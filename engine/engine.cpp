@@ -1,4 +1,4 @@
-#include "core/engine.hpp"
+#include "engine.hpp"
 #include "systems/physics/physics_system.hpp"
 #include "systems/animation/animation_system.hpp"
 

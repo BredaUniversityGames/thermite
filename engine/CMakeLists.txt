@@ -17,8 +17,9 @@ file(GLOB_RECURSE THERMITE_SOURCES
 add_library(ThermiteEngine STATIC ${THERMITE_SOURCES})
 
 # add include path
-target_include_directories(ThermiteEngine PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}  # engine/
+target_include_directories(ThermiteEngine 
+PUBLIC ${CMAKE_SOURCE_DIR}  
+PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
 # precomp possible..
