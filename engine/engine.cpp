@@ -1,35 +1,32 @@
 #include "engine.hpp"
+
 #include "systems/physics/physics_system.hpp"
 #include "systems/animation/animation_system.hpp"
 
 #include <iostream>
 
-namespace thermite
-{
-    Engine::Engine(std::string name)
-        : m_name(std::move(name))
-    {
-    }
+namespace thermite {
 
-    const std::string& Engine::get_name() const
-    {
-        return m_name;
-    }
+Engine::Engine(std::string name) : name(std::move(name)) {}
 
-    //example stuff
-    void Engine::run()
-    {
-        std::cout << "[Thermite] Engine \"" << m_name << "\" starting...\n";
+const std::string& Engine::get_name() const {
+    return name;
+}
 
-        PhysicsSystem physics;
-        AnimationSystem animation;
+// Example stuff
+void Engine::run() {
+    std::cout << "[Thermite] Engine \"" << name << "\" starting...\n";
 
-        physics.Initialize();
-        animation.Initialize();
+    PhysicsSystem physics {};
+    AnimationSystem animation {};
 
-        physics.Update(0.016f);
-        animation.Update(0.016f);
+    physics.init();
+    animation.init();
 
-        std::cout << "[Thermite] Application \"" << m_name << "\" shutting down.\n";
-    }
+    physics.update(0.016f);
+    animation.update(0.016f);
+
+    std::cout << "[Thermite] Application \"" << name << "\" shutting down.\n";
+}
+
 }

@@ -2,30 +2,30 @@
 
 #include <string>
 
-namespace thermite
-{
-    #if THERMITE_EDITOR
-    #   pragma message(" THERMITE_EDITOR=1 ")
-    #else
-    #   pragma message(" THERMITE_EDITOR=0 ")
-    #endif
+namespace thermite {
 
-    #if THERMITE_DEBUG
-    #   pragma message("THERMITE_DEBUG=1")
-    #else
-    #   pragma message("THERMITE_DEBUG=0")
-    #endif
+#if THERMITE_EDITOR
+#   pragma message(" THERMITE_EDITOR=1 ")
+#else
+#   pragma message(" THERMITE_EDITOR=0 ")
+#endif
 
-    //example engine class
-    class Engine
-    {
-    public:
-        explicit Engine(std::string name);
+#if THERMITE_DEBUG
+#   pragma message("THERMITE_DEBUG=1")
+#else
+#   pragma message("THERMITE_DEBUG=0")
+#endif
 
-        void run();
-        const std::string& get_name() const;
+// Example engine class
+class Engine {
+public:
+    explicit Engine(std::string name);
 
-    private:
-        std::string m_name;
-    };
+    void run();
+    const std::string& get_name() const;
+
+private:
+    std::string name {};
+};
+
 }

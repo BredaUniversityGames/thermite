@@ -1,16 +1,15 @@
-#include "systems/physics/physics_system.hpp" 
+#include "physics_system.hpp" 
 #include <iostream>
 
-namespace thermite
-{
-    void PhysicsSystem::Initialize()
-    {
-        std::cout << "[Thermite][Physics] Initialized.\n";
-    }
+namespace thermite {
 
-    void PhysicsSystem::Update(float deltaTime)
-    {
-        std::cout << "[Thermite][Physics] Updating with dt = "
-            << deltaTime << " seconds.\n";
-    }
+void PhysicsSystem::init() {
+    std::cout << "[Thermite][Physics] Initialized.\n";
+}
+
+void PhysicsSystem::update(float dt) {
+    std::cout << "[Thermite][Physics] Updating with dt = "
+        << dt << " seconds.\n";
+}
+
 }
