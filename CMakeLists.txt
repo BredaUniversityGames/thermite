@@ -1,11 +1,11 @@
 cmake_minimum_required(VERSION 3.25)
 project(thermite LANGUAGES CXX)
 
-### Hide away ZERO_CHECK and ALL_BUILD
+# Hide away ZERO_CHECK and ALL_BUILD
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set_property(GLOBAL PROPERTY PREDEFINED_TARGETS_FOLDER "CMakeTargets")
 
-### Use C++20 as language standard
+# Use C++20 as language standard
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
