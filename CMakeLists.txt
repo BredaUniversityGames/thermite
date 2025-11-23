@@ -1,15 +1,11 @@
 cmake_minimum_required(VERSION 3.25)
 project(thermite LANGUAGES CXX)
 
-# Hide away ZERO_CHECK and ALL_BUILD
-set_property(GLOBAL PROPERTY USE_FOLDERS ON)
-set_property(GLOBAL PROPERTY PREDEFINED_TARGETS_FOLDER "CMakeTargets")
-
 # Use C++20 as language standard
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Define THERMITE_* macro defaults 
+# Define THERMITE_*_BUILD macro defaults 
 option(THERMITE_EDITOR_BUILD "Build editor version" ON)
 option(THERMITE_DEBUG_BUILD "Thermite in debug build" ON)
 
@@ -39,3 +35,6 @@ endif()
 # Find and add projects
 include(scripts/cmake/code_modules.cmake) 
 find_and_add_targets()
+
+# Add externals
+add_subdirectory("extern")
