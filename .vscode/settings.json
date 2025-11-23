@@ -1,9 +1,7 @@
 {
-    "cmake.environment": {"EXECUTABLE": "true"},
     "cmake.debugConfig": {
         "cwd": "${workspaceFolder}"
     },
-    "cmake.configureOnOpen": false,
     "cmake.options.advanced": {
         "configurePreset": {
             "statusBarVisibility": "visible"
