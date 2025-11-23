@@ -1,44 +1,41 @@
-function(vs_configuration_setup)
+function(find_and_add_targets)
 
-	# custom build configs in VS
-	set(CMAKE_CONFIGURATION_TYPES "DebugEditor;ReleaseEditor;RelWithDebInfoEditor;DebugGame;ReleaseGame;RelWithDebInfoGame" CACHE STRING "Build configs" FORCE)
+	set(PROJECTS_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/projects/")
+
+	file(GLOB PROJECT_DIRS RELATIVE "${PROJECTS_ROOT}" "${PROJECTS_ROOT}/*")
+
+	foreach(project ${PROJECT_DIRS})
+		set(project_dir "${PROJECTS_ROOT}/${project}")
+		if (IS_DIRECTORY "${project_dir}" AND EXISTS "${project_dir}/main.cpp")
+			# use folder name as target name
+			set(target_name "${project}")
 	
-	set(_THERMITE_DEBUG_CONFIGS
-		DebugEditor
-		DebugGame)
+			message(STATUS "Auto-adding project target: ${target_name}")
+		
+		# get all code
+		file(GLOB_RECURSE PROJECT_SOURCES
+				${project_dir}/*.cpp
+				${project_dir}/*.hpp
+		)
+		
+		# define executable
+			add_executable(${target_name}
+				${PROJECT_SOURCES}
+			)
+		
+		# link with ThermiteEngine
+			target_link_libraries(${target_name} PRIVATE ThermiteEngine)
+		
+		# add some build state macros for code
+			if (THERMITE_EDITOR_BUILD)
+				target_compile_definitions(${target_name} PRIVATE THERMITE_EDITOR=1)
+			endif()
 	
-	set(_THERMITE_RELEASE_CONFIGS
-		ReleaseEditor
-		ReleaseGame)
-	
-	set(_THERMITE_RELWITHDEBINFO_CONFIGS
-		RelWithDebInfoEditor
-		RelWithDebInfoGame)
-	
-	# Copy flags from canonical configs
-	
-	foreach(cfg IN LISTS _THERMITE_DEBUG_CONFIGS)
-		string(TOUPPER "${cfg}" CFG_UPPER)
-		set(CMAKE_C_FLAGS_${CFG_UPPER}           "${CMAKE_C_FLAGS_DEBUG}"           CACHE STRING "" FORCE)
-		set(CMAKE_CXX_FLAGS_${CFG_UPPER}         "${CMAKE_CXX_FLAGS_DEBUG}"         CACHE STRING "" FORCE)
-		set(CMAKE_EXE_LINKER_FLAGS_${CFG_UPPER}  "${CMAKE_EXE_LINKER_FLAGS_DEBUG}"  CACHE STRING "" FORCE)
-		set(CMAKE_SHARED_LINKER_FLAGS_${CFG_UPPER} "${CMAKE_SHARED_LINKER_FLAGS_DEBUG}" CACHE STRING "" FORCE)
-	endforeach()
-	
-	foreach(cfg IN LISTS _THERMITE_RELEASE_CONFIGS)
-		string(TOUPPER "${cfg}" CFG_UPPER)
-		set(CMAKE_C_FLAGS_${CFG_UPPER}           "${CMAKE_C_FLAGS_RELEASE}"           CACHE STRING "" FORCE)
-		set(CMAKE_CXX_FLAGS_${CFG_UPPER}         "${CMAKE_CXX_FLAGS_RELEASE}"         CACHE STRING "" FORCE)
-		set(CMAKE_EXE_LINKER_FLAGS_${CFG_UPPER}  "${CMAKE_EXE_LINKER_FLAGS_RELEASE}"  CACHE STRING "" FORCE)
-		set(CMAKE_SHARED_LINKER_FLAGS_${CFG_UPPER} "${CMAKE_SHARED_LINKER_FLAGS_RELEASE}" CACHE STRING "" FORCE)
-	endforeach()
-	
-	foreach(cfg IN LISTS _THERMITE_RELWITHDEBINFO_CONFIGS)
-		string(TOUPPER "${cfg}" CFG_UPPER)
-		set(CMAKE_C_FLAGS_${CFG_UPPER}           "${CMAKE_C_FLAGS_RELWITHDEBINFO}"           CACHE STRING "" FORCE)
-		set(CMAKE_CXX_FLAGS_${CFG_UPPER}         "${CMAKE_CXX_FLAGS_RELWITHDEBINFO}"         CACHE STRING "" FORCE)
-		set(CMAKE_EXE_LINKER_FLAGS_${CFG_UPPER}  "${CMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO}"  CACHE STRING "" FORCE)
-		set(CMAKE_SHARED_LINKER_FLAGS_${CFG_UPPER} "${CMAKE_SHARED_LINKER_FLAGS_RELWITHDEBINFO}" CACHE STRING "" FORCE)
+			if (THERMITE_DEBUG_BUILD)
+				target_compile_definitions(${target_name} PRIVATE THERMITE_DEBUG=1)
+			endif()
+		endif()
 	endforeach()
 
+	
 endfunction()

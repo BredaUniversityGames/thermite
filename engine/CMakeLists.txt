@@ -32,28 +32,8 @@ target_include_directories(ThermiteEngine PUBLIC
 #)
 #target_link_libraries(ThermiteEngine PUBLIC Graphite)
 
-
-# Engine compile definitions (Multi config)
-target_compile_definitions(ThermiteEngine PUBLIC
-    # Editor configs
-    $<$<CONFIG:DebugEditor>:THERMITE_EDITOR=1>
-    $<$<CONFIG:DebugEditor>:THERMITE_DEBUG=1>
-    $<$<CONFIG:ReleaseEditor>:THERMITE_EDITOR=1>
-    $<$<CONFIG:ReleaseEditor>:THERMITE_DEBUG=0>
-    $<$<CONFIG:RelWithDebInfoEditor>:THERMITE_EDITOR=1>
-    $<$<CONFIG:RelWithDebInfoEditor>:THERMITE_DEBUG=0>
-    
-    # Game configs
-    $<$<CONFIG:DebugGame>:THERMITE_EDITOR=0>
-    $<$<CONFIG:DebugGame>:THERMITE_DEBUG=1>
-    $<$<CONFIG:ReleaseGame>:THERMITE_EDITOR=0>
-    $<$<CONFIG:ReleaseGame>:THERMITE_DEBUG=0>
-    $<$<CONFIG:RelWithDebInfoGame>:THERMITE_EDITOR=0>
-    $<$<CONFIG:RelWithDebInfoGame>:THERMITE_DEBUG=0>
-)
-
 # VS filters
-source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${THERMITE_SOURCES})
+#source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${THERMITE_SOURCES})
 
 # Warning level
 target_compile_options(ThermiteEngine PRIVATE /W4 /permissive-)

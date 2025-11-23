@@ -1,4 +1,4 @@
-#include "systems/physics/PhysicsSystem.hpp"
+#include "systems/physics/physics_system.hpp" 
 #include <iostream>
 
 namespace thermite

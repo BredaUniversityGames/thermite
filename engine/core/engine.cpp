@@ -1,24 +1,25 @@
-#include "core/Application.hpp"
-#include "systems/physics/PhysicsSystem.hpp"
-#include "systems/animation/AnimationSystem.hpp"
+#include "core/engine.hpp"
+#include "systems/physics/physics_system.hpp"
+#include "systems/animation/animation_system.hpp"
 
 #include <iostream>
 
 namespace thermite
 {
-    Application::Application(std::string name)
+    Engine::Engine(std::string name)
         : m_name(std::move(name))
     {
     }
 
-    const std::string& Application::GetName() const
+    const std::string& Engine::get_name() const
     {
         return m_name;
     }
 
-    void Application::Run()
+    //example stuff
+    void Engine::run()
     {
-        std::cout << "[Thermite] Application \"" << m_name << "\" starting...\n";
+        std::cout << "[Thermite] Engine \"" << m_name << "\" starting...\n";
 
         PhysicsSystem physics;
         AnimationSystem animation;

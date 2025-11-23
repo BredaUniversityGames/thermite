@@ -1,4 +1,4 @@
-#include "systems/animation/AnimationSystem.hpp"
+#include "systems/animation/animation_system.hpp"
 #include <iostream>
 
 namespace thermite
