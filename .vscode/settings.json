@@ -6,9 +6,6 @@
         "configurePreset": {
             "statusBarVisibility": "visible"
         },
-        "buildPreset": {
-            "statusBarVisibility": "visible"
-        },
         "launchTarget": {
             "statusBarVisibility": "visible"
         }
