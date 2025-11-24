@@ -24,6 +24,9 @@ option(THERMITE_DEBUG_BUILD "Build debug-style config (extra asserts/logging)" O
 # Engine sub-directory
 add_subdirectory("engine")
 
+# Add externals
+add_subdirectory("extern")
+
 # Editor and Debug defines
 if (THERMITE_EDITOR_BUILD)
     target_compile_definitions(thermite-engine PUBLIC THERMITE_EDITOR=1)
@@ -35,6 +38,3 @@ endif()
 # Find and add projects
 include(scripts/cmake/code_modules.cmake) 
 find_and_add_targets()
-
-# Add externals
-add_subdirectory("extern")
