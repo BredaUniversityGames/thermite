@@ -1,7 +1,7 @@
 #include "engine.hpp"
 
 /* Singleton */
-tmt::Engine engine;
+tmt::Engine tmt::engine;
 
 namespace tmt {
 
