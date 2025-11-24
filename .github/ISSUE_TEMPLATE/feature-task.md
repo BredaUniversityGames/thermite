@@ -1,7 +1,7 @@
 ---
 name: Feature Task
 about: This issue template is for tasks that add feature(s)
-title: My Task
+title: My Feature
 labels: feature
 assignees: ''
 
