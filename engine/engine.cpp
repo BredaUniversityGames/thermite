@@ -1,5 +1,4 @@
 #include "engine.hpp"
-
 #include <iostream>
 
 #include <SDL3/SDL.h>
@@ -7,12 +6,15 @@
 #include "systems/physics/physics_system.hpp"
 #include "systems/animation/animation_system.hpp"
 
+/* Singleton */
+tmt::Engine tmt::engine;
 
-namespace thermite {
+namespace tmt {
+void Engine::init() {}
 
 static SDL_Window* window = nullptr;
 
-Engine::Engine(std::string name) : name(std::move(name)) {
+Engine::Engine() {
     SDL_SetAppMetadata(
         "Thermite Engine", "0.1", "com.example.renderer-clear"
     );
@@ -26,12 +28,12 @@ Engine::Engine(std::string name) : name(std::move(name)) {
     }
 }
 
-const std::string& Engine::get_name() const { return name; }
+Engine::~Engine() {}
+
+void Engine::end() {}
 
 // Example stuff
 void Engine::run() {
-    std::cout << "[Thermite] Engine \"" << name << "\" starting...\n";
-
     PhysicsSystem physics {};
     AnimationSystem animation {};
 
@@ -51,8 +53,6 @@ void Engine::run() {
             }
         }
     }
-
-    std::cout << "[Thermite] Application \"" << name << "\" shutting down.\n";
 }
 
 }  // namespace thermite

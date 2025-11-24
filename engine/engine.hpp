@@ -2,7 +2,7 @@
 
 #include <string>
 
-namespace thermite {
+namespace tmt {
 
 #if THERMITE_EDITOR
 #pragma message(" THERMITE_EDITOR=1 ")
@@ -16,16 +16,22 @@ namespace thermite {
 #pragma message("THERMITE_DEBUG=0")
 #endif
 
-// Example engine class
 class Engine {
    public:
-    explicit Engine(std::string name);
+    Engine();
+    ~Engine();
 
+    /* No copies allowed */
+    Engine(const Engine&) = delete;
+    Engine& operator=(const Engine&) = delete;
+
+
+    void init();
     void run();
-    const std::string& get_name() const;
-
-   private:
-    std::string name {};
+    void end();
 };
 
-}  // namespace thermite
+/* Singleton */
+extern Engine engine;
+
+}  // namespace tmt

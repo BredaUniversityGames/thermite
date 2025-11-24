@@ -9,9 +9,11 @@ int main(int argc, char** argv) {
     std::cout << "Thermite Editor not included.\n";
 #endif
 
-    thermite::Engine engine("ThermiteEngine");
+    tmt::engine.init();
 
-    engine.run();
+    tmt::engine.run();
+
+    tmt::engine.end();
 
     return 0;
 }
