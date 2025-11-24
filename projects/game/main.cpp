@@ -2,17 +2,16 @@
 
 #include "engine/engine.hpp"
 
-int main(int argc, char** argv)
-{
+int main(int argc, char** argv) {
 #ifdef THERMITE_EDITOR
-  std::cout << "Thermite Editor included.\n";
+    std::cout << "Thermite Editor included.\n";
 #else
-  std::cout << "Thermite Editor not included.\n";
+    std::cout << "Thermite Editor not included.\n";
 #endif
 
-  thermite::Engine engine("ThermiteEngine");
+    thermite::Engine engine("ThermiteEngine");
 
-  engine.run();
+    engine.run();
 
-  return 0;
+    return 0;
 }

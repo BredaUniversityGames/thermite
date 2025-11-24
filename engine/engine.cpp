@@ -5,31 +5,26 @@
 
 #include <iostream>
 
-namespace thermite
-{
+namespace thermite {
 
 Engine::Engine(std::string name) : name(std::move(name)) {}
 
-const std::string& Engine::get_name() const
-{
-  return name;
-}
+const std::string& Engine::get_name() const { return name; }
 
 // Example stuff
-void Engine::run()
-{
-  std::cout << "[Thermite] Engine \"" << name << "\" starting...\n";
+void Engine::run() {
+    std::cout << "[Thermite] Engine \"" << name << "\" starting...\n";
 
-  PhysicsSystem physics {};
-  AnimationSystem animation {};
+    PhysicsSystem physics {};
+    AnimationSystem animation {};
 
-  physics.init();
-  animation.init();
+    physics.init();
+    animation.init();
 
-  physics.update(0.016f);
-  animation.update(0.016f);
+    physics.update(0.016f);
+    animation.update(0.016f);
 
-  std::cout << "[Thermite] Application \"" << name << "\" shutting down.\n";
+    std::cout << "[Thermite] Application \"" << name << "\" shutting down.\n";
 }
 
-} // namespace thermite
+}  // namespace thermite

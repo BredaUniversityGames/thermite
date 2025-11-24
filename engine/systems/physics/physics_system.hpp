@@ -1,13 +1,11 @@
 #pragma once
 
-namespace thermite
-{
+namespace thermite {
 
-class PhysicsSystem
-{
- public:
-  void init();
-  void update(float dt);
+class PhysicsSystem {
+   public:
+    void init();
+    void update(float dt);
 };
 
-} // namespace thermite
+}  // namespace thermite

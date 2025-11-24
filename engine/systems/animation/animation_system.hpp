@@ -1,13 +1,11 @@
 #pragma once
 
-namespace thermite
-{
+namespace thermite {
 
-class AnimationSystem
-{
- public:
-  void init();
-  void update(float dt);
+class AnimationSystem {
+   public:
+    void init();
+    void update(float dt);
 };
 
-} // namespace thermite
+}  // namespace thermite
