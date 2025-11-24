@@ -5,7 +5,8 @@ namespace tmt {
 /* Ray definition. */
 struct Ray {
     glm::vec3 origin {};
-    glm::vec3 direction {};
+    glm::vec3 dir {};
+    glm::vec3 rcp_dir {};
 };
 
 /* Ray hit data. */

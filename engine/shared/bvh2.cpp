@@ -12,7 +12,31 @@ inline float surface_area(const Bvh2Node& node) {
     return extent.x * extent.y + extent.y * extent.z + extent.z * extent.x;
 }
 
+/* Returns half the area of an extent `v`. */
+inline float half_area(const glm::vec3& v) { return v.x < -BIG_F32 ? 0.0f : (v.x * v.y + v.y * v.z + v.z * v.x); }
+
 void Bvh2::build(const Aabb* input_prims, const uint32_t input_count) {
+    /* Delete old BVH data if it exists */
+    if (nodes) {
+        delete[] nodes;
+        delete[] prims;
+        delete[] indices;
+        nodes = nullptr;
+    }
+
+    /* Allocate space for nodes */
+    const uint32_t nodes_required = input_count * 2u;
+    nodes = new Bvh2Node[nodes_required] {};
+    node_count = 2u; /* Skip the 2nd node for better cache-line alignment */
+
+    /* Copy the input primitives */
+    prims = new Aabb[input_count] {};
+    memcpy(prims, input_prims, input_count * sizeof(Aabb));
+
+    /* Initialize primitive indices */
+    indices = new uint32_t[input_count] {};
+    for (uint32_t i = 0u; i < input_count; ++i) indices[i] = i;
+
     /* Setup the root node for the BVH */
     Bvh2Node& root = nodes[0];
     root.left_first = 0u;
@@ -50,8 +74,8 @@ void Bvh2::build(const Aabb* input_prims, const uint32_t input_count) {
             const glm::vec3 rpd3 = glm::vec3(BVH_BINS / (node.max_bounds - node.min_bounds));
             const glm::vec3 nmin3 = node.min_bounds;
             for (uint32_t i = 0u; i < node.prim_count; ++i) {
-                const Aabb& prim = prims[bvh2_indices[node.left_first + i]];
-                int3 bi = int3(((prim.min + prim.max) * 0.5f - nmin3) * rpd3);
+                const Aabb& prim = prims[indices[node.left_first + i]];
+                glm::ivec3 bi = glm::ivec3(((prim.min + prim.max) * 0.5f - nmin3) * rpd3);
                 bi.x = clamp(bi.x, 0, BVH_BINS - 1);
                 bi.y = clamp(bi.y, 0, BVH_BINS - 1);
                 bi.z = clamp(bi.z, 0, BVH_BINS - 1);
@@ -136,13 +160,80 @@ void Bvh2::build(const Aabb* input_prims, const uint32_t input_count) {
     }
 }
 
+/* Ray AABB intersection function. */
+inline float intersect_aabb(const Ray ray, const glm::vec3 box_min, const glm::vec3 box_max) {
+    const glm::vec3 t_to_min = (box_min - ray.origin) * ray.rcp_dir;
+    const glm::vec3 t_to_max = (box_max - ray.origin) * ray.rcp_dir;
+    const glm::vec3 t_min = fminf(t_to_min, t_to_max);
+    const glm::vec3 t_max = fmaxf(t_to_min, t_to_max);
+    const float t_near = fmaxf(fmaxf(fmaxf(t_min.x, t_min.y), t_min.z), 0);
+    const float t_far = fminf(fminf(fminf(t_max.x, t_max.y), t_max.z), ray.t);
+    return t_near > t_far ? BIG_F32 : t_near;
+}
+
+/* Swap two variables. */
+template <typename T>
+inline T swap(T& a, T& b) {
+    const T c = a;
+    a = b, b = c;
+}
+
 Hit Bvh2::trace(const Ray& ray) const {
-    /* TODO: Implement CPU trace. */
-    return Hit(BIG_F32);
+    /* Traversal state */
+    uint32_t stack[32] {}, stack_ptr = 0u, node_index = 0u;
+    float min_t = BIG_F32;
+
+    for (;;) {
+        const Bvh2Node& node = nodes[node_index];
+
+        /* Leaf node */
+        if (node.is_leaf()) {
+            /* Intersect all primitives */
+            for (uint32_t i = 0u; i < node.prim_count; ++i) {
+                const Aabb& prim = prims[indices[node.left_first + i]];
+                const float dist = intersect_aabb(ray, prim.min, prim.max);
+                min_t = fminf(min_t, dist);
+            }
+
+            /* Pop the node stack */
+            if (stack_ptr == 0u) break;
+            node_index = stack[--stack_ptr];
+            continue;
+        }
+
+        /* Interior node */
+        uint32_t child1_index = node.left_first;
+        uint32_t child2_index = node.left_first + 1u;
+        const Bvh2Node &child1 = nodes[child1_index], &child2 = nodes[child2_index];
+        float dist1 = intersect_aabb(ray, child1.min_bounds, child1.max_bounds);
+        float dist2 = intersect_aabb(ray, child2.min_bounds, child2.max_bounds);
+
+        /* Swap child nodes so that the closest one comes first */
+        if (dist1 > dist2) {
+            swap(dist1, dist2), swap(child1_index, child2_index);
+        }
+
+        /* If we missed both child nodes */
+        if (dist1 == BIG_F32) {
+            /* Pop the node stack */
+            if (stack_ptr == 0u) break;
+            node_index = stack[--stack_ptr];
+        } else {
+            /* Continue with the closest child node */
+            node_index = child1_index;
+            /* Push the 2nd child onto the node stack if we hit it */
+            if (dist2 != BIG_F32) stack[stack_ptr++] = child2_index;
+        }
+    }
+
+    return Hit(min_t);
 }
 
 Bvh2::~Bvh2() {
-    /* TODO: Free BVH resources. */
+    if (nodes == nullptr) return;
+    delete[] nodes;
+    delete[] prims;
+    delete[] indices;
 }
 
 }  // namespace tmt
