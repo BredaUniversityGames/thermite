@@ -29,23 +29,17 @@ class Log {
     };
 
     template <typename... Args>
-    static void info(
-        LoggerScope scope, spdlog::format_string_t<Args...> fmt, Args&&... args
-    ) {
+    static void info(LoggerScope scope, spdlog::format_string_t<Args...> fmt, Args&&... args) {
         loggers[scope]->info(fmt, std::forward<Args>(args)...);
     }
 
     template <typename... Args>
-    static void warn(
-        LoggerScope scope, spdlog::format_string_t<Args...> fmt, Args&&... args
-    ) {
+    static void warn(LoggerScope scope, spdlog::format_string_t<Args...> fmt, Args&&... args) {
         loggers[scope]->warn(fmt, std::forward<Args>(args)...);
     }
 
     template <typename... Args>
-    static void error(
-        LoggerScope scope, spdlog::format_string_t<Args...> fmt, Args&&... args
-    ) {
+    static void error(LoggerScope scope, spdlog::format_string_t<Args...> fmt, Args&&... args) {
         loggers[scope]->error(fmt, std::forward<Args>(args)...);
     }
 
@@ -65,9 +59,7 @@ class Log {
     }
 
    private:
-    static inline std::unordered_map<
-        LoggerScope, std::shared_ptr<spdlog::logger>>
-        loggers;
+    static inline std::unordered_map<LoggerScope, std::shared_ptr<spdlog::logger>> loggers;
 };
 
 }  // namespace tmt

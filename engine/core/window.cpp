@@ -29,7 +29,9 @@ void Window::update() {
 
     while (SDL_PollEvent(&event)) {
         switch (event.type) {
-        case SDL_EVENT_QUIT: { is_running = false; }
+            case SDL_EVENT_QUIT: {
+                is_running = false;
+            }
         }
     }
 }
