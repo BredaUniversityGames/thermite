@@ -5,14 +5,14 @@
 int main(int argc, char** argv)
 {
 #ifdef THERMITE_EDITOR
-    std::cout << "Thermite Editor included.\n";
+  std::cout << "Thermite Editor included.\n";
 #else
-    std::cout << "Thermite Editor not included.\n";
+  std::cout << "Thermite Editor not included.\n";
 #endif
 
-    thermite::Engine engine("ThermiteEngine");
-    
-    engine.run();
+  thermite::Engine engine("ThermiteEngine");
 
-    return 0;
+  engine.run();
+
+  return 0;
 }
