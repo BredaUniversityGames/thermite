@@ -1,5 +1,6 @@
 #pragma once
 #include "spdlog/spdlog.h"
+#include "spdlog/sinks/basic_file_sink.h"
 #include "spdlog/sinks/stdout_color_sinks-inl.h"
 
 namespace tmt {
@@ -7,19 +8,33 @@ namespace tmt {
 class Log {
    public:
     // Call once at the beginning of the setup
-    static void init() {
+
+    static void init(const std::string& log_file = "") {
         // This prints: [info] message for the global function
         // the info part is the colored output which can be info, warning,
         // error, etc check
         // https://github.com/gabime/spdlog/wiki/Custom-formatting
         spdlog::set_pattern("%^[%l]%$ %v");
+
         loggers[LoggerScope::ENGINE] = spdlog::stdout_color_mt("Engine");
         loggers[LoggerScope::GAME] = spdlog::stdout_color_mt("Game");
         loggers[LoggerScope::RENDERER] = spdlog::stdout_color_mt("Renderer");
 
-        // Pattern with logger name (%n) and level
+        std::shared_ptr<spdlog::sinks::basic_file_sink_mt> file_sink = nullptr;
+        if (!log_file.empty()) {
+            file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(
+                log_file, true
+            );
+            file_sink->set_pattern("[%n] %^[%l]%$ %v");
+        }
         for (const auto& logger : loggers) {
-            logger.second->set_pattern("%^[%n] [%l]%$ %v");
+            // Pattern with logger name (%n) and level, only the logger level is
+            // colored
+            logger.second->set_pattern("[%n] %^[%l]%$ %v");
+
+            if (file_sink != nullptr) {
+                logger.second->sinks().push_back(file_sink);
+            }
         }
     }
     enum class LoggerScope {
