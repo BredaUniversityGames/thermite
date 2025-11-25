@@ -1,5 +1,4 @@
 #pragma once
-#include <set>
 #include <memory>
 #include <stdexcept>
 #include <vector>
