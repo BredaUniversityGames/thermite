@@ -37,7 +37,6 @@ class Engine {
     Ecs& ecs;
 
     struct Config {
-        /* 60 FPS fixed time step */
         constexpr static float fixed_time_step = 1.0f / 60.0f;
     };
 };
