@@ -30,7 +30,14 @@ class Ecs : public OnStart,
         );
 
         T* system = new T(std::forward<Args>(args)...);
-        systems.insert(system);
+
+        for (auto* existing_system : systems) {
+            if (typeid(*existing_system) == typeid(T)) {
+                throw std::runtime_error("System already registered");
+            }
+        }
+
+        systems.push_back(system);
         return *system;
     }
 
@@ -55,7 +62,7 @@ class Ecs : public OnStart,
     }
 
    private:
-    std::set<ISystem*> systems;
+    std::vector<ISystem*> systems;
 
     void on_start() override;
 
