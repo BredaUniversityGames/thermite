@@ -10,7 +10,7 @@ Window::~Window() {
     }
 }
 
-void Window::init() const {
+void Window::on_engine_init(const ApplicationSpecs& specs) {
     SDL_SetAppMetadata("Thermite Engine", "0.1", "com.thermite.engine");
 
     if (!SDL_Init(SDL_INIT_VIDEO)) {

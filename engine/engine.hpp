@@ -1,7 +1,10 @@
 #pragma once
+#include "core/application.hpp"
 
 namespace tmt {
+/* Forward declarations */
 class Window;
+class Ecs;
 
 class Engine {
    public:
@@ -12,7 +15,7 @@ class Engine {
     Engine(const Engine&) = delete;
     Engine& operator=(const Engine&) = delete;
 
-    void init();
+    void init(const ApplicationSpecs& specs);
     void run();
     void end();
 
@@ -31,6 +34,12 @@ class Engine {
     */
 
     Window& window;
+    Ecs& ecs;
+
+    struct Config {
+        /* 60 FPS fixed time step */
+        constexpr static float fixed_time_step = 1.0f / 60.0f;
+    };
 };
 
 /* Singleton */

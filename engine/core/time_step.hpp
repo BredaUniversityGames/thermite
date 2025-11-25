@@ -1,18 +1,15 @@
 #pragma once
+#include <cstdint>
 
 namespace tmt {
 
-struct TimeStep {
-    TimeStep(const float& delta_time_seconds)
-        : delta_time(delta_time_seconds) {}
-
+struct FrameData {
     /* In seconds */
-    const float delta_time = 0;
+    float delta_time = 0;
+    float fixed_delta_time = 0;
+    float total_time = 0;
 
-    explicit operator float() const { return delta_time; }
-
-    const float as_seconds() const { return delta_time; }
-    const float as_milliseconds() const { return delta_time * 1000.0f; }
+    uint64_t frame_count = 0;
 };
 
 }  // namespace tmt
