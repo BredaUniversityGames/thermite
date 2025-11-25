@@ -28,11 +28,11 @@ Engine::~Engine() {
 }
 
 void Engine::init(const ApplicationSpecs& specs) {
-    Log::init();
+    Log::init("somefile.txt");
     tmt::Log::info("No scope here!");
-    tmt::Log::warn(Log::LoggerScope::GAME, "Game scope here!");
-    tmt::Log::warn(Log::LoggerScope::RENDERER, "Renderer scope here!");
-    tmt::Log::warn(Log::LoggerScope::ENGINE, "THERMITE scope here!");
+    tmt::Log::warn(Log::Scope::GAME, "Game scope here!");
+    tmt::Log::warn(Log::Scope::RENDERER, "Renderer scope here!");
+    tmt::Log::warn(Log::Scope::ENGINE, "THERMITE scope here!");
 
     window.init(specs);
 
