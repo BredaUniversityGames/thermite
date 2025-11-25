@@ -37,7 +37,7 @@ class EventListenerBase {
         for (auto listener : listeners) {
             listener->on_event(event);
             if constexpr (std::is_base_of_v<EventBase, E>) {
-                if (break_on_handled && event.Handled) break;
+                if (break_on_handled && event.handled) break;
             }
         }
     }
@@ -47,7 +47,7 @@ class EventListenerBase {
         for (auto listener : listeners) {
             listener->on_event(event);
             if constexpr (std::is_base_of_v<EventBase, E>) {
-                if (break_on_handled && event.Handled) break;
+                if (break_on_handled && event.handled) break;
             }
         }
     }
