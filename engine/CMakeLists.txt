@@ -28,6 +28,12 @@ target_link_libraries(thermite-engine
     PUBLIC spdlog::spdlog
 )
 
+# Always copy the assets folder after building
+add_custom_command(TARGET thermite-engine POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+            ${CMAKE_SOURCE_DIR}/engine/assets $<TARGET_FILE_DIR:thermite-engine>/assets
+    COMMENT "Copying assets to output directory"
+)
 
 # TODO: Precompiled header(s)
 # target_precompile_headers(thermite-engine PRIVATE Thermite/pch.h)

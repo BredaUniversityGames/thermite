@@ -2,6 +2,7 @@
 
 namespace tmt {
 class Window;
+class Renderer;
 
 class Engine {
    public:
@@ -31,6 +32,7 @@ class Engine {
     */
 
     Window& window;
+    Renderer& renderer;
 };
 
 /* Singleton */

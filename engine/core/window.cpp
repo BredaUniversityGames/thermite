@@ -10,15 +10,17 @@ Window::~Window() {
     }
 }
 
-void Window::init() const {
+void Window::init() {
     SDL_SetAppMetadata("Thermite Engine", "0.1", "com.thermite.engine");
 
-    if (!SDL_Init(SDL_INIT_VIDEO)) {
+   if (!SDL_Init(SDL_INIT_VIDEO)) {
         SDL_Log("Couldn't initialize SDL: %s", SDL_GetError());
         return;
     }
 
-    if (!SDL_CreateWindow(title.data(), width, height, SDL_WINDOW_VULKAN)) {
+    window = SDL_CreateWindow(title.data(), width, height, SDL_WINDOW_VULKAN);
+
+    if (!window) {
         SDL_Log("Couldn't create window: %s", SDL_GetError());
         return;
     }
@@ -32,6 +34,21 @@ void Window::update() {
         case SDL_EVENT_QUIT: { is_running = false; }
         }
     }
+}
+
+HWND Window::get_window_handle() {
+    SDL_PropertiesID props = SDL_GetWindowProperties(window);
+    HWND hwnd = (HWND)SDL_GetPointerProperty(props, SDL_PROP_WINDOW_WIN32_HWND_POINTER, NULL);
+
+    // Not sure whether it sets any errors when returning a default value, so
+    // this may be redundant
+    if (!hwnd) {
+        SDL_Log("Failed to get HWND: %s", SDL_GetError());
+        return nullptr;
+    } else {
+        SDL_Log("HWND: %p", hwnd);
+    }
+    return hwnd;
 }
 
 }  // namespace tmt

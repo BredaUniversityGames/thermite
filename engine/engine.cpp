@@ -5,6 +5,8 @@
 #include "core/logger.hpp"
 #include "core/window.hpp"
 
+#include "rendering/renderer.hpp"
+
 #include "systems/physics/physics_system.hpp"
 #include "systems/animation/animation_system.hpp"
 
@@ -13,11 +15,14 @@ tmt::Engine tmt::engine;
 
 namespace tmt {
 
-Engine::Engine() : window(*new Window()) {}
+Engine::Engine() : window(*new Window()), renderer(*new Renderer()) {}
 
-Engine::~Engine() { delete &window; }
+Engine::~Engine() { 
+    delete &window;
+    delete &renderer;
+}
 
-void Engine::end() {}
+void Engine::end() { renderer.end(); }
 
 // Example stuff
 void Engine::run() {
@@ -29,11 +34,13 @@ void Engine::run() {
 
     while (window.is_running) {
         window.update();
+        renderer.update();
     }
 }
 
 void Engine::init() {
     window.init();
+    renderer.init();
 
     Log::init();
     tmt::Log::info("No scope here!");
