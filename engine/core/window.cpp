@@ -38,17 +38,8 @@ void Window::update() {
 
 HWND Window::get_window_handle() {
     SDL_PropertiesID props = SDL_GetWindowProperties(window);
-    HWND hwnd = (HWND)SDL_GetPointerProperty(props, SDL_PROP_WINDOW_WIN32_HWND_POINTER, NULL);
 
-    // Not sure whether it sets any errors when returning a default value, so
-    // this may be redundant
-    if (!hwnd) {
-        SDL_Log("Failed to get HWND: %s", SDL_GetError());
-        return nullptr;
-    } else {
-        SDL_Log("HWND: %p", hwnd);
-    }
-    return hwnd;
+    return (HWND)SDL_GetPointerProperty(props, SDL_PROP_WINDOW_WIN32_HWND_POINTER, NULL);
 }
 
 }  // namespace tmt
