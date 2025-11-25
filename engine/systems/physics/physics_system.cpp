@@ -1,5 +1,6 @@
 #include "physics_system.hpp"
 #include "core/logger.hpp"
+#include "engine.hpp"
 
 namespace tmt {
 
@@ -10,7 +11,10 @@ void Physics::on_update(const FrameData& time) {
 }
 
 void Physics::on_fixed_update(const FrameData& time) {
-    Log::info("Physics on_fixed_update with delta time: {}", time.fixed_delta_time);
+    Log::info(
+        "Physics on_fixed_update with delta time: {}",
+        Engine::Config::fixed_time_step
+    );
 }
 
 void Physics::on_end() { Log::info("Physics on_end"); }
