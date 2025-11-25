@@ -5,7 +5,6 @@ set(SPDLOG_BUILD_EXAMPLE OFF CACHE BOOL "" FORCE)
 set(SPDLOG_BUILD_TESTS   OFF CACHE BOOL "" FORCE)
 set(SPDLOG_BUILD_BENCH   OFF CACHE BOOL "" FORCE)
 add_subdirectory(spdlog)
-target_link_libraries(thermite-engine PUBLIC spdlog::spdlog)
 
 # SDL3 - Windowing & Input
 # https://github.com/libsdl-org/SDL
@@ -19,16 +18,26 @@ set(SDL_TEST_LIBRARY         OFF CACHE BOOL "" FORCE)
 set(SDL_TESTS                OFF CACHE BOOL "" FORCE)
 set(SDL_EXAMPLES             OFF CACHE BOOL "" FORCE)
 add_subdirectory(SDL3)
-target_link_libraries(thermite-engine PRIVATE SDL3::SDL3-static)
 
 # GLM - Vector Math
 # https://github.com/g-truc/glm
 set(GLM_ENABLE_CXX_20 ON CACHE BOOL "" FORCE)
 add_subdirectory(glm)
-target_link_libraries(thermite-engine PUBLIC glm::glm)
 
 # ENTT - Entity Component System
 # https://github.com/skypjack/entt
-set(ENTT_INSTALL ON CACHE BOOL "" FORCE)
 add_subdirectory(entt)
-target_link_libraries(thermite-engine PUBLIC EnTT::EnTT)
+
+# Link libraries publicly
+target_link_libraries(thermite-engine
+    PUBLIC 
+    spdlog::spdlog
+    glm::glm
+    EnTT::EnTT
+)
+
+# Link libraries privately
+target_link_libraries(thermite-engine 
+	PRIVATE
+	SDL3::SDL3-static
+)
