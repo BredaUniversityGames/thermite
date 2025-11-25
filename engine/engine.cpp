@@ -47,17 +47,10 @@ void Engine::run() {
     OnStart::dispatch();
 
     float accumulator = 0.0f;
-    Timer timer;
-    uint64_t frame_count = 0;
     while (window.is_running) {
         window.update();
 
-        const FrameData frame_data = {
-            .delta_time = timer.tick(),
-            .fixed_delta_time = Config::fixed_time_step,
-            .total_time = timer.elapsed(),
-            .frame_count = frame_count
-        };
+        const FrameData frame_data = {.delta_time = timer.tick()};
 
         /* Update */
         OnUpdate::dispatch(frame_data);

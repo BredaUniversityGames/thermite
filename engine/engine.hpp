@@ -1,5 +1,6 @@
 #pragma once
 #include "core/application.hpp"
+#include "core/timer.hpp"
 
 namespace tmt {
 /* Forward declarations */
@@ -39,6 +40,13 @@ class Engine {
     struct Config {
         constexpr static float fixed_time_step = 1.0f / 60.0f;
     };
+
+    uint64_t get_frame_count() const { return frame_count; }
+    float get_elapsed_time() const { return timer.elapsed(); }
+
+   private:
+    Timer timer;
+    uint64_t frame_count = 0;
 };
 
 /* Singleton */
