@@ -22,8 +22,9 @@ namespace tmt {
 Engine::Engine() : window(*new Window()), ecs(*new Ecs()) {}
 
 Engine::~Engine() {
-    delete &window;
+    /* Destruction should be in reverse order */
     delete &ecs;
+    delete &window;
 }
 
 void Engine::init(const ApplicationSpecs& specs) {
