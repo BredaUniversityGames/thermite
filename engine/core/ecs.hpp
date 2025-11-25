@@ -18,9 +18,7 @@ class Ecs : public OnStart,
     Ecs() = default;
     ~Ecs() {
         /* CLean up all systems */
-        for (auto* system : systems) {
-            delete system;
-        }
+        systems.clear();
     }
 
     template <typename T, typename... Args>
@@ -29,22 +27,17 @@ class Ecs : public OnStart,
             std::is_base_of_v<ISystem, T>, "T must inherit from ISystem"
         );
 
-        T* system = new T(std::forward<Args>(args)...);
+        auto system = std::make_unique<T>(std::forward<Args>(args)...);
+        T& ref = *system;
 
-        for (auto* existing_system : systems) {
-            if (typeid(*existing_system) == typeid(T)) {
-                throw std::runtime_error("System already registered");
-            }
-        }
-
-        systems.push_back(system);
-        return *system;
+        systems.push_back(std::move(system));
+        return ref;
     }
 
     template <typename T>
     T& get_system() {
-        for (auto* system : systems) {
-            if (T* casted = dynamic_cast<T*>(system)) {
+        for (auto& system : systems) {
+            if (T* casted = dynamic_cast<T*>(system.get())) {
                 return *casted;
             }
         }
@@ -53,8 +46,8 @@ class Ecs : public OnStart,
 
     template <typename T>
     T* try_get_system() {
-        for (auto* system : systems) {
-            if (T* casted = dynamic_cast<T*>(system)) {
+        for (auto& system : systems) {
+            if (T* casted = dynamic_cast<T*>(system.get())) {
                 return casted;
             }
         }
@@ -62,7 +55,7 @@ class Ecs : public OnStart,
     }
 
    private:
-    std::vector<ISystem*> systems;
+    std::vector<std::unique_ptr<ISystem>> systems;
 
     void on_start() override;
 
