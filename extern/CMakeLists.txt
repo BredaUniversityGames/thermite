@@ -1,5 +1,3 @@
-# TODO: link to external libraries here.
-
 # Configure spdlog options 
 set(SPDLOG_BUILD_SHARED OFF CACHE BOOL "" FORCE)
 set(SPDLOG_BUILD_EXAMPLE OFF CACHE BOOL "" FORCE)
@@ -17,3 +15,7 @@ set(SDL_DISABLE_INSTALL_DOCS ON)
 set(SDL_INSTALL_TESTS OFF)
 add_subdirectory(SDL3)
 target_link_libraries(thermite-engine PRIVATE SDL3::SDL3-static)
+
+# graphite - https://github.com/mxcop/graphite
+add_subdirectory(graphite)
+target_link_libraries(thermite-engine PRIVATE graphite)

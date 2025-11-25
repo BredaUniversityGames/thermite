@@ -6,3 +6,6 @@
 	path = extern/SDL3
 	url = https://github.com/libsdl-org/SDL
 	branch = main
+[submodule "extern/graphite"]
+	path = extern/graphite
+	url = https://github.com/mxcop/graphite.git
