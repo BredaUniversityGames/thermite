@@ -24,4 +24,11 @@ class OnEngineEnd : public EventListenerBase<OnEngineEnd, void> {
     void on_event() final override { on_engine_end(); }
 };
 
+class OnEndFrame : public EventListenerBase<OnEndFrame, void> {
+   public:
+    OnEndFrame() : EventListenerBase() {}
+    virtual void on_end_frame() = 0;
+    void on_event() final override { on_end_frame(); }
+};
+
 }  // namespace tmt

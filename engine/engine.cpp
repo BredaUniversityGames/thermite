@@ -63,6 +63,7 @@ void Engine::run() {
             OnFixedUpdate::dispatch(frame_data);
         }
 
+        OnEndFrame::dispatch();
         frame_count++;
     }
 
