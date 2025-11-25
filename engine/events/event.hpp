@@ -12,7 +12,7 @@ class EventBase {
    public:
     virtual ~EventBase() = default;
 
-    bool Handled = false;
+    bool handled = false;
 };
 
 template <typename T, typename E = void>
@@ -37,7 +37,7 @@ class EventListenerBase {
         for (auto listener : listeners) {
             listener->on_event(event);
             if constexpr (std::is_base_of_v<EventBase, E>) {
-                if (BreakOnHandled && event.Handled) break;
+                if (break_on_handled && event.Handled) break;
             }
         }
     }
@@ -47,14 +47,14 @@ class EventListenerBase {
         for (auto listener : listeners) {
             listener->on_event(event);
             if constexpr (std::is_base_of_v<EventBase, E>) {
-                if (BreakOnHandled && event.Handled) break;
+                if (break_on_handled && event.Handled) break;
             }
         }
     }
 
    protected:
     int priority = 0;
-    inline static bool BreakOnHandled = true;
+    inline static bool break_on_handled = true;
 
    private:
     static void sort_listeners() {
