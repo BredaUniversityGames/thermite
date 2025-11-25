@@ -9,7 +9,7 @@ struct CommandLineArgs {
 
     const char* operator[](const int index) const {
         if (index < count) {
-            std::runtime_error("Argument index out of bounds");
+            throw std::runtime_error("Argument index out of bounds");
         }
         return args[index];
     }

@@ -2,6 +2,7 @@
 #include <set>
 #include <memory>
 #include <stdexcept>
+#include <vector>
 
 #include "time_step.hpp"
 #include "system.hpp"

@@ -34,6 +34,8 @@ void Engine::init(const ApplicationSpecs& specs) {
     tmt::Log::warn(Log::LoggerScope::RENDERER, "Renderer scope here!");
     tmt::Log::warn(Log::LoggerScope::ENGINE, "THERMITE scope here!");
 
+    window.init(specs);
+
     ecs.register_system<Physics>();
     ecs.register_system<Animation>();
 

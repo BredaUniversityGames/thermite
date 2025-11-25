@@ -2,13 +2,13 @@
 
 #include <string_view>
 
-#include "events/engine.hpp"
+#include "core/application.hpp"
 
 class SDL_Window;
 
 namespace tmt {
 
-class Window : public OnEngineInit {
+class Window {
    public:
     SDL_Window* window = nullptr;
 
@@ -20,7 +20,7 @@ class Window : public OnEngineInit {
     Window() = default;
     ~Window();
 
-    void on_engine_init(const ApplicationSpecs& specs) override;
+    void init(const ApplicationSpecs& specs);
     void update();
 
     Window(const Window&) = delete;
