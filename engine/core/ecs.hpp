@@ -16,10 +16,7 @@ class Ecs : public OnStart,
             public OnEnd {
    public:
     Ecs() = default;
-    ~Ecs() {
-        /* CLean up all systems */
-        systems.clear();
-    }
+    ~Ecs() = default;
 
     template <typename T, typename... Args>
     T& register_system(Args&&... args) {
