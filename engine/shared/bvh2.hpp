@@ -8,11 +8,11 @@ namespace tmt {
 /* 2-wide Bounding Volume Hierarchy Node. */
 struct Bvh2Node {
     /* Minimum bounds */
-    glm::vec3 min_bounds = 0.0f;
+    glm::vec3 min_bounds {};
     /* Left child node, or first primitive index */
     uint32_t left_first = 0u;
     /* Maximum bounds */
-    glm::vec3 max_bounds = 0.0f;
+    glm::vec3 max_bounds {};
     /* Primitive count */
     uint32_t prim_count = 0u;
 

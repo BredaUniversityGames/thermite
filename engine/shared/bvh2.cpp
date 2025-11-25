@@ -15,6 +15,13 @@ inline float surface_area(const Bvh2Node& node) {
 /* Returns half the area of an extent `v`. */
 inline float half_area(const glm::vec3& v) { return v.x < -BIG_F32 ? 0.0f : (v.x * v.y + v.y * v.z + v.z * v.x); }
 
+/* Swap two variables. */
+template <typename T>
+inline void swap(T& a, T& b) {
+    const T c = a;
+    a = b, b = c;
+}
+
 void Bvh2::build(const Aabb* input_prims, const uint32_t input_count) {
     /* Delete old BVH data if it exists */
     if (nodes) {
@@ -41,8 +48,8 @@ void Bvh2::build(const Aabb* input_prims, const uint32_t input_count) {
     Bvh2Node& root = nodes[0];
     root.left_first = 0u;
     root.prim_count = input_count;
-    root.min_bounds = BIG_F32;
-    root.max_bounds = -BIG_F32;
+    root.min_bounds = glm::vec3(BIG_F32);
+    root.max_bounds = glm::vec3(-BIG_F32);
     for (uint32_t i = 0u; i < input_count; ++i) {
         root.min_bounds.x = fminf(root.min_bounds.x, prims[i].min.x);
         root.min_bounds.y = fminf(root.min_bounds.y, prims[i].min.y);
@@ -71,20 +78,20 @@ void Bvh2::build(const Aabb* input_prims, const uint32_t input_count) {
 
             /* Scatter the primitives into the bins */
             uint32_t bin_count[3][BVH_BINS] {};
-            const glm::vec3 rpd3 = glm::vec3(BVH_BINS / (node.max_bounds - node.min_bounds));
+            const glm::vec3 rpd3 = glm::vec3((float)BVH_BINS / (node.max_bounds - node.min_bounds));
             const glm::vec3 nmin3 = node.min_bounds;
             for (uint32_t i = 0u; i < node.prim_count; ++i) {
                 const Aabb& prim = prims[indices[node.left_first + i]];
                 glm::ivec3 bi = glm::ivec3(((prim.min + prim.max) * 0.5f - nmin3) * rpd3);
-                bi.x = clamp(bi.x, 0, BVH_BINS - 1);
-                bi.y = clamp(bi.y, 0, BVH_BINS - 1);
-                bi.z = clamp(bi.z, 0, BVH_BINS - 1);
-                bin_min[0][bi.x] = fminf(bin_min[0][bi.x], prim.min);
-                bin_max[0][bi.x] = fmaxf(bin_max[0][bi.x], prim.max), bin_count[0][bi.x]++;
-                bin_min[1][bi.y] = fminf(bin_min[1][bi.y], prim.min);
-                bin_max[1][bi.y] = fmaxf(bin_max[1][bi.y], prim.max), bin_count[1][bi.y]++;
-                bin_min[2][bi.z] = fminf(bin_min[2][bi.z], prim.min);
-                bin_max[2][bi.z] = fmaxf(bin_max[2][bi.z], prim.max), bin_count[2][bi.z]++;
+                bi.x = glm::clamp(bi.x, 0, BVH_BINS - 1);
+                bi.y = glm::clamp(bi.y, 0, BVH_BINS - 1);
+                bi.z = glm::clamp(bi.z, 0, BVH_BINS - 1);
+                bin_min[0][bi.x] = glm::min(bin_min[0][bi.x], prim.min);
+                bin_max[0][bi.x] = glm::max(bin_max[0][bi.x], prim.max), bin_count[0][bi.x]++;
+                bin_min[1][bi.y] = glm::min(bin_min[1][bi.y], prim.min);
+                bin_max[1][bi.y] = glm::max(bin_max[1][bi.y], prim.max), bin_count[1][bi.y]++;
+                bin_min[2][bi.z] = glm::min(bin_min[2][bi.z], prim.min);
+                bin_max[2][bi.z] = glm::max(bin_max[2][bi.z], prim.max), bin_count[2][bi.z]++;
             }
 
             /* Calculate the cost for each split */
@@ -99,10 +106,10 @@ void Bvh2::build(const Aabb* input_prims, const uint32_t input_count) {
                 glm::vec3 lb_max[BVH_SPLITS] {}, rb_max[BVH_SPLITS] {}, r1 {BIG_F32}, r2 {-BIG_F32};
                 float l_cost[BVH_SPLITS] {}, r_cost[BVH_SPLITS] {};
                 for (uint32_t ln = 0u, rn = 0u, i = 0u; i < BVH_SPLITS; ++i) {
-                    lb_min[i] = l1 = fminf(l1, bin_min[a][i]);
-                    rb_min[BVH_BINS - 2u - i] = r1 = fminf(r1, bin_min[a][BVH_SPLITS - i]);
-                    lb_max[i] = l2 = fmaxf(l2, bin_max[a][i]);
-                    rb_max[BVH_BINS - 2u - i] = r2 = fmaxf(r2, bin_max[a][BVH_SPLITS - i]);
+                    lb_min[i] = l1 = glm::min(l1, bin_min[a][i]);
+                    rb_min[BVH_BINS - 2u - i] = r1 = glm::min(r1, bin_min[a][BVH_SPLITS - i]);
+                    lb_max[i] = l2 = glm::max(l2, bin_max[a][i]);
+                    rb_max[BVH_BINS - 2u - i] = r2 = glm::max(r2, bin_max[a][BVH_SPLITS - i]);
                     ln += bin_count[a][i], rn += bin_count[a][BVH_SPLITS - i];
                     l_cost[i] = ln == 0u ? BIG_F32 : (half_area(l2 - l1) * (float)ln);
                     r_cost[BVH_BINS - 2u - i] = rn == 0u ? BIG_F32 : (half_area(r2 - r1) * (float)rn);
@@ -131,7 +138,7 @@ void Bvh2::build(const Aabb* input_prims, const uint32_t input_count) {
             const float rpd = rpd3[best_axis], nmin = nmin3[best_axis];
             for (uint32_t i = 0u; i < node.prim_count; ++i) {
                 const Aabb& prim = prims[indices[src]];
-                const uint32_t bi = clamp((uint32_t)(((prim.min[best_axis] + prim.max[best_axis]) * 0.5f - nmin) * rpd), 0u, BVH_BINS - 1u);
+                const uint32_t bi = glm::clamp((uint32_t)(((prim.min[best_axis] + prim.max[best_axis]) * 0.5f - nmin) * rpd), 0u, BVH_BINS - 1u);
                 if (bi <= best_split) {
                     src++;
                 } else {
@@ -164,18 +171,11 @@ void Bvh2::build(const Aabb* input_prims, const uint32_t input_count) {
 inline float intersect_aabb(const Ray ray, const glm::vec3 box_min, const glm::vec3 box_max) {
     const glm::vec3 t_to_min = (box_min - ray.origin) * ray.rcp_dir;
     const glm::vec3 t_to_max = (box_max - ray.origin) * ray.rcp_dir;
-    const glm::vec3 t_min = fminf(t_to_min, t_to_max);
-    const glm::vec3 t_max = fmaxf(t_to_min, t_to_max);
-    const float t_near = fmaxf(fmaxf(fmaxf(t_min.x, t_min.y), t_min.z), 0);
-    const float t_far = fminf(fminf(fminf(t_max.x, t_max.y), t_max.z), ray.t);
+    const glm::vec3 t_min = glm::min(t_to_min, t_to_max);
+    const glm::vec3 t_max = glm::max(t_to_min, t_to_max);
+    const float t_near = glm::max(glm::max(glm::max(t_min.x, t_min.y), t_min.z), 0.0f);
+    const float t_far = glm::min(glm::min(t_max.x, t_max.y), t_max.z);
     return t_near > t_far ? BIG_F32 : t_near;
-}
-
-/* Swap two variables. */
-template <typename T>
-inline T swap(T& a, T& b) {
-    const T c = a;
-    a = b, b = c;
 }
 
 Hit Bvh2::trace(const Ray& ray) const {
