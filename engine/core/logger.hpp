@@ -16,9 +16,9 @@ class Log {
         // https://github.com/gabime/spdlog/wiki/Custom-formatting
         spdlog::set_pattern("%^[%l]%$ %v");
 
-        loggers[LoggerScope::ENGINE] = spdlog::stdout_color_mt("Engine");
-        loggers[LoggerScope::GAME] = spdlog::stdout_color_mt("Game");
-        loggers[LoggerScope::RENDERER] = spdlog::stdout_color_mt("Renderer");
+        loggers[Scope::ENGINE] = spdlog::stdout_color_mt("Engine");
+        loggers[Scope::GAME] = spdlog::stdout_color_mt("Game");
+        loggers[Scope::RENDERER] = spdlog::stdout_color_mt("Renderer");
 
         std::shared_ptr<spdlog::sinks::basic_file_sink_mt> file_sink = nullptr;
         if (!log_file.empty()) {
@@ -37,7 +37,7 @@ class Log {
             }
         }
     }
-    enum class LoggerScope {
+    enum class Scope {
         ENGINE,
         RENDERER,
         GAME,
@@ -45,21 +45,21 @@ class Log {
 
     template <typename... Args>
     static void info(
-        LoggerScope scope, spdlog::format_string_t<Args...> fmt, Args&&... args
+        Scope scope, spdlog::format_string_t<Args...> fmt, Args&&... args
     ) {
         loggers[scope]->info(fmt, std::forward<Args>(args)...);
     }
 
     template <typename... Args>
     static void warn(
-        LoggerScope scope, spdlog::format_string_t<Args...> fmt, Args&&... args
+        Scope scope, spdlog::format_string_t<Args...> fmt, Args&&... args
     ) {
         loggers[scope]->warn(fmt, std::forward<Args>(args)...);
     }
 
     template <typename... Args>
     static void error(
-        LoggerScope scope, spdlog::format_string_t<Args...> fmt, Args&&... args
+        Scope scope, spdlog::format_string_t<Args...> fmt, Args&&... args
     ) {
         loggers[scope]->error(fmt, std::forward<Args>(args)...);
     }
@@ -80,8 +80,7 @@ class Log {
     }
 
    private:
-    static inline std::unordered_map<
-        LoggerScope, std::shared_ptr<spdlog::logger>>
+    static inline std::unordered_map<Scope, std::shared_ptr<spdlog::logger>>
         loggers;
 };
 
