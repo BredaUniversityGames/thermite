@@ -123,21 +123,13 @@ CheckOptions:
     value: lower_case
   
   # Constants: UPPER_CASE (MY_NUMBER)
-  - key: readability-identifier-naming.ConstantCase
+  - key: readability-identifier-naming.GlobalConstantCase
     value: UPPER_CASE
   
   - key: readability-identifier-naming.ConstexprVariableCase
     value: UPPER_CASE
-  
-  - key: readability-identifier-naming.GlobalConstantCase
-    value: UPPER_CASE
-  
-  - key: readability-identifier-naming.StaticConstantCase
-    value: UPPER_CASE
-  
-  # Macros: UPPER_CASE (MACRO_17)
-  - key: readability-identifier-naming.MacroDefinitionCase
-    value: UPPER_CASE
+  - key: readability-identifier-naming.LocalConstexprVariableCase
+    value: lower_case
 WarningsAsErrors: '*'
 FormatStyle: file
 SystemHeaders: false
