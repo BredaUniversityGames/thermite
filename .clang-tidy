@@ -78,14 +78,14 @@ CheckOptions:
   
   # Classes/Structs: PascalCase (ClassObject, Struct)
   - key: readability-identifier-naming.ClassCase
-    value: CamelCase
+    value: PascalCase
   
   - key: readability-identifier-naming.StructCase
-    value: CamelCase
+    value: PascalCase
   
   # Enums: PascalCase (Enum)
   - key: readability-identifier-naming.EnumCase
-    value: CamelCase
+    value: PascalCase
   
   # Enum constants: UPPER_CASE (TWO, MAX_ENUM)
   - key: readability-identifier-naming.EnumConstantCase
