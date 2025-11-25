@@ -12,7 +12,7 @@
 #include "systems/animation/animation_system.hpp"
 
 #include "events/engine.hpp"
-#include "events/update.hpp"
+#include "events/game.hpp"
 
 /* Singleton */
 tmt::Engine tmt::engine;
@@ -41,8 +41,9 @@ void Engine::init(const ApplicationSpecs& specs) {
 
 // Example stuff
 void Engine::run() {
-    float accumulator = 0.0f;
+    OnStart::dispatch();
 
+    float accumulator = 0.0f;
     Timer timer;
     uint64_t frame_count = 0;
     while (window.is_running) {
@@ -68,6 +69,8 @@ void Engine::run() {
 
         frame_count++;
     }
+
+    OnEnd::dispatch();
 }
 
 void Engine::end() { OnEngineEnd::dispatch(); }

@@ -4,6 +4,13 @@
 
 namespace tmt {
 
+class OnStart : public EventListenerBase<OnStart, void> {
+   public:
+    OnStart() : EventListenerBase() {}
+    virtual void on_start() = 0;
+    void on_event() final override { on_start(); }
+};
+
 class OnUpdate : public EventListenerBase<OnUpdate, FrameData> {
    public:
     OnUpdate() : EventListenerBase() {}
@@ -24,6 +31,13 @@ class OnFixedUpdate : public EventListenerBase<OnFixedUpdate, FrameData> {
     void on_event(const FrameData& time) final override {
         on_fixed_update(time);
     }
+};
+
+class OnEnd : public EventListenerBase<OnEnd, void> {
+   public:
+    OnEnd() : EventListenerBase() {}
+    virtual void on_end() = 0;
+    void on_event() final override { on_end(); }
 };
 
 }  // namespace tmt

@@ -6,11 +6,14 @@
 #include "time_step.hpp"
 #include "system.hpp"
 
-#include "events/update.hpp"
+#include "events/game.hpp"
 
 namespace tmt {
 
-class Ecs : public OnUpdate, public OnFixedUpdate {
+class Ecs : public OnStart,
+            public OnUpdate,
+            public OnFixedUpdate,
+            public OnEnd {
    public:
     Ecs() = default;
     ~Ecs() {
@@ -54,9 +57,13 @@ class Ecs : public OnUpdate, public OnFixedUpdate {
    private:
     std::set<ISystem*> systems;
 
+    void on_start() override;
+
     void on_update(const FrameData& time) override;
 
     void on_fixed_update(const FrameData& time) override;
+
+    void on_end() override;
 };
 
 }  // namespace tmt
