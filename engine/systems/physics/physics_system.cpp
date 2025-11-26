@@ -1,15 +1,20 @@
 #include "physics_system.hpp"
-#include <iostream>
+#include "core/logger.hpp"
+
+#include "engine.hpp"
+#include "core/ecs.hpp"
+#include "core/components.hpp"
+
+#include "tools/fmt_defines.hpp"
 
 namespace tmt {
 
-void PhysicsSystem::init() {
-    std::cout << "[Thermite][Physics] Initialized.\n";
-}
+void Physics::on_start() { Log::info("Physics on_start"); }
 
-void PhysicsSystem::update(float dt) {
-    std::cout << "[Thermite][Physics] Updating with dt = " << dt
-              << " seconds.\n";
-}
+void Physics::on_update(const FrameData&) {}
+
+void Physics::on_fixed_update(const FrameData&) { Log::info("Physics on_fixed_update with delta time: {}", Engine::Config::FIXED_TIME_STEP); }
+
+void Physics::on_end() { Log::info("Physics on_end"); }
 
 }  // namespace tmt

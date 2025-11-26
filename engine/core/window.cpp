@@ -10,7 +10,7 @@ Window::~Window() {
     }
 }
 
-void Window::init() {
+void Window::init(const ApplicationSpecs& specs) {
     SDL_SetAppMetadata("Thermite Engine", "0.1", "com.thermite.engine");
 
    if (!SDL_Init(SDL_INIT_VIDEO)) {
@@ -31,7 +31,9 @@ void Window::update() {
 
     while (SDL_PollEvent(&event)) {
         switch (event.type) {
-        case SDL_EVENT_QUIT: { is_running = false; }
+            case SDL_EVENT_QUIT: {
+                is_running = false;
+            }
         }
     }
 }

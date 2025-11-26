@@ -1,0 +1,134 @@
+---
+Checks: "-*,\
+
+readability-identifier-naming,\
+misc-misplaced-const,\
+bugprone-return-const-ref-from-parameter,\
+readability-non-const-parameter,\
+readability-const-return-type,\
+readability-make-member-function-const,\
+avoid-const-params-in-decls,\
+move-const-arg,\
+cppcoreguidelines-pro-type-const-cast,\
+cppcoreguidelines-avoid-const-or-ref-data-members,\
+portability-std-allocator-const,\
+bugprone-unused-return-value,\
+
+readability-qualified-auto,\
+modernize-use-auto,\
+
+performance-unnecessary-value-param,\
+cppcoreguidelines-rvalue-reference-param-not-moved,\
+readability-redundant-function-ptr-dereference,\
+readability-reference-to-constructed-temporary,\
+bugprone-forwarding-reference-overload,\
+bugprone-multi-level-implicit-pointer-conversion,\
+bugprone-move-forwarding-reference,\
+bugprone-pointer-arithmetic-on-polymorphic-object,\
+readability-delete-null-pointer,\
+readability-container-data-pointer,\
+cppcoreguidelines-misleading-capture-default-by-value,\
+modernize-pass-by-value,\
+readability-avoid-return-with-void-value,\
+
+readability-container-size-empty,\
+modernize-replace-auto-ptr,\
+bugprone-optional-value-conversion,\
+readibility-container-data-pointer,\
+readibility-container-contains,\
+performance-inefficient-algorithm,\
+
+readability-redundant-smartptr-get,\
+readability-uniqueptr-delete-release,\
+readability-redundant-function-ptr-dereference,\
+modernize-use-nullptr,\
+misc-uniqueptr-reset-release,\
+bugprone-unique-ptr-array-mismatch,\
+bugprone-shared-ptr-array-mismatch,\
+
+readability-convert-member-functions-to-static,\
+readability-enum-initial-value,\
+bugprone-unused-raii,\
+bugprone-forwarding-reference-overload,\
+cppcoreguidelines-avoid-do-while,\
+cppcoreguidelines-avoid-goto,\
+cppcoreguidelines-init-variables,\
+cppcoreguidelines-misleading-capture-default-by-value,\
+cppcoreguidelines-virtual-class-destructor,\
+misc-unused-using-decls,\
+misc-unused-parameters,\
+misc-unconventional-assign-operator,\
+misc-static-assert,\
+misc-redundant-expression,\
+misc-non-copyable-objects,\
+misc-confusable-identifiers,\
+modernize-deprecated-headers,\
+bugprone-use-after-move,\
+"
+# yes I used AI, in clang tidy file:
+CheckOptions:
+  # Ignore public member structs
+  - key: misc-non-private-member-variables-in-classes
+    value: IgnoreClassesWithAllMemberVariablesBeingPublic
+  
+  # Namespaces: snake_case (my_space)
+  - key: readability-identifier-naming.NamespaceCase
+    value: lower_case
+  
+  # Classes/Structs: PascalCase (ClassObject, Struct)
+  - key: readability-identifier-naming.ClassCase
+    value: PascalCase
+  
+  - key: readability-identifier-naming.StructCase
+    value: PascalCase
+  
+  # Enums: PascalCase (Enum)
+  - key: readability-identifier-naming.EnumCase
+    value: PascalCase
+  
+  # Enum constants: UPPER_CASE (TWO, MAX_ENUM)
+  - key: readability-identifier-naming.EnumConstantCase
+    value: UPPER_CASE
+  
+  # Functions: snake_case (my_func)
+  - key: readability-identifier-naming.FunctionCase
+    value: lower_case
+  
+  - key: readability-identifier-naming.MethodCase
+    value: lower_case
+  
+  # Variables: snake_case (is_enabled)
+  - key: readability-identifier-naming.VariableCase
+    value: lower_case
+  
+  - key: readability-identifier-naming.LocalVariableCase
+    value: lower_case
+  
+  # Parameters: snake_case (func_arg)
+  - key: readability-identifier-naming.ParameterCase
+    value: lower_case
+  
+  # Members: snake_case (id, object)
+  - key: readability-identifier-naming.MemberCase
+    value: lower_case
+  
+  - key: readability-identifier-naming.PrivateMemberCase
+    value: lower_case
+  
+  - key: readability-identifier-naming.ProtectedMemberCase
+    value: lower_case
+  
+  - key: readability-identifier-naming.PublicMemberCase
+    value: lower_case
+  
+  # Constants: UPPER_CASE (MY_NUMBER)
+  - key: readability-identifier-naming.GlobalConstantCase
+    value: UPPER_CASE
+  
+  - key: readability-identifier-naming.ConstexprVariableCase
+    value: UPPER_CASE
+  - key: readability-identifier-naming.LocalConstexprVariableCase
+    value: lower_case
+WarningsAsErrors: '*,-readability-make-member-function-const,-readability-convert-member-functions-to-static'
+FormatStyle: file
+SystemHeaders: false

@@ -5,7 +5,9 @@
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 
-class SDL_Window;
+#include "core/application.hpp"
+
+struct SDL_Window;
 
 namespace tmt {
 
@@ -23,8 +25,8 @@ class Window {
 
     Window(const Window&) = delete;
     Window& operator=(const Window&) = delete;
-    
-    void init();
+
+    void init(const ApplicationSpecs& specs);
     void update();
 
     HWND get_window_handle();

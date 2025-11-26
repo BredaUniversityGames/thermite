@@ -1,15 +1,13 @@
 #include "animation_system.hpp"
-#include <iostream>
+
+#include "core/logger.hpp"
 
 namespace tmt {
 
-void AnimationSystem::init() {
-    std::cout << "[Thermite][Animation] Initialized.\n";
-}
+void Animation::on_start() { Log::info("Animation on_start"); }
 
-void AnimationSystem::update(float dt) {
-    std::cout << "[Thermite][Animation] Updating with dt = " << dt
-              << " seconds.\n";
-}
+void Animation::on_update(const FrameData&) {}
+
+void Animation::on_end() { Log::info("Animation on_end"); }
 
 }  // namespace tmt

@@ -23,11 +23,6 @@ target_include_directories(thermite-engine
     PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-# Link spdlog
-target_link_libraries(thermite-engine
-    PUBLIC spdlog::spdlog
-)
-
 # Always copy the assets folder after building
 add_custom_command(TARGET thermite-engine POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
