@@ -106,6 +106,12 @@ class Ecs : public OnStart, public OnUpdate, public OnFixedUpdate, public OnEnd,
         }
     }
 
+    template <typename Component>
+    Entity get_entity(const Component& instance) {
+        const auto& storage = registry.storage<Component>();
+        return entt::to_entity(storage, instance);
+    }
+
     void destroy_entity(const Entity entity, bool force = false) {
         if (force) {
             registry.destroy(entity);
