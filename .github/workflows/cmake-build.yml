@@ -32,8 +32,16 @@ jobs:
           cache: true
           
       - name: Export VULKAN_SDK
-        run: echo "VULKAN_SDK=$env:VK_SDK_PATH" >> $env:GITHUB_ENV
         shell: pwsh
+        run: |
+          Write-Host "VK_SDK_PATH is $env:VK_SDK_PATH"
+          echo "VULKAN_SDK=$env:VK_SDK_PATH" >> $env:GITHUB_ENV
+
+      - name: Verify env vars
+        shell: pwsh
+        run: |
+          echo "VULKAN_SDK=$env:VULKAN_SDK"
+          dir "$env:VULKAN_SDK/include/vulkan"
       
       - name: Configure with preset
         shell: pwsh
