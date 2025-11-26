@@ -26,10 +26,9 @@ jobs:
         uses: ilammy/msvc-dev-cmd@v1
 
       - name: Fetch VulkanSDK
-        uses: humbletim/install-vulkan-sdk@main
-        with:
-          version: 1.4.328.1
-          cache: true
+        shell: pwsh
+        run: |
+          choco install vulkan-sdk --version=1.4.328.1 -y --no-progress
           
       - name: Debug environment
         shell: pwsh
