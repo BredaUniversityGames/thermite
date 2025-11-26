@@ -29,8 +29,12 @@ jobs:
         uses: humbletim/install-vulkan-sdk@main
         with:
           version: 1.4.328.1
-          vulkan-components: Vulkan-Headers, Vulkan-Loader
           cache: true
+          
+      - name: Debug environment
+        shell: pwsh
+        run: |
+          Get-ChildItem Env: | Sort-Object Name
           
       - name: Export Vulkan SDK
         shell: pwsh
