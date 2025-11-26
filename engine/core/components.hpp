@@ -18,7 +18,4 @@ struct Transform {
 }  // namespace tmt
 
 FMT_LOGGING(tmt::Name, "name: \"{}\"", obj.name);
-FMT_LOGGING(
-    tmt::Transform, "Position: {}, Rotation: {}, Scale: {}", obj.position,
-    obj.rotation, obj.scale
-);
+FMT_LOGGING(tmt::Transform, "Position: {}, Rotation: {}, Scale: {}", obj.position, obj.rotation, obj.scale);

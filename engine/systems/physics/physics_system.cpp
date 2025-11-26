@@ -9,9 +9,7 @@
 
 namespace tmt {
 
-void Physics::on_start() {
-    Log::info("Physics on_start");
-}
+void Physics::on_start() { Log::info("Physics on_start"); }
 
 void Physics::on_update(const FrameData& time) { Log::info("Physics on_update with delta time: {}", time.delta_time); }
 
