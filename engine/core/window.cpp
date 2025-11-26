@@ -2,6 +2,8 @@
 
 #include <SDL3/SDL.h>
 
+#include "logger.hpp"
+
 namespace tmt {
 
 Window::~Window() {
@@ -14,20 +16,20 @@ void Window::init(const ApplicationSpecs& specs) {
     SDL_SetAppMetadata("Thermite Engine", "0.1", "com.thermite.engine");
 
    if (!SDL_Init(SDL_INIT_VIDEO)) {
-        SDL_Log("Couldn't initialize SDL: %s", SDL_GetError());
+        Log::error(Log::Scope::ENGINE, "Couldn't initialize SDL: %s", SDL_GetError());
         return;
     }
 
     window = SDL_CreateWindow(title.data(), width, height, SDL_WINDOW_VULKAN);
 
     if (!window) {
-        SDL_Log("Couldn't create window: %s", SDL_GetError());
+        Log::error(Log::Scope::ENGINE, "Couldn't create window: %s", SDL_GetError());
         return;
     }
 }
 
 void Window::update() {
-    SDL_Event event {};
+    const SDL_Event event {};
 
     while (SDL_PollEvent(&event)) {
         switch (event.type) {
@@ -38,8 +40,8 @@ void Window::update() {
     }
 }
 
-HWND Window::get_window_handle() {
-    SDL_PropertiesID props = SDL_GetWindowProperties(window);
+HWND Window::get_window_handle() const {
+    const SDL_PropertiesID props = SDL_GetWindowProperties(window);
 
     return (HWND)SDL_GetPointerProperty(props, SDL_PROP_WINDOW_WIN32_HWND_POINTER, NULL);
 }

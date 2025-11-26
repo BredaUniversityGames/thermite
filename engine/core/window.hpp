@@ -29,7 +29,7 @@ class Window {
     void init(const ApplicationSpecs& specs);
     void update();
 
-    HWND get_window_handle();
+    HWND get_window_handle() const;
 };
 
 }  // namespace tmt
