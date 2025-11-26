@@ -120,7 +120,7 @@ void run_transform_tests() {
         // Set euler angles (45 degrees on each axis)
         euler = glm::vec3(glm::radians(45.0f), glm::radians(45.0f), glm::radians(45.0f));
         transform.set_local_rotation(euler);
-        glm::quat expected = glm::quat(euler);
+        auto expected = glm::quat(euler);
         assert(quat_approx_equal(transform.get_local_rotation(), expected));
 
         // Edge case: 90 degree pitch (potential gimbal lock)
@@ -269,7 +269,7 @@ void run_transform_tests() {
         // Set world rotation using euler angles
         glm::vec3 euler(glm::radians(30.0f), glm::radians(60.0f), glm::radians(90.0f));
         transform.set_world_rotation(euler);
-        glm::quat expected = glm::quat(euler);
+        auto expected = glm::quat(euler);
         assert(quat_approx_equal(transform.get_world_rotation(), expected));
 
         // Set world rotation using axis-angle
@@ -362,8 +362,8 @@ void run_transform_tests() {
         glm::vec3 euler_delta(glm::radians(15.0f), glm::radians(30.0f), glm::radians(45.0f));
         transform.rotate_local(euler_delta);
 
-        glm::quat delta = glm::quat(euler_delta);
-        glm::quat expected = initial * delta;
+        auto delta = glm::quat(euler_delta);
+        auto expected = initial * delta;
         auto current = transform.get_local_rotation();
         assert(quat_approx_equal(current, expected));
 
@@ -425,8 +425,8 @@ void run_transform_tests() {
         glm::vec3 euler_delta(glm::radians(10.0f), glm::radians(20.0f), glm::radians(30.0f));
         transform.rotate_world(euler_delta);
 
-        glm::quat delta = glm::quat(euler_delta);
-        glm::quat expected = delta * initial;
+        auto delta = glm::quat(euler_delta);
+        auto expected = delta * initial;
         assert(quat_approx_equal(transform.get_local_rotation(), expected));
 
         tmt::engine.ecs.clear();

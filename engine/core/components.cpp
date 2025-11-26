@@ -182,14 +182,14 @@ void Transform::set_parent(Entity new_parent) {
 
     // Cycle detection
     int iterations = 0;
-    constexpr static int max_iterations = 1000;
+    constexpr static int MAX_ITERATIONS = 1000;
     Entity current = new_parent;
     while (current != entt::null) {
         if (current == get_self()) {
             throw std::runtime_error("Circular parent hierarchy detected");
         }
 
-        if (iterations >= max_iterations) {
+        if (iterations >= MAX_ITERATIONS) {
             throw std::runtime_error("Transform::set_parent: Max hierarchy depth exceeded during cycle detection");
         }
 
