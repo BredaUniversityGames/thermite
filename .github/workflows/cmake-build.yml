@@ -26,25 +26,16 @@ jobs:
         uses: ilammy/msvc-dev-cmd@v1
 
       - name: Fetch VulkanSDK
-        shell: pwsh
-        run: |
-          choco install vulkan-sdk --version=1.4.328.1 -y --no-progress
+        uses: humbletim/install-vulkan-sdk@main
+        with:
+          version: 1.4.328.1
+          cache: true
           
-      - name: Debug environment
-        shell: pwsh
-        run: |
-          Get-ChildItem Env: | Sort-Object Name
-          
-      - name: Export Vulkan SDK
-        shell: pwsh
-        run: |
-          echo "VULKAN_SDK=$env:VULKAN_SDK_INSTALL_DIR" >> $env:GITHUB_ENV
-          echo "VULKAN_SDK is now: $env:VULKAN_SDK_INSTALL_DIR"
-
       - name: Verify Vulkan SDK
         shell: pwsh
         run: |
           echo "VULKAN_SDK=$env:VULKAN_SDK"
+          if (-not $env:VULKAN_SDK) { throw 'VULKAN_SDK is NOT set!' }
           dir "$env:VULKAN_SDK/include/vulkan"
       
       - name: Configure with preset
