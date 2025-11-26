@@ -35,12 +35,6 @@ jobs:
         shell: pwsh
         run: |
           echo "VULKAN_SDK=$env:VULKAN_SDK_INSTALL_DIR" >> $env:GITHUB_ENV
-          
-      - name: Verify Vulkan SDK
-        shell: pwsh
-        run: |
-          echo "VULKAN_SDK=$env:VULKAN_SDK"
-          dir "$env:VULKAN_SDK/include/vulkan"
       
       - name: Configure with preset
         shell: pwsh
