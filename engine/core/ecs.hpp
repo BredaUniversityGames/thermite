@@ -120,6 +120,8 @@ class Ecs : public OnStart, public OnUpdate, public OnFixedUpdate, public OnEnd,
         }
     }
 
+    void clear() { registry.clear(); }
+
    private:
     std::vector<std::unique_ptr<ISystem>> systems;
 
