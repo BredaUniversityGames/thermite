@@ -22,4 +22,4 @@ class Renderer {
     void update();
     void end();
 };
-}
+}  // namespace tmt
