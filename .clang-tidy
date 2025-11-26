@@ -55,7 +55,6 @@ cppcoreguidelines-avoid-goto,\
 cppcoreguidelines-init-variables,\
 cppcoreguidelines-misleading-capture-default-by-value,\
 cppcoreguidelines-virtual-class-destructor,\
-cppcoreguidelines-special-member-functions,\
 misc-unused-using-decls,\
 misc-unused-parameters,\
 misc-unconventional-assign-operator,\
