@@ -25,7 +25,7 @@ Engine::Engine() : window(*new Window()), ecs(*new Ecs()), renderer(*new Rendere
 
 Engine::~Engine() {
     /* Destruction should be in reverse order */
-    delete& renderer;
+    delete &renderer;
     delete &ecs;
     delete &window;
 }
