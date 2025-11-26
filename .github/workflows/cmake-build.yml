@@ -30,6 +30,10 @@ jobs:
         with:
           version: 1.4.328.1
           cache: true
+          
+      - name: Export VULKAN_SDK
+        run: echo "VULKAN_SDK=$env:VK_SDK_PATH" >> $env:GITHUB_ENV
+        shell: pwsh
       
       - name: Configure with preset
         shell: pwsh
