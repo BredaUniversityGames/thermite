@@ -12,7 +12,7 @@ Window::~Window() {
     }
 }
 
-void Window::init(const ApplicationSpecs& specs) {
+void Window::init(const ApplicationSpecs&) {
     SDL_SetAppMetadata("Thermite Engine", "0.1", "com.thermite.engine");
 
    if (!SDL_Init(SDL_INIT_VIDEO)) {
@@ -29,7 +29,7 @@ void Window::init(const ApplicationSpecs& specs) {
 }
 
 void Window::update() {
-    const SDL_Event event {};
+    SDL_Event event {};
 
     while (SDL_PollEvent(&event)) {
         switch (event.type) {
@@ -43,7 +43,7 @@ void Window::update() {
 HWND Window::get_window_handle() const {
     const SDL_PropertiesID props = SDL_GetWindowProperties(window);
 
-    return (HWND)SDL_GetPointerProperty(props, SDL_PROP_WINDOW_WIN32_HWND_POINTER, NULL);
+    return (HWND)SDL_GetPointerProperty(props, SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr);
 }
 
 }  // namespace tmt
