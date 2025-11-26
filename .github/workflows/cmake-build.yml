@@ -40,7 +40,6 @@ jobs:
         shell: pwsh
         run: |
           echo "VULKAN_SDK=$env:VULKAN_SDK"
-          if (-not $env:VULKAN_SDK) { throw 'VULKAN_SDK is NOT set!' }
           dir "$env:VULKAN_SDK/include/vulkan"
       
       - name: Configure with preset
