@@ -44,6 +44,7 @@ void Engine::init(const ApplicationSpecs& specs) {
 
 // Example stuff
 void Engine::run() {
+    timer.reset();
     OnStart::dispatch();
 
     float accumulator = 0.0f;
@@ -56,13 +57,14 @@ void Engine::run() {
         OnUpdate::dispatch(frame_data);
 
         accumulator += frame_data.delta_time;
-        while (accumulator >= Config::fixed_time_step) {
-            accumulator -= Config::fixed_time_step;
+        while (accumulator >= Config::FIXED_TIME_STEP) {
+            accumulator -= Config::FIXED_TIME_STEP;
 
             /* Fixed Update */
             OnFixedUpdate::dispatch(frame_data);
         }
 
+        OnEndFrame::dispatch();
         frame_count++;
     }
 

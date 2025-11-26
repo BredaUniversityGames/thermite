@@ -4,7 +4,7 @@
 
 #include "core/application.hpp"
 
-class SDL_Window;
+struct SDL_Window;
 
 namespace tmt {
 
@@ -25,7 +25,6 @@ class Window {
 
     Window(const Window&) = delete;
     Window& operator=(const Window&) = delete;
-
 };
 
 }  // namespace tmt
