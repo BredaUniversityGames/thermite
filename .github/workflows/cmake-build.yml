@@ -30,6 +30,11 @@ jobs:
         with:
           version: 1.4.328.1
           cache: true
+          
+      - name: Debug Vulkan env
+        run: |
+          echo "VULKAN_SDK=$VULKAN_SDK"
+          ls -R "$VULKAN_SDK"
       
       - name: Configure with preset
         shell: pwsh
