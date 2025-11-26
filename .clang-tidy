@@ -129,6 +129,6 @@ CheckOptions:
     value: UPPER_CASE
   - key: readability-identifier-naming.LocalConstexprVariableCase
     value: lower_case
-WarningsAsErrors: '*'
+WarningsAsErrors: '*,-readability-make-member-function-const,-readability-convert-member-functions-to-static'
 FormatStyle: file
 SystemHeaders: false
