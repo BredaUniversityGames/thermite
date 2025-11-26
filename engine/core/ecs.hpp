@@ -18,11 +18,7 @@ using Entity = entt::entity;
 
 struct Delete {};
 
-class Ecs : public OnStart,
-            public OnUpdate,
-            public OnFixedUpdate,
-            public OnEnd,
-            public OnEndFrame {
+class Ecs : public OnStart, public OnUpdate, public OnFixedUpdate, public OnEnd, public OnEndFrame {
    public:
     Ecs() = default;
     ~Ecs() = default;
@@ -30,9 +26,7 @@ class Ecs : public OnStart,
     /* Systems */
     template <typename T, typename... Args>
     T& register_system(Args&&... args) {
-        static_assert(
-            std::is_base_of_v<ISystem, T>, "T must inherit from ISystem"
-        );
+        static_assert(std::is_base_of_v<ISystem, T>, "T must inherit from ISystem");
 
         auto system = std::make_unique<T>(std::forward<Args>(args)...);
         T& ref = *system;
@@ -64,9 +58,7 @@ class Ecs : public OnStart,
     /* Entities / Components */
     Registry& get_registry() { return registry; }
 
-    Entity create_entity(const Entity hint = entt::null) {
-        return registry.create(hint);
-    }
+    Entity create_entity(const Entity hint = entt::null) { return registry.create(hint); }
 
     template <typename... Component>
     Entity create_entity(const Entity hint = entt::null) {
