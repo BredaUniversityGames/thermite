@@ -44,6 +44,7 @@ void Engine::init(const ApplicationSpecs& specs) {
 
 // Example stuff
 void Engine::run() {
+    timer.reset();
     OnStart::dispatch();
 
     float accumulator = 0.0f;

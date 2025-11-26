@@ -1,9 +1,9 @@
 #pragma once
 #include <glm/glm.hpp>
 
-#include "tools/fmt_helpers.hpp"
+#include "engine/tools/fmt_helpers.hpp"
 
-#include "core/ecs.hpp"
+#include "engine/core/ecs.hpp"
 
 FMT_LOGGING(glm::vec2, "(x={}, y={})", obj.x, obj.y);
 FMT_LOGGING(glm::vec3, "(x={}, y={}, z={})", obj.x, obj.y, obj.z);
