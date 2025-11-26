@@ -30,6 +30,11 @@ jobs:
         with:
           version: 1.4.328.1
           cache: true
+
+      - name: Export Vulkan SDK for CMake
+        shell: pwsh
+        run: |
+          echo "VULKAN_SDK=$env:VULKAN_SDK_INSTALL_DIR" >> $env:GITHUB_ENV
           
       - name: Verify Vulkan SDK
         shell: pwsh
