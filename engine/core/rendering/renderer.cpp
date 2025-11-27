@@ -68,6 +68,7 @@ void Renderer::init() {
     /* Initialize the immediate mode GUI */
     ImGui::CreateContext();
     ImGui_ImplSDL3_InitForVulkan(engine.window.window);
+    imgui.set_clear_screen(true);
     if (const Result r = imgui.init(gpu, render_target, IMGUI_FUNCTIONS); r.is_err()) {
         Log::error(Log::Scope::RENDERER, "failed to initialize imgui.\nreason: {}", r.unwrap_err());
         return;
