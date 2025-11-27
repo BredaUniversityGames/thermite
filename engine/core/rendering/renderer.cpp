@@ -114,10 +114,7 @@ void Renderer::update() {
     draw_line({0.0f, -0.5f, 0.0f}, {0.5f, 0.5f, 0.0f}, {0.0f, 1.0f, 0.0f});
     draw_line({0.5f, 0.5f, 0.0f}, {-0.5f, 0.5f, 0.0f}, {0.0f, 1.0f, 0.0f});
 
-    /* Update Line Buffer */
-    if (debug_points.size() > 0) {
-        bank.upload_buffer(point_buffer, debug_points.data(), 0, sizeof(DebugPoint) * debug_points.size());
-    }
+    
 
     /* Start a new imgui frame */
     imgui.new_frame();
@@ -130,6 +127,13 @@ void Renderer::update() {
     ImGui::Render();
 
     render_graph.new_graph().unwrap();
+
+    /* Update Line Buffer */
+    const u32 num_points = (u32)debug_points.size();
+    if (num_points > 0) {
+        render_graph.upload_buffer(point_buffer, debug_points.data(), 0, sizeof(DebugPoint) * num_points);
+    }
+    debug_points.clear();
 
     /* clang-format off */
 
@@ -147,8 +151,7 @@ void Renderer::update() {
                                 .attribute(AttrFormat::XYZ32_SFloat)  // Color
                                 .attach(render_target)
                                 .raster_extent(engine.window.width, engine.window.height);
-    line_pass.draw(point_buffer, (u32)debug_points.size());
-    debug_points.clear();
+    line_pass.draw(point_buffer, num_points);
 
     /* Add the immediate mode GUI to the render graph */
     render_graph.add_imgui(imgui, render_target);
