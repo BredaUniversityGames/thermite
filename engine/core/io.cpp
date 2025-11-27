@@ -7,9 +7,9 @@
 namespace tmt {
 const char* IO::path_str[3] = {"assets/game/", "assets/engine/", "assets/editor/"};
 
-bool IO::write_file(IO::Location sub_category, const std::filesystem::path& relative_path, const char* data, size_t size) {
+bool IO::write_file(const FileLocation& file_location, const char* data, size_t size) {
 
-    std::filesystem::path absolute = GetAbsolutePath(sub_category, relative_path);
+    std::filesystem::path absolute = GetAbsolutePath(file_location.sub_location, file_location.relative_path);
 
     if (!create_directories(absolute)) return false;
 
@@ -29,8 +29,8 @@ bool IO::write_file(IO::Location sub_category, const std::filesystem::path& rela
     return true;
 }
 
-bool IO::write_text_file(Location sub_category, const std::filesystem::path& relative_path, const std::string& text, bool overwrite) {
-    std::filesystem::path absolute = GetAbsolutePath(sub_category, relative_path);
+bool IO::write_text_file(const FileLocation& file_location, const std::string& text, bool overwrite) {
+    std::filesystem::path absolute = GetAbsolutePath(file_location.sub_location, file_location.relative_path);
 
     if (!create_directories(absolute)) return false;
 
@@ -50,8 +50,8 @@ bool IO::write_text_file(Location sub_category, const std::filesystem::path& rel
     return true;
 }
 
-std::vector<char> IO::read_file(IO::Location sub_category, const std::filesystem::path& relative_path) {
-    std::filesystem::path absolute = GetAbsolutePath(sub_category, relative_path);
+std::vector<char> IO::read_file(const FileLocation& file_location) {
+    std::filesystem::path absolute = GetAbsolutePath(file_location.sub_location, file_location.relative_path);
 
     std::vector<char> data;
 
@@ -78,9 +78,9 @@ std::vector<char> IO::read_file(IO::Location sub_category, const std::filesystem
     return data;
 }
 
-std::string IO::read_text_file(Location sub_category, const std::filesystem::path& relative_path) 
+std::string IO::read_text_file(const FileLocation& file_location) 
 {
-    std::filesystem::path absolute = GetAbsolutePath(sub_category, relative_path);
+    std::filesystem::path absolute = GetAbsolutePath(file_location.sub_location, file_location.relative_path);
 
     std::string data;
 
