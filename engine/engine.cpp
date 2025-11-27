@@ -53,6 +53,8 @@ void Engine::run() {
 
     float accumulator = 0.0f;
     while (window.is_running) {
+        renderer.draw_line({0.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f});
+
         window.update();
         renderer.update();
         const FrameData frame_data = {.delta_time = timer.tick()};

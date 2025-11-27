@@ -6,6 +6,7 @@
 #include "engine/core/ecs.hpp"
 #include "engine/core/components/transform.hpp"
 #include "engine/core/components/name.hpp"
+#include "engine/core/rendering/renderer.hpp"
 #include "engine/tools/fmt_defines.hpp"
 
 void ecs_testing();

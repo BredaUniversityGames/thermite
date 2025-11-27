@@ -2,6 +2,7 @@
 
 #include <graphite/gpu_adapter.hh>
 #include <graphite/render_graph.hh>
+#include <graphite/vram_bank.hh>
 
 #include <graphite/nodes/raster_node.hh>
 
@@ -42,6 +43,13 @@ void Renderer::init() {
         return;
     } else
         render_target = r.unwrap();
+
+    /* Initialize the Line Buffer */
+    if (const Result r = bank.create_buffer(BufferUsage::Vertex | BufferUsage::TransferDst, MAX_DEBUG_POINTS, sizeof(DebugPoint)); r.is_err()) {
+        printf("failed to initialise line buffer.\nreason: %s\n", r.unwrap_err().c_str());
+        return;
+    } else
+        point_buffer = r.unwrap();
 }
 
 static bool is_init = false;
@@ -54,9 +62,10 @@ struct Vertex {
 };
 
 void Renderer::update() {
+    VRAMBank& bank = gpu.get_vram_bank();
     if (!is_init) {
         /* Initialise a vertex buffer */
-        VRAMBank& bank = gpu.get_vram_bank();
+        
         if (const Result r = bank.create_buffer(BufferUsage::Vertex | BufferUsage::TransferDst, 1, sizeof(Vertex) * 3); r.is_err()) {
             printf("failed to initialise constant buffer.\nreason: %s\n", r.unwrap_err().c_str());
             return;
@@ -70,6 +79,12 @@ void Renderer::update() {
         is_init = true;
     }
 
+    /* Update Line Buffer */
+    if (debug_points.size() > 0) {
+        bank.upload_buffer(point_buffer, debug_points.data(), 0, sizeof(DebugPoint) * debug_points.size());
+    }
+    debug_points.clear();
+
     render_graph.new_graph().unwrap();
 
     /* Test Rasterisation Pass */
@@ -80,6 +95,14 @@ void Renderer::update() {
                                     .raster_extent(engine.window.width, engine.window.height);
     graphics_pass.draw(vertex_buffer, 3);
 
+    RasterNode& line_pass = render_graph.add_raster_pass("debug line pass", "debug-line-vert", "debug-line-frag")
+                                .topology(Topology::LineList)
+                                .attribute(AttrFormat::XYZ32_SFloat)  // Position
+                                .attribute(AttrFormat::XYZ32_SFloat)  // Color
+                                .attach(render_target)
+                                .raster_extent(engine.window.width, engine.window.height);
+    line_pass.draw(point_buffer, (u32)debug_points.size());
+
     render_graph.end_graph().expect("failed to compile render graph.");
     render_graph.dispatch().expect("failed to dispatch render graph.");
 }
@@ -88,6 +111,7 @@ void Renderer::end() {
     VRAMBank& bank = gpu.get_vram_bank();
     bank.destroy(render_target);
     bank.destroy(vertex_buffer);
+    bank.destroy(point_buffer);
 
     /* Cleanup the VRAM bank & GPU adapter */
     render_graph.deinit().expect("failed to destroy render graph.");
@@ -96,8 +120,9 @@ void Renderer::end() {
 }
 
 void Renderer::draw_line(const glm::vec3 start, const glm::vec3 end, const glm::vec3 color) {
-    if (debug_lines.size() <= MAX_DEBUG_LINES) {
-        debug_lines.push_back({start, end, color});
+    if (debug_points.size() <= MAX_DEBUG_POINTS - 2) {
+        debug_points.push_back({start, color});
+        debug_points.push_back({end, color});
     }
 }
 

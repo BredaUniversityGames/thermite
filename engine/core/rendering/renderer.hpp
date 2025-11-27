@@ -2,23 +2,24 @@
 
 #include <vector>
 
-#include <graphite/vram_bank.hh>
+#include <graphite/resources/handle.hh>
 
 class GPUAdapter;
 class RenderGraph;
 
 namespace tmt {
 
-struct DebugLine {
+struct DebugPoint {
     glm::vec3 start {0.0f, 0.0f, 0.0f};
-    glm::vec3 end {0.0f, 0.0f, 0.0f};
     glm::vec3 color {1.0f, 0.0f, 0.0f};
 };
 
-constexpr uint32_t MAX_DEBUG_LINES = 512;
+constexpr uint32_t MAX_DEBUG_POINTS = 4;
 
 class Renderer {
-    std::vector<DebugLine> debug_lines {};
+    // Debug Rendering
+    Buffer point_buffer {};
+    std::vector<DebugPoint> debug_points {};
 
    public:
     GPUAdapter& gpu;
