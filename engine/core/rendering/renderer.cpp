@@ -114,8 +114,6 @@ void Renderer::update() {
     draw_line({0.0f, -0.5f, 0.0f}, {0.5f, 0.5f, 0.0f}, {0.0f, 1.0f, 0.0f});
     draw_line({0.5f, 0.5f, 0.0f}, {-0.5f, 0.5f, 0.0f}, {0.0f, 1.0f, 0.0f});
 
-    
-
     /* Start a new imgui frame */
     imgui.new_frame();
     ImGui_ImplSDL3_NewFrame();
