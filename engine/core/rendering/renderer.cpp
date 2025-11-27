@@ -78,12 +78,15 @@ void Renderer::update() {
         bank.upload_buffer(vertex_buffer, vertices.data(), 0, sizeof(Vertex) * 3);
         is_init = true;
     }
+    // Temporary
+    draw_line({-0.5f, 0.5f, 0.0f}, {0.0f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f});
+    draw_line({0.0f, -0.5f, 0.0f}, {0.5f, 0.5f, 0.0f}, {0.0f, 1.0f, 0.0f});
+    draw_line({0.5f, 0.5f, 0.0f}, {-0.5f, 0.5f, 0.0f}, {0.0f, 1.0f, 0.0f});
 
     /* Update Line Buffer */
     if (debug_points.size() > 0) {
         bank.upload_buffer(point_buffer, debug_points.data(), 0, sizeof(DebugPoint) * debug_points.size());
     }
-    debug_points.clear();
 
     render_graph.new_graph().unwrap();
 
@@ -102,6 +105,7 @@ void Renderer::update() {
                                 .attach(render_target)
                                 .raster_extent(engine.window.width, engine.window.height);
     line_pass.draw(point_buffer, (u32)debug_points.size());
+    debug_points.clear();
 
     render_graph.end_graph().expect("failed to compile render graph.");
     render_graph.dispatch().expect("failed to dispatch render graph.");

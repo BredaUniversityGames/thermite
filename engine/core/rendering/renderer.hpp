@@ -14,7 +14,7 @@ struct DebugPoint {
     glm::vec3 color {1.0f, 0.0f, 0.0f};
 };
 
-constexpr uint32_t MAX_DEBUG_POINTS = 4;
+constexpr uint32_t MAX_DEBUG_POINTS = 32;
 
 class Renderer {
     // Debug Rendering
