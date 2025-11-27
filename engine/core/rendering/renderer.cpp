@@ -70,8 +70,7 @@ void Renderer::init() {
     if (const Result r = bank.create_buffer(BufferUsage::Vertex | BufferUsage::TransferDst, MAX_DEBUG_POINTS, sizeof(DebugPoint)); r.is_err()) {
         printf("failed to initialise line buffer.\nreason: %s\n", r.unwrap_err().c_str());
         return;
-    }
-    else
+    } else
         point_buffer = r.unwrap();
 
     /* Initialize the immediate mode GUI */
@@ -82,7 +81,6 @@ void Renderer::init() {
         return;
     }
 }
-
 
 static bool is_init = false;
 static Buffer vertex_buffer {};
@@ -97,7 +95,7 @@ void Renderer::update() {
     VRAMBank& bank = gpu.get_vram_bank();
     if (!is_init) {
         /* Initialise a vertex buffer */
-        
+
         if (const Result r = bank.create_buffer(BufferUsage::Vertex | BufferUsage::TransferDst, 1, sizeof(Vertex) * 3); r.is_err()) {
             Log::error(Log::Scope::RENDERER, "failed to initialise constant buffer.\nreason: {}", r.unwrap_err());
             return;
