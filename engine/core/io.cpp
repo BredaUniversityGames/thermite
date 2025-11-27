@@ -111,13 +111,12 @@ std::string IO::read_text_file(const FileLocation& file_location)
 std::filesystem::path IO::GetAbsolutePath(Location sub_cat, const std::filesystem::path& relative_path) {
     auto sub_path = std::filesystem::path(path_str[static_cast<uint8_t>(sub_cat)]);
 
-    std::filesystem::path relative = relative_path;
+    std::filesystem::path relative = relative_path.lexically_normal();
     if (relative_path.has_root_path()) {
-        tmt::Log::warn(tmt::Log::Scope::ENGINE, "Possible incorrect path passed: {}\nTrying to normalize path..", relative_path.string());
+        tmt::Log::warn(tmt::Log::Scope::ENGINE, "Possible incorrect path passed: {}\nTrying to fix path..", relative_path.string());
 
         relative = relative_path.relative_path();
     }
-
     return sub_path / relative;
 }
 

@@ -7,7 +7,7 @@ namespace tmt {
 
 class IO {
    public:
-    enum class Location : uint8_t { GAME, ENGINE, EDITOR };
+    enum class Location : uint8_t { PROJECT, ENGINE, EDITOR };
 
     struct FileLocation {
         IO::Location sub_location;

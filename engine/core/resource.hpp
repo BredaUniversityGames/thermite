@@ -17,7 +17,7 @@ class Resource {
 
 class ExampleResource : public Resource {
    public:
-    ExampleResource(/*const IO::FileLocation& location, */float example_arg);
+    ExampleResource(const IO::FileLocation& location, float example_arg);
 
     // Inherited via Resource
     void load() override;
