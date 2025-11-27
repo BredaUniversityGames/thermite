@@ -55,6 +55,7 @@ target_link_libraries(thermite-engine
     spdlog::spdlog
     glm::glm
     EnTT::EnTT
+    JsonReflect
 )
 
 # Link libraries privately
@@ -63,5 +64,4 @@ target_link_libraries(thermite-engine
 	SDL3::SDL3-static
     visit_struct
     nlohmann_json::nlohmann_json
-    JsonReflect
 )

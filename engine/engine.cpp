@@ -40,6 +40,9 @@ void Engine::init(const ApplicationSpecs& specs) {
     ecs.register_system<Animation>();
 
     OnEngineInit::dispatch(specs);
+
+    delete &ecs;
+    delete &window;
 }
 
 // Example stuff
