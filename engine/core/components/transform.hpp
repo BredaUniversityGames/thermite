@@ -1,6 +1,4 @@
 #pragma once
-#include <string>
-
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 
@@ -8,10 +6,6 @@
 #include "engine/tools/fmt_helpers.hpp"
 
 namespace tmt {
-
-struct Name {
-    std::string name {"Unnamed Entity"};
-};
 
 struct Transform {
     /* Local */
@@ -94,5 +88,4 @@ struct Transform {
 
 }  // namespace tmt
 
-FMT_LOGGING(tmt::Name, "name: \"{}\"", obj.name);
 FMT_LOGGING(tmt::Transform, "Position: {}, Rotation: {}, Scale: {}", obj.get_world_position(), obj.get_world_rotation(), obj.get_world_scale());

@@ -4,7 +4,8 @@
 
 #include "engine/core/logger.hpp"
 #include "engine/core/ecs.hpp"
-#include "engine/core/components.hpp"
+#include "engine/core/components/transform.hpp"
+#include "engine/core/components/name.hpp"
 #include "engine/tools/fmt_defines.hpp"
 
 void ecs_testing();

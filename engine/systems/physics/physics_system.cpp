@@ -3,7 +3,7 @@
 
 #include "engine.hpp"
 #include "core/ecs.hpp"
-#include "core/components.hpp"
+#include "core/components/transform.hpp"
 
 #include "tools/fmt_defines.hpp"
 
