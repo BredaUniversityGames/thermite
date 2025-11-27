@@ -4,9 +4,6 @@ on:
   pull_request:
     branches: 'main'
 
-env:
-  VULKAN_SDK_VERSION: "1.4.328.1"
-
 jobs:
   build:
     name: "Build ${{ matrix.preset }}"
@@ -26,36 +23,11 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Cache Vulkan SDK
-        id: cache-vulkan
-        uses: actions/cache@v4
+      - name: Setup Vulkan SDK
+        uses: humbletim/install-vulkan-sdk@v1.2
         with:
-          path: C:\vulkan-sdk
-          key: vulkan-sdk-${{ env.VULKAN_SDK_VERSION }}-${{ runner.os }}
-          
-      - name: Install Vulkan SDK Components
-        if: steps.cache-vulkan.outputs.cache-hit != 'true'
-        shell: bash
-        run: |
-          set -e
-          
-          SDK_URL="https://sdk.lunarg.com/sdk/download/$VULKAN_SDK_VERSION/windows/vulkan-sdk.zip"
-          SDK_PATH="/c/vulkan-sdk"
-          
-          mkdir -p "$SDK_PATH/include" "$SDK_PATH/bin"
-          curl -sL "$SDK_URL" -o vulkan-sdk.zip
-          7z x vulkan-sdk.zip -y
-          
-          cp -r "$VULKAN_SDK_VERSION/Include/vulkan" "$SDK_PATH/include/"
-          cp "$VULKAN_SDK_VERSION/Bin/slangc.exe" "$SDK_PATH/bin/"
-          
-          rm -rf "$VULKAN_SDK_VERSION" vulkan-sdk.zip 2>/dev/null || true
-
-      - name: Setup Environment
-        shell: bash
-        run: |
-          echo "VULKAN_SDK=C:\\vulkan-sdk" >> $GITHUB_ENV
-          echo "C:\\vulkan-sdk\\bin" >> $GITHUB_PATH
+          version: 1.4.328.1
+          cache: true
       
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1
@@ -127,11 +99,10 @@ jobs:
           submodules: recursive
 
       - name: Setup Vulkan SDK
-        uses: humbletim/setup-vulkan-sdk@v1.2.1
+        uses: humbletim/install-vulkan-sdk@v1.2
         with:
-          vulkan-query-version: 1.4.328.1
-          vulkan-components: Vulkan-Headers
-          vulkan-use-cache: true
+          version: 1.4.328.1
+          cache: true
       
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1
