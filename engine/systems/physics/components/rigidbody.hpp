@@ -1,5 +1,5 @@
 #pragma once
-#include "glm/gtc/quaternion.hpp" // Add this include for glm::quat
+#include "glm/gtc/quaternion.hpp"
 
 namespace tmt {
 
@@ -23,7 +23,16 @@ struct RigidBody {
     float density = 1.0f;
 
     glm::vec3 position = glm::vec3(0);
-    glm::quat rotation = glm::quat(1, 0, 0, 0); // Correct initialization for quaternion
+    glm::quat rotation = glm::quat(1, 0, 0, 0);
+
+    enum Type {
+        Static,
+        Dynamic,
+        Wants_Sleep,
+        Sleeping,
+    };
+
+    Type type = Dynamic;
 };
 
 }  // namespace tmt

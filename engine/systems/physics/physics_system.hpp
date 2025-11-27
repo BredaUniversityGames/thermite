@@ -25,9 +25,7 @@ class Physics : public ISystem {
     bool simulating = true;
     ConstraintSolver solver = {};
 
-    void apply_velocities() const;
-
-    bool is_colliding(Transform& transform_a, const VoxelCollider& vox_a, Transform& transform_b);
+    //bool is_colliding(Transform& transform_a, const VoxelCollider& vox_a, Transform& transform_b);
 
     void generate_voxel_constraints_range(const int index, const int size);
 
@@ -35,10 +33,13 @@ class Physics : public ISystem {
 
     void get_overlap(const RigidBody& rb_a, const VoxelCollider& vox_a, const RigidBody& rb_b, const VoxelCollider& vox_b, glm::ivec3& min, glm::ivec3& max);
 
-    bool is_separated(const glm::vec3& axis, const Box& vertices_a, const Box& vertices_b, float& overlap) const;
+    float ray_aabb(const glm::vec3& min, const glm::vec3& max, const glm::vec3& ro, const glm::vec3& rd) const;
 
-    void check_neighbors(const VoxelCollider& vox_a, const VoxelCollider& vox_b, const RigidBody& rb_a, const RigidBody& rb_b, const size_t x, const size_t y, const size_t z, Collision& coll)
-        const;
+    bool is_separated(const glm::vec3& axis, const Box& box_a, const Box& box_b, float& overlap) const;
+
+    void check_neighbors(const VoxelCollider& vox_a, const VoxelCollider& vox_b, const RigidBody& rb_a, const RigidBody& rb_b, const size_t x, const size_t y, const size_t z, Collision& coll) const;
+
+    void apply_velocities() const;
 };
 
 }  // namespace tmt
