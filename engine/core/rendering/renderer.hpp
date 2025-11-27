@@ -2,6 +2,7 @@
 
 #include <vector>
 
+#include <graphite/imgui.hh>
 #include <graphite/resources/handle.hh>
 
 class GPUAdapter;
@@ -25,6 +26,7 @@ class Renderer {
     GPUAdapter& gpu;
     RenderGraph& render_graph;
     RenderTarget render_target {};
+    ImGUI imgui {};
 
     Renderer();
     ~Renderer();
