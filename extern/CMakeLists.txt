@@ -63,7 +63,6 @@ target_include_directories(thermite-engine
     PRIVATE "./imgui"
     PRIVATE "./imgui/backends"
 )
-target_compile_definitions(thermite-engine PRIVATE IMGUI_IMPL_VULKAN_USE_VOLK)
 
 # Link libraries publicly
 target_link_libraries(thermite-engine
