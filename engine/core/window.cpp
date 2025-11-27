@@ -34,7 +34,7 @@ void Window::update() {
 
     while (SDL_PollEvent(&event)) {
         ImGui_ImplSDL3_ProcessEvent(&event);
-        
+
         switch (event.type) {
             case SDL_EVENT_QUIT: {
                 is_running = false;
