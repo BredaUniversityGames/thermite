@@ -1,5 +1,9 @@
 #include "renderer.hpp"
 
+#include <imgui.h>
+#include <imgui_impl_sdl3.h>
+#include <imgui_impl_vulkan.h>
+
 #include <graphite/gpu_adapter.hh>
 #include <graphite/render_graph.hh>
 
@@ -60,6 +64,14 @@ void Renderer::init() {
     } else {
         render_target = r.unwrap();
     }
+
+    /* Initialize the immediate mode GUI */
+    ImGui::CreateContext();
+    ImGui_ImplSDL3_InitForVulkan(engine.window.window);
+    if (const Result r = imgui.init(gpu, render_target, IMGUI_FUNCTIONS); r.is_err()) {
+        Log::error(Log::Scope::RENDERER, "failed to initialize imgui.\nreason: {}", r.unwrap_err());
+        return;
+    }
 }
 
 static bool is_init = false;
@@ -89,6 +101,16 @@ void Renderer::update() {
         is_init = true;
     }
 
+    /* Start a new imgui frame */
+    imgui.new_frame();
+    ImGui_ImplSDL3_NewFrame();
+    ImGui::NewFrame();
+
+    ImGui::ShowDemoWindow();
+
+    /* End the imgui frame */
+    ImGui::Render();
+
     render_graph.new_graph().unwrap();
 
     /* clang-format off */
@@ -100,6 +122,9 @@ void Renderer::update() {
         .attach(render_target)
         .raster_extent(engine.window.width, engine.window.height);
     graphics_pass.draw(vertex_buffer, 3);
+
+    /* Add the immediate mode GUI to the render graph */
+    render_graph.add_imgui(imgui, render_target);
 
     /* clang-format on */
 
