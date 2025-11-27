@@ -1,5 +1,8 @@
+#pragma once
+
 #include <cstdint> /* uint32_t, int16_t, etc */
 #include <cmath>   /* fminf, fmaxf, powf, etc */
+#include <utility> /* std::swap */
 
 #include <glm/glm.hpp> /* vector math */
 

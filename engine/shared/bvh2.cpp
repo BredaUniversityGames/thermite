@@ -3,8 +3,8 @@
 namespace tmt {
 
 /* Number of bins to use during BVH construction. */
-constexpr int BVH_BINS = 4u;
-constexpr int BVH_SPLITS = BVH_BINS - 1u;
+constexpr int BVH_BINS = 4;
+constexpr int BVH_SPLITS = BVH_BINS - 1;
 
 /* Returns the surface area of a node. */
 inline float surface_area(const Bvh2Node& node) {
@@ -14,13 +14,6 @@ inline float surface_area(const Bvh2Node& node) {
 
 /* Returns half the area of an extent `v`. */
 inline float half_area(const glm::vec3& v) { return v.x < -BIG_F32 ? 0.0f : (v.x * v.y + v.y * v.z + v.z * v.x); }
-
-/* Swap two variables. */
-template <typename T>
-inline void swap(T& a, T& b) {
-    const T c = a;
-    a = b, b = c;
-}
 
 void Bvh2::build(const Aabb* input_prims, const uint32_t input_count) {
     /* Delete old BVH data if it exists */
@@ -142,7 +135,7 @@ void Bvh2::build(const Aabb* input_prims, const uint32_t input_count) {
                 if (bi <= best_split) {
                     src++;
                 } else {
-                    swap(indices[src], indices[--j]);
+                    std::swap(indices[src], indices[--j]);
                 }
             }
 
@@ -210,7 +203,7 @@ Hit Bvh2::trace(const Ray& ray) const {
 
         /* Swap child nodes so that the closest one comes first */
         if (dist1 > dist2) {
-            swap(dist1, dist2), swap(child1_index, child2_index);
+            std::swap(dist1, dist2), std::swap(child1_index, child2_index);
         }
 
         /* If we missed both child nodes */
