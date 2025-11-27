@@ -60,6 +60,17 @@ target_include_directories(thermite-engine
     PRIVATE "./imgui"
     PRIVATE "./imgui/backends"
 )
+target_compile_definitions(thermite-engine PRIVATE IMGUI_IMPL_VULKAN_USE_VOLK)
+# tracy - profiler integration
+# https://github.com/wolfpld/tracy
+option(TRACY_ENABLE "" OFF)
+option(TRACY_ON_DEMAND "" ON)
+
+if(THERMITE_EDITOR_BUILD)
+    set(TRACY_ENABLE ON CACHE BOOL "" FORCE)
+endif()
+add_subdirectory(tracy)
+
 
 # Link libraries publicly
 target_link_libraries(thermite-engine
@@ -68,6 +79,8 @@ target_link_libraries(thermite-engine
     glm::glm
     EnTT::EnTT
     graphite
+    Tracy::TracyClient
+
 )
 
 # Link libraries privately
@@ -77,3 +90,5 @@ target_link_libraries(thermite-engine
     visit_struct
     nlohmann_json::nlohmann_json
 )
+
+
