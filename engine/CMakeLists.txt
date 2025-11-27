@@ -30,8 +30,8 @@ add_custom_command(TARGET thermite-engine POST_BUILD
     COMMENT "Copying assets to output directory"
 )
 
-# TODO: Precompiled header(s)
-# target_precompile_headers(thermite-engine PRIVATE Thermite/pch.h)
+# Add the precompiled header
+target_precompile_headers(thermite-engine PRIVATE "shared/pch.hpp")
 
 # Set warning level
 target_compile_options(thermite-engine PRIVATE /W4 /permissive-)
