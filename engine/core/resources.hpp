@@ -3,15 +3,21 @@
 #include "resource.hpp"
 
 namespace tmt {
+
+template <typename T>
+concept ResourceType = std::derived_from<T, Resource>;
+
 class ResourceSystem {
+
+
    public:
-    template <typename T, typename... Args>
+    template <ResourceType T, typename... Args>
+    requires std::constructible_from<T, const IO::FileLocation&, Args...>
     std::shared_ptr<Resource> LoadResource(const IO::FileLocation& file_location, Args&&... args) {
-        static_assert(std::is_base_of_v<Resource, T>, "Type T is not derived from Resource");
 
-        std::shared_ptr<T> resource = std::make_unique<T>(file_location, std::forward<Args>(args)...);
+        std::shared_ptr<T> resource = std::make_shared<T>(file_location, std::forward<Args>(args)...);
 
-        static_cast<std::shared_ptr<Resource>>(resource)->load();
+        resource->load();
 
         resources.emplace(file_location, resource);
 

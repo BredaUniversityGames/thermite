@@ -24,8 +24,8 @@ class IO {
 
             std::size_t h2 = std::hash<std::filesystem::path> {}(fl.relative_path);
 
-            // Standard-ish hash combine
-            return h1 ^ (h2 + 0x9e3779b97f4a7c15ull + (h1 << 6) + (h1 >> 2));
+            // https://www.reddit.com/r/cpp/comments/1225m8g/why_is_there_no_standard_library_way_to_combine/
+            return h1 ^ (h2 + 0x9e3779b9ull  + (h1 << 6) + (h1 >> 2));
         }
     };
 

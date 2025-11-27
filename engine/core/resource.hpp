@@ -3,8 +3,9 @@
 
 namespace tmt {
 class Resource {
-   public:
+   protected:
     Resource(const IO::FileLocation& file_location);
+   public:
     virtual ~Resource() = default;
 
     virtual void load() = 0;
@@ -16,12 +17,15 @@ class Resource {
 
 class ExampleResource : public Resource {
    public:
-    ExampleResource(const IO::FileLocation& location, float arg);
+    ExampleResource(/*const IO::FileLocation& location, */float example_arg);
 
-   private:
     // Inherited via Resource
     void load() override;
     void unload() override;
     void reload() override;
+
+    float important_float;
+
+   private:
 };
 }  // namespace tmt
