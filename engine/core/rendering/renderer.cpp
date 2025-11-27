@@ -23,17 +23,17 @@ Renderer::~Renderer() {
 }
 
 /* Custom thermite logger function for graphite. */
-void thermite_logger(const DebugSeverity severity, const char *msg, void *) {
+void thermite_logger(const DebugSeverity severity, const char* msg, void*) {
     switch (severity) {
-    case DebugSeverity::Info:
-        Log::info(Log::Scope::RENDERER, "{}", msg);
-        break;
-    case DebugSeverity::Warning:
-        Log::warn(Log::Scope::RENDERER, "{}", msg);
-        break;
-    case DebugSeverity::Error:
-        Log::error(Log::Scope::RENDERER, "{}", msg);
-        break;
+        case DebugSeverity::Info:
+            Log::info(Log::Scope::RENDERER, "{}", msg);
+            break;
+        case DebugSeverity::Warning:
+            Log::warn(Log::Scope::RENDERER, "{}", msg);
+            break;
+        case DebugSeverity::Error:
+            Log::error(Log::Scope::RENDERER, "{}", msg);
+            break;
     }
 }
 
