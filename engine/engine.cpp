@@ -8,7 +8,7 @@
 #include "core/ecs.hpp"
 #include "core/timer.hpp"
 
-#include "rendering/renderer.hpp"
+#include "core/rendering/renderer.hpp"
 
 #include "systems/physics/physics_system.hpp"
 #include "systems/animation/animation_system.hpp"
