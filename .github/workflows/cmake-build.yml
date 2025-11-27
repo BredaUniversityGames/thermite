@@ -35,34 +35,27 @@ jobs:
           
       - name: Install Vulkan SDK Components
         if: steps.cache-vulkan.outputs.cache-hit != 'true'
-        shell: pwsh
+        shell: bash
         run: |
-          $SDK_URL = "https://sdk.lunarg.com/sdk/download/$env:VULKAN_SDK_VERSION/windows/vulkan-sdk.zip"
+          set -e
           
-          # Create target directories
-          New-Item -ItemType Directory -Force -Path "C:\vulkan-sdk\include"
-          New-Item -ItemType Directory -Force -Path "C:\vulkan-sdk\bin"
+          SDK_URL="https://sdk.lunarg.com/sdk/download/$VULKAN_SDK_VERSION/windows/vulkan-sdk.zip"
+          SDK_PATH="/c/vulkan-sdk"
           
-          # Download and extract
-          Invoke-WebRequest -Uri $SDK_URL -OutFile vulkan-sdk.zip
-          Expand-Archive -Path vulkan-sdk.zip -DestinationPath .
+          mkdir -p "$SDK_PATH/include" "$SDK_PATH/bin"
+          curl -sL "$SDK_URL" -o vulkan-sdk.zip
+          7z x vulkan-sdk.zip -y
           
-          # Copy only what we need
-          Copy-Item -Recurse "$env:VULKAN_SDK_VERSION\Include\vulkan" "C:\vulkan-sdk\include\"
-          # if (Test-Path "$env:VULKAN_SDK_VERSION\Include\vk_video") {
-          #   Copy-Item -Recurse "$env:VULKAN_SDK_VERSION\Include\vk_video" "C:\vulkan-sdk\include\"
-          # }
-          Copy-Item "$env:VULKAN_SDK_VERSION\Bin\slangc.exe" "C:\vulkan-sdk\bin\"
+          cp -r "$VULKAN_SDK_VERSION/Include/vulkan" "$SDK_PATH/include/"
+          cp "$VULKAN_SDK_VERSION/Bin/slangc.exe" "$SDK_PATH/bin/"
           
-          # Clean up
-          Remove-Item -Recurse -Force $env:VULKAN_SDK_VERSION
-          Remove-Item vulkan-sdk.zip
+          rm -rf "$VULKAN_SDK_VERSION" vulkan-sdk.zip 2>/dev/null || true
 
       - name: Setup Environment
-        shell: pwsh
+        shell: bash
         run: |
-          echo "VULKAN_SDK=C:\vulkan-sdk" >> $env:GITHUB_ENV
-          echo "C:\vulkan-sdk\bin" >> $env:GITHUB_PATH
+          echo "VULKAN_SDK=C:\\vulkan-sdk" >> $GITHUB_ENV
+          echo "C:\\vulkan-sdk\\bin" >> $GITHUB_PATH
       
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1
