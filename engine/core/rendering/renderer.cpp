@@ -94,4 +94,11 @@ void Renderer::end() {
     bank.deinit().expect("failed to destroy vram bank.");
     gpu.deinit().expect("failed to destroy gpu adapter.");
 }
+
+void Renderer::draw_line(const glm::vec3 start, const glm::vec3 end, const glm::vec3 color) {
+    if (debug_lines.size() <= MAX_DEBUG_LINES) {
+        debug_lines.push_back({start, end, color});
+    }
+}
+
 }  // namespace tmt
