@@ -4,23 +4,26 @@
 #include <imgui_impl_sdl3.h>
 #include <imgui_impl_vulkan.h>
 
+#include <graphite/vram_bank.hh>
 #include <graphite/gpu_adapter.hh>
 #include <graphite/render_graph.hh>
-#include <graphite/vram_bank.hh>
-
 #include <graphite/nodes/raster_node.hh>
 
-#include "engine/engine.hpp"
 #include "core/window.hpp"
 #include "core/logger.hpp"
 
+#include "engine/engine.hpp"
+
+#include "pipelines/debug_pipeline.hpp"
+
 namespace tmt {
 
-Renderer::Renderer() : gpu(*new GPUAdapter()), render_graph(*new RenderGraph()) {}
+Renderer::Renderer() : gpu(*new GPUAdapter()), render_graph(*new RenderGraph()), debug_pipeline(*new DebugPipeline()) {}
 
 Renderer::~Renderer() {
-    delete &gpu;
+    delete &debug_pipeline;
     delete &render_graph;
+    delete &gpu;
 }
 
 /* Custom thermite logger function for graphite. */
@@ -66,13 +69,6 @@ void Renderer::init() {
         render_target = r.unwrap();
     }
 
-    /* Initialize the Line Buffer */
-    if (const Result r = bank.create_buffer(BufferUsage::Vertex | BufferUsage::TransferDst, MAX_DEBUG_POINTS, sizeof(DebugPoint)); r.is_err()) {
-        printf("failed to initialise line buffer.\nreason: %s\n", r.unwrap_err().c_str());
-        return;
-    } else
-        point_buffer = r.unwrap();
-
     /* Initialize the immediate mode GUI */
     ImGui::CreateContext();
     ImGui_ImplSDL3_InitForVulkan(engine.window.window);
@@ -80,6 +76,9 @@ void Renderer::init() {
         Log::error(Log::Scope::RENDERER, "failed to initialize imgui.\nreason: {}", r.unwrap_err());
         return;
     }
+
+    /* Initialize Pipelines */
+    debug_pipeline.init(gpu);
 }
 
 static bool is_init = false;
@@ -126,12 +125,8 @@ void Renderer::update() {
 
     render_graph.new_graph().unwrap();
 
-    /* Update Line Buffer */
-    const u32 num_points = (u32)debug_points.size();
-    if (num_points > 0) {
-        render_graph.upload_buffer(point_buffer, debug_points.data(), 0, sizeof(DebugPoint) * num_points);
-    }
-    debug_points.clear();
+    /* Pipelines Update */
+    debug_pipeline.update(render_graph);
 
     /* clang-format off */
 
@@ -144,13 +139,8 @@ void Renderer::update() {
         .raster_extent(engine.window.width, engine.window.height);
     graphics_pass.draw(vertex_buffer, 3);
 
-    RasterNode& line_pass = render_graph.add_raster_pass("debug line pass", "debug-line-vert", "debug-line-frag")
-                                .topology(Topology::LineList)
-                                .attribute(AttrFormat::XYZ32_SFloat)  // Position
-                                .attribute(AttrFormat::XYZ32_SFloat)  // Color
-                                .attach(render_target)
-                                .raster_extent(engine.window.width, engine.window.height);
-    line_pass.draw(point_buffer, num_points);
+    /* Pipelines Enqueue */
+    debug_pipeline.enqueue(render_graph);
 
     /* Add the immediate mode GUI to the render graph */
     render_graph.add_imgui(imgui, render_target);
@@ -171,7 +161,9 @@ void Renderer::end() {
     VRAMBank& bank = gpu.get_vram_bank();
     bank.destroy(render_target);
     bank.destroy(vertex_buffer);
-    bank.destroy(point_buffer);
+
+    /* Pipelines Cleanup */
+    debug_pipeline.deinit(gpu);
 
     /* Cleanup the VRAM bank & GPU adapter */
     render_graph.deinit().expect("failed to destroy render graph.");
@@ -179,11 +171,6 @@ void Renderer::end() {
     gpu.deinit().expect("failed to destroy gpu adapter.");
 }
 
-void Renderer::draw_line(const glm::vec3 start, const glm::vec3 end, const glm::vec3 color) {
-    if (debug_points.size() <= MAX_DEBUG_POINTS - 2) {
-        debug_points.push_back({start, color});
-        debug_points.push_back({end, color});
-    }
-}
+void Renderer::draw_line(const glm::vec3 start, const glm::vec3 end, const glm::vec3 color) { debug_pipeline.draw_line(start, end, color); }
 
 }  // namespace tmt

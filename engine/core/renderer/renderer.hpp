@@ -9,24 +9,18 @@ class GPUAdapter;
 class RenderGraph;
 
 namespace tmt {
-
-struct DebugPoint {
-    glm::vec3 start {0.0f, 0.0f, 0.0f};
-    glm::vec3 color {1.0f, 0.0f, 0.0f};
-};
-
-constexpr uint32_t MAX_DEBUG_POINTS = 32;
+class DebugPipeline;
 
 class Renderer {
-    // Debug Rendering
-    Buffer point_buffer {};
-    std::vector<DebugPoint> debug_points {};
-
    public:
     GPUAdapter& gpu;
     RenderGraph& render_graph;
+
     RenderTarget render_target {};
     ImGUI imgui {};
+
+    /* Pipelines */
+    DebugPipeline& debug_pipeline;
 
     Renderer();
     ~Renderer();
