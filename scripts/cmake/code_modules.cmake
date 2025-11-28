@@ -60,6 +60,8 @@ function(find_and_add_targets)
 			set(ENGINE_ASSETS_SRC "${CMAKE_CURRENT_SOURCE_DIR}/engine/assets")
 			set(EDITOR_ASSETS_SRC "${CMAKE_CURRENT_SOURCE_DIR}/editor/assets")
 
+			file(MAKE_DIRECTORY "${GAME_ASSETS_SRC}")
+
 			create_symlink("${GAME_ASSETS_SRC}" "${CMAKE_BINARY_DIR}/bin/${target_name}/assets/game")
 			create_symlink("${ENGINE_ASSETS_SRC}" "${CMAKE_BINARY_DIR}/bin/${target_name}/assets/engine")
 
