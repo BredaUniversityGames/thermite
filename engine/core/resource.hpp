@@ -8,9 +8,9 @@ class Resource {
    public:
     virtual ~Resource() = default;
 
-    virtual void load() = 0;
+    virtual bool load() = 0;
     virtual void unload() = 0;
-    virtual void reload() = 0;
+    virtual bool reload() = 0;
 
     const IO::FileLocation file_location;
 };
@@ -20,9 +20,9 @@ class ExampleResource : public Resource {
     ExampleResource(const IO::FileLocation& location, float example_arg);
 
     // Inherited via Resource
-    void load() override;
+    bool load() override;
     void unload() override;
-    void reload() override;
+    bool reload() override;
 
     float important_float;
 

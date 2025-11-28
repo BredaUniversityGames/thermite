@@ -4,7 +4,7 @@
 namespace tmt {
 Resource::Resource(const IO::FileLocation& _file_location) : file_location(_file_location) {}
 ExampleResource::ExampleResource(const IO::FileLocation& location, float arg) : Resource({}) { important_float = arg; }
-void ExampleResource::load() {}
+bool ExampleResource::load() {return true;}
 void ExampleResource::unload() {}
-void ExampleResource::reload() {}
+bool ExampleResource::reload() {return true;}
 }  // namespace tmt

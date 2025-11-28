@@ -50,10 +50,6 @@ function(find_and_add_targets)
 			set_target_properties(${target_name} PROPERTIES
 				RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/${target_name}"
 			)
-
-			if(THERMITE_EDITOR_BUILD)
-				# Copy editor assets to target output
-			endif()
 			
 			# Make sure target has assets folder
 			file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/bin/${target_name}/assets")
@@ -66,7 +62,11 @@ function(find_and_add_targets)
 
 			create_symlink("${GAME_ASSETS_SRC}" "${CMAKE_BINARY_DIR}/bin/${target_name}/assets/game")
 			create_symlink("${ENGINE_ASSETS_SRC}" "${CMAKE_BINARY_DIR}/bin/${target_name}/assets/engine")
-			create_symlink("${EDITOR_ASSETS_SRC}" "${CMAKE_BINARY_DIR}/bin/${target_name}/assets/editor")
+
+			# If this is an editor build, symlink editor assets
+			if(THERMITE_EDITOR_BUILD)
+				create_symlink("${EDITOR_ASSETS_SRC}" "${CMAKE_BINARY_DIR}/bin/${target_name}/assets/editor")
+			endif()
 
 			# Link with the Thermite Engine
 			target_link_libraries(${target_name} PRIVATE thermite-engine)

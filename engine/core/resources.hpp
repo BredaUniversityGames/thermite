@@ -1,15 +1,14 @@
 #pragma once
 #include <memory>
 #include "resource.hpp"
+#include "logger.hpp"
 
 namespace tmt {
 
 template <typename T>
 concept ResourceType = std::derived_from<T, Resource>;
 
-class ResourceSystem {
-
-
+class Resources {
    public:
     template <ResourceType T, typename... Args>
     requires std::constructible_from<T, const IO::FileLocation&, Args...>
@@ -17,9 +16,17 @@ class ResourceSystem {
 
         std::shared_ptr<T> resource = std::make_shared<T>(file_location, std::forward<Args>(args)...);
 
-        resource->load();
+        // duplicate checking
+        if(!resources.emplace(file_location, resource).second)
+        {
+            tmt::Log::error(tmt::Log::Scope::ENGINE, "Tried to insert duplicate resource!");
+        }
 
-        resources.emplace(file_location, resource);
+        //load() success checking
+        if(!resource->load())
+        {
+            tmt::Log::error(tmt::Log::Scope::ENGINE, "Failed to load resource!");
+        }
 
         return resource;
     }

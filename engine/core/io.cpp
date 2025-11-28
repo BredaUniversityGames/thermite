@@ -2,7 +2,6 @@
 
 #include <fstream>
 #include "logger.hpp"
-#include "nlohmann/json.hpp"
 
 namespace tmt {
 const char* IO::path_str[3] = {"assets/game/", "assets/engine/", "assets/editor/"};
