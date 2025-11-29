@@ -30,7 +30,6 @@ class DebugPipeline {
     DebugPipeline& operator=(const DebugPipeline&) = delete;
 
     void init(GPUAdapter& gpu);
-    void update(RenderGraph& render_graph);
     void enqueue(RenderGraph& render_graph);
     void deinit(GPUAdapter& gpu);
 

@@ -24,16 +24,14 @@ void DebugPipeline::init(GPUAdapter& gpu) {
         point_buffer = r.unwrap();
 }
 
-void DebugPipeline::update(RenderGraph& render_graph) {
+void DebugPipeline::enqueue(RenderGraph& render_graph) {
     /* Update Point Buffer */
     num_points = (u32)debug_points.size();
     if (num_points > 0) {
         render_graph.upload_buffer(point_buffer, debug_points.data(), 0, sizeof(DebugPoint) * num_points);
     }
     debug_points.clear();
-}
 
-void DebugPipeline::enqueue(RenderGraph& render_graph) {
     RasterNode& line_pass = render_graph.add_raster_pass("debug line pass", "debug-line-vert", "debug-line-frag")
                                 .topology(Topology::LineList)
                                 .attribute(AttrFormat::XYZ32_SFloat)  // Position

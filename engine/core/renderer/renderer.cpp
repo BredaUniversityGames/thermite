@@ -125,9 +125,6 @@ void Renderer::update() {
 
     render_graph.new_graph().unwrap();
 
-    /* Pipelines Update */
-    debug_pipeline.update(render_graph);
-
     /* clang-format off */
 
     /* Test Rasterisation Pass */
