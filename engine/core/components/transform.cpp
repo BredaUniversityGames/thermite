@@ -193,7 +193,7 @@ void Transform::set_parent(Entity new_parent) {
             throw std::runtime_error("Transform::set_parent: Max hierarchy depth exceeded during cycle detection");
         }
 
-        auto& transform = engine.ecs.get_component<Transform>(current);
+        auto& transform = engine.ecs.<Transform>(current);
         current = transform.parent;
         iterations++;
     }

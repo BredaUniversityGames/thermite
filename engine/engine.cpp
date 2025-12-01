@@ -46,6 +46,10 @@ void Engine::init(const ApplicationSpecs& specs) {
     ecs.register_system<RigModelManager>();
 
     OnEngineInit::dispatch(specs);
+
+    auto fucker = ecs.create_entity();
+    auto& fucker_rig_model_comp = ecs.add_component<RigModel>(fucker);
+    fucker_rig_model_comp.init({IO::Location::PROJECT, "blocker.glb"}, fucker);
 }
 
 // Example stuff
