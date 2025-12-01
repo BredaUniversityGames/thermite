@@ -212,7 +212,7 @@ RigData::RigData(const IO::FileLocation& _directory) : Resource(_directory) {
     extract_bone_keyframes(model);
 }
 
-bool tmt::RigData::load() { return false; }
+bool tmt::RigData::load() { return true; }
 
 void tmt::RigData::unload() {}
 

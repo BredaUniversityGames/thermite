@@ -1,7 +1,7 @@
 #pragma once
 #include <variant>
 #include <cstdint>
-#include "../../core/ecs.hpp"
+#include "engine/core/ecs.hpp"
 //#include "editor/inspectable.hpp"
 //#include "systems/events.hpp"
 //#include "tools/serialization.hpp"

@@ -21,6 +21,10 @@ const Condition::CompareFunctionMap Condition::COMPARE_MAP {
 
 #pragma region RigController
 
+tmt::RigController::RigController() {}
+
+void tmt::RigController::on_destroy(entt::registry& registry, Entity entity) {}
+
 void RigController::set_parameter_float(const std::string& name, const float value) {
     if (parameters.find(name) == parameters.end()) {
         Log::error("Invalid parameter with name: \"{}\"", name);
