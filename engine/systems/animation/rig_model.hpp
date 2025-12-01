@@ -18,8 +18,8 @@ class RigModel
 {
 public:
     RigModel() = default;
-    RigModel(FileIO::Directory directory, const std::string& filename, Entity p);
-    void init(FileIO::Directory directory, const std::string& filename, Entity p);
+ RigModel(const IO::FileLocation& directory, Entity p);
+    void init(const IO::FileLocation& directory, Entity p);
     
     bool rig_is_loaded = false;
     bool vox_is_loaded = false;
@@ -35,9 +35,9 @@ public:
     std::vector<Entity> voxel_entities;
     std::vector<Entity> pivot_entities;
     std::shared_ptr<RigData> data;
-    FileIO::Directory file_directory = FileIO::Directory::None;
+    IO::FileLocation file_directory = {};
 
-    void attach_voxel_objects(FileIO::Directory directory, const std::string& filename);
+    //void attach_voxel_objects(const IO::FileLocation& directory);
 
     [[nodiscard]] bool is_transferring() const
     {

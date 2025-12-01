@@ -8,7 +8,7 @@
 #include "tiny_gltf.h"
 #include <unordered_map>
 
-//#include "kudzu/resource.hpp"
+#include "engine/core/resource.hpp"
 //#include "kudzu/systems/fileio.hpp"
 
 namespace tmt {
@@ -51,8 +51,12 @@ struct Bone {
 
 struct RigData : public Resource {
    public:
-    RigData(FileIO::Directory directory, const std::string& filename);
-    void reload() override;
+    RigData(const IO::FileLocation& directory);
+    
+    // Inherited via Resource
+    bool load() override;
+    void unload() override;
+    bool reload() override;
 
     std::vector<Bone> bones;
     std::string name;

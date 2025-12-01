@@ -135,20 +135,16 @@ void RigData::init_bone(const glm::vec3& o, const glm::quat& q, const tinygltf::
     bones.push_back(bone);
 }
 
-RigData::RigData(FileIO::Directory _directory, const std::string& _filename) : Resource(AssetType::ANIMATED_RIG) {
-    directory = _directory;
-    filename = _filename;
-    path = _filename;
+RigData::RigData(const IO::FileLocation& _directory) : Resource(_directory) {
     tinygltf::TinyGLTF loader;
     tinygltf::Model model;
     std::string err;
     std::string warn;
     std::string base_dir;
 
-    const std::string full_filename = Engine.files().GetPath(_directory, _filename);
 
     // Load the GLTF file (.glb)
-    auto rig = Engine.files().ReadBinaryFile(_directory, _filename);
+    auto rig = IO::read_file(_directory);
     bool ret = loader.LoadBinaryFromMemory(&model, &err, &warn, (unsigned char*)rig.data(), (uint32_t)rig.size(), base_dir);
 
     if (!ret) {
@@ -216,17 +212,19 @@ RigData::RigData(FileIO::Directory _directory, const std::string& _filename) : R
     extract_bone_keyframes(model);
 }
 
-void tmt::RigData::reload() {
+bool tmt::RigData::load() { return false; }
+
+void tmt::RigData::unload() {}
+
+bool tmt::RigData::reload() {
     tinygltf::TinyGLTF loader;
     tinygltf::Model model;
     std::string err;
     std::string warn;
     std::string base_dir;
 
-    const std::string full_filename = Engine.files().GetPath(directory, filename);
-
     // Load the GLTF file (.glb)
-    auto rig = Engine.files().ReadBinaryFile(directory, filename);
+    auto rig = IO::read_file(file_location);
     bool ret = loader.LoadBinaryFromMemory(&model, &err, &warn, (unsigned char*)rig.data(), (uint32_t)rig.size(), base_dir);
 
     if (!ret) {
@@ -254,4 +252,5 @@ void tmt::RigData::reload() {
     }
 
     extract_bone_keyframes(model);
+    return true;
 }
