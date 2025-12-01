@@ -5,6 +5,10 @@
 #include "engine/core/components/transform.hpp"
 #include "engine/core/components/name.hpp"
 
+#define TINYGLTF_IMPLEMENTATION
+#include "nlohmann/json.hpp"
+#define TINYGLTF_NO_INCLUDE_JSON
+
 #include "tiny_gltf.h"
 #include <unordered_map>
 
