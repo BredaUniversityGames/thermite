@@ -36,10 +36,9 @@ add_subdirectory(graphite)
 # https://github.com/syoyo/tinygltf
 set(TINYGLTF_INSTALL OFF CACHE BOOL "" FORCE)
 set(TINYGLTF_INSTALL_VENDOR OFF CACHE BOOL "" FORCE)
-set(TINYGLTF_HEADER_ONLY ON CACHE BOOL "" FORCE)
+set(TINYGLTF_HEADER_ONLY OFF CACHE BOOL "" FORCE)
 set(TINYGLTF_BUILD_LOADER_EXAMPLE OFF CACHE BOOL "" FORCE)
 add_subdirectory(tinygltf)
-target_include_directories(tinygltf INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/tinygltf/)
 
 # visit_struct - struct reflection
 # https://github.com/cbeck88/visit_struct
@@ -77,13 +76,13 @@ target_link_libraries(thermite-engine
     spdlog::spdlog
     glm::glm
     EnTT::EnTT
+    graphite
 )
 
 # Link libraries privately
 target_link_libraries(thermite-engine 
 	PRIVATE
 	SDL3::SDL3-static
-    graphite
     visit_struct
     nlohmann_json::nlohmann_json
     tinygltf
