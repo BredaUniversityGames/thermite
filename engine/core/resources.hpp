@@ -13,11 +13,11 @@ class Resources {
     // loads or gets the resource of type T with file location file_location
     template <ResourceType T, typename... Args>
         requires std::constructible_from<T, const IO::FileLocation&, Args...>
-    std::shared_ptr<Resource> load_resource(const IO::FileLocation& file_location, Args&&... args) {
+    std::shared_ptr<T> load_resource(const IO::FileLocation& file_location, Args&&... args) {
         // duplicate checking
         if (resources.contains(file_location)) {
             // already loaded
-            return resources[file_location];
+            return std::dynamic_pointer_cast<T>(resources[file_location]);
         }
 
         std::shared_ptr<T> resource = std::make_shared<T>(file_location, std::forward<Args>(args)...);
@@ -31,7 +31,7 @@ class Resources {
 
         resources.emplace(file_location, resource);
 
-        return resource;
+        return std::dynamic_pointer_cast<T>(resource);
     }
 
    private:
