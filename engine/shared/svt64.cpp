@@ -85,19 +85,14 @@ void Svt64::build(const RawVoxels& raw_data) {
     voxels = (MaterialIndex*)malloc(1ull << 26);
     voxel_count = 0u;
 
+    /* Copy the material palette */
+    palette = raw_data.palette;
+
     /* Required tree depth */
     req_depth = log_base(std::max(std::max(raw_data.w, raw_data.h), raw_data.d), 4);
-    // printf("required depth: %u\n", req_depth);
 
     /* Begin the recursive build */
     nodes[0] = subdivide(raw_data, req_depth * 2, glm::ivec3(0));
-
-    // printf("size: (%u, %u, %u), nodes: %u, voxels: %u\n", raw_data.w, raw_data.h, raw_data.d, node_count, voxel_count);
-
-    // const uint64_t raw_size = raw_data.w * raw_data.h * raw_data.d;
-    // const uint64_t tree_size = node_count * sizeof(Node) + voxel_count;
-    // const float memory_percent = ((float)tree_size / (float)raw_size) * 100.0f;
-    // printf("raw memory: %.2fMB, tree memory: %.2fMB (%.2f%%)\n", (float)raw_size / 1000000, (float)tree_size / 1000000, memory_percent);
 }
 
 inline uint32_t get_node_cell_index(const glm::vec3 pos, const int scale_exp) {
@@ -115,7 +110,7 @@ inline glm::vec3 floor_scale(const glm::vec3 pos, const int scale_exp) {
     return glm::vec3((float&)masked_x, (float&)masked_y, (float&)masked_z);
 }
 
-// Reverses `pos` from range [1.0, 2.0) to (2.0, 1.0] if `dir > 0`.
+/* Reverses `pos` from range [1.0, 2.0) to (2.0, 1.0] if `dir > 0`. */
 inline glm::vec3 mirror_pos(const glm::vec3 pos, const glm::vec3 dir) {
     glm::vec3 mirrored {};
     mirrored.x = dir.x > 0.0f ? (3.0f - pos.x) : pos.x;
@@ -124,20 +119,18 @@ inline glm::vec3 mirror_pos(const glm::vec3 pos, const glm::vec3 dir) {
     return mirrored;
 }
 
-// Count number of set bits in variable range [0..width]
+/* Count number of set bits in variable range [0..width] */
 inline uint32_t popcnt_var64(uint64_t mask, uint32_t width) { return __popcnt64(mask & ((1ull << width) - 1)); }
 
-inline glm::vec2 intersect_aabb(const glm::vec3 origin, const glm::vec3 invDir, const glm::vec3 bbMin, const glm::vec3 bbMax) {
-    glm::vec3 t0 = (bbMin - origin) * invDir;
-    glm::vec3 t1 = (bbMax - origin) * invDir;
-
-    const glm::vec3 temp = t0;
-    t0 = glm::min(temp, t1), t1 = glm::max(temp, t1);
-
-    const float tmin = glm::max(glm::max(glm::max(t0.x, t0.y), t0.z), 0.0f);
-    const float tmax = glm::min(glm::min(t1.x, t1.y), t1.z);
-
-    return glm::vec2(tmin, tmax);
+/* Ray AABB intersection function. */
+inline float intersect_aabb(const Ray ray, const glm::vec3 box_min, const glm::vec3 box_max) {
+    const glm::vec3 t_to_min = (box_min - ray.origin) * ray.rcp_dir;
+    const glm::vec3 t_to_max = (box_max - ray.origin) * ray.rcp_dir;
+    const glm::vec3 t_min = glm::min(t_to_min, t_to_max);
+    const glm::vec3 t_max = glm::max(t_to_min, t_to_max);
+    const float t_near = glm::max(glm::max(glm::max(t_min.x, t_min.y), t_min.z), 0.0f);
+    const float t_far = glm::min(glm::min(t_max.x, t_max.y), t_max.z);
+    return t_near > t_far ? BIG_F32 : t_near;
 }
 
 inline float sign(const float f) { return f >= 0.0f ? 1.0f : -1.0f; }
@@ -150,14 +143,15 @@ uint64_t Svt64::wasted_memory() const { return wasted_count; }
 VoxelHit Svt64::trace(const Ray& ray) const {
     /* Traversal state */
     uint32_t stack[11] {};
-    int scale_exp = 21;   /* 23 mantissa bits - 2 */
+    int scale_exp = 21; /* 23 mantissa bits - 2 */
     uint32_t node_index = 0u; /* root node */
     Node node = nodes[node_index];
 
-    const glm::vec2 hit = intersect_aabb(ray.origin, ray.rcp_dir, glm::vec3(1.0f), glm::vec3(2.0f));
-    if (hit.y < hit.x) return VoxelHit(1e30f, glm::vec3(0.0f), 0u, 1u);
+    /* TODO: This should be using the actual bounding box of this SVT */
+    const float entry_t = intersect_aabb(ray, glm::vec3(1.0f), glm::vec3(2.0f));
+    if (entry_t == BIG_F32) return VoxelHit(BIG_F32, glm::vec3(0.0f), 0u, 1u);
 
-    const glm::vec3 origin = mirror_pos(ray.origin + ray.dir * hit.x, ray.dir);
+    const glm::vec3 origin = mirror_pos(ray.origin + ray.dir * entry_t, ray.dir);
     const glm::vec3 dir = ray.dir;
 
     /* Mirror coordinates to simplify cell intersections */
@@ -258,7 +252,7 @@ VoxelHit Svt64::trace(const Ray& ray) const {
 
         return VoxelHit(t, normal, mat, (uint16_t)i + 1u);
     }
-    return VoxelHit(1e30f, glm::vec3(0.0f), 0u, (uint16_t)i + 1u);
+    return VoxelHit(BIG_F32, glm::vec3(0.0f), 0u, (uint16_t)i + 1u);
 }
 
 void Svt64::set_voxel(uint32_t x, uint32_t y, uint32_t z) {

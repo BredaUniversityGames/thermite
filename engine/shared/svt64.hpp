@@ -9,7 +9,7 @@
 namespace tmt {
 
 struct RawVoxels {
-    MaterialPalette pallete {};
+    MaterialPalette palette {};
     std::vector<uint8_t> voxels {};
     uint32_t w = 0u, h = 0u, d = 0u;
 };
@@ -48,6 +48,7 @@ class Svt64 {
     uint32_t node_count = 0u;
 
     /* List of voxel data. */
+    MaterialPalette palette {};
     MaterialIndex* voxels = nullptr;
     uint32_t voxel_count = 0u;
     uint32_t req_depth = 0u;
