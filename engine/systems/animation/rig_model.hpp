@@ -1,0 +1,86 @@
+#pragma once
+
+#include "../../engine.hpp"
+#include "../../core/ecs.hpp"
+//#include "../transform.hpp"
+#include "animation_data.hpp"
+
+//#include "tools/macros.hpp"
+
+struct BoneComp
+{
+    int id = -1;
+};
+
+namespace tmt
+{
+class RigModel
+{
+public:
+    RigModel() = default;
+    RigModel(FileIO::Directory directory, const std::string& filename, Entity p);
+    void init(FileIO::Directory directory, const std::string& filename, Entity p);
+    
+    bool rig_is_loaded = false;
+    bool vox_is_loaded = false;
+    std::string rig_path;
+    std::string vox_path;
+
+    float time = 0.05f;
+    float animation_speed = 1.0f;
+    float transfer_time = 0.0f;
+    float transfer_threshold = 0.0f;
+    Entity armature_entity = entt::null;
+    std::vector<Entity> bone_entities;
+    std::vector<Entity> voxel_entities;
+    std::vector<Entity> pivot_entities;
+    std::shared_ptr<RigData> data;
+    FileIO::Directory file_directory = FileIO::Directory::None;
+
+    void attach_voxel_objects(FileIO::Directory directory, const std::string& filename);
+
+    [[nodiscard]] bool is_transferring() const
+    {
+        if (state == State::TRANSFERRING_TO_LOOP || state == State::TRANSFERRING_TO_ONCE ||
+            state == State::TRANSFERRING_TO_STOP)
+            return true;
+
+        return false;
+    }
+
+    void play_animation(const std::string& animation_name, float transfer_time, bool _loop_animation);
+    void stop_loop(float _transfer_time);
+    void set_animation_speed(float s);
+
+    void set_current_animation(std::string v) { current_animation = v; }
+    std::string get_current_animation() const { return current_animation; }
+    std::string get_next_animation() const { return next_animation; }
+    std::string current_animation_playing();
+
+    void animate_translation(Transform& t, Bone& b);
+    void animate_rotation(Transform& t, Bone& b);
+    void animate_scale(Transform& t, Bone& b);
+
+    enum class State
+    {
+        ANIMATE_LOOP,
+        ANIMATE_ONCE,
+        STATIONARY,
+        TRANSFERRING_TO_LOOP,
+        TRANSFERRING_TO_ONCE,
+        TRANSFERRING_TO_STOP
+    } state = State::STATIONARY;
+
+private:
+    std::string next_animation;
+    std::string current_animation;
+    std::string name;
+    glm::vec3 base = {0, 0, 0};
+    Entity transform_entity = entt::null;
+    void init_bones(const Bone& b, Entity p);
+};
+
+}  // namespace kudzu
+
+//VISITABLE_STRUCT(BoneComp, id);
+//VISITABLE_STRUCT(kudzu::RigModel, file_directory, rig_path, bone_entities, voxel_entities);
