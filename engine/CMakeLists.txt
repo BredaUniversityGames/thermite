@@ -23,6 +23,40 @@ target_include_directories(thermite-engine
     PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
+# Python interpreter
+find_package(Python3 REQUIRED)
+
+# Where your shaders live
+set(SHADER_SOURCE_DIR ${CMAKE_SOURCE_DIR}/engine/assets/shaders)
+
+# Where compiled SPIR-V should go
+set(SHADER_OUTPUT_DIR ${CMAKE_SOURCE_DIR}/engine/assets/shaders)
+
+# Gather all shader files so CMake knows when to re-run
+file(GLOB_RECURSE SLANG_SHADERS
+    ${SHADER_SOURCE_DIR}/*.slang
+)
+
+# Script path
+set(SHADER_SCRIPT ${CMAKE_SOURCE_DIR}/scripts/compile_shaders.py)
+
+# Stamp file to trigger rebuilds
+set(SHADER_STAMP ${SHADER_OUTPUT_DIR}/shaders.stamp)
+
+add_custom_command(
+    OUTPUT ${SHADER_STAMP}
+    COMMAND ${Python3_EXECUTABLE} ${SHADER_SCRIPT}
+            ${SHADER_SOURCE_DIR}
+            ${SHADER_OUTPUT_DIR}
+    COMMAND ${CMAKE_COMMAND} -E touch ${SHADER_STAMP}
+    DEPENDS ${SLANG_SHADERS} ${SHADER_SCRIPT}
+    COMMENT "Compiling Slang shaders..."
+)
+
+add_custom_target(compile_shaders ALL
+    DEPENDS ${SHADER_STAMP}
+)
+
 # Always copy the assets folder after building
 add_custom_command(TARGET thermite-engine POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
