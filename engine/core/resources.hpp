@@ -37,8 +37,6 @@ class Resources {
         return resource;
     }
 
-
-
    private:
     std::unordered_map<IO::FileLocation, std::shared_ptr<Resource>, IO::FileLocationHash> resources;
 };
