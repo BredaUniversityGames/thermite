@@ -32,14 +32,6 @@ add_subdirectory(entt)
 # https://github.com/mxcop/graphite
 add_subdirectory(graphite)
 
-# tinygltf - header only gltf loading
-# https://github.com/syoyo/tinygltf
-set(TINYGLTF_INSTALL OFF CACHE BOOL "" FORCE)
-set(TINYGLTF_INSTALL_VENDOR OFF CACHE BOOL "" FORCE)
-set(TINYGLTF_HEADER_ONLY OFF CACHE BOOL "" FORCE)
-set(TINYGLTF_BUILD_LOADER_EXAMPLE OFF CACHE BOOL "" FORCE)
-add_subdirectory(tinygltf)
-
 # visit_struct - struct reflection
 # https://github.com/cbeck88/visit_struct
 add_library(visit_struct INTERFACE)
@@ -85,5 +77,4 @@ target_link_libraries(thermite-engine
 	SDL3::SDL3-static
     visit_struct
     nlohmann_json::nlohmann_json
-    tinygltf
 )
