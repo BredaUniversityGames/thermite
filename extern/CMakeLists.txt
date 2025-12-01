@@ -28,6 +28,18 @@ add_subdirectory(glm)
 # https://github.com/skypjack/entt
 add_subdirectory(entt)
 
+# graphite - render graph library
+# https://github.com/mxcop/graphite
+add_subdirectory(graphite)
+
+# tinygltf - header only gltf loading
+# https://github.com/syoyo/tinygltf
+set(TINYGLTF_BUILD_LOADER_EXAMPLE OFF CACHE BOOL "" FORCE)
+set(TINYGLTF_INSTALL OFF CACHE BOOL "" FORCE)
+set(TINYGLTF_INSTALL_VENDOR OFF CACHE BOOL "" FORCE)
+set(TINYGLTF_HEADER_ONLY ON CACHE BOOL "" FORCE)
+add_subdirectory(tinygltf)
+
 # visit_struct - struct reflection
 # https://github.com/cbeck88/visit_struct
 add_library(visit_struct INTERFACE)
@@ -39,6 +51,23 @@ target_include_directories(visit_struct
 # nlohmann json - json parsing
 # https://github.com/nlohmann/json
 add_subdirectory(nlohmann_json)
+
+# ImGUI - immediate mode gui
+# https://github.com/ocornut/imgui
+target_sources(thermite-engine
+    PRIVATE "./imgui/imgui_demo.cpp"
+    PRIVATE "./imgui/imgui_draw.cpp"
+    PRIVATE "./imgui/imgui_tables.cpp"
+    PRIVATE "./imgui/imgui_widgets.cpp"
+    PRIVATE "./imgui/imgui.cpp"
+    PRIVATE "./imgui/backends/imgui_impl_sdl3.cpp"
+    PRIVATE "./imgui/backends/imgui_impl_vulkan.cpp"
+    PRIVATE "./imgui/backends/imgui_impl_win32.cpp"
+)
+target_include_directories(thermite-engine
+    PRIVATE "./imgui"
+    PRIVATE "./imgui/backends"
+)
 
 # Link libraries publicly
 target_link_libraries(thermite-engine
@@ -52,6 +81,8 @@ target_link_libraries(thermite-engine
 target_link_libraries(thermite-engine 
 	PRIVATE
 	SDL3::SDL3-static
+    graphite
     visit_struct
     nlohmann_json::nlohmann_json
+    tinygltf
 )
