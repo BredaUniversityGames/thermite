@@ -7,7 +7,6 @@ namespace tmt {
 const char* IO::path_str[3] = {"assets/game/", "assets/engine/", "assets/editor/"};
 
 bool IO::write_file(const FileLocation& file_location, const char* data, size_t size) {
-
     std::filesystem::path absolute = GetAbsolutePath(file_location.sub_location, file_location.relative_path);
 
     if (!create_directories(absolute)) return false;
@@ -77,8 +76,7 @@ std::vector<char> IO::read_file(const FileLocation& file_location) {
     return data;
 }
 
-std::string IO::read_text_file(const FileLocation& file_location) 
-{
+std::string IO::read_text_file(const FileLocation& file_location) {
     std::filesystem::path absolute = GetAbsolutePath(file_location.sub_location, file_location.relative_path);
 
     std::string data;
@@ -107,7 +105,7 @@ std::string IO::read_text_file(const FileLocation& file_location)
     return data;
 }
 
-std::filesystem::path IO::GetAbsolutePath(Location sub_cat, const std::filesystem::path& relative_path) {
+std::filesystem::path IO::get_absolute_path(Location sub_cat, const std::filesystem::path& relative_path) {
     auto sub_path = std::filesystem::path(path_str[static_cast<uint8_t>(sub_cat)]);
 
     std::filesystem::path relative = relative_path.lexically_normal();

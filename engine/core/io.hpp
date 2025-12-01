@@ -25,7 +25,7 @@ class IO {
             std::size_t h2 = std::hash<std::filesystem::path> {}(fl.relative_path);
 
             // https://www.reddit.com/r/cpp/comments/1225m8g/why_is_there_no_standard_library_way_to_combine/
-            return h1 ^ (h2 + 0x9e3779b9ull  + (h1 << 6) + (h1 >> 2));
+            return h1 ^ (h2 + 0x9e3779b9ull + (h1 << 6) + (h1 >> 2));
         }
     };
 
@@ -44,7 +44,7 @@ class IO {
    private:
     static const char* path_str[3];
 
-    static std::filesystem::path GetAbsolutePath(Location sub_cat, const std::filesystem::path& relative_path);
+    static std::filesystem::path get_absolute_path(Location sub_cat, const std::filesystem::path& relative_path);
 
     static bool stream_open(std::fstream& file_stream, const std::filesystem::path& absolute, std::ios::openmode open_mode);
     static bool create_directories(const std::filesystem::path& absolute);

@@ -5,6 +5,7 @@ namespace tmt {
 class Resource {
    protected:
     Resource(const IO::FileLocation& file_location);
+
    public:
     virtual ~Resource() = default;
 
