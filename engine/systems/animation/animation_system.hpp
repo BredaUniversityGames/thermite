@@ -90,9 +90,7 @@ class RigController {
     std::map<std::string, AnimationState> states = {{"Start", AnimationState {}}};
     std::vector<Transition> transitions;
 
-#ifdef KUDZU_INSPECTOR
     ImNodesEditorContext* editor_context = nullptr;
-#endif
    private:
     std::string current_state = "Start";
 
@@ -111,16 +109,17 @@ class RigModelManager : public ISystem/*, public IPanel, public IKeyboardListene
     //RigModelManager();
     //~RigModelManager() {};
 
+    std::string get_name() override;
+
     void on_start() override;
     void on_update(const FrameData& time) override;
     void on_end() override;
     //void on_key_event(KeyboardEvent& event) override;
 
-#ifdef KUDZU_INSPECTOR
-    void list_animations(const RigModel& model);
-    void list_parameters(RigController& controller);
+    //void list_animations(const RigModel& model);
+    //void list_parameters(RigController& controller);
 
-    void draw_transitions(const RigController& controller);
+    /*void draw_transitions(const RigController& controller);
     void draw_transition(ImVec2 start, ImVec2 middle, int transition_index) const;
     void draw_transition_select(ImVec2 middle, int transition_index, ImVec2 clickable_size = ImVec2 {25.0f, 25.0f});
 
@@ -143,9 +142,7 @@ class RigModelManager : public ISystem/*, public IPanel, public IKeyboardListene
 
     void OnPanel() override;
     std::string GetName() const override { return "Rig state controller"; }
-    std::string GetIcon() const override { return ICON_MD_STATE_MACHINE; }
-
-#endif
+    std::string GetIcon() const override { return ICON_MD_STATE_MACHINE; }*/
 };
 }  // namespace tmt
 

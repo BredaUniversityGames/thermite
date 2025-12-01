@@ -42,7 +42,6 @@ void RigModel::init(const IO::FileLocation& directory, Entity p) {
     data = engine.resources.load_resource<RigData>(directory);
 
     file_directory = directory;
-    rig_path = filename;
 
     name = data->name;
 
@@ -53,14 +52,15 @@ void RigModel::init(const IO::FileLocation& directory, Entity p) {
     auto it = data->bones[0].animations.begin();
     current_animation = it->first;
 
-    auto& comp = Engine.ecs().get_component<Transform>(p);
-    comp.Name = name;
-    auto trans = comp.GetTranslation();
-    comp.SetTranslation({trans.x, trans.y, trans.z});
+    auto& comp = engine.ecs.get_component<Transform>(p);
+    auto& name_comp = engine.ecs.get_component<Name>(p);
+    name_comp.name = name;
+    auto trans = comp.get_world_position();
+    comp.set_world_position({trans.x, trans.y, trans.z});
 }
 
 RigModel::RigModel(const IO::FileLocation& directory, Entity p) {
-    init(directory, filename, p);
+    init(directory, p);
 }
 
 //void tmt::RigModel::attach_voxel_objects(const IO::FileLocation& directory) {
@@ -123,7 +123,7 @@ std::string tmt::RigModel::current_animation_playing() {
 void RigModel::play_animation(const std::string& animation_name, float _transfer_time, bool loop_animation) {
     const auto& animations = data->bones[0].animations;
     if (animations.find(animation_name) == animations.end()) {
-        Log::warn("invalid animation name: " + animation_name);
+        Log::warn("invalid animation name: ", animation_name);
         
         return;
     }

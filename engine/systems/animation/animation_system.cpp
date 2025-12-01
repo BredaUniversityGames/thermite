@@ -213,6 +213,8 @@ bool RigController::check_transition_conditions(const Transition& transition) {
 
 //RigModelManager::RigModelManager() : System(Engine.ecs()) { IKeyboardListener::priority = 1; }
 
+std::string tmt::RigModelManager::get_name() { return "animation system"; }
+
 void tmt::RigModelManager::on_start() {}
 
 void RigModelManager::on_update(const FrameData& time) {
@@ -296,17 +298,13 @@ void RigModelManager::on_update(const FrameData& time) {
             const auto world_pos = glm::vec3(transform.get_world_matrix() * glm::vec4(0, 0, 0, 1.0f));
             const auto up_dir = glm::vec3(transform.get_world_matrix() * glm::vec4(0, 1, 0, 0));
 
-#ifdef KUDZU_INSPECTOR
-            Engine.debug_renderer().add_line(DebugCategory::GENERAL, world_pos, world_pos + up_dir, {1, 1, 1, 1});
-            Engine.debug_renderer().add_sphere(DebugCategory::GENERAL, world_pos, 0.1f, {1, 0, 0, 1});
-#endif  // KUDZU_INSPECTOR
+            //Engine.debug_renderer().add_line(DebugCategory::GENERAL, world_pos, world_pos + up_dir, {1, 1, 1, 1});
+            //Engine.debug_renderer().add_sphere(DebugCategory::GENERAL, world_pos, 0.1f, {1, 0, 0, 1});
         }
 
-#ifdef KUDZU_INSPECTOR
-        for (const Entity vox : rig.voxel_entities) {
-            Engine.debug_renderer().add_sphere(DebugCategory::GENERAL, Engine.ecs().get_component<Transform>(vox).GetTranslation(), 0.15f, {0, 0, 1, 1});
-        }
-#endif  // KUDZU_INSPECTOR
+        //for (const Entity vox : rig.voxel_entities) {
+            //Engine.debug_renderer().add_sphere(DebugCategory::GENERAL, Engine.ecs().get_component<Transform>(vox).GetTranslation(), 0.15f, {0, 0, 1, 1});
+        //}
 
         //Engine.profiler().EndSection("animation");
     }
@@ -314,8 +312,7 @@ void RigModelManager::on_update(const FrameData& time) {
 
 void tmt::RigModelManager::on_end() {}
 
-#ifdef KUDZU_INSPECTOR
-
+/*
 #include "editor/inspector.hpp"
 #include "editor/editor_colors.hpp"
 #include <imgui/imgui_stdlib.h>
@@ -1014,3 +1011,5 @@ void RigModelManager::on_key_event(KeyboardEvent&) {}
 #endif
 
 #pragma endregion
+
+*/

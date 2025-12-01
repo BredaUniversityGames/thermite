@@ -43,7 +43,7 @@ void Engine::init(const ApplicationSpecs& specs) {
     renderer.init();
 
     ecs.register_system<Physics>();
-    ecs.register_system<Animation>();
+    ecs.register_system<RigModelManager>();
 
     OnEngineInit::dispatch(specs);
 }
