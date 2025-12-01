@@ -4,9 +4,11 @@
 #include "engine.hpp"
 #include "core/ecs.hpp"
 #include "core/components/transform.hpp"
+#include "components/voxel_body.hpp"
 
 #include "tools/fmt_defines.hpp"
 #include "glm/gtx/norm.hpp"
+#include <glm/gtx/quaternion.hpp>
 
 namespace tmt {
 
@@ -16,45 +18,45 @@ void Physics::on_update(const FrameData&) {}
 
 void Physics::on_fixed_update(const FrameData&) {
     // Update Forces
-    for (const auto& [entity, rb, transform] : engine.ecs.get_registry().view<RigidBody, Transform>().each()) {
+    for (const auto& [entity, vb, transform] : engine.ecs.get_registry().view<VoxelBody, Transform>().each()) {
         // if (!transform.is_enabled()) continue;
 
         // Add stored forces
-        rb.velocity += rb.stored_velocity;
-        rb.stored_velocity = glm::vec3(0);
+        vb.velocity += vb.stored_velocity;
+        vb.stored_velocity = glm::vec3(0);
 
-        rb.angular_velocity += rb.stored_torque;
-        rb.stored_torque = glm::vec3(0);
+        vb.angular_velocity += vb.stored_torque;
+        vb.stored_torque = glm::vec3(0);
 
         // Add gravity
-        rb.velocity += glm::vec3(0, -1, 0) * rb.gravity * Engine::Config::FIXED_TIME_STEP;
+        vb.velocity += glm::vec3(0, -1, 0) * vb.gravity * Engine::Config::FIXED_TIME_STEP;
 
         // Add drag
-        rb.velocity *= std::max(0.0f, 1.0f - rb.linear_drag * Engine::Config::FIXED_TIME_STEP);
-        rb.angular_velocity *= std::max(0.0f, 1.0f - rb.angular_drag * Engine::Config::FIXED_TIME_STEP);
+        vb.velocity *= std::max(0.0f, 1.0f - vb.linear_drag * Engine::Config::FIXED_TIME_STEP);
+        vb.angular_velocity *= std::max(0.0f, 1.0f - vb.angular_drag * Engine::Config::FIXED_TIME_STEP);
 
-        if (rb.type == RigidBody::Static) continue;
-        if (rb.type == RigidBody::Sleeping) {
-            rb.velocity = glm::vec3(0);
-            rb.angular_velocity = glm::vec3(0);
+        if (vb.type == VoxelBody::Static) continue;
+        if (vb.type == VoxelBody::Sleeping) {
+            vb.velocity = glm::vec3(0);
+            vb.angular_velocity = glm::vec3(0);
             continue;
         }
 
         // Accumulate
-        float forces = (glm::length2(rb.velocity / Engine::Config::FIXED_TIME_STEP) + glm::length2(rb.angular_velocity / Engine::Config::FIXED_TIME_STEP));
+        float forces = (glm::length2(vb.velocity / Engine::Config::FIXED_TIME_STEP) + glm::length2(vb.angular_velocity / Engine::Config::FIXED_TIME_STEP));
         if (std::isnan(forces)) forces = 0;
-        rb.accumulated_forces = rb.accumulated_forces * 0.925f + forces * 0.075f;
+        vb.accumulated_forces = vb.accumulated_forces * 0.925f + forces * 0.075f;
 
         // practicly not moving
-        if (rb.accumulated_forces <= 150.0f && forces <= 150.0f)
-            rb.type = RigidBody::Wants_Sleep;
+        if (vb.accumulated_forces <= 150.0f && forces <= 150.0f)
+            vb.type = VoxelBody::Wants_Sleep;
         else
-            rb.type = RigidBody::Dynamic;
+            vb.type = VoxelBody::Dynamic;
     }
 
     // Detect Colllisions
     // Generate Contacts
-    const int numb_objects = (int)engine.ecs.get_registry().view<VoxelCollider, RigidBody, Transform>().size_hint();
+    const int numb_objects = (int)engine.ecs.get_registry().view<VoxelBody, Transform>().size_hint();
     generate_voxel_constraints_range(0, numb_objects);
 
     // Solve Velocities
@@ -74,21 +76,21 @@ void Physics::generate_voxel_constraints_range(const int index, const int size) 
     // auto& physics_layers = Engine.layers();
     const int min = index * size;
     const int max = (index + 1) * size;
-    auto vox_view = engine.ecs.get_registry().view<const VoxelCollider, RigidBody, Transform>();
+    auto vox_view = engine.ecs.get_registry().view<VoxelBody, Transform>();
 
     int curr = -1;
-    for (const auto& [entity, vox, rb, transform] : vox_view.each()) {
+    for (const auto& [entity, vb, transform] : vox_view.each()) {
         // if (!transform.is_enabled()) continue;
         curr++;
         if (curr < min || curr >= max) continue;
-        if (rb.type == RigidBody::Static || rb.type == RigidBody::Sleeping) continue;
-        for (const auto& [other_entity, other_vox, other_rb, other_transform] : vox_view.each()) {
+        if (vb.type == VoxelBody::Static || vb.type == VoxelBody::Sleeping) continue;
+        for (const auto& [other_entity, other_vb, other_transform] : vox_view.each()) {
             // if (!other_transform.is_enabled()) continue;
             if (entity == other_entity) continue;
 
             // if (!(physics_layers.collides_with_layer(layer, other_layer))) continue;
 
-            if (sat_early_out(rb, vox, other_rb, other_vox)) continue;
+            if (sat_early_out(vb, other_vb)) continue;
 
             Collision coll(entity, other_entity);
             coll.contacts.reserve(64);
@@ -97,31 +99,31 @@ void Physics::generate_voxel_constraints_range(const int index, const int size) 
             // A's local collision overlap
             glm::ivec3 min_a = {};
             glm::ivec3 max_a = {};
-            get_overlap(rb, vox, other_rb, other_vox, min_a, max_a);
+            get_overlap(vb, other_vb, min_a, max_a);
 
             for (size_t z = min_a.z; z < max_a.z; z++) {
                 for (size_t y = min_a.y; y < max_a.y; y++) {
                     for (size_t x = min_a.x; x < max_a.x; x++) {
                         if (coll.contacts.size() >= max_contacts) continue;
-                        check_neighbors(vox, other_vox, rb, other_rb, x, y, z, coll);
+                        check_neighbors(vb, other_vb, x, y, z, coll);
                     }
                 }
             }
 
             if (coll.contacts.size() <= 0) continue;
 
-            coll.normal = glm::normalize(other_rb.position - rb.position);
+            coll.normal = glm::normalize(other_vb.position - vb.position);
             solver.collisions.push_back(coll);
             // thread_collisions[index].push_back(coll);
         }
     }
 }
 
-bool Physics::sat_early_out(const RigidBody& rb_a, const VoxelCollider& vox_a, const RigidBody& rb_b, const VoxelCollider& vox_b) {
-    auto vert_a = vox_a.get_world_bounds(rb_a);
-    auto vert_b = vox_b.get_world_bounds(rb_b);
-    auto axes_a = vox_a.get_axes(rb_a);
-    auto axes_b = vox_b.get_axes(rb_b);
+bool Physics::sat_early_out(const VoxelBody& vb_a, const VoxelBody& vb_b) {
+    auto vert_a = vb_a.get_world_bounds();
+    auto vert_b = vb_b.get_world_bounds();
+    auto axes_a = vb_a.get_axes();
+    auto axes_b = vb_b.get_axes();
 
     // Check against all axes
     for (size_t i = 0; i < 3; i++) {
@@ -142,22 +144,22 @@ bool Physics::sat_early_out(const RigidBody& rb_a, const VoxelCollider& vox_a, c
     return false;
 }
 
-void Physics::get_overlap(const RigidBody& rb_a, const VoxelCollider& vox_a, const RigidBody& rb_b, const VoxelCollider& vox_b, glm::ivec3& min, glm::ivec3& max) {
-    const glm::vec3 local_half_a = vox_a.get_dimensions() * 0.5f;
+void Physics::get_overlap(const VoxelBody& vb_a, const VoxelBody& vb_b, glm::ivec3& min, glm::ivec3& max) {
+    const glm::vec3 local_half_a = glm::vec3(vb_a.width, vb_a.height, vb_a.depth) * 0.5f;
     // const auto local_bounds_a = vox_a.get_local_bounds();
-    const auto box_a = vox_a.get_world_bounds(rb_a);
-    const auto edges_a = vox_a.get_world_edges(rb_a);
+    const auto box_a = vb_a.get_world_bounds();
+    const auto edges_a = vb_a.get_world_edges();
 
-    const auto pos_a = rb_a.position;
-    const auto rot_a = rb_a.rotation;
+    const auto pos_a = vb_a.position;
+    const auto rot_a = vb_a.rotation;
 
-    const glm::vec3 local_half_b = vox_b.get_dimensions() * 0.5f;
+    const glm::vec3 local_half_b = glm::vec3(vb_b.width, vb_b.height, vb_b.depth) * 0.5f;
     // const auto local_bounds_b = vox_b.get_local_bounds();
-    const auto box_b = vox_b.get_world_bounds(rb_b);
-    const auto edges_b = vox_b.get_world_edges(rb_b);
+    const auto box_b = vb_b.get_world_bounds();
+    const auto edges_b = vb_b.get_world_edges();
 
-    const auto pos_b = rb_b.position;
-    const auto rot_b = rb_b.rotation;
+    const auto pos_b = vb_b.position;
+    const auto rot_b = vb_b.rotation;
 
     glm::vec3 t_min = glm::vec3(1e32f);
     glm::vec3 t_max = glm::vec3(-1e32f);
@@ -315,19 +317,17 @@ bool Physics::is_separated(const glm::vec3& axis, const Box& box_a, const Box& b
     return false;  // Not separated
 }
 
-void Physics::check_neighbors(
-    const VoxelCollider& vox_a, const VoxelCollider& vox_b, const RigidBody& rb_a, const RigidBody& rb_b, const size_t x, const size_t y, const size_t z, Collision& coll
-) const {
-    const PhysicsVoxel& voxel_a = vox_a.voxels.get_voxel(x, y, z);
+void Physics::check_neighbors(const VoxelBody& vb_a, const VoxelBody& vb_b, const size_t x, const size_t y, const size_t z, Collision& coll) const {
+    const PhysicsVoxel& voxel_a = vb_a.voxels.get_voxel(x, y, z);
     if (voxel_a.type == PhysicsVoxelType::Empty) return;
 
-    const glm::vec3 pos_a = rb_a.position;
-    const glm::vec3 half_scale_a = glm::vec3(vox_a.width, vox_a.height, vox_a.depth) * 0.5f;
-    const glm::quat rot_a = rb_a.rotation;
+    const glm::vec3 pos_a = vb_a.position;
+    const glm::vec3 half_scale_a = glm::vec3(vb_a.width, vb_a.height, vb_a.depth) * 0.5f;
+    const glm::quat rot_a = vb_a.rotation;
 
-    const glm::vec3 pos_b = rb_b.position;
-    const glm::vec3 half_scale_b = glm::vec3(vox_b.width, vox_b.height, vox_b.depth) * 0.5f;
-    const glm::quat rot_b = rb_b.rotation;
+    const glm::vec3 pos_b = vb_b.position;
+    const glm::vec3 half_scale_b = glm::vec3(vb_b.width, vb_b.height, vb_b.depth) * 0.5f;
+    const glm::quat rot_b = vb_b.rotation;
 
     // Transform the voxel from local voxel space A to world space
     glm::vec3 local_pos_a = {x, y, z};
@@ -347,10 +347,9 @@ void Physics::check_neighbors(
                 if (coll.contacts.size() >= max_contacts || added_contact) continue;
                 const glm::uvec3 coord(voxel_coord + glm::ivec3(x_b, y_b, z_b));
                 // Check if in range
-                if (!(coord.x >= 0 && coord.x < vox_b.voxels.get_size().x && coord.y >= 0 && coord.y < vox_b.voxels.get_size().y && coord.z >= 0 && coord.z < vox_b.voxels.get_size().z))
-                    continue;
+                if (!(coord.x >= 0 && coord.x < vb_b.voxels.get_size().x && coord.y >= 0 && coord.y < vb_b.voxels.get_size().y && coord.z >= 0 && coord.z < vb_b.voxels.get_size().z)) continue;
 
-                const PhysicsVoxel& voxel_b = vox_b.voxels.get_voxel(coord.x, coord.y, coord.z);
+                const PhysicsVoxel& voxel_b = vb_b.voxels.get_voxel(coord.x, coord.y, coord.z);
                 if (voxel_b.type == PhysicsVoxelType::Empty) continue;
 
                 if (voxel_a.type != PhysicsVoxelType::Corner && !(voxel_a.type == PhysicsVoxelType::Edge && voxel_b.type == PhysicsVoxelType::Edge)) continue;
@@ -402,19 +401,125 @@ void Physics::check_neighbors(
 }
 
 void Physics::apply_velocities() const {
-    for (const auto& [vox, rb, transform] : engine.ecs.get_registry().view<RigidBody, Transform>().each()) {
-        if (rb.type == RigidBody::Static) continue;
+    for (const auto& [vox, vb, transform] : engine.ecs.get_registry().view<VoxelBody, Transform>().each()) {
+        if (vb.type == VoxelBody::Static) continue;
 
-        rb.position += rb.velocity * Engine::Config::FIXED_TIME_STEP;
-        rb.center_of_mass += rb.velocity * Engine::Config::FIXED_TIME_STEP;
+        vb.position += vb.velocity * Engine::Config::FIXED_TIME_STEP;
+        vb.center_of_mass += vb.velocity * Engine::Config::FIXED_TIME_STEP;
 
-        float angle = glm::length(rb.angular_velocity) * Engine::Config::FIXED_TIME_STEP;
+        float angle = glm::length(vb.angular_velocity) * Engine::Config::FIXED_TIME_STEP;
         if (angle <= 0.0f) continue;
 
-        glm::vec3 axis = glm::normalize(rb.angular_velocity);
+        glm::vec3 axis = glm::normalize(vb.angular_velocity);
         glm::quat incremental_rot = glm::angleAxis(angle, axis);
-        rb.rotation = glm::normalize(incremental_rot * rb.rotation);
+        vb.rotation = glm::normalize(incremental_rot * vb.rotation);
     }
+}
+
+void Physics::initialize_voxel_rigidbody(Entity entity) {
+    // Get VoxelBody component
+    VoxelBody* vrb = engine.ecs.try_get_component<VoxelBody>(entity);
+    if (!vrb) {
+        Log::error("Failed to initialize VoxelBody: Entity does not have VoxelBody component");
+        return;
+    }
+
+    // Calculate mass and inertia
+    size_t filled_counter = 0;
+    glm::vec3 sum = {};
+    const glm::vec3 half_scale = glm::vec3(vrb->width, vrb->height, vrb->depth) * 0.5f;
+
+    for (size_t z = 0; z < vrb->voxels.get_size().z; z++) {
+        for (size_t y = 0; y < vrb->voxels.get_size().y; y++) {
+            for (size_t x = 0; x < vrb->voxels.get_size().x; x++) {
+                if (vrb->voxels.get_voxel(x, y, z).type == PhysicsVoxelType::Empty) continue;
+
+                filled_counter++;
+                sum += glm::vec3(x, y, z) * VOXEL_SIZE - half_scale + VOXEL_SIZE_HALF;
+            }
+        }
+    }
+
+    vrb->com_local_offset = sum / (float)filled_counter;
+    const float voxel_mass = std::powf(VOXEL_SIZE, 3) * vrb->density;
+    vrb->inv_mass = 1.0f / (voxel_mass * filled_counter);
+
+    glm::mat3 inertia_tensor(0.0f);
+    for (size_t z = 0; z < vrb->voxels.get_size().z; z++) {
+        for (size_t y = 0; y < vrb->voxels.get_size().y; y++) {
+            for (size_t x = 0; x < vrb->voxels.get_size().x; x++) {
+                if (vrb->voxels.get_voxel(x, y, z).type == PhysicsVoxelType::Empty) continue;
+
+                const glm::vec3 pos = glm::vec3(x, y, z) * VOXEL_SIZE - half_scale + VOXEL_SIZE_HALF;
+                const glm::vec3 r = pos - vrb->com_local_offset;
+                float r2 = glm::dot(r, r);
+
+                inertia_tensor[0][0] += voxel_mass * (r2 - r.x * r.x);
+                inertia_tensor[1][1] += voxel_mass * (r2 - r.y * r.y);
+                inertia_tensor[2][2] += voxel_mass * (r2 - r.z * r.z);
+                inertia_tensor[0][1] -= voxel_mass * r.x * r.y;
+                inertia_tensor[0][2] -= voxel_mass * r.x * r.z;
+                inertia_tensor[1][2] -= voxel_mass * r.y * r.z;
+            }
+        }
+    }
+
+    inertia_tensor[1][0] = inertia_tensor[0][1];
+    inertia_tensor[2][0] = inertia_tensor[0][2];
+    inertia_tensor[2][1] = inertia_tensor[1][2];
+
+    if (inertia_tensor[0][0] == 0) {
+        inertia_tensor[0][0] = 1;
+    }
+
+    if (inertia_tensor[1][1] == 0) {
+        inertia_tensor[1][1] = 1;
+    }
+
+    if (inertia_tensor[2][2] == 0) {
+        inertia_tensor[2][2] = 1;
+    }
+
+    vrb->inv_inertia = glm::inverse(inertia_tensor);
+}
+
+void Physics::add_force(Entity entity, const glm::vec3& force) {
+    // Get VoxelBody component
+    VoxelBody* vrb = engine.ecs.try_get_component<VoxelBody>(entity);
+    if (!vrb) {
+        Log::error("Failed to add force to a VoxelBody: Entity does not have VoxelBody component");
+        return;
+    }
+
+    vrb->stored_velocity += force;
+}
+
+void Physics::add_torque(Entity entity, const glm::vec3& torque) {
+    // Get VoxelBody component
+    VoxelBody* vrb = engine.ecs.try_get_component<VoxelBody>(entity);
+    if (!vrb) {
+        Log::error("Failed to add force to a VoxelBody: Entity does not have VoxelBody component");
+        return;
+    }
+
+    vrb->stored_torque += torque;
+}
+
+void Physics::add_force_at_position(Entity entity, const glm::vec3& force, const glm::vec3& p) {
+    // Get VoxelBody component
+    VoxelBody* vrb = engine.ecs.try_get_component<VoxelBody>(entity);
+    if (!vrb) {
+        Log::error("Failed to add force at position to a VoxelBody: Entity does not have VoxelBody component");
+        return;
+    }
+    const glm::vec3 r = p - vrb->position;
+    vrb->stored_velocity += force * vrb->inv_mass;
+
+    // Calculate and apply torque
+    const glm::vec3 torque = glm::cross(r, force);
+    const glm::mat3 ro = glm::toMat3(vrb->rotation);
+    const glm::mat3 inv_inertia_world = ro * vrb->inv_inertia * glm::transpose(ro);
+    vrb->stored_torque += inv_inertia_world * torque;
 }
 
 }  // namespace tmt

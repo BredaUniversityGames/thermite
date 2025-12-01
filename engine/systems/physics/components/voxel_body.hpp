@@ -1,9 +1,15 @@
 #pragma once
 #include "glm/gtc/quaternion.hpp"
+#include "engine/systems/physics/physics_voxel_data.hpp"
 
 namespace tmt {
 
-struct RigidBody {
+struct Box {
+    glm::vec3 vertex[8] {};
+};
+
+struct VoxelBody {
+    // RigidBody properties
     float accumulated_forces = 1000.0f;
     glm::vec3 stored_velocity = glm::vec3(0);
     glm::vec3 stored_torque = glm::vec3(0);
@@ -33,6 +39,18 @@ struct RigidBody {
     };
 
     Type type = Dynamic;
+
+    // Collider properties
+    float width = 1.0f;
+    float height = 1.0f;
+    float depth = 1.0f;
+
+    PhysicsVoxelData voxels = {};
+
+    tmt::Box get_local_bounds() const;
+    tmt::Box get_world_bounds() const;
+    std::array<glm::vec3, 3> get_axes() const;
+    std::array<std::pair<glm::vec3, glm::vec3>, 12> get_world_edges() const;
 };
 
 }  // namespace tmt
