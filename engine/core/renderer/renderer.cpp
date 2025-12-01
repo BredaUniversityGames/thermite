@@ -15,12 +15,14 @@
 #include "engine/engine.hpp"
 
 #include "pipelines/debug_pipeline.hpp"
+#include "pipelines/geometry_pipeline.hpp"
 
 namespace tmt {
 
-Renderer::Renderer() : gpu(*new GPUAdapter()), render_graph(*new RenderGraph()), debug_pipeline(*new DebugPipeline()) {}
+Renderer::Renderer() : gpu(*new GPUAdapter()), render_graph(*new RenderGraph()), debug_pipeline(*new DebugPipeline()), geometry_pipeline(*new GeometryPipeline()) {}
 
 Renderer::~Renderer() {
+    delete &geometry_pipeline;
     delete &debug_pipeline;
     delete &render_graph;
     delete &gpu;
@@ -77,8 +79,17 @@ void Renderer::init() {
         return;
     }
 
-    /* Initialize Pipelines */
+    /* Create the active render view buffer */
+    if (const Result r = bank.create_buffer(BufferUsage::Constant | BufferUsage::TransferDst, sizeof(RenderView)); r.is_err()) {
+        Log::error(Log::Scope::RENDERER, "failed to create render view buffer.\nreason: {}", r.unwrap_err().c_str());
+        return;
+    } else {
+        render_view_buffer = r.unwrap();
+    }
+
+    /* Initialize pipelines */
     debug_pipeline.init(gpu);
+    geometry_pipeline.init(gpu);
 }
 
 static bool is_init = false;
@@ -125,24 +136,19 @@ void Renderer::update() {
 
     render_graph.new_graph().unwrap();
 
-    /* clang-format off */
+    /* Update the active render view */
+    render_view.world_to_view = glm::mat4x4(1.0f);
+    render_view.origin = glm::vec3(0.0f);
+    render_view.focal_length = 0.1f;
+    render_view.sensor_size = glm::vec2(0.1f, 0.1f);
+    render_graph.upload_buffer(render_view_buffer, &render_view, 0u, sizeof(RenderView));
 
-    /* Test Rasterisation Pass */
-    RasterNode& graphics_pass = render_graph.add_raster_pass("graphics pass", "test.vx", "test.px")
-        .topology(Topology::TriangleList)
-        .attribute(AttrFormat::XYZ32_SFloat)  // Position
-        .load_op(LoadOp::Clear)
-        .attach(render_target)
-        .raster_extent(engine.window.width, engine.window.height);
-    graphics_pass.draw(vertex_buffer, 3);
-
-    /* Pipelines Enqueue */
+    /* Pipelines enqueue */
+    geometry_pipeline.enqueue(render_graph);
     debug_pipeline.enqueue(render_graph);
 
     /* Add the immediate mode GUI to the render graph */
     render_graph.add_imgui(imgui, render_target);
-
-    /* clang-format on */
 
     /* Compile the render graph */
     if (const Result r = render_graph.end_graph(); r.is_err()) {
@@ -156,11 +162,13 @@ void Renderer::update() {
 
 void Renderer::end() {
     VRAMBank& bank = gpu.get_vram_bank();
+    bank.destroy(render_view_buffer);
     bank.destroy(render_target);
     bank.destroy(vertex_buffer);
 
-    /* Pipelines Cleanup */
+    /* Pipelines cleanup */
     debug_pipeline.deinit(gpu);
+    geometry_pipeline.deinit(gpu);
 
     /* Cleanup the VRAM bank & GPU adapter */
     render_graph.deinit().expect("failed to destroy render graph.");

@@ -4,4 +4,6 @@ slangc test.slang -profile ps_6_0 -target spirv -o test-frag.spv -entry fragment
 slangc debug-line.slang -profile vs_6_0 -target spirv -o debug-line-vert.spv -entry vertex_entry
 slangc debug-line.slang -profile ps_6_0 -target spirv -o debug-line-frag.spv -entry fragment_entry
 
+slangc geometry.cs.slang -profile cs_6_0 -target spirv -o geometry.cs.spv -entry main
+
 pause
