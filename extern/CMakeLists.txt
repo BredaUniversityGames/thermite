@@ -34,10 +34,10 @@ add_subdirectory(graphite)
 
 # tinygltf - header only gltf loading
 # https://github.com/syoyo/tinygltf
-set(TINYGLTF_BUILD_LOADER_EXAMPLE OFF CACHE BOOL "" FORCE)
 set(TINYGLTF_INSTALL OFF CACHE BOOL "" FORCE)
 set(TINYGLTF_INSTALL_VENDOR OFF CACHE BOOL "" FORCE)
-set(TINYGLTF_HEADER_ONLY ON CACHE BOOL "" FORCE)
+set(TINYGLTF_HEADER_ONLY OFF CACHE BOOL "" FORCE)
+set(TINYGLTF_BUILD_LOADER_EXAMPLE OFF CACHE BOOL "" FORCE)
 add_subdirectory(tinygltf)
 
 # visit_struct - struct reflection
@@ -68,6 +68,7 @@ target_include_directories(thermite-engine
     PRIVATE "./imgui"
     PRIVATE "./imgui/backends"
 )
+
 
 # Link libraries publicly
 target_link_libraries(thermite-engine
