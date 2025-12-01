@@ -120,7 +120,7 @@ inline glm::vec3 mirror_pos(const glm::vec3 pos, const glm::vec3 dir) {
 }
 
 /* Count number of set bits in variable range [0..width] */
-inline uint32_t popcnt_var64(uint64_t mask, uint32_t width) { return __popcnt64(mask & ((1ull << width) - 1)); }
+inline uint32_t popcnt_var64(uint64_t mask, uint32_t width) { return (uint32_t)__popcnt64(mask & ((1ull << width) - 1)); }
 
 /* Ray AABB intersection function. */
 inline float intersect_aabb(const Ray ray, const glm::vec3 box_min, const glm::vec3 box_max) {
@@ -143,7 +143,7 @@ uint64_t Svt64::wasted_memory() const { return wasted_count; }
 VoxelHit Svt64::trace(const Ray& ray) const {
     /* Traversal state */
     uint32_t stack[11] {};
-    int scale_exp = 21; /* 23 mantissa bits - 2 */
+    int scale_exp = 21;       /* 23 mantissa bits - 2 */
     uint32_t node_index = 0u; /* root node */
     Node node = nodes[node_index];
 
@@ -337,39 +337,6 @@ void Svt64::defrag() {
     /* Traverse the tree top down, move all child nodes/voxels into new lists */
     node_count = 1u;
     voxel_count = wasted_count = 0u;
-    defrag_recurse(0u, 0u, new_nodes, new_voxels);
-
-    delete[] nodes;
-    nodes = new_nodes;
-    delete[] voxels;
-    voxels = new_voxels;
-}
-
-void Svt64::defrag_recurse(uint32_t old_index, uint32_t new_index, Node* new_nodes, MaterialIndex* new_voxels) {
-#if 0 /* Recursive */
-	const Node& old_node = nodes[old_index];
-	Node& new_node = new_nodes[new_index];
-	const uint32_t child_count = popcnt_var64(old_node.child_mask, 64u);
-	const uint32_t child_ptr = old_node.abs_ptr();
-
-	/* Defrag leaf node */
-	if (old_node.is_leaf()) {
-		new_node = Node(true, voxel_count, old_node.child_mask);
-		memcpy(new_voxels + voxel_count, voxels + child_ptr, child_count * sizeof(MaterialIndex));
-		voxel_count += child_count;
-		return;
-	}
-
-	/* Defrag node */
-	new_node = Node(false, node_count, old_node.child_mask);
-	memcpy(new_nodes + node_count, nodes + child_ptr, child_count * sizeof(Node));
-	node_count += child_count;
-
-	/* Recurse into child nodes */
-	for (uint32_t i = 0u; i < child_count; ++i) {
-		defrag_recurse(child_ptr + i, new_node.abs_ptr() + i, new_nodes, new_voxels);
-	}
-#else /* Non-recursive */
     uint32_t old_stack[128] {};
     uint32_t new_stack[128] {};
     uint32_t stack_ptr = 0u;
@@ -408,7 +375,11 @@ void Svt64::defrag_recurse(uint32_t old_index, uint32_t new_index, Node* new_nod
         old_node_index = old_stack[--stack_ptr];
         new_node_index = new_stack[stack_ptr];
     }
-#endif
+
+    delete[] nodes;
+    nodes = new_nodes;
+    delete[] voxels;
+    voxels = new_voxels;
 }
 
 Svt64::~Svt64() {

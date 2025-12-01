@@ -69,8 +69,6 @@ class Svt64 {
     /* Defragment the Tree. */
     void defrag();
 
-    void defrag_recurse(uint32_t old_index, uint32_t new_index, Node* new_nodes, uint8_t* new_voxels);
-
     /* Get the current memory usage of the 64tree. */
     uint64_t memory_usage() const;
     /* Get the current wasted memory of the 64tree. */
