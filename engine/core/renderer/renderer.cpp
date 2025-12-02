@@ -116,7 +116,7 @@ void Renderer::update() {
     /* Iterate over all cameras to find an active one to use as render view */
     static float rotation = 0.0f;
     rotation += 0.01f;
-    for(auto &&[entity, camera, transform] : group.each()) {
+    for (auto&& [entity, camera, transform] : group.each()) {
         if (camera.active == true) {
             const glm::mat4 p = glm::perspectiveLH(glm::radians(camera.fov), aspect_ratio, 0.05f, 1000.0f);
             const glm::mat4 v = glm::inverse(transform.get_world_matrix());

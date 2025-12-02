@@ -38,7 +38,7 @@ void GeometryPipeline::enqueue(RenderGraph& render_graph, Buffer render_view, Re
     objects.reserve(min(group.size(), (size_t)MAX_VOXEL_OBJECTS));
 
     /* Iterate over all voxel renderers */
-    for(auto &&[entity, renderer, transform] : group.each()) {
+    for (auto&& [entity, renderer, transform] : group.each()) {
         /* Convert the entity to a voxel object */
         VoxelObject object {};
         object.world_to_local = glm::inverse(transform.get_world_matrix());
