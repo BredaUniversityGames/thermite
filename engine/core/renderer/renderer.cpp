@@ -140,11 +140,12 @@ void Renderer::update() {
     render_view.world_to_view = glm::mat4x4(1.0f);
     render_view.origin = glm::vec3(0.0f);
     render_view.focal_length = 0.1f;
-    render_view.sensor_size = glm::vec2(0.1f, 0.1f);
+    render_view.resolution = glm::uvec2(engine.window.width, engine.window.height);
+    render_view.sensor_size = 0.1f;
     render_graph.upload_buffer(render_view_buffer, &render_view, 0u, sizeof(RenderView));
 
     /* Pipelines enqueue */
-    geometry_pipeline.enqueue(render_graph);
+    geometry_pipeline.enqueue(render_graph, render_view_buffer);
     debug_pipeline.enqueue(render_graph);
 
     /* Add the immediate mode GUI to the render graph */

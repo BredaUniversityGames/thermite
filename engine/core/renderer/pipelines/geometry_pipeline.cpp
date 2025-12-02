@@ -29,7 +29,7 @@ void GeometryPipeline::init(GPUAdapter& gpu) {
     }
 }
 
-void GeometryPipeline::enqueue(RenderGraph& render_graph) {
+void GeometryPipeline::enqueue(RenderGraph& render_graph, Buffer render_view) {
     /* Capture all voxel renderers in the scene */
     const entt::basic_group group = engine.ecs.get_registry().group<const VoxelRenderer>(entt::get<Transform>);
 
@@ -52,6 +52,7 @@ void GeometryPipeline::enqueue(RenderGraph& render_graph) {
 
     /* Enqueue the geometry compute pass */
     render_graph.add_compute_pass("geometry pass", "geometry.cs")
+        .read(render_view)
         .read(object_buffer)
         .group_size(16, 8)
         .work_size(engine.window.width, engine.window.height);

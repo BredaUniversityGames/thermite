@@ -1,4 +1,5 @@
-static const float BIG_F32 = 1e30;
+import view;
+import math;
 
 /* Ray AABB intersection function. *(returns BIG_F32 if the ray misses the AABB)* */
 inline void intersect_aabb(float3 ro, float3 rrd, float3 bmin, float3 bmax, out float hit_t) {
@@ -16,11 +17,21 @@ struct VoxelObject {
     uint3 size;
 };
 
-/* Bindings */ 
+/* Bindings */
+ConstantBuffer<RenderView> render_view;
 StructuredBuffer<VoxelObject> object_buffer;
 
 [shader("compute")]
 [numthreads(16, 8, 1)]
 void main(int2 thread_id: SV_DispatchThreadID) {
+    /* Generate a ray for our render view */
+    const Ray ray = pinhole_ray(render_view, thread_id);
 
+    float hit_t;
+    intersect_aabb(ray.origin, ray.rcp_dir, 0.0, 1.0, hit_t);
+    if (hit_t == BIG_F32) {
+        // ...
+    } else {
+        // ...
+    }
 }
