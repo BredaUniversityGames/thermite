@@ -23,7 +23,6 @@ class Input {
     void init();
     void update();
 
-
     bool is_keyboard_button_pressed(Key key) const;
 
     template <typename... Keys>
