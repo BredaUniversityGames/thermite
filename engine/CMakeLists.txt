@@ -32,16 +32,21 @@ set(SHADER_SOURCE_DIR ${CMAKE_SOURCE_DIR}/engine/assets/shaders)
 # Where compiled SPIR-V should go
 set(SHADER_OUTPUT_DIR ${CMAKE_SOURCE_DIR}/engine/assets/shaders)
 
-# Gather all shader files so CMake knows when to re-run
-file(GLOB_RECURSE SLANG_SHADERS
-    ${SHADER_SOURCE_DIR}/*.slang
-)
-
 # Script path
 set(SHADER_SCRIPT ${CMAKE_SOURCE_DIR}/scripts/compile_shaders.py)
 
+add_custom_target(shaders ALL
+    COMMAND ${CMAKE_COMMAND} -E echo ""
+    COMMAND ${CMAKE_COMMAND} -E echo "Compiling Slang shaders..."
+    COMMAND ${CMAKE_COMMAND} -E echo ""
+    COMMAND ${Python3_EXECUTABLE} ${SHADER_SCRIPT}
+            ${SHADER_SOURCE_DIR}
+            ${SHADER_OUTPUT_DIR}
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+)
+
 add_custom_command(
-    TARGET thermite-engine POST_BUILD
+    TARGET thermite-engine PRE_BUILD
     COMMAND ${Python3_EXECUTABLE} ${SHADER_SCRIPT}
             ${SHADER_SOURCE_DIR}
             ${SHADER_OUTPUT_DIR}
@@ -50,11 +55,16 @@ add_custom_command(
 )
 
 # Always copy the assets folder after building
-add_custom_command(TARGET thermite-engine POST_BUILD
+add_custom_target(assets ALL
+    COMMAND ${CMAKE_COMMAND} -E echo ""
+    COMMAND ${CMAKE_COMMAND} -E echo "Copying assets to output directory..."
+    COMMAND ${CMAKE_COMMAND} -E echo ""
     COMMAND ${CMAKE_COMMAND} -E copy_directory
-            ${CMAKE_SOURCE_DIR}/engine/assets $<TARGET_FILE_DIR:thermite-engine>/assets
-    COMMENT "Copying assets to output directory"
+            ${CMAKE_SOURCE_DIR}/engine/assets
+            $<TARGET_FILE_DIR:thermite-engine>/assets
 )
+
+add_dependencies(thermite-engine shaders assets)
 
 # Add the precompiled header
 target_precompile_headers(thermite-engine PRIVATE "shared/pch.hpp")
