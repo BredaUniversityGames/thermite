@@ -22,7 +22,6 @@ target_include_directories(thermite-engine
     PUBLIC ${CMAKE_SOURCE_DIR}  
     PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
 )
-
 # Python interpreter
 find_package(Python3 REQUIRED)
 
@@ -52,16 +51,6 @@ add_custom_command(
             ${SHADER_OUTPUT_DIR}
     DEPENDS ${SLANG_SHADERS} ${SHADER_SCRIPT}
     COMMENT "Compiling Slang shaders..."
-)
-
-# Always copy the assets folder after building
-add_custom_target(assets ALL
-    COMMAND ${CMAKE_COMMAND} -E echo ""
-    COMMAND ${CMAKE_COMMAND} -E echo "Copying assets to output directory..."
-    COMMAND ${CMAKE_COMMAND} -E echo ""
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-            ${CMAKE_SOURCE_DIR}/engine/assets
-            $<TARGET_FILE_DIR:thermite-engine>/assets
 )
 
 add_dependencies(thermite-engine shaders assets)
