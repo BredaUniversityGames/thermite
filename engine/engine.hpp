@@ -18,7 +18,7 @@ class Engine {
     Engine(const Engine&) = delete;
     Engine& operator=(const Engine&) = delete;
 
-    void init(const ApplicationSpecs& specs);
+    void init(const ApplicationSpecs& specs, Application* user_app);
     void run();
     void end();
 
@@ -51,6 +51,12 @@ class Engine {
    private:
     Timer timer;
     uint64_t frame_count = 0;
+    Application* app;
+
+    void start_game();
+    void update_game(const FrameData& frame_data);
+    void fixed_update_game(const FrameData& frame_data);
+    void end_game();
 };
 
 /* Singleton */

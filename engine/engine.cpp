@@ -32,7 +32,8 @@ Engine::~Engine() {
     delete &window;
 }
 
-void Engine::init(const ApplicationSpecs& specs) {
+void Engine::init(const ApplicationSpecs& specs, Application* user_app) {
+    app = user_app;
     Log::init(specs.log_file.string());
     tmt::Log::info("No scope here!");
     tmt::Log::warn(Log::Scope::GAME, "Game scope here!");
@@ -51,32 +52,52 @@ void Engine::init(const ApplicationSpecs& specs) {
 // Example stuff
 void Engine::run() {
     timer.reset();
-    OnStart::dispatch();
+    start_game();
 
     float accumulator = 0.0f;
     while (window.is_running) {
         window.update();
         renderer.update();
+
         const FrameData frame_data = {.delta_time = timer.tick()};
 
         /* Update */
-        OnUpdate::dispatch(frame_data);
+        update_game(frame_data);
 
         accumulator += frame_data.delta_time;
         while (accumulator >= Config::FIXED_TIME_STEP) {
             accumulator -= Config::FIXED_TIME_STEP;
 
             /* Fixed Update */
-            OnFixedUpdate::dispatch(frame_data);
+            fixed_update_game(frame_data);
         }
 
         OnEndFrame::dispatch();
         frame_count++;
     }
-
-    OnEnd::dispatch();
+    end_game();
 }
 
 void Engine::end() { OnEngineEnd::dispatch(); }
+
+void Engine::start_game() {
+    app->on_start();
+    OnGameStart::dispatch();
+}
+
+void Engine::update_game(const FrameData& frame_data) {
+    app->on_update(frame_data);
+    OnGameUpdate::dispatch(frame_data);
+}
+
+void Engine::fixed_update_game(const FrameData& frame_data) {
+    app->on_fixed_update(frame_data);
+    OnGameFixedUpdate::dispatch(frame_data);
+}
+
+void Engine::end_game() {
+    app->on_end();
+    OnGameEnd::dispatch();
+}
 
 }  // namespace tmt
