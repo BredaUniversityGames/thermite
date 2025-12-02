@@ -8,7 +8,6 @@
 //#define TINYGLTF_IMPLEMENTATION
 //#define TINYGLTF_NO_INCLUDE_JSON
 
-#include "tiny_gltf.h"
 #include <unordered_map>
 
 #include "engine/core/resource.hpp"
