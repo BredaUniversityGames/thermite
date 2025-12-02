@@ -12,14 +12,33 @@ inline void intersect_aabb(float3 ro, float3 rrd, float3 bmin, float3 bmax, out 
     hit_t = t_near > t_far ? BIG_F32 : t_near;
 }
 
+/* Represents a renderable voxel object. */
 struct VoxelObject {
     float4x4 world_to_local;
     uint3 size;
 };
 
-/* Bindings */
+inline void intersect_voxel_object(Ray ray, VoxelObject object, out float hit_t) {
+    /* Transform the ray into the object local-space */
+    const float3 local_origin = mul(object.world_to_local, float4(ray.origin, 1.0f)).xyz;
+    const float3 local_rcp_dir = 1.0f / normalize(mul(object.world_to_local, float4(ray.dir, 0.0f)).xyz);
+
+    /* Intersect the object AABB in local-space */
+    const float3 half_extent = float3(object.size) * UNITS_PER_VOXEL * 0.5f;
+    const float3 t_to_min = (-half_extent - local_origin) * local_rcp_dir;
+    const float3 t_to_max = (half_extent - local_origin) * local_rcp_dir;
+    const float3 t_min = min(t_to_min, t_to_max);
+    const float3 t_max = max(t_to_min, t_to_max);
+    const float t_near = max(max(max(t_min.x, t_min.y), t_min.z), 0.0f);
+    const float t_far = min(min(t_max.x, t_max.y), t_max.z);
+    hit_t = t_near > t_far ? BIG_F32 : t_near;
+}
+
+/* Active render view. */
 ConstantBuffer<RenderView> render_view;
+/* Voxel object buffer. */
 StructuredBuffer<VoxelObject> object_buffer;
+/* Render target. */
 RWTexture2D<float4> render_target;
 
 [shader("compute")]
@@ -33,10 +52,10 @@ void main(int2 thread_id: SV_DispatchThreadID) {
     // render_target[thread_id] = float4(world_dir * 0.5 + 0.5, 1.0);
 
     float hit_t;
-    intersect_aabb(ray.origin, ray.rcp_dir, 0.0, 1.0, hit_t);
+    intersect_voxel_object(ray, object_buffer[0], hit_t);
     if (hit_t == BIG_F32) {
-        render_target[thread_id] = float4(0.0, 0.0, 0.0, 1.0);
+        render_target[thread_id] = float4(0.0f, 0.0f, 0.0f, 1.0f);
     } else {
-        render_target[thread_id] = float4(1.0 - (hit_t * 0.25).xxx, 1.0);
+        render_target[thread_id] = float4(1.0f - (hit_t * 0.25f).xxx, 1.0f);
     }
 }

@@ -43,6 +43,7 @@ void GeometryPipeline::enqueue(RenderGraph& render_graph, Buffer render_view, Re
         VoxelObject object {};
         object.world_to_local = glm::inverse(transform.get_world_matrix());
         object.size = renderer.size;
+        objects.push_back(std::move(object));
     }
 
     /* Update objects buffer */
