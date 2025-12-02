@@ -277,7 +277,7 @@ void Transform::calculate_world_matrix() const {
         const glm::mat4 rotation = glm::toMat4(local_rotation);
         const glm::mat4 scale = glm::scale(glm::identity<glm::mat4>(), local_scale);
 
-        world_matrix = scale * rotation * translation;
+        world_matrix = translation * rotation * scale;
 
         if (parent != entt::null) {
             auto& parent_transform = engine.ecs.get_component<Transform>(parent);

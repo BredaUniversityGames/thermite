@@ -41,7 +41,8 @@ void GeometryPipeline::enqueue(RenderGraph& render_graph, Buffer render_view, Re
     for (auto&& [entity, renderer, transform] : group.each()) {
         /* Convert the entity to a voxel object */
         VoxelObject object {};
-        object.world_to_local = glm::inverse(transform.get_world_matrix());
+        object.local_to_world = transform.get_world_matrix();
+        object.world_to_local = glm::inverse(object.local_to_world);
         object.size = renderer.size;
         objects.push_back(std::move(object));
     }
