@@ -37,8 +37,8 @@ Engine::~Engine() {
     delete &input;
 }
 
-void Engine::init(const ApplicationSpecs& specs, Application* user_app) {
-    app = user_app;
+void Engine::init(const ApplicationSpecs& specs, std::unique_ptr<Application> user_app) {
+    app = std::move(user_app);
     Log::init(specs.log_file.string());
 
     input.init();

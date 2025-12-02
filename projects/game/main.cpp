@@ -10,7 +10,7 @@ class Game : public tmt::Application {
     void on_end() override;
 };
 
-tmt::Application* create_application(const tmt::CommandLineArgs& args) {
+std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs& args) {
     // clang-format off
     tmt::ApplicationSpecs specs {
         .name = "Example Game",
@@ -19,7 +19,7 @@ tmt::Application* create_application(const tmt::CommandLineArgs& args) {
     };
     // clang-format on
 
-    return new Game(specs);
+    return std::make_unique<Game>(specs);
 }
 
 void Game::on_start() {}
