@@ -40,6 +40,9 @@ struct VoxelBody {
 
     Type type = Dynamic;
 
+    const float get_inv_mass() const;
+    const glm::mat3 get_inv_world_inertia() const;
+
     // Collider properties
     float width = 1.0f;
     float height = 1.0f;
@@ -47,10 +50,10 @@ struct VoxelBody {
 
     PhysicsVoxelData voxels = {};
 
-    tmt::Box get_local_bounds() const;
-    tmt::Box get_world_bounds() const;
-    std::array<glm::vec3, 3> get_axes() const;
-    std::array<std::pair<glm::vec3, glm::vec3>, 12> get_world_edges() const;
+    const tmt::Box get_local_bounds() const;
+    const tmt::Box get_world_bounds() const;
+    const std::array<glm::vec3, 3> get_axes() const;
+    const std::array<std::pair<glm::vec3, glm::vec3>, 12> get_world_edges() const;
 };
 
 }  // namespace tmt

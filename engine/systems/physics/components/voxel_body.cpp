@@ -1,7 +1,19 @@
 #include "voxel_body.hpp"
+#include <glm/gtx/quaternion.hpp>
 #include <array>
 
-tmt::Box tmt::VoxelBody::get_local_bounds() const {
+const float tmt::VoxelBody::get_inv_mass() const {
+    return type != Dynamic ? 0 : inv_mass;
+}
+
+const glm::mat3 tmt::VoxelBody::get_inv_world_inertia() const {
+    if (type != Dynamic) return glm::mat3(0);
+
+    const glm::mat3 r = glm::toMat3(rotation);
+    return r * inv_inertia * glm::transpose(r);
+}
+
+const tmt::Box tmt::VoxelBody::get_local_bounds() const {
     // Define local corners of the box
     const float half_width = width / 2.0f;
     const float half_height = height / 2.0f;
@@ -19,7 +31,7 @@ tmt::Box tmt::VoxelBody::get_local_bounds() const {
     return box;
 }
 
-tmt::Box tmt::VoxelBody::get_world_bounds() const { 
+const tmt::Box tmt::VoxelBody::get_world_bounds() const { 
     tmt::Box box = get_local_bounds();
 
     // Transform vertices to world space
@@ -28,7 +40,7 @@ tmt::Box tmt::VoxelBody::get_world_bounds() const {
     return box;
 }
 
-std::array<glm::vec3, 3> tmt::VoxelBody::get_axes() const {
+const std::array<glm::vec3, 3> tmt::VoxelBody::get_axes() const {
     std::array<glm::vec3, 3> axes = {
         glm::vec3(1, 0, 0),
         glm::vec3(0, 1, 0),
@@ -40,7 +52,7 @@ std::array<glm::vec3, 3> tmt::VoxelBody::get_axes() const {
     return axes;
 }
 
-std::array<std::pair<glm::vec3, glm::vec3>, 12> tmt::VoxelBody::get_world_edges() const {
+const std::array<std::pair<glm::vec3, glm::vec3>, 12> tmt::VoxelBody::get_world_edges() const {
     auto box = get_world_bounds();
     return std::array<std::pair<glm::vec3, glm::vec3>, 12> {{
         // X axis edges

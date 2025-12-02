@@ -40,10 +40,10 @@ class Physics : public ISystem {
 
    public:
     // Static utility functions
-    static void initialize_voxel_rigidbody(Entity entity);
-    static void add_force(Entity entity, const glm::vec3& force);
-    static void add_torque(Entity entity, const glm::vec3& torque);
-    static void add_force_at_position(Entity entity, const glm::vec3& force, const glm::vec3& position);
+    static void initialize_voxel_body(VoxelBody& vb);
+    static void add_force(VoxelBody vb, const glm::vec3& force);
+    static void add_torque(VoxelBody vb, const glm::vec3& torque);
+    static void add_force_at_position(VoxelBody vb, const glm::vec3& force, const glm::vec3& position);
 };
 
 }  // namespace tmt

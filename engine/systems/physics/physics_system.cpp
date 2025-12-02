@@ -416,23 +416,16 @@ void Physics::apply_velocities() const {
     }
 }
 
-void Physics::initialize_voxel_rigidbody(Entity entity) {
-    // Get VoxelBody component
-    VoxelBody* vrb = engine.ecs.try_get_component<VoxelBody>(entity);
-    if (!vrb) {
-        Log::error("Failed to initialize VoxelBody: Entity does not have VoxelBody component");
-        return;
-    }
-
+void Physics::initialize_voxel_body(VoxelBody& vb) {
     // Calculate mass and inertia
     size_t filled_counter = 0;
     glm::vec3 sum = {};
-    const glm::vec3 half_scale = glm::vec3(vrb->width, vrb->height, vrb->depth) * 0.5f;
+    const glm::vec3 half_scale = glm::vec3(vb.width, vb.height, vb.depth) * 0.5f;
 
-    for (size_t z = 0; z < vrb->voxels.get_size().z; z++) {
-        for (size_t y = 0; y < vrb->voxels.get_size().y; y++) {
-            for (size_t x = 0; x < vrb->voxels.get_size().x; x++) {
-                if (vrb->voxels.get_voxel(x, y, z).type == PhysicsVoxelType::Empty) continue;
+    for (size_t z = 0; z < vb.voxels.get_size().z; z++) {
+        for (size_t y = 0; y < vb.voxels.get_size().y; y++) {
+            for (size_t x = 0; x < vb.voxels.get_size().x; x++) {
+                if (vb.voxels.get_voxel(x, y, z).type == PhysicsVoxelType::Empty) continue;
 
                 filled_counter++;
                 sum += glm::vec3(x, y, z) * VOXEL_SIZE - half_scale + VOXEL_SIZE_HALF;
@@ -440,18 +433,18 @@ void Physics::initialize_voxel_rigidbody(Entity entity) {
         }
     }
 
-    vrb->com_local_offset = sum / (float)filled_counter;
-    const float voxel_mass = std::powf(VOXEL_SIZE, 3) * vrb->density;
-    vrb->inv_mass = 1.0f / (voxel_mass * filled_counter);
+    vb.com_local_offset = sum / (float)filled_counter;
+    const float voxel_mass = std::powf(VOXEL_SIZE, 3) * vb.density;
+    vb.inv_mass = 1.0f / (voxel_mass * filled_counter);
 
     glm::mat3 inertia_tensor(0.0f);
-    for (size_t z = 0; z < vrb->voxels.get_size().z; z++) {
-        for (size_t y = 0; y < vrb->voxels.get_size().y; y++) {
-            for (size_t x = 0; x < vrb->voxels.get_size().x; x++) {
-                if (vrb->voxels.get_voxel(x, y, z).type == PhysicsVoxelType::Empty) continue;
+    for (size_t z = 0; z < vb.voxels.get_size().z; z++) {
+        for (size_t y = 0; y < vb.voxels.get_size().y; y++) {
+            for (size_t x = 0; x < vb.voxels.get_size().x; x++) {
+                if (vb.voxels.get_voxel(x, y, z).type == PhysicsVoxelType::Empty) continue;
 
                 const glm::vec3 pos = glm::vec3(x, y, z) * VOXEL_SIZE - half_scale + VOXEL_SIZE_HALF;
-                const glm::vec3 r = pos - vrb->com_local_offset;
+                const glm::vec3 r = pos - vb.com_local_offset;
                 float r2 = glm::dot(r, r);
 
                 inertia_tensor[0][0] += voxel_mass * (r2 - r.x * r.x);
@@ -480,46 +473,26 @@ void Physics::initialize_voxel_rigidbody(Entity entity) {
         inertia_tensor[2][2] = 1;
     }
 
-    vrb->inv_inertia = glm::inverse(inertia_tensor);
+    vb.inv_inertia = glm::inverse(inertia_tensor);
 }
 
-void Physics::add_force(Entity entity, const glm::vec3& force) {
-    // Get VoxelBody component
-    VoxelBody* vrb = engine.ecs.try_get_component<VoxelBody>(entity);
-    if (!vrb) {
-        Log::error("Failed to add force to a VoxelBody: Entity does not have VoxelBody component");
-        return;
-    }
-
-    vrb->stored_velocity += force;
+void Physics::add_force(VoxelBody vb, const glm::vec3& force) {
+    vb.stored_velocity += force;
 }
 
-void Physics::add_torque(Entity entity, const glm::vec3& torque) {
-    // Get VoxelBody component
-    VoxelBody* vrb = engine.ecs.try_get_component<VoxelBody>(entity);
-    if (!vrb) {
-        Log::error("Failed to add force to a VoxelBody: Entity does not have VoxelBody component");
-        return;
-    }
-
-    vrb->stored_torque += torque;
+void Physics::add_torque(VoxelBody vb, const glm::vec3& torque) {
+    vb.stored_torque += torque;
 }
 
-void Physics::add_force_at_position(Entity entity, const glm::vec3& force, const glm::vec3& p) {
-    // Get VoxelBody component
-    VoxelBody* vrb = engine.ecs.try_get_component<VoxelBody>(entity);
-    if (!vrb) {
-        Log::error("Failed to add force at position to a VoxelBody: Entity does not have VoxelBody component");
-        return;
-    }
-    const glm::vec3 r = p - vrb->position;
-    vrb->stored_velocity += force * vrb->inv_mass;
+void Physics::add_force_at_position(VoxelBody vb, const glm::vec3& force, const glm::vec3& p) {
+    const glm::vec3 r = p - vb.position;
+    vb.stored_velocity += force * vb.inv_mass;
 
     // Calculate and apply torque
     const glm::vec3 torque = glm::cross(r, force);
-    const glm::mat3 ro = glm::toMat3(vrb->rotation);
-    const glm::mat3 inv_inertia_world = ro * vrb->inv_inertia * glm::transpose(ro);
-    vrb->stored_torque += inv_inertia_world * torque;
+    const glm::mat3 ro = glm::toMat3(vb.rotation);
+    const glm::mat3 inv_inertia_world = ro * vb.inv_inertia * glm::transpose(ro);
+    vb.stored_torque += inv_inertia_world * torque;
 }
 
 }  // namespace tmt
