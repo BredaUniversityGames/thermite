@@ -19,7 +19,7 @@ def detect_stage(shader_path: Path):
             return stage
     return None
 
-def compile_shader(shader: Path, out_dir: Path):
+def compile_shader(shader: Path, source_dir: Path, out_dir: Path):
     stage = detect_stage(shader)
     if not stage:
         print(f"[Skip] Unknown stage in: {shader.name}")
@@ -32,6 +32,7 @@ def compile_shader(shader: Path, out_dir: Path):
     cmd = [
         SLANGC,
         str(shader),
+        "-I", f"{str(source_dir)}/shared",
         "-target", "spirv",
         "-profile", info["profile"],
         "-entry", "main",
@@ -52,7 +53,7 @@ def main():
     out_dir.mkdir(parents=True, exist_ok=True)
 
     for shader in source_dir.rglob("*.slang"):
-        compile_shader(shader, out_dir)
+        compile_shader(shader, source_dir, out_dir)
 
 if __name__ == "__main__":
     main()

@@ -20,18 +20,20 @@ struct VoxelObject {
 /* Bindings */
 ConstantBuffer<RenderView> render_view;
 StructuredBuffer<VoxelObject> object_buffer;
+RWTexture2D<float4> render_target;
 
 [shader("compute")]
 [numthreads(16, 8, 1)]
 void main(int2 thread_id: SV_DispatchThreadID) {
     /* Generate a ray for our render view */
     const Ray ray = pinhole_ray(render_view, thread_id);
+    // render_target[thread_id] = float4(ray.dir * 0.5 + 0.5, 1.0);
 
     float hit_t;
     intersect_aabb(ray.origin, ray.rcp_dir, 0.0, 1.0, hit_t);
     if (hit_t == BIG_F32) {
-        // ...
+        render_target[thread_id] = float4(0.0, 0.0, 0.0, 1.0);
     } else {
-        // ...
+        render_target[thread_id] = float4(1.0 - (hit_t * 0.25).xxx, 1.0);
     }
 }

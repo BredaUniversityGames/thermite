@@ -9,11 +9,13 @@ struct RenderView {
     /* Origin of the view in world-space. */
     glm::vec3 origin {};
     /* Focal length of the view. */
-    float focal_length = 0.0f;
+    float focal_length = 0.1f;
     /* Resolution of the view in pixels. */
     glm::uvec2 resolution {};
     /* Physical sensor size of the view. */
-    float sensor_size = 0.0f;
+    float sensor_size = 0.1f;
+    /* Aspect ratio of the view. (height / width) */
+    float aspect_ratio = 0.0f;
 };
 
 }  // namespace tmt

@@ -5,6 +5,7 @@
 #include <graphite/imgui.hh>
 #include <graphite/resources/handle.hh>
 
+#include "core/ecs.hpp"
 #include "render_view.hpp"
 
 class GPUAdapter;
@@ -16,7 +17,6 @@ class DebugPipeline;
 class GeometryPipeline;
 
 class Renderer {
-   public:
     GPUAdapter& gpu;
     RenderGraph& render_graph;
 
@@ -30,6 +30,10 @@ class Renderer {
     /* Pipelines */
     DebugPipeline& debug_pipeline;
     GeometryPipeline& geometry_pipeline;
+
+   public:
+    /* Active camera in the scene. */
+    Entity active_camera {};
 
     Renderer();
     ~Renderer();

@@ -21,7 +21,7 @@ class GeometryPipeline {
     GeometryPipeline& operator=(const GeometryPipeline&) = delete;
 
     void init(GPUAdapter& gpu);
-    void enqueue(RenderGraph& render_graph, Buffer render_view);
+    void enqueue(RenderGraph& render_graph, Buffer render_view, RenderTarget render_target);
     void deinit(GPUAdapter& gpu);
 };
 
