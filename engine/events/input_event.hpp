@@ -1,6 +1,7 @@
 #pragma once
 
 #include "engine/core/keys.hpp"
+
 namespace tmt {
 class Input;
 
@@ -31,7 +32,38 @@ enum class MouseButton : int32_t {
     X2 = 5,
 };
 
-class InputEventMouseButton : public InputEvent {
+class InputEventMouse : public InputEvent {
+   public:
+    // These will be overriden by InputEventMouseButton
+
+    bool is_pressed() const override;
+    bool is_just_pressed() const override;
+    bool is_just_released() const override;
+
+    float get_position_x() const;
+    float get_position_y() const;
+
+    float get_relative_x() const;
+    float get_relative_y() const;
+
+    void set_position(float x, float y) {
+        position_x = x;
+        position_y = y;
+    }
+    void set_relative(float x, float y) {
+        relative_x = x;
+        relative_y = y;
+    }
+
+   private:
+    float position_x {0};
+    float position_y {0};
+
+    float relative_x {0};
+    float relative_y {0};
+};
+
+class InputEventMouseButton : public InputEventMouse {
    public:
     explicit InputEventMouseButton(MouseButton button) : button(button) {}
 

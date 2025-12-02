@@ -19,9 +19,8 @@ void Input::update() {
     std::copy_n(keys, prev_keys.size(), prev_keys.begin());
     prev_mouse_buttons = mouse_buttons;
 
-    mouse_buttons = SDL_GetMouseState(&mouse_x, &mouse_y);
-    SDL_GetRelativeMouseState(&mouse_dx, &mouse_dy);
-
+    mouse_dx = 0;
+    mouse_dy = 0;
     // Get current mouse state
     mouse_buttons = SDL_GetMouseState(&mouse_x, &mouse_y);
     while (SDL_PollEvent(&event)) {
@@ -32,38 +31,39 @@ void Input::update() {
                 engine.set_is_running(false);
                 break;
             }
+            case SDL_EVENT_MOUSE_MOTION:
+                mouse_dx += event.motion.xrel;
+                mouse_dy += event.motion.yrel;
+                break;
             default:
                 break;
         }
     }
 }
-bool Input::is_key_pressed(Key key) const { return keys[to_sdl(key)]; }
-bool Input::is_key_just_pressed(Key key) const {
+void Input::add_action(const std::string& name) { actions[name] = InputAction {}; }
+bool Input::is_keyboard_button_pressed(Key key) const { return keys[to_sdl(key)]; }
+bool Input::is_keyboard_button_just_pressed(Key key) const {
     auto sdl_scancode = to_sdl(key);
     return keys[sdl_scancode] == true && prev_keys[sdl_scancode] == false;
 }
-bool Input::is_key_just_released(Key key) const {
+bool Input::is_keyboard_button_released(Key key) const {
     auto sdl_scancode = to_sdl(key);
     return keys[sdl_scancode] == false && prev_keys[sdl_scancode] == true;
 }
 
 bool Input::is_mouse_button_pressed(MouseButton button) const { return mouse_buttons & SDL_BUTTON_MASK(static_cast<int>(button)); }
 bool Input::is_mouse_button_just_pressed(MouseButton button) const {
-    auto mask = SDL_BUTTON_MASK(static_cast<int>(button));
-    return (mouse_buttons & mask) == true && (prev_mouse_buttons & mask) == false;
+    auto mask = SDL_BUTTON_MASK(static_cast<int32_t>(button));
+    bool is_pressed = (mouse_buttons & mask) != 0;
+    bool was_pressed = (prev_mouse_buttons & mask) != 0;
+    return is_pressed == true && was_pressed == false;
 }
 bool Input::is_mouse_button_just_released(MouseButton button) const {
-    auto mask = SDL_BUTTON_MASK(static_cast<int>(button));
-    return (mouse_buttons & mask) == false && (prev_mouse_buttons & mask) == true;
+    auto mask = SDL_BUTTON_MASK(static_cast<int32_t>(button));
+    bool is_pressed = (mouse_buttons & mask) != 0;
+    bool was_pressed = (prev_mouse_buttons & mask) != 0;
+    return is_pressed == false && was_pressed == true;
 }
-void Input::add_key_to_action(const std::string& name, Key key) { add_action_event(name, std::make_unique<InputEventKey>(key)); }
-
-void Input::add_action_event(const std::string& name, std::unique_ptr<InputEvent> event) { actions[name].events.push_back(std::move(event)); }
-void Input::add_action_key(const std::string& name, Key key) { add_action_event(name, std::make_unique<InputEventKey>(key)); }
-
-void Input::add_action_mouse(const std::string& name, MouseButton button) { add_action_event(name, std::make_unique<InputEventMouseButton>(button)); }
-
-void Input::remove_action(const std::string& name) { actions.erase(name); }
 
 bool Input::is_action_pressed(const std::string& name) const {
     auto it = actions.find(name);
@@ -107,6 +107,29 @@ bool Input::is_action_just_released(const std::string& name) const {
     return false;
 }
 void Input::setup_default_action() {
-    add_action("confirm", Key::RETURN, Key::SPACE);
-    add_action("cancel", Key::ESCAPE);
+    add_action("confirm");
+    add_action_keys("confirm", Key::SPACE, Key::RETURN);
+    add_action("cancel");
+    add_action_keys("cancel", Key::ESCAPE);
+
+    add_action("left_click");
+    add_action_mouse("left_click", MouseButton::LEFT);
+
+    add_action("right_click");
+    add_action_mouse("right_click", MouseButton::RIGHT);
+
+    add_action("middle_click");
+    add_action_mouse("middle_click", MouseButton::MIDDLE);
+
+    add_action("mouse_motion");
+    add_action_mouse_motion("mouse_motion");
 }
+
+void Input::add_key_to_action(const std::string& name, Key key) { add_action_event(name, std::make_unique<InputEventKey>(key)); }
+
+void Input::add_action_event(const std::string& name, std::unique_ptr<InputEvent> event) { actions[name].events.push_back(std::move(event)); }
+
+void Input::add_action_mouse(const std::string& name, MouseButton button) { add_action_event(name, std::make_unique<InputEventMouseButton>(button)); }
+
+void Input::remove_action(const std::string& name) { actions.erase(name); }
+void Input::add_action_mouse_motion(const std::string& name) { add_action_event(name, std::make_unique<InputEventMouse>()); }
