@@ -53,6 +53,7 @@ class Engine {
 
     bool get_is_running() const;
     void set_is_running(bool value);
+
    private:
     Timer timer;
     uint64_t frame_count = 0;
