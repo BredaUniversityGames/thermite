@@ -1,5 +1,6 @@
 #include "input.hpp"
 
+#include "engine.hpp"
 #include "keys.hpp"
 #include "logger.hpp"
 #include "extern/SDL3/include/SDL3/SDL_events.h"
@@ -21,13 +22,12 @@ void tmt::Input::update() {
 
         switch (event.type) {
             case SDL_EVENT_QUIT: {
-                is_running = false;
+                engine.set_is_running(false);
                 break;
             }
         }
     }
 }
-bool tmt::Input::get_is_running() const { return is_running; }
 bool tmt::Input::is_keyboard_button_pressed(const Key key) const { return keys[to_sdl(key)]; }
 void tmt::Input::add_key_to_action(const std::string& name, Key key) {
     if (auto it = actions.find(name); it != actions.end()) {

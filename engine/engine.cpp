@@ -19,6 +19,8 @@
 #include "events/game.hpp"
 #include "core/resources.hpp"
 
+bool tmt::Engine::get_is_running() const { return is_running; }
+void tmt::Engine::set_is_running(bool value) { is_running = value; }
 /* Singleton */
 tmt::Engine tmt::engine;
 
@@ -54,7 +56,7 @@ void Engine::run() {
     OnStart::dispatch();
 
     float accumulator = 0.0f;
-    while (input.get_is_running()) {
+    while (is_running) {
         input.update();
         renderer.update();
         const FrameData frame_data = {.delta_time = timer.tick()};

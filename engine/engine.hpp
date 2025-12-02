@@ -51,9 +51,12 @@ class Engine {
     uint64_t get_frame_count() const { return frame_count; }
     float get_elapsed_time() const { return timer.elapsed(); }
 
+    bool get_is_running() const;
+    void set_is_running(bool value);
    private:
     Timer timer;
     uint64_t frame_count = 0;
+    bool is_running {true};
 };
 
 /* Singleton */

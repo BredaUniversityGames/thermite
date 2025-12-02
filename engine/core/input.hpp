@@ -23,7 +23,6 @@ class Input {
     void init();
     void update();
 
-    bool get_is_running() const;
 
     bool is_keyboard_button_pressed(Key key) const;
 
@@ -41,7 +40,6 @@ class Input {
    private:
     void setup_default_action();
     // do not free this manually
-    bool is_running {true};
     const bool* keys {nullptr};
     std::vector<bool> prev_keys;
     std::unordered_map<std::string, InputAction> actions;
