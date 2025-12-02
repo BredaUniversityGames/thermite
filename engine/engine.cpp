@@ -49,6 +49,8 @@ void Engine::init(const ApplicationSpecs& specs) {
 
     auto fucker = ecs.create_entity();
     auto& fucker_rig_model_comp = ecs.add_component<RigModel>(fucker);
+    auto& fucker_transform = ecs.add_component<Transform>(fucker);
+    auto& fucker_name = ecs.add_component<Name>(fucker);
     fucker_rig_model_comp.init({IO::Location::PROJECT, "blocker.glb"}, fucker);
 }
 
