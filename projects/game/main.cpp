@@ -36,7 +36,8 @@ void ecs_testing() {
     tmt::Entity entity = tmt::engine.ecs.create_entity();
     auto& transform = tmt::engine.ecs.add_component<tmt::Transform>(entity);
     auto& camera = tmt::engine.ecs.add_component<tmt::Camera>(entity);
-    transform.set_world_position(glm::vec3(0.0f, 1.5f, -2.0f));
+    transform.set_world_position(glm::vec3(0.0f, 0.0f, -2.0f));
+    // transform.set_world_rotation(glm::vec3(0.0f, glm::radians(90.0f), 0.0f));
 
     /* ECS testing */
     {

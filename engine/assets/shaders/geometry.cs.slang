@@ -29,6 +29,9 @@ void main(int2 thread_id: SV_DispatchThreadID) {
     const Ray ray = pinhole_ray(render_view, thread_id);
     // render_target[thread_id] = float4(ray.dir * 0.5 + 0.5, 1.0);
 
+    // const float3 world_dir = mul(render_view.clip_to_view, float4(ndc, -1.0f, 0.0f)).xyz;
+    // render_target[thread_id] = float4(world_dir * 0.5 + 0.5, 1.0);
+
     float hit_t;
     intersect_aabb(ray.origin, ray.rcp_dir, 0.0, 1.0, hit_t);
     if (hit_t == BIG_F32) {

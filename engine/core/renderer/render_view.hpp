@@ -4,18 +4,14 @@ namespace tmt {
 
 /* Represents a renderable view in the scene. (used on the GPU) */
 struct RenderView {
-    /* World-space to view-space transformation matrix. */
-    glm::mat4x4 world_to_view {};
+    /* World-space to clip-space transformation matrix. */
+    glm::mat4 world_to_clip {};
+    /* Clip-space to world-space transformation matrix. */
+    glm::mat4 clip_to_world {};
     /* Origin of the view in world-space. */
-    glm::vec3 origin {};
-    /* Focal length of the view. */
-    float focal_length = 0.1f;
+    glm::vec4 origin {};
     /* Resolution of the view in pixels. */
     glm::uvec2 resolution {};
-    /* Physical sensor size of the view. */
-    float sensor_size = 0.1f;
-    /* Aspect ratio of the view. (height / width) */
-    float aspect_ratio = 0.0f;
 };
 
 }  // namespace tmt

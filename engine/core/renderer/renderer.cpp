@@ -110,21 +110,30 @@ void Renderer::update() {
 
     /* Capture all cameras in the scene */
     const entt::basic_group group = engine.ecs.get_registry().group<const Camera>(entt::get<Transform>);
+    render_view.resolution = glm::uvec2(engine.window.width, engine.window.height);
+    const float aspect_ratio = (float)engine.window.width / (float)engine.window.height;
 
     /* Iterate over all cameras to find an active one to use as render view */
+    static float rotation = 0.0f;
+    rotation += 0.01f;
     for(auto &&[entity, camera, transform] : group.each()) {
         if (camera.active == true) {
-            render_view.world_to_view = transform.get_world_matrix();
-            render_view.origin = transform.get_world_position();
-            render_view.focal_length = camera.focal_length;
-            render_view.sensor_size = camera.sensor_size;
+            const glm::mat4 p = glm::perspectiveLH(glm::radians(camera.fov), aspect_ratio, 0.05f, 1000.0f);
+            const glm::mat4 v = glm::inverse(transform.get_world_matrix());
+            render_view.world_to_clip = p * v;
+            render_view.clip_to_world = glm::inverse(render_view.world_to_clip);
+            render_view.origin = glm::vec4(transform.get_world_position(), 0.0f);
+            ImGui::Begin("Camera");
+            glm::vec3 pos = transform.get_world_position();
+            if (ImGui::InputFloat3("Origin", &pos.x)) {
+                transform.set_world_position(pos);
+            }
+            ImGui::End();
             break;
         }
     }
 
     /* Upload the active render view */
-    render_view.resolution = glm::uvec2(engine.window.width, engine.window.height);
-    render_view.aspect_ratio = (float)engine.window.height / (float)engine.window.width;
     render_graph.upload_buffer(render_view_buffer, &render_view, 0u, sizeof(RenderView));
 
     /* Pipelines enqueue */
