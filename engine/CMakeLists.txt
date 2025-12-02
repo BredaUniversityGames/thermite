@@ -35,6 +35,7 @@ set(SHADER_OUTPUT_DIR ${CMAKE_SOURCE_DIR}/engine/assets/shaders)
 set(SHADER_SCRIPT ${CMAKE_SOURCE_DIR}/scripts/compile_shaders.py)
 
 add_custom_target(shaders ALL
+    DEPENDS ${SHADER_SCRIPT}
     COMMAND ${CMAKE_COMMAND} -E echo ""
     COMMAND ${CMAKE_COMMAND} -E echo "Compiling Slang shaders..."
     COMMAND ${CMAKE_COMMAND} -E echo ""
@@ -49,11 +50,10 @@ add_custom_command(
     COMMAND ${Python3_EXECUTABLE} ${SHADER_SCRIPT}
             ${SHADER_SOURCE_DIR}
             ${SHADER_OUTPUT_DIR}
-    DEPENDS ${SLANG_SHADERS} ${SHADER_SCRIPT}
     COMMENT "Compiling Slang shaders..."
 )
 
-add_dependencies(thermite-engine shaders assets)
+add_dependencies(thermite-engine shaders)
 
 # Add the precompiled header
 target_precompile_headers(thermite-engine PRIVATE "shared/pch.hpp")
