@@ -7,6 +7,11 @@
 #include <string>
 
 namespace tmt {
+class InputEvent {
+   public:
+    virtual ~InputEvent() = default;
+    virtual void trigger() = 0;
+};
 
 struct InputAction {
     std::vector<Key> keys;
