@@ -40,21 +40,13 @@ file(GLOB_RECURSE SLANG_SHADERS
 # Script path
 set(SHADER_SCRIPT ${CMAKE_SOURCE_DIR}/scripts/compile_shaders.py)
 
-# Stamp file to trigger rebuilds
-set(SHADER_STAMP ${SHADER_OUTPUT_DIR}/shaders.stamp)
-
 add_custom_command(
-    OUTPUT ${SHADER_STAMP}
+    TARGET thermite-engine POST_BUILD
     COMMAND ${Python3_EXECUTABLE} ${SHADER_SCRIPT}
             ${SHADER_SOURCE_DIR}
             ${SHADER_OUTPUT_DIR}
-    COMMAND ${CMAKE_COMMAND} -E touch ${SHADER_STAMP}
     DEPENDS ${SLANG_SHADERS} ${SHADER_SCRIPT}
     COMMENT "Compiling Slang shaders..."
-)
-
-add_custom_target(compile_shaders ALL
-    DEPENDS ${SHADER_STAMP}
 )
 
 # Always copy the assets folder after building
