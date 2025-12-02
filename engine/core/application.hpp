@@ -29,7 +29,7 @@ struct ApplicationSpecs {
 
 class Application : public IGameEvents {
    public:
-    Application(const ApplicationSpecs& specs) : specs(specs) {};
+    Application(ApplicationSpecs specs) : specs(std::move(specs)) {};
     virtual ~Application() = default;
 
    private:

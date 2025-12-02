@@ -6,6 +6,8 @@ namespace tmt {
 
 class IGameEvents {
    public:
+    virtual ~IGameEvents() = default;
+
     /* Events */
     /* [Required] */
     virtual void on_start() = 0;
