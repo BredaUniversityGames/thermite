@@ -10,8 +10,10 @@ struct RenderView {
     glm::vec3 origin {};
     /* Focal length of the view. */
     float focal_length = 0.0f;
+    /* Resolution of the view in pixels. */
+    glm::uvec2 resolution {};
     /* Physical sensor size of the view. */
-    glm::vec2 sensor_size = glm::vec2(0.0f, 0.0f);
+    float sensor_size = 0.0f;
 };
 
 }  // namespace tmt
