@@ -4,6 +4,7 @@
 
 namespace tmt {
 /* Forward declarations */
+class Input;
 class Window;
 class Renderer;
 class Ecs;
@@ -36,7 +37,9 @@ class Engine {
     ~Engine() { delete &my_system; };
     */
 
+    Input& input;
     Window& window;
+
     Ecs& ecs;
     Renderer& renderer;
     Resources& resources;
