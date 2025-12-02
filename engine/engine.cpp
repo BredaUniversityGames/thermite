@@ -4,6 +4,8 @@
 #include <chrono>
 
 #include "core/logger.hpp"
+#include "core/input.hpp"
+
 #include "core/window.hpp"
 #include "core/ecs.hpp"
 #include "core/timer.hpp"
@@ -17,12 +19,14 @@
 #include "events/game.hpp"
 #include "core/resources.hpp"
 
+bool tmt::Engine::get_is_running() const { return is_running; }
+void tmt::Engine::set_is_running(bool value) { is_running = value; }
 /* Singleton */
 tmt::Engine tmt::engine;
 
 namespace tmt {
 
-Engine::Engine() : window(*new Window()), ecs(*new Ecs()), renderer(*new Renderer()), resources(*new Resources()) {}
+Engine::Engine() : input(*new Input()), window(*new Window()), ecs(*new Ecs()), renderer(*new Renderer()), resources(*new Resources()) {}
 
 Engine::~Engine() {
     /* Destruction should be in reverse order */
@@ -30,16 +34,14 @@ Engine::~Engine() {
     delete &renderer;
     delete &ecs;
     delete &window;
+    delete &input;
 }
 
 void Engine::init(const ApplicationSpecs& specs, Application* user_app) {
     app = user_app;
     Log::init(specs.log_file.string());
-    tmt::Log::info("No scope here!");
-    tmt::Log::warn(Log::Scope::GAME, "Game scope here!");
-    tmt::Log::warn(Log::Scope::RENDERER, "Renderer scope here!");
-    tmt::Log::warn(Log::Scope::ENGINE, "THERMITE scope here!");
 
+    input.init();
     window.init(specs);
     renderer.init();
 
@@ -55,14 +57,28 @@ void Engine::run() {
     start_game();
 
     float accumulator = 0.0f;
-    while (window.is_running) {
-        window.update();
+    while (is_running) {
+        input.update();
         renderer.update();
 
         const FrameData frame_data = {.delta_time = timer.tick()};
 
         /* Update */
         update_game(frame_data);
+
+        // Testing code here, please move when scenes can be added elegantly
+        if (input.is_action_just_pressed("confirm")) {
+            tmt::Log::info(tmt::Log::Scope::ENGINE, "Confirm action pressed!");
+        }
+        if (input.is_action_just_pressed("cancel")) {
+            tmt::Log::info(tmt::Log::Scope::ENGINE, "Cancel action pressed!");
+        }
+        if (input.is_action_pressed("confirm")) {
+            tmt::Log::info(tmt::Log::Scope::ENGINE, "Confirm pressed continuously!");
+        }
+        if (input.is_action_just_released("confirm")) {
+            tmt::Log::info(tmt::Log::Scope::ENGINE, "Confirm released!");
+        }
 
         accumulator += frame_data.delta_time;
         while (accumulator >= Config::FIXED_TIME_STEP) {
