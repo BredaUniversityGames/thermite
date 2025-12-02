@@ -28,6 +28,10 @@ add_subdirectory(glm)
 # https://github.com/skypjack/entt
 add_subdirectory(entt)
 
+# graphite - render graph library
+# https://github.com/mxcop/graphite
+add_subdirectory(graphite)
+
 # visit_struct - struct reflection
 # https://github.com/cbeck88/visit_struct
 add_library(visit_struct INTERFACE)
@@ -49,6 +53,23 @@ target_include_directories(JsonReflect
 # https://github.com/nlohmann/json
 add_subdirectory(nlohmann_json)
 
+# ImGUI - immediate mode gui
+# https://github.com/ocornut/imgui
+target_sources(thermite-engine
+    PRIVATE "./imgui/imgui_demo.cpp"
+    PRIVATE "./imgui/imgui_draw.cpp"
+    PRIVATE "./imgui/imgui_tables.cpp"
+    PRIVATE "./imgui/imgui_widgets.cpp"
+    PRIVATE "./imgui/imgui.cpp"
+    PRIVATE "./imgui/backends/imgui_impl_sdl3.cpp"
+    PRIVATE "./imgui/backends/imgui_impl_vulkan.cpp"
+    PRIVATE "./imgui/backends/imgui_impl_win32.cpp"
+)
+target_include_directories(thermite-engine
+    PRIVATE "./imgui"
+    PRIVATE "./imgui/backends"
+)
+
 # Link libraries publicly
 target_link_libraries(thermite-engine
     PUBLIC 
@@ -56,6 +77,7 @@ target_link_libraries(thermite-engine
     glm::glm
     EnTT::EnTT
     JsonReflect
+    graphite
 )
 
 # Link libraries privately
