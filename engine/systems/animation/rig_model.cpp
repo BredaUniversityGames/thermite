@@ -38,7 +38,6 @@ void RigModel::init_bones(const Bone& b, Entity p) {
 void RigModel::init(const IO::FileLocation& directory, Entity p) {
     armature_entity = p;
     rig_is_loaded = true;
-    //data = Engine.resources().load<RigData>(directory, filename);
     data = engine.resources.load_resource<RigData>(directory);
 
     file_directory = directory;
@@ -49,18 +48,20 @@ void RigModel::init(const IO::FileLocation& directory, Entity p) {
         init_bones(data->bones.back(), p);
     }
 
-    auto it = data->bones[0].animations.begin();
-    current_animation = it->first;
+    if (p != entt::null) {
+        const auto& animations = data->bones.back().animations;
+        if (!animations.empty()) current_animation = animations.begin()->first;
 
-    auto& comp = engine.ecs.get_component<Transform>(p);
-    auto& name_comp = engine.ecs.get_component<Name>(p);
-    name_comp.name = name;
-    auto trans = comp.get_world_position();
-    comp.set_world_position({trans.x, trans.y, trans.z});
+        auto& compt = engine.ecs.get_component<Transform>(p);
+        auto& compn = engine.ecs.get_component<Name>(p);
+        compn.name = name;
+        auto trans = compt.get_local_position();
+        compt.set_local_position({trans.x, trans.y, trans.z});
+    }
 }
 
 RigModel::RigModel(const IO::FileLocation& directory, Entity p) {
-    init(directory, p);
+    //init(directory, p);
 }
 
 //void tmt::RigModel::attach_voxel_objects(const IO::FileLocation& directory) {

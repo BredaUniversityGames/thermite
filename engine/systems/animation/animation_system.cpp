@@ -6,7 +6,6 @@
 #include "rig_model.hpp"
 //#include "graphics/debug_render.hpp"
 //#include "tools/profiler.hpp"
-#include "../../core/logger.hpp"
 
 #define CONDITION(comparison) [](const Variant& parameter, const Variant& value) -> bool { return parameter comparison value; }
 
@@ -195,18 +194,14 @@ void RigController::rename_parameter(const std::string& old_name, const std::str
     }
 }
 
-bool RigController::check_transition_conditions(const Transition& transition) {
-    std::vector<Trigger*> triggers;
+bool RigController::check_transition_conditions(const Transition& transition, std::vector<Trigger*>& satisfied_triggers) {
     for (auto& condition : transition.conditions) {
         Variant& parameter = parameters.at(condition.parameter_name);
         if (!condition.is_satisfied(parameter)) return false;
 
         auto* trigger = std::get_if<Trigger>(&parameter);
-        if (trigger != nullptr) triggers.push_back(trigger);
+        if (trigger != nullptr) satisfied_triggers.push_back(trigger);
     }
-
-    // If the transition is successful we reset all the trigger parameters
-    std::for_each(triggers.begin(), triggers.end(), [](Trigger* trigger) { *trigger = Trigger {false}; });
 
     return true;
 }
@@ -225,6 +220,7 @@ void RigModelManager::on_update(const FrameData& time) {
     for (const auto& [entity, rig, controller] : engine.ecs.get_registry().view<RigModel, RigController>().each()) {
         const std::string& current_state = controller.current_state;
         if (current_state.empty()) {
+            const auto& transform = engine.ecs.get_component<Transform>(entity);
             const auto& name = engine.ecs.get_component<Name>(entity);
             Log::error("Trying to animate \"{}\" without a state!", name.name);
             continue;
@@ -233,19 +229,32 @@ void RigModelManager::on_update(const FrameData& time) {
         for (auto& transition : controller.transitions) {
             if (transition.from != current_state) continue;
 
-            const bool should_transition = controller.check_transition_conditions(transition);
+            std::vector<Trigger*> satisfied_triggers;
+            const bool should_transition = controller.check_transition_conditions(transition, satisfied_triggers);
             if (!should_transition) continue;
+
+            const AnimationState& from_state = controller.states[transition.from];
+            if (from_state.transition_on_finish) {
+                const auto& animations = rig.data->bones.back().animations;
+                const auto& iterator = animations.find(from_state.animation);
+
+                if (iterator != animations.end() && rig.time < (iterator->second.keyframes_pos.back().time - transition.transition_time)) continue;
+            }
+
+            // If the transition is successful we reset all the trigger parameters
+            std::for_each(satisfied_triggers.begin(), satisfied_triggers.end(), [](Trigger* trigger) { *trigger = Trigger {false}; });
 
             const std::string& state_name = controller.current_state = transition.to;
             const AnimationState& state = controller.states[state_name];
 
+            rig.set_animation_speed(state.animation_speed);
+
             if (state.animation.empty()) {
                 if (rig.state == RigModel::State::ANIMATE_LOOP) rig.stop_loop(transition.transition_time);
-                rig.set_animation_speed(state.animation_speed);
-            } else {
-                rig.play_animation(state.animation, transition.transition_time, state.repeat);
-                rig.set_animation_speed(state.animation_speed);
+                break;
             }
+
+            rig.play_animation(state.animation, transition.transition_time, state.repeat);
             break;
         }
     }
@@ -279,18 +288,27 @@ void RigModelManager::on_update(const FrameData& time) {
         }
 
         const Bone& last_bone = rig.data->bones.back();
+        const std::string& current_animation = rig.get_current_animation();
+        if (last_bone.animations.find(current_animation) == last_bone.animations.end()) {
+            Log::warn(R"(Animation "{}" isn't a valid animation!)", current_animation);
+            continue;
+        }
+
         const float animation_time = last_bone.animations.at(rig.get_current_animation()).keyframes_pos.back().time;
 
         if (rig.time >= animation_time) {
-            rig.time = rig.time - animation_time;
-            if (rig.state == RigModel::State::ANIMATE_ONCE) rig.state = RigModel::State::STATIONARY;
+            if (rig.state == RigModel::State::ANIMATE_ONCE) {
+                rig.state = RigModel::State::STATIONARY;
+            } else if (rig.state == RigModel::State::ANIMATE_LOOP) {
+                rig.time = rig.time - animation_time;
+            }
         }
 
         //Engine.profiler().BeginSection("animation");
 
         for (const Entity bone_entity : rig.bone_entities) {
             auto& transform = engine.ecs.get_component<Transform>(bone_entity);
-            if (/*!transform.is_enabled()*/false) continue;
+            //if (!transform.is_enabled()) continue;
 
             const BoneComp& bone_comp_id = engine.ecs.get_component<BoneComp>(bone_entity);
             Bone& bone = rig.data->bones[bone_comp_id.id];
@@ -298,17 +316,7 @@ void RigModelManager::on_update(const FrameData& time) {
             rig.animate_translation(transform, bone);
             rig.animate_rotation(transform, bone);
             rig.animate_scale(transform, bone);
-
-            const auto world_pos = glm::vec3(transform.get_world_matrix() * glm::vec4(0, 0, 0, 1.0f));
-            const auto up_dir = glm::vec3(transform.get_world_matrix() * glm::vec4(0, 1, 0, 0));
-
-            //Engine.debug_renderer().add_line(DebugCategory::GENERAL, world_pos, world_pos + up_dir, {1, 1, 1, 1});
-            //Engine.debug_renderer().add_sphere(DebugCategory::GENERAL, world_pos, 0.1f, {1, 0, 0, 1});
         }
-
-        //for (const Entity vox : rig.voxel_entities) {
-            //Engine.debug_renderer().add_sphere(DebugCategory::GENERAL, Engine.ecs().get_component<Transform>(vox).GetTranslation(), 0.15f, {0, 0, 1, 1});
-        //}
 
         //Engine.profiler().EndSection("animation");
     }

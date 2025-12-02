@@ -95,5 +95,4 @@ target_link_libraries(thermite-engine
 	SDL3::SDL3-static
     visit_struct
     nlohmann_json::nlohmann_json
-    tinygltf
 )

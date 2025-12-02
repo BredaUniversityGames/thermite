@@ -4,14 +4,14 @@
 #include "engine/core/ecs.hpp"
 #include "engine/core/components/transform.hpp"
 #include "engine/core/components/name.hpp"
-
-//#define TINYGLTF_IMPLEMENTATION
-//#define TINYGLTF_NO_INCLUDE_JSON
+#include "engine/core/resource.hpp"
+#include "engine/core/resources.hpp"
 
 #include <unordered_map>
 
-#include "engine/core/resource.hpp"
-//#include "kudzu/systems/fileio.hpp"
+struct FBX;
+struct ufbx_scene;
+struct ufbx_node;
 
 namespace tmt {
 struct KeyframePos {
@@ -63,9 +63,13 @@ struct RigData : public Resource {
     std::vector<Bone> bones;
     std::string name;
 
+    // Hacky way of ding this, this info should not be stored in the resources since it can not be found in the .FBX file itself
+    //std::vector<std::pair<FileIO::Directory, std::string>> animation_files;
+    std::vector<IO::FileLocation> animation_files;
+
    private:
-    void get_bone_entity(const tinygltf::Node& node, int& entity);
-    void extract_bone_keyframes(const tinygltf::Model& model);
-    void init_bone(const glm::vec3& o, const glm::quat& q, const tinygltf::Node& n, const tinygltf::Model& model);
+    void load_fbx(const IO::FileLocation& directory);
+    void extract_bone_keyframes_fbx(const ufbx_scene* animation_fbx, const ufbx_scene* rig_fbx, const std::map<const ufbx_node*, const ufbx_node*>& mesh_connections);
+    void init_bone_fbx(const ufbx_node* node, const std::map<const ufbx_node*, const ufbx_node*>& mesh_connections);
 };
 }  // namespace tmt

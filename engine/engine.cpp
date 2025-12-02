@@ -53,7 +53,11 @@ void Engine::init(const ApplicationSpecs& specs) {
     auto& fucker_rig_model_comp = ecs.add_component<RigModel>(fucker);
     auto& fucker_transform = ecs.add_component<Transform>(fucker);
     auto& fucker_name = ecs.add_component<Name>(fucker);
-    fucker_rig_model_comp.init({IO::Location::PROJECT, "blocker.glb"}, fucker);
+    IO::FileLocation location {IO::Location::PROJECT, "Victory_animation.fbx"};
+    fucker_rig_model_comp.init(location, fucker);
+
+    fucker_rig_model_comp.data->animation_files.push_back(location);
+    fucker_rig_model_comp.data->reload();
 }
 
 // Example stuff

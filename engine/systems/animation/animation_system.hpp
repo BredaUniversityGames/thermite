@@ -22,10 +22,10 @@ struct Trigger {
     Trigger(bool _value) : value(_value) {};
 
     // operators needed due to comparing std::variant<..., Trigger>
-    [[nodiscard]] bool operator==(const Trigger& other) const { return value == other.value; }
-    [[nodiscard]] bool operator!=(const Trigger& other) const { return value != other.value; }
-    [[nodiscard]] bool operator>(const Trigger& other) const { return value > other.value; }
-    [[nodiscard]] bool operator<(const Trigger& other) const { return value < other.value; }
+    [[nodiscard]] bool operator==(const Trigger&) const { return value; }
+    [[nodiscard]] bool operator!=(const Trigger&) const { return value; }
+    [[nodiscard]] bool operator>(const Trigger&) const { return value; }
+    [[nodiscard]] bool operator<(const Trigger&) const { return value; }
 
     bool value = false;
 };
@@ -35,6 +35,7 @@ struct AnimationState {
 
     float animation_speed = 1.0f;
     bool repeat = false;
+    bool transition_on_finish = false;  // Only transition after finishing the animation.
 };
 
 using Variant = std::variant<float, int, bool, Trigger>;
@@ -100,7 +101,7 @@ class RigController {
     void rename_state(const std::string& old_name, const std::string& new_name);
     void rename_parameter(const std::string& old_name, const std::string& new_name);
 
-    bool check_transition_conditions(const Transition& transition);
+    bool check_transition_conditions(const Transition& transition, std::vector<Trigger*>& satisfied_triggers);
 };
 
 
