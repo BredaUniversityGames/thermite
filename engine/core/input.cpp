@@ -42,13 +42,13 @@ void Input::update() {
     }
 }
 void Input::add_action(const std::string& name) { actions[name] = InputAction {}; }
-bool Input::is_keyboard_button_pressed(Key key) const { return keys[to_sdl(key)]; }
+bool Input::is_keyboard_button_pressed(Key key) const { return keys[static_cast<SDL_Scancode>(key)]; }
 bool Input::is_keyboard_button_just_pressed(Key key) const {
-    auto sdl_scancode = to_sdl(key);
+    const auto sdl_scancode = static_cast<SDL_Scancode>(key);
     return keys[sdl_scancode] == true && prev_keys[sdl_scancode] == false;
 }
 bool Input::is_keyboard_button_released(Key key) const {
-    auto sdl_scancode = to_sdl(key);
+    auto sdl_scancode = static_cast<SDL_Scancode>(key);
     return keys[sdl_scancode] == false && prev_keys[sdl_scancode] == true;
 }
 

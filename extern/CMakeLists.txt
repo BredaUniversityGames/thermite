@@ -94,13 +94,12 @@ target_link_libraries(thermite-engine
     EnTT::EnTT
     JsonReflect
     graphite
-	SDL3::SDL3-static
-
 )
 
 # Link libraries privately
 target_link_libraries(thermite-engine 
 	PRIVATE
+	SDL3::SDL3-static
     visit_struct
     nlohmann_json::nlohmann_json
     ZLIB::ZLIBSTATIC
