@@ -44,8 +44,7 @@ std::unique_ptr<vengi::Node> VengiParser::Load(const tmt::IO::FileLocation& veng
     }
 }
 
-std::vector<char> VengiParser::ZLibDecompressVengiFile(std::vector<char>& compressed_data)
-{
+std::vector<char> VengiParser::ZLibDecompressVengiFile(std::vector<char>& compressed_data) {
     // Decompress zlib data (starts after magic number)
     std::vector<char> decompressed_output;
     z_stream stream = {};
@@ -82,8 +81,7 @@ std::vector<char> VengiParser::ZLibDecompressVengiFile(std::vector<char>& compre
     return decompressed_output;
 }
 
-namespace vengi
-{
+namespace vengi {
 vengi::NodeType BinaryParser::parse_node_type(const std::string& typeStr) {
     if (typeStr == "Root") return NodeType::ROOT;
     if (typeStr == "Model") return NodeType::MODEL;
@@ -122,23 +120,23 @@ bool BinaryParser::parse_node(vengi::Node& node) {
             case 0x4E444E45:
                 return true;
             case 0x504F5250:
-                if (!parse_properties( node)) return false;
+                if (!parse_properties(node)) return false;
                 break;
             case 0x41544144:
-                if (!parse_voxel_data( node)) return false;
+                if (!parse_voxel_data(node)) return false;
                 break;
             case 0x434C4150:
-                if (!parse_palette_colors( node)) return false;
+                if (!parse_palette_colors(node)) return false;
                 break;
             case 0x4E4C4150:
-                if (!parse_palette_normals( node)) return false;
+                if (!parse_palette_normals(node)) return false;
                 break;
             case 0x494C4150:
-                if (!parse_palette_identifier( node)) return false;
+                if (!parse_palette_identifier(node)) return false;
                 break;
             case 0x4D494E41: {
                 Animation anim;
-                if (!parse_animation( anim)) return false;
+                if (!parse_animation(anim)) return false;
                 node.animations.push_back(anim);
                 break;
             }
@@ -146,7 +144,7 @@ bool BinaryParser::parse_node(vengi::Node& node) {
                 // Rewind to read NODE again
                 seek(tell() - 4);
                 auto child = std::make_unique<Node>();
-                if (!parse_node( *child)) return false;
+                if (!parse_node(*child)) return false;
                 node.children.push_back(std::move(child));
                 break;
             }
@@ -316,4 +314,4 @@ bool BinaryParser::parse_animation(vengi::Animation& anim) {
     return true;
 }
 
-}
+}  // namespace vengi

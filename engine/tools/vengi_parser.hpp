@@ -18,7 +18,6 @@ struct Region {
     int64_t volume() const { return static_cast<int64_t>(width() * height() * depth()); }
 };
 
-
 struct RGBA {
     uint8_t r, g, b, a;
 
@@ -38,8 +37,7 @@ struct RGBA {
     uint32_t toABGR() const { return ((uint32_t)a << 24) | ((uint32_t)b << 16) | ((uint32_t)g << 8) | (uint32_t)r; }
 };
 
-struct PaletteColor 
-{
+struct PaletteColor {
     RGBA color;
     RGBA emit_color;
     uint8_t index;
@@ -56,8 +54,7 @@ struct Material {
     std::vector<MaterialProperty> properties;
 };
 
-struct Palette
-{
+struct Palette {
     std::string name;
     std::vector<PaletteColor> colors;
     std::vector<RGBA> normals;
@@ -165,7 +162,8 @@ class BinaryParser {
 
     bool parse_node(vengi::Node& node);
 
-    int32_t read_version(){return read_uint32();}
+    int32_t read_version() { return read_uint32(); }
+
    private:
     // reader related
     const std::vector<char>& data;
@@ -256,8 +254,7 @@ class BinaryParser {
 
 }  // namespace vengi
 
-class VengiParser 
-{
+class VengiParser {
    public:
     static std::unique_ptr<vengi::Node> Load(const tmt::IO::FileLocation& vengi_file);
 
