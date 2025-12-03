@@ -20,6 +20,18 @@ struct Bvh2Node {
     inline bool is_leaf() const { return prim_count > 0u; }
 };
 
+/* 2-wide Bounding Volume Hierarchy Node as described by 2009 Aila & Laine. */
+struct AilaLaineNode {
+    glm::vec3 lmin {};
+    uint32_t left = 0u;
+    glm::vec3 lmax {};
+    uint32_t right = 0u;
+    glm::vec3 rmin {};
+    uint32_t prim_index = 0u;
+    glm::vec3 rmax {};
+    uint32_t prim_count = 0u;
+};
+
 /*/
  * NOTE:
  * All BVH primitive types must implement the following functions:
@@ -29,10 +41,12 @@ struct Bvh2Node {
 /*/
 
 /* 2-wide Bounding Volume Hierarchy. */
-template<typename T>
+template <typename T>
 class Bvh2 {
+   public:
     /* Primitive data */
     T* prims = nullptr;
+    Aabb* bounds = nullptr;
     uint32_t prim_count = 0u;
 
     /* Nodes & primitive indices */
@@ -40,7 +54,9 @@ class Bvh2 {
     uint32_t* indices = nullptr;
     uint32_t node_count = 0u;
 
-   public:
+    /* Nodes optimized for gpu traversal */
+    AilaLaineNode* gpu_nodes = nullptr;
+
     Bvh2() = default;
     ~Bvh2();
 

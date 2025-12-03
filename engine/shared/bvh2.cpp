@@ -23,40 +23,45 @@ void Bvh2<T>::build(const T* input_prims, const uint32_t input_count) {
     if (nodes) {
         delete[] nodes;
         delete[] prims;
+        delete[] bounds;
         delete[] indices;
+        delete[] gpu_nodes;
         nodes = nullptr;
     }
 
     /* Allocate space for nodes */
-    const uint32_t nodes_required = input_count * 2u;
+    prim_count = input_count;
+    const uint32_t nodes_required = prim_count * 2u + 1u;
     nodes = new Bvh2Node[nodes_required] {};
     node_count = 2u; /* Skip the 2nd node for better cache-line alignment */
 
     /* Copy the input primitives */
-    prims = new T[input_count] {};
-    memcpy(prims, input_prims, input_count * sizeof(Aabb));
+    prims = new T[prim_count] {};
+    bounds = new Aabb[prim_count] {};
+    memcpy(prims, input_prims, prim_count * sizeof(T));
 
     /* Initialize primitive indices */
-    indices = new uint32_t[input_count] {};
-    for (uint32_t i = 0u; i < input_count; ++i) indices[i] = i;
+    indices = new uint32_t[prim_count] {};
+    for (uint32_t i = 0u; i < prim_count; ++i) indices[i] = i;
 
     /* Setup the root node for the BVH */
     Bvh2Node& root = nodes[0];
     root.left_first = 0u;
-    root.prim_count = input_count;
+    root.prim_count = prim_count;
     root.min_bounds = glm::vec3(BIG_F32);
     root.max_bounds = glm::vec3(-BIG_F32);
-    for (uint32_t i = 0u; i < input_count; ++i) {
-        const Aabb aabb = prims[i].aabb();
-        root.min_bounds.x = fminf(root.min_bounds.x, aabb.min.x);
-        root.min_bounds.y = fminf(root.min_bounds.y, aabb.min.y);
-        root.min_bounds.z = fminf(root.min_bounds.z, aabb.min.z);
-        root.max_bounds.x = fmaxf(root.max_bounds.x, aabb.max.x);
-        root.max_bounds.y = fmaxf(root.max_bounds.y, aabb.max.y);
-        root.max_bounds.z = fmaxf(root.max_bounds.z, aabb.max.z);
+    /* Generate all primitive AABBs, and find the root AABB */
+    for (uint32_t i = 0u; i < prim_count; ++i) {
+        bounds[i] = prims[i].aabb();
+        root.min_bounds.x = fminf(root.min_bounds.x, bounds[i].min.x);
+        root.min_bounds.y = fminf(root.min_bounds.y, bounds[i].min.y);
+        root.min_bounds.z = fminf(root.min_bounds.z, bounds[i].min.z);
+        root.max_bounds.x = fmaxf(root.max_bounds.x, bounds[i].max.x);
+        root.max_bounds.y = fmaxf(root.max_bounds.y, bounds[i].max.y);
+        root.max_bounds.z = fmaxf(root.max_bounds.z, bounds[i].max.z);
     }
 
-    /* Build the node hierarchy */
+     /* Build the node hierarchy */
     uint32_t build_tasks[256] {}, task_count = 0u, node_ptr = 0u;
     const glm::vec3 min_extent = (root.max_bounds - root.min_bounds) * 1e-20f;
     glm::vec3 best_lmin {}, best_lmax {}, best_rmin {}, best_rmax {};
@@ -78,17 +83,17 @@ void Bvh2<T>::build(const T* input_prims, const uint32_t input_count) {
             const glm::vec3 rpd3 = glm::vec3((float)BVH_BINS / (node.max_bounds - node.min_bounds));
             const glm::vec3 nmin3 = node.min_bounds;
             for (uint32_t i = 0u; i < node.prim_count; ++i) {
-                const Aabb aabb = prims[indices[node.left_first + i]].aabb();
-                glm::ivec3 bi = glm::ivec3(((aabb.min + aabb.max) * 0.5f - nmin3) * rpd3);
+                const Aabb& prim = bounds[indices[node.left_first + i]];
+                glm::ivec3 bi = glm::ivec3(((prim.min + prim.max) * 0.5f - nmin3) * rpd3);
                 bi.x = glm::clamp(bi.x, 0, BVH_BINS - 1);
                 bi.y = glm::clamp(bi.y, 0, BVH_BINS - 1);
                 bi.z = glm::clamp(bi.z, 0, BVH_BINS - 1);
-                bin_min[0][bi.x] = glm::min(bin_min[0][bi.x], aabb.min);
-                bin_max[0][bi.x] = glm::max(bin_max[0][bi.x], aabb.max), bin_count[0][bi.x]++;
-                bin_min[1][bi.y] = glm::min(bin_min[1][bi.y], aabb.min);
-                bin_max[1][bi.y] = glm::max(bin_max[1][bi.y], aabb.max), bin_count[1][bi.y]++;
-                bin_min[2][bi.z] = glm::min(bin_min[2][bi.z], aabb.min);
-                bin_max[2][bi.z] = glm::max(bin_max[2][bi.z], aabb.max), bin_count[2][bi.z]++;
+                bin_min[0][bi.x] = glm::min(bin_min[0][bi.x], prim.min);
+                bin_max[0][bi.x] = glm::max(bin_max[0][bi.x], prim.max), bin_count[0][bi.x]++;
+                bin_min[1][bi.y] = glm::min(bin_min[1][bi.y], prim.min);
+                bin_max[1][bi.y] = glm::max(bin_max[1][bi.y], prim.max), bin_count[1][bi.y]++;
+                bin_min[2][bi.z] = glm::min(bin_min[2][bi.z], prim.min);
+                bin_max[2][bi.z] = glm::max(bin_max[2][bi.z], prim.max), bin_count[2][bi.z]++;
             }
 
             /* Calculate the cost for each split */
@@ -134,8 +139,8 @@ void Bvh2<T>::build(const T* input_prims, const uint32_t input_count) {
             uint32_t j = node.left_first + node.prim_count, src = node.left_first;
             const float rpd = rpd3[best_axis], nmin = nmin3[best_axis];
             for (uint32_t i = 0u; i < node.prim_count; ++i) {
-                const Aabb aabb = prims[indices[src]].aabb();
-                const uint32_t bi = glm::clamp((uint32_t)(((aabb.min[best_axis] + aabb.max[best_axis]) * 0.5f - nmin) * rpd), 0u, BVH_BINS - 1u);
+                const Aabb& prim = bounds[indices[src]];
+                const uint32_t bi = glm::clamp((uint32_t)(((prim.min[best_axis] + prim.max[best_axis]) * 0.5f - nmin) * rpd), 0u, BVH_BINS - 1u);
                 if (bi <= best_split) {
                     src++;
                 } else {
@@ -161,6 +166,32 @@ void Bvh2<T>::build(const T* input_prims, const uint32_t input_count) {
         /* Fetch task from the build stack */
         if (task_count == 0u) break;
         node_ptr = build_tasks[--task_count];
+    }
+
+    /* Convert the BVH2 into the GPU friendly format */
+    gpu_nodes = new AilaLaineNode[node_count] {};
+    uint32_t alt_node = 0u, node_index = 0u, stack[128] {}, stack_ptr = 0u;
+    for (;;) { /* Credit: <https://github.com/jbikker/tinybvh> */
+        const Bvh2Node& node = nodes[node_index];
+        const uint32_t idx = alt_node++;
+        /* Handle case where the tree is only a root node */
+        if (node.is_leaf()) {
+            gpu_nodes[idx].prim_count = node.prim_count;
+            gpu_nodes[idx].prim_index = node.left_first;
+            if (!stack_ptr) break;
+            node_index = stack[--stack_ptr];
+            const uint32_t new_parent = stack[--stack_ptr];
+            gpu_nodes[new_parent].right = alt_node; /* <- right filled here */
+            continue;
+        }
+        const Bvh2Node& left = nodes[node.left_first];
+        const Bvh2Node& right = nodes[node.left_first + 1];
+        gpu_nodes[idx].lmin = left.min_bounds, gpu_nodes[idx].rmin = right.min_bounds;
+        gpu_nodes[idx].lmax = left.max_bounds, gpu_nodes[idx].rmax = right.max_bounds;
+        gpu_nodes[idx].left = alt_node; /* right will be filled when popped! */
+        stack[stack_ptr++] = idx;
+        stack[stack_ptr++] = node.left_first + 1;
+        node_index = node.left_first;
     }
 }
 
@@ -232,7 +263,9 @@ Bvh2<T>::~Bvh2() {
     if (nodes == nullptr) return;
     delete[] nodes;
     delete[] prims;
+    delete[] bounds;
     delete[] indices;
+    delete[] gpu_nodes;
 }
 
 /* Explicit template instantiations */
