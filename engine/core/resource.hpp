@@ -38,7 +38,7 @@ class FileResource : public Resource {
 template <typename T>
 concept ResourceType = std::derived_from<T, FileResource>;
 
-/* Mutable, is allowed to be changed and can be shard between objects */
+/* Mutable, is allowed to be changed and can be shared between objects */
 template <ResourceType T>
 class RuntimeResource : public Resource {
    public:
