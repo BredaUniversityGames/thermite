@@ -29,12 +29,11 @@ std::unique_ptr<vengi::Node> VengiParser::load(const tmt::IO::FileLocation& veng
         uint32_t version = reader.read_version();
         if (version > 6) {
             Log::warn(Log::Scope::ENGINE, "Newer file format detected, Vengi Parser might need refactor..");
-            return ret_node;
         }
 
         // Parse root node
         if (!reader.parse_node(*ret_node)) {
-            return ret_node;
+            throw std::runtime_error("Node data parsing error!");
         }
 
         return ret_node;
