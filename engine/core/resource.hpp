@@ -4,7 +4,7 @@
 namespace tmt {
 
 class Resource {
-   public:
+   protected:
     virtual ~Resource() = default;
 
     /* [Required] */
@@ -15,6 +15,13 @@ class Resource {
         unload();
         return load();
     }
+
+    bool is_loaded() const { return _is_loaded; }
+
+   private:
+    friend class Resources;
+    /* Managed by Resources system */
+    bool _is_loaded = false;
 };
 
 /* Immutable, data *should* not be changed */
@@ -31,7 +38,7 @@ class FileResource : public Resource {
 template <typename T>
 concept ResourceType = std::derived_from<T, FileResource>;
 
-/* Mutable, is allowed to be changed */
+/* Mutable, is allowed to be changed and can be shard between objects */
 template <ResourceType T>
 class RuntimeResource : public Resource {
    public:
@@ -42,17 +49,5 @@ class RuntimeResource : public Resource {
     RuntimeResource(std::shared_ptr<T> resource) : file_resource(std::move(resource)) {}
 
     const std::shared_ptr<T> file_resource;
-};
-
-class ExampleResource : public FileResource {
-   public:
-    ExampleResource(const IO::FileLocation& location, float example_arg) : FileResource(location), important_float(example_arg) {}
-
-    // Inherited via Resource
-    bool load() override {};
-    void unload() override {};
-    bool reload() override {};
-
-    float important_float;
 };
 }  // namespace tmt

@@ -3,7 +3,8 @@
 #include <string>
 #include <filesystem>
 
-#include "engine/tools/fmt_helpers.hpp"
+#include "engine/tools/fmt/stl.hpp"
+#include "engine/tools/fmt/enum.hpp"
 
 namespace tmt {
 
@@ -54,4 +55,4 @@ class IO {
 
 }  // namespace tmt
 
-FMT_LOGGING(tmt::IO::FileLocation, obj.sub_location, obj.relative_path);
+FMT_LOGGING(tmt::IO::FileLocation, "({}, \"{}\")", obj.sub_location, obj.relative_path);

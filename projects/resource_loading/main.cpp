@@ -55,22 +55,33 @@ class RuntimeTextFile : public tmt::RuntimeResource<TextFile> {
 };
 
 void Game::on_start() {
-    /* Loading */
-    auto source = tmt::engine.resources.load_resource<TextFile>({tmt::IO::Location::PROJECT, "source.txt"});
-    tmt::Log::info("{}", source->original_content);
+    {
+        /* load file resource */
+        auto source = tmt::engine.resources.load_resource<TextFile>({tmt::IO::Location::PROJECT, "source.txt"});
+        tmt::Log::info("{}", source->original_content);
 
-    auto modified = tmt::engine.resources.load_resource<RuntimeTextFile>(source);
-    tmt::Log::info("{}", modified->modified_content);
+        /* create runtime resource from file resource */
+        auto modified = tmt::engine.resources.copy_resource<RuntimeTextFile>(source);
+        tmt::Log::info("{}", modified->modified_content);
 
-    auto also_modified = tmt::engine.resources.load_resource<RuntimeTextFile>({tmt::IO::Location::PROJECT, "source.txt"});
-    tmt::Log::info("{}", also_modified->modified_content);
+        /* create another runtime resource from the same file resource to test independence */
+        auto also_modified = tmt::engine.resources.copy_resource<RuntimeTextFile>({tmt::IO::Location::PROJECT, "source.txt"});
+        tmt::Log::info("{}", also_modified->modified_content);
 
-    also_modified->modified_content += " - Further modified";
-    if (also_modified->modified_content != modified->modified_content) {
-        throw std::runtime_error("Runtime resources are not independent!");
-    } else {
-        tmt::Log::error("Runtime resources are not independent!");
+        also_modified->modified_content += " - Further modified";
+        if (also_modified->modified_content != modified->modified_content) {
+            tmt::Log::info("Runtime resources are independent!");
+        } else {
+            throw std::runtime_error("Runtime resources are not independent!");
+        }
+
+        tmt::engine.resources.unload_unused();
+        tmt::Log::info("Resource count before going out of scope: {}", tmt::engine.resources.resource_count());
     }
+    /* Runtime resources go out of scope */
+
+    tmt::engine.resources.unload_unused();
+    tmt::Log::info("Resource count after going out of scope: {}", tmt::engine.resources.resource_count());
 }
 
 void Game::on_update(const tmt::FrameData& time) {}

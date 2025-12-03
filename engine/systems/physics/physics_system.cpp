@@ -5,8 +5,6 @@
 #include "core/ecs.hpp"
 #include "core/components/transform.hpp"
 
-#include "tools/fmt_defines.hpp"
-
 namespace tmt {
 
 void Physics::on_start() { Log::info("Physics on_start"); }
