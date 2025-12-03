@@ -99,7 +99,6 @@ class Resources {
 
        private:
         std::vector<std::weak_ptr<Resource>> runtime_resources;
-
     };
 
     /* File location -> file resource & runtime resources */
