@@ -49,7 +49,7 @@ std::vector<char> VengiParser::ZLibDecompressVengiFile(std::vector<char>& compre
     std::vector<char> decompressed_output;
     z_stream stream = {};
     stream.next_in = reinterpret_cast<unsigned char*>(compressed_data.data() + 4);
-    stream.avail_in = compressed_data.size() - 4;
+    stream.avail_in = static_cast<uint32_t>(compressed_data.size() - 4);
 
     if (inflateInit(&stream) != Z_OK) {
         throw std::runtime_error("Zip parsing error!");
