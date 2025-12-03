@@ -18,12 +18,10 @@ struct VoxelObject {
     inline Aabb aabb() const {
         const glm::vec3 center = glm::vec3(local_to_world[3]);
         const glm::vec3 unit_extent = glm::vec3(size) * UNITS_PER_VOXEL * 0.5f;
-
-        // Half-extents along each world axis (assuming unit OBB in local space)
-        const glm::vec3 extent = glm::abs(glm::vec3(local_to_world[0]) * unit_extent) 
-                               + glm::abs(glm::vec3(local_to_world[1]) * unit_extent) 
-                               + glm::abs(glm::vec3(local_to_world[2]) * unit_extent);
-
+        const glm::vec3 x_extent = glm::abs(glm::vec3(local_to_world[0]) * unit_extent);
+        const glm::vec3 y_extent = glm::abs(glm::vec3(local_to_world[1]) * unit_extent);
+        const glm::vec3 z_extent = glm::abs(glm::vec3(local_to_world[2]) * unit_extent);
+        const glm::vec3 extent = x_extent + y_extent + z_extent;
         return Aabb(center - extent, center + extent);
     }
 };
