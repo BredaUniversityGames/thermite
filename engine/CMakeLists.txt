@@ -14,6 +14,17 @@ file(GLOB_RECURSE THERMITE_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/*.hpp
 )
 
+if(THERMITE_EDITOR_BUILD)
+    file(GLOB_RECURSE EDITOR_SOURCES
+        ${CMAKE_CURRENT_SOURCE_DIR}/editor/*.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/editor/*.hpp
+    )
+    list(APPEND THERMITE_SOURCES ${EDITOR_SOURCES})
+else()
+    # Exclude editor folder
+    list(FILTER THERMITE_SOURCES EXCLUDE REGEX ".*/editor/.*")
+endif()
+
 # Add the engine as static library
 add_library(thermite-engine STATIC ${THERMITE_SOURCES})
 
