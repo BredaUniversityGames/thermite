@@ -34,6 +34,7 @@ if (THERMITE_EDITOR_BUILD)
 endif()
 if (THERMITE_DEBUG_BUILD)
     target_compile_definitions(thermite-engine PUBLIC THERMITE_DEBUG=1)
+    target_compile_definitions(thermite-editor PUBLIC THERMITE_DEBUG=1)
 endif()
 
 # Find and add projects
