@@ -21,12 +21,16 @@ option(THERMITE_BUILD_TESTS "Build unit tests" OFF)
 # Engine sub-directory
 add_subdirectory("engine")
 
+# Editor sub-directory
+add_subdirectory("editor")
+
 # Add externals
 add_subdirectory("extern")
 
 # Editor and Debug defines
 if (THERMITE_EDITOR_BUILD)
     target_compile_definitions(thermite-engine PUBLIC THERMITE_EDITOR=1)
+    target_compile_definitions(thermite-editor PUBLIC THERMITE_EDITOR=1)
 endif()
 if (THERMITE_DEBUG_BUILD)
     target_compile_definitions(thermite-engine PUBLIC THERMITE_DEBUG=1)
