@@ -10,7 +10,7 @@ struct Camera {
     float fov = 80.0f;
     /* True if this camera is active. */
     bool active = true;
-    
+
     static Entity get_active_camera();
 };
 

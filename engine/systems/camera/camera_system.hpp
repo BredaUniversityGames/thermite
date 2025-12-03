@@ -6,20 +6,22 @@
 
 namespace tmt {
 
-const std::string M_SPRINT = "Camera Sprint";
-const std::string M_FORWARD = "Camera Move Forward";
-const std::string M_BACKWARD = "Camera Move Backward";
-const std::string M_RIGHT = "Camera Move Right";
-const std::string M_LEFT = "Camera Move Left";
-const std::string M_UP = "Camera Move Up";
-const std::string M_DOWN = "Camera Move Down";
+const std::string SPRINT = "Camera Sprint";
+const std::string FORWARD = "Camera Move Forward";
+const std::string BACKWARD = "Camera Move Backward";
+const std::string RIGHT = "Camera Move Right";
+const std::string LEFT = "Camera Move Left";
+const std::string UP = "Camera Move Up";
+const std::string DOWN = "Camera Move Down";
 
 class CameraSystem : public ISystem {
-    
     constexpr virtual std::string get_name() { return "Camera System"; }
 
     void on_start() override;
     void on_update(const FrameData& time) override;
     void on_end() override;
+
+    float base_speed = 4.0f;
+    float sprint_mult = 3.0f;
 };
-} // namespace tmt
+}  // namespace tmt
