@@ -158,7 +158,7 @@ struct Node {
 
 class BinaryParser {
    public:
-    BinaryParser(const std::vector<char>& _data) : data(_data), pos(0) {}
+    BinaryParser(const std::vector<char>& data_) : data(data_), pos(0) {}
 
     bool parse_node(vengi::Node& node);
 
@@ -170,7 +170,7 @@ class BinaryParser {
     size_t pos;
 
     size_t tell() const { return pos; }
-    void seek(size_t _pos) { pos = _pos; }
+    void seek(size_t pos_) { pos = pos_; }
     size_t size() const { return data.size(); }
     bool eof() const { return pos >= data.size(); }
 
