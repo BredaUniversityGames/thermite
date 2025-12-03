@@ -21,10 +21,10 @@ Editor::Editor() {}
 
 Editor::~Editor() {}
 
-void Editor::start() { 
-	tmt::Log::info("Starting Thermite Editor..."); 
+void Editor::start() {
+    tmt::Log::info("Starting Thermite Editor...");
 
-	tmt::engine.ecs.create_entity();
+    tmt::engine.ecs.create_entity();
 }
 
 }  // namespace tmt
