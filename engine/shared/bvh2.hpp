@@ -20,10 +20,19 @@ struct Bvh2Node {
     inline bool is_leaf() const { return prim_count > 0u; }
 };
 
+/*/
+ * NOTE:
+ * All BVH primitive types must implement the following functions:
+ * 1. Aabb aabb() const;
+ * 2. float intersect(const Ray&) const;
+ * These are required for the BVH to function.
+/*/
+
 /* 2-wide Bounding Volume Hierarchy. */
+template<typename T>
 class Bvh2 {
     /* Primitive data */
-    Aabb* prims = nullptr;
+    T* prims = nullptr;
     uint32_t prim_count = 0u;
 
     /* Nodes & primitive indices */
@@ -36,7 +45,7 @@ class Bvh2 {
     ~Bvh2();
 
     /* Build the acceleration structure. */
-    void build(const Aabb* input_prims, const uint32_t input_count);
+    void build(const T* input_prims, const uint32_t input_count);
 
     /* Trace the acceleration structure. */
     Hit trace(const Ray& ray) const;

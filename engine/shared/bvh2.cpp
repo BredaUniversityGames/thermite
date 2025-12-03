@@ -1,5 +1,7 @@
 #include "bvh2.hpp"
 
+#include "engine/core/renderer/voxel_object.hpp"
+
 namespace tmt {
 
 /* Number of bins to use during BVH construction. */
@@ -15,7 +17,8 @@ inline float surface_area(const Bvh2Node& node) {
 /* Returns half the area of an extent `v`. */
 inline float half_area(const glm::vec3& v) { return v.x < -BIG_F32 ? 0.0f : (v.x * v.y + v.y * v.z + v.z * v.x); }
 
-void Bvh2::build(const Aabb* input_prims, const uint32_t input_count) {
+template<typename T>
+void Bvh2<T>::build(const T* input_prims, const uint32_t input_count) {
     /* Delete old BVH data if it exists */
     if (nodes) {
         delete[] nodes;
@@ -30,7 +33,7 @@ void Bvh2::build(const Aabb* input_prims, const uint32_t input_count) {
     node_count = 2u; /* Skip the 2nd node for better cache-line alignment */
 
     /* Copy the input primitives */
-    prims = new Aabb[input_count] {};
+    prims = new T[input_count] {};
     memcpy(prims, input_prims, input_count * sizeof(Aabb));
 
     /* Initialize primitive indices */
@@ -44,12 +47,13 @@ void Bvh2::build(const Aabb* input_prims, const uint32_t input_count) {
     root.min_bounds = glm::vec3(BIG_F32);
     root.max_bounds = glm::vec3(-BIG_F32);
     for (uint32_t i = 0u; i < input_count; ++i) {
-        root.min_bounds.x = fminf(root.min_bounds.x, prims[i].min.x);
-        root.min_bounds.y = fminf(root.min_bounds.y, prims[i].min.y);
-        root.min_bounds.z = fminf(root.min_bounds.z, prims[i].min.z);
-        root.max_bounds.x = fmaxf(root.max_bounds.x, prims[i].max.x);
-        root.max_bounds.y = fmaxf(root.max_bounds.y, prims[i].max.y);
-        root.max_bounds.z = fmaxf(root.max_bounds.z, prims[i].max.z);
+        const Aabb aabb = prims[i].aabb();
+        root.min_bounds.x = fminf(root.min_bounds.x, aabb.min.x);
+        root.min_bounds.y = fminf(root.min_bounds.y, aabb.min.y);
+        root.min_bounds.z = fminf(root.min_bounds.z, aabb.min.z);
+        root.max_bounds.x = fmaxf(root.max_bounds.x, aabb.max.x);
+        root.max_bounds.y = fmaxf(root.max_bounds.y, aabb.max.y);
+        root.max_bounds.z = fmaxf(root.max_bounds.z, aabb.max.z);
     }
 
     /* Build the node hierarchy */
@@ -74,17 +78,17 @@ void Bvh2::build(const Aabb* input_prims, const uint32_t input_count) {
             const glm::vec3 rpd3 = glm::vec3((float)BVH_BINS / (node.max_bounds - node.min_bounds));
             const glm::vec3 nmin3 = node.min_bounds;
             for (uint32_t i = 0u; i < node.prim_count; ++i) {
-                const Aabb& prim = prims[indices[node.left_first + i]];
-                glm::ivec3 bi = glm::ivec3(((prim.min + prim.max) * 0.5f - nmin3) * rpd3);
+                const Aabb aabb = prims[indices[node.left_first + i]].aabb();
+                glm::ivec3 bi = glm::ivec3(((aabb.min + aabb.max) * 0.5f - nmin3) * rpd3);
                 bi.x = glm::clamp(bi.x, 0, BVH_BINS - 1);
                 bi.y = glm::clamp(bi.y, 0, BVH_BINS - 1);
                 bi.z = glm::clamp(bi.z, 0, BVH_BINS - 1);
-                bin_min[0][bi.x] = glm::min(bin_min[0][bi.x], prim.min);
-                bin_max[0][bi.x] = glm::max(bin_max[0][bi.x], prim.max), bin_count[0][bi.x]++;
-                bin_min[1][bi.y] = glm::min(bin_min[1][bi.y], prim.min);
-                bin_max[1][bi.y] = glm::max(bin_max[1][bi.y], prim.max), bin_count[1][bi.y]++;
-                bin_min[2][bi.z] = glm::min(bin_min[2][bi.z], prim.min);
-                bin_max[2][bi.z] = glm::max(bin_max[2][bi.z], prim.max), bin_count[2][bi.z]++;
+                bin_min[0][bi.x] = glm::min(bin_min[0][bi.x], aabb.min);
+                bin_max[0][bi.x] = glm::max(bin_max[0][bi.x], aabb.max), bin_count[0][bi.x]++;
+                bin_min[1][bi.y] = glm::min(bin_min[1][bi.y], aabb.min);
+                bin_max[1][bi.y] = glm::max(bin_max[1][bi.y], aabb.max), bin_count[1][bi.y]++;
+                bin_min[2][bi.z] = glm::min(bin_min[2][bi.z], aabb.min);
+                bin_max[2][bi.z] = glm::max(bin_max[2][bi.z], aabb.max), bin_count[2][bi.z]++;
             }
 
             /* Calculate the cost for each split */
@@ -130,8 +134,8 @@ void Bvh2::build(const Aabb* input_prims, const uint32_t input_count) {
             uint32_t j = node.left_first + node.prim_count, src = node.left_first;
             const float rpd = rpd3[best_axis], nmin = nmin3[best_axis];
             for (uint32_t i = 0u; i < node.prim_count; ++i) {
-                const Aabb& prim = prims[indices[src]];
-                const uint32_t bi = glm::clamp((uint32_t)(((prim.min[best_axis] + prim.max[best_axis]) * 0.5f - nmin) * rpd), 0u, BVH_BINS - 1u);
+                const Aabb aabb = prims[indices[src]].aabb();
+                const uint32_t bi = glm::clamp((uint32_t)(((aabb.min[best_axis] + aabb.max[best_axis]) * 0.5f - nmin) * rpd), 0u, BVH_BINS - 1u);
                 if (bi <= best_split) {
                     src++;
                 } else {
@@ -171,7 +175,8 @@ inline float intersect_aabb(const Ray ray, const glm::vec3 box_min, const glm::v
     return t_near > t_far ? BIG_F32 : t_near;
 }
 
-Hit Bvh2::trace(const Ray& ray) const {
+template<typename T>
+Hit Bvh2<T>::trace(const Ray& ray) const {
     /* Traversal state */
     uint32_t stack[32] {}, stack_ptr = 0u, node_index = 0u;
     float min_t = BIG_F32;
@@ -183,8 +188,8 @@ Hit Bvh2::trace(const Ray& ray) const {
         if (node.is_leaf()) {
             /* Intersect all primitives */
             for (uint32_t i = 0u; i < node.prim_count; ++i) {
-                const Aabb& prim = prims[indices[node.left_first + i]];
-                const float dist = intersect_aabb(ray, prim.min, prim.max);
+                const T& prim = prims[indices[node.left_first + i]];
+                const float dist = prim.intersect(ray);
                 min_t = fminf(min_t, dist);
             }
 
@@ -222,11 +227,15 @@ Hit Bvh2::trace(const Ray& ray) const {
     return Hit(min_t);
 }
 
-Bvh2::~Bvh2() {
+template<typename T>
+Bvh2<T>::~Bvh2() {
     if (nodes == nullptr) return;
     delete[] nodes;
     delete[] prims;
     delete[] indices;
 }
+
+/* Explicit template instantiations */
+template class Bvh2<VoxelObject>;
 
 }  // namespace tmt

@@ -4,6 +4,8 @@
 
 namespace tmt {
 
+struct Ray;
+
 /* Represents a renderable voxel object. (used on the GPU) */
 struct VoxelObject {
     /* World-space to local-space transformation matrix. */
@@ -23,6 +25,12 @@ struct VoxelObject {
         const glm::vec3 z_extent = glm::abs(glm::vec3(local_to_world[2]) * unit_extent);
         const glm::vec3 extent = x_extent + y_extent + z_extent;
         return Aabb(center - extent, center + extent);
+    }
+
+    /* Intersect the voxel object with a ray. */
+    float intersect(const Ray&) const {
+        // TODO: Implement the ray intersection function!
+        return 0.0f;
     }
 };
 
