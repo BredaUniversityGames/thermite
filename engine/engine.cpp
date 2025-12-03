@@ -20,8 +20,6 @@
 #include "events/game.hpp"
 #include "core/resources.hpp"
 
-#include "editor/editor.hpp"
-
 bool tmt::Engine::get_is_running() const { return is_running; }
 void tmt::Engine::set_is_running(bool value) { is_running = value; }
 /* Singleton */
@@ -53,8 +51,6 @@ void Engine::init(const ApplicationSpecs& specs, std::unique_ptr<Application> us
     ecs.register_system<CameraSystem>();
 
     OnEngineInit::dispatch(specs);
-
-    editor.start();
 }
 
 // Example stuff
