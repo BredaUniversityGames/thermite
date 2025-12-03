@@ -4,6 +4,8 @@
 #include <chrono>
 
 #include "core/logger.hpp"
+#include "core/input.hpp"
+
 #include "core/window.hpp"
 #include "core/ecs.hpp"
 #include "core/timer.hpp"
@@ -15,28 +17,31 @@
 
 #include "events/engine.hpp"
 #include "events/game.hpp"
+#include "core/resources.hpp"
 
+bool tmt::Engine::get_is_running() const { return is_running; }
+void tmt::Engine::set_is_running(bool value) { is_running = value; }
 /* Singleton */
 tmt::Engine tmt::engine;
 
 namespace tmt {
 
-Engine::Engine() : window(*new Window()), ecs(*new Ecs()), renderer(*new Renderer()) {}
+Engine::Engine() : input(*new Input()), window(*new Window()), ecs(*new Ecs()), renderer(*new Renderer()), resources(*new Resources()) {}
 
 Engine::~Engine() {
     /* Destruction should be in reverse order */
+    delete &resources;
     delete &renderer;
     delete &ecs;
     delete &window;
+    delete &input;
 }
 
-void Engine::init(const ApplicationSpecs& specs) {
+void Engine::init(const ApplicationSpecs& specs, std::unique_ptr<Application> user_app) {
+    app = std::move(user_app);
     Log::init(specs.log_file.string());
-    tmt::Log::info("No scope here!");
-    tmt::Log::warn(Log::Scope::GAME, "Game scope here!");
-    tmt::Log::warn(Log::Scope::RENDERER, "Renderer scope here!");
-    tmt::Log::warn(Log::Scope::ENGINE, "THERMITE scope here!");
 
+    input.init();
     window.init(specs);
     renderer.init();
 
@@ -49,32 +54,52 @@ void Engine::init(const ApplicationSpecs& specs) {
 // Example stuff
 void Engine::run() {
     timer.reset();
-    OnStart::dispatch();
+    start_game();
 
     float accumulator = 0.0f;
-    while (window.is_running) {
-        window.update();
+    while (is_running) {
+        input.update();
         renderer.update();
+
         const FrameData frame_data = {.delta_time = timer.tick()};
 
         /* Update */
-        OnUpdate::dispatch(frame_data);
+        update_game(frame_data);
 
         accumulator += frame_data.delta_time;
         while (accumulator >= Config::FIXED_TIME_STEP) {
             accumulator -= Config::FIXED_TIME_STEP;
 
             /* Fixed Update */
-            OnFixedUpdate::dispatch(frame_data);
+            fixed_update_game(frame_data);
         }
 
         OnEndFrame::dispatch();
         frame_count++;
     }
-
-    OnEnd::dispatch();
+    end_game();
 }
 
 void Engine::end() { OnEngineEnd::dispatch(); }
+
+void Engine::start_game() {
+    app->on_start();
+    OnGameStart::dispatch();
+}
+
+void Engine::update_game(const FrameData& frame_data) {
+    app->on_update(frame_data);
+    OnGameUpdate::dispatch(frame_data);
+}
+
+void Engine::fixed_update_game(const FrameData& frame_data) {
+    app->on_fixed_update(frame_data);
+    OnGameFixedUpdate::dispatch(frame_data);
+}
+
+void Engine::end_game() {
+    app->on_end();
+    OnGameEnd::dispatch();
+}
 
 }  // namespace tmt
