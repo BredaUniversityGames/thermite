@@ -6,7 +6,8 @@
 
 #include <SDL3/SDL_events.h>
 #include <SDL3/SDL_keyboard.h>
-#include <extern/imgui/backends/imgui_impl_sdl3.h>
+#include <imgui_impl_sdl3.h>
+
 using namespace tmt;
 void Input::init() {
     int32_t number_keys;
