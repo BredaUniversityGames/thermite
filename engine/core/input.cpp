@@ -1,12 +1,12 @@
 #include "input.hpp"
 
-#include "engine.hpp"
-#include "keys.hpp"
-#include "logger.hpp"
-
 #include <SDL3/SDL_events.h>
 #include <SDL3/SDL_keyboard.h>
 #include <imgui_impl_sdl3.h>
+
+#include "engine.hpp"
+#include "keys.hpp"
+#include "logger.hpp"
 
 using namespace tmt;
 void Input::init() {

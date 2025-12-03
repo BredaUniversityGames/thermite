@@ -1,12 +1,11 @@
 #pragma once
-#include "keys.hpp"
-
 #include <string>
-
-#include "engine/events/input_event.hpp"
-
 #include <memory>
 #include <unordered_map>
+
+#include "keys.hpp"
+#include "events/input_event.hpp"
+
 namespace tmt {
 
 struct InputAction {
@@ -52,15 +51,15 @@ class Input {
    private:
     void setup_default_action();
     // do not free this manually
-    const bool* keys {nullptr};
-    uint32_t mouse_buttons {0};
-    uint32_t prev_mouse_buttons {0};
-    float mouse_x {0};
-    float mouse_y {0};
+    const bool* keys = nullptr;
+    uint32_t mouse_buttons = 0u;
+    uint32_t prev_mouse_buttons = 0u;
+    float mouse_x = 0.0f;
+    float mouse_y = 0.0f;
     // relative positions
-    float mouse_dx {0};
-    float mouse_dy {0};
-    std::vector<bool> prev_keys;
-    std::unordered_map<std::string, InputAction> actions;
+    float mouse_dx = 0.0f;
+    float mouse_dy = 0.0f;
+    std::vector<bool> prev_keys {};
+    std::unordered_map<std::string, InputAction> actions {};
 };
 }  // namespace tmt
