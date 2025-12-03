@@ -132,27 +132,27 @@ void Renderer::update() {
     }
     ImGui::End();
 
-/* Upload the active render view */
-render_graph.upload_buffer(render_view_buffer, &render_view, 0u, sizeof(RenderView));
+    /* Upload the active render view */
+    render_graph.upload_buffer(render_view_buffer, &render_view, 0u, sizeof(RenderView));
 
-/* Pipelines enqueue */
-geometry_pipeline.enqueue(render_graph, render_view_buffer, render_target);
-debug_pipeline.enqueue(render_graph, render_target);
+    /* Pipelines enqueue */
+    geometry_pipeline.enqueue(render_graph, render_view_buffer, render_target);
+    debug_pipeline.enqueue(render_graph, render_target);
 
-/* Add the immediate mode GUI to the render graph */
-render_graph.add_imgui(imgui, render_target);
+    /* Add the immediate mode GUI to the render graph */
+    render_graph.add_imgui(imgui, render_target);
 
-/* End the imgui frame */
-ImGui::Render();
+    /* End the imgui frame */
+    ImGui::Render();
 
-/* Compile the render graph */
-if (const Result r = render_graph.end_graph(); r.is_err()) {
-    Log::error(Log::Scope::RENDERER, "failed to compile render graph.\nreason: {}", r.unwrap_err());
-}
-/* Dispatch the render graph */
-if (const Result r = render_graph.dispatch(); r.is_err()) {
-    Log::error(Log::Scope::RENDERER, "failed to dispatch render graph.\nreason: {}", r.unwrap_err());
-}
+    /* Compile the render graph */
+    if (const Result r = render_graph.end_graph(); r.is_err()) {
+        Log::error(Log::Scope::RENDERER, "failed to compile render graph.\nreason: {}", r.unwrap_err());
+    }
+    /* Dispatch the render graph */
+    if (const Result r = render_graph.dispatch(); r.is_err()) {
+        Log::error(Log::Scope::RENDERER, "failed to dispatch render graph.\nreason: {}", r.unwrap_err());
+    }
 }
 
 void Renderer::end() {
