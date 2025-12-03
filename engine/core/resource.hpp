@@ -4,9 +4,10 @@
 namespace tmt {
 
 class Resource {
-   protected:
+   public:
     virtual ~Resource() = default;
 
+   protected:
     /* [Required] */
     virtual bool load() = 0;
     virtual void unload() = 0;
