@@ -4,10 +4,17 @@
 #include <unordered_map>
 
 #include "keys.hpp"
-#include "events/input_event.hpp"
+#include "engine/events/input_event.hpp"
 
 namespace tmt {
-
+namespace action {
+constexpr const char* CONFIRM = "confirm";
+constexpr const char* CANCEL = "cancel";
+constexpr const char* LEFT_CLICK = "left_click";
+constexpr const char* RIGHT_CLICK = "right_click";
+constexpr const char* MIDDLE_CLICK = "middle_click";
+constexpr const char* MOUSE_MOTION = "mouse_motion";
+}  // namespace action
 struct InputAction {
     std::vector<std::unique_ptr<InputEvent>> events;
 };

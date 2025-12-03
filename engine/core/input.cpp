@@ -109,22 +109,23 @@ bool Input::is_action_just_released(const std::string& name) const {
     return false;
 }
 void Input::setup_default_action() {
-    add_action("confirm");
-    add_action_keys("confirm", Key::SPACE, Key::RETURN);
-    add_action("cancel");
-    add_action_keys("cancel", Key::ESCAPE);
+    add_action(action::CONFIRM);
+    add_action_keys(action::CONFIRM, Key::SPACE, Key::RETURN);
 
-    add_action("left_click");
-    add_action_mouse("left_click", MouseButton::LEFT);
+    add_action(action::CANCEL);
+    add_action_keys(action::CANCEL, Key::ESCAPE);
 
-    add_action("right_click");
-    add_action_mouse("right_click", MouseButton::RIGHT);
+    add_action(action::LEFT_CLICK);
+    add_action_mouse(action::LEFT_CLICK, MouseButton::LEFT);
 
-    add_action("middle_click");
-    add_action_mouse("middle_click", MouseButton::MIDDLE);
+    add_action(action::RIGHT_CLICK);
+    add_action_mouse(action::RIGHT_CLICK, MouseButton::RIGHT);
 
-    add_action("mouse_motion");
-    add_action_mouse_motion("mouse_motion");
+    add_action(action::MIDDLE_CLICK);
+    add_action_mouse(action::MIDDLE_CLICK, MouseButton::MIDDLE);
+
+    add_action(action::MOUSE_MOTION);
+    add_action_mouse_motion(action::MOUSE_MOTION);
 }
 
 void Input::add_key_to_action(const std::string& name, Key key) { add_action_event(name, std::make_unique<InputEventKey>(key)); }
