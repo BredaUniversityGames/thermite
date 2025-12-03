@@ -27,7 +27,7 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
 
 class TextFile : public tmt::FileResource {
    public:
-    TextFile(tmt::IO::FileLocation file_location) : FileResource(file_location) {}
+    TextFile(tmt::IO::FileLocation file_location) : FileResource(std::move(file_location)) {}
 
     // Inherited via FileResource
     bool load() override {
