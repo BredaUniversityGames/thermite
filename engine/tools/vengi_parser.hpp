@@ -25,7 +25,7 @@ struct RGBA {
     RGBA(uint8_t r, uint8_t g, uint8_t b, uint8_t a = 255) : r(r), g(g), b(b), a(a) {}
 
     // Convert from ABGR uint32
-    static RGBA fromABGR(uint32_t abgr) {
+    static RGBA from_abgr(uint32_t abgr) {
         return RGBA(
             (abgr >> 0) & 0xFF,   // R
             (abgr >> 8) & 0xFF,   // G
@@ -34,7 +34,7 @@ struct RGBA {
         );
     }
 
-    uint32_t toABGR() const { return ((uint32_t)a << 24) | ((uint32_t)b << 16) | ((uint32_t)g << 8) | (uint32_t)r; }
+    uint32_t to_abgr() const { return ((uint32_t)a << 24) | ((uint32_t)b << 16) | ((uint32_t)g << 8) | (uint32_t)r; }
 };
 
 struct PaletteColor {
@@ -139,9 +139,9 @@ struct Node {
     Node() : type(NodeType::NONE), node_id(-1), reference_node_id(-1), visible(true), locked(false) { uuid[0] = uuid[1] = 0; }
 
     // Helper to find child nodes by name
-    Node* find_child(const std::string& childName) {
+    Node* find_child(const std::string& child_name) {
         for (auto& child : children) {
-            if (child->name == childName) return child.get();
+            if (child->name == child_name) return child.get();
         }
         return nullptr;
     }
@@ -243,7 +243,7 @@ class BinaryParser {
     }
 
     // parsing related
-    vengi::NodeType parse_node_type(const std::string& typeStr);
+    vengi::NodeType parse_node_type(const std::string& type_str);
     bool parse_palette_identifier(vengi::Node& node);
     bool parse_palette_normals(vengi::Node& node);
     bool parse_palette_colors(vengi::Node& node);

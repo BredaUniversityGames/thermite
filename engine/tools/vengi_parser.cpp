@@ -82,13 +82,13 @@ std::vector<char> VengiParser::ZLibDecompressVengiFile(std::vector<char>& compre
 }
 
 namespace vengi {
-vengi::NodeType BinaryParser::parse_node_type(const std::string& typeStr) {
-    if (typeStr == "Root") return NodeType::ROOT;
-    if (typeStr == "Model") return NodeType::MODEL;
-    if (typeStr == "ModelReference") return NodeType::MODELREFERENCE;
-    if (typeStr == "Group") return NodeType::GROUP;
-    if (typeStr == "Camera") return NodeType::CAMERA;
-    if (typeStr == "Point") return NodeType::POINT;
+vengi::NodeType BinaryParser::parse_node_type(const std::string& type_str) {
+    if (type_str == "Root") return NodeType::ROOT;
+    if (type_str == "Model") return NodeType::MODEL;
+    if (type_str == "ModelReference") return NodeType::MODELREFERENCE;
+    if (type_str == "Group") return NodeType::GROUP;
+    if (type_str == "Camera") return NodeType::CAMERA;
+    if (type_str == "Point") return NodeType::POINT;
     return NodeType::NONE;
 }
 
@@ -101,15 +101,15 @@ bool BinaryParser::parse_node(vengi::Node& node) {
 
     // Read node data
     node.name = read_string();
-    std::string typeStr = read_string();
-    node.type = parse_node_type(typeStr);
+    std::string type_str = read_string();
+    node.type = parse_node_type(type_str);
     node.uuid[0] = read_uint64();
     node.uuid[1] = read_uint64();
     node.node_id = read_int32();
     node.reference_node_id = read_int32();
     node.visible = read_bool();
     node.locked = read_bool();
-    node.color = RGBA::fromABGR(read_uint32());
+    node.color = RGBA::from_abgr(read_uint32());
     node.pivot = read_vec3f();
 
     // Parse chunks until ENDN
@@ -191,13 +191,13 @@ bool BinaryParser::parse_voxel_data(vengi::Node& node) {
     for (int32_t z = node.voxel_data->region.lower.z; z <= node.voxel_data->region.upper.z; z++) {
         for (int32_t y = node.voxel_data->region.lower.y; y <= node.voxel_data->region.upper.y; y++) {
             for (int32_t x = node.voxel_data->region.lower.x; x <= node.voxel_data->region.upper.x; x++) {
-                bool isAir = read_bool();
-                if (isAir) {
+                bool is_air = read_bool();
+                if (is_air) {
                     node.voxel_data->voxels.emplace_back();
                 } else {
-                    uint8_t colorIndex = read_uint8();
-                    uint8_t normalIndex = read_uint8();
-                    node.voxel_data->voxels.emplace_back(colorIndex, normalIndex);
+                    uint8_t color_index = read_uint8();
+                    uint8_t normal_index = read_uint8();
+                    node.voxel_data->voxels.emplace_back(color_index, normal_index);
                 }
             }
         }
@@ -217,13 +217,13 @@ bool BinaryParser::parse_palette_colors(vengi::Node& node) {
     // Read colors
     std::vector<RGBA> colors;
     for (uint32_t i = 0; i < color_count; i++) {
-        colors.push_back(RGBA::fromABGR(read_uint32()));
+        colors.push_back(RGBA::from_abgr(read_uint32()));
     }
 
     // Read emit colors (deprecated)
     std::vector<RGBA> emit_colors;
     for (uint32_t i = 0; i < color_count; i++) {
-        emit_colors.push_back(RGBA::fromABGR(read_uint32()));
+        emit_colors.push_back(RGBA::from_abgr(read_uint32()));
     }
 
     // Read indices
@@ -275,7 +275,7 @@ bool BinaryParser::parse_palette_normals(vengi::Node& node) {
 
     uint32_t normal_count = read_uint32();
     for (uint32_t i = 0; i < normal_count; i++) {
-        node.palette->normals.push_back(RGBA::fromABGR(read_uint32()));
+        node.palette->normals.push_back(RGBA::from_abgr(read_uint32()));
     }
 
     return true;
