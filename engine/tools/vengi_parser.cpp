@@ -2,7 +2,7 @@
 #include "engine/core/logger.hpp"
 #include "zlib.h"
 
-std::unique_ptr<vengi::Node> VengiParser::Load(const tmt::IO::FileLocation& vengi_file) {
+std::unique_ptr<vengi::Node> VengiParser::load(const tmt::IO::FileLocation& vengi_file) {
     using namespace tmt;
     std::vector<char> data = IO::read_file(vengi_file);
 
@@ -20,7 +20,7 @@ std::unique_ptr<vengi::Node> VengiParser::Load(const tmt::IO::FileLocation& veng
             return ret_node;
         }
 
-        std::vector<char> decompressed_output = ZLibDecompressVengiFile(data);
+        std::vector<char> decompressed_output = zlib_decompress_vengi_file(data);
 
         // Parse decompressed data
         vengi::BinaryParser reader(decompressed_output);
@@ -44,7 +44,7 @@ std::unique_ptr<vengi::Node> VengiParser::Load(const tmt::IO::FileLocation& veng
     }
 }
 
-std::vector<char> VengiParser::ZLibDecompressVengiFile(std::vector<char>& compressed_data) {
+std::vector<char> VengiParser::zlib_decompress_vengi_file(std::vector<char>& compressed_data) {
     // Decompress zlib data (starts after magic number)
     std::vector<char> decompressed_output;
     z_stream stream = {};
@@ -94,8 +94,8 @@ vengi::NodeType BinaryParser::parse_node_type(const std::string& type_str) {
 
 bool BinaryParser::parse_node(vengi::Node& node) {
     // Read NODE FourCC
-    uint32_t fourCC = read_fourCC();
-    if (fourCC != 0x45444F4E) {  // "NODE"
+    uint32_t four_cc = read_four_cc();
+    if (four_cc != 0x45444F4E) {  // "NODE"
         throw std::runtime_error("Expected NODE block!");
     }
 
@@ -114,9 +114,9 @@ bool BinaryParser::parse_node(vengi::Node& node) {
 
     // Parse chunks until ENDN
     while (!eof()) {
-        fourCC = read_fourCC();
+        four_cc = read_four_cc();
 
-        switch (fourCC) {
+        switch (four_cc) {
             case 0x4E444E45:
                 return true;
             case 0x504F5250:
@@ -295,7 +295,7 @@ bool BinaryParser::parse_animation(vengi::Animation& anim) {
 
     // Parse keyframes until ENDA
     while (!eof()) {
-        uint32_t fourCC = read_fourCC();
+        uint32_t fourCC = read_four_cc();
 
         if (fourCC == 0x41444E45) {  // "ENDA"
             break;

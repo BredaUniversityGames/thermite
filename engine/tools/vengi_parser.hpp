@@ -136,7 +136,7 @@ struct Node {
     std::vector<Animation> animations;
     std::vector<std::unique_ptr<Node>> children;
 
-    Node() : type(NodeType::NONE), node_id(-1), reference_node_id(-1), visible(true), locked(false) { uuid[0] = uuid[1] = 0; }
+    Node() : type(NodeType::NONE), node_id(-1), reference_node_id(-1), visible(true), locked(false), pivot(0.f) { uuid[0] = uuid[1] = 0; }
 
     // Helper to find child nodes by name
     Node* find_child(const std::string& child_name) {
@@ -226,7 +226,7 @@ class BinaryParser {
         return value;
     }
 
-    uint32_t read_fourCC() { return read_uint32(); }
+    uint32_t read_four_cc() { return read_uint32(); }
 
     glm::vec3 read_vec3f() { return glm::vec3(read_float(), read_float(), read_float()); }
 
@@ -256,8 +256,8 @@ class BinaryParser {
 
 class VengiParser {
    public:
-    static std::unique_ptr<vengi::Node> Load(const tmt::IO::FileLocation& vengi_file);
+    static std::unique_ptr<vengi::Node> load(const tmt::IO::FileLocation& vengi_file);
 
    private:
-    static std::vector<char> ZLibDecompressVengiFile(std::vector<char>& compressed_data);
+    static std::vector<char> zlib_decompress_vengi_file(std::vector<char>& compressed_data);
 };
