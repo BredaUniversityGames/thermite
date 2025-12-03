@@ -24,8 +24,6 @@ add_subdirectory("engine")
 # Editor sub-directory
 if (THERMITE_EDITOR_BUILD)
     add_subdirectory("editor")
-    # Link editor to engine
-    target_link_libraries(thermite-editor PRIVATE thermite-engine)
 endif()
 
 # Add externals

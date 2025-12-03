@@ -9,13 +9,15 @@ if (NOT MSVC)
 endif()
 
 # Collect source files
-file(GLOB_RECURSE THERMITE_SOURCES
+file(GLOB_RECURSE THERMITE_SOURCES CONFIGURE_DEPENDS
     ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/*.hpp
 )
 
 # Add the editor as static library
 add_library(thermite-editor STATIC ${THERMITE_SOURCES})
+# Link editor to engine
+target_link_libraries(thermite-editor PRIVATE thermite-engine)
 
 # Add include paths
 target_include_directories(thermite-editor

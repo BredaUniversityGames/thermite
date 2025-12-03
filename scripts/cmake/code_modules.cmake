@@ -36,7 +36,7 @@ function(find_and_add_targets)
 			message(STATUS "Auto-adding project target: ${target_name}")
 		
 			# Glob all the source files
-			file(GLOB_RECURSE PROJECT_SOURCES
+			file(GLOB_RECURSE PROJECT_SOURCES CONFIGURE_DEPENDS
 				${project_dir}/*.cpp
 				${project_dir}/*.hpp
 			)
