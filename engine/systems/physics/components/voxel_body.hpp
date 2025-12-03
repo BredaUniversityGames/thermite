@@ -1,14 +1,24 @@
 #pragma once
 #include "glm/gtc/quaternion.hpp"
 #include "engine/systems/physics/physics_voxel_data.hpp"
+#include "engine/tools/serializer.hpp"
 
 namespace tmt {
 
-struct Box {
-    glm::vec3 vertex[8] {};
-};
-
 struct VoxelBody {
+    struct Box {
+        glm::vec3 vertex[8] {};
+    };
+
+    struct Edge {
+        glm::vec3 start = glm::vec3(0);
+        glm::vec3 end = glm::vec3(0);
+    };
+
+    struct Axes {
+        glm::vec3 axis[3] {};
+    };
+
     // RigidBody properties
     float accumulated_forces = 1000.0f;
     glm::vec3 stored_velocity = glm::vec3(0);
@@ -40,8 +50,8 @@ struct VoxelBody {
 
     Type type = DYNAMIC;
 
-    const float get_inv_mass() const;
-    const glm::mat3 get_inv_world_inertia() const;
+    float get_inv_mass() const;
+    glm::mat3 get_inv_world_inertia() const;
 
     // Collider properties
     float width = 1.0f;
@@ -50,10 +60,12 @@ struct VoxelBody {
 
     PhysicsVoxelData voxels = {};
 
-    const tmt::Box get_local_bounds() const;
-    const tmt::Box get_world_bounds() const;
-    const std::array<glm::vec3, 3> get_axes() const;
-    const std::array<std::pair<glm::vec3, glm::vec3>, 12> get_world_edges() const;
+    Box get_local_bounds() const;
+    Box get_world_bounds() const;
+    Axes get_axes() const;
+    std::array<Edge, 12> get_world_edges() const;
 };
 
 }  // namespace tmt
+
+JSON_REFLECT(tmt::VoxelBody, linear_drag, angular_drag, gravity, density);

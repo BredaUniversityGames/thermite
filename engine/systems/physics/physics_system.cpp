@@ -129,12 +129,12 @@ bool Physics::sat_early_out(const VoxelBody& vb_a, const VoxelBody& vb_b) {
     for (size_t i = 0; i < 3; i++) {
         float overlap;
 
-        if (is_separated(axes_a[i], vert_a, vert_b, overlap)) return true;
-        if (is_separated(axes_b[i], vert_a, vert_b, overlap)) return true;
+        if (is_separated(axes_a.axis[i], vert_a, vert_b, overlap)) return true;
+        if (is_separated(axes_b.axis[i], vert_a, vert_b, overlap)) return true;
 
         for (size_t j = 0; j < 3; j++)  // edge-edge
         {
-            auto cross_axis = glm::normalize(glm::cross(axes_a[i], axes_b[j]));
+            auto cross_axis = glm::normalize(glm::cross(axes_a.axis[i], axes_b.axis[j]));
             if (glm::length(cross_axis) > 0) {
                 if (is_separated(cross_axis, vert_a, vert_b, overlap)) return true;
             }
@@ -196,8 +196,8 @@ void Physics::get_overlap(const VoxelBody& vb_a, const VoxelBody& vb_b, glm::ive
 
     // Check B edges
     for (size_t i = 0; i < 12; i++) {
-        const glm::vec3 v1 = (edges_b[i].first - pos_a) * rot_a;
-        const glm::vec3 v2 = (edges_b[i].second - pos_a) * rot_a;
+        const glm::vec3 v1 = (edges_b[i].start - pos_a) * rot_a;
+        const glm::vec3 v2 = (edges_b[i].end - pos_a) * rot_a;
 
         const glm::vec3 diff = v2 - v1;
         const float length = glm::length(diff);
@@ -229,11 +229,11 @@ void Physics::get_overlap(const VoxelBody& vb_a, const VoxelBody& vb_b, glm::ive
 
     // Check A edges
     for (size_t i = 0; i < 12; i++) {
-        const glm::vec3 v1 = (edges_a[i].first - pos_b) * rot_b;
-        const glm::vec3 v2 = (edges_a[i].second - pos_b) * rot_b;
+        const glm::vec3 v1 = (edges_a[i].start - pos_b) * rot_b;
+        const glm::vec3 v2 = (edges_a[i].end - pos_b) * rot_b;
 
-        const glm::vec3 transformed_v1 = (edges_a[i].first - pos_a) * rot_a;
-        const glm::vec3 transformed_v2 = (edges_a[i].second - pos_a) * rot_a;
+        const glm::vec3 transformed_v1 = (edges_a[i].start - pos_a) * rot_a;
+        const glm::vec3 transformed_v2 = (edges_a[i].end - pos_a) * rot_a;
 
         const glm::vec3 diff = v2 - v1;
         const float length = glm::length(diff);
@@ -264,8 +264,8 @@ void Physics::get_overlap(const VoxelBody& vb_a, const VoxelBody& vb_b, glm::ive
     }
 
     for (int j = 0; j < 3; j++) {
-        min[j] = (int)std::floor((std::clamp(t_min[j] - VOXEL_SIZE, -local_half_a[j], local_half_a[j]) + local_half_a[j]) * VOXELS_PER_UNIT);
-        max[j] = (int)std::floor((std::clamp(t_max[j] + VOXEL_SIZE, -local_half_a[j], local_half_a[j]) + local_half_a[j]) * VOXELS_PER_UNIT);
+        min[j] = (int)std::floor((std::clamp(t_min[j] - UNITS_PER_VOXEL, -local_half_a[j], local_half_a[j]) + local_half_a[j]) * VOXELS_PER_UNIT);
+        max[j] = (int)std::floor((std::clamp(t_max[j] + UNITS_PER_VOXEL, -local_half_a[j], local_half_a[j]) + local_half_a[j]) * VOXELS_PER_UNIT);
     }
 }
 
@@ -288,7 +288,7 @@ float Physics::ray_aabb(const glm::vec3& min, const glm::vec3& max, const glm::v
     return 1e32f; /* miss */
 }
 
-bool Physics::is_separated(const glm::vec3& axis, const Box& box_a, const Box& box_b, float& overlap) const {
+bool Physics::is_separated(const glm::vec3& axis, const VoxelBody::Box& box_a, const VoxelBody::Box& box_b, float& overlap) const {
     float min_a = 1e32f, max_a = -1e32f;
     float min_b = 1e32f, max_b = -1e32f;
 
@@ -331,7 +331,7 @@ void Physics::check_neighbors(const VoxelBody& vb_a, const VoxelBody& vb_b, cons
 
     // Transform the voxel from local voxel space A to world space
     glm::vec3 local_pos_a = {x, y, z};
-    local_pos_a *= VOXEL_SIZE;
+    local_pos_a *= UNITS_PER_VOXEL;
     local_pos_a -= half_scale_a - glm::vec3(VOXEL_SIZE_HALF);
     const glm::vec3 world_pos_a = pos_a + rot_a * local_pos_a;
 
@@ -356,7 +356,7 @@ void Physics::check_neighbors(const VoxelBody& vb_a, const VoxelBody& vb_b, cons
 
                 // Transform the voxel from local voxel space B to world space
                 glm::vec3 local_pos_b = {coord.x, coord.y, coord.z};
-                local_pos_b *= VOXEL_SIZE;
+                local_pos_b *= UNITS_PER_VOXEL;
                 local_pos_b -= half_scale_b - glm::vec3(VOXEL_SIZE_HALF);
                 glm::vec3 world_pos_b = pos_b + rot_b * local_pos_b;
 
@@ -371,9 +371,9 @@ void Physics::check_neighbors(const VoxelBody& vb_a, const VoxelBody& vb_b, cons
 
                 // Decide penetration
                 if (voxel_a.type == PhysicsVoxelType::INSIDE || voxel_b.type == PhysicsVoxelType::INSIDE)
-                    contact.penetration = VOXEL_SIZE;
+                    contact.penetration = UNITS_PER_VOXEL;
                 else
-                    contact.penetration = VOXEL_SIZE - sqrtf(dist);
+                    contact.penetration = UNITS_PER_VOXEL - sqrtf(dist);
 
                 // Decide normal
                 if (voxel_a.type == PhysicsVoxelType::INSIDE || voxel_a.type == PhysicsVoxelType::FACE)
@@ -428,13 +428,13 @@ void Physics::initialize_voxel_body(VoxelBody& vb) {
                 if (vb.voxels.get_voxel(x, y, z).type == PhysicsVoxelType::EMPTY) continue;
 
                 filled_counter++;
-                sum += glm::vec3(x, y, z) * VOXEL_SIZE - half_scale + VOXEL_SIZE_HALF;
+                sum += glm::vec3(x, y, z) * UNITS_PER_VOXEL - half_scale + VOXEL_SIZE_HALF;
             }
         }
     }
 
     vb.com_local_offset = sum / (float)filled_counter;
-    const float voxel_mass = std::powf(VOXEL_SIZE, 3) * vb.density;
+    const float voxel_mass = std::powf(UNITS_PER_VOXEL, 3) * vb.density;
     vb.inv_mass = 1.0f / (voxel_mass * filled_counter);
 
     glm::mat3 inertia_tensor(0.0f);
@@ -443,7 +443,7 @@ void Physics::initialize_voxel_body(VoxelBody& vb) {
             for (size_t x = 0; x < vb.voxels.get_size().x; x++) {
                 if (vb.voxels.get_voxel(x, y, z).type == PhysicsVoxelType::EMPTY) continue;
 
-                const glm::vec3 pos = glm::vec3(x, y, z) * VOXEL_SIZE - half_scale + VOXEL_SIZE_HALF;
+                const glm::vec3 pos = glm::vec3(x, y, z) * UNITS_PER_VOXEL - half_scale + VOXEL_SIZE_HALF;
                 const glm::vec3 r = pos - vb.com_local_offset;
                 float r2 = glm::dot(r, r);
 
@@ -476,11 +476,11 @@ void Physics::initialize_voxel_body(VoxelBody& vb) {
     vb.inv_inertia = glm::inverse(inertia_tensor);
 }
 
-void Physics::add_force(VoxelBody vb, const glm::vec3& force) { vb.stored_velocity += force; }
+void Physics::add_force(VoxelBody& vb, const glm::vec3& force) { vb.stored_velocity += force; }
 
-void Physics::add_torque(VoxelBody vb, const glm::vec3& torque) { vb.stored_torque += torque; }
+void Physics::add_torque(VoxelBody& vb, const glm::vec3& torque) { vb.stored_torque += torque; }
 
-void Physics::add_force_at_position(VoxelBody vb, const glm::vec3& force, const glm::vec3& p) {
+void Physics::add_force_at_position(VoxelBody& vb, const glm::vec3& force, const glm::vec3& p) {
     const glm::vec3 r = p - vb.position;
     vb.stored_velocity += force * vb.inv_mass;
 

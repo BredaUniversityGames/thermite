@@ -45,7 +45,7 @@ struct PhysicsVoxel {
     PhysicsVoxelType type : 3;
     uint8_t normal_index : 5;
 
-    glm::ivec3 get_normal() const { return NORMAL_LUT[normal_index]; }
+    const glm::ivec3 get_normal() const { return NORMAL_LUT[normal_index]; }
 };
 
 struct PhysicsVoxelData {
@@ -56,6 +56,8 @@ struct PhysicsVoxelData {
 
     const std::vector<PhysicsVoxel>& get_data() const { return data; }
     const glm::uvec3& get_size() const { return size; }
+    //std::vector<PhysicsVoxel>& set_data() { return data; }
+    //glm::uvec3& set_size() { return size; }
 
     void upload_voxel_texture_if_dirty() {}
 

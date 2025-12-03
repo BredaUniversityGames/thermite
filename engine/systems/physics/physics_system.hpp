@@ -33,16 +33,16 @@ class Physics : public ISystem {
     bool sat_early_out(const VoxelBody& vb_a, const VoxelBody& vb_b);
     void get_overlap(const VoxelBody& vb_a, const VoxelBody& vb_b, glm::ivec3& min, glm::ivec3& max);
     float ray_aabb(const glm::vec3& min, const glm::vec3& max, const glm::vec3& ro, const glm::vec3& rd) const;
-    bool is_separated(const glm::vec3& axis, const Box& box_a, const Box& box_b, float& overlap) const;
+    bool is_separated(const glm::vec3& axis, const VoxelBody::Box& box_a, const VoxelBody::Box& box_b, float& overlap) const;
     void check_neighbors(const VoxelBody& vb_a, const VoxelBody& vb_b, const size_t x, const size_t y, const size_t z, Collision& coll) const;
     void apply_velocities() const;
 
    public:
     // Static utility functions
     static void initialize_voxel_body(VoxelBody& vb);
-    static void add_force(VoxelBody vb, const glm::vec3& force);
-    static void add_torque(VoxelBody vb, const glm::vec3& torque);
-    static void add_force_at_position(VoxelBody vb, const glm::vec3& force, const glm::vec3& position);
+    static void add_force(VoxelBody& vb, const glm::vec3& force);
+    static void add_torque(VoxelBody& vb, const glm::vec3& torque);
+    static void add_force_at_position(VoxelBody& vb, const glm::vec3& force, const glm::vec3& position);
 };
 
 }  // namespace tmt
