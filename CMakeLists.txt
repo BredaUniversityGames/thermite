@@ -22,7 +22,9 @@ option(THERMITE_BUILD_TESTS "Build unit tests" OFF)
 add_subdirectory("engine")
 
 # Editor sub-directory
-add_subdirectory("editor")
+if (THERMITE_EDITOR_BUILD)
+    add_subdirectory("editor")
+endif()
 
 # Add externals
 add_subdirectory("extern")
