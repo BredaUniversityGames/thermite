@@ -32,13 +32,13 @@ struct VoxelBody {
     glm::quat rotation = glm::quat(1, 0, 0, 0);
 
     enum Type {
-        Static,
-        Dynamic,
-        Wants_Sleep,
-        Sleeping,
+        STATIC,
+        DYNAMIC,
+        WANTS_SLEEP,
+        SLEEPING,
     };
 
-    Type type = Dynamic;
+    Type type = DYNAMIC;
 
     const float get_inv_mass() const;
     const glm::mat3 get_inv_world_inertia() const;

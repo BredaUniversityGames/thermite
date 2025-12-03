@@ -2,12 +2,10 @@
 #include <glm/gtx/quaternion.hpp>
 #include <array>
 
-const float tmt::VoxelBody::get_inv_mass() const {
-    return type != Dynamic ? 0 : inv_mass;
-}
+const float tmt::VoxelBody::get_inv_mass() const { return type != DYNAMIC ? 0 : inv_mass; }
 
 const glm::mat3 tmt::VoxelBody::get_inv_world_inertia() const {
-    if (type != Dynamic) return glm::mat3(0);
+    if (type != DYNAMIC) return glm::mat3(0);
 
     const glm::mat3 r = glm::toMat3(rotation);
     return r * inv_inertia * glm::transpose(r);
@@ -31,7 +29,7 @@ const tmt::Box tmt::VoxelBody::get_local_bounds() const {
     return box;
 }
 
-const tmt::Box tmt::VoxelBody::get_world_bounds() const { 
+const tmt::Box tmt::VoxelBody::get_world_bounds() const {
     tmt::Box box = get_local_bounds();
 
     // Transform vertices to world space
@@ -74,4 +72,3 @@ const std::array<std::pair<glm::vec3, glm::vec3>, 12> tmt::VoxelBody::get_world_
         {box.vertex[3], box.vertex[7]},
     }};
 }
-

@@ -30,6 +30,6 @@ class Collision {
 
     std::vector<ContactPoint> contacts = {};
 
-    inline const uint64_t get_id() const { return id; };
+    inline uint64_t get_id() const { return id; };
 };
 }  // namespace tmt

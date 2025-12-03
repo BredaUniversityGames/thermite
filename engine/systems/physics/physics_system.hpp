@@ -5,8 +5,8 @@
 #include "collision.hpp"
 #include "constraint_solver.hpp"
 #include "components/voxel_body.hpp"
-//#include "components/rigidbody.hpp"
-//#include "components/voxel_collider.hpp"
+// #include "components/rigidbody.hpp"
+// #include "components/voxel_collider.hpp"
 
 namespace tmt {
 
@@ -24,7 +24,7 @@ class Physics : public ISystem {
    private:
     // Simulation data
     float simulation_time_accum = 0.0f;
-    const int max_contacts = 256;
+    int max_contacts = 256;
     bool simulating = true;
     ConstraintSolver solver = {};
 
@@ -34,8 +34,7 @@ class Physics : public ISystem {
     void get_overlap(const VoxelBody& vb_a, const VoxelBody& vb_b, glm::ivec3& min, glm::ivec3& max);
     float ray_aabb(const glm::vec3& min, const glm::vec3& max, const glm::vec3& ro, const glm::vec3& rd) const;
     bool is_separated(const glm::vec3& axis, const Box& box_a, const Box& box_b, float& overlap) const;
-    void check_neighbors(const VoxelBody& vb_a, const VoxelBody& vb_b, const size_t x, const size_t y, const size_t z, Collision& coll)
-        const;
+    void check_neighbors(const VoxelBody& vb_a, const VoxelBody& vb_b, const size_t x, const size_t y, const size_t z, Collision& coll) const;
     void apply_velocities() const;
 
    public:

@@ -17,20 +17,18 @@ void ConstraintSolver::solve_velocities(const float) {
             auto& body_b = engine.ecs.get_registry().get<VoxelBody>(collision.entity_b);
 
             // Check if we want to go into sleep state
-            if ((body_a.type == VoxelBody::Sleeping && body_b.type == VoxelBody::Dynamic) || (body_b.type == VoxelBody::Sleeping && body_a.type == VoxelBody::Dynamic)) {
-                body_a.type = VoxelBody::Dynamic;
-                body_b.type = VoxelBody::Dynamic;
-            } else if (body_a.type == VoxelBody::Wants_Sleep && body_b.type == VoxelBody::Wants_Sleep) {
-                body_a.type = VoxelBody::Sleeping;
-                body_b.type = VoxelBody::Sleeping;
-            } else if (body_a.type == VoxelBody::Wants_Sleep && body_b.type == VoxelBody::Static)
-                body_a.type = VoxelBody::Sleeping;
-            else if (body_a.type == VoxelBody::Static && body_b.type == VoxelBody::Wants_Sleep)
-                body_b.type = VoxelBody::Sleeping;
+            if ((body_a.type == VoxelBody::SLEEPING && body_b.type == VoxelBody::DYNAMIC) || (body_b.type == VoxelBody::SLEEPING && body_a.type == VoxelBody::DYNAMIC)) {
+                body_a.type = VoxelBody::DYNAMIC;
+                body_b.type = VoxelBody::DYNAMIC;
+            } else if (body_a.type == VoxelBody::WANTS_SLEEP && body_b.type == VoxelBody::WANTS_SLEEP) {
+                body_a.type = VoxelBody::SLEEPING;
+                body_b.type = VoxelBody::SLEEPING;
+            } else if (body_a.type == VoxelBody::WANTS_SLEEP && body_b.type == VoxelBody::STATIC)
+                body_a.type = VoxelBody::SLEEPING;
+            else if (body_a.type == VoxelBody::STATIC && body_b.type == VoxelBody::WANTS_SLEEP)
+                body_b.type = VoxelBody::SLEEPING;
 
-            if ((body_a.type == VoxelBody::Sleeping || body_a.type == VoxelBody::Static) &&
-                (body_b.type == VoxelBody::Sleeping || body_b.type == VoxelBody::Static))
-                continue;
+            if ((body_a.type == VoxelBody::SLEEPING || body_a.type == VoxelBody::STATIC) && (body_b.type == VoxelBody::SLEEPING || body_b.type == VoxelBody::STATIC)) continue;
 
             const float inv_mass_a = body_a.get_inv_mass();
             const float inv_mass_b = body_b.get_inv_mass();
@@ -127,7 +125,7 @@ void ConstraintSolver::solve_positions(const float) {
                 const float steering_force = glm::clamp(steering_constant * (-contact.penetration + slop), max_correction, 0.0f);
                 const glm::vec3 impulse = contact.normal * (-steering_force * contact.normal_mass);
 
-                if (body_a.type != VoxelBody::Static) {
+                if (body_a.type != VoxelBody::STATIC) {
                     body_a.center_of_mass -= impulse * body_a.inv_mass;
                     glm::vec3 r_a = contact.point - body_a.center_of_mass;
                     glm::vec3 axis = glm::cross(r_a, -impulse);
@@ -136,7 +134,7 @@ void ConstraintSolver::solve_positions(const float) {
                     body_a.rotation = glm::normalize(rot * body_a.rotation);
                 }
 
-                if (body_b.type != VoxelBody::Static) {
+                if (body_b.type != VoxelBody::STATIC) {
                     body_b.center_of_mass += impulse * body_b.inv_mass;
                     glm::vec3 r_b = contact.point - body_b.center_of_mass;
                     glm::vec3 axis = glm::cross(r_b, impulse);
@@ -147,11 +145,11 @@ void ConstraintSolver::solve_positions(const float) {
             }
 
             // Update the positions of the rigid bodies
-            if (body_a.type != VoxelBody::Static) {
+            if (body_a.type != VoxelBody::STATIC) {
                 body_a.position = body_a.center_of_mass - body_a.rotation * body_a.com_local_offset;
             }
 
-            if (body_b.type != VoxelBody::Static) {
+            if (body_b.type != VoxelBody::STATIC) {
                 body_b.position = body_b.center_of_mass - body_b.rotation * body_b.com_local_offset;
             }
         }
