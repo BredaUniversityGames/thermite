@@ -17,12 +17,12 @@ class Resource {
         return load();
     }
 
-    bool is_loaded() const { return _is_loaded; }
+    bool is_loaded() const { return loaded; }
 
    private:
     friend class Resources;
     /* Managed by Resources system */
-    bool _is_loaded = false;
+    bool loaded = false;
 };
 
 /* Immutable, data *should* not be changed */

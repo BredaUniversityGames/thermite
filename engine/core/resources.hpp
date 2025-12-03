@@ -27,10 +27,10 @@ class Resources {
         if (!resource->load()) {
             tmt::Log::error(tmt::Log::Scope::ENGINE, "Failed to load resource!");
             resource->unload();
-            resource->_is_loaded = false;
+            resource->loaded = false;
             return nullptr;
         }
-        resource->_is_loaded = true;
+        resource->loaded = true;
 
         resources.emplace(file_location, resource);
 
@@ -55,10 +55,10 @@ class Resources {
         if (!resource->load()) {
             tmt::Log::error(tmt::Log::Scope::ENGINE, "Failed to load runtime resource!");
             resource->unload();
-            resource->_is_loaded = false;
+            resource->loaded = false;
             return nullptr;
         }
-        resource->_is_loaded = true;
+        resource->loaded = true;
 
         auto& collection = resources.at(file_resource->file_location);
         collection.push_back(resource);

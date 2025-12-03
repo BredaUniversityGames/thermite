@@ -10,7 +10,7 @@ void Resources::unload_unused() {
         const int ref_count = collection.file_resource.use_count();
         if (ref_count <= 1) {
             collection.file_resource->unload();
-            collection.file_resource->_is_loaded = false;
+            collection.file_resource->loaded = false;
             tmt::Log::info(tmt::Log::Scope::ENGINE, "Unloaded unused file resource {}", file_location);
             resources.erase(file_location);
             i--;
