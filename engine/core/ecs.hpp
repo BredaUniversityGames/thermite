@@ -11,6 +11,8 @@
 #include "engine/events/game.hpp"
 #include "engine/events/engine.hpp"
 
+#include "engine/tools/fmt/helper.hpp"
+
 namespace tmt {
 
 using Registry = entt::registry;
@@ -21,7 +23,7 @@ struct Delete {};
 template <typename T>
 concept System = std::is_base_of_v<ISystem, T>;
 
-class Ecs : public OnStart, public OnUpdate, public OnFixedUpdate, public OnEnd, public OnEndFrame {
+class Ecs : public OnGameStart, public OnGameUpdate, public OnGameFixedUpdate, public OnGameEnd, public OnEndFrame {
    public:
     Ecs() = default;
     ~Ecs() = default;
@@ -96,6 +98,16 @@ class Ecs : public OnStart, public OnUpdate, public OnFixedUpdate, public OnEnd,
         }
     }
 
+    template <typename... Component>
+    decltype(auto) add_or_get_component(const Entity entity) {
+        constexpr size_t COUNT = sizeof...(Component);
+        if constexpr (COUNT == 1) {
+            return registry.emplace_or_replace<Component...>(entity);
+        } else {
+            return std::make_tuple(registry.emplace_or_replace<Component>(entity)...);
+        }
+    }
+
     /* Single + Multiple try_get */
     template <typename... Component>
     decltype(auto) try_get_component(const Entity entity) {
@@ -128,15 +140,17 @@ class Ecs : public OnStart, public OnUpdate, public OnFixedUpdate, public OnEnd,
 
     Registry registry;
 
-    void on_start() override;
+    void on_game_start() override;
 
-    void on_update(const FrameData& time) override;
+    void on_game_update(const FrameData& time) override;
 
-    void on_fixed_update(const FrameData& time) override;
+    void on_game_fixed_update(const FrameData& time) override;
 
-    void on_end() override;
+    void on_game_end() override;
 
     void on_end_frame() override;
 };
 
 }  // namespace tmt
+
+FMT_LOGGING(tmt::Entity, "{}", static_cast<uint32_t>(obj));

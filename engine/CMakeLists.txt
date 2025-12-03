@@ -23,12 +23,9 @@ target_include_directories(thermite-engine
     PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-# Always copy the assets folder after building
-add_custom_command(TARGET thermite-engine POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-            ${CMAKE_SOURCE_DIR}/engine/assets $<TARGET_FILE_DIR:thermite-engine>/assets
-    COMMENT "Copying assets to output directory"
-)
+# Compile Shaders
+include(../scripts/cmake/shader_compilation.cmake)
+compile_shaders()
 
 # Add the precompiled header
 target_precompile_headers(thermite-engine PRIVATE "shared/pch.hpp")

@@ -40,6 +40,15 @@ target_include_directories(visit_struct
     ${CMAKE_CURRENT_SOURCE_DIR}/visit_struct/
 )
 
+# JsonReflect - json reflection
+# https://github.com/Sven-vh/JsonReflect
+add_library(JsonReflect INTERFACE)
+target_include_directories(JsonReflect
+    INTERFACE
+    ${CMAKE_CURRENT_SOURCE_DIR}/JsonReflect/
+    ${CMAKE_CURRENT_SOURCE_DIR}/JsonReflect/extern
+)
+
 # nlohmann json - json parsing
 # https://github.com/nlohmann/json
 add_subdirectory(nlohmann_json)
@@ -72,12 +81,29 @@ endif()
 add_subdirectory(tracy)
 
 
+# ufbx - single source fbx loading
+# https://github.com/ufbx/ufbx
+target_sources(thermite-engine
+    PRIVATE "./ufbx/ufbx.cpp"
+)
+target_include_directories(thermite-engine
+    PRIVATE "./ufbx"
+)
+
+# zlib - zip (un)compression 
+# https://github.com/madler/zlib
+set(ZLIB_BUILD_TESTING OFF CACHE BOOL "" FORCE)
+set(ZLIB_BUILD_SHARED OFF CACHE BOOL "" FORCE)
+set(ZLIB_BUILD_STATIC ON CACHE BOOL "" FORCE)
+add_subdirectory(zlib)
+
 # Link libraries publicly
 target_link_libraries(thermite-engine
     PUBLIC 
     spdlog::spdlog
     glm::glm
     EnTT::EnTT
+    JsonReflect
     graphite
     Tracy::TracyClient
 
@@ -89,6 +115,7 @@ target_link_libraries(thermite-engine
 	SDL3::SDL3-static
     visit_struct
     nlohmann_json::nlohmann_json
+    ZLIB::ZLIBSTATIC
 )
 
 
