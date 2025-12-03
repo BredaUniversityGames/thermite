@@ -1,6 +1,9 @@
 #include "window.hpp"
 
 #include <SDL3/SDL.h>
+#include <imgui_impl_sdl3.h>
+
+#include "logger.hpp"
 
 namespace tmt {
 
@@ -10,30 +13,26 @@ Window::~Window() {
     }
 }
 
-void Window::init(const ApplicationSpecs& specs) {
+void Window::init(const ApplicationSpecs&) {
     SDL_SetAppMetadata("Thermite Engine", "0.1", "com.thermite.engine");
 
     if (!SDL_Init(SDL_INIT_VIDEO)) {
-        SDL_Log("Couldn't initialize SDL: %s", SDL_GetError());
+        Log::error(Log::Scope::ENGINE, "Couldn't initialize SDL: %s", SDL_GetError());
         return;
     }
 
-    if (!SDL_CreateWindow(specs.name.c_str(), width, height, SDL_WINDOW_VULKAN)) {
-        SDL_Log("Couldn't create window: %s", SDL_GetError());
+    window = SDL_CreateWindow(title.data(), width, height, SDL_WINDOW_VULKAN);
+
+    if (!window) {
+        Log::error(Log::Scope::ENGINE, "Couldn't create window: %s", SDL_GetError());
         return;
     }
 }
 
-void Window::update() {
-    SDL_Event event {};
+HWND Window::get_window_handle() const {
+    const SDL_PropertiesID props = SDL_GetWindowProperties(window);
 
-    while (SDL_PollEvent(&event)) {
-        switch (event.type) {
-            case SDL_EVENT_QUIT: {
-                is_running = false;
-            }
-        }
-    }
+    return (HWND)SDL_GetPointerProperty(props, SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr);
 }
 
 }  // namespace tmt

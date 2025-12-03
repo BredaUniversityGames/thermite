@@ -1,5 +1,13 @@
 # build directory
 build/
+
+# caches
 /.vs
 /scripts/__pycache__
+imgui.ini
+
+# clang tidy
 tidy_results/report.txt
+
+# binary files
+engine/assets/shaders/bin

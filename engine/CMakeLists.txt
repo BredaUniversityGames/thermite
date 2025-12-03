@@ -23,6 +23,10 @@ target_include_directories(thermite-engine
     PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
+# Compile Shaders
+include(../scripts/cmake/shader_compilation.cmake)
+compile_shaders()
+
 # Add the precompiled header
 target_precompile_headers(thermite-engine PRIVATE "shared/pch.hpp")
 

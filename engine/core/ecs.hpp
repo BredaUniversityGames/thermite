@@ -18,16 +18,17 @@ using Entity = entt::entity;
 
 struct Delete {};
 
-class Ecs : public OnStart, public OnUpdate, public OnFixedUpdate, public OnEnd, public OnEndFrame {
+template <typename T>
+concept System = std::is_base_of_v<ISystem, T>;
+
+class Ecs : public OnGameStart, public OnGameUpdate, public OnGameFixedUpdate, public OnGameEnd, public OnEndFrame {
    public:
     Ecs() = default;
     ~Ecs() = default;
 
     /* Systems */
-    template <typename T, typename... Args>
+    template <System T, typename... Args>
     T& register_system(Args&&... args) {
-        static_assert(std::is_base_of_v<ISystem, T>, "T must inherit from ISystem");
-
         auto system = std::make_unique<T>(std::forward<Args>(args)...);
         T& ref = *system;
 
@@ -35,7 +36,7 @@ class Ecs : public OnStart, public OnUpdate, public OnFixedUpdate, public OnEnd,
         return ref;
     }
 
-    template <typename T>
+    template <System T>
     T& get_system() {
         for (auto& system : systems) {
             if (T* casted = dynamic_cast<T*>(system.get())) {
@@ -45,7 +46,7 @@ class Ecs : public OnStart, public OnUpdate, public OnFixedUpdate, public OnEnd,
         throw std::runtime_error("System not found");
     }
 
-    template <typename T>
+    template <System T>
     T* try_get_system() {
         for (auto& system : systems) {
             if (T* casted = dynamic_cast<T*>(system.get())) {
@@ -95,6 +96,16 @@ class Ecs : public OnStart, public OnUpdate, public OnFixedUpdate, public OnEnd,
         }
     }
 
+    template <typename... Component>
+    decltype(auto) add_or_get_component(const Entity entity) {
+        constexpr size_t COUNT = sizeof...(Component);
+        if constexpr (COUNT == 1) {
+            return registry.emplace_or_replace<Component...>(entity);
+        } else {
+            return std::make_tuple(registry.emplace_or_replace<Component>(entity)...);
+        }
+    }
+
     /* Single + Multiple try_get */
     template <typename... Component>
     decltype(auto) try_get_component(const Entity entity) {
@@ -127,13 +138,13 @@ class Ecs : public OnStart, public OnUpdate, public OnFixedUpdate, public OnEnd,
 
     Registry registry;
 
-    void on_start() override;
+    void on_game_start() override;
 
-    void on_update(const FrameData& time) override;
+    void on_game_update(const FrameData& time) override;
 
-    void on_fixed_update(const FrameData& time) override;
+    void on_game_fixed_update(const FrameData& time) override;
 
-    void on_end() override;
+    void on_game_end() override;
 
     void on_end_frame() override;
 };

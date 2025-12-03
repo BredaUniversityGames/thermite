@@ -4,8 +4,11 @@
 
 namespace tmt {
 /* Forward declarations */
+class Input;
 class Window;
+class Renderer;
 class Ecs;
+class Resources;
 
 class Engine {
    public:
@@ -16,7 +19,7 @@ class Engine {
     Engine(const Engine&) = delete;
     Engine& operator=(const Engine&) = delete;
 
-    void init(const ApplicationSpecs& specs);
+    void init(const ApplicationSpecs& specs, std::unique_ptr<Application> user_app);
     void run();
     void end();
 
@@ -34,8 +37,12 @@ class Engine {
     ~Engine() { delete &my_system; };
     */
 
+    Input& input;
     Window& window;
+
     Ecs& ecs;
+    Renderer& renderer;
+    Resources& resources;
 
     struct Config {
         constexpr static float FIXED_TIME_STEP = 1.0f / 60.0f;
@@ -44,9 +51,19 @@ class Engine {
     uint64_t get_frame_count() const { return frame_count; }
     float get_elapsed_time() const { return timer.elapsed(); }
 
+    bool get_is_running() const;
+    void set_is_running(bool value);
+
    private:
     Timer timer;
     uint64_t frame_count = 0;
+    bool is_running {true};
+    std::unique_ptr<Application> app;
+
+    void start_game();
+    void update_game(const FrameData& frame_data);
+    void fixed_update_game(const FrameData& frame_data);
+    void end_game();
 };
 
 /* Singleton */

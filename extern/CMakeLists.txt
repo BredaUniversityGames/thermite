@@ -28,6 +28,10 @@ add_subdirectory(glm)
 # https://github.com/skypjack/entt
 add_subdirectory(entt)
 
+# graphite - render graph library
+# https://github.com/mxcop/graphite
+add_subdirectory(graphite)
+
 # visit_struct - struct reflection
 # https://github.com/cbeck88/visit_struct
 add_library(visit_struct INTERFACE)
@@ -36,9 +40,44 @@ target_include_directories(visit_struct
     ${CMAKE_CURRENT_SOURCE_DIR}/visit_struct/
 )
 
+# JsonReflect - json reflection
+# https://github.com/Sven-vh/JsonReflect
+add_library(JsonReflect INTERFACE)
+target_include_directories(JsonReflect
+    INTERFACE
+    ${CMAKE_CURRENT_SOURCE_DIR}/JsonReflect/
+    ${CMAKE_CURRENT_SOURCE_DIR}/JsonReflect/extern
+)
+
 # nlohmann json - json parsing
 # https://github.com/nlohmann/json
 add_subdirectory(nlohmann_json)
+
+# ImGUI - immediate mode gui
+# https://github.com/ocornut/imgui
+target_sources(thermite-engine
+    PRIVATE "./imgui/imgui_demo.cpp"
+    PRIVATE "./imgui/imgui_draw.cpp"
+    PRIVATE "./imgui/imgui_tables.cpp"
+    PRIVATE "./imgui/imgui_widgets.cpp"
+    PRIVATE "./imgui/imgui.cpp"
+    PRIVATE "./imgui/backends/imgui_impl_sdl3.cpp"
+    PRIVATE "./imgui/backends/imgui_impl_vulkan.cpp"
+    PRIVATE "./imgui/backends/imgui_impl_win32.cpp"
+)
+target_include_directories(thermite-engine
+    PRIVATE "./imgui"
+    PRIVATE "./imgui/backends"
+)
+
+# ufbx - single source fbx loading
+# https://github.com/ufbx/ufbx
+target_sources(thermite-engine
+    PRIVATE "./ufbx/ufbx.cpp"
+)
+target_include_directories(thermite-engine
+    PRIVATE "./ufbx"
+)
 
 # Link libraries publicly
 target_link_libraries(thermite-engine
@@ -46,6 +85,8 @@ target_link_libraries(thermite-engine
     spdlog::spdlog
     glm::glm
     EnTT::EnTT
+    JsonReflect
+    graphite
 )
 
 # Link libraries privately
