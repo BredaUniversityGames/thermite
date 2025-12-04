@@ -18,8 +18,8 @@ class GoapAction {
     virtual const char* get_name() const = 0;
 
     // Planner helper functions
-    virtual bool check_preconditions(const world_state& ws) const;
-    virtual void apply_effects(world_state& ws) const;  // can call apply() from ws
+    virtual bool check_preconditions(const WorldState& ws) const;
+    virtual void apply_effects(WorldState& ws) const;  // can call apply() from ws
 
     // action execuion helpers
     virtual void on_start(entt::entity agent, entt::registry& ecs) {}
