@@ -124,7 +124,9 @@ void Renderer::update() {
     debug_pipeline.enqueue(render_graph, render_view_buffer, render_target);
 
     /* Add the immediate mode GUI to the render graph */
-    render_graph.add_imgui(*imgui, render_target);
+    if (imgui != nullptr) {
+        render_graph.add_imgui(*imgui, render_target);
+    }
 
     /* Compile the render graph */
     if (const Result r = render_graph.end_graph(); r.is_err()) {

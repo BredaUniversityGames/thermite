@@ -14,9 +14,9 @@
 #include "engine/core/renderer/renderer.hpp"
 #include "engine/core/window.hpp"
 
-#include <extern/imgui/imgui.h>
-#include <extern/imgui/backends/imgui_impl_sdl3.h>
-#include <extern/imgui/backends/imgui_impl_vulkan.h>
+#include <imgui.h>
+#include <imgui_impl_sdl3.h>
+#include <imgui_impl_vulkan.h>
 
 /* Singleton */
 tmt::Editor tmt::editor;
