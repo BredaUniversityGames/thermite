@@ -15,9 +15,9 @@ void CameraSystem::on_start() {
     engine.input.add_action_keys(BACKWARD, Key::S);
     engine.input.add_action_keys(RIGHT, Key::D);
     engine.input.add_action_keys(LEFT, Key::A);
-    engine.input.add_action_keys(UP, Key::Q);
+    engine.input.add_action_keys(UP, Key::E);
+    engine.input.add_action_keys(DOWN, Key::Q);
     engine.input.add_action_keys(UP, Key::SPACE);
-    engine.input.add_action_keys(DOWN, Key::E);
     engine.input.add_action_keys(DOWN, Key::LEFT_CTRL);
 }
 
