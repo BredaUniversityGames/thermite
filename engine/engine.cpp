@@ -79,6 +79,7 @@ void Engine::run() {
 
         /* Update */
         update_game(frame_data);
+        update_engine(frame_data);
 
         accumulator += frame_data.delta_time;
         while (accumulator >= Config::FIXED_TIME_STEP) {
@@ -86,6 +87,7 @@ void Engine::run() {
 
             /* Fixed Update */
             fixed_update_game(frame_data);
+            fixed_update_engine(frame_data);
         }
 
         OnEndFrame::dispatch();
@@ -96,6 +98,17 @@ void Engine::run() {
 
 void Engine::end() { OnEngineEnd::dispatch(); }
 
+/* Engine events */
+void Engine::update_engine(const FrameData& frame_data) {
+    /* dispatch */
+    OnEngineUpdate::dispatch(frame_data);
+}
+void Engine::fixed_update_engine(const FrameData& frame_data) {
+    /* dispatch */
+    OnEngineFixedUpdate::dispatch(frame_data);
+}
+
+/* Game events */
 void Engine::start_game() {
     app->on_start();
     OnGameStart::dispatch();
@@ -117,3 +130,9 @@ void Engine::end_game() {
 }
 
 }  // namespace tmt
+
+#if THERMITE_DEBUG
+#pragma message("THERMITE_DEBUG=1")
+#else
+#pragma message("THERMITE_DEBUG=0")
+#endif
