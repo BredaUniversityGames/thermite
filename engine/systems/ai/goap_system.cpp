@@ -4,8 +4,6 @@
 #include "engine.hpp"
 #include "core/ecs.hpp"
 
-#include "tools/fmt_defines.hpp"
-
 namespace tmt {
 
 void Goap::on_start() { Log::info("Goap on_start"); }
@@ -42,7 +40,7 @@ void Goap::process_agent(tmt::Registry& ecs, tmt::Entity entity, float dt)
 }
 
 // ------------------------------------------------------
-// Step 1 — goal assignment
+// Step 1: goal assignment
 // ------------------------------------------------------
 void Goap::update_goal(tmt::Registry& ecs, tmt::Entity entity, GoapComponent& goap, GoalComponent& goal, world_state& ws) 
 {
@@ -55,7 +53,7 @@ void Goap::update_goal(tmt::Registry& ecs, tmt::Entity entity, GoapComponent& go
 }
 
 // ------------------------------------------------------
-// Step 2 — planning
+// Step 2: planning
 // ------------------------------------------------------
 void Goap::update_plan(tmt::Registry& ecs, tmt::Entity entity, GoapComponent& goap, GoalComponent& goal, world_state& ws) 
 {
@@ -73,7 +71,7 @@ void Goap::update_plan(tmt::Registry& ecs, tmt::Entity entity, GoapComponent& go
 }
 
 // ------------------------------------------------------
-// Step 3 — action execution
+// Step 3: action execution
 // ------------------------------------------------------
 void Goap::update_action(tmt::Registry& ecs, tmt::Entity entity, GoapComponent& goap, float dt) 
 {
