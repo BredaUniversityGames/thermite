@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "engine/tools/profiler_defines.hpp"
+#include "engine/tools/profiler.hpp"
 #include <thread>
 #include <chrono>
 
