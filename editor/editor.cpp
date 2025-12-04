@@ -23,10 +23,6 @@ tmt::Editor tmt::editor;
 
 namespace tmt {
 
-Editor::Editor() {}
-
-Editor::~Editor() {}
-
 void Editor::init() { Log::info("Thermite Editor initialized."); }
 
 void Editor::on_engine_init(const ApplicationSpecs&) {

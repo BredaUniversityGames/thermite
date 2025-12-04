@@ -6,8 +6,8 @@
 namespace tmt {
 class Editor : public OnEngineInit, public OnEngineUpdate, public OnEngineFixedUpdate, public OnEngineEnd {
    public:
-    Editor();
-    ~Editor();
+    Editor() = default;
+
     void init();
 
    private:
