@@ -71,9 +71,6 @@ void Renderer::init() {
         render_target = r.unwrap();
     }
 
-    /* Initialize Pipelines */
-    debug_pipeline.init(gpu);
-
     /* Create the active render view buffer */
     if (const Result r = bank.create_buffer(BufferUsage::Constant | BufferUsage::TransferDst, sizeof(RenderView)); r.is_err()) {
         Log::error(Log::Scope::RENDERER, "failed to create render view buffer.\nreason: {}", r.unwrap_err().c_str());
@@ -149,6 +146,7 @@ void Renderer::end() {
 
     /* Cleanup the VRAM bank & GPU adapter */
     render_graph.deinit().expect("failed to destroy render graph.");
+    imgui.deinit().expect("failed to destroy imgui.");
     bank.deinit().expect("failed to destroy vram bank.");
     gpu.deinit().expect("failed to destroy gpu adapter.");
 }

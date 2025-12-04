@@ -86,7 +86,6 @@ void Engine::run() {
 }
 
 void Engine::end() {
-    /* dispatch should happen before renderer.end() */
     OnEngineEnd::dispatch();
     renderer.end();
 }
