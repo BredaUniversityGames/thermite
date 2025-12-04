@@ -28,6 +28,10 @@ add_subdirectory(glm)
 # https://github.com/skypjack/entt
 add_subdirectory(entt)
 
+# Vulkan SDK - Graphics API
+# https://vulkan.lunarg.com/sdk/home
+target_include_directories(thermite-engine PUBLIC "vulkan_sdk/include")
+
 # graphite - render graph library
 # https://github.com/mxcop/graphite
 add_subdirectory(graphite)
@@ -106,7 +110,6 @@ target_link_libraries(thermite-engine
     JsonReflect
     graphite
     Tracy::TracyClient
-
 )
 
 # Link libraries privately
@@ -117,5 +120,3 @@ target_link_libraries(thermite-engine
     nlohmann_json::nlohmann_json
     ZLIB::ZLIBSTATIC
 )
-
-
