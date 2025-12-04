@@ -11,6 +11,12 @@
 
 #include "engine/engine.hpp"
 #include "engine/core/ecs.hpp"
+#include "engine/core/renderer/renderer.hpp"
+#include "engine/core/window.hpp"
+
+#include <extern/imgui/imgui.h>
+#include <extern/imgui/backends/imgui_impl_sdl3.h>
+#include <extern/imgui/backends/imgui_impl_vulkan.h>
 
 /* Singleton */
 tmt::Editor tmt::editor;
@@ -27,12 +33,33 @@ void Editor::on_engine_init(const ApplicationSpecs&) {
     tmt::Log::info("Starting Thermite Editor...");
 
     tmt::engine.ecs.create_entity();
+
+    /* Initialize the immediate mode GUI */
+    ImGui::CreateContext();
+    ImGui_ImplSDL3_InitForVulkan(engine.window.window);
+    tmt::engine.renderer.set_imgui(&imgui, IMGUI_FUNCTIONS);
 }
 
-void Editor::on_engine_update(const FrameData&) { Log::info("Thermite Editor updating..."); }
+void Editor::on_engine_update(const FrameData&) {
+    Log::info("Thermite Editor updating...");
+
+    /* Start a new imgui frame */
+    imgui.new_frame();
+    ImGui_ImplSDL3_NewFrame();
+    ImGui::NewFrame();
+
+    ImGui::Begin("Camera");
+    ImGui::End();
+
+    /* End the imgui frame */
+    ImGui::Render();
+}
 
 void Editor::on_engine_fixed_update(const FrameData&) {}
 
-void Editor::on_engine_end() { tmt::Log::info("Shutting down Thermite Editor..."); }
+void Editor::on_engine_end() {
+    tmt::Log::info("Shutting down Thermite Editor...");
+    imgui.deinit();
+}
 
 }  // namespace tmt

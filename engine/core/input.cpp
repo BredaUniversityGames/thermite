@@ -2,7 +2,7 @@
 
 #include <SDL3/SDL_events.h>
 #include <SDL3/SDL_keyboard.h>
-#include <imgui_impl_sdl3.h>
+// #include <imgui_impl_sdl3.h>
 
 #include "engine.hpp"
 #include "keys.hpp"
@@ -26,7 +26,8 @@ void Input::update() {
     // Get current mouse state
     mouse_buttons = SDL_GetMouseState(&mouse_x, &mouse_y);
     while (SDL_PollEvent(&event)) {
-        ImGui_ImplSDL3_ProcessEvent(&event);
+        // TODO: move this to editor
+        // ImGui_ImplSDL3_ProcessEvent(&event);
 
         switch (event.type) {
             case SDL_EVENT_QUIT: {
