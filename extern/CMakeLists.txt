@@ -70,8 +70,9 @@ if (THERMITE_EDITOR_BUILD)
         PRIVATE "./imgui"
         PRIVATE "./imgui/backends"
     )
+
+    target_compile_definitions(thermite-editor PRIVATE IMGUI_IMPL_VULKAN_USE_VOLK)
 endif()
-target_compile_definitions(thermite-engine PRIVATE IMGUI_IMPL_VULKAN_USE_VOLK)
 # tracy - profiler integration
 # https://github.com/wolfpld/tracy
 option(TRACY_ENABLE "" OFF)
@@ -108,7 +109,6 @@ target_link_libraries(thermite-engine
     JsonReflect
     graphite
     Tracy::TracyClient
-
 )
 
 # Link engine libraries privately
@@ -121,22 +121,11 @@ target_link_libraries(thermite-engine
 )
 
 if (THERMITE_EDITOR_BUILD)
-    # Link editor libraries publicly
-    target_link_libraries(thermite-editor
-        PUBLIC 
-        spdlog::spdlog
-        glm::glm
-        EnTT::EnTT
-        JsonReflect
-        graphite
-    )
-
     # Link editor libraries privately
     target_link_libraries(thermite-editor
 	    PRIVATE
 	    SDL3::SDL3-static
         visit_struct
         nlohmann_json::nlohmann_json
-        ZLIB::ZLIBSTATIC
     )
 endif()
