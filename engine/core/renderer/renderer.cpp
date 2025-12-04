@@ -83,9 +83,6 @@ void Renderer::init() {
         return;
     }
 
-    /* Initialize Pipelines */
-    // debug_pipeline.init(gpu);
-
     /* Create the active render view buffer */
     if (const Result r = bank.create_buffer(BufferUsage::Constant | BufferUsage::TransferDst, sizeof(RenderView)); r.is_err()) {
         Log::error(Log::Scope::RENDERER, "failed to create render view buffer.\nreason: {}", r.unwrap_err().c_str());
