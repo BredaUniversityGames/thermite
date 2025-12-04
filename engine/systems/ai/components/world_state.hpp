@@ -19,7 +19,7 @@ struct fact_id {
 // Represents the value of a fact.
 // Can be extended to support multiple types. Currently supports boolean, integer, and float.
 struct fact_value {
-    enum class type { bool_type, int_type, float_type } value_type;
+    enum class type { BOOL_TYPE, INT_TYPE, FLOAT_TYPE } value_type;
 
     union {
         bool bool_val;
@@ -27,10 +27,10 @@ struct fact_value {
         float float_val;
     };
 
-    fact_value() : value_type(type::bool_type), bool_val(false) {}
-    fact_value(bool b) : value_type(type::bool_type), bool_val(b) {}
-    fact_value(int i) : value_type(type::int_type), int_val(i) {}
-    fact_value(float f) : value_type(type::float_type), float_val(f) {}
+    fact_value() : value_type(type::BOOL_TYPE), bool_val(false) {}
+    fact_value(bool b) : value_type(type::BOOL_TYPE), bool_val(b) {}
+    fact_value(int i) : value_type(type::INT_TYPE), int_val(i) {}
+    fact_value(float f) : value_type(type::FLOAT_TYPE), float_val(f) {}
 };
 
 // A simple pair of fact_id and its value.
@@ -60,7 +60,7 @@ struct world_state {
 
             const auto& val = it->second;
 
-            if (val.value_type == fact_value::type::bool_type && val.bool_val != cond.value.bool_val) return false;
+            if (val.value_type == fact_value::type::BOOL_TYPE && val.bool_val != cond.value.bool_val) return false;
         }
         return true;
     }
