@@ -71,6 +71,17 @@ if (THERMITE_EDITOR_BUILD)
         PRIVATE "./imgui/backends"
     )
 endif()
+target_compile_definitions(thermite-engine PRIVATE IMGUI_IMPL_VULKAN_USE_VOLK)
+# tracy - profiler integration
+# https://github.com/wolfpld/tracy
+option(TRACY_ENABLE "" OFF)
+option(TRACY_ON_DEMAND "" ON)
+
+if(THERMITE_EDITOR_BUILD)
+    set(TRACY_ENABLE ON CACHE BOOL "" FORCE)
+endif()
+add_subdirectory(tracy)
+
 
 # ufbx - single source fbx loading
 # https://github.com/ufbx/ufbx
@@ -96,6 +107,8 @@ target_link_libraries(thermite-engine
     EnTT::EnTT
     JsonReflect
     graphite
+    Tracy::TracyClient
+
 )
 
 # Link engine libraries privately
