@@ -19,7 +19,8 @@ template <typename ReturnType, typename Function>
 class JobBase {
    public:
     [[nodiscard]] bool finished() const;
-    [[nodiscard]] size_t pending_tasks() const { return futures.size(); }
+    // The number of tasks that are still active OR have not yet returned their result value using get() or try_get().
+    [[nodiscard]] size_t pending_task_count() const { return futures.size(); }
 
    protected:
     JobBase(Function function) : function(std::move(function)) {}
@@ -32,6 +33,7 @@ class JobBase {
 template <typename ReturnType, typename Function>
 class Job final : public internal::JobBase<ReturnType, Function> {
    public:
+    // Create a task for the worker threads to perform with the provided arguments.
     template <typename... Args>
     void add_to_queue(Args... args);
 
@@ -53,7 +55,7 @@ class Job<void, Function> final : public internal::JobBase<void, Function> {
     void add_to_queue(Args... args);
 
     template <typename Container, typename... Args>
-    void dispatch(Container container, const size_t taskCount, Args... args);
+    void dispatch_to_queue(Container container, const size_t taskCount, Args... args);
 
     void wait();
 
@@ -111,7 +113,6 @@ Job<ReturnType, Function> JobManager::deduce_return_type(Function function, cons
 #pragma endregion
 
 #pragma region Job function definitions
-// Create a task for the worker threads to perform with the provided arguments
 template <typename ReturnType, typename Function>
 template <typename... Args>
 void Job<ReturnType, Function>::add_to_queue(Args... args) {
@@ -124,7 +125,6 @@ void Job<ReturnType, Function>::add_to_queue(Args... args) {
     engine.job_manager.queue_task(task);
 }
 
-// Create a task for the worker threads to perform with the provided arguments
 template <typename Function>
 template <typename... Args>
 void Job<void, Function>::add_to_queue(Args... args) {
@@ -140,10 +140,10 @@ void Job<void, Function>::add_to_queue(Args... args) {
     engine.job_manager.queue_task(task);
 }
 
-// Create a large number of tasks in groups to more efficiently perform a lot of small tasks
+// Create a large number of tasks in groups to more efficiently perform a lot of small tasks.
 template <typename Function>
 template <typename Container, typename... Args>
-void Job<void, Function>::dispatch(Container container, const size_t taskCount, Args... args) {
+void Job<void, Function>::dispatch_to_queue(Container container, const size_t taskCount, Args... args) {
     if (taskCount <= 0) return;
 
     const size_t group_count = engine.job_manager.get_thread_count();
@@ -191,14 +191,14 @@ bool internal::JobBase<ReturnType, Function>::finished() const {
 }
 
 // Wait for all tasks created with this job to be complete
-// After all tasks have been executed, doesn't clear all tasks until Get() or TryGet() has been used
+// After all tasks have been executed, doesn't clear all tasks until get() or try_get() has been used
 template <typename ReturnType, typename Function>
 void Job<ReturnType, Function>::wait() {
     for (auto& future : this->futures) future.wait();
 }
 
-// Wait for all tasks created with this job to be complete
-// After all tasks have been executed, clears all tasks from the job
+// Wait for all tasks created with this job to be complete.
+// After all tasks have been executed, clears all tasks from the job.
 template <typename Function>
 void Job<void, Function>::wait() {
     for (auto& future : this->futures) future.wait();
