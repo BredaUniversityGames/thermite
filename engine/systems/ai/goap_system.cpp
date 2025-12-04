@@ -8,13 +8,11 @@ namespace tmt {
 
 void Goap::on_start() { Log::info("Goap on_start"); }
 
-void Goap::on_update(const FrameData& time) 
-{
+void Goap::on_update(const FrameData& time) {
     auto& registry = tmt::engine.ecs.get_registry();
     float dt = time.delta_time;
-    
-    for (auto [entity, goap, goal, world] : registry.view<GoapAgent, GoapGoal, world_state>().each()) 
-    {
+
+    for (auto [entity, goap, goal, world] : registry.view<GoapAgent, GoapGoal, world_state>().each()) {
         process_agent(registry, entity, dt);
     }
 }
@@ -23,12 +21,10 @@ void Goap::on_fixed_update(const FrameData&) {}
 
 void Goap::on_end() { Log::info("Goap on_end"); }
 
-
 // ------------------------------------------------------
 // Main per-agent update
 // ------------------------------------------------------
-void Goap::process_agent(Registry& ecs, Entity entity, float dt) 
-{
+void Goap::process_agent(Registry& ecs, Entity entity, float dt) {
     auto& goap = ecs.get<GoapAgent>(entity);
     auto& goal = ecs.get<GoapGoal>(entity);
     auto& ws = ecs.get<world_state>(entity);
@@ -70,8 +66,7 @@ void Goap::update_plan(Registry& ecs, Entity entity, GoapAgent& agent, GoapGoal&
 // ------------------------------------------------------
 // Step 3: action execution
 // ------------------------------------------------------
-void Goap::update_action(Registry& ecs, Entity entity, GoapAgent& agent, float dt) 
-{
+void Goap::update_action(Registry& ecs, Entity entity, GoapAgent& agent, float dt) {
     GoapAction* action = agent.get_current_action();
     if (!action) return;  // no plan yet
 
