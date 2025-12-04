@@ -84,8 +84,8 @@ void Engine::run() {
     end_game();
 }
 
-void Engine::end() { 
-    OnEngineEnd::dispatch(); 
+void Engine::end() {
+    OnEngineEnd::dispatch();
     renderer.end();
 }
 
