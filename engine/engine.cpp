@@ -85,8 +85,8 @@ void Engine::run() {
 }
 
 void Engine::end() { 
-    renderer.end();
     OnEngineEnd::dispatch(); 
+    renderer.end();
 }
 
 /* Engine events */
