@@ -12,7 +12,7 @@ void Goap::on_update(const FrameData& time) {
     auto& registry = tmt::engine.ecs.get_registry();
     float dt = time.delta_time;
 
-    for (auto [entity, goap, goal, world] : registry.view<GoapAgent, GoapGoal, world_state>().each()) {
+    for (auto [entity, goap, goal, world] : registry.view<GoapAgent, GoapGoal, WorldState>().each()) {
         process_agent(registry, entity, dt);
     }
 }
@@ -27,7 +27,7 @@ void Goap::on_end() { Log::info("Goap on_end"); }
 void Goap::process_agent(Registry& ecs, Entity entity, float dt) {
     auto& goap = ecs.get<GoapAgent>(entity);
     auto& goal = ecs.get<GoapGoal>(entity);
-    auto& ws = ecs.get<world_state>(entity);
+    auto& ws = ecs.get<WorldState>(entity);
 
     update_goal(ecs, entity, goap, goal, ws);
     if (goap.needs_replan) update_plan(ecs, entity, goap, goal, ws);
@@ -37,7 +37,7 @@ void Goap::process_agent(Registry& ecs, Entity entity, float dt) {
 // ------------------------------------------------------
 // Step 1: goal assignment
 // ------------------------------------------------------
-void Goap::update_goal(Registry& ecs, Entity entity, GoapAgent& agent, GoapGoal& goal, world_state& ws) {
+void Goap::update_goal(Registry& ecs, Entity entity, GoapAgent& agent, GoapGoal& goal, WorldState& ws) {
     if (agent.has_goal) return;
 
     // TODO: goal selection logic here (look at world_state)
@@ -49,7 +49,7 @@ void Goap::update_goal(Registry& ecs, Entity entity, GoapAgent& agent, GoapGoal&
 // ------------------------------------------------------
 // Step 2: planning
 // ------------------------------------------------------
-void Goap::update_plan(Registry& ecs, Entity entity, GoapAgent& agent, GoapGoal& goal, world_state& ws) {
+void Goap::update_plan(Registry& ecs, Entity entity, GoapAgent& agent, GoapGoal& goal, WorldState& ws) {
     agent.clear_plan();
 
     // TODO: implement A* planning using agent.actions

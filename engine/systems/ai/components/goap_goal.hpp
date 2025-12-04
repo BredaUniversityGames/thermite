@@ -5,7 +5,7 @@
 namespace tmt {
 
 struct GoapGoal {
-    std::vector<fact_pair> desired_state;
+    std::vector<FactPair> desired_state;
     int priority = 0;
 };
 
