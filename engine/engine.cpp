@@ -19,6 +19,7 @@
 #include "events/engine.hpp"
 #include "events/game.hpp"
 #include "core/resources.hpp"
+#include "core/job_system.hpp"
 
 bool tmt::Engine::get_is_running() const { return is_running; }
 void tmt::Engine::set_is_running(bool value) { is_running = value; }
@@ -27,10 +28,11 @@ tmt::Engine tmt::engine;
 
 namespace tmt {
 
-Engine::Engine() : input(*new Input()), window(*new Window()), ecs(*new Ecs()), renderer(*new Renderer()), resources(*new Resources()) {}
+Engine::Engine() : input(*new Input()), window(*new Window()), ecs(*new Ecs()), renderer(*new Renderer()), resources(*new Resources()), job_manager(*new JobManager()) {}
 
 Engine::~Engine() {
     /* Destruction should be in reverse order */
+    delete &job_manager;
     delete &resources;
     delete &renderer;
     delete &ecs;
