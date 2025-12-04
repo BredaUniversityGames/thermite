@@ -5,27 +5,39 @@
 #error THERMITE_EDITOR must be defined to 1 in editor builds
 #endif
 
-#include "editor/editor.hpp"
-
-#include "engine/core/logger.hpp"
-
-#include "engine/engine.hpp"
-#include "engine/core/ecs.hpp"
-#include "engine/core/renderer/renderer.hpp"
-#include "engine/core/window.hpp"
-
 #include <imgui.h>
 #include <imgui_impl_sdl3.h>
 #include <imgui_impl_vulkan.h>
+
+#include "editor/editor.hpp"
+
+#include "engine/engine.hpp"
+
+#include "engine/core/ecs.hpp"
+#include "engine/core/logger.hpp"
+#include "engine/core/renderer/renderer.hpp"
+#include "engine/core/window.hpp"
+
+#include "engine/events/sdl.hpp"
 
 /* Singleton */
 tmt::Editor tmt::editor;
 
 namespace tmt {
 
+class ImGuiUpdate : public internal::OnSdlEvent {
+   public:
+    ImGuiUpdate() : tmt::internal::OnSdlEvent() { priority = 100; }
+
+   private:
+    void on_sdl_event(SDL_Event& event) override { ImGui_ImplSDL3_ProcessEvent(&event); }
+};
+
 void Editor::init() { Log::info("Thermite Editor initialized."); }
 
 void Editor::on_engine_init(const ApplicationSpecs&) {
+    static ImGuiUpdate imgui_event_listener {};
+
     tmt::Log::info("Starting Thermite Editor...");
 
     tmt::engine.ecs.create_entity();
@@ -37,8 +49,6 @@ void Editor::on_engine_init(const ApplicationSpecs&) {
 }
 
 void Editor::on_engine_update(const FrameData&) {
-    Log::info("Thermite Editor updating...");
-
     /* Start a new imgui frame */
     imgui.new_frame();
     ImGui_ImplSDL3_NewFrame();
