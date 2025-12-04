@@ -60,7 +60,7 @@ struct WorldState {
 
             const auto& val = it->second;
 
-            if (val.value_type == FactValue::type::BOOL_TYPE && val.bool_val != cond.value.bool_val) return false;
+            if (val.value_type == FactValue::Type::BOOL_TYPE && val.bool_val != cond.value.bool_val) return false;
         }
         return true;
     }
