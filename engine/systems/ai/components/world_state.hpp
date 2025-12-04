@@ -19,7 +19,7 @@ struct FactId {
 // Represents the value of a fact.
 // Can be extended to support multiple types. Currently supports boolean, integer, and float.
 struct FactValue {
-    enum class type { BOOL_TYPE, INT_TYPE, FLOAT_TYPE } value_type;
+    enum class Type { BOOL_TYPE, INT_TYPE, FLOAT_TYPE } value_type;
 
     union {
         bool bool_val;
@@ -27,10 +27,10 @@ struct FactValue {
         float float_val;
     };
 
-    FactValue() : value_type(type::BOOL_TYPE), bool_val(false) {}
-    FactValue(bool b) : value_type(type::BOOL_TYPE), bool_val(b) {}
-    FactValue(int i) : value_type(type::INT_TYPE), int_val(i) {}
-    FactValue(float f) : value_type(type::FLOAT_TYPE), float_val(f) {}
+    FactValue() : value_type(Type::BOOL_TYPE), bool_val(false) {}
+    FactValue(bool b) : value_type(Type::BOOL_TYPE), bool_val(b) {}
+    FactValue(int i) : value_type(Type::INT_TYPE), int_val(i) {}
+    FactValue(float f) : value_type(Type::FLOAT_TYPE), float_val(f) {}
 };
 
 // A simple pair of fact_id and its value.
