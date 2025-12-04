@@ -17,7 +17,7 @@ inline float surface_area(const Bvh2Node& node) {
 /* Returns half the area of an extent `v`. */
 inline float half_area(const glm::vec3& v) { return v.x < -BIG_F32 ? 0.0f : (v.x * v.y + v.y * v.z + v.z * v.x); }
 
-template<typename T>
+template <typename T>
 void Bvh2<T>::build(const T* input_prims, const uint32_t input_count) {
     /* Delete old BVH data if it exists */
     if (nodes) {
@@ -61,7 +61,7 @@ void Bvh2<T>::build(const T* input_prims, const uint32_t input_count) {
         root.max_bounds.z = fmaxf(root.max_bounds.z, bounds[i].max.z);
     }
 
-     /* Build the node hierarchy */
+    /* Build the node hierarchy */
     uint32_t build_tasks[256] {}, task_count = 0u, node_ptr = 0u;
     const glm::vec3 min_extent = (root.max_bounds - root.min_bounds) * 1e-20f;
     glm::vec3 best_lmin {}, best_lmax {}, best_rmin {}, best_rmax {};
@@ -206,7 +206,7 @@ inline float intersect_aabb(const Ray ray, const glm::vec3 box_min, const glm::v
     return t_near > t_far ? BIG_F32 : t_near;
 }
 
-template<typename T>
+template <typename T>
 Hit Bvh2<T>::trace(const Ray& ray) const {
     /* Traversal state */
     uint32_t stack[32] {}, stack_ptr = 0u, node_index = 0u;
@@ -258,7 +258,7 @@ Hit Bvh2<T>::trace(const Ray& ray) const {
     return Hit(min_t);
 }
 
-template<typename T>
+template <typename T>
 Bvh2<T>::~Bvh2() {
     if (nodes == nullptr) return;
     delete[] nodes;
