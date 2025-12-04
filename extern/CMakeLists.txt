@@ -57,23 +57,26 @@ target_include_directories(JsonReflect
 # https://github.com/nlohmann/json
 add_subdirectory(nlohmann_json)
 
-# ImGUI - immediate mode gui
-# https://github.com/ocornut/imgui
-target_sources(thermite-engine
-    PRIVATE "./imgui/imgui_demo.cpp"
-    PRIVATE "./imgui/imgui_draw.cpp"
-    PRIVATE "./imgui/imgui_tables.cpp"
-    PRIVATE "./imgui/imgui_widgets.cpp"
-    PRIVATE "./imgui/imgui.cpp"
-    PRIVATE "./imgui/backends/imgui_impl_sdl3.cpp"
-    PRIVATE "./imgui/backends/imgui_impl_vulkan.cpp"
-    PRIVATE "./imgui/backends/imgui_impl_win32.cpp"
-)
-target_include_directories(thermite-engine
-    PRIVATE "./imgui"
-    PRIVATE "./imgui/backends"
-)
-target_compile_definitions(thermite-engine PRIVATE IMGUI_IMPL_VULKAN_USE_VOLK)
+if (THERMITE_EDITOR_BUILD)
+    # ImGUI - immediate mode gui
+    # https://github.com/ocornut/imgui
+    target_sources(thermite-editor
+        PRIVATE "./imgui/imgui_demo.cpp"
+        PRIVATE "./imgui/imgui_draw.cpp"
+        PRIVATE "./imgui/imgui_tables.cpp"
+        PRIVATE "./imgui/imgui_widgets.cpp"
+        PRIVATE "./imgui/imgui.cpp"
+        PRIVATE "./imgui/backends/imgui_impl_sdl3.cpp"
+        PRIVATE "./imgui/backends/imgui_impl_vulkan.cpp"
+        PRIVATE "./imgui/backends/imgui_impl_win32.cpp"
+    )
+    target_include_directories(thermite-editor
+        PRIVATE "./imgui"
+        PRIVATE "./imgui/backends"
+    )
+
+    target_compile_definitions(thermite-editor PRIVATE IMGUI_IMPL_VULKAN_USE_VOLK)
+endif()
 # tracy - profiler integration
 # https://github.com/wolfpld/tracy
 option(TRACY_ENABLE "" OFF)
@@ -101,7 +104,7 @@ set(ZLIB_BUILD_SHARED OFF CACHE BOOL "" FORCE)
 set(ZLIB_BUILD_STATIC ON CACHE BOOL "" FORCE)
 add_subdirectory(zlib)
 
-# Link libraries publicly
+# Link engine libraries publicly
 target_link_libraries(thermite-engine
     PUBLIC 
     spdlog::spdlog
@@ -112,7 +115,7 @@ target_link_libraries(thermite-engine
     Tracy::TracyClient
 )
 
-# Link libraries privately
+# Link engine libraries privately
 target_link_libraries(thermite-engine 
 	PRIVATE
 	SDL3::SDL3-static
@@ -120,3 +123,13 @@ target_link_libraries(thermite-engine
     nlohmann_json::nlohmann_json
     ZLIB::ZLIBSTATIC
 )
+
+if (THERMITE_EDITOR_BUILD)
+    # Link editor libraries privately
+    target_link_libraries(thermite-editor
+	    PRIVATE
+	    SDL3::SDL3-static
+        visit_struct
+        nlohmann_json::nlohmann_json
+    )
+endif()
