@@ -47,7 +47,7 @@ void Engine::init(const ApplicationSpecs& specs, std::unique_ptr<Application> us
     renderer.init();
 
     ecs.register_system<Physics>();
-    ecs.register_system<Animation>();
+    ecs.register_system<RigModelManager>();
     ecs.register_system<CameraSystem>();
 
     OnEngineInit::dispatch(specs);
@@ -61,6 +61,8 @@ void Engine::init(const ApplicationSpecs& specs, std::unique_ptr<Application> us
 
     fucker_rig_model_comp.data->animation_files.push_back(location);
     fucker_rig_model_comp.data->reload();
+
+    fucker_rig_model_comp.play_animation("Victory", 0.5f, true);
 }
 
 // Example stuff

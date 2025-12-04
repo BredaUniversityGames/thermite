@@ -114,6 +114,7 @@ class RigModelManager : public ISystem/*, public IPanel, public IKeyboardListene
 
     void on_start() override;
     void on_update(const FrameData& time) override;
+    void Inspect(float);
     void on_end() override;
     //void on_key_event(KeyboardEvent& event) override;
 

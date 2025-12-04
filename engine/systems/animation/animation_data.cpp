@@ -4,8 +4,7 @@
 
 using namespace tmt;
 
-tmt::RigData::RigData(const IO::FileLocation& directory) : Resource(directory) { 
-}
+tmt::RigData::RigData(const IO::FileLocation& directory) : FileResource(directory) {}
 
 bool tmt::RigData::load() { 
     load_fbx(file_location);

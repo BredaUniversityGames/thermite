@@ -5,6 +5,7 @@
 #include "engine.hpp"
 #include "rig_model.hpp"
 //#include "graphics/debug_render.hpp"
+#include "engine/core/renderer/pipelines/debug_pipeline.hpp"
 //#include "tools/profiler.hpp"
 
 #define CONDITION(comparison) [](const Variant& parameter, const Variant& value) -> bool { return parameter comparison value; }
@@ -323,6 +324,28 @@ void RigModelManager::on_update(const FrameData& time) {
 }
 
 void tmt::RigModelManager::on_end() {}
+
+
+void RigModelManager::Inspect(float) {
+    ///* Debug drawing */
+    //for (const auto& [entity, transform, rig] : engine.ecs.get_registry().view<Transform, RigModel>().each()) {
+    //    //if (transform.is_enabled() == false) continue;
+
+    //    for (const Entity bone_entity : rig.bone_entities) {
+    //        auto& bone_transform = engine.ecs.get_component<Transform>(bone_entity);
+    //        const glm::vec3 joint = bone_transform.get_world_position();
+
+    //        engine.debug_renderer().add_sphere(DebugCategory::ANIMATION, joint, 0.1f, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
+
+    //        if (bone_transform.HasParent()) {
+    //            auto& parent_transform = Engine.ecs().get_component<Transform>(bone_transform.GetParent());
+    //            const glm::vec3 parent_joint = parent_transform.GetWorldPosition();
+    //            Engine.debug_renderer().add_line(DebugCategory::ANIMATION, parent_joint, joint, glm::vec4(0.0f, 0.0f, 1.0f, 1.0f));
+    //        }
+    //    }
+    //}
+}
+
 
 /*
 #include "editor/inspector.hpp"

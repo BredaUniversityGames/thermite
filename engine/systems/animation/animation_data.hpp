@@ -51,7 +51,7 @@ struct Bone {
     std::unordered_map<std::string, Animation> animations;
 };
 
-struct RigData : public Resource {
+struct RigData : public FileResource {
    public:
     RigData(const IO::FileLocation& directory);
     
