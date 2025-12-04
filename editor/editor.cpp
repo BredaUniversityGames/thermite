@@ -29,7 +29,7 @@ void Editor::on_engine_init(const ApplicationSpecs& specs) {
     tmt::engine.ecs.create_entity();
 }
 
-void Editor::on_engine_update(const FrameData&) { Log::info("Thermite Editor updating..."); }
+void Editor::on_engine_update(const FrameData&) { /*Log::info("Thermite Editor updating...");*/ }
 
 void Editor::on_engine_fixed_update(const FrameData&) {}
 
