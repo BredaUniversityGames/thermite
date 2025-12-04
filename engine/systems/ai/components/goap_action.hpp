@@ -2,8 +2,6 @@
 #include "core/ecs.hpp"
 #include "world_state.hpp"
 
-//class WorldStateComponent;
-
 namespace tmt {
 
 class GoapAction {

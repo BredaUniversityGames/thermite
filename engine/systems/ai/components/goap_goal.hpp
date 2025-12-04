@@ -4,7 +4,7 @@
 
 namespace tmt {
 
-struct GoalComponent {
+struct GoapGoal {
     std::vector<fact_pair> desired_state;
     int priority = 0;
 };

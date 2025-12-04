@@ -3,11 +3,9 @@
 #include <vector>
 #include "goap_action.hpp"
 
-//class GoapAction; 
-
 namespace tmt {
 
-struct GoapComponent {
+struct GoapAgent {
     std::vector<std::unique_ptr<GoapAction>> actions;
     std::vector<GoapAction*> plan;
     int current_index = -1;
@@ -15,11 +13,11 @@ struct GoapComponent {
     bool needs_replan = true;
     bool has_goal = false;
 
-    GoapComponent() = default;
+    GoapAgent() = default;
 
     // Prevent copying
-    GoapComponent(const GoapComponent&) = delete;
-    GoapComponent& operator=(const GoapComponent&) = delete;
+    GoapAgent(const GoapAgent&) = delete;
+    GoapAgent& operator=(const GoapAgent&) = delete;
 
     // Reset the current plan
     void clear_plan() {
