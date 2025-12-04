@@ -146,7 +146,6 @@ void Renderer::end() {
 
     /* Cleanup the VRAM bank & GPU adapter */
     render_graph.deinit().expect("failed to destroy render graph.");
-    imgui.deinit().expect("failed to destroy imgui.");
     bank.deinit().expect("failed to destroy vram bank.");
     gpu.deinit().expect("failed to destroy gpu adapter.");
 }
