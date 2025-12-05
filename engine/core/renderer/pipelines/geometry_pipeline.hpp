@@ -3,6 +3,7 @@
 #include <graphite/resources/handle.hh>
 
 #include "engine/shared/bvh2.hpp"
+#include "engine/shared/svt64.hpp"
 
 class GPUAdapter;
 class RenderGraph;
@@ -20,8 +21,12 @@ class GeometryPipeline {
     Buffer object_indices {};
     Buffer object_data {};
 
-    /* Acceleration structure */
+    Buffer blas_nodes {};
+    Buffer voxel_data {};
+
+    /* Acceleration structures */
     Bvh2<VoxelObject> bvh {};
+    Svt64 svt {};
 
    public:
     GeometryPipeline() {}

@@ -53,7 +53,7 @@ void Game::on_start() {
         auto entity = tmt::engine.ecs.create_entity();
         auto& transform = tmt::engine.ecs.add_component<tmt::Transform>(entity);
         auto& renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(entity);
-        renderer.size = glm::uvec3(10u + (rand() % 90u), 10u + (rand() % 90u), 10u + (rand() % 90u));
+        renderer.size = glm::uvec3(16u, 16u, 16u);
         float rx = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * PRIM_RANGE - (PRIM_RANGE / 2.0f);
         float ry = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * PRIM_RANGE - (PRIM_RANGE / 2.0f);
         float rz = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * PRIM_RANGE - (PRIM_RANGE / 2.0f);
