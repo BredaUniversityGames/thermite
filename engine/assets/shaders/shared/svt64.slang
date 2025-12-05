@@ -75,11 +75,14 @@ inline float intersect_aabb(Ray ray, float3 box_min, float3 box_max) {
     return count;
 }
 
+/* 8x8 thread group, 11 stack slots each. */
+groupshared uint gs_stack[64][11];
+
 /* Trace a ray through a SVT64. */
 public inline float trace_svt64(
     StructuredBuffer<Svt64Node> nodes,
     StructuredBuffer<uint8_t> voxels,
-    Ray ray
+    Ray ray, int group_id
 ) {
     const float entry_t = intersect_aabb(ray, 1.0f, 2.0f);
     if (entry_t == BIG_F32) return BIG_F32;
@@ -94,7 +97,7 @@ public inline float trace_svt64(
     if (ray.dir.z > 0.0f) mirror_mask |= 3u << 2u;
 
     /* Traversal state */
-    uint stack[11], node_index = 0u; /* root node */
+    uint node_index = 0u; /* root node */
     int scale_exp = 21; /* 23 mantissa bits - 2 */
     Svt64Node node = nodes[node_index];
     float3 pos = clamp(ray.origin, 1.0f, 1.9999999f);
@@ -106,7 +109,7 @@ public inline float trace_svt64(
         /* Descend down the tree until we find an empty node or leaf node */
         while (node.child_active(child_index) && !node.is_leaf()) {
             /* Push the current node on the stack (at `scale_exp / 2`) */
-            stack[scale_exp >> 1] = node_index;
+            gs_stack[group_id][scale_exp >> 1] = node_index;
 
             /* Fetch the child node */
             node_index = node.abs_ptr() + popcnt_var64(node.child_mask_lo, node.child_mask_hi, child_index);
@@ -142,7 +145,7 @@ public inline float trace_svt64(
             if (diff_exp > 21) break;
 
             /* Read the first common ancestor node from the stack */
-            node_index = stack[scale_exp >> 1];
+            node_index = gs_stack[group_id][scale_exp >> 1];
             node = nodes[node_index];
         }
     }

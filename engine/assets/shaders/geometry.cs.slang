@@ -39,7 +39,7 @@ inline float intersect_aabb(Ray ray, float3 box_min, float3 box_max) {
 
 [shader("compute")]
 [numthreads(8, 8, 1)]
-void main(int2 thread_id: SV_DispatchThreadID) {
+void main(int2 thread_id: SV_DispatchThreadID, int group_id: SV_GroupIndex) {
     /* Generate a ray for our render view */
     const Ray ray = pinhole_ray(render_view, thread_id);
 
@@ -47,7 +47,7 @@ void main(int2 thread_id: SV_DispatchThreadID) {
 
     /* Trace the scene BVH */
     // const float hit_t = trace_bvh2(bvh_nodes, object_indices, object_data, ray) * 0.01;
-    const float hit_t = trace_svt64(blas_nodes, voxel_data, ray);
+    const float hit_t = trace_svt64(blas_nodes, voxel_data, ray, group_id);
     // render_target[thread_id] = float4(hit_t, hit_t, hit_t, 1.0f);
 
     if (hit_t < BIG_F32) {
