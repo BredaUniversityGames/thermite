@@ -26,6 +26,7 @@ struct VoxelHit {
     VoxelHit(float t, glm::vec3 normal, uint8_t mat, uint16_t steps) : t(t), normal(normal), material(mat), steps(steps) {};
 };
 
+#pragma pack(push, 1)
 struct Svt64Node {
     /* The most significant bit indicates if this node is a leaf containing voxels. */
     /* The 31 least significant bits are an absolute offset into an array of child nodes / voxels. */
@@ -42,6 +43,7 @@ struct Svt64Node {
     /* Absolute offset into an array of child nodes / voxels. */
     inline uint32_t abs_ptr() const { return child_ptr & 0x7FFFFFFFu; };
 };
+#pragma pack(pop)
 
 /* 64-wide Sparse Voxel Tree. */
 class Svt64 {

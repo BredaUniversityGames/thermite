@@ -8,14 +8,14 @@ inline uint32_t log_base(const uint32_t x, const uint32_t b) { return (uint32_t)
 /* Calculate the depth of a SVT64 based on its input voxel grid size. */
 inline uint32_t tree_depth(uint32_t width, uint32_t height, uint32_t depth) {
     const float max_axis = (float)std::max(std::max(width, height), depth);
-    return logf(max_axis) * 1.660964f/* 1.0f / logf(4.0f) */;
+    return (uint32_t)(logf(max_axis) / logf(4.0f));
 }
 
 /* Calculate the maximum number of nodes a SVT64 can have given its depth. */
 inline uint32_t max_node_count(uint32_t depth) {
     uint32_t node_count = 0u;
     for (int i = (int)depth - 1; i >= 0; --i) {
-        const uint32_t width = (uint32_t)powf(4.0f, i);
+        const uint32_t width = (uint32_t)powf(4.0f, (float)i);
         node_count += width * width * width;
     }
     return node_count;
@@ -124,7 +124,7 @@ void Svt64::build(const RawVoxels& raw_data) {
     nodes[0] = subdivide(raw_data, depth * 2u, glm::ivec3(0));
 
     /* Reallocate the nodes to save memory */
-    nodes = (Svt64Node*)realloc(nodes, node_count * sizeof(Svt64Node) + SVT64_BUFFER_MEMORY);
+    // nodes = (Svt64Node*)realloc(nodes, node_count * sizeof(Svt64Node) + SVT64_BUFFER_MEMORY);
 }
 
 Svt64::~Svt64() {

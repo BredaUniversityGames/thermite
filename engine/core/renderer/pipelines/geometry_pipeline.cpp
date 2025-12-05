@@ -21,9 +21,9 @@ void GeometryPipeline::init(GPUAdapter& gpu) {
     VRAMBank& bank = gpu.get_vram_bank();
 
     RawVoxels voxels {};
-    voxels.w = voxels.h = voxels.d = 16u;
+    voxels.w = voxels.h = voxels.d = 64u;
     for (uint32_t i = 0u; i < voxels.w * voxels.h * voxels.d; ++i) {
-        if ((rand() % 10) == 0) {
+        if ((rand() % 1024) == 0) {
             voxels.voxels.emplace_back(0xFFu);
         } else {
             voxels.voxels.emplace_back(0x00u);
@@ -37,8 +37,8 @@ void GeometryPipeline::init(GPUAdapter& gpu) {
     bvh_nodes = bank.create_buffer(usage, MAX_VOXEL_OBJECTS * 2u + 1u, sizeof(AilaLaineNode)).expect("failed to create bvh nodes buffer.");
     object_indices = bank.create_buffer(usage, MAX_VOXEL_OBJECTS, sizeof(uint32_t)).expect("failed to create object indices buffer.");
     object_data = bank.create_buffer(usage, MAX_VOXEL_OBJECTS, sizeof(VoxelObject)).expect("failed to create object data buffer.");
-    // blas_nodes = bank.create_buffer(usage, MAX_VOXEL_OBJECTS, sizeof(Svt64Node)).expect("failed to create object indices buffer.");
-    // voxel_data = bank.create_buffer(usage, MAX_VOXEL_OBJECTS, sizeof(VoxelObject)).expect("failed to create object data buffer.");
+    blas_nodes = bank.create_buffer(usage, 1024u, sizeof(Svt64Node)).expect("failed to create blas nodes buffer.");
+    voxel_data = bank.create_buffer(usage, 1024u, sizeof(MaterialIndex)).expect("failed to create voxel data buffer.");
 }
 
 void GeometryPipeline::enqueue(RenderGraph& render_graph, Buffer render_view, RenderTarget render_target) {
@@ -80,9 +80,11 @@ void GeometryPipeline::enqueue(RenderGraph& render_graph, Buffer render_view, Re
         .read(bvh_nodes)
         .read(object_indices)
         .read(object_data)
+        .read(blas_nodes)
+        .read(voxel_data)
         /* Render target */
         .write(render_target)
-        .group_size(16, 8)
+        .group_size(8, 8)
         .work_size(engine.window.width, engine.window.height);
 
     /* clang-format on */
@@ -93,6 +95,9 @@ void GeometryPipeline::deinit(GPUAdapter& gpu) {
     bank.destroy(bvh_nodes);
     bank.destroy(object_indices);
     bank.destroy(object_data);
+
+    bank.destroy(blas_nodes);
+    bank.destroy(voxel_data);
 }
 
 }  // namespace tmt
