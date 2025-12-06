@@ -55,7 +55,7 @@ class Job<void, Function> final : public internal::JobBase<void, Function> {
     void add_to_queue(Args... args);
 
     template <typename Container, typename... Args>
-    void dispatch_to_queue(Container container, const size_t taskCount, Args... args);
+    void dispatch_to_queue(Container container, const size_t task_count_hint, Args... args);
 
     void wait();
 
@@ -75,6 +75,28 @@ class JobManager {
 
     template <typename Function>
     auto create_job(Function&& function);
+
+    // A multithreaded parallel for loop, this version works best on a small amount of longer tasks.
+    void parallel_for(size_t task_count, const std::function<void(size_t)>& function);
+
+    // A multithreaded parallel for loop, this version works best on a large amount of short tasks by grouping those tasks together.
+    void grouped_parallel_for(size_t task_count, const std::function<void(size_t)>& function, size_t group_count = engine.job_manager.get_thread_count());
+
+    // A multithreaded parallel foreach loop.
+    template <typename Container>
+    void parallel_foreach(Container& container, const std::function<void(typename Container::value_type&)>& function);
+    // A multithreaded parallel foreach loop.
+    template <typename Container>
+    void parallel_foreach(const Container& container, const std::function<void(typename Container::value_type&)>& function);
+
+    /* 
+    - A multithreaded parallel foreach loop, this overload is meant specifically for entt::view.each().
+    - When using a lambda, due to type deduction, you need to wrap the lambda around std::function() to correctly deduce typing, e.g: parallel_foreach(view.each(), std::function([](entt:entity, Transform&){}));
+    - The function arguments should be entt::entity followed by all component types int the view (as references).
+    */
+    template <typename Container, typename... Args>
+        requires(std::is_same_v<std::tuple<Args...>, typename Container::value_type>)
+    void parallel_foreach(const Container& container, const std::function<void(Args...)>& function);
 
    private:
     template <typename, typename>
@@ -102,6 +124,94 @@ template <typename Function>
 auto JobManager::create_job(Function&& function) {
     using FunctionTypeSTD = decltype(std::function {std::forward<Function>(function)});
     return deduce_return_type(std::forward<Function>(function), FunctionTypeSTD {});
+}
+
+template <typename Container>
+void JobManager::parallel_foreach(Container& container, const std::function<void(typename Container::value_type&)>& function) {
+    std::atomic<bool> finished {false};
+    std::atomic<size_t> finished_count {0};
+    std::atomic<size_t> task_count {0};
+
+    size_t local_task_count = 0;
+    for (auto&& element : container) {
+        queue_task([&function, &finished_count, &task_count, &container, &element, &finished] {
+            function(element);
+            ++finished_count;
+
+            // Task count is set later once so is either 0 or the total task count, this means the values can't be accidentally the same, since finished_count is incremented right before check
+            // and thus can never be 0.
+            if (finished_count == task_count) {
+                finished = true;
+                finished.notify_one();
+            }
+        });
+        ++local_task_count;
+    }
+    // We store the value instead of incrementing the atomic to avoid finished_count and task_count being the same but not equal to the total task count.
+    task_count = local_task_count;
+    // This check is to avoid the unlucky event that all threads have already finished when we start waiting, therefor never notifying the atomic variable to stop waiting.
+    if (finished_count == task_count) return;
+
+    finished.wait(false);
+}
+
+template <typename Container>
+void JobManager::parallel_foreach(const Container& container, const std::function<void(typename Container::value_type&)>& function) {
+    std::atomic<bool> finished {false};
+    std::atomic<size_t> finished_count {0};
+    std::atomic<size_t> task_count {0};
+
+    size_t local_task_count = 0;
+    for (auto&& element : container) {
+        queue_task([&function, &finished_count, &task_count, &element, &finished] {
+            function(element);
+            ++finished_count;
+
+            // Task count is set later once so is either 0 or the total task count, this means the values can't be accidentally the same, since finished_count is incremented right before check
+            // and thus can never be 0.
+            if (finished_count == task_count) {
+                finished = true;
+                finished.notify_one();
+            }
+        });
+        ++local_task_count;
+    }
+    // We store the value instead of incrementing the atomic to avoid finished_count and task_count being the same but not equal to the total task count.
+    task_count = local_task_count;
+    // This check is to avoid the unlucky event that all threads have already finished when we start waiting, therefor never notifying the atomic variable to stop waiting.
+    if (finished_count == task_count) return;
+
+    finished.wait(false);
+}
+
+template <typename Container, typename... Args>
+    requires(std::is_same_v<std::tuple<Args...>, typename Container::value_type>)
+void JobManager::parallel_foreach(const Container& container, const std::function<void(Args...)>& function) {
+    std::atomic finished {false};
+    std::atomic<size_t> finished_count {0};
+    std::atomic<size_t> task_count {0};
+
+    size_t local_task_count = 0;
+    for (auto&& element : container) {
+        queue_task([&function, &finished_count, &task_count, &element, &finished] {
+            function(std::get<Args>(element)...);
+            ++finished_count;
+
+            // Task count is set later once so is either 0 or the total task count, this means the values can't be accidentally the same, since finished_count is incremented right before check
+            // and thus can never be 0.
+            if (finished_count == task_count) {
+                finished = true;
+                finished.notify_one();
+            }
+        });
+        ++local_task_count;
+    }
+    // We store the value instead of incrementing the atomic to avoid finished_count and task_count being the same but not equal to the total task count.
+    task_count = local_task_count;
+    // This check is to avoid the unlucky event that all threads have already finished when we start waiting, therefor never notifying the atomic variable to stop waiting.
+    if (finished_count == task_count) return;
+
+    finished.wait(false);
 }
 
 // Function used to deduce the return-type of a function without its arguments, source:
@@ -141,28 +251,29 @@ void Job<void, Function>::add_to_queue(Args... args) {
 }
 
 // Create a large number of tasks in groups to more efficiently perform a lot of small tasks.
+// The task count can be a hint while still handling all tasks correct, as long as the hint is not smaller than the real task count.
 template <typename Function>
 template <typename Container, typename... Args>
-void Job<void, Function>::dispatch_to_queue(Container container, const size_t taskCount, Args... args) {
-    if (taskCount <= 0) return;
+void Job<void, Function>::dispatch_to_queue(Container container, const size_t task_count_hint, Args... args) {
+    if (task_count_hint <= 0) return;
 
     const size_t group_count = engine.job_manager.get_thread_count();
-    const auto group_size = static_cast<size_t>(std::ceil(static_cast<float>(taskCount) / static_cast<float>(group_count)));
+    const auto group_size = static_cast<size_t>(std::ceil(static_cast<float>(task_count_hint) / static_cast<float>(group_count)));
 
-    for (size_t groupIndex = 0; groupIndex < group_count; groupIndex++) {
-        const size_t start_index = groupIndex * group_size;  // Index of the first element in the current group
-        if (start_index >= taskCount) continue;              // Skip scheduling a task if we have exceeded the job count prematurely
+    for (size_t group_index = 0; group_index < group_count; group_index++) {
+        const size_t start_index = group_index * group_size;  // Index of the first element in the current group.
+        if (start_index >= task_count_hint) continue;         // Skip scheduling a task if we have exceeded the job count prematurely.
 
         auto promise = std::make_shared<std::promise<void>>();
         this->futures.push_back(promise->get_future());
 
-        const size_t maxLocalTaskCount = taskCount - start_index;
+        const size_t max_local_task_count = task_count_hint - start_index;
 
-        // Size of the current group, either groupSize or a smaller size depending on the amount of elements left
-        const size_t local_group_size = std::min<size_t>(group_size, maxLocalTaskCount);
+        // Size of the current group, either group_size or a smaller size depending on the amount of elements left.
+        const size_t local_group_size = std::min<size_t>(group_size, max_local_task_count);
         const size_t group_end = start_index + local_group_size;
 
-        auto jobGrouping = [this, start_index, group_end, container, promise, args...] {
+        auto task_grouping = [this, start_index, group_end, container, promise, args...] {
             size_t i = 0;
 
             for (auto&& item : container) {
@@ -177,7 +288,7 @@ void Job<void, Function>::dispatch_to_queue(Container container, const size_t ta
             promise->set_value();
         };
 
-        engine.job_manager.queue_task(jobGrouping);
+        engine.job_manager.queue_task(task_grouping);
     }
 }
 
