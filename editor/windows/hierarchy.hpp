@@ -41,6 +41,16 @@ class Hierarchy {
 
     glm::uvec2 selected_index_begin = null_index;
     glm::uvec2 selected_index_end = null_index;
+    glm::uvec2 selected_index_previous_end_cache = null_index;
+    glm::uvec2 selected_index_previous_end = null_index;
+
+    static inline bool is_between(const glm::uvec2& value, const glm::uvec2& begin, const glm::uvec2& end) {
+        if (begin == null_index || end == null_index) return false;
+        const bool between_begin_end = (value.y >= begin.y && value.y <= end.y);
+        const bool between_end_begin = (value.y <= begin.y && value.y >= end.y);
+        const bool same_depth = (value.x == begin.x);
+        return same_depth && (between_begin_end || between_end_begin);
+    }
 
     struct HierarchyState {
         HierarchyState(Entity entity, Transform& transform, Name& name) : entity(entity), transform(transform), name(name) {};

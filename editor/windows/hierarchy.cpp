@@ -19,6 +19,13 @@ void Hierarchy::end_section() {
     ImGui::EndChild();
     // ImGui::PopStyleColor();
     drag_drop_target(entt::null);
+
+    if (selected_index_previous_end_cache != null_index) {
+        selected_index_previous_end = selected_index_previous_end_cache;
+        selected_index_previous_end_cache = null_index;
+    } else {
+        selected_index_previous_end = null_index;
+    }
 }
 
 bool Hierarchy::display_entity(const HierarchyState& state) {
@@ -33,6 +40,9 @@ bool Hierarchy::display_entity(const HierarchyState& state) {
 
     const bool is_leaf = state.transform.has_children() == false;
     if (is_leaf) flags |= ImGuiTreeNodeFlags_Leaf;
+
+    const bool is_begin = state.position == selected_index_begin;
+    if (is_begin) flags |= ImGuiTreeNodeFlags_Bullet;
 
     /* Debug name */
     // const auto name = state.name.name + " " + std::to_string(state.indent_level) + "-" + std::to_string(state.level_index);
@@ -56,7 +66,16 @@ bool Hierarchy::display_entity(const HierarchyState& state) {
     /* Selection logic */
     const bool select_entity = !dropped && !just_opened && !is_payload_being_dragged && is_left_clicked;
     if (select_entity) {
-        if (is_ctrl_held && selected_entities.empty() == false) {
+        const bool is_first_selected = selected_entities.empty();
+        if (is_shift_held) {
+            if (is_first_selected) {
+                selected_index_begin = state.position;
+                selected_index_end = state.position;
+            } else {
+                selected_index_previous_end_cache = selected_index_end;
+                selected_index_end = state.position;
+            }
+        } else if (is_ctrl_held) {
             if (is_selected) {
                 selected_entities.erase(state.entity);
             } else {
@@ -65,7 +84,28 @@ bool Hierarchy::display_entity(const HierarchyState& state) {
         } else {
             selected_entities.clear();
             selected_entities.insert(state.entity);
+            selected_index_begin = state.position;
+            selected_index_end = state.position;
         }
+    }
+
+    /* Check if entity is between selected */
+    const bool is_between = Hierarchy::is_between(state.position, selected_index_begin, selected_index_end);
+    if (is_between) {
+        selected_entities.insert(state.entity);
+    }
+
+    const bool is_between_end_and_previous_end = Hierarchy::is_between(state.position, selected_index_end, selected_index_previous_end);
+
+    /* detect if the end position has switched sides */
+    const bool was_above = (selected_index_previous_end.y < selected_index_begin.y);
+    const bool is_above = (selected_index_end.y < selected_index_begin.y);
+    const bool was_below = (selected_index_previous_end.y > selected_index_begin.y);
+    const bool is_below = (selected_index_end.y > selected_index_begin.y);
+    const bool has_switched_sides = (was_above && is_below) || (was_below && is_above);
+
+    if (is_between_end_and_previous_end && !has_switched_sides) {
+        selected_entities.erase(state.entity);
     }
 
     /* If the node is closed, don't display children */
@@ -134,6 +174,9 @@ bool Hierarchy::drag_drop_target(const Entity dropped_entity) {
                 }
             }
             ImGui::EndDragDropTarget();
+            selected_index_begin = null_index;
+            selected_index_end = null_index;
+            selected_index_previous_end = null_index;
             return true;
         }
         ImGui::EndDragDropTarget();
