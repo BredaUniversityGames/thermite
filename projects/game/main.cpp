@@ -35,7 +35,7 @@ void Game::on_start() {
         tmt::Entity entity = tmt::engine.ecs.create_entity();
         auto& transform = tmt::engine.ecs.add_component<tmt::Transform>(entity);
         auto& camera = tmt::engine.ecs.add_component<tmt::Camera>(entity);
-        transform.set_world_position(glm::vec3(0.0f, 0.0f, -2.0f));
+        transform.set_world_position(glm::vec3(0.0f, 0.0f, -16.0f));
     }
 
     { /* Voxel entity */
@@ -58,21 +58,21 @@ void Game::on_start() {
     //     transform.set_world_scale(glm::vec3(1.0f, 1.0f, 1.0f));
     // }
 
-    constexpr float PRIM_RANGE = 64.0f;
-    for (int i = 0; i < 255; ++i) {
-        auto entity = tmt::engine.ecs.create_entity();
-        auto& transform = tmt::engine.ecs.add_component<tmt::Transform>(entity);
-        auto& renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(entity);
-        renderer.size = glm::uvec3(64u, 64u, 64u);
-        float rx = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * PRIM_RANGE - (PRIM_RANGE / 2.0f);
-        float ry = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * PRIM_RANGE - (PRIM_RANGE / 2.0f);
-        float rz = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * PRIM_RANGE - (PRIM_RANGE / 2.0f);
-        float rrx = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * 180.0f;
-        float rry = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * 180.0f;
-        transform.set_world_position(glm::vec3(rx, ry, rz));
-        transform.set_world_rotation(glm::vec3(glm::radians(rrx), glm::radians(rry), 0.0f));
-        transform.set_world_scale(glm::vec3(1.0f, 1.0f, 1.0f));
-    }
+    // constexpr float PRIM_RANGE = 1000.0f;
+    // for (int i = 0; i < 9999; ++i) {
+    //     auto entity = tmt::engine.ecs.create_entity();
+    //     auto& transform = tmt::engine.ecs.add_component<tmt::Transform>(entity);
+    //     auto& renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(entity);
+    //     renderer.size = glm::uvec3(64u, 64u, 64u);
+    //     float rx = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * PRIM_RANGE - (PRIM_RANGE / 2.0f);
+    //     float ry = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * PRIM_RANGE - (PRIM_RANGE / 2.0f);
+    //     float rz = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * PRIM_RANGE - (PRIM_RANGE / 2.0f);
+    //     float rrx = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * 180.0f;
+    //     float rry = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * 180.0f;
+    //     transform.set_world_position(glm::vec3(rx, ry, rz));
+    //     transform.set_world_rotation(glm::vec3(glm::radians(rrx), glm::radians(rry), 0.0f));
+    //     transform.set_world_scale(glm::vec3(1.0f, 1.0f, 1.0f));
+    // }
 }
 
 void Game::on_update(const tmt::FrameData& time) {

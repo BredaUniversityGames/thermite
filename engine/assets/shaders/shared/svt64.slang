@@ -75,18 +75,18 @@ public struct Svt64Node {
     return count;
 }
 
-/* 16x8 thread group, 11 stack slots each. */
-groupshared uint gs_stack[128][11];
-
 /* Trace a ray through a SVT64. */
-public inline float trace_svt64(
+public inline Hit trace_svt64<let DEBUG : bool>(
     StructuredBuffer<Svt64Node> nodes,
     StructuredBuffer<uint8_t> voxels,
     Ray ray
 ) {
-    const int group_id = spirv_asm {
-        result:$$int = OpLoad builtin(LocalInvocationIndex:int);
+    const uint group_id = spirv_asm {
+        result:$$uint = OpLoad builtin(LocalInvocationIndex:uint);
     };
+
+    /* 16x8 thread group, 11 stack slots each. */
+    static groupshared uint gs_stack[16 * 8][11];
 
     /* Mirror ray origin for more efficient ray-octant traversal */
     ray.origin = mirror_pos(ray.origin, ray.dir, true);
@@ -104,7 +104,8 @@ public inline float trace_svt64(
     Svt64Node node = nodes[node_index];
     float3 pos = clamp(ray.origin, 1.0f, 1.9999999f);
     float3 side_dist = 0.0f;
-    for (int i = 0; i < 64; ++i) {
+    uint steps = 0u;
+    for (;;) {
         uint child_index = get_node_cell_index(pos, scale_exp) ^ mirror_mask;
 
         /* Descend down the tree until we find an empty node or leaf node */
@@ -148,13 +149,19 @@ public inline float trace_svt64(
             node_index = gs_stack[group_id][scale_exp >> 1];
             node = nodes[node_index];
         }
+
+        if (DEBUG) steps++;
     }
+
+    Hit hit;
+    hit.t = BIG_F32;
+    if (DEBUG) hit.steps = steps;
 
     /* If we hit a leaf node, return the voxel we hit */
     if (node.is_leaf() && scale_exp <= 21) {
         pos = mirror_pos(pos, ray.dir, false);
-        return distance(ray.origin, pos);
+        hit.t = distance(ray.origin, pos);
     }
 
-    return BIG_F32;
+    return hit;
 }
