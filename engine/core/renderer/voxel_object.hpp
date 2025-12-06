@@ -18,13 +18,10 @@ struct alignas(16) VoxelObject {
     uint32_t blas_handle = 0u;
     uint32_t voxels_handle = 0u;
 
-    inline glm::mat3 abs_local_to_world() const {
-        glm::mat3 result {};
-        result[0] = glm::abs(glm::vec3(local_to_world[0]));
-        result[1] = glm::abs(glm::vec3(local_to_world[1]));
-        result[2] = glm::abs(glm::vec3(local_to_world[2]));
-        return result;
-    }
+    /* Padding */
+    uint32_t : 32;
+    uint32_t : 32;
+    uint32_t : 32;
 
     /* Get the axis-aligned bounding box of this voxel object. */
     inline Aabb aabb() const {
