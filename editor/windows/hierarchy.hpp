@@ -40,16 +40,21 @@ class Hierarchy {
     static constexpr glm::uvec2 null_index {std::numeric_limits<uint32_t>::max()};
 
     glm::uvec2 selected_index_begin = null_index;
-    glm::uvec2 selected_index_end = null_index;
-    glm::uvec2 selected_index_previous_end_cache = null_index;
-    glm::uvec2 selected_index_previous_end = null_index;
+
+    glm::uvec2 selected_index_end_above = null_index;
+    glm::uvec2 selected_index_end_below = null_index;
+
+    glm::uvec2 end_above_next_frame = null_index;
+    glm::uvec2 end_below_next_frame = null_index;
+
+    glm::uvec2 previous_end_above = null_index;
+    glm::uvec2 previous_end_below = null_index;
 
     static inline bool is_between(const glm::uvec2& value, const glm::uvec2& begin, const glm::uvec2& end) {
         if (begin == null_index || end == null_index) return false;
         const bool between_begin_end = (value.y >= begin.y && value.y <= end.y);
-        const bool between_end_begin = (value.y <= begin.y && value.y >= end.y);
         const bool same_depth = (value.x == begin.x);
-        return same_depth && (between_begin_end || between_end_begin);
+        return same_depth && between_begin_end;
     }
 
     struct HierarchyState {

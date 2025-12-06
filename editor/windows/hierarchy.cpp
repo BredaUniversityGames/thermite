@@ -20,11 +20,20 @@ void Hierarchy::end_section() {
     // ImGui::PopStyleColor();
     drag_drop_target(entt::null);
 
-    if (selected_index_previous_end_cache != null_index) {
-        selected_index_previous_end = selected_index_previous_end_cache;
-        selected_index_previous_end_cache = null_index;
+    if (end_above_next_frame != null_index) {
+        previous_end_above = selected_index_end_above;
+        selected_index_end_above = end_above_next_frame;
+        end_above_next_frame = null_index;
     } else {
-        selected_index_previous_end = null_index;
+        previous_end_above = null_index;
+    }
+
+    if (end_below_next_frame != null_index) {
+        previous_end_below = selected_index_end_below;
+        selected_index_end_below = end_below_next_frame;
+        end_below_next_frame = null_index;
+    } else {
+        previous_end_below = null_index;
     }
 }
 
@@ -66,14 +75,18 @@ bool Hierarchy::display_entity(const HierarchyState& state) {
     /* Selection logic */
     const bool select_entity = !dropped && !just_opened && !is_payload_being_dragged && is_left_clicked;
     if (select_entity) {
-        const bool is_first_selected = selected_entities.empty();
         if (is_shift_held) {
+            const bool is_first_selected = selected_entities.empty();
             if (is_first_selected) {
                 selected_index_begin = state.position;
-                selected_index_end = state.position;
+                selected_index_end_above = state.position;
+                selected_index_end_below = state.position;
             } else {
-                selected_index_previous_end_cache = selected_index_end;
-                selected_index_end = state.position;
+                if (state.position.y > selected_index_begin.y) {
+                    end_below_next_frame = state.position;
+                } else {
+                    end_above_next_frame = state.position;
+                }
             }
         } else if (is_ctrl_held) {
             if (is_selected) {
@@ -85,26 +98,23 @@ bool Hierarchy::display_entity(const HierarchyState& state) {
             selected_entities.clear();
             selected_entities.insert(state.entity);
             selected_index_begin = state.position;
-            selected_index_end = state.position;
+            selected_index_end_above = state.position;
+            selected_index_end_below = state.position;
         }
     }
 
     /* Check if entity is between selected */
-    const bool is_between = Hierarchy::is_between(state.position, selected_index_begin, selected_index_end);
+    const bool is_between_begin_above = Hierarchy::is_between(state.position, selected_index_end_above, selected_index_begin);
+    const bool is_between_begin_below = Hierarchy::is_between(state.position, selected_index_begin, selected_index_end_below);
+    const bool is_between = is_between_begin_above || is_between_begin_below;
     if (is_between) {
         selected_entities.insert(state.entity);
     }
 
-    const bool is_between_end_and_previous_end = Hierarchy::is_between(state.position, selected_index_end, selected_index_previous_end);
-
-    /* detect if the end position has switched sides */
-    const bool was_above = (selected_index_previous_end.y < selected_index_begin.y);
-    const bool is_above = (selected_index_end.y < selected_index_begin.y);
-    const bool was_below = (selected_index_previous_end.y > selected_index_begin.y);
-    const bool is_below = (selected_index_end.y > selected_index_begin.y);
-    const bool has_switched_sides = (was_above && is_below) || (was_below && is_above);
-
-    if (is_between_end_and_previous_end && !has_switched_sides) {
+    const bool was_between_begin_above = Hierarchy::is_between(state.position, previous_end_above, selected_index_begin);
+    const bool was_between_begin_below = Hierarchy::is_between(state.position, selected_index_begin, previous_end_below);
+    const bool was_between = was_between_begin_above || was_between_begin_below;
+    if (!is_between && was_between) {
         selected_entities.erase(state.entity);
     }
 
@@ -175,8 +185,8 @@ bool Hierarchy::drag_drop_target(const Entity dropped_entity) {
             }
             ImGui::EndDragDropTarget();
             selected_index_begin = null_index;
-            selected_index_end = null_index;
-            selected_index_previous_end = null_index;
+            selected_index_end_above = null_index;
+            selected_index_end_below = null_index;
             return true;
         }
         ImGui::EndDragDropTarget();
