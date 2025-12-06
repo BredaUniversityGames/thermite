@@ -35,4 +35,4 @@ void ImGuiManager::deinit() { imgui.deinit().expect("Failed to deinitialize ImGu
 
 void ImGuiManager::on_sdl_event(SDL_Event& event) { ImGui_ImplSDL3_ProcessEvent(&event); }
 
-}  // namespace tmt::editor
+}  // namespace tmt

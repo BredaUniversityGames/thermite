@@ -48,4 +48,4 @@ void Editor::on_engine_end() {
     imgui_manager.deinit();
 }
 
-}  // namespace tmt::editor
+}  // namespace tmt

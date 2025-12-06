@@ -22,4 +22,4 @@ class ImGuiManager : public internal::OnSdlEvent {
 
     ImGUI imgui {};
 };
-}  // namespace tmt::editor
+}  // namespace tmt
