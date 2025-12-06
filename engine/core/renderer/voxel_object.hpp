@@ -15,7 +15,8 @@ struct alignas(16) VoxelObject {
 
     /* Size of the object in voxels. */
     glm::uvec3 size {};
-    uint8_t padding : 8;
+    uint32_t blas_handle = 0u;
+    uint32_t voxels_handle = 0u;
 
     inline glm::mat3 abs_local_to_world() const {
         glm::mat3 result {};

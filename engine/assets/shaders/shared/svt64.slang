@@ -35,7 +35,7 @@ public struct Svt64Node {
 };
 
 /* Ray AABB intersection function. */
-inline float intersect_aabb(Ray ray, float3 box_min, float3 box_max) {
+[ForceInline] float intersect_aabb(Ray ray, float3 box_min, float3 box_max) {
     const float3 t_to_min = (box_min - ray.origin) * ray.rcp_dir;
     const float3 t_to_max = (box_max - ray.origin) * ray.rcp_dir;
     const float3 t_min = min(t_to_min, t_to_max);
@@ -75,20 +75,22 @@ inline float intersect_aabb(Ray ray, float3 box_min, float3 box_max) {
     return count;
 }
 
-/* 8x8 thread group, 11 stack slots each. */
-groupshared uint gs_stack[64][11];
+/* 16x8 thread group, 11 stack slots each. */
+groupshared uint gs_stack[128][11];
 
 /* Trace a ray through a SVT64. */
 public inline float trace_svt64(
     StructuredBuffer<Svt64Node> nodes,
     StructuredBuffer<uint8_t> voxels,
-    Ray ray, int group_id
+    Ray ray
 ) {
-    const float entry_t = intersect_aabb(ray, 1.0f, 2.0f);
-    if (entry_t == BIG_F32) return BIG_F32;
+    const int group_id = spirv_asm {
+        result:$$int = OpLoad builtin(LocalInvocationIndex:int);
+    };
 
     /* Mirror ray origin for more efficient ray-octant traversal */
-    ray.origin = mirror_pos(ray.origin + ray.dir * entry_t, ray.dir, true);
+    ray.origin = mirror_pos(ray.origin, ray.dir, true);
+    ray.rcp_dir = 1.0f / -abs(ray.dir);
 
     /* Mirror coordinates to simplify cell intersections */
     uint mirror_mask = 0x00u;
@@ -101,9 +103,8 @@ public inline float trace_svt64(
     int scale_exp = 21; /* 23 mantissa bits - 2 */
     Svt64Node node = nodes[node_index];
     float3 pos = clamp(ray.origin, 1.0f, 1.9999999f);
-    const float3 inv_dir = 1.0f / -abs(ray.dir);
     float3 side_dist = 0.0f;
-    for (;;) {
+    for (int i = 0; i < 64; ++i) {
         uint child_index = get_node_cell_index(pos, scale_exp) ^ mirror_mask;
 
         /* Descend down the tree until we find an empty node or leaf node */
@@ -123,15 +124,14 @@ public inline float trace_svt64(
         /* If this node is a leaf, check if we hit a voxel */
         if (node.child_active(child_index) && node.is_leaf()) break;
 
-        /* Check if we can actually take a larger step based on the child mask */  
-        int sub_scale_exp = scale_exp;
-        if (node.child_coalesced_skip(child_index)) sub_scale_exp++;
+        /* Check if we can actually take a larger step based on the child mask */
+        const int sub_scale_exp = node.child_coalesced_skip(child_index) ? (scale_exp + 1) : scale_exp;
 
         /* Compute the next position by intersecting the max cell sides */
         const float3 cell_min = floor_scale(pos, sub_scale_exp);
-        side_dist = (cell_min - ray.origin) * inv_dir;
+        side_dist = (cell_min - ray.origin) * ray.rcp_dir;
         const float tmax = min(min(side_dist.x, side_dist.y), side_dist.z);
-        int3 neighbor_max = asint(cell_min) + select(side_dist == tmax, -1, (1 << sub_scale_exp) - 1);
+        const int3 neighbor_max = asint(cell_min) + select(side_dist == tmax, -1, (1 << sub_scale_exp) - 1);
         pos = min(ray.origin - abs(ray.dir) * tmax, asfloat(neighbor_max));
 
         /* Find the first common ancestor node based on left-most carry bit */

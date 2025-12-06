@@ -56,6 +56,8 @@ void GeometryPipeline::enqueue(RenderGraph& render_graph, Buffer render_view, Re
         object.local_to_world = transform.get_world_matrix();
         object.world_to_local = glm::inverse(object.local_to_world);
         object.size = renderer.size;
+        object.blas_handle = blas_nodes.get_index();
+        object.voxels_handle = voxel_data.get_index();
         objects.push_back(std::move(object));
     }
 
@@ -80,11 +82,9 @@ void GeometryPipeline::enqueue(RenderGraph& render_graph, Buffer render_view, Re
         .read(bvh_nodes)
         .read(object_indices)
         .read(object_data)
-        .read(blas_nodes)
-        .read(voxel_data)
         /* Render target */
         .write(render_target)
-        .group_size(8, 8)
+        .group_size(16, 8)
         .work_size(engine.window.width, engine.window.height);
 
     /* clang-format on */
