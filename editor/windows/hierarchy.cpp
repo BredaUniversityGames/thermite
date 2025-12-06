@@ -1,6 +1,7 @@
 #include "hierarchy.hpp"
 
 #include <imgui.h>
+#include <imgui_internal.h>
 
 #include "engine/engine.hpp"
 #include "engine/core/ecs.hpp"
@@ -17,7 +18,7 @@ void Hierarchy::start_section() {
 
 void Hierarchy::end_section() {
     ImGui::EndChild();
-    // ImGui::PopStyleColor();
+
     drag_drop_target(entt::null);
 
     if (end_above_next_frame != null_index) {
@@ -42,7 +43,10 @@ bool Hierarchy::display_entity(const HierarchyState& state) {
     const bool has_parent = state.transform.has_parent();
     if (root_indent && has_parent) return false;
 
-    ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_None | ImGuiTreeNodeFlags_FramePadding | ImGuiTreeNodeFlags_SpanAvailWidth;
+    ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_None;
+    flags |= ImGuiTreeNodeFlags_FramePadding;
+    flags |= ImGuiTreeNodeFlags_SpanAvailWidth;
+    flags |= ImGuiTreeNodeFlags_DrawLinesToNodes;
 
     const bool is_selected = selected_entities.contains(state.entity);
     if (is_selected) flags |= ImGuiTreeNodeFlags_Selected;
@@ -50,14 +54,16 @@ bool Hierarchy::display_entity(const HierarchyState& state) {
     const bool is_leaf = state.transform.has_children() == false;
     if (is_leaf) flags |= ImGuiTreeNodeFlags_Leaf;
 
-    const bool is_begin = state.position == selected_index_begin;
+    const Entity parent = state.transform.get_parent();
+    const bool is_begin = state.position == selected_index_begin && selection_parent == parent;
     if (is_begin) flags |= ImGuiTreeNodeFlags_Bullet;
 
     /* Debug name */
-    // const auto name = state.name.name + " " + std::to_string(state.indent_level) + "-" + std::to_string(state.level_index);
-    const auto name = state.name.name;
+    const auto name = state.name.name + " " + std::to_string(state.position.x) + "-" + std::to_string(state.position.y);
+    // const auto name = state.name.name;
 
-    const bool open_node = ImGui::TreeNodeEx(name.c_str(), flags);
+    const ImGuiID tree_node_id = ImGui::GetID(name.c_str());
+    bool open_node = ImGui::TreeNodeBehavior(tree_node_id, flags, name.c_str(), NULL);
     /* TODO: is a too early because it toggles when mouse down, but we use mouse released for selection */
     const bool just_opened = ImGui::IsItemToggledOpen();
 
@@ -67,18 +73,25 @@ bool Hierarchy::display_entity(const HierarchyState& state) {
     const bool is_left_clicked = is_hovered && is_left_mouse_released;
     const bool is_ctrl_held = ImGui::GetIO().KeyCtrl;
     const bool is_shift_held = ImGui::GetIO().KeyShift;
+    const bool same_parent = selection_parent == parent;
 
     /* Drag and drop logic */
     drag_drop_source(state.entity);
     const bool dropped = drag_drop_target(state.entity);
+    /* Force open treenode using imgui storage */
+    if (dropped) {
+        ImGuiStorage* storage = ImGui::GetStateStorage();
+        storage->SetBool(tree_node_id, true);
+    }
 
     /* Selection logic */
     const bool select_entity = !dropped && !just_opened && !is_payload_being_dragged && is_left_clicked;
     if (select_entity) {
-        if (is_shift_held) {
+        if (is_shift_held && same_parent) {
             const bool is_first_selected = selected_entities.empty();
             if (is_first_selected) {
                 selected_index_begin = state.position;
+                selection_parent = parent;
                 selected_index_end_above = state.position;
                 selected_index_end_below = state.position;
             } else {
@@ -98,6 +111,7 @@ bool Hierarchy::display_entity(const HierarchyState& state) {
             selected_entities.clear();
             selected_entities.insert(state.entity);
             selected_index_begin = state.position;
+            selection_parent = state.transform.get_parent();
             selected_index_end_above = state.position;
             selected_index_end_below = state.position;
         }
@@ -106,7 +120,7 @@ bool Hierarchy::display_entity(const HierarchyState& state) {
     /* Check if entity is between selected */
     const bool is_between_begin_above = Hierarchy::is_between(state.position, selected_index_end_above, selected_index_begin);
     const bool is_between_begin_below = Hierarchy::is_between(state.position, selected_index_begin, selected_index_end_below);
-    const bool is_between = is_between_begin_above || is_between_begin_below;
+    const bool is_between = same_parent && (is_between_begin_above || is_between_begin_below);
     if (is_between) {
         selected_entities.insert(state.entity);
     }
@@ -124,7 +138,7 @@ bool Hierarchy::display_entity(const HierarchyState& state) {
     const bool has_children = state.transform.has_children();
     /* Display children */
     if (has_children) {
-        uint32_t level_index = 0;
+        uint32_t level_index = state.index() + 1;
         for (auto child : state.transform.get_children()) {
             const bool has_components = engine.ecs.has_component<Name, Transform>(child);
             if (!has_components) continue;
@@ -185,6 +199,7 @@ bool Hierarchy::drag_drop_target(const Entity dropped_entity) {
             }
             ImGui::EndDragDropTarget();
             selected_index_begin = null_index;
+            selection_parent = entt::null;
             selected_index_end_above = null_index;
             selected_index_end_below = null_index;
             return true;

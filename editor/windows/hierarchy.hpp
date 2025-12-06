@@ -50,6 +50,8 @@ class Hierarchy {
     glm::uvec2 previous_end_above = null_index;
     glm::uvec2 previous_end_below = null_index;
 
+    Entity selection_parent = entt::null;
+
     static inline bool is_between(const glm::uvec2& value, const glm::uvec2& begin, const glm::uvec2& end) {
         if (begin == null_index || end == null_index) return false;
         const bool between_begin_end = (value.y >= begin.y && value.y <= end.y);
