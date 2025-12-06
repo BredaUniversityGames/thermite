@@ -36,6 +36,9 @@ void Editor::on_engine_update(const FrameData&) {
     imgui_manager.new_frame();
 
     ImGui::Begin("Camera");
+
+    hierarchy.display();
+
     ImGui::End();
 
     imgui_manager.end_frame();
