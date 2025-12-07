@@ -24,7 +24,7 @@ void CameraSystem::on_start() {
 void CameraSystem::on_update(const FrameData& time) {
     // Gather Variables to be used
     auto& input = engine.input;
-    Entity camera_entity = Camera::get_active_camera();
+    const Entity camera_entity = Camera::get_active_camera();
     if (camera_entity == entt::null) {
         Log::error(Log::Scope::ENGINE, "Camera Entity is NULL. Are there any active cameras in the scene?");
         return;
@@ -34,17 +34,18 @@ void CameraSystem::on_update(const FrameData& time) {
     const bool is_2d_axis_movement = input.is_action_pressed(action::LEFT_CLICK);
 
     if (!enable_mouse_look) {
+        /* Show mouse cursor */
         input.set_mouse_relative_to_window(false);
         return;
     }
+    /* Hide mouse cursor */
+    input.set_mouse_relative_to_window(true);
 
     Camera& camera = engine.ecs.get_component<Camera>(camera_entity);
     Transform& transform = engine.ecs.get_component<Transform>(camera_entity);
 
-    input.set_mouse_relative_to_window(true);
-
-    float dx = input.get_mouse_delta_x();
-    float dy = input.get_mouse_delta_y();
+    const float dx = input.get_mouse_delta_x();
+    const float dy = input.get_mouse_delta_y();
 
     if (is_2d_axis_movement == false) {
         // Mouse Look
