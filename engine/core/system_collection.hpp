@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <memory>
+#include <stdexcept>
 
 namespace tmt {
 template <typename SystemType>
