@@ -59,8 +59,8 @@ bool Hierarchy::display_entity(const HierarchyState& state) {
     if (is_begin) flags |= ImGuiTreeNodeFlags_Bullet;
 
     /* Debug name */
-    const auto name = state.name.name + " " + std::to_string(state.position.x) + "-" + std::to_string(state.position.y);
-    // const auto name = state.name.name;
+    //const auto name = state.name.name + " " + std::to_string(state.position.x) + "-" + std::to_string(state.position.y);
+     const auto name = state.name.name;
 
     const ImGuiID tree_node_id = ImGui::GetID(name.c_str());
     bool open_node = ImGui::TreeNodeBehavior(tree_node_id, flags, name.c_str(), NULL);
@@ -162,15 +162,19 @@ bool Hierarchy::display_entity(const HierarchyState& state) {
 bool Hierarchy::drag_drop_source(const Entity dragged_entity) const {
     if (ImGui::BeginDragDropSource()) {
         DragNDropPayload payload_data;
-        if (selected_entities.size() > 1) {
-            payload_data.multiple = true;
-            payload_data.entity = dragged_entity;
-        } else {
-            payload_data.multiple = false;
-            payload_data.entity = dragged_entity;
-        }
+        const bool multiple = selected_entities.size() > 1;
+        payload_data.multiple = multiple;
+        payload_data.entity = dragged_entity;
+
         ImGui::SetDragDropPayload("HIERARCHY_ENTITY", &payload_data, sizeof(DragNDropPayload));
-        const auto& name = engine.ecs.get_component<Name>(dragged_entity).name;
+        std::string name;
+        if (multiple) {
+            name = engine.ecs.get_component<Name>(dragged_entity).name;
+            const int count = static_cast<int>(selected_entities.size());
+            name += " (+" + std::to_string(count - 1) + " more)";
+        } else {
+            name = engine.ecs.get_component<Name>(dragged_entity).name;
+        }
         ImGui::TextUnformatted(name.c_str());
         ImGui::EndDragDropSource();
         return true;
