@@ -39,6 +39,11 @@ void Input::update() {
                 mouse_dx += event.motion.xrel;
                 mouse_dy += event.motion.yrel;
                 break;
+            case SDL_EVENT_WINDOW_RESIZED:
+                engine.window.width = event.window.data1;
+                engine.window.height = event.window.data2;
+                engine.window.resized = true;
+                break;
             default:
                 break;
         }
