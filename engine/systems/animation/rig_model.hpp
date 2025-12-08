@@ -42,11 +42,11 @@ class RigModel {
         return false;
     }
 
-    void play_animation(const std::string& animation_name, float transfer_time, bool _loop_animation);
-    void stop_loop(float _transfer_time);
+    void play_animation(const std::string& animation_name, float transfer_time, bool loop_animation);
+    void stop_loop(float transfer_time_);
     void set_animation_speed(float s);
 
-    void set_current_animation(std::string v) { current_animation = v; }
+    void set_current_animation(std::string v) { current_animation = std::move(v); }
     std::string get_current_animation() const { return current_animation; }
     std::string get_next_animation() const { return next_animation; }
     std::string current_animation_playing();

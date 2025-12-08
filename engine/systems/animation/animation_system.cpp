@@ -327,7 +327,7 @@ void RigModelManager::on_update(const FrameData& time) {
 
 void tmt::RigModelManager::on_end() {}
 
-void RigModelManager::Inspect(float) {
+void RigModelManager::inspect(float) {
     int lines_drawn = 0;
     for (const auto& [entity, transform, rig] : engine.ecs.get_registry().view<Transform, RigModel>().each()) {
         for (const Entity bone_entity : rig.bone_entities) {

@@ -17,7 +17,7 @@ struct ImNodesEditorContext;
 
 struct Trigger {
     Trigger() = default;
-    Trigger(bool _value) : value(_value) {};
+    Trigger(bool value_) : value(value_) {};
 
     // operators needed due to comparing std::variant<..., Trigger>
     [[nodiscard]] bool operator==(const Trigger&) const { return value; }
@@ -45,7 +45,7 @@ struct Condition {
     static const CompareFunctionMap COMPARE_MAP;
 
     [[nodiscard]] bool is_satisfied(const Variant& parameter) const {
-        auto& compare = COMPARE_MAP.at(compare_type);
+        const auto& compare = COMPARE_MAP.at(compare_type);
         const bool satisfied = compare(parameter, compare_value);
         return satisfied;
     };
@@ -112,7 +112,7 @@ class RigModelManager : public ISystem /*, public IPanel, public IKeyboardListen
 
     void on_start() override;
     void on_update(const FrameData& time) override;
-    void Inspect(float);
+    void inspect(float);
     void on_end() override;
     // void on_key_event(KeyboardEvent& event) override;
 
