@@ -17,7 +17,7 @@ void Goap::on_update(const FrameData& time) {
     auto& registry = tmt::engine.ecs.get_registry();
     float dt = time.delta_time;
 
-    for (auto [entity, goap, goal, world] : registry.view<GoapAgent, GoapGoal, WorldState>().each()) {
+    for (auto [entity, agent, world] : registry.view<GoapAgent, WorldState>().each()) {
         process_agent(registry, entity, dt);
     }
 }
@@ -30,19 +30,18 @@ void Goap::on_end() { Log::info("Goap on_end"); }
 // Main per-agent update
 // ------------------------------------------------------
 void Goap::process_agent(Registry& ecs, Entity entity, float dt) {
-    auto& goap = ecs.get<GoapAgent>(entity);
-    auto& goal = ecs.get<GoapGoal>(entity);
+    auto& agent = ecs.get<GoapAgent>(entity);
     auto& ws = ecs.get<WorldState>(entity);
 
-    update_goal(ecs, entity, goap, goal, ws);
-    if (goap.needs_replan) update_plan(ecs, entity, goap, goal, ws);
-    update_action(ecs, entity, goap, dt);
+    update_goal(ecs, entity, agent, ws);
+    if (agent.needs_replan) update_plan(ecs, entity, agent, ws);
+    update_action(ecs, entity, agent, dt);
 }
 
 // ------------------------------------------------------
 // Step 1: goal assignment
 // ------------------------------------------------------
-void Goap::update_goal(Registry& ecs, Entity entity, GoapAgent& agent, GoapGoal& goal, WorldState& ws) {
+void Goap::update_goal(Registry& ecs, Entity entity, GoapAgent& agent, WorldState& ws) {
     // If agent already has an active goal, do nothing
     if (agent.has_goal()) return;
 
@@ -60,7 +59,7 @@ void Goap::update_goal(Registry& ecs, Entity entity, GoapAgent& agent, GoapGoal&
             agent.active_goal = goal;
             agent.needs_replan = true;
 
-            Log::info("GOAP Agent {} selected goal with priority {}", int(entity), goal.priority);
+            Log::info("GOAP Agent {} selected goal '{}' with priority {}", int(entity), agent.active_goal.name, goal.priority);
             return;
         }
     }
@@ -89,7 +88,7 @@ struct Node {
 // ------------------------------------------------------
 // Step 2: planning
 // ------------------------------------------------------
-void Goap::update_plan(Registry& ecs, Entity entity, GoapAgent& agent, GoapGoal& goal, WorldState& ws) {
+void Goap::update_plan(Registry& ecs, Entity entity, GoapAgent& agent, WorldState& ws) {
     agent.clear_plan();
 
     // Storage for nodes
@@ -107,6 +106,15 @@ void Goap::update_plan(Registry& ecs, Entity entity, GoapAgent& agent, GoapGoal&
     closed.reserve(agent.actions.size());
 
     // ------------------------------------------------------
+    // Log all available actions
+    // ------------------------------------------------------
+    /*Log::info("GOAP: Agent {} has {} actions:", int(entity), int(agent.actions.size()));
+    for (auto& action_ptr : agent.actions) {
+        if (!action_ptr) continue;
+        Log::info("  - {}", action_ptr->get_name());
+    }*/
+
+    // ------------------------------------------------------
     // Add all valid starting actions (whose preconditions match current worldstate)
     // ------------------------------------------------------
     for (auto& action_ptr : agent.actions) {
@@ -117,10 +125,14 @@ void Goap::update_plan(Registry& ecs, Entity entity, GoapAgent& agent, GoapGoal&
             nodes.emplace_back(action, action->cost, 0.f, nullptr);
             Node* node = &nodes.back();
             open_list.push(node);
+            // Log::info("GOAP: Starting action '{}' satisfies preconditions, added to open list", action->get_name());
+        } else {
+            // Log::info("GOAP: Action '{}' does NOT satisfy preconditions", action->get_name());
         }
     }
 
     Node* goal_node = nullptr;
+    int iteration = 0;
 
     // ------------------------------------------------------
     // A* SEARCH LOOP
@@ -128,6 +140,7 @@ void Goap::update_plan(Registry& ecs, Entity entity, GoapAgent& agent, GoapGoal&
     while (!open_list.empty()) {
         Node* current = open_list.top();
         open_list.pop();
+        iteration++;
 
         if (!current) continue;
 
@@ -140,8 +153,9 @@ void Goap::update_plan(Registry& ecs, Entity entity, GoapAgent& agent, GoapGoal&
         current->action->apply_effects(temp);
 
         // check if goal met
-        if (temp.satisfies(goal.desired_state)) {
+        if (temp.satisfies(agent.active_goal.desired_state)) {
             goal_node = current;
+            // Log::info("GOAP: Goal satisfied by action '{}'", current->action->get_name());
             break;
         }
 
@@ -159,6 +173,10 @@ void Goap::update_plan(Registry& ecs, Entity entity, GoapAgent& agent, GoapGoal&
                 nodes.emplace_back(next, new_cost, 0.f, current);
                 Node* new_node = &nodes.back();
                 open_list.push(new_node);
+
+                // Log::info("GOAP: Adding child action '{}' to open list (cost: {})", next->get_name(), new_cost);
+            } else {
+                // Log::info("GOAP: Child action '{}' preconditions NOT satisfied at this node", next->get_name());
             }
         }
     }
@@ -167,7 +185,7 @@ void Goap::update_plan(Registry& ecs, Entity entity, GoapAgent& agent, GoapGoal&
     // Reconstruct plan
     // ------------------------------------------------------
     if (!goal_node) {
-        Log::warn("GOAP: planning failed for agent {}", int(entity));
+        Log::warn("GOAP: planning FAILED for agent {} after {} iterations", int(entity), iteration);
         return;
     }
 

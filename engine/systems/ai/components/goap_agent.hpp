@@ -1,5 +1,5 @@
 #pragma once
-#include "core/ecs.hpp"
+#include "engine/core/ecs.hpp"
 #include <vector>
 #include "goap_action.hpp"
 #include "goap_goal.hpp"
