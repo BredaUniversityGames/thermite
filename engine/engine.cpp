@@ -38,38 +38,39 @@ Engine::~Engine() {
     delete &input;
 }
 
-void Engine::init(const ApplicationSpecs& specs, std::unique_ptr<Application> user_app) {
+void Engine::init(std::unique_ptr<Application> user_app) {
     app = std::move(user_app);
-    Log::init(specs.log_file.string());
+    Log::init(app->specs.log_file.string());
 
     input.init();
-    window.init(specs);
+    window.init(app->specs);
     renderer.init();
 
     ecs.register_system<Physics>();
     ecs.register_system<RigModelManager>();
     ecs.register_system<CameraSystem>();
 
-    OnEngineInit::dispatch(specs);
-
-auto fucker = ecs.create_entity();
-    auto& fucker_transform = ecs.add_component<Transform>(fucker);
-    auto& fucker_name = ecs.add_component<Name>(fucker);
-    auto& fucker_rig_model_comp = ecs.add_component<RigModel>(fucker);
+    auto rig_ent = ecs.create_entity();
+    auto& rig_ent_transform = ecs.add_component<Transform>(rig_ent);
+    auto& rig_ent_name = ecs.add_component<Name>(rig_ent);
+    auto& rig_ent_rig_model_comp = ecs.add_component<RigModel>(rig_ent);
 
     IO::FileLocation location {IO::Location::PROJECT, "Victory_animation.fbx"};
-    fucker_rig_model_comp.init(location, fucker);
-    fucker_rig_model_comp.data->animation_files.push_back(location);
-    fucker_rig_model_comp.data->reload();
+    rig_ent_rig_model_comp.init(location, fucker);
+    rig_ent_rig_model_comp.data->animation_files.push_back(location);
+    rig_ent_rig_model_comp.data->reload();
 
     // Debug: print available animations
     Log::info("Available animations:");
-    for (const auto& [name, anim] : fucker_rig_model_comp.data->bones.back().animations) {
+    for (const auto& [name, anim] : rig_ent_rig_model_comp.data->bones.back().animations) {
         Log::info("  - '{}'", name);
     }
-    fucker_rig_model_comp.set_current_animation("Victory_animation");
-    fucker_rig_model_comp.state = RigModel::State::ANIMATE_LOOP;
-    fucker_rig_model_comp.time = 0.0f;
+    rig_ent_rig_model_comp.set_current_animation("Victory_animation");
+    rig_ent_rig_model_comp.state = RigModel::State::ANIMATE_LOOP;
+    rig_ent_rig_model_comp.time = 0.0f;
+  
+    OnEngineInit::dispatch(specs);
+    OnEngineInit::dispatch(app->specs);
 }
 
 // Example stuff
