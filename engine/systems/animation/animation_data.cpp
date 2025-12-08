@@ -6,14 +6,14 @@ using namespace tmt;
 
 tmt::RigData::RigData(const IO::FileLocation& directory) : FileResource(directory) {}
 
-bool tmt::RigData::load() { 
+bool tmt::RigData::load() {
     load_fbx(file_location);
     return true;
 }
 
 void tmt::RigData::unload() {}
 
-bool tmt::RigData::reload() { 
+bool tmt::RigData::reload() {
     bones.clear();
     load_fbx(file_location);
     return true;
@@ -140,13 +140,12 @@ void RigData::extract_bone_keyframes_fbx(const ufbx_scene* animation_fbx, const 
 
             for (const ufbx_baked_quat& rotation : bake_node.rotation_keys) {
                 bone_comp.animations[animation_name].keyframes_rot.push_back(
-                    KeyframeRot {static_cast<float>(rotation.time), glm::quat (rotation.value.w, rotation.value.x, rotation.value.y, rotation.value.z)}
+                    KeyframeRot {static_cast<float>(rotation.time), glm::quat(rotation.value.w, rotation.value.x, rotation.value.y, rotation.value.z)}
                 );
             }
         }
     }
 }
-
 
 void RigData::init_bone_fbx(const ufbx_node* node, const std::map<const ufbx_node*, const ufbx_node*>& mesh_connections) {
     Bone bone;

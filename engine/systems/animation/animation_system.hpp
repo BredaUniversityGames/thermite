@@ -2,20 +2,18 @@
 #include <variant>
 #include <cstdint>
 #include "engine/core/ecs.hpp"
-//#include "editor/inspectable.hpp"
-//#include "systems/events.hpp"
-//#include "tools/serialization.hpp"
+// #include "editor/inspectable.hpp"
+// #include "systems/events.hpp"
+// #include "tools/serialization.hpp"
 #include "rig_model.hpp"
 
-//#ifdef KUDZU_INSPECTOR
-//#include "imgui/imgui.h"
-//#endif
-
+// #ifdef KUDZU_INSPECTOR
+// #include "imgui/imgui.h"
+// #endif
 
 namespace tmt {
 
 struct ImNodesEditorContext;
-
 
 struct Trigger {
     Trigger() = default;
@@ -92,6 +90,7 @@ class RigController {
     std::vector<Transition> transitions;
 
     ImNodesEditorContext* editor_context = nullptr;
+
    private:
     std::string current_state = "Start";
 
@@ -104,10 +103,9 @@ class RigController {
     bool check_transition_conditions(const Transition& transition, std::vector<Trigger*>& satisfied_triggers);
 };
 
-
-class RigModelManager : public ISystem/*, public IPanel, public IKeyboardListener*/ {
+class RigModelManager : public ISystem /*, public IPanel, public IKeyboardListener*/ {
    public:
-    //RigModelManager();
+    // RigModelManager();
     //~RigModelManager() {};
 
     std::string get_name() override;
@@ -116,10 +114,10 @@ class RigModelManager : public ISystem/*, public IPanel, public IKeyboardListene
     void on_update(const FrameData& time) override;
     void Inspect(float);
     void on_end() override;
-    //void on_key_event(KeyboardEvent& event) override;
+    // void on_key_event(KeyboardEvent& event) override;
 
-    //void list_animations(const RigModel& model);
-    //void list_parameters(RigController& controller);
+    // void list_animations(const RigModel& model);
+    // void list_parameters(RigController& controller);
 
     /*void draw_transitions(const RigController& controller);
     void draw_transition(ImVec2 start, ImVec2 middle, int transition_index) const;
@@ -148,7 +146,7 @@ class RigModelManager : public ISystem/*, public IPanel, public IKeyboardListene
 };
 }  // namespace tmt
 
-//VISITABLE_STRUCT(kudzu::Trigger, value);
-//VISITABLE_STRUCT(kudzu::AnimationState, animation, animation_speed, repeat);
-//VISITABLE_STRUCT(kudzu::Transition, from, to, transition_time, conditions);
-//VISITABLE_STRUCT(kudzu::Condition, parameter_name, compare_value, compare_type);
+// VISITABLE_STRUCT(kudzu::Trigger, value);
+// VISITABLE_STRUCT(kudzu::AnimationState, animation, animation_speed, repeat);
+// VISITABLE_STRUCT(kudzu::Transition, from, to, transition_time, conditions);
+// VISITABLE_STRUCT(kudzu::Condition, parameter_name, compare_value, compare_type);

@@ -4,15 +4,14 @@
 
 #include "engine.hpp"
 #include "rig_model.hpp"
-//#include "graphics/debug_render.hpp"
+// #include "graphics/debug_render.hpp"
 #include "engine/core/renderer/pipelines/debug_pipeline.hpp"
 #include "engine/core/renderer/renderer.hpp"
-//#include "tools/profiler.hpp"
+// #include "tools/profiler.hpp"
 
 #define CONDITION(comparison) [](const Variant& parameter, const Variant& value) -> bool { return parameter comparison value; }
 
 using namespace tmt;
-
 
 const Condition::CompareFunctionMap Condition::COMPARE_MAP {
     {CompareType::EQUAL, CONDITION(==)},
@@ -213,7 +212,7 @@ bool RigController::check_transition_conditions(const Transition& transition, st
 
 #pragma region RigModelManager
 
-//RigModelManager::RigModelManager() : System(Engine.ecs()) { IKeyboardListener::priority = 1; }
+// RigModelManager::RigModelManager() : System(Engine.ecs()) { IKeyboardListener::priority = 1; }
 
 std::string tmt::RigModelManager::get_name() { return "animation system"; }
 
@@ -308,11 +307,11 @@ void RigModelManager::on_update(const FrameData& time) {
             }
         }
 
-        //Engine.profiler().BeginSection("animation");
+        // Engine.profiler().BeginSection("animation");
 
         for (const Entity bone_entity : rig.bone_entities) {
             auto& transform = engine.ecs.get_component<Transform>(bone_entity);
-            //if (!transform.is_enabled()) continue;
+            // if (!transform.is_enabled()) continue;
 
             const BoneComp& bone_comp_id = engine.ecs.get_component<BoneComp>(bone_entity);
             Bone& bone = rig.data->bones[bone_comp_id.id];
@@ -322,17 +321,15 @@ void RigModelManager::on_update(const FrameData& time) {
             rig.animate_scale(transform, bone);
         }
 
-        //Engine.profiler().EndSection("animation");
+        // Engine.profiler().EndSection("animation");
     }
 }
 
 void tmt::RigModelManager::on_end() {}
 
-
 void RigModelManager::Inspect(float) {
     int lines_drawn = 0;
     for (const auto& [entity, transform, rig] : engine.ecs.get_registry().view<Transform, RigModel>().each()) {
-
         for (const Entity bone_entity : rig.bone_entities) {
             auto& bone_transform = engine.ecs.get_component<Transform>(bone_entity);
             auto& bone_name = engine.ecs.get_component<Name>(bone_entity);
@@ -347,7 +344,6 @@ void RigModelManager::Inspect(float) {
         }
     }
 }
-
 
 /*
 #include "editor/inspector.hpp"

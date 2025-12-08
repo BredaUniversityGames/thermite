@@ -1,12 +1,12 @@
 #include "rig_model.hpp"
 
-//#include "../resources.hpp"
+// #include "../resources.hpp"
 
-//#include "graphics/debug_render.hpp"
-//#include "voxel_resource.hpp"
-//#include "tools/profiler.hpp"
+// #include "graphics/debug_render.hpp"
+// #include "voxel_resource.hpp"
+// #include "tools/profiler.hpp"
 //
-//#include "tools/log.hpp"
+// #include "tools/log.hpp"
 
 #include "engine/core/logger.hpp"
 #include "engine/core/components/transform.hpp"
@@ -67,39 +67,38 @@ void RigModel::init(const IO::FileLocation& directory, Entity p) {
 }
 
 RigModel::RigModel(const IO::FileLocation& directory, Entity p) {
-    //init(directory, p);
+    // init(directory, p);
 }
 
-//void tmt::RigModel::attach_voxel_objects(const IO::FileLocation& directory) {
-//    vox_is_loaded = true;
-//    VoxParser vox {directory, filename};
-//    const auto entity = vox.instantiate();
-//    voxel_entities = entity;
-//    glm::vec3 armature_pos = Engine.ecs().get_component<Transform>(armature_entity).GetWorldPosition();
+// void tmt::RigModel::attach_voxel_objects(const IO::FileLocation& directory) {
+//     vox_is_loaded = true;
+//     VoxParser vox {directory, filename};
+//     const auto entity = vox.instantiate();
+//     voxel_entities = entity;
+//     glm::vec3 armature_pos = Engine.ecs().get_component<Transform>(armature_entity).GetWorldPosition();
 //
 //
-//    for (int i = 0; i < entity.size(); i++) {
-//        auto& transf = Engine.ecs().get_component<Transform>(entity[i]);
-//        for (int j = 0; j < bone_entities.size(); j++) {
-//            auto* rig_transf = kudzu::Engine.ecs().registry.try_get<kudzu::Transform>(bone_entities[j]);
-//            if (rig_transf->Name == transf.Name) {
-//                BoneComp& bone_comp_id = Engine.ecs().registry.get<BoneComp>(bone_entities[j]);
-//                Bone& b = data->bones[bone_comp_id.id];
+//     for (int i = 0; i < entity.size(); i++) {
+//         auto& transf = Engine.ecs().get_component<Transform>(entity[i]);
+//         for (int j = 0; j < bone_entities.size(); j++) {
+//             auto* rig_transf = kudzu::Engine.ecs().registry.try_get<kudzu::Transform>(bone_entities[j]);
+//             if (rig_transf->Name == transf.Name) {
+//                 BoneComp& bone_comp_id = Engine.ecs().registry.get<BoneComp>(bone_entities[j]);
+//                 Bone& b = data->bones[bone_comp_id.id];
 //
-//                pivot_entities.push_back(Engine.ecs().create_entity());
-//                auto& pivot_transf = Engine.ecs().get_component<Transform>(pivot_entities.back());
-//                pivot_transf.SetParent(bone_entities[j]);
-//                
-//                transf.SetParent(pivot_entities.back());
-//                transf.SetTranslation(b.mesh_offset - (rig_transf->GetWorldPosition() - armature_pos));
-//                pivot_transf.SetRotation(glm::inverse(glm::toQuat(rig_transf->World())));
-//                pivot_transf.Name = "pivot";
-//                
-//            }
-//        }
-//    }
-//}
-
+//                 pivot_entities.push_back(Engine.ecs().create_entity());
+//                 auto& pivot_transf = Engine.ecs().get_component<Transform>(pivot_entities.back());
+//                 pivot_transf.SetParent(bone_entities[j]);
+//
+//                 transf.SetParent(pivot_entities.back());
+//                 transf.SetTranslation(b.mesh_offset - (rig_transf->GetWorldPosition() - armature_pos));
+//                 pivot_transf.SetRotation(glm::inverse(glm::toQuat(rig_transf->World())));
+//                 pivot_transf.Name = "pivot";
+//
+//             }
+//         }
+//     }
+// }
 
 std::string tmt::RigModel::current_animation_playing() {
     switch (state) {
@@ -131,7 +130,7 @@ void RigModel::play_animation(const std::string& animation_name, float _transfer
     const auto& animations = data->bones[0].animations;
     if (animations.find(animation_name) == animations.end()) {
         Log::warn("invalid animation name: ", animation_name);
-        
+
         return;
     }
     if (loop_animation)
@@ -148,7 +147,6 @@ void RigModel::stop_loop(float _transfer_time) {
     transfer_threshold = _transfer_time;
     transfer_time = 0.0f;
 }
-
 
 void tmt::RigModel::set_animation_speed(float s) { animation_speed = s; }
 
@@ -168,20 +166,13 @@ void RigModel::animate_translation(Transform& t, Bone& b) {
         float next_frame_time = keyframes[current_frame + 1].time;
         float interp_time = (time - current_frame_time) / (next_frame_time - current_frame_time);
 
-        glm::vec3 new_position =
-            glm::mix(keyframes[current_frame].position, keyframes[current_frame + 1].position, interp_time);
+        glm::vec3 new_position = glm::mix(keyframes[current_frame].position, keyframes[current_frame + 1].position, interp_time);
 
         // transfer from current frame to first frame of new animation
         if (is_transferring()) {
             interp_time = transfer_time / transfer_threshold;
-            new_position = glm::mix(
-                b.animations[get_current_animation()].keyframes_pos[current_frame].position,
-                b.animations[get_next_animation()].keyframes_pos[0].position, interp_time
-            );
-            new_position = glm::mix(
-                glm::mix(t.get_local_position(), b.animations[get_next_animation()].keyframes_pos[0].position, interp_time),
-                new_position, 0.4f
-            );
+            new_position = glm::mix(b.animations[get_current_animation()].keyframes_pos[current_frame].position, b.animations[get_next_animation()].keyframes_pos[0].position, interp_time);
+            new_position = glm::mix(glm::mix(t.get_local_position(), b.animations[get_next_animation()].keyframes_pos[0].position, interp_time), new_position, 0.4f);
         }
 
         t.set_local_position(new_position);
@@ -201,22 +192,13 @@ void RigModel::animate_rotation(Transform& t, Bone& b) {
     float next_frame_time = keyframes[std::min(current_frame + 1, (int)keyframes.size() - 1)].time;
     float interp_time = (time - current_frame_time) / (next_frame_time - current_frame_time);
 
-    glm::quat new_rotation = glm::slerp(
-        keyframes[current_frame].rotation, keyframes[std::min(current_frame + 1, (int)keyframes.size() - 1)].rotation,
-        interp_time
-    );
+    glm::quat new_rotation = glm::slerp(keyframes[current_frame].rotation, keyframes[std::min(current_frame + 1, (int)keyframes.size() - 1)].rotation, interp_time);
 
     // transfer from current frame to first frame of new animation
     if (is_transferring()) {
         interp_time = transfer_time / transfer_threshold;
-        new_rotation = glm::slerp(
-            b.animations[get_current_animation()].keyframes_rot[current_frame].rotation,
-            b.animations[get_next_animation()].keyframes_rot[0].rotation, interp_time
-        );
-        new_rotation = glm::slerp(
-            glm::slerp(t.get_local_rotation(), b.animations[get_next_animation()].keyframes_rot[0].rotation, interp_time),
-            new_rotation, 0.4f
-        );
+        new_rotation = glm::slerp(b.animations[get_current_animation()].keyframes_rot[current_frame].rotation, b.animations[get_next_animation()].keyframes_rot[0].rotation, interp_time);
+        new_rotation = glm::slerp(glm::slerp(t.get_local_rotation(), b.animations[get_next_animation()].keyframes_rot[0].rotation, interp_time), new_rotation, 0.4f);
     }
 
     t.set_local_rotation(new_rotation);

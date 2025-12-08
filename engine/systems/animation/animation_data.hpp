@@ -54,7 +54,7 @@ struct Bone {
 struct RigData : public FileResource {
    public:
     RigData(const IO::FileLocation& directory);
-    
+
     // Inherited via Resource
     bool load() override;
     void unload() override;
@@ -64,7 +64,7 @@ struct RigData : public FileResource {
     std::string name;
 
     // Hacky way of ding this, this info should not be stored in the resources since it can not be found in the .FBX file itself
-    //std::vector<std::pair<FileIO::Directory, std::string>> animation_files;
+    // std::vector<std::pair<FileIO::Directory, std::string>> animation_files;
     std::vector<IO::FileLocation> animation_files;
 
    private:
