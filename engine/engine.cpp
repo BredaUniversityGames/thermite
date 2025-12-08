@@ -38,12 +38,12 @@ Engine::~Engine() {
     delete &input;
 }
 
-void Engine::init(const ApplicationSpecs& specs, std::unique_ptr<Application> user_app) {
+void Engine::init(std::unique_ptr<Application> user_app) {
     app = std::move(user_app);
-    Log::init(specs.log_file.string());
+    Log::init(app->specs.log_file.string());
 
     input.init();
-    window.init(specs);
+    window.init(app->specs);
     renderer.init();
 
     ecs.register_system<Physics>();
