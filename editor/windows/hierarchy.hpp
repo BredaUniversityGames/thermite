@@ -11,7 +11,6 @@
 namespace tmt {
 class Hierarchy {
    public:
-
     template <typename... Components>
     void display() {
         /* Enforce Transform and Name component */
