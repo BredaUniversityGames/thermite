@@ -5,7 +5,7 @@
 namespace tmt {
 
 struct GoapGoal {
-    std::string name;  
+    std::string name;
     std::vector<FactPair> desired_state;
     int priority = 0;
     bool valid = false;
@@ -15,7 +15,6 @@ struct GoapGoal {
         if (!valid) return false;
         return !ws.satisfies(desired_state);
     }
-
 };
 
 }  // namespace tmt

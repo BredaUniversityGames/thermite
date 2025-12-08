@@ -70,10 +70,8 @@ void Game::on_start() {
         transform.set_world_scale(glm::vec3(1.0f, 1.0f, 1.0f));
     }
 
-    // Register GOAP system & agents
+    // Register agents
     {
-        tmt::engine.ecs.register_system<tmt::Goap>();
-
         // Create agents
         tmt::Entity ai = tmt::engine.ecs.create_entity();
 

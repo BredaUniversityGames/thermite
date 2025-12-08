@@ -43,5 +43,4 @@ void GoapAction::apply_effects(WorldState& ws) const {
     ws.apply(effects_vec);
 }
 
-
 }  // namespace tmt
