@@ -135,7 +135,7 @@ bool Hierarchy::display_entity(const HierarchyState& state) {
     }
 
     /* If the node is closed, don't display children */
-    if (open_node == false) return false;
+    if (open_node == false) return true;
 
     const bool has_children = state.transform.has_children();
     /* Display children */
@@ -164,7 +164,7 @@ bool Hierarchy::display_entity(const HierarchyState& state) {
 bool Hierarchy::drag_drop_source(const Entity dragged_entity) const {
     if (ImGui::BeginDragDropSource()) {
         DragNDropPayload payload_data;
-        const bool multiple = selected_entities.size() > 1;
+        const bool multiple = selected_entities.size() > 1 && selected_entities.contains(dragged_entity);
         payload_data.multiple = multiple;
         payload_data.entity = dragged_entity;
 
