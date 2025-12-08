@@ -32,7 +32,7 @@ void RigModel::init_bones(const Bone& b, Entity p) {
     trans_comp.set_parent(p);
     trans_comp.set_local_position(b.default_trans.get_local_position());
     trans_comp.set_local_rotation(b.default_trans.get_local_rotation());
-    auto& name_comp = engine.ecs.add_component<Name>(bone);
+    auto& name_comp = engine.ecs.get_component<Name>(bone);
     name_comp.name = b.name;
 
     bone_entities.push_back(bone);

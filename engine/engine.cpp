@@ -46,15 +46,14 @@ void Engine::init(std::unique_ptr<Application> user_app) {
     window.init(app->specs);
     renderer.init();
 
-    ecs.register_system<Physics>();
-    ecs.register_system<RigModelManager>();
-    ecs.register_system<CameraSystem>();
+    ecs.systems.add<Physics>();
+    ecs.systems.add<RigModelManager>();
+    ecs.systems.add<CameraSystem>();
 
-    OnEngineInit::dispatch(specs);
+    OnEngineInit::dispatch(app->specs);
 
     auto rig_ent = ecs.create_entity();
     auto& rig_ent_transform = ecs.add_component<Transform>(rig_ent);
-    auto& rig_ent_name = ecs.add_component<Name>(rig_ent);
     auto& rig_ent_rig_model_comp = ecs.add_component<RigModel>(rig_ent);
 
     IO::FileLocation location {IO::Location::PROJECT, "Victory_animation.fbx"};
@@ -62,11 +61,6 @@ void Engine::init(std::unique_ptr<Application> user_app) {
     rig_ent_rig_model_comp.data->animation_files.push_back(location);
     rig_ent_rig_model_comp.data->reload();
 
-    // Debug: print available animations
-    Log::info("Available animations:");
-    for (const auto& [name, anim] : rig_ent_rig_model_comp.data->bones.back().animations) {
-        Log::info("  - '{}'", name);
-    }
     rig_ent_rig_model_comp.set_current_animation("Victory_animation");
     rig_ent_rig_model_comp.state = RigModel::State::ANIMATE_LOOP;
     rig_ent_rig_model_comp.time = 0.0f;
