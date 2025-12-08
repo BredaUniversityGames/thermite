@@ -43,7 +43,7 @@ class RigModel {
     }
 
     void play_animation(const std::string& animation_name, float transfer_time, bool loop_animation);
-    void stop_loop(float transfer_time_);
+    void stop_loop(float transfer_time_t);
     void set_animation_speed(float s);
 
     void set_current_animation(std::string v) { current_animation = std::move(v); }

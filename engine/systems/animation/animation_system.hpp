@@ -17,7 +17,7 @@ struct ImNodesEditorContext;
 
 struct Trigger {
     Trigger() = default;
-    Trigger(bool value_) : value(value_) {};
+    Trigger(bool value_v) : value(value_v) {};
 
     // operators needed due to comparing std::variant<..., Trigger>
     [[nodiscard]] bool operator==(const Trigger&) const { return value; }

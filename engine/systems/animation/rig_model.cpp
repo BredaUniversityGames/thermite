@@ -142,9 +142,9 @@ void RigModel::play_animation(const std::string& animation_name, float _transfer
     next_animation = animation_name;
 }
 
-void RigModel::stop_loop(float transfer_time_) {
+void RigModel::stop_loop(float transfer_time_t) {
     state = RigModel::State::TRANSFERRING_TO_STOP;
-    transfer_threshold = transfer_time_;
+    transfer_threshold = transfer_time_t;
     transfer_time = 0.0f;
 }
 
