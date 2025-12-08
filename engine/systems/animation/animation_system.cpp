@@ -219,7 +219,7 @@ std::string tmt::RigModelManager::get_name() { return "animation system"; }
 void tmt::RigModelManager::on_start() {}
 
 void RigModelManager::on_update(const FrameData& time) {
-    Inspect(time.delta_time);
+    inspect(time.delta_time);
     for (const auto& [entity, rig, controller] : engine.ecs.get_registry().view<RigModel, RigController>().each()) {
         const std::string& current_state = controller.current_state;
         if (current_state.empty()) {
