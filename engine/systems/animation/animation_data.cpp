@@ -94,7 +94,6 @@ void RigData::extract_bone_keyframes_fbx(const ufbx_scene* animation_fbx, const 
     for (const ufbx_anim_stack* animation : animation_fbx->anim_stacks) {
         const ufbx_baked_anim* baked = ufbx_bake_anim(animation_fbx, animation->anim, nullptr, nullptr);
 
-        //int count = 0;
         for (const ufbx_baked_node& bake_node : baked->nodes) {
             const ufbx_node* bone_node = animation_fbx->nodes[bake_node.typed_id];
             if (bone_node->bone == nullptr) continue;
@@ -102,13 +101,6 @@ void RigData::extract_bone_keyframes_fbx(const ufbx_scene* animation_fbx, const 
             std::function<bool(const Bone&)> find_bone_predicate;
 
             const std::string& bone_name = bone_node->name.data;
-
-            Log::warn(R"(Looking for anim bone: '{}')", bone_name);
-            Log::warn("Available rig bones:");
-            for (const auto& b : bones) {
-                Log::warn(R"(  - '{}' match={})", b.name, check_correct_bone(b.name, bone_name));
-            }
-
 
             // Get the bone node of the rig from the animation fbx file, since we are animating based on rig_fbx names.
             const auto animation_bone_node =
@@ -132,10 +124,6 @@ void RigData::extract_bone_keyframes_fbx(const ufbx_scene* animation_fbx, const 
             const std::string animation_name = generic_path.stem().generic_string();
 
             auto& bone_comp = *bone_iterator;
-
-            //if (count == bones.size()) break;
-            //Bone& bone_comp = bones[count];
-            //count++;
 
             bone_comp.animations[animation_name] = Animation();
             bone_comp.animations[animation_name].name = animation_name;
