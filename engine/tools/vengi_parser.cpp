@@ -1,7 +1,6 @@
 #include "vengi_parser.hpp"
 #include "engine/core/logger.hpp"
 #include "zlib.h"
-#include "glm/gtx/matrix_decompose.hpp"
 
 std::unique_ptr<vengi::Node> VengiParser::load(const tmt::IO::FileLocation& vengi_file) {
     using namespace tmt;
