@@ -1,6 +1,7 @@
 #include "vengi_parser.hpp"
 #include "engine/core/logger.hpp"
 #include "zlib.h"
+#include "glm/gtx/matrix_decompose.hpp"
 
 std::unique_ptr<vengi::Node> VengiParser::load(const tmt::IO::FileLocation& vengi_file) {
     using namespace tmt;
@@ -35,6 +36,8 @@ std::unique_ptr<vengi::Node> VengiParser::load(const tmt::IO::FileLocation& veng
         if (!reader.parse_node(*ret_node)) {
             throw std::runtime_error("Node data parsing error!");
         }
+
+        compute_ref_world_transforms(*ret_node, glm::mat4(1.f));
 
         return ret_node;
     } catch (const std::exception& e) {
@@ -80,6 +83,19 @@ std::vector<char> VengiParser::zlib_decompress_vengi_file(std::vector<char>& com
     return decompressed_output;
 }
 
+void VengiParser::compute_ref_world_transforms(vengi::Node& node, const glm::mat4& parent_matrix) 
+{
+    if(node.animations.empty()) return;
+
+    const glm::mat4& local = node.animations[0].keyframes[0].local_matrix;
+    glm::mat4 world = parent_matrix * local;
+    node.transform.set_world_matrix(world);
+
+    for (auto& child : node.children) {
+        compute_ref_world_transforms(*child, world);
+    }
+}
+
 namespace vengi {
 vengi::NodeType BinaryParser::parse_node_type(const std::string& type_str) {
     if (type_str == "Root") return NodeType::ROOT;
@@ -91,7 +107,7 @@ vengi::NodeType BinaryParser::parse_node_type(const std::string& type_str) {
     return NodeType::NONE;
 }
 
-bool BinaryParser::parse_node(vengi::Node& node) {
+bool BinaryParser::parse_node(vengi::Node& node, vengi::Node* parent) {
     // Read NODE FourCC
     uint32_t four_cc = read_four_cc();
     if (four_cc != 0x45444F4E) {  // "NODE"
@@ -143,7 +159,7 @@ bool BinaryParser::parse_node(vengi::Node& node) {
                 // Rewind to read NODE again
                 seek(tell() - 4);
                 auto child = std::make_unique<Node>();
-                if (!parse_node(*child)) return false;
+                if (!parse_node(*child, &node)) return false;
                 node.children.push_back(std::move(child));
                 break;
             }
