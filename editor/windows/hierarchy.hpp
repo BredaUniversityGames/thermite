@@ -37,23 +37,23 @@ class Hierarchy {
    private:
     std::set<Entity> selected_entities;
 
-    static constexpr glm::uvec2 null_index {std::numeric_limits<uint32_t>::max()};
+    static constexpr glm::uvec2 NULL_INDEX {std::numeric_limits<uint32_t>::max()};
 
-    glm::uvec2 selected_index_begin = null_index;
+    glm::uvec2 selected_index_begin = NULL_INDEX;
 
-    glm::uvec2 selected_index_end_above = null_index;
-    glm::uvec2 selected_index_end_below = null_index;
+    glm::uvec2 selected_index_end_above = NULL_INDEX;
+    glm::uvec2 selected_index_end_below = NULL_INDEX;
 
-    glm::uvec2 end_above_next_frame = null_index;
-    glm::uvec2 end_below_next_frame = null_index;
+    glm::uvec2 end_above_next_frame = NULL_INDEX;
+    glm::uvec2 end_below_next_frame = NULL_INDEX;
 
-    glm::uvec2 previous_end_above = null_index;
-    glm::uvec2 previous_end_below = null_index;
+    glm::uvec2 previous_end_above = NULL_INDEX;
+    glm::uvec2 previous_end_below = NULL_INDEX;
 
     Entity selection_parent = entt::null;
 
     static inline bool is_between(const glm::uvec2& value, const glm::uvec2& begin, const glm::uvec2& end) {
-        if (begin == null_index || end == null_index) return false;
+        if (begin == NULL_INDEX || end == NULL_INDEX) return false;
         const bool between_begin_end = (value.y >= begin.y && value.y <= end.y);
         const bool same_depth = (value.x == begin.x);
         return same_depth && between_begin_end;

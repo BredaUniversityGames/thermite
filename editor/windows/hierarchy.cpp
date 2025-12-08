@@ -21,20 +21,20 @@ void Hierarchy::end_section() {
 
     drag_drop_target(entt::null);
 
-    if (end_above_next_frame != null_index) {
+    if (end_above_next_frame != NULL_INDEX) {
         previous_end_above = selected_index_end_above;
         selected_index_end_above = end_above_next_frame;
-        end_above_next_frame = null_index;
+        end_above_next_frame = NULL_INDEX;
     } else {
-        previous_end_above = null_index;
+        previous_end_above = NULL_INDEX;
     }
 
-    if (end_below_next_frame != null_index) {
+    if (end_below_next_frame != NULL_INDEX) {
         previous_end_below = selected_index_end_below;
         selected_index_end_below = end_below_next_frame;
-        end_below_next_frame = null_index;
+        end_below_next_frame = NULL_INDEX;
     } else {
-        previous_end_below = null_index;
+        previous_end_below = NULL_INDEX;
     }
 }
 
@@ -59,8 +59,8 @@ bool Hierarchy::display_entity(const HierarchyState& state) {
     if (is_begin) flags |= ImGuiTreeNodeFlags_Bullet;
 
     /* Debug name */
-    //const auto name = state.name.name + " " + std::to_string(state.position.x) + "-" + std::to_string(state.position.y);
-     const auto name = state.name.name;
+    // const auto name = state.name.name + " " + std::to_string(state.position.x) + "-" + std::to_string(state.position.y);
+    const auto name = state.name.name;
 
     const ImGuiID tree_node_id = ImGui::GetID(name.c_str());
     bool open_node = ImGui::TreeNodeBehavior(tree_node_id, flags, name.c_str(), NULL);
@@ -202,10 +202,10 @@ bool Hierarchy::drag_drop_target(const Entity dropped_entity) {
                 }
             }
             ImGui::EndDragDropTarget();
-            selected_index_begin = null_index;
+            selected_index_begin = NULL_INDEX;
             selection_parent = entt::null;
-            selected_index_end_above = null_index;
-            selected_index_end_below = null_index;
+            selected_index_end_above = NULL_INDEX;
+            selected_index_end_below = NULL_INDEX;
             return true;
         }
         ImGui::EndDragDropTarget();
