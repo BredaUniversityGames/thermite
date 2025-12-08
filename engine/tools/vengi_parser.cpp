@@ -82,9 +82,8 @@ std::vector<char> VengiParser::zlib_decompress_vengi_file(std::vector<char>& com
     return decompressed_output;
 }
 
-void VengiParser::compute_ref_world_transforms(vengi::Node& node, const glm::mat4& parent_matrix) 
-{
-    if(node.animations.empty()) return;
+void VengiParser::compute_ref_world_transforms(vengi::Node& node, const glm::mat4& parent_matrix) {
+    if (node.animations.empty()) return;
 
     const glm::mat4& local = node.animations[0].keyframes[0].local_matrix;
     glm::mat4 world = parent_matrix * local;

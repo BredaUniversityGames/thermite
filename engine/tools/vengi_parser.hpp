@@ -130,7 +130,7 @@ struct Node {
     bool locked;
     RGBA color;
     glm::vec3 pivot;
-    tmt::Transform transform; // local transform
+    tmt::Transform transform;  // local transform
 
     std::unordered_map<std::string, std::string> properties;
     std::unique_ptr<Palette> palette;
@@ -230,10 +230,7 @@ class BinaryParser {
 
     uint32_t read_four_cc() { return read_uint32(); }
 
-    glm::vec3 read_vec3f() 
-    { 
-        return glm::vec3 {read_float(), read_float(), read_float()}; 
-    }
+    glm::vec3 read_vec3f() { return glm::vec3 {read_float(), read_float(), read_float()}; }
 
     glm::mat4 read_matrix4x4() {
         glm::mat4 mat;
