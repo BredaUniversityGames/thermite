@@ -52,17 +52,24 @@ void Engine::init(const ApplicationSpecs& specs, std::unique_ptr<Application> us
 
     OnEngineInit::dispatch(specs);
 
-    auto fucker = ecs.create_entity();
-    auto& fucker_rig_model_comp = ecs.add_component<RigModel>(fucker);
+auto fucker = ecs.create_entity();
     auto& fucker_transform = ecs.add_component<Transform>(fucker);
     auto& fucker_name = ecs.add_component<Name>(fucker);
+    auto& fucker_rig_model_comp = ecs.add_component<RigModel>(fucker);
+
     IO::FileLocation location {IO::Location::PROJECT, "Victory_animation.fbx"};
     fucker_rig_model_comp.init(location, fucker);
-
     fucker_rig_model_comp.data->animation_files.push_back(location);
     fucker_rig_model_comp.data->reload();
 
-    fucker_rig_model_comp.play_animation("Victory", 0.5f, true);
+    // Debug: print available animations
+    Log::info("Available animations:");
+    for (const auto& [name, anim] : fucker_rig_model_comp.data->bones.back().animations) {
+        Log::info("  - '{}'", name);
+    }
+    fucker_rig_model_comp.set_current_animation("Victory_animation.fbx");
+    fucker_rig_model_comp.state = RigModel::State::ANIMATE_LOOP;
+    fucker_rig_model_comp.time = 0.0f;
 }
 
 // Example stuff

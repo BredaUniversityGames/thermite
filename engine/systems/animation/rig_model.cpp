@@ -17,6 +17,12 @@
 using namespace tmt;
 
 void RigModel::init_bones(const Bone& b, Entity p) {
+    Log::info("init bones got called!");
+    if (!engine.ecs.try_get_component<Transform>(p)) {
+        Log::warn("Parent entity {} has no Transform!", static_cast<uint32_t>(p));
+        engine.ecs.add_component<Transform>(p);
+    }
+
     auto bone = engine.ecs.create_entity();
 
     auto& bone_comp = engine.ecs.add_component<BoneComp>(bone);
@@ -24,8 +30,8 @@ void RigModel::init_bones(const Bone& b, Entity p) {
 
     auto& trans_comp = engine.ecs.add_component<Transform>(bone);
     trans_comp.set_parent(p);
-    trans_comp.set_world_position(b.default_trans.get_world_position());
-    trans_comp.set_world_rotation(b.default_trans.get_world_rotation());
+    trans_comp.set_local_position(b.default_trans.get_local_position());
+    trans_comp.set_local_rotation(b.default_trans.get_local_rotation());
     auto& name_comp = engine.ecs.add_component<Name>(bone);
     name_comp.name = b.name;
 
@@ -156,7 +162,7 @@ void RigModel::animate_translation(Transform& t, Bone& b) {
         }
     }
     if (current_frame >= keyframes.size() - 1)
-        t.set_world_position(keyframes[current_frame].position);
+        t.set_local_position(keyframes[current_frame].position);
     else {
         float current_frame_time = keyframes[current_frame].time;
         float next_frame_time = keyframes[current_frame + 1].time;
@@ -173,12 +179,12 @@ void RigModel::animate_translation(Transform& t, Bone& b) {
                 b.animations[get_next_animation()].keyframes_pos[0].position, interp_time
             );
             new_position = glm::mix(
-                glm::mix(t.get_world_position(), b.animations[get_next_animation()].keyframes_pos[0].position, interp_time),
+                glm::mix(t.get_local_position(), b.animations[get_next_animation()].keyframes_pos[0].position, interp_time),
                 new_position, 0.4f
             );
         }
 
-        t.set_world_position(new_position);
+        t.set_local_position(new_position);
     }
 }
 
@@ -208,12 +214,12 @@ void RigModel::animate_rotation(Transform& t, Bone& b) {
             b.animations[get_next_animation()].keyframes_rot[0].rotation, interp_time
         );
         new_rotation = glm::slerp(
-            glm::slerp(t.get_world_rotation(), b.animations[get_next_animation()].keyframes_rot[0].rotation, interp_time),
+            glm::slerp(t.get_local_rotation(), b.animations[get_next_animation()].keyframes_rot[0].rotation, interp_time),
             new_rotation, 0.4f
         );
     }
 
-    t.set_world_rotation(new_rotation);
+    t.set_local_rotation(new_rotation);
 }
 
 void RigModel::animate_scale(Transform& t, Bone& b) {
@@ -226,7 +232,7 @@ void RigModel::animate_scale(Transform& t, Bone& b) {
         }
     }
     if (current_frame >= keyframes.size() - 1)
-        t.set_world_scale(keyframes[current_frame].scale);
+        t.set_local_scale(keyframes[current_frame].scale);
     else {
         float current_frame_time = keyframes[current_frame].time;
         float next_frame_time = keyframes[current_frame + 1].time;
@@ -237,9 +243,9 @@ void RigModel::animate_scale(Transform& t, Bone& b) {
         // transfer from current frame to first frame of new animation
         if (is_transferring()) {
             interp_time = transfer_time / transfer_threshold;
-            new_scale = glm::mix(t.get_world_scale(), b.animations[get_next_animation()].keyframes_scale[0].scale, interp_time);
+            new_scale = glm::mix(t.get_local_scale(), b.animations[get_next_animation()].keyframes_scale[0].scale, interp_time);
         }
 
-        t.set_world_scale(new_scale);
+        t.set_local_scale(new_scale);
     }
 }

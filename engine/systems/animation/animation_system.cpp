@@ -6,11 +6,13 @@
 #include "rig_model.hpp"
 //#include "graphics/debug_render.hpp"
 #include "engine/core/renderer/pipelines/debug_pipeline.hpp"
+#include "engine/core/renderer/renderer.hpp"
 //#include "tools/profiler.hpp"
 
 #define CONDITION(comparison) [](const Variant& parameter, const Variant& value) -> bool { return parameter comparison value; }
 
 using namespace tmt;
+
 
 const Condition::CompareFunctionMap Condition::COMPARE_MAP {
     {CompareType::EQUAL, CONDITION(==)},
@@ -218,6 +220,7 @@ std::string tmt::RigModelManager::get_name() { return "animation system"; }
 void tmt::RigModelManager::on_start() {}
 
 void RigModelManager::on_update(const FrameData& time) {
+    Inspect(time.delta_time);
     for (const auto& [entity, rig, controller] : engine.ecs.get_registry().view<RigModel, RigController>().each()) {
         const std::string& current_state = controller.current_state;
         if (current_state.empty()) {
@@ -327,23 +330,22 @@ void tmt::RigModelManager::on_end() {}
 
 
 void RigModelManager::Inspect(float) {
-    ///* Debug drawing */
-    //for (const auto& [entity, transform, rig] : engine.ecs.get_registry().view<Transform, RigModel>().each()) {
-    //    //if (transform.is_enabled() == false) continue;
+    int lines_drawn = 0;
+    for (const auto& [entity, transform, rig] : engine.ecs.get_registry().view<Transform, RigModel>().each()) {
 
-    //    for (const Entity bone_entity : rig.bone_entities) {
-    //        auto& bone_transform = engine.ecs.get_component<Transform>(bone_entity);
-    //        const glm::vec3 joint = bone_transform.get_world_position();
+        for (const Entity bone_entity : rig.bone_entities) {
+            auto& bone_transform = engine.ecs.get_component<Transform>(bone_entity);
+            auto& bone_name = engine.ecs.get_component<Name>(bone_entity);
+            const glm::vec3 joint = bone_transform.get_world_position();
 
-    //        engine.debug_renderer().add_sphere(DebugCategory::ANIMATION, joint, 0.1f, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
-
-    //        if (bone_transform.HasParent()) {
-    //            auto& parent_transform = Engine.ecs().get_component<Transform>(bone_transform.GetParent());
-    //            const glm::vec3 parent_joint = parent_transform.GetWorldPosition();
-    //            Engine.debug_renderer().add_line(DebugCategory::ANIMATION, parent_joint, joint, glm::vec4(0.0f, 0.0f, 1.0f, 1.0f));
-    //        }
-    //    }
-    //}
+            if (bone_transform.has_parent()) {
+                auto& parent_transform = engine.ecs.get_component<Transform>(bone_transform.get_parent());
+                const glm::vec3 parent_joint = parent_transform.get_world_position();
+                engine.renderer.draw_line(parent_joint, joint, glm::vec3(1.0f, 0.0f, 0.0f));
+                lines_drawn++;
+            }
+        }
+    }
 }
 
 

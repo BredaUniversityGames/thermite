@@ -79,6 +79,7 @@ void RigData::load_fbx(const IO::FileLocation& directory) {
         }
 
         extract_bone_keyframes_fbx(animation_fbx, rig_fbx, mesh_connections);
+
         ufbx_free_scene(animation_fbx);
     }
 
@@ -89,9 +90,22 @@ void RigData::extract_bone_keyframes_fbx(const ufbx_scene* animation_fbx, const 
     for (const ufbx_anim_stack* animation : animation_fbx->anim_stacks) {
         const ufbx_baked_anim* baked = ufbx_bake_anim(animation_fbx, animation->anim, nullptr, nullptr);
 
+        // Determine animation name robustly: prefer metadata original file path stem, fallback to anim stack name
+        const std::filesystem::path generic_path = StringReplace(animation_fbx->metadata.original_file_path.data, "\\", "/");
+        std::string animation_name = generic_path.stem().generic_string();
+        if (animation_name.empty()) {
+            if (animation && animation->name.data && animation->name.data[0]) {
+                animation_name = animation->name.data;
+            } else {
+                animation_name = "unnamed_animation";
+            }
+        }
+
+        int count = 0;
         for (const ufbx_baked_node& bake_node : baked->nodes) {
             const ufbx_node* bone_node = animation_fbx->nodes[bake_node.typed_id];
-            if (bone_node->bone == nullptr) continue;
+            // NOTE: do NOT require bone_node->bone to be non-null. Animations often target transform nodes
+            // that are not typed as ufbx_bone in the animation FBX, but the rig's nodes still match by name.
 
             std::function<bool(const Bone&)> find_bone_predicate;
 
@@ -99,7 +113,7 @@ void RigData::extract_bone_keyframes_fbx(const ufbx_scene* animation_fbx, const 
             const auto animation_bone_node =
                 std::find_if(rig_fbx->nodes.begin(), rig_fbx->nodes.end(), [bone_node](const ufbx_node* rig_node) { return check_correct_bone(rig_node->name.data, bone_node->name.data); });
 
-            if (animation_bone_node == rig_fbx->nodes.end()) continue;
+            //if (animation_bone_node == rig_fbx->nodes.end()) continue;
 
             bone_node = *animation_bone_node;
 
@@ -111,27 +125,29 @@ void RigData::extract_bone_keyframes_fbx(const ufbx_scene* animation_fbx, const 
             }
 
             const auto& bone_iterator = std::find_if(bones.begin(), bones.end(), find_bone_predicate);
-            if (bone_iterator == bones.end()) continue;
 
-            const std::filesystem::path generic_path = StringReplace(animation_fbx->metadata.original_file_path.data, "\\", "/");
-            const std::string animation_name = generic_path.stem().generic_string();
 
-            auto& bone_comp = *bone_iterator;
-            bone_comp.animations[animation_name] = Animation();
-            bone_comp.animations[animation_name].name = animation_name;
+
+            //if (bone_iterator == bones.end()) continue;
+            if (bones.size() == count) break;
+            auto& bone_comp = bones[count];
+            count++;
+            auto& anim = bone_comp.animations[animation_name];
+            anim = Animation();
+            anim.name = animation_name;
 
             for (const ufbx_baked_vec3& translation : bake_node.translation_keys) {
-                bone_comp.animations[animation_name].keyframes_pos.push_back(
+                anim.keyframes_pos.push_back(
                     KeyframePos {static_cast<float>(translation.time), glm::vec3 {translation.value.x, translation.value.y, translation.value.z}}
                 );
             }
 
             for (const ufbx_baked_vec3& scale : bake_node.scale_keys) {
-                bone_comp.animations[animation_name].keyframes_scale.push_back(KeyframeScale {static_cast<float>(scale.time), glm::vec3 {scale.value.x, scale.value.y, scale.value.z}});
+                anim.keyframes_scale.push_back(KeyframeScale {static_cast<float>(scale.time), glm::vec3 {scale.value.x, scale.value.y, scale.value.z}});
             }
 
             for (const ufbx_baked_quat& rotation : bake_node.rotation_keys) {
-                bone_comp.animations[animation_name].keyframes_rot.push_back(
+                anim.keyframes_rot.push_back(
                     KeyframeRot {static_cast<float>(rotation.time), glm::quat (rotation.value.w, rotation.value.x, rotation.value.y, rotation.value.z)}
                 );
             }
@@ -142,6 +158,8 @@ void RigData::extract_bone_keyframes_fbx(const ufbx_scene* animation_fbx, const 
 void RigData::init_bone_fbx(const ufbx_node* node, const std::map<const ufbx_node*, const ufbx_node*>& mesh_connections) {
     Bone bone;
     bone.name = node->name.data;
+
+    Log::info("Loading bone: {} with {} children", bone.name, node->children.count);
 
     const ufbx_transform& node_transform = node->local_transform;
 
