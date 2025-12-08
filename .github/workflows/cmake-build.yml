@@ -27,12 +27,12 @@ jobs:
       - name: Configure with preset
         shell: pwsh
         run: |
-          cmake --preset ${{ matrix.preset }}
+          cmake --preset ${{ matrix.preset }} -DCMAKE_CXX_FLAGS="/WX"
       
       - name: Build with preset
         shell: pwsh
         run: |
-          cmake --build -DCMAKE_COMPILE_WARNING_AS_ERROR=true --preset ${{ matrix.preset }} -j
+          cmake --build --preset ${{ matrix.preset }} -j
   
   cpp-linter-windows:
     name: "Run cpp-linter (Windows)"
