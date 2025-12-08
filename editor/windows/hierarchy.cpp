@@ -65,7 +65,6 @@ bool Hierarchy::display_entity(const HierarchyState& state) {
     const ImGuiID tree_node_id = ImGui::GetID(name.c_str());
     bool open_node = ImGui::TreeNodeBehavior(tree_node_id, flags, name.c_str(), NULL);
     /* TODO: is a too early because it toggles when mouse down, but we use mouse released for selection */
-    const bool just_opened = ImGui::IsItemToggledOpen();
 
     const bool is_hovered = ImGui::IsItemHovered();
     const bool is_left_mouse_released = ImGui::IsMouseReleased(ImGuiMouseButton_Left);
@@ -74,6 +73,9 @@ bool Hierarchy::display_entity(const HierarchyState& state) {
     const bool is_ctrl_held = ImGui::GetIO().KeyCtrl;
     const bool is_shift_held = ImGui::GetIO().KeyShift;
     const bool same_parent = selection_parent == parent;
+
+    /* Checks if hovering the arrow part of the tree node */
+    const bool hover_arrow = is_hovered && (ImGui::GetMousePos().x - ImGui::GetItemRectMin().x) <= ImGui::GetTreeNodeToLabelSpacing();
 
     /* Drag and drop logic */
     drag_drop_source(state.entity);
@@ -85,7 +87,7 @@ bool Hierarchy::display_entity(const HierarchyState& state) {
     }
 
     /* Selection logic */
-    const bool select_entity = !dropped && !just_opened && !is_payload_being_dragged && is_left_clicked;
+    const bool select_entity = !dropped && !hover_arrow && !is_payload_being_dragged && is_left_clicked;
     if (select_entity) {
         if (is_shift_held && same_parent) {
             const bool is_first_selected = selected_entities.empty();
