@@ -79,6 +79,31 @@ void Engine::run() {
             fixed_update_engine(frame_data);
         }
 
+        std::atomic<size_t> counter {};
+        // auto group = ecs.get_registry().group<Transform, float>();
+        // job_manager.parallel_foreach(group, std::function {[&counter](entt::entity) { --counter; }});
+        // assert(counter == 0);
+        {
+            counter = 1000;
+            ScopedSpinLock lock {job_manager};
+            job_manager.parallel_for(1000, [&counter](size_t) { --counter; });
+            assert(counter.load() == 0);
+        //}
+        //{
+        //    ScopedSpinLock lock {job_manager};
+            counter = 1000;
+            std::array<std::atomic<size_t>, 1000> vec;
+            for (std::atomic<size_t>& thing : vec) thing = 0;
+
+            job_manager.parallel_for(1000, [&counter, &vec](const size_t i) {
+                --counter;
+                vec[i].store(1ull);
+            });
+            size_t test = counter.load();
+            for (size_t thing : vec) assert(thing == 1);
+            assert(test == 0);
+        }
+
         OnEndFrame::dispatch();
 
         renderer.update();

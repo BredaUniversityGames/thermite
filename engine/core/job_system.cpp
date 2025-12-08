@@ -9,94 +9,65 @@ namespace tmt {
 
 JobManager::JobManager() {
     Log::info("Start JobSystem module: creating worker threads");
-    // Threads in the pool will be the amount of hardware threads - 1 (to account for main thread).
-    const size_t thread_count = std::thread::hardware_concurrency() - 1;
-
+    // Threads in the pool will be the amount of hardware threads - 2 (to account for main thread and background tasks).
+    const size_t thread_count = std::thread::hardware_concurrency() - 2;
     for (size_t i = 0; i < thread_count; i++) {
-        worker_threads.emplace_back(&JobManager::run_jobs, this);
+        worker_threads.emplace_back(&JobManager::run_worker, this);
     }
+    worker_threads_active.clear();
 
     // We could set the thread affinity here (locking a worker thread to a specific hardware thread), however on more modern PCs it can sometimes be slower.
 }
 
 JobManager::~JobManager() {
     // Notify all threads to quit.
-    {
-        std::scoped_lock lock(mutex);
-        exit = true;
-        conditional.notify_all();
-    }
+    ScopedSpinLock lock {*this};
+    exit.test_and_set();
 
     // Wait for all threads after we notify them to quit.
-    Log::info("Quit JobSystem module: joining worker threads");
+    Log::info("Quiting job_manager module: joining worker threads");
     for (std::thread& thread : worker_threads) {
         thread.join();
     }
 }
 
-void JobManager::parallel_for(const size_t task_count, const std::function<void(size_t)>& function) {
-    std::latch latch {static_cast<ptrdiff_t>(task_count)};
+void JobManager::parallel_for(const size_t count, const std::function<void(size_t)>& function) {
+    task_function = function;
 
-    for (size_t i = 0; i < task_count; i++) {
-        queue_task([&function, &latch, i] {
-            function(i);
-            latch.count_down();
-        });
-    }
+    next_task_index = 0;
+    total_task_count = count;
 
-    latch.wait();
+    finished_working.clear();
+
+    execute_work();
+
+    finished_working.wait(false);
 }
 
-void JobManager::grouped_parallel_for(const size_t task_count, const std::function<void(size_t)>& function, const size_t group_count) {
-    if (task_count <= 0) return;
-
-    std::latch latch {static_cast<ptrdiff_t>(task_count)};
-    const auto group_size = static_cast<size_t>(std::ceil(static_cast<float>(task_count) / static_cast<float>(group_count)));
-
-    for (size_t group_index = 0; group_index < group_count; group_index++) {
-        const size_t start_index = group_index * group_size;  // Index of the first element in the current group
-        if (start_index >= task_count) continue;              // Skip scheduling a task if we have exceeded the job count prematurely
-
-        const size_t max_local_task_count = task_count - start_index;
-
-        // Size of the current group, either group_size or a smaller size depending on the amount of elements left
-        const size_t local_group_size = std::min<size_t>(group_size, max_local_task_count);
-        const size_t group_end = start_index + local_group_size;
-
-        auto task_grouping = [&function, &latch, start_index, group_end] {
-            for (size_t i = start_index; i < group_end; i++) {
-                function(i);
-                latch.count_down();
-            }
-        };
-
-        queue_task(task_grouping);
-    }
-
-    latch.wait();
-}
-
-void JobManager::run_jobs() {
+void JobManager::run_worker() {
     while (true) {
-        std::function<void()> job;
-        {
-            std::unique_lock lock(mutex);
-            conditional.wait(lock, [this] { return tasks.empty() == false || exit == true; });
+        worker_threads_active.wait(false);
 
-            if (exit) return;
+        if (exit.test()) return;
 
-            job = tasks.front();
-            tasks.pop();
-        }
-        job();
+        if (!finished_working.test()) execute_work();
     }
 }
 
-// Queue a task created by a job
-void JobManager::queue_task(const std::function<void()>& task) {
-    std::scoped_lock lock(mutex);
-    tasks.push(task);
-    conditional.notify_one();
-}
+void JobManager::execute_work() {
+    if (next_task_index >= total_task_count) return;
+    ++threads_finished_working;
 
+    size_t i = next_task_index.fetch_add(1);
+    while (i < total_task_count) {
+        task_function(i);
+
+        i = next_task_index.fetch_add(1);
+    }
+
+    if (threads_finished_working.fetch_sub(1) == 1) {
+        finished_working.test_and_set();
+        finished_working.notify_one();
+    }
+}
 }  // namespace tmt
