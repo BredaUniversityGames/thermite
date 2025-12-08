@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../../engine.hpp"
-#include "../../core/ecs.hpp"
+#include "engine.hpp"
+#include "engine/core/ecs.hpp"
 //#include "../transform.hpp"
 #include "animation_data.hpp"
 
@@ -18,7 +18,7 @@ class RigModel
 {
 public:
     RigModel() = default;
- RigModel(const IO::FileLocation& directory, Entity p);
+    RigModel(const IO::FileLocation& directory, Entity p);
     void init(const IO::FileLocation& directory, Entity p);
     
     bool rig_is_loaded = false;

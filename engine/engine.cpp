@@ -67,7 +67,7 @@ auto fucker = ecs.create_entity();
     for (const auto& [name, anim] : fucker_rig_model_comp.data->bones.back().animations) {
         Log::info("  - '{}'", name);
     }
-    fucker_rig_model_comp.set_current_animation("Victory_animation.fbx");
+    fucker_rig_model_comp.set_current_animation("Victory_animation");
     fucker_rig_model_comp.state = RigModel::State::ANIMATE_LOOP;
     fucker_rig_model_comp.time = 0.0f;
 }
