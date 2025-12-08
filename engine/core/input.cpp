@@ -2,11 +2,13 @@
 
 #include <SDL3/SDL_events.h>
 #include <SDL3/SDL_keyboard.h>
-#include <imgui_impl_sdl3.h>
 
 #include "engine.hpp"
 #include "keys.hpp"
 #include "logger.hpp"
+#include "window.hpp"
+
+#include "engine/events/sdl.hpp"
 
 using namespace tmt;
 void Input::init() {
@@ -23,10 +25,14 @@ void Input::update() {
 
     mouse_dx = 0;
     mouse_dy = 0;
+
+    scroll_dx = 0;
+    scroll_dy = 0;
     // Get current mouse state
     mouse_buttons = SDL_GetMouseState(&mouse_x, &mouse_y);
+
     while (SDL_PollEvent(&event)) {
-        ImGui_ImplSDL3_ProcessEvent(&event);
+        internal::OnSdlEvent::dispatch(event);
 
         switch (event.type) {
             case SDL_EVENT_QUIT: {
@@ -36,6 +42,10 @@ void Input::update() {
             case SDL_EVENT_MOUSE_MOTION:
                 mouse_dx += event.motion.xrel;
                 mouse_dy += event.motion.yrel;
+                break;
+            case SDL_EVENT_MOUSE_WHEEL:
+                scroll_dx = event.wheel.x;
+                scroll_dy = event.wheel.y;
                 break;
             default:
                 break;
@@ -108,6 +118,8 @@ bool Input::is_action_just_released(const std::string& name) const {
 
     return false;
 }
+void Input::set_mouse_relative_to_window(bool value) { SDL_SetWindowRelativeMouseMode(engine.window.window, value); }
+bool Input::get_mouse_relative_to_window() { return SDL_GetWindowRelativeMouseMode(engine.window.window); }
 void Input::setup_default_action() {
     add_action(action::CONFIRM);
     add_action_keys(action::CONFIRM, Key::SPACE, Key::RETURN);

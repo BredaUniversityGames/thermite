@@ -40,19 +40,19 @@ Engine::~Engine() {
     delete &input;
 }
 
-void Engine::init(const ApplicationSpecs& specs, std::unique_ptr<Application> user_app) {
+void Engine::init(std::unique_ptr<Application> user_app) {
     app = std::move(user_app);
-    Log::init(specs.log_file.string());
+    Log::init(app->specs.log_file.string());
 
     input.init();
-    window.init(specs);
+    window.init(app->specs);
     renderer.init();
 
     ecs.register_system<Physics>();
     ecs.register_system<Animation>();
     ecs.register_system<CameraSystem>();
 
-    OnEngineInit::dispatch(specs);
+    OnEngineInit::dispatch(app->specs);
 }
 
 // Example stuff
@@ -63,7 +63,6 @@ void Engine::run() {
     float accumulator = 0.0f;
     while (is_running) {
         input.update();
-        renderer.update();
 
         const FrameData frame_data = {.delta_time = timer.tick()};
 
@@ -81,12 +80,17 @@ void Engine::run() {
         }
 
         OnEndFrame::dispatch();
+
+        renderer.update();
         frame_count++;
     }
     end_game();
 }
 
-void Engine::end() { OnEngineEnd::dispatch(); }
+void Engine::end() {
+    OnEngineEnd::dispatch();
+    renderer.end();
+}
 
 /* Engine events */
 void Engine::update_engine(const FrameData& frame_data) {

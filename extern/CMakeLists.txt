@@ -17,6 +17,19 @@ set(SDL_DISABLE_INSTALL_DOCS ON  CACHE BOOL "" FORCE)
 set(SDL_TEST_LIBRARY         OFF CACHE BOOL "" FORCE)
 set(SDL_TESTS                OFF CACHE BOOL "" FORCE)
 set(SDL_EXAMPLES             OFF CACHE BOOL "" FORCE)
+set(SDL_AUDIO    ON  CACHE BOOL "" FORCE)
+set(SDL_VIDEO    ON  CACHE BOOL "" FORCE)
+set(SDL_JOYSTICK ON  CACHE BOOL "" FORCE)
+# Turn off everything else we don't care about:
+set(SDL_GPU      OFF CACHE BOOL "" FORCE)
+set(SDL_RENDER   OFF CACHE BOOL "" FORCE)
+set(SDL_CAMERA   OFF CACHE BOOL "" FORCE)
+set(SDL_HAPTIC   OFF CACHE BOOL "" FORCE)
+set(SDL_HIDAPI   OFF CACHE BOOL "" FORCE)
+set(SDL_POWER    OFF CACHE BOOL "" FORCE)
+set(SDL_SENSOR   OFF CACHE BOOL "" FORCE)
+set(SDL_DIALOG   OFF CACHE BOOL "" FORCE)
+set(SDL_TRAY     OFF CACHE BOOL "" FORCE)
 add_subdirectory(SDL3)
 
 # GLM - Vector Math
@@ -27,6 +40,10 @@ add_subdirectory(glm)
 # ENTT - Entity Component System
 # https://github.com/skypjack/entt
 add_subdirectory(entt)
+
+# Vulkan SDK - Graphics API
+# https://vulkan.lunarg.com/sdk/home
+set(VULKAN_HEADERS_INSTALL_DIR "${CMAKE_SOURCE_DIR}/extern/vulkan_sdk/")
 
 # graphite - render graph library
 # https://github.com/mxcop/graphite
@@ -53,23 +70,26 @@ target_include_directories(JsonReflect
 # https://github.com/nlohmann/json
 add_subdirectory(nlohmann_json)
 
-# ImGUI - immediate mode gui
-# https://github.com/ocornut/imgui
-target_sources(thermite-engine
-    PRIVATE "./imgui/imgui_demo.cpp"
-    PRIVATE "./imgui/imgui_draw.cpp"
-    PRIVATE "./imgui/imgui_tables.cpp"
-    PRIVATE "./imgui/imgui_widgets.cpp"
-    PRIVATE "./imgui/imgui.cpp"
-    PRIVATE "./imgui/backends/imgui_impl_sdl3.cpp"
-    PRIVATE "./imgui/backends/imgui_impl_vulkan.cpp"
-    PRIVATE "./imgui/backends/imgui_impl_win32.cpp"
-)
-target_include_directories(thermite-engine
-    PRIVATE "./imgui"
-    PRIVATE "./imgui/backends"
-)
-target_compile_definitions(thermite-engine PRIVATE IMGUI_IMPL_VULKAN_USE_VOLK)
+if (THERMITE_EDITOR_BUILD)
+    # ImGUI - immediate mode gui
+    # https://github.com/ocornut/imgui
+    target_sources(thermite-editor
+        PRIVATE "./imgui/imgui_demo.cpp"
+        PRIVATE "./imgui/imgui_draw.cpp"
+        PRIVATE "./imgui/imgui_tables.cpp"
+        PRIVATE "./imgui/imgui_widgets.cpp"
+        PRIVATE "./imgui/imgui.cpp"
+        PRIVATE "./imgui/backends/imgui_impl_sdl3.cpp"
+        PRIVATE "./imgui/backends/imgui_impl_vulkan.cpp"
+        PRIVATE "./imgui/backends/imgui_impl_win32.cpp"
+    )
+    target_include_directories(thermite-editor
+        PRIVATE "./imgui"
+        PRIVATE "./imgui/backends"
+    )
+
+    target_compile_definitions(thermite-editor PRIVATE IMGUI_IMPL_VULKAN_USE_VOLK)
+endif()
 # tracy - profiler integration
 # https://github.com/wolfpld/tracy
 option(TRACY_ENABLE "" OFF)
@@ -97,7 +117,7 @@ set(ZLIB_BUILD_SHARED OFF CACHE BOOL "" FORCE)
 set(ZLIB_BUILD_STATIC ON CACHE BOOL "" FORCE)
 add_subdirectory(zlib)
 
-# Link libraries publicly
+# Link engine libraries publicly
 target_link_libraries(thermite-engine
     PUBLIC 
     spdlog::spdlog
@@ -106,10 +126,9 @@ target_link_libraries(thermite-engine
     JsonReflect
     graphite
     Tracy::TracyClient
-
 )
 
-# Link libraries privately
+# Link engine libraries privately
 target_link_libraries(thermite-engine 
 	PRIVATE
 	SDL3::SDL3-static
@@ -118,4 +137,12 @@ target_link_libraries(thermite-engine
     ZLIB::ZLIBSTATIC
 )
 
-
+if (THERMITE_EDITOR_BUILD)
+    # Link editor libraries privately
+    target_link_libraries(thermite-editor
+	    PRIVATE
+	    SDL3::SDL3-static
+        visit_struct
+        nlohmann_json::nlohmann_json
+    )
+endif()
