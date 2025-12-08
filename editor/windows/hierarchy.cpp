@@ -12,7 +12,7 @@
 namespace tmt {
 
 void Hierarchy::start_section() {
-    /*ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(1.0f, 0.0f, 0.0f, 1.0f));*/
+    /* Begin child section for hierarchy */
     ImGui::BeginChild("HierarchySection", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
 }
 

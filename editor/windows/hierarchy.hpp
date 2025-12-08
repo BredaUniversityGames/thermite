@@ -11,8 +11,6 @@
 namespace tmt {
 class Hierarchy {
    public:
-    Hierarchy() = default;
-    ~Hierarchy() = default;
 
     template <typename... Components>
     void display() {
@@ -35,7 +33,7 @@ class Hierarchy {
     }
 
    private:
-    std::set<Entity> selected_entities;
+    std::unordered_set<Entity> selected_entities;
 
     static constexpr glm::uvec2 NULL_INDEX {std::numeric_limits<uint32_t>::max()};
 
