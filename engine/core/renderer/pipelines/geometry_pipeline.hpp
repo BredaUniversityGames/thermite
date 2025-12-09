@@ -11,7 +11,7 @@ namespace tmt {
 
 struct VoxelObject;
 
-constexpr uint32_t MAX_VOXEL_OBJECTS = 256u;
+constexpr uint32_t MAX_VOXEL_OBJECTS = 10000u;
 
 class GeometryPipeline {
    private:

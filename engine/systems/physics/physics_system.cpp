@@ -9,11 +9,70 @@
 #include "glm/gtx/norm.hpp"
 #include <glm/gtx/quaternion.hpp>
 
+#include "core/renderer/renderer.hpp"
+#include <queue>
+
 namespace tmt {
 
-void Physics::on_start() { Log::info("Physics on_start"); }
+void Physics::on_start() {
+    Log::info("Physics on_start");
+    for (const auto& [entity, vb, transform] : engine.ecs.get_registry().view<VoxelBody, Transform>().each()) {
+        if (vb.type == VoxelBody::DYNAMIC) {
+            initialize_voxel_body(vb);
+            if (vb.gravity <= 0.0f) {
+                vb.type = VoxelBody::SLEEPING;
+                vb.accumulated_forces = 0.0f;
+            }
+        }
 
-void Physics::on_update(const FrameData&) {}
+        vb.position = transform.get_world_position();
+        vb.rotation = transform.get_world_rotation();
+        vb.center_of_mass = vb.position + (vb.rotation * vb.com_local_offset);
+    }
+}
+
+void draw_node(tmt::Bvh2<VoxelObject>& bvh, uint32_t current_node) {
+    // Draw AABB of the node
+    glm::vec3 min = bvh.nodes[current_node].min_bounds;
+    glm::vec3 max = bvh.nodes[current_node].max_bounds;
+    glm::vec3 color(0, 0, 1);
+
+    // Bottom face (4 edges)
+    tmt::engine.renderer.draw_line(glm::vec3(min.x, min.y, min.z), glm::vec3(max.x, min.y, min.z), color);
+    tmt::engine.renderer.draw_line(glm::vec3(max.x, min.y, min.z), glm::vec3(max.x, min.y, max.z), color);
+    tmt::engine.renderer.draw_line(glm::vec3(max.x, min.y, max.z), glm::vec3(min.x, min.y, max.z), color);
+    tmt::engine.renderer.draw_line(glm::vec3(min.x, min.y, max.z), glm::vec3(min.x, min.y, min.z), color);
+
+    // Top face (4 edges)
+    tmt::engine.renderer.draw_line(glm::vec3(min.x, max.y, min.z), glm::vec3(max.x, max.y, min.z), color);
+    tmt::engine.renderer.draw_line(glm::vec3(max.x, max.y, min.z), glm::vec3(max.x, max.y, max.z), color);
+    tmt::engine.renderer.draw_line(glm::vec3(max.x, max.y, max.z), glm::vec3(min.x, max.y, max.z), color);
+    tmt::engine.renderer.draw_line(glm::vec3(min.x, max.y, max.z), glm::vec3(min.x, max.y, min.z), color);
+
+    // Vertical edges (4 edges connecting bottom to top)
+    tmt::engine.renderer.draw_line(glm::vec3(min.x, min.y, min.z), glm::vec3(min.x, max.y, min.z), color);
+    tmt::engine.renderer.draw_line(glm::vec3(max.x, min.y, min.z), glm::vec3(max.x, max.y, min.z), color);
+    tmt::engine.renderer.draw_line(glm::vec3(max.x, min.y, max.z), glm::vec3(max.x, max.y, max.z), color);
+    tmt::engine.renderer.draw_line(glm::vec3(min.x, min.y, max.z), glm::vec3(min.x, max.y, max.z), color);
+
+    if (bvh.nodes[current_node].is_leaf()) return;
+    draw_node(bvh, bvh.nodes[current_node].left_first);
+    draw_node(bvh, bvh.nodes[current_node].left_first + 1);
+    // bvh.prims[0].
+}
+
+void Physics::on_update(const FrameData&) {
+    for (const auto& [entity, vb, transform] : engine.ecs.get_registry().view<VoxelBody, Transform>().each()) {
+        auto edges = vb.get_world_edges();
+        glm::vec3 color = vb.type == VoxelBody::DYNAMIC ? glm::vec3(0, 1, 0) : glm::vec3(1, 0, 0);
+        for (size_t i = 0; i < edges.size(); i++) {
+            tmt::engine.renderer.draw_line(edges[i].start, edges[i].end, color);
+        }
+    }
+
+    //if (bvh.nodes) draw_node(bvh, 0u);
+    // draw_node(bvh, bvh.nodes[0].left_first + 1u);
+}
 
 void Physics::on_fixed_update(const FrameData&) {
     // Update Forces
@@ -31,26 +90,28 @@ void Physics::on_fixed_update(const FrameData&) {
         vb.velocity += glm::vec3(0, -1, 0) * vb.gravity * Engine::Config::FIXED_TIME_STEP;
 
         // Add drag
-        vb.velocity *= std::max(0.0f, 1.0f - vb.linear_drag * Engine::Config::FIXED_TIME_STEP);
-        vb.angular_velocity *= std::max(0.0f, 1.0f - vb.angular_drag * Engine::Config::FIXED_TIME_STEP);
+        vb.velocity *= max(0.0f, 1.0f - vb.linear_drag * Engine::Config::FIXED_TIME_STEP);
+        vb.angular_velocity *= max(0.0f, 1.0f - vb.angular_drag * Engine::Config::FIXED_TIME_STEP);
 
         if (vb.type == VoxelBody::STATIC) continue;
-        if (vb.type == VoxelBody::SLEEPING) {
-            vb.velocity = glm::vec3(0);
-            vb.angular_velocity = glm::vec3(0);
-            continue;
-        }
 
         // Accumulate
         float forces = (glm::length2(vb.velocity / Engine::Config::FIXED_TIME_STEP) + glm::length2(vb.angular_velocity / Engine::Config::FIXED_TIME_STEP));
         if (std::isnan(forces)) forces = 0;
         vb.accumulated_forces = vb.accumulated_forces * 0.925f + forces * 0.075f;
 
+        if (vb.type == VoxelBody::SLEEPING) {
+            if (vb.accumulated_forces > 150.0f || forces > 150.0f) {
+                vb.type = VoxelBody::DYNAMIC;
+            } else {
+                vb.velocity = glm::vec3(0);
+                vb.angular_velocity = glm::vec3(0);
+            }
+        }
+
         // practicly not moving
         if (vb.accumulated_forces <= 150.0f && forces <= 150.0f)
-            vb.type = VoxelBody::WANTS_SLEEP;
-        else
-            vb.type = VoxelBody::DYNAMIC;
+            vb.type = VoxelBody::SLEEPING;
     }
 
     // Detect Colllisions
@@ -72,6 +133,25 @@ void Physics::on_fixed_update(const FrameData&) {
 void Physics::on_end() { Log::info("Physics on_end"); }
 
 void Physics::generate_voxel_constraints_range(const int index, const int size) {
+    // Build BVH
+    // NOTE: BVH needs to move to another function when multithreading is implemented
+    const entt::basic_group group = engine.ecs.get_registry().group<VoxelBody>(entt::get<Transform>);
+    std::vector<VoxelObject> objects {};
+    std::vector<Entity> entities {};
+    objects.reserve(group.size());
+
+    for (auto&& [entity, vb, transform] : group.each()) {
+        /* Convert the entity to a voxel object */
+        VoxelObject object {};
+        object.local_to_world = transform.get_world_matrix();
+        object.world_to_local = glm::inverse(object.local_to_world);
+        object.size = vb.voxels.size;
+        objects.push_back(std::move(object));
+        entities.push_back(entity);
+    }
+
+    bvh.build(objects.data(), (uint32_t)objects.size());
+
     // auto& physics_layers = Engine.layers();
     const int min = index * size;
     const int max = (index + 1) * size;
@@ -83,11 +163,42 @@ void Physics::generate_voxel_constraints_range(const int index, const int size) 
         curr++;
         if (curr < min || curr >= max) continue;
         if (vb.type == VoxelBody::STATIC || vb.type == VoxelBody::SLEEPING) continue;
-        for (const auto& [other_entity, other_vb, other_transform] : vox_view.each()) {
-            // if (!other_transform.is_enabled()) continue;
-            if (entity == other_entity) continue;
 
-            // if (!(physics_layers.collides_with_layer(layer, other_layer))) continue;
+        // Get current AABB
+        Aabb current_aabb = vb.aabb();
+
+        // Check against BVH
+        std::vector<Entity> bvh_overlaps {};
+        std::queue<uint32_t> node_queue {};
+        node_queue.push(0);
+        while (!node_queue.empty()) {
+            const uint32_t index = node_queue.front();
+            node_queue.pop();
+
+            // If leaf node, add to overlaps
+            if (bvh.nodes[index].is_leaf()) {
+                // Add all primitives in leaf to overlaps if overlapping
+                if (current_aabb.overlap({bvh.nodes[index].min_bounds, bvh.nodes[index].max_bounds})) {
+                    for (uint32_t i = 0; i < bvh.nodes[index].prim_count; i++) {
+                        bvh_overlaps.push_back(entities[bvh.nodes[index].left_first + i]);
+                    }
+                }
+                continue;
+            }
+
+            // Check for overlap
+            if (current_aabb.overlap({bvh.nodes[index].min_bounds, bvh.nodes[index].max_bounds})) {
+                // On overlap add children to queue
+                node_queue.push(bvh.nodes[index].left_first);
+                node_queue.push(bvh.nodes[index].left_first + 1u);
+            }
+        }
+
+        // Collision checks for entities in bvh_overlaps
+        for (Entity other_entity : entities) {
+            if (other_entity == entity) continue;
+            Transform& other_transform = engine.ecs.get_component<Transform>(other_entity);
+            VoxelBody& other_vb = engine.ecs.get_component<VoxelBody>(other_entity);
 
             if (sat_early_out(vb, other_vb)) continue;
 
@@ -111,10 +222,43 @@ void Physics::generate_voxel_constraints_range(const int index, const int size) 
 
             if (coll.contacts.size() <= 0) continue;
 
+            if (other_vb.type == VoxelBody::SLEEPING) other_vb.accumulated_forces = 10000;
             coll.normal = glm::normalize(other_vb.position - vb.position);
             solver.collisions.push_back(coll);
-            // thread_collisions[index].push_back(coll);
         }
+
+        // for (const auto& [other_entity, other_vb, other_transform] : vox_view.each()) {
+        //     // if (!other_transform.is_enabled()) continue;
+        //     if (entity == other_entity) continue;
+
+        //    // if (!(physics_layers.collides_with_layer(layer, other_layer))) continue;
+
+        //    if (sat_early_out(vb, other_vb)) continue;
+
+        //    Collision coll(entity, other_entity);
+        //    coll.contacts.reserve(64);
+
+        //    // Find overlapping area's
+        //    // A's local collision overlap
+        //    glm::ivec3 min_a = {};
+        //    glm::ivec3 max_a = {};
+        //    get_overlap(vb, other_vb, min_a, max_a);
+
+        //    for (size_t z = min_a.z; z < max_a.z; z++) {
+        //        for (size_t y = min_a.y; y < max_a.y; y++) {
+        //            for (size_t x = min_a.x; x < max_a.x; x++) {
+        //                if (coll.contacts.size() >= max_contacts) continue;
+        //                check_neighbors(vb, other_vb, x, y, z, coll);
+        //            }
+        //        }
+        //    }
+
+        //    if (coll.contacts.size() <= 0) continue;
+
+        //    coll.normal = glm::normalize(other_vb.position - vb.position);
+        //    solver.collisions.push_back(coll);
+        //    // thread_collisions[index].push_back(coll);
+        //}
     }
 }
 
@@ -276,11 +420,11 @@ float Physics::ray_aabb(const glm::vec3& min, const glm::vec3& max, const glm::v
         const float t1 = (min[axis] - ro[axis]) / rd[axis];
         const float t2 = (max[axis] - ro[axis]) / rd[axis];
 
-        const float dmin = std::min(t1, t2);
-        const float dmax = std::max(t1, t2);
+        const float dmin = min(t1, t2);
+        const float dmax = max(t1, t2);
 
-        tmin = std::max(dmin, tmin);
-        tmax = std::min(dmax, tmax);
+        tmin = max(dmin, tmin);
+        tmax = min(dmax, tmax);
     }
 
     if (tmax >= tmin) return tmin;
@@ -293,20 +437,20 @@ bool Physics::is_separated(const glm::vec3& axis, const VoxelBody::Box& box_a, c
 
     for (size_t i = 0; i < 8; i++) {
         float projection = glm::dot(box_a.vertex[i], axis);
-        min_a = std::min(min_a, projection);
-        max_a = std::max(max_a, projection);
+        min_a = min(min_a, projection);
+        max_a = max(max_a, projection);
     }
 
     for (size_t i = 0; i < 8; i++) {
         float projection = glm::dot(box_b.vertex[i], axis);
-        min_b = std::min(min_b, projection);
-        max_b = std::max(max_b, projection);
+        min_b = min(min_b, projection);
+        max_b = max(max_b, projection);
     }
 
     if (max_a < min_b || max_b < min_a) return true;
 
-    float max = std::min(max_a, max_b);
-    float min = std::max(min_a, min_b);
+    float max = min(max_a, max_b);
+    float min = max(min_a, min_b);
 
     // Calculate overlap
     overlap = max - min;
@@ -406,12 +550,16 @@ void Physics::apply_velocities() const {
         vb.position += vb.velocity * Engine::Config::FIXED_TIME_STEP;
         vb.center_of_mass += vb.velocity * Engine::Config::FIXED_TIME_STEP;
 
+        transform.set_world_position(vb.position);  // TEMP
+
         float angle = glm::length(vb.angular_velocity) * Engine::Config::FIXED_TIME_STEP;
         if (angle <= 0.0f) continue;
 
         glm::vec3 axis = glm::normalize(vb.angular_velocity);
         glm::quat incremental_rot = glm::angleAxis(angle, axis);
         vb.rotation = glm::normalize(incremental_rot * vb.rotation);
+
+        transform.set_world_rotation(vb.rotation);  // TEMP
     }
 }
 

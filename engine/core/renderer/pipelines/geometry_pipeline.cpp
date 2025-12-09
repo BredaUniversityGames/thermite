@@ -30,7 +30,6 @@ void GeometryPipeline::init(GPUAdapter& gpu) {
 void GeometryPipeline::enqueue(RenderGraph& render_graph, Buffer render_view, RenderTarget render_target) {
     /* Capture all voxel renderers in the scene */
     const entt::basic_group group = engine.ecs.get_registry().group<const VoxelRenderer>(entt::get<Transform>);
-
     /* Allocate space for all voxel objects */
     std::vector<VoxelObject> objects {};
     objects.reserve(std::min(group.size(), (size_t)MAX_VOXEL_OBJECTS));

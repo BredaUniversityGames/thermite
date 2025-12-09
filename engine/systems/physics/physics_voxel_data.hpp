@@ -61,9 +61,12 @@ struct PhysicsVoxelData {
 
     void upload_voxel_texture_if_dirty() {}
 
-   private:
     std::vector<PhysicsVoxel> data = {};
     glm::uvec3 size = {};
+
+   private:
+    //std::vector<PhysicsVoxel> data = {};
+    //glm::uvec3 size = {};
 };
 
 }  // namespace tmt

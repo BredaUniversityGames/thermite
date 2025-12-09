@@ -18,6 +18,8 @@ struct Bvh2Node {
 
     /* Returns true if this node is a leaf node. */
     inline bool is_leaf() const { return prim_count > 0u; }
+
+    // test aabb intersection
 };
 
 /* 2-wide Bounding Volume Hierarchy Node as described by 2009 Aila & Laine. */
