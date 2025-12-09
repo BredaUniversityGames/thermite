@@ -28,6 +28,15 @@ class JobManager {
         parallel_for(std::size(container), [&container, &function](size_t index) { function(container[index]); });
     }
 
+    // Activates the worker threads and makes them spinlock.
+    void activate_workers() {
+        //assert(worker_threads_active.test() == false && "Tried to activate worker threads while they were still active!");
+        worker_threads_active.test_and_set();
+        worker_threads_active.notify_all();
+    }
+    // Deactivates the worker threads by making them atomic wait.
+    void deactivate_workers() { worker_threads_active.clear(); }
+
    private:
     friend class ScopedSpinLock;
 
@@ -43,18 +52,6 @@ class JobManager {
     size_t total_task_count;
     std::atomic<size_t> next_task_index;
     std::atomic_flag worker_threads_active;
-};
-
-class ScopedSpinLock {
-   public:
-    ScopedSpinLock(JobManager& job_manager) : job_manager(job_manager) {
-        job_manager.worker_threads_active.test_and_set();
-        job_manager.worker_threads_active.notify_all();
-    }
-    ~ScopedSpinLock() { job_manager.worker_threads_active.clear(); }
-
-   private:
-    JobManager& job_manager;
 };
 
 }  // namespace tmt
