@@ -3,12 +3,20 @@
 #include <cstdint>
 #include <vector>
 
+<<<<<<< HEAD
 #include "engine/core/renderer/material.hpp"
+=======
+#include "core/renderer/material.hpp"
+>>>>>>> origin/main
 
 namespace tmt {
 
 /* How much space should be reserved for real-time modifications. */
+<<<<<<< HEAD
 constexpr uint32_t SVT64_BUFFER_MEMORY = 10000u/* 10 kb */;
+=======
+constexpr uint32_t SVT64_BUFFER_MEMORY = 10000u /* 10 kb */;
+>>>>>>> origin/main
 
 struct RawVoxels {
     MaterialPalette palette {};

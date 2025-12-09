@@ -8,7 +8,11 @@ inline uint32_t log_base(const uint32_t x, const uint32_t b) { return (uint32_t)
 /* Calculate the depth of a SVT64 based on its input voxel grid size. */
 inline uint32_t tree_depth(uint32_t width, uint32_t height, uint32_t depth) {
     const float max_axis = (float)std::max(std::max(width, height), depth);
+<<<<<<< HEAD
     return (uint32_t)ceilf(logf(max_axis) / logf(4.0f));
+=======
+    return (uint32_t)(logf(max_axis) / logf(4.0f));
+>>>>>>> origin/main
 }
 
 /* Calculate the maximum number of nodes a SVT64 can have given its depth. */
