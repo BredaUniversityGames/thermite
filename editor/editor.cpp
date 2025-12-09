@@ -1,3 +1,4 @@
+#include "windows/profiler_tracy.hpp"
 #if THERMITE_EDITOR
 #pragma message(" THERMITE_EDITOR=1 ")
 #else
@@ -36,6 +37,7 @@ void Editor::on_engine_init(const ApplicationSpecs&) {
 
     windows.add<Hierarchy>();
     windows.add<GameFlow>();
+    windows.add<Profiler>();
 
     for (auto& system : windows) {
         system->on_editor_start();
