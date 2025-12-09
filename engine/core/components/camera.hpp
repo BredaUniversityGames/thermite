@@ -1,6 +1,7 @@
 #pragma once
+#include <ImReflect_macro.hpp>
 
-#include "engine/core/ecs.hpp"
+#include "engine/core/entity.hpp"
 
 namespace tmt {
 
@@ -20,3 +21,5 @@ struct Camera {
 };
 
 }  // namespace tmt
+
+IMGUI_REFLECT(tmt::Camera, fov, pitch, yaw, active);

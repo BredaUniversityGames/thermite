@@ -1,4 +1,5 @@
 #pragma once
+#include <ImReflect_macro.hpp>
 
 namespace tmt {
 
@@ -9,3 +10,5 @@ struct VoxelRenderer {
 };
 
 }  // namespace tmt
+
+IMGUI_REFLECT(tmt::VoxelRenderer, size);

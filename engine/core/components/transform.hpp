@@ -1,6 +1,7 @@
 #pragma once
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
+#include <ImReflect_macro.hpp>
 
 #include "engine/core/ecs.hpp"
 
@@ -95,3 +96,4 @@ struct Transform {
 
 FMT_LOGGING(tmt::Transform, "Position: {}, Rotation: {}, Scale: {}", obj.get_world_position(), obj.get_world_rotation(), obj.get_world_scale());
 JSON_REFLECT(tmt::Transform, local_position, local_rotation, local_scale, parent, children);
+IMGUI_REFLECT(tmt::Transform, local_position, local_rotation, local_scale, parent, children);
