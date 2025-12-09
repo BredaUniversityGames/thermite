@@ -16,8 +16,10 @@
 
 #include "editor/imgui/manager.hpp"
 
+/* Windows */
 #include "editor/windows/hierarchy.hpp"
 #include "editor/windows/game_flow.hpp"
+#include "editor/windows/inspector.hpp"
 
 /* Singleton */
 tmt::Editor tmt::editor;
@@ -36,6 +38,7 @@ void Editor::on_engine_init(const ApplicationSpecs&) {
 
     windows.add<Hierarchy>();
     windows.add<GameFlow>();
+    windows.add<Inspector>();
 
     for (auto& system : windows) {
         system->on_editor_start();

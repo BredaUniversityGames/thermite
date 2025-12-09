@@ -21,7 +21,7 @@ class Hierarchy : public IWindow {
     constexpr std::string get_title() const override { return "Hierarchy"; };
 
     void on_editor_start() override {};
-    void on_editor_update(const FrameData& time) override {};
+    void on_editor_update(const FrameData&) override {};
     void on_editor_end() override {};
 
     template <typename... Components>
@@ -43,6 +43,18 @@ class Hierarchy : public IWindow {
 
         end_section();
     }
+
+    Entity get_last_selected_entity() const {
+        if (selected_entities.empty()) return entt::null;
+        return *selected_entities.end();
+    };
+    Entity get_first_selected_entity() const {
+        if (selected_entities.empty()) return entt::null;
+        return *selected_entities.begin();
+    };
+
+    const std::unordered_set<Entity>& get_selected_entities() const { return selected_entities; };
+    bool is_entity_selected() const { return !selected_entities.empty(); }
 
    private:
     std::unordered_set<Entity> selected_entities;
