@@ -41,16 +41,24 @@
 #define TMT_LOCKABLE(type, var) TracyLockable(type, var)
 #define TMT_LOCKABLE_N(type, var, name) TracyLockableN(type, var, name)
 
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4595)  // non-member operator new/delete may not be declared inline
+#endif
+
 inline void* operator new(std::size_t count) {
     auto ptr = malloc(count);
     TracyAllocS(ptr, count, TMT_CALLSTACK_DEPTH);
     return ptr;
 }
-
 inline void operator delete(void* ptr) noexcept {
     TracyFreeS(ptr, TMT_CALLSTACK_DEPTH);
     free(ptr);
 }
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 #else
 
 // Zone scoping
