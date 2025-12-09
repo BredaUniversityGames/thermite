@@ -4,6 +4,15 @@ import view;
 import math;
 import material;
 
+public struct Svt64Hit {
+    public float3 point;
+    public float3 albedo;
+    public uint steps;
+
+    /* Returns true if this was a miss. */
+    public bool miss() { return point.x == 1e30f; }
+};
+
 public struct Svt64Node {
     uint child_ptr;
     uint child_mask_hi;
@@ -77,7 +86,7 @@ public struct Svt64Node {
 }
 
 /* Trace a ray through a SVT64. */
-public inline Hit trace_svt64<let DEBUG : bool>(
+public inline Svt64Hit trace_svt64<let DEBUG : bool>(
     StructuredBuffer<Svt64Node> nodes,
     StructuredBuffer<uint> voxels,
     StructuredBuffer<Material> palette,
@@ -155,15 +164,15 @@ public inline Hit trace_svt64<let DEBUG : bool>(
         if (DEBUG) steps++;
     }
 
-    Hit hit;
-    hit.t = BIG_F32;
+    Svt64Hit hit;
+    hit.point = 1e30f;
     if (DEBUG) hit.steps = steps;
 
     /* If we hit a leaf node, return the voxel we hit */
     if (node.is_leaf() && scale_exp <= 21) {
         /* Find the hit position & calculate the hit distance */
         pos = mirror_pos(pos, ray.dir, false);
-        hit.t = distance(ray.origin, pos);
+        hit.point = pos; // distance(ray.origin, pos);
 
         /* Fetch the material of the voxel we hit */
         const uint child_index = get_node_cell_index(pos, scale_exp);

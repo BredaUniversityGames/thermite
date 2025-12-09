@@ -20,6 +20,7 @@ public struct VoxelObject {
 
 public inline Hit intersect_voxel_object<let DEBUG : bool>(Ray ray, VoxelObject object) {
     /* Transform the ray into the local space of the object */
+    const float3 ray_start = ray.origin;
     ray.origin = mul(object.world_to_local, float4(ray.origin, 1.0f)).xyz;
     ray.dir = mul(object.world_to_local, float4(ray.dir, 0.0f)).xyz;
     ray.rcp_dir = 1.0f / ray.dir;
@@ -52,8 +53,16 @@ public inline Hit intersect_voxel_object<let DEBUG : bool>(Ray ray, VoxelObject 
     const StructuredBuffer<Material> palette = bindless::storage_buffer<StructuredBuffer<Material>>(object.palette_handle);
 
     /* Trace the SVT64 */
-    Hit hit = trace_svt64<DEBUG>(nodes, voxels, palette, ray);
-    hit.t += t_near;
+    const Svt64Hit local_hit = trace_svt64<DEBUG>(nodes, voxels, palette, ray);
+
+    Hit hit = Hit::miss(); /* Fill-in hit info */
+    if (DEBUG) hit.steps = local_hit.steps;
+    if (local_hit.miss()) return Hit::miss();
+
+    /* Calculate world-space hit point and distance */
+    const float3 hit_point = mul(object.local_to_world, float4((local_hit.point - 1.5f) * 2.0f * half_extent, 1.0f)).xyz;
+    hit.t = distance(hit_point, ray_start);
+    hit.albedo = local_hit.albedo;
     return hit;
 #endif
 }
