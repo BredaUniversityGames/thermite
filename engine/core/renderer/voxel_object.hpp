@@ -27,11 +27,7 @@ struct alignas(16) VoxelObject {
     inline Aabb aabb() const {
         const glm::vec3 center = glm::vec3(local_to_world[3]);
         const glm::vec3 unit_extent = glm::vec3(size) * UNITS_PER_VOXEL * 0.5f;
-        const glm::vec3 extent = glm::mat3(
-            glm::abs(glm::vec3(local_to_world[0])),
-            glm::abs(glm::vec3(local_to_world[1])),
-            glm::abs(glm::vec3(local_to_world[2]))
-        ) * unit_extent;
+        const glm::vec3 extent = glm::mat3(glm::abs(glm::vec3(local_to_world[0])), glm::abs(glm::vec3(local_to_world[1])), glm::abs(glm::vec3(local_to_world[2]))) * unit_extent;
         return Aabb(center - extent, center + extent);
     }
 

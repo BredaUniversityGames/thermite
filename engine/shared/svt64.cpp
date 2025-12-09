@@ -112,9 +112,9 @@ void Svt64::build(const RawVoxels& raw_data) {
     const uint32_t raw_voxels = raw_voxel_count(raw_data);
 
     /* Allocate space for new tree */
-    nodes = new Svt64Node[max_nodes]; // (Node*)malloc(1ull << 26);
+    nodes = new Svt64Node[max_nodes];  // (Node*)malloc(1ull << 26);
     node_count = 1u;
-    voxels = new MaterialIndex[raw_voxels]; // (MaterialIndex*)malloc(1ull << 26);
+    voxels = new MaterialIndex[raw_voxels];  // (MaterialIndex*)malloc(1ull << 26);
     voxel_count = 0u;
 
     /* Copy the material palette */
