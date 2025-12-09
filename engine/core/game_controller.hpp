@@ -20,7 +20,11 @@ class GameController {
     bool is_game_playing = false;
     bool is_game_paused = false;
 
+#ifndef THERMITE_EDITOR
     bool should_start_game = true;
+#else
+    bool should_start_game = false;
+#endif
     bool should_end_game = false;
 };
 }  // namespace tmt
