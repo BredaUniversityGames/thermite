@@ -10,6 +10,7 @@ namespace tmt {
 class VoxelVolume : public tmt::RuntimeResource<VoxelScene> {
    public:
     VoxelVolume(const std::shared_ptr<VoxelScene>& file_resource) : RuntimeResource<VoxelScene>(file_resource) {}
+    ~VoxelVolume() { unload(); }
 
     bool load() override;
     void unload() override;
