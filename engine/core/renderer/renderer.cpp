@@ -73,8 +73,9 @@ void Renderer::init() {
     }
 
     /* Viewport Texture */
-    if (const Result r =
-            bank.create_texture(TextureUsage::ColorAttachment | TextureUsage::Sampled | TextureUsage::Storage, TextureFormat::RGBA8Unorm, {(uint32_t)engine.window.width, (uint32_t)engine.window.height, 0});
+    if (const Result r = bank.create_texture(
+            TextureUsage::ColorAttachment | TextureUsage::Sampled | TextureUsage::Storage, TextureFormat::RGBA8Unorm, {(uint32_t)engine.window.width, (uint32_t)engine.window.height, 0}
+        );
         r.is_err()) {
         Log::error(Log::Scope::RENDERER, "failed to initialize attachment texture.\nreason: {}", r.unwrap_err());
         return;
@@ -125,9 +126,13 @@ void Renderer::update() {
 
     render_graph.new_graph().unwrap();
 
+#ifdef THERMITE_EDITOR
+
+#else
+    render_view.resolution = glm::uvec2(engine.window.width, engine.window.height);
+#endif  // THERMITE_EDITOR
     if (cam_entity != entt::null) {
-        render_view.resolution = glm::uvec2(engine.window.width, engine.window.height);
-        const float aspect_ratio = (float)engine.window.width / (float)engine.window.height;
+        const float aspect_ratio = (float)render_view.resolution.x / (float)render_view.resolution.y;
         /* Get active camera */
         Camera& camera = engine.ecs.get_component<Camera>(cam_entity);
         Transform& transform = engine.ecs.get_component<Transform>(cam_entity);
@@ -200,6 +205,21 @@ BindHandle Renderer::get_render_image() const {
 }
 
 u64 Renderer::get_imgui_viewport() const { return imgui_viewport; }
+
+void Renderer::set_viewport_size(uint32_t width, uint32_t height) { 
+    if (width != render_view.resolution.x || height != render_view.resolution.y) {
+        render_view.resolution = {width, height};
+
+        if (const Result r = gpu.get_vram_bank().resize_texture(viewport_texture, {width, height, 0}); r.is_err()) {
+            Log::error(Log::Scope::RENDERER, "failed to resize the viewport texture.\nreason: {}", r.unwrap_err().c_str());
+        } else {
+            Log::info(Log::Scope::RENDERER, "viewport texture has been resized.");
+        }
+
+        imgui->remove_image(viewport_image);
+        imgui_viewport = imgui->add_image(viewport_image);
+    }
+}
 
 void Renderer::draw_line(const glm::vec3 start, const glm::vec3 end, const glm::vec3 color) { debug_pipeline.draw_line(start, end, color); }
 

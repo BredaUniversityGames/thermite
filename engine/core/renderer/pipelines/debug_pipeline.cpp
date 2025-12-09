@@ -35,13 +35,14 @@ void DebugPipeline::enqueue(RenderGraph& render_graph, Buffer render_view) {
     }
     debug_points.clear();
 
+    const glm::uvec2 render_res = engine.renderer.render_view.resolution;
     RasterNode& line_pass = render_graph.add_raster_pass("debug line pass", "debug_line.vx", "debug_line.px")
                                 .topology(Topology::LineList)
                                 .attribute(AttrFormat::XYZ32_SFloat)  // Position
                                 .attribute(AttrFormat::XYZ32_SFloat)  // Color
                                 .read(render_view, ShaderStages::Vertex)
                                 .attach(render_image)
-                                .raster_extent(engine.window.width, engine.window.height);
+                                .raster_extent(render_res.x, render_res.y);
     line_pass.draw(point_buffer, num_points);
 }
 

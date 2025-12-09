@@ -60,6 +60,8 @@ void GeometryPipeline::enqueue(RenderGraph& render_graph, Buffer render_view) {
     /* clang-format off */
 
     /* Enqueue the geometry compute pass */
+    const glm::uvec2 render_res = engine.renderer.render_view.resolution;
+
     render_graph.add_compute_pass("geometry pass", "geometry.cs")
         /* Render view */
         .read(render_view)
@@ -70,7 +72,7 @@ void GeometryPipeline::enqueue(RenderGraph& render_graph, Buffer render_view) {
         /* Render target */
         .write(render_image)
         .group_size(16, 8)
-        .work_size(engine.window.width, engine.window.height);
+        .work_size(render_res.x, render_res.y);
 
     /* clang-format on */
 }

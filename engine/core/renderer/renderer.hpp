@@ -24,7 +24,6 @@ class Renderer {
     Image viewport_image {};
     u64 imgui_viewport {};
     RenderTarget render_target {};
-    RenderView render_view {};
     Buffer render_view_buffer {};
 
     ImGUI* imgui = nullptr;
@@ -34,6 +33,8 @@ class Renderer {
     GeometryPipeline& geometry_pipeline;
 
    public:
+    RenderView render_view {};
+
     Renderer();
     ~Renderer();
 
@@ -48,6 +49,7 @@ class Renderer {
     BindHandle get_render_image() const;
 
     u64 get_imgui_viewport() const;
+    void set_viewport_size(uint32_t width, uint32_t height);
 
     void draw_line(const glm::vec3 start, const glm::vec3 end, const glm::vec3 color = {1.0f, 0.0f, 0.0f});
 
