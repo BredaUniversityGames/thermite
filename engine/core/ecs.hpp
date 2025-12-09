@@ -5,8 +5,14 @@
 
 #include <entt/entt.hpp>
 
-#include "frame_data.hpp"
-#include "system.hpp"
+#include "engine/core/entity.hpp"
+
+#include "engine/core/frame_data.hpp"
+#include "engine/core/system.hpp"
+
+#include "engine/core/components/name.hpp"
+#include "engine/core/components/transform.hpp"
+#include "engine/core/system_collection.hpp"
 
 #include "engine/events/game.hpp"
 #include "engine/events/engine.hpp"
@@ -16,7 +22,6 @@
 namespace tmt {
 
 using Registry = entt::registry;
-using Entity = entt::entity;
 
 struct Delete {};
 
@@ -28,44 +33,33 @@ class Ecs : public OnGameStart, public OnGameUpdate, public OnGameFixedUpdate, p
     Ecs() = default;
     ~Ecs() = default;
 
-    /* Systems */
-    template <System T, typename... Args>
-    T& register_system(Args&&... args) {
-        auto system = std::make_unique<T>(std::forward<Args>(args)...);
-        T& ref = *system;
-
-        systems.push_back(std::move(system));
-        return ref;
-    }
-
-    template <System T>
-    T& get_system() {
-        for (auto& system : systems) {
-            if (T* casted = dynamic_cast<T*>(system.get())) {
-                return *casted;
-            }
-        }
-        throw std::runtime_error("System not found");
-    }
-
-    template <System T>
-    T* try_get_system() {
-        for (auto& system : systems) {
-            if (T* casted = dynamic_cast<T*>(system.get())) {
-                return casted;
-            }
-        }
-        return nullptr;
-    }
-
     /* Entities / Components */
     Registry& get_registry() { return registry; }
+    const Registry& get_registry() const { return registry; }
 
-    Entity create_entity(const Entity hint = entt::null) { return registry.create(hint); }
-
-    template <typename... Component>
-    Entity create_entity(const Entity hint = entt::null) {
+    /* Enforce Name component */
+    Entity create_entity(const std::string& name = "", const Entity hint = entt::null) {
         Entity entity = registry.create(hint);
+        /* Enforce Name component */
+        registry.emplace<Name>(entity, name.empty() ? "Entity_" + EntityHelper::to_string(entity) : name);
+        return entity;
+    }
+
+    /* No components enforced. Preferably use ``create_entity`` over this one */
+    Entity create_empty_entity(const Entity hint = entt::null) { return registry.create(hint); }
+
+    /* Enforce Name component */
+    template <typename... Component>
+    Entity create_entity(const std::string& name = "", const Entity hint = entt::null) {
+        Entity entity = create_entity(name, hint);
+        (registry.emplace<Component>(entity), ...);
+        return entity;
+    }
+
+    /* No components enforced. Preferably use ``create_entity`` over this one */
+    template <typename... Component>
+    Entity create_empty_entity(const Entity hint = entt::null) {
+        Entity entity = create_empty_entity(hint);
         (registry.emplace<Component>(entity), ...);
         return entity;
     }
@@ -96,6 +90,11 @@ class Ecs : public OnGameStart, public OnGameUpdate, public OnGameFixedUpdate, p
         } else {
             return std::make_tuple(registry.get<Component>(entity)...);
         }
+    }
+
+    template <typename... Component>
+    bool has_component(const Entity entity) const {
+        return registry.all_of<Component...>(entity);
     }
 
     template <typename... Component>
@@ -135,9 +134,9 @@ class Ecs : public OnGameStart, public OnGameUpdate, public OnGameFixedUpdate, p
 
     void clear() { registry.clear(); }
 
-   private:
-    std::vector<std::unique_ptr<ISystem>> systems;
+    SystemCollection<ISystem> systems;
 
+   private:
     Registry registry;
 
     void on_game_start() override;
@@ -152,5 +151,3 @@ class Ecs : public OnGameStart, public OnGameUpdate, public OnGameFixedUpdate, p
 };
 
 }  // namespace tmt
-
-FMT_LOGGING(tmt::Entity, "{}", static_cast<uint32_t>(obj));

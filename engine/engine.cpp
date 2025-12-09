@@ -15,6 +15,7 @@
 #include "systems/physics/physics_system.hpp"
 #include "systems/animation/animation_system.hpp"
 #include "systems/camera/camera_system.hpp"
+#include "systems/ai/goap_system.hpp"
 
 #include "events/engine.hpp"
 #include "events/game.hpp"
@@ -38,19 +39,20 @@ Engine::~Engine() {
     delete &input;
 }
 
-void Engine::init(const ApplicationSpecs& specs, std::unique_ptr<Application> user_app) {
+void Engine::init(std::unique_ptr<Application> user_app) {
     app = std::move(user_app);
-    Log::init(specs.log_file.string());
+    Log::init(app->specs.log_file.string());
 
     input.init();
-    window.init(specs);
+    window.init(app->specs);
     renderer.init();
 
-    ecs.register_system<Physics>();
-    ecs.register_system<Animation>();
-    ecs.register_system<CameraSystem>();
+    ecs.systems.add<Physics>();
+    ecs.systems.add<Animation>();
+    ecs.systems.add<CameraSystem>();
+    ecs.systems.add<Goap>();
 
-    OnEngineInit::dispatch(specs);
+    OnEngineInit::dispatch(app->specs);
 }
 
 // Example stuff

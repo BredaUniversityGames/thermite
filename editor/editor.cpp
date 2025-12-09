@@ -5,10 +5,6 @@
 #error THERMITE_EDITOR must be defined to 1 in editor builds
 #endif
 
-#include <imgui.h>
-#include <imgui_impl_sdl3.h>
-#include <imgui_impl_vulkan.h>
-
 #include "editor/editor.hpp"
 
 #include "engine/engine.hpp"
@@ -18,54 +14,61 @@
 #include "engine/core/renderer/renderer.hpp"
 #include "engine/core/window.hpp"
 
-#include "engine/events/sdl.hpp"
+#include "editor/imgui/manager.hpp"
+
+#include "editor/windows/hierarchy.hpp"
 
 /* Singleton */
 tmt::Editor tmt::editor;
 
 namespace tmt {
 
-class ImGuiUpdate : public internal::OnSdlEvent {
-   public:
-    ImGuiUpdate() : tmt::internal::OnSdlEvent() { priority = 100; }
+Editor::Editor() : imgui_manager(*new ImGuiManager()) {}
 
-   private:
-    void on_sdl_event(SDL_Event& event) override { ImGui_ImplSDL3_ProcessEvent(&event); }
-};
+Editor::~Editor() { delete &imgui_manager; }
 
 void Editor::init() { Log::info("Thermite Editor initialized."); }
 
 void Editor::on_engine_init(const ApplicationSpecs&) {
-    static ImGuiUpdate imgui_event_listener {};
-
     tmt::Log::info("Starting Thermite Editor...");
+    imgui_manager.init();
 
-    tmt::engine.ecs.create_entity();
+    systems.add<Hierarchy>();
 
-    /* Initialize the immediate mode GUI */
-    ImGui::CreateContext();
-    ImGui_ImplSDL3_InitForVulkan(engine.window.window);
-    tmt::engine.renderer.set_imgui(&imgui, IMGUI_FUNCTIONS);
+    for (auto& system : systems) {
+        system->on_editor_start();
+    }
 }
 
-void Editor::on_engine_update(const FrameData&) {
-    /* Start a new imgui frame */
-    imgui.new_frame();
-    ImGui_ImplSDL3_NewFrame();
-    ImGui::NewFrame();
+void Editor::on_engine_update(const FrameData& time) {
+    imgui_manager.new_frame();
 
-    ImGui::Begin("Camera");
-    ImGui::End();
+    for (auto& system : systems) {
+        system->on_editor_update(time);
+    }
 
-    /* End the imgui frame */
-    ImGui::Render();
+    for (auto& system : systems) {
+        ImGui::Begin(system->get_title().c_str());
+        system->display();
+        ImGui::End();
+    }
+
+    imgui_manager.end_frame();
 }
 
-void Editor::on_engine_fixed_update(const FrameData&) {}
+void Editor::on_engine_fixed_update(const FrameData& time) {
+    for (auto& system : systems) {
+        system->on_editor_fixed_update(time);
+    }
+}
 
 void Editor::on_engine_end() {
+    for (auto& system : systems) {
+        system->on_editor_end();
+    }
+
     tmt::Log::info("Shutting down Thermite Editor...");
-    imgui.deinit();
+    imgui_manager.deinit();
 }
 
 }  // namespace tmt
