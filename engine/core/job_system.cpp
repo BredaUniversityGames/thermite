@@ -92,7 +92,7 @@ void JobManager::execute_work() {
         i = next_task_index.fetch_add(1);
     }
 
-    // If we get here we know that there is no more work left to grab, so this thread checks to see if it was the last thread to finish (fetch_sub(1) returns the value *before* we subtract 1). 
+    // If we get here we know that there is no more work left to grab, so this thread checks to see if it was the last thread to finish (fetch_sub(1) returns the value *before* we subtract 1).
     if (finished_thread_count.fetch_sub(1) == 1) {
         // If this is the last worker thread to get here, we know all work is actually done as well, so we notify the main thread.
         finished_working.test_and_set();
