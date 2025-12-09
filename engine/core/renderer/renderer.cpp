@@ -119,6 +119,21 @@ void Renderer::update() {
         }
     }
 
+#ifdef THERMITE_EDITOR
+    if (viewport_resized) {
+        if (const Result r = gpu.get_vram_bank().resize_texture(viewport_texture, {render_view.resolution.x, render_view.resolution.y, 0}); r.is_err()) {
+            Log::error(Log::Scope::RENDERER, "failed to resize the viewport texture.\nreason: {}", r.unwrap_err().c_str());
+        } else {
+            Log::info(Log::Scope::RENDERER, "viewport texture has been resized.");
+        }
+
+        imgui->remove_image(viewport_image);
+        imgui_viewport = imgui->add_image(viewport_image);
+
+        viewport_resized = false;
+    }
+#endif
+
     Entity cam_entity = Camera::get_active_camera();
     if (cam_entity == entt::null) {
         Log::error(Log::Scope::RENDERER, "Camera Entity is NULL. Are there any active cameras in the scene?");
@@ -206,18 +221,20 @@ BindHandle Renderer::get_render_image() const {
 
 u64 Renderer::get_imgui_viewport() const { return imgui_viewport; }
 
-void Renderer::set_viewport_size(uint32_t width, uint32_t height) { 
+void Renderer::set_viewport_size(uint32_t width, uint32_t height) {
     if (width != render_view.resolution.x || height != render_view.resolution.y) {
         render_view.resolution = {width, height};
 
+        viewport_resized = true;
+
+        /*imgui->remove_image(viewport_image);
         if (const Result r = gpu.get_vram_bank().resize_texture(viewport_texture, {width, height, 0}); r.is_err()) {
             Log::error(Log::Scope::RENDERER, "failed to resize the viewport texture.\nreason: {}", r.unwrap_err().c_str());
         } else {
             Log::info(Log::Scope::RENDERER, "viewport texture has been resized.");
         }
 
-        imgui->remove_image(viewport_image);
-        imgui_viewport = imgui->add_image(viewport_image);
+        imgui_viewport = imgui->add_image(viewport_image);*/
     }
 }
 
