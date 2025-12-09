@@ -7,21 +7,25 @@
 namespace tmt {
 
 void GameFlow::display() {
-    if (ImGui::Button("Start")) {
-        engine.game_controller.start_game();
+    if (engine.game_controller.is_playing()) {
+        if (ImGui::Button("End")) {
+            engine.game_controller.end_game();
+            engine.ecs.clear();
+        }
+    } else {
+        if (ImGui::Button("Start")) {
+            engine.game_controller.start_game();
+        }
     }
     ImGui::SameLine();
-    if (ImGui::Button("Pause")) {
-        engine.game_controller.pause_game();
-    }
-    ImGui::SameLine();
-    if (ImGui::Button("Resume")) {
-        engine.game_controller.resume_game();
-    }
-    ImGui::SameLine();
-    if (ImGui::Button("End")) {
-        engine.game_controller.end_game();
-        engine.ecs.clear();
+    if (engine.game_controller.is_paused()) {    
+        if (ImGui::Button("Resume")) {
+            engine.game_controller.resume_game();
+        }
+    } else {    
+        if (ImGui::Button("Pause")) {
+            engine.game_controller.pause_game();
+        }
     }
 }
 

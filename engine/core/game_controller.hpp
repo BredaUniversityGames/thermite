@@ -9,7 +9,10 @@ class GameController {
     void start_game() { should_start_game = true; }
     void pause_game() { is_game_paused = true; }
     void resume_game() { is_game_paused = false; }
-    void end_game() { should_end_game = true; }
+    void end_game() {
+        should_end_game = true;
+        is_game_paused = false;
+    }
 
     bool should_game_start() const { return should_start_game; }
     bool should_game_end() const { return should_end_game; }
