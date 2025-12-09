@@ -20,11 +20,10 @@ VoxelModel load_hierarchy(vengi::Node* node) {
         RawVoxels raw_voxels {};
         const vengi::Region& region = node->voxel_data->region;
         raw_voxels.voxels.resize(region.width() * region.height() * region.depth());
-        raw_voxels.w = region.width();
-        raw_voxels.h = region.height();
-        raw_voxels.d = region.depth();
+        raw_voxels.w = model.width = region.width();
+        raw_voxels.h = model.height = region.height();
+        raw_voxels.d = model.depth = region.depth();
 
-        uint32_t count = 0u;
         const glm::ivec3 min = region.lower;
         const glm::ivec3 max = region.upper + 1;
         for (int32_t z = min.z; z < max.z; ++z) {
@@ -33,24 +32,15 @@ VoxelModel load_hierarchy(vengi::Node* node) {
                     const uint32_t i = (z - min.z) * region.height() * region.width() + (y - min.y) * region.width() + (x - min.x);
                     const vengi::VoxelInformation& voxel = node->voxel_data->voxels[i];
                     raw_voxels.voxels[i] = voxel.color_index;
-                    if (voxel.color_index > 0) count++;
                 }
             }
         }
 
-        // for (int32_t i = 0; i < node->voxel_data->voxels.size(); ++i) {
-        //     const vengi::VoxelInformation& voxel = node->voxel_data->voxels[i];
-        //     if (voxel.color_index > 0) count++;
-        // }
-
-        model.tree.build(raw_voxels);
-
-        // engine.renderer.vram_bank().create_buffer();
+        model.tree = std::make_unique<Svt64>();
+        model.tree->build(raw_voxels);
 
         Log::info("{} ({}, {}, {})", node->name, raw_voxels.w, raw_voxels.h, raw_voxels.d);
     }
-
-    
 
     /* TODO: Only include Model type nodes */
     /* TODO: Load the voxel palette */
@@ -58,6 +48,7 @@ VoxelModel load_hierarchy(vengi::Node* node) {
     // model.tree.build(raw_voxels);
 
     /* Process child nodes */
+    model.children.reserve(node->children.size());
     for (uint32_t i = 0u; i < node->children.size(); ++i) {
         model.children.push_back(load_hierarchy(node->children[i].get()));
     }
@@ -74,6 +65,8 @@ bool VoxelScene::load() {
     return true; 
 }
 
-void VoxelScene::unload() {}
+void VoxelScene::unload() {
+    hierarchy = {};
+}
 
 }  // namespace tmt

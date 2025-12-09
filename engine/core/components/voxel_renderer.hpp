@@ -2,7 +2,7 @@
 
 #include <memory>
 
-#include "engine/core/resources/voxel_scene.hpp"
+#include "engine/core/resources/voxel_volume.hpp"
 
 namespace tmt {
 
@@ -11,9 +11,7 @@ struct VoxelRenderer {
     /* Size of the voxel data. (TODO: move this into the run-time resource) */
     glm::uvec3 size {};
 
-    std::shared_ptr<VoxelScene> resource {};
-
-    VoxelRenderer(std::shared_ptr<VoxelScene> resource) : resource(resource) {};
+    std::shared_ptr<VoxelVolume> resource {};
 };
 
 }  // namespace tmt

@@ -64,6 +64,27 @@ class Svt64 {
     Svt64() = default;
     ~Svt64();
 
+    /* No copies allowed */
+    Svt64(const Svt64& src) {
+        node_count = src.node_count;
+        voxel_count = src.voxel_count;
+        depth = src.depth;
+        nodes = new Svt64Node[node_count + SVT64_BUFFER_MEMORY / sizeof(Svt64Node)];
+        voxels = new MaterialIndex[voxel_count + SVT64_BUFFER_MEMORY / sizeof(MaterialIndex)];
+        memcpy(nodes, src.nodes, node_count * sizeof(Svt64Node));
+        memcpy(voxels, src.voxels, voxel_count * sizeof(MaterialIndex));
+    }
+    Svt64& operator=(const Svt64& src) {
+        node_count = src.node_count;
+        voxel_count = src.voxel_count;
+        depth = src.depth;
+        nodes = new Svt64Node[node_count + SVT64_BUFFER_MEMORY / sizeof(Svt64Node)];
+        voxels = new MaterialIndex[voxel_count + SVT64_BUFFER_MEMORY / sizeof(MaterialIndex)];
+        memcpy(nodes, src.nodes, node_count * sizeof(Svt64Node));
+        memcpy(voxels, src.voxels, voxel_count * sizeof(MaterialIndex));
+        return *this;
+    }
+
     /* Build the Sparse Voxel Tree. */
     void build(const RawVoxels& raw_data);
 };

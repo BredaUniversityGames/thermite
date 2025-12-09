@@ -174,4 +174,8 @@ void Renderer::set_imgui(ImGUI* imgui, ImGUIFunctions functions) {
 
 void Renderer::draw_line(const glm::vec3 start, const glm::vec3 end, const glm::vec3 color) { debug_pipeline.draw_line(start, end, color); }
 
+VRAMBank& Renderer::vram_bank() {
+    return gpu.get_vram_bank();
+}
+
 }  // namespace tmt
