@@ -163,8 +163,8 @@ void Renderer::end() {
     gpu.deinit().expect("failed to destroy gpu adapter.");
 }
 
-void Renderer::set_imgui(ImGUI* imgui, ImGUIFunctions functions) {
-    this->imgui = imgui;
+void Renderer::set_imgui(ImGUI* new_imgui, ImGUIFunctions functions) {
+    imgui = new_imgui;
     /* Initialize the immediate mode GUI */
     if (const Result r = imgui->init(gpu, render_target, functions); r.is_err()) {
         Log::error(Log::Scope::RENDERER, "failed to initialize imgui.\nreason: {}", r.unwrap_err());
