@@ -1,6 +1,9 @@
 #pragma once
 #include "engine/events/engine.hpp"
 
+#include "editor/core/window.hpp"
+#include "engine/core/system_collection.hpp"
+
 namespace tmt {
 
 /* Forward declares */
@@ -20,6 +23,7 @@ class Editor : public OnEngineInit, public OnEngineUpdate, public OnEngineFixedU
     void on_engine_end() override;
 
     ImGuiManager& imgui_manager;
+    SystemCollection<IWindow> windows;
 };
 
 /* Singleton */

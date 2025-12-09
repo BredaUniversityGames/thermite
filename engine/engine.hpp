@@ -2,6 +2,8 @@
 #include "core/application.hpp"
 #include "core/timer.hpp"
 
+#include "engine/core/game_controller.hpp"
+
 namespace tmt {
 /* Forward declarations */
 class Input;
@@ -45,6 +47,8 @@ class Engine {
     Renderer& renderer;
     Resources& resources;
     JobManager& job_manager;
+
+    GameController game_controller;
 
     struct Config {
         constexpr static float FIXED_TIME_STEP = 1.0f / 60.0f;

@@ -15,6 +15,7 @@
 #include "systems/physics/physics_system.hpp"
 #include "systems/animation/animation_system.hpp"
 #include "systems/camera/camera_system.hpp"
+#include "systems/ai/goap_system.hpp"
 
 #include "events/engine.hpp"
 #include "events/game.hpp"
@@ -48,9 +49,10 @@ void Engine::init(std::unique_ptr<Application> user_app) {
     window.init(app->specs);
     renderer.init();
 
-    ecs.register_system<Physics>();
-    ecs.register_system<Animation>();
-    ecs.register_system<CameraSystem>();
+    ecs.systems.add<Physics>();
+    ecs.systems.add<Animation>();
+    ecs.systems.add<CameraSystem>();
+    ecs.systems.add<Goap>();
 
     OnEngineInit::dispatch(app->specs);
 }
@@ -58,16 +60,29 @@ void Engine::init(std::unique_ptr<Application> user_app) {
 // Example stuff
 void Engine::run() {
     timer.reset();
-    start_game();
 
     float accumulator = 0.0f;
     while (is_running) {
+        if (game_controller.should_game_end()) {
+            end_game();
+            game_controller.should_end_game = false;
+            game_controller.is_game_playing = false;
+        }
+        if (game_controller.should_game_start()) {
+            start_game();
+            game_controller.should_start_game = false;
+            game_controller.is_game_playing = true;
+        }
+
         input.update();
 
         const FrameData frame_data = {.delta_time = timer.tick()};
 
+        const bool shoulld_update = game_controller.is_playing() && !game_controller.is_paused();
         /* Update */
-        update_game(frame_data);
+        if (shoulld_update) {
+            update_game(frame_data);
+        }
         update_engine(frame_data);
 
         accumulator += frame_data.delta_time;
@@ -75,7 +90,9 @@ void Engine::run() {
             accumulator -= Config::FIXED_TIME_STEP;
 
             /* Fixed Update */
-            fixed_update_game(frame_data);
+            if (shoulld_update) {
+                fixed_update_game(frame_data);
+            }
             fixed_update_engine(frame_data);
         }
 
@@ -84,7 +101,10 @@ void Engine::run() {
         renderer.update();
         frame_count++;
     }
-    end_game();
+
+    if (game_controller.is_playing()) {
+        end_game();
+    }
 }
 
 void Engine::end() {
