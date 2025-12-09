@@ -32,6 +32,11 @@ public inline Hit intersect_voxel_object<let DEBUG : bool>(Ray ray, VoxelObject 
     const float t_far = min(min(t_max.x, t_max.y), t_max.z);
     if (t_near > t_far) return Hit::miss();
 
+    Hit hit;
+    hit.t = t_near;
+    hit.steps = 1u;
+    return hit;
+#if 0
     /* Move to the point of entry */
     ray.origin = ray.origin + ray.dir * t_near;
 
@@ -46,4 +51,5 @@ public inline Hit intersect_voxel_object<let DEBUG : bool>(Ray ray, VoxelObject 
     Hit hit = trace_svt64<DEBUG>(nodes, voxels, ray);
     hit.t += t_near;
     return hit;
+#endif
 }
