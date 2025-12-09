@@ -18,11 +18,11 @@ void GameFlow::display() {
         }
     }
     ImGui::SameLine();
-    if (engine.game_controller.is_paused()) {    
+    if (engine.game_controller.is_paused()) {
         if (ImGui::Button("Resume")) {
             engine.game_controller.resume_game();
         }
-    } else {    
+    } else {
         if (ImGui::Button("Pause")) {
             engine.game_controller.pause_game();
         }
