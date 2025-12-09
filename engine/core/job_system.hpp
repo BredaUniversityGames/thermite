@@ -2,9 +2,6 @@
 
 #include <vector>
 #include <future>
-#include <queue>
-
-#include "engine.hpp"
 
 namespace std {
 class thread;
@@ -22,15 +19,9 @@ class JobManager {
     // A multithreaded parallel for loop.
     void parallel_for(size_t count, const std::function<void(size_t)>& function);
 
-    // A multithreaded parallel foreach loop, the function its takes has to have a single parameter which matches the type the container holds.
-    template <typename Container, typename Element = std::invoke_result_t<typename Container::operator[], typename Container::size_type>>
-    void parallel_foreach(Container& container, const std::function<void(Element)>& function) {
-        parallel_for(std::size(container), [&container, &function](size_t index) { function(container[index]); });
-    }
-
     // Activates the worker threads and makes them spinlock.
     void activate_workers() {
-        //assert(worker_threads_active.test() == false && "Tried to activate worker threads while they were still active!");
+        assert(worker_threads_active.test() == false && "Tried to activate worker threads while they were still active!");
         worker_threads_active.test_and_set();
         worker_threads_active.notify_all();
     }
@@ -38,20 +29,20 @@ class JobManager {
     void deactivate_workers() { worker_threads_active.clear(); }
 
    private:
-    friend class ScopedSpinLock;
-
+    // Function looping infinitely on the worker threads.
     void run_worker();
+    // Function used to actually execute work, used on both the worker threads and in the main thread.
     void execute_work();
 
     std::atomic_flag exit;
     std::vector<std::thread> worker_threads;
 
-    std::function<void(size_t)> task_function;
-    std::atomic_flag finished_working;
-    std::atomic<size_t> threads_finished_working;
-    size_t total_task_count;
-    std::atomic<size_t> next_task_index;
     std::atomic_flag worker_threads_active;
+    std::atomic_flag finished_working;
+    size_t total_task_count;
+    std::atomic<size_t> finished_thread_count;
+    std::atomic<size_t> next_task_index;
+    std::function<void(size_t)> task_function;
 };
 
 }  // namespace tmt
