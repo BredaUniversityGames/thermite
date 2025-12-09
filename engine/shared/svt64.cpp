@@ -63,7 +63,7 @@ Svt64Node Svt64::subdivide(const RawVoxels& raw_data, uint32_t scale, glm::uvec3
             const uint32_t voxel_offset = voxel_z * wh + voxel_y * raw_data.w + voxel_x;
             const MaterialIndex material = raw_data.voxels[voxel_offset];
 
-            if (material > 0u) {
+            if (material != AIR_INDEX) {
                 voxels[voxel_count++] = material;
                 leaf_node.child_mask |= (1ull << i);
             }

@@ -3,6 +3,7 @@ module voxel;
 import math;
 import view;
 import svt64;
+import material;
 import bindless;
 
 /* Represents a renderable voxel object. */
@@ -14,6 +15,7 @@ public struct VoxelObject {
     uint size_z;
     uint blas_handle;
     uint voxels_handle;
+    uint palette_handle;
 };
 
 public inline Hit intersect_voxel_object<let DEBUG : bool>(Ray ray, VoxelObject object) {
@@ -45,11 +47,12 @@ public inline Hit intersect_voxel_object<let DEBUG : bool>(Ray ray, VoxelObject 
     ray.origin = ray.origin / half_extent * 0.5f + 1.5f;
 
     /* Fetch the SVT64 buffers */
-    const StructuredBuffer<Svt64Node> nodes = bindless::storage_buffer<StructuredBuffer<Svt64Node>>(6);
-    const StructuredBuffer<uint8_t> voxels = bindless::storage_buffer<StructuredBuffer<uint8_t>>(7);
+    const StructuredBuffer<Svt64Node> nodes = bindless::storage_buffer<StructuredBuffer<Svt64Node>>(object.blas_handle);
+    const StructuredBuffer<uint> voxels = bindless::storage_buffer<StructuredBuffer<uint>>(object.voxels_handle);
+    const StructuredBuffer<Material> palette = bindless::storage_buffer<StructuredBuffer<Material>>(object.palette_handle);
 
     /* Trace the SVT64 */
-    Hit hit = trace_svt64<DEBUG>(nodes, voxels, ray);
+    Hit hit = trace_svt64<DEBUG>(nodes, voxels, palette, ray);
     hit.t += t_near;
     return hit;
 #endif

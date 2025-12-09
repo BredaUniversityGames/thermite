@@ -15,12 +15,15 @@ class VoxelVolume : public tmt::RuntimeResource<VoxelScene> {
     bool load() override;
     void unload() override;
 
+    /* 128 bit unique identifier. */
     uint64_t uuid[2] {};
-    std::unique_ptr<Svt64> tree {};
+    
+    /* Voxel acceleration structure. */
+    std::unique_ptr<Svt64> blas {};
     glm::uvec3 size {};
 
-    Buffer tree_nodes {};
-    Buffer tree_voxels {};
+    /* Voxel acceleration structure buffers. */
+    Buffer blas_nodes {}, blas_voxels {}, blas_palette {};
 };
 
 }  // namespace tmt

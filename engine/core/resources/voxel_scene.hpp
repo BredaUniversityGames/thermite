@@ -5,11 +5,20 @@
 
 namespace tmt {
 
-struct VoxelModel {
+/* Voxel scene resource node. */
+struct VoxelSceneNode {
+    /* 128 bit unique identifier. */
     uint64_t uuid[2] {};
+
+    /* Voxel acceleration structure. */
     std::unique_ptr<Svt64> tree {};
-    std::vector<VoxelModel> children {};
-    uint32_t width = 0u, height = 0u, depth = 0u;
+    glm::uvec3 size {};
+    
+    /* Child nodes. */
+    std::vector<VoxelSceneNode> children {};
+
+    /* Returns true if this node is a voxel volume. */
+    inline bool is_volume() const { return tree != nullptr; }
 };
 
 /* Voxel scene resource, loaded from a `.vengi` file. */
@@ -20,7 +29,8 @@ class VoxelScene : public tmt::FileResource {
     bool load() override;
     void unload() override;
 
-    VoxelModel hierarchy {};
+    /* Voxel scene hierarchy. */
+    VoxelSceneNode hierarchy {};
 };
 
 }  // namespace tmt

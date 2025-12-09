@@ -51,7 +51,12 @@ void main(int2 thread_id: SV_DispatchThreadID, int group_id: SV_GroupIndex) {
     // const float hit_t = trace_svt64(blas, voxels, ray, group_id);
     // render_target[thread_id] = float4(hit_t, hit_t, hit_t, 1.0f);
 
-    render_target[thread_id] = float4((hit.t * 0.01f).xxx, 1.0f);
+    if (hit.t < BIG_F32) {
+        render_target[thread_id] = float4(hit.albedo, 1.0f);
+    } else {
+        render_target[thread_id] = float4(0.05f, 0.05f, 0.05f, 1.0f);
+    }
+    // render_target[thread_id] = float4((hit.t * 0.01f).xxx, 1.0f);
     // if (hit.t < BIG_F32) {
     //     render_target[thread_id] = float4(1.0f - (hit.t * 0.01f).xxx, 1.0f);
     // } else {

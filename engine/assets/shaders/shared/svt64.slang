@@ -2,6 +2,7 @@ module svt64;
 
 import view;
 import math;
+import material;
 
 public struct Svt64Node {
     uint child_ptr;
@@ -78,7 +79,8 @@ public struct Svt64Node {
 /* Trace a ray through a SVT64. */
 public inline Hit trace_svt64<let DEBUG : bool>(
     StructuredBuffer<Svt64Node> nodes,
-    StructuredBuffer<uint8_t> voxels,
+    StructuredBuffer<uint> voxels,
+    StructuredBuffer<Material> palette,
     Ray ray
 ) {
     const uint group_id = spirv_asm {
@@ -159,8 +161,15 @@ public inline Hit trace_svt64<let DEBUG : bool>(
 
     /* If we hit a leaf node, return the voxel we hit */
     if (node.is_leaf() && scale_exp <= 21) {
+        /* Find the hit position & calculate the hit distance */
         pos = mirror_pos(pos, ray.dir, false);
         hit.t = distance(ray.origin, pos);
+
+        /* Fetch the material of the voxel we hit */
+        const uint child_index = get_node_cell_index(pos, scale_exp);
+        const uint voxel_index = node.abs_ptr() + popcnt_var64(node.child_mask_lo, node.child_mask_hi, child_index);
+        const uint palette_index = (voxels[voxel_index >> 2u] >> ((4u - (voxel_index % 4u)) << 3u)) & 0xFFu;
+        hit.albedo = palette[palette_index].albedo;
     }
 
     return hit;

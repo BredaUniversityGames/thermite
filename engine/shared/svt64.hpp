@@ -73,6 +73,7 @@ class Svt64 {
         voxels = new MaterialIndex[voxel_count + SVT64_BUFFER_MEMORY / sizeof(MaterialIndex)];
         memcpy(nodes, src.nodes, node_count * sizeof(Svt64Node));
         memcpy(voxels, src.voxels, voxel_count * sizeof(MaterialIndex));
+        palette = src.palette;
     }
     Svt64& operator=(const Svt64& src) {
         node_count = src.node_count;
@@ -82,6 +83,7 @@ class Svt64 {
         voxels = new MaterialIndex[voxel_count + SVT64_BUFFER_MEMORY / sizeof(MaterialIndex)];
         memcpy(nodes, src.nodes, node_count * sizeof(Svt64Node));
         memcpy(voxels, src.voxels, voxel_count * sizeof(MaterialIndex));
+        palette = src.palette;
         return *this;
     }
 
