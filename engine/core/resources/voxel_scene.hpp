@@ -1,5 +1,7 @@
 #pragma once
 
+#include <graphite/resources/handle.hh>
+
 #include "engine/core/resource.hpp"
 #include "engine/shared/svt64.hpp"
 
@@ -9,6 +11,10 @@ struct VoxelModel {
     uint64_t uuid[2] {};
     Svt64 tree {};
     std::vector<VoxelModel> children {};
+
+    /* Temporary, this should be moved to the run-time resource */
+    Buffer tree_nodes {};
+    Buffer tree_voxels {};
 };
 
 /* Voxel scene resource, loaded from a `.vengi` file. */

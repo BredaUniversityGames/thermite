@@ -3,8 +3,6 @@
 #include <cstdint>
 #include <vector>
 
-#include <glm/glm.hpp>
-
 #include "engine/core/renderer/material.hpp"
 
 namespace tmt {
@@ -50,7 +48,7 @@ struct Svt64Node {
 /* 64-wide Sparse Voxel Tree. */
 class Svt64 {
     /* Recursive tree subdivide function. */
-    Svt64Node subdivide(const RawVoxels& raw_data, int scale, glm::ivec3 index);
+    Svt64Node subdivide(const RawVoxels& raw_data, uint32_t scale, glm::uvec3 index);
 
    public:
     /* List of tree nodes. */

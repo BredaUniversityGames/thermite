@@ -40,17 +40,17 @@ void Game::on_start() {
         transform.set_world_position(glm::vec3(0.0f, 0.0f, -2.0f));
     }
 
+    auto voxel_file = tmt::engine.resources.load_resource<tmt::VoxelScene>({tmt::IO::Location::PROJECT, "table.vengi"});
+
     { /* Voxel entity */
         voxel = tmt::engine.ecs.create_entity("Moving Voxel");
         auto& transform = tmt::engine.ecs.add_component<tmt::Transform>(voxel);
-        auto& renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(voxel);
+        auto& renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(voxel, voxel_file);
         renderer.size = glm::uvec3(20u, 10u, 10u);
         transform.set_world_position(glm::vec3(2.0f, 2.0f, 0.0f));
         transform.set_world_rotation(glm::vec3(glm::radians(45.0f), glm::radians(45.0f), 0.0f));
         transform.set_world_scale(glm::vec3(1.0f, 2.0f, 1.0f));
     }
-
-    tmt::engine.resources.load_resource<tmt::VoxelScene>({tmt::IO::Location::PROJECT, "table.vengi"});
 
     // { /* Voxel entity */
     //     auto entity = tmt::engine.ecs.create_entity();

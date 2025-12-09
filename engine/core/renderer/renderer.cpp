@@ -92,8 +92,7 @@ void Renderer::update() {
 
     draw_line({0.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f});
 
-    if (engine.window.resized)
-    {
+    if (engine.window.resized) {
         if (const Result r = gpu.get_vram_bank().resize_render_target(render_target, engine.window.width, engine.window.height); r.is_err()) {
             Log::error(Log::Scope::RENDERER, "failed to resize the swapchain.\nreason: {}", r.unwrap_err().c_str());
         } else {
