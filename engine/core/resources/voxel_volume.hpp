@@ -16,7 +16,7 @@ class VoxelVolume : public tmt::RuntimeResource<VoxelScene> {
 
     uint64_t uuid[2] {};
     std::unique_ptr<Svt64> tree {};
-    uint32_t width = 0u, height = 0u, depth = 0u;
+    glm::uvec3 size {};
 
     Buffer tree_nodes {};
     Buffer tree_voxels {};

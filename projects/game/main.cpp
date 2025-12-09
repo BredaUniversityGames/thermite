@@ -48,7 +48,6 @@ void Game::on_start() {
         auto& transform = tmt::engine.ecs.add_component<tmt::Transform>(voxel);
         auto& renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(voxel);
         renderer.resource = voxel_volume;
-        renderer.size = glm::uvec3(20u, 10u, 10u);
         transform.set_world_position(glm::vec3(2.0f, 2.0f, 0.0f));
         transform.set_world_rotation(glm::vec3(glm::radians(45.0f), glm::radians(45.0f), 0.0f));
         transform.set_world_scale(glm::vec3(1.0f, 1.0f, 1.0f));

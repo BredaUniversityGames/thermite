@@ -17,9 +17,9 @@ public struct Svt64Node {
     /* Is a given child node index active? */
     [ForceInline] bool child_active(uint child_index) {
         if (child_index < 32u) {
-            return (child_mask_lo >> child_index & 1u) != 0u;
+            return (child_mask_hi >> child_index & 1u) != 0u;
         } else {
-            return (child_mask_hi >> (child_index - 32u) & 1u) != 0u;
+            return (child_mask_lo >> (child_index - 32u) & 1u) != 0u;
         }
     }
 
@@ -27,9 +27,9 @@ public struct Svt64Node {
     [ForceInline] bool child_coalesced_skip(uint child_index) {
         child_index = child_index & 0b101010;
         if (child_index < 32u) {
-            return (child_mask_lo >> child_index & 0x00330033u) == 0u;
+            return (child_mask_hi >> child_index & 0x00330033u) == 0u;
         } else {
-            return (child_mask_hi >> (child_index - 32u) & 0x00330033u) == 0u;
+            return (child_mask_lo >> (child_index - 32u) & 0x00330033u) == 0u;
         }
     }
 };

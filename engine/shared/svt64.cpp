@@ -51,17 +51,16 @@ Svt64Node Svt64::subdivide(const RawVoxels& raw_data, uint32_t scale, glm::uvec3
 
         /* Check if the node is outside the voxel grid bounds */
         if (index.x >= raw_data.w || index.y >= raw_data.h || index.z >= raw_data.d) return leaf_node;
-        if (index.x < 0 || index.y < 0 || index.z < 0) return leaf_node;
 
-        const int wh = raw_data.h * raw_data.w;
+        const uint32_t wh = raw_data.h * raw_data.w;
 
         for (uint32_t i = 0u; i < 64u; ++i) {
             /* Fetch the voxel data */
-            const uint32_t voxel_x = index.x + ((i >> 0) & 3);
-            const uint32_t voxel_y = index.y + ((i >> 4) & 3);
-            const uint32_t voxel_z = index.z + ((i >> 2) & 3);
+            const uint32_t voxel_x = index.x + ((i >> 0u) & 3u);
+            const uint32_t voxel_y = index.y + ((i >> 4u) & 3u);
+            const uint32_t voxel_z = index.z + ((i >> 2u) & 3u);
             if (voxel_x >= raw_data.w || voxel_y >= raw_data.h || voxel_z >= raw_data.d) continue;
-            const int voxel_offset = voxel_z * wh + voxel_y * raw_data.w + voxel_x;
+            const uint32_t voxel_offset = voxel_z * wh + voxel_y * raw_data.w + voxel_x;
             const MaterialIndex material = raw_data.voxels[voxel_offset];
 
             if (material > 0u) {
@@ -83,7 +82,7 @@ Svt64Node Svt64::subdivide(const RawVoxels& raw_data, uint32_t scale, glm::uvec3
 
     for (uint32_t i = 0u; i < 64u; ++i) {
         /* Subdivide the child node */
-        const glm::uvec3 child_index = glm::uvec3(i >> 0 & 3, i >> 4 & 3, i >> 2 & 3);
+        const glm::uvec3 child_index = glm::uvec3(i >> 0u & 3u, i >> 4u & 3u, i >> 2u & 3u);
         const Svt64Node child = subdivide(raw_data, scale, index + (child_index << scale));
 
         /* If the child is not empty */

@@ -25,19 +25,31 @@ bool VoxelVolume::load() {
 
     /* Copy the voxel data from the model */
     tree = std::make_unique<Svt64>(*model->tree.get());
-    width = model->width;
-    height = model->height;
-    depth = model->depth;
+    size = glm::uvec3(model->width, model->height, model->depth);
 
-    // VRAMBank& bank = engine.renderer.vram_bank();
-    // tree_nodes = bank.create_buffer();
+    /* Create GPU buffers for the voxel data */
+    /* TODO: These buffers need to scale when the voxel data is modified at run-time! */
+    VRAMBank& bank = engine.renderer.vram_bank();
+    const BufferUsage usage = BufferUsage::Storage | BufferUsage::TransferDst;
+    tree_nodes = bank.create_buffer(usage, tree->node_count, sizeof(Svt64Node)).expect("failed to create tree nodes buffer.");
+    tree_voxels = bank.create_buffer(usage, tree->voxel_count, sizeof(MaterialIndex)).expect("failed to create voxel data buffer.");
+
+    /* Upload the voxel data into the GPU buffers */
+    /* TODO: These buffers need to be updated when voxel data is modified at run-time! */
+    bank.upload_buffer(tree_nodes, tree->nodes, 0u, tree->node_count * sizeof(Svt64Node));
+    bank.upload_buffer(tree_voxels, tree->voxels, 0u, tree->voxel_count * sizeof(MaterialIndex));
 
     return true; 
 }
 
 void VoxelVolume::unload() {
+    /* Destroy the GPU buffers */
+    VRAMBank& bank = engine.renderer.vram_bank();
+    bank.destroy(tree_nodes);
+    bank.destroy(tree_voxels);
+
     tree = nullptr;
-    width = height = depth = 0u;
+    size = glm::uvec3(0u);
 }
 
 }  // namespace tmt

@@ -25,7 +25,7 @@ VoxelModel load_hierarchy(vengi::Node* node) {
         raw_voxels.d = model.depth = region.depth();
 
         const glm::ivec3 min = region.lower;
-        const glm::ivec3 max = region.upper + 1;
+        const glm::ivec3 max = region.upper;
         for (int32_t z = min.z; z < max.z; ++z) {
             for (int32_t y = min.y; y < max.y; ++y) {
                 for (int32_t x = min.x; x < max.x; ++x) {
