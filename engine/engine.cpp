@@ -67,9 +67,6 @@ void Engine::init(std::unique_ptr<Application> user_app) {
 void Engine::run() {
     timer.reset();
 
-    std::vector data = IO::read_file({IO::Location::ENGINE, "Master.bank"});
-    audio.load_bank(data); 
-
     float accumulator = 0.0f;
     while (is_running) {
         TMT_ZONE_SCOPED_N("Frame");

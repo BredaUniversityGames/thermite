@@ -37,7 +37,7 @@ void Audio::Init() {
     if (LogError(result, "Failed to initialize the FMOD Studio System")) return;
 
     result = system->getCoreSystem(&core_system);
-    if (LogError(result, "Failed to get the FMOD Studio System after initialization")) return;
+    LogError(result, "Failed to get the FMOD Studio System after initialization");
 }
 
 void Audio::update() {
@@ -48,8 +48,6 @@ void Audio::update() {
         instance->getPlaybackState(&state);
         return state == FMOD_STUDIO_PLAYBACK_STOPPED;
     });
-
-    Log::info("Active instance count: {}", active_instances.size());
 }
 
 FMOD::Studio::Bank* Audio::load_bank(const std::vector<char>& data) {
@@ -64,10 +62,6 @@ FMOD::Studio::Bank* Audio::load_bank(const std::vector<char>& data) {
     // Enable this to wait for loading to finish.
     result = system->flushSampleLoading();
     if (LogError(result, "FMOD bank could not flush sample loading")) return nullptr;
-
-    FMOD::Studio::EventDescription* descriptions[33];
-    bank->getEventList(descriptions, 33, nullptr);
-    for (auto* description : descriptions) start_event(description);
 
     return bank;
 }
