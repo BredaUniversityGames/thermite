@@ -103,7 +103,7 @@ Svt64Node Svt64::subdivide(const RawVoxels& raw_data, uint32_t scale, glm::uvec3
 
 void Svt64::build(const RawVoxels& raw_data) {
     /* Delete old data */
-    if (depth > 0u) { 
+    if (depth > 0u) {
         delete[] nodes;
         delete[] voxels;
         depth = 0u;
@@ -115,9 +115,9 @@ void Svt64::build(const RawVoxels& raw_data) {
     const uint32_t raw_voxels = raw_voxel_count(raw_data);
 
     /* Allocate space for new tree */
-    nodes = new Svt64Node[max_nodes]; // (Node*)malloc(1ull << 26);
+    nodes = new Svt64Node[max_nodes];  // (Node*)malloc(1ull << 26);
     node_count = 1u;
-    voxels = new MaterialIndex[raw_voxels + SVT64_BUFFER_MEMORY]; // (MaterialIndex*)malloc(1ull << 26);
+    voxels = new MaterialIndex[raw_voxels + SVT64_BUFFER_MEMORY];  // (MaterialIndex*)malloc(1ull << 26);
     voxel_count = 0u;
 
     /* Copy the material palette */
@@ -131,7 +131,7 @@ void Svt64::build(const RawVoxels& raw_data) {
 }
 
 Svt64::~Svt64() {
-    if (depth > 0u) { 
+    if (depth > 0u) {
         delete[] nodes;
         delete[] voxels;
         depth = 0u;

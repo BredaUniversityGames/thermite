@@ -19,7 +19,7 @@ const VoxelSceneNode* first_model(const VoxelSceneNode* parent) {
     return nullptr;
 }
 
-bool VoxelVolume::load() { 
+bool VoxelVolume::load() {
     /* TEMP: It's currently just grabbing the first model node */
     const VoxelSceneNode* model = first_model(&file_resource->hierarchy);
 
@@ -41,7 +41,7 @@ bool VoxelVolume::load() {
     bank.upload_buffer(blas_voxels, blas->voxels, 0u, blas->voxel_count * sizeof(MaterialIndex));
     bank.upload_buffer(blas_palette, &blas->palette, 0u, 255u * sizeof(Material));
 
-    return true; 
+    return true;
 }
 
 void VoxelVolume::unload() {

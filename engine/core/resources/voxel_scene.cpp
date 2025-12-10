@@ -65,7 +65,7 @@ VoxelSceneNode parse_hierarchy(const vengi::Node* file_node) {
             node.tree->palette.entries[i] = material;
         }
     }
-    
+
     /* Recursively traverse child nodes */
     node.children.resize(file_node->children.size());
     for (uint32_t i = 0u; i < file_node->children.size(); ++i) {
@@ -74,17 +74,15 @@ VoxelSceneNode parse_hierarchy(const vengi::Node* file_node) {
     return node;
 }
 
-bool VoxelScene::load() { 
+bool VoxelScene::load() {
     /* Parse the vengi file */
     const std::unique_ptr<vengi::Node> root = VengiParser::load(file_location);
 
     /* Traverse & parse the vengi scene */
     hierarchy = parse_hierarchy(root.get());
-    return true; 
+    return true;
 }
 
-void VoxelScene::unload() {
-    hierarchy = {};
-}
+void VoxelScene::unload() { hierarchy = {}; }
 
 }  // namespace tmt

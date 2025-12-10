@@ -13,7 +13,7 @@ struct VoxelSceneNode {
     /* Voxel acceleration structure. */
     std::unique_ptr<Svt64> tree {};
     glm::uvec3 size {};
-    
+
     /* Child nodes. */
     std::vector<VoxelSceneNode> children {};
 

@@ -17,7 +17,7 @@ class VoxelVolume : public tmt::RuntimeResource<VoxelScene> {
 
     /* 128 bit unique identifier. */
     uint64_t uuid[2] {};
-    
+
     /* Voxel acceleration structure. */
     std::unique_ptr<Svt64> blas {};
     glm::uvec3 size {};
