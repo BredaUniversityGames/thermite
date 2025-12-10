@@ -75,7 +75,7 @@ class InputEventMouseButton : public InputEventMouseMotion {
 };
 class InputEventGamepadButton : public InputEvent {
    public:
-    explicit InputEventGamepadButton(GamepadButton button, int32_t device_id = 0) : button(button), device_id(device_id) {}
+    explicit InputEventGamepadButton(GamepadButton button, int32_t device_id = -1) : button(button), device_id(device_id) {}
 
     bool is_pressed() const override;
     bool is_just_pressed() const override;
@@ -87,7 +87,7 @@ class InputEventGamepadButton : public InputEvent {
 
 class InputEventGamepadMotion : public InputEvent {
    public:
-    explicit InputEventGamepadMotion(GamepadAxis axis, int32_t device_id = 0) : axis(axis), device_id(device_id) {}
+    explicit InputEventGamepadMotion(GamepadAxis axis, int32_t device_id = -1) : axis(axis), device_id(device_id) {}
 
     // TODO add a configurable way to define when an axis is pressed
     bool is_pressed() const override;

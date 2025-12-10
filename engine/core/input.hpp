@@ -40,6 +40,11 @@ class Input {
         auto& action = actions[name];
         (action.events.push_back(std::make_unique<InputEventKey>(keys)), ...);
     }
+    template <typename... Buttons>
+    void add_action_gamepad_buttons(const std::string& name, Buttons... buttons) {
+        auto& action = actions[name];
+        (action.events.push_back(std::make_unique<InputEventGamepadButton>(buttons)), ...);
+    }
     void add_action_event(const std::string& name, std::unique_ptr<InputEvent> event);
 
     void add_key_to_action(const std::string& name, Key key);

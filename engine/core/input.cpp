@@ -20,6 +20,27 @@ void Input::init() {
     prev_keys.resize(number_keys, false);
     setup_default_action();
 }
+void Input::setup_default_action() {
+    add_action(action::CONFIRM);
+    add_action_keys(action::CONFIRM, Key::SPACE, Key::RETURN);
+    add_action_gamepad_buttons(action::CONFIRM, GamepadButton::SOUTH);
+
+    add_action(action::CANCEL);
+    add_action_keys(action::CANCEL, Key::ESCAPE);
+    add_action_gamepad_buttons(action::CANCEL, GamepadButton::EAST);
+
+    add_action(action::LEFT_CLICK);
+    add_action_mouse(action::LEFT_CLICK, MouseButton::LEFT);
+
+    add_action(action::RIGHT_CLICK);
+    add_action_mouse(action::RIGHT_CLICK, MouseButton::RIGHT);
+
+    add_action(action::MIDDLE_CLICK);
+    add_action_mouse(action::MIDDLE_CLICK, MouseButton::MIDDLE);
+
+    add_action(action::MOUSE_MOTION);
+    add_action_mouse_motion(action::MOUSE_MOTION);
+}
 void Input::update() {
     TMT_ZONE_SCOPED_N("Input")
     SDL_Event event {};
@@ -35,8 +56,9 @@ void Input::update() {
         }
 
         for (int32_t i = 0; i < static_cast<int32_t>(GamepadAxis::COUNT); i++) {
-            int16_t raw = SDL_GetGamepadAxis(state.handle, static_cast<SDL_GamepadAxis>(i));
-            state.axes[i] = raw / 32767.0f;
+            constexpr float INT16_MAX_F = 32767.0f;
+            auto raw = SDL_GetGamepadAxis(state.handle, static_cast<SDL_GamepadAxis>(i));
+            state.axes[i] = static_cast<int32_t>(static_cast<float>(raw) / INT16_MAX_F);
         }
     }
 
@@ -70,6 +92,7 @@ void Input::update() {
                 auto it = gamepads.find(id);
                 if (it != gamepads.end()) {
                     Log::info(Log::Scope::ENGINE, "Gamepad removed: {}", it->second.name);
+                    SDL_CloseGamepad(it->second.handle);
                     gamepads.erase(it);
                 }
                 break;
@@ -166,25 +189,6 @@ bool Input::is_action_just_released(std::string_view name) const {
 }
 void Input::set_mouse_relative_to_window(bool value) { SDL_SetWindowRelativeMouseMode(engine.window.window, value); }
 bool Input::get_mouse_relative_to_window() { return SDL_GetWindowRelativeMouseMode(engine.window.window); }
-void Input::setup_default_action() {
-    add_action(action::CONFIRM);
-    add_action_keys(action::CONFIRM, Key::SPACE, Key::RETURN);
-
-    add_action(action::CANCEL);
-    add_action_keys(action::CANCEL, Key::ESCAPE);
-
-    add_action(action::LEFT_CLICK);
-    add_action_mouse(action::LEFT_CLICK, MouseButton::LEFT);
-
-    add_action(action::RIGHT_CLICK);
-    add_action_mouse(action::RIGHT_CLICK, MouseButton::RIGHT);
-
-    add_action(action::MIDDLE_CLICK);
-    add_action_mouse(action::MIDDLE_CLICK, MouseButton::MIDDLE);
-
-    add_action(action::MOUSE_MOTION);
-    add_action_mouse_motion(action::MOUSE_MOTION);
-}
 
 void Input::add_key_to_action(const std::string& name, Key key) { add_action_event(name, std::make_unique<InputEventKey>(key)); }
 
