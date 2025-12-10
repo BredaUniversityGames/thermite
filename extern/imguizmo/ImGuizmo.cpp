@@ -1287,7 +1287,7 @@ namespace IMGUIZMO_NAMESPACE
       }
       else
       {
-         viewDirNormalized = Normalized(gContext.mCameraDir);
+          viewDirNormalized = Normalized(gContext.mModel.v.position - gContext.mCameraEye);
       }
 
       viewDirNormalized.TransformVector(gContext.mModelInverse);
@@ -1313,7 +1313,7 @@ namespace IMGUIZMO_NAMESPACE
 
          ImVec2* circlePos = (ImVec2*)alloca(sizeof(ImVec2) * (circleMul * halfCircleSegmentCount + 1));
 
-         float angleStart = atan2f(viewDirNormalized[(4 - axis) % 3], viewDirNormalized[(3 - axis) % 3]) + (gContext.mIsOrthographic ? ZPI : -ZPI) * 0.5f;
+         float angleStart = atan2f(viewDirNormalized[(4 - axis) % 3], viewDirNormalized[(3 - axis) % 3]) + ZPI * 0.5f;
 
          for (int i = 0; i < circleMul * halfCircleSegmentCount + 1; i++)
          {

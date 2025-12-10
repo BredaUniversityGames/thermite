@@ -17,8 +17,10 @@ class Viewport : public IWindow {
 
    private:
     void gizmo_manip();
+    void setup_gizmo_style();
 
     uint8_t gizmo_space = 1;
+    uint8_t gizmo_multiselect_mode = 0;
     uint8_t gizmo_operation = 0;
 
     static constexpr uint8_t GIZMO_OP_COUNT = 3; 
