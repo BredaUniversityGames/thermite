@@ -12,6 +12,7 @@ class Renderer;
 class Ecs;
 class Resources;
 class JobManager;
+class Audio;
 
 class Engine {
    public:
@@ -42,6 +43,7 @@ class Engine {
 
     Input& input;
     Window& window;
+    Audio& audio;
 
     Ecs& ecs;
     Renderer& renderer;

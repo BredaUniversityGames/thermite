@@ -7,6 +7,7 @@
 #include "core/input.hpp"
 
 #include "core/window.hpp"
+#include "core/audio.hpp"
 #include "core/ecs.hpp"
 #include "core/timer.hpp"
 
@@ -30,7 +31,7 @@ tmt::Engine tmt::engine;
 
 namespace tmt {
 
-Engine::Engine() : input(*new Input()), window(*new Window()), ecs(*new Ecs()), renderer(*new Renderer()), resources(*new Resources()), job_manager(*new JobManager()) {}
+Engine::Engine() : input(*new Input()), window(*new Window()), audio(*new Audio()), ecs(*new Ecs()), renderer(*new Renderer()), resources(*new Resources()), job_manager(*new JobManager()) {}
 
 Engine::~Engine() {
     /* Destruction should be in reverse order */
@@ -38,6 +39,7 @@ Engine::~Engine() {
     delete &resources;
     delete &renderer;
     delete &ecs;
+    delete &audio;
     delete &window;
     delete &input;
 }
@@ -51,6 +53,7 @@ void Engine::init(std::unique_ptr<Application> user_app) {
     input.init();
     window.init(app->specs);
     renderer.init();
+    //audio.Init();
 
     ecs.systems.add<Physics>();
     ecs.systems.add<Animation>();
@@ -63,6 +66,9 @@ void Engine::init(std::unique_ptr<Application> user_app) {
 // Example stuff
 void Engine::run() {
     timer.reset();
+
+    std::vector data = IO::read_file({IO::Location::ENGINE, "Master.bank"});
+    audio.load_bank(data); 
 
     float accumulator = 0.0f;
     while (is_running) {
@@ -83,12 +89,14 @@ void Engine::run() {
 
         const FrameData frame_data = {.delta_time = timer.tick()};
 
-        const bool shoulld_update = game_controller.is_playing() && !game_controller.is_paused();
+        const bool should_update = game_controller.is_playing() && !game_controller.is_paused();
         /* Update */
-        if (shoulld_update) {
+        if (should_update) {
             update_game(frame_data);
         }
         update_engine(frame_data);
+
+        audio.update();
 
         accumulator += frame_data.delta_time;
         while (accumulator >= Config::FIXED_TIME_STEP) {
@@ -97,7 +105,7 @@ void Engine::run() {
             TMT_ZONE_SCOPED_N("Fixed Update")
 
             /* Fixed Update */
-            if (shoulld_update) {
+            if (should_update) {
                 fixed_update_game(frame_data);
             }
             fixed_update_engine(frame_data);
