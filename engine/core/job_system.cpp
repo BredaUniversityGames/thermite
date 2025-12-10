@@ -9,6 +9,8 @@
 namespace tmt {
 
 JobManager::JobManager() {
+    exit.clear();
+
     // Set the flags to not accidentally start the worker threads once they get created.
     worker_threads_active.clear();
     finished_working.test_and_set();
