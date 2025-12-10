@@ -3,7 +3,7 @@
 #include <glm/gtc/quaternion.hpp>
 
 #include "engine/core/entity.hpp"
-#include "engine/core/component.hpp"
+#include "engine/core/reflection.hpp"
 
 namespace tmt {
 

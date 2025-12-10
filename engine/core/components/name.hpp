@@ -1,6 +1,6 @@
 #pragma once
 #include <string>
-#include "engine/core/component.hpp"
+#include "engine/core/reflection.hpp"
 
 #include "engine/tools/fmt/helper.hpp"
 

@@ -1,6 +1,6 @@
 #pragma once
 #include <glm/glm.hpp>
-#include "engine/core/component.hpp"
+#include "engine/core/reflection.hpp"
 
 #include <memory>
 
@@ -15,4 +15,4 @@ struct VoxelRenderer {
 
 }  // namespace tmt
 
-TMT_COMPONENT(tmt::VoxelRenderer, "Voxel Renderer", (size));
+TMT_COMPONENT(tmt::VoxelRenderer, "Voxel Renderer", (resource));

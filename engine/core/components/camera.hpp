@@ -1,5 +1,5 @@
 #pragma once
-#include "engine/core/component.hpp"
+#include "engine/core/reflection.hpp"
 
 #include "engine/core/entity.hpp"
 
