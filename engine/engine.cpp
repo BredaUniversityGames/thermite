@@ -20,6 +20,8 @@
 #include "events/engine.hpp"
 #include "events/game.hpp"
 #include "core/resources.hpp"
+#include "core/job_system.hpp"
+#include "tools/profiler.hpp"
 
 bool tmt::Engine::get_is_running() const { return is_running; }
 void tmt::Engine::set_is_running(bool value) { is_running = value; }
@@ -28,10 +30,11 @@ tmt::Engine tmt::engine;
 
 namespace tmt {
 
-Engine::Engine() : input(*new Input()), window(*new Window()), ecs(*new Ecs()), renderer(*new Renderer()), resources(*new Resources()) {}
+Engine::Engine() : input(*new Input()), window(*new Window()), ecs(*new Ecs()), renderer(*new Renderer()), resources(*new Resources()), job_manager(*new JobManager()) {}
 
 Engine::~Engine() {
     /* Destruction should be in reverse order */
+    delete &job_manager;
     delete &resources;
     delete &renderer;
     delete &ecs;
@@ -40,6 +43,8 @@ Engine::~Engine() {
 }
 
 void Engine::init(std::unique_ptr<Application> user_app) {
+    TMT_ZONE_SCOPED_N("Initializing")
+
     app = std::move(user_app);
     Log::init(app->specs.log_file.string());
 
@@ -61,6 +66,8 @@ void Engine::run() {
 
     float accumulator = 0.0f;
     while (is_running) {
+        TMT_ZONE_SCOPED_N("Frame");
+
         if (game_controller.should_game_end()) {
             end_game();
             game_controller.should_end_game = false;
@@ -87,6 +94,8 @@ void Engine::run() {
         while (accumulator >= Config::FIXED_TIME_STEP) {
             accumulator -= Config::FIXED_TIME_STEP;
 
+            TMT_ZONE_SCOPED_N("Fixed Update")
+
             /* Fixed Update */
             if (shoulld_update) {
                 fixed_update_game(frame_data);
@@ -106,32 +115,46 @@ void Engine::run() {
 }
 
 void Engine::end() {
+    TMT_ZONE_SCOPED_N("Engine::end")
+
     OnEngineEnd::dispatch();
+
+    ecs.clear();
+    resources.unload_unused();
     renderer.end();
 }
 
 /* Engine events */
 void Engine::update_engine(const FrameData& frame_data) {
     /* dispatch */
+    TMT_ZONE_SCOPED_N("Engine::update_engine")
+
     OnEngineUpdate::dispatch(frame_data);
 }
 void Engine::fixed_update_engine(const FrameData& frame_data) {
+    TMT_ZONE_SCOPED_N("Engine::fixed_update_engine")
+
     /* dispatch */
     OnEngineFixedUpdate::dispatch(frame_data);
 }
 
 /* Game events */
 void Engine::start_game() {
+    TMT_ZONE_SCOPED_N("Engine::start_game")
+
     app->on_start();
     OnGameStart::dispatch();
 }
 
 void Engine::update_game(const FrameData& frame_data) {
+    TMT_ZONE_SCOPED_N("Engine::update_game")
+
     app->on_update(frame_data);
     OnGameUpdate::dispatch(frame_data);
 }
 
 void Engine::fixed_update_game(const FrameData& frame_data) {
+    TMT_ZONE_SCOPED_N("Engine::fixed_update_game")
     app->on_fixed_update(frame_data);
     OnGameFixedUpdate::dispatch(frame_data);
 }

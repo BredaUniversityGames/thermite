@@ -9,6 +9,7 @@
 #include "window.hpp"
 
 #include "engine/events/sdl.hpp"
+#include "tools/profiler.hpp"
 
 using namespace tmt;
 void Input::init() {
@@ -18,6 +19,7 @@ void Input::init() {
     setup_default_action();
 }
 void Input::update() {
+    TMT_ZONE_SCOPED_N("Input")
     SDL_Event event {};
 
     std::copy_n(keys, prev_keys.size(), prev_keys.begin());
@@ -47,6 +49,10 @@ void Input::update() {
                 engine.window.width = event.window.data1;
                 engine.window.height = event.window.data2;
                 engine.window.resized = true;
+                break;
+            case SDL_EVENT_WINDOW_RESTORED:
+                engine.window.resized = true;
+                break;
             case SDL_EVENT_MOUSE_WHEEL:
                 scroll_dx = event.wheel.x;
                 scroll_dy = event.wheel.y;

@@ -21,6 +21,8 @@
 #include "editor/windows/game_flow.hpp"
 #include "editor/windows/inspector.hpp"
 
+#include "windows/profiler_tracy.hpp"
+
 /* Singleton */
 tmt::Editor tmt::editor;
 
@@ -39,6 +41,7 @@ void Editor::on_engine_init(const ApplicationSpecs&) {
     windows.add<Hierarchy>();
     windows.add<GameFlow>();
     windows.add<Inspector>();
+    windows.add<Profiler>();
 
     for (auto& system : windows) {
         system->on_editor_start();
@@ -57,6 +60,16 @@ void Editor::on_engine_update(const FrameData& time) {
         system->display();
         ImGui::End();
     }
+
+    ImGui::Begin("Viewport");
+
+    auto size = ImGui::GetContentRegionAvail();
+
+    engine.renderer.render_view.set_viewport_size(size.x, size.y);
+
+    ImGui::Image((ImTextureRef)engine.renderer.render_view.imgui_viewport, size);
+
+    ImGui::End();
 
     imgui_manager.end_frame();
 }
