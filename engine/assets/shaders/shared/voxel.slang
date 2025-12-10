@@ -13,11 +13,13 @@ public struct VoxelObject {
     uint size_y;
     uint size_z;
     uint blas_handle;
-    uint voxels_handle;
+    public uint voxels_handle;
+    public uint palette_handle;
 };
 
-public inline Hit intersect_voxel_object<let DEBUG : bool>(Ray ray, VoxelObject object) {
+public inline Hit intersect_voxel_object<let DEBUG : bool>(Ray ray, VoxelObject object, float t) {
     /* Transform the ray into the local space of the object */
+    const float3 world_origin = ray.origin;
     ray.origin = mul(object.world_to_local, float4(ray.origin, 1.0f)).xyz;
     ray.dir = mul(object.world_to_local, float4(ray.dir, 0.0f)).xyz;
     ray.rcp_dir = 1.0f / ray.dir;
@@ -29,12 +31,13 @@ public inline Hit intersect_voxel_object<let DEBUG : bool>(Ray ray, VoxelObject 
     const float3 t_min = min(t_to_min, t_to_max);
     const float3 t_max = max(t_to_min, t_to_max);
     const float t_near = max(max(max(t_min.x, t_min.y), t_min.z), 0.0f);
-    const float t_far = min(min(t_max.x, t_max.y), t_max.z);
+    const float t_far = min(min(min(t_max.x, t_max.y), t_max.z), t);
     if (t_near > t_far) return Hit::miss();
 
     Hit hit;
     hit.t = t_near;
     hit.steps = 1u;
+    hit.voxel_index = 0u;
     return hit;
 #if 0
     /* Move to the point of entry */
@@ -44,12 +47,30 @@ public inline Hit intersect_voxel_object<let DEBUG : bool>(Ray ray, VoxelObject 
     ray.origin = ray.origin / half_extent * 0.5f + 1.5f;
 
     /* Fetch the SVT64 buffers */
+<<<<<<< Updated upstream
     const StructuredBuffer<Svt64Node> nodes = bindless::storage_buffer<StructuredBuffer<Svt64Node>>(6);
     const StructuredBuffer<uint8_t> voxels = bindless::storage_buffer<StructuredBuffer<uint8_t>>(7);
 
     /* Trace the SVT64 */
     Hit hit = trace_svt64<DEBUG>(nodes, voxels, ray);
     hit.t += t_near;
+=======
+    const StructuredBuffer<Svt64Node> nodes = bindless::storage_buffer<StructuredBuffer<Svt64Node>>(object.blas_handle);
+
+    /* Trace the SVT64 */
+    const Svt64Hit local_hit = trace_svt64<DEBUG>(nodes, ray);
+
+    Hit hit = Hit::miss(); /* Fill-in hit info */
+    if (DEBUG) hit.steps = local_hit.steps;
+    if (local_hit.miss()) return Hit::miss();
+
+    /* Calculate world-space hit point and distance */
+    const float3 hit_ndc = local_hit.point * 4.0f - 5.0f;
+    const float3 hit_point = mul(object.local_to_world, float4(hit_ndc * half_extent, 1.0f)).xyz;
+    hit.t = distance(world_origin, hit_point);
+    hit.voxel_index = local_hit.voxel_index;
+    hit.debug = hit_ndc;
+>>>>>>> Stashed changes
     return hit;
 #endif
 }

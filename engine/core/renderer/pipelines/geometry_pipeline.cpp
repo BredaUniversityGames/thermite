@@ -43,30 +43,39 @@ void GeometryPipeline::init(GPUAdapter& gpu) {
 }
 
 void GeometryPipeline::enqueue(RenderGraph& render_graph, Buffer render_view) {
-    /* Capture all voxel renderers in the scene */
-    const entt::basic_group group = engine.ecs.get_registry().group<const VoxelRenderer>(entt::get<Transform>);
-
     /* Get Render Image */
     const BindHandle render_image = engine.renderer.get_render_image();
 
-    /* Allocate space for all voxel objects */
-    std::vector<VoxelObject> objects {};
-    objects.reserve(std::min(group.size(), (size_t)MAX_VOXEL_OBJECTS));
+    static bool test = false;
+    if (test == false) {
+        /* Capture all voxel renderers in the scene */
+        const entt::basic_group group = engine.ecs.get_registry().group<const VoxelRenderer>(entt::get<Transform>);
 
-    /* Iterate over all voxel renderers */
-    for (auto&& [entity, renderer, transform] : group.each()) {
-        /* Convert the entity to a voxel object */
-        VoxelObject object {};
-        object.local_to_world = transform.get_world_matrix();
-        object.world_to_local = glm::inverse(object.local_to_world);
-        object.size = renderer.size;
-        object.blas_handle = blas_nodes.get_index();
-        object.voxels_handle = voxel_data.get_index();
-        objects.push_back(std::move(object));
+        /* Allocate space for all voxel objects */
+        std::vector<VoxelObject> objects {};
+        objects.reserve(std::min(group.size(), (size_t)MAX_VOXEL_OBJECTS));
+
+        /* Iterate over all voxel renderers */
+        for (auto&& [entity, renderer, transform] : group.each()) {
+            if (objects.size() >= (size_t)MAX_VOXEL_OBJECTS) break;
+            if (renderer.resource == nullptr) continue;
+
+            /* Convert the entity to a voxel object */
+            VoxelObject object {};
+            object.local_to_world = transform.get_world_matrix();
+            object.world_to_local = glm::inverse(object.local_to_world);
+            object.size = renderer.resource->size;
+            object.blas_handle = renderer.resource->blas_nodes.get_index();
+            object.voxels_handle = renderer.resource->blas_voxels.get_index();
+            object.palette_handle = renderer.resource->blas_palette.get_index();
+            objects.push_back(std::move(object));
+        }
+
+        /* Build a BVH over the scene */
+        bvh.build(objects.data(), (uint32_t)objects.size());
+
+        test = true;
     }
-
-    /* Build a BVH over the scene */
-    bvh.build(objects.data(), (uint32_t)objects.size());
 
     /* Upload the object buffers */
     render_graph.upload_buffer(bvh_nodes, bvh.gpu_nodes, 0u, bvh.node_count * sizeof(AilaLaineNode));
