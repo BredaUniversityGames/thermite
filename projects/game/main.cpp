@@ -1,5 +1,7 @@
 #include "engine/entry_point.hpp"
 #include "engine/core/ecs.hpp"
+#include "engine/core/resources.hpp"
+#include "engine/core/resources/voxel_volume.hpp"
 #include "engine/core/components/transform.hpp"
 #include "engine/core/components/camera.hpp"
 #include "engine/core/components/voxel_renderer.hpp"
@@ -37,6 +39,9 @@ void Game::on_start() {
         auto& camera = tmt::engine.ecs.add_component<tmt::Camera>(entity);
         transform.set_world_position(glm::vec3(0.0f, 0.0f, -16.0f));
     }
+
+    auto voxel_file = tmt::engine.resources.load_resource<tmt::VoxelScene>({tmt::IO::Location::PROJECT, "dragon128.vengi"});
+    auto voxel_volume = tmt::engine.resources.copy_resource<tmt::VoxelVolume>(voxel_file);
 
     { /* Voxel entity */
         voxel = tmt::engine.ecs.create_entity("Moving Voxel");

@@ -2,6 +2,8 @@
 
 #include <graphite/resources/handle.hh>
 
+#include "core/renderer/render_view.hpp"
+
 #include "engine/shared/bvh2.hpp"
 #include "engine/shared/svt64.hpp"
 
@@ -21,12 +23,8 @@ class GeometryPipeline {
     Buffer object_indices {};
     Buffer object_data {};
 
-    Buffer blas_nodes {};
-    Buffer voxel_data {};
-
     /* Acceleration structures */
     Bvh2<VoxelObject> bvh {};
-    Svt64 svt {};
 
    public:
     GeometryPipeline() {}
@@ -36,7 +34,7 @@ class GeometryPipeline {
     GeometryPipeline& operator=(const GeometryPipeline&) = delete;
 
     void init(GPUAdapter& gpu);
-    void enqueue(RenderGraph& render_graph, Buffer render_view);
+    void enqueue(RenderGraph& render_graph, RenderView render_view);
     void deinit(GPUAdapter& gpu);
 };
 

@@ -3,6 +3,7 @@ module voxel;
 import math;
 import view;
 import svt64;
+import material;
 import bindless;
 
 /* Represents a renderable voxel object. */
@@ -34,12 +35,13 @@ public inline Hit intersect_voxel_object<let DEBUG : bool>(Ray ray, VoxelObject 
     const float t_far = min(min(min(t_max.x, t_max.y), t_max.z), t);
     if (t_near > t_far) return Hit::miss();
 
+#if 0
     Hit hit;
     hit.t = t_near;
     hit.steps = 1u;
     hit.voxel_index = 0u;
     return hit;
-#if 0
+#else
     /* Move to the point of entry */
     ray.origin = ray.origin + ray.dir * t_near;
 
@@ -47,14 +49,6 @@ public inline Hit intersect_voxel_object<let DEBUG : bool>(Ray ray, VoxelObject 
     ray.origin = ray.origin / half_extent * 0.5f + 1.5f;
 
     /* Fetch the SVT64 buffers */
-<<<<<<< Updated upstream
-    const StructuredBuffer<Svt64Node> nodes = bindless::storage_buffer<StructuredBuffer<Svt64Node>>(6);
-    const StructuredBuffer<uint8_t> voxels = bindless::storage_buffer<StructuredBuffer<uint8_t>>(7);
-
-    /* Trace the SVT64 */
-    Hit hit = trace_svt64<DEBUG>(nodes, voxels, ray);
-    hit.t += t_near;
-=======
     const StructuredBuffer<Svt64Node> nodes = bindless::storage_buffer<StructuredBuffer<Svt64Node>>(object.blas_handle);
 
     /* Trace the SVT64 */
@@ -70,7 +64,6 @@ public inline Hit intersect_voxel_object<let DEBUG : bool>(Ray ray, VoxelObject 
     hit.t = distance(world_origin, hit_point);
     hit.voxel_index = local_hit.voxel_index;
     hit.debug = hit_ndc;
->>>>>>> Stashed changes
     return hit;
 #endif
 }
