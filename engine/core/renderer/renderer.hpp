@@ -44,7 +44,7 @@ class Renderer {
     void init();
     void update();
     void end();
-    
+
     /* If we are running the editor, we render to the viewport_image, otherwise we render directly to the render_target */
     BindHandle get_render_image() const;
 
