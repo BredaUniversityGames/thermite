@@ -194,30 +194,30 @@ void Renderer::set_imgui(ImGUI* new_imgui, ImGUIFunctions functions) {
     imgui_viewport = imgui->add_image(viewport_image);
 }
 
-BindHandle Renderer::get_render_image() const {
-#ifdef THERMITE_EDITOR
-    return viewport_image;
-#else
-    return render_target;
-#endif  // THERMITE_EDITOR
-}
+//BindHandle Renderer::get_render_image() const {
+//#ifdef THERMITE_EDITOR
+//    return viewport_image;
+//#else
+//    return render_target;
+//#endif  // THERMITE_EDITOR
+//}
 
-u64 Renderer::get_imgui_viewport() const { return imgui_viewport; }
+//u64 Renderer::get_imgui_viewport() const { return imgui_viewport; }
 
-void Renderer::set_viewport_size(uint32_t width, uint32_t height) {
-    if (width != render_view.resolution.x || height != render_view.resolution.y) {
-        render_view.resolution = {width, height};
-
-        if (const Result r = gpu.get_vram_bank().resize_texture(viewport_texture, {width, height, 0}); r.is_err()) {
-            Log::error(Log::Scope::RENDERER, "failed to resize the viewport texture.\nreason: {}", r.unwrap_err().c_str());
-        } else {
-            Log::info(Log::Scope::RENDERER, "viewport texture has been resized.");
-        }
-
-        imgui->remove_image(viewport_image);
-        imgui_viewport = imgui->add_image(viewport_image);
-    }
-}
+//void Renderer::set_viewport_size(uint32_t width, uint32_t height) {
+//    if (width != render_view.resolution.x || height != render_view.resolution.y) {
+//        render_view.resolution = {width, height};
+//
+//        if (const Result r = gpu.get_vram_bank().resize_texture(viewport_texture, {width, height, 0}); r.is_err()) {
+//            Log::error(Log::Scope::RENDERER, "failed to resize the viewport texture.\nreason: {}", r.unwrap_err().c_str());
+//        } else {
+//            Log::info(Log::Scope::RENDERER, "viewport texture has been resized.");
+//        }
+//
+//        imgui->remove_image(viewport_image);
+//        imgui_viewport = imgui->add_image(viewport_image);
+//    }
+//}
 
 void Renderer::draw_line(const glm::vec3 start, const glm::vec3 end, const glm::vec3 color) { debug_pipeline.draw_line(start, end, color); }
 
