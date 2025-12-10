@@ -8,7 +8,6 @@ namespace tmt {
 
 class RigModelManager : public ISystem {
    public:
-
     std::string get_name() override;
 
     void on_start() override;

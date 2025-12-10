@@ -58,8 +58,7 @@ void RigModel::init(const IO::FileLocation& directory, Entity p) {
     }
 }
 
-RigModel::RigModel(const IO::FileLocation& directory, Entity p) {
-}
+RigModel::RigModel(const IO::FileLocation& directory, Entity p) {}
 
 std::string tmt::RigModel::current_animation_playing() {
     switch (state) {
