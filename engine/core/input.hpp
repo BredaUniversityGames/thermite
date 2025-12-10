@@ -38,9 +38,9 @@ class Input {
     void remove_action(const std::string& name);
     void add_action_mouse_motion(const std::string& name);
 
-    bool is_action_pressed(const std::string& name) const;
-    bool is_action_just_pressed(const std::string& name) const;
-    bool is_action_just_released(const std::string& name) const;
+    bool is_action_pressed(std::string_view name) const;
+    bool is_action_just_pressed(std::string_view name) const;
+    bool is_action_just_released(std::string_view name) const;
 
     bool is_keyboard_button_just_pressed(Key key) const;
     bool is_keyboard_button_pressed(Key key) const;

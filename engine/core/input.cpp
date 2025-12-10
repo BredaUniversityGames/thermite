@@ -87,8 +87,8 @@ bool Input::is_mouse_button_just_released(MouseButton button) const {
     return is_pressed == false && was_pressed == true;
 }
 
-bool Input::is_action_pressed(const std::string& name) const {
-    auto it = actions.find(name);
+bool Input::is_action_pressed(std::string_view name) const {
+    auto it = actions.find(std::string {name});
     if (it == actions.end()) {
         Log::warn(Log::Scope::ENGINE, "No input action found with this name {}", name);
         return false;
@@ -100,8 +100,8 @@ bool Input::is_action_pressed(const std::string& name) const {
     return false;
 }
 
-bool Input::is_action_just_pressed(const std::string& name) const {
-    auto it = actions.find(name);
+bool Input::is_action_just_pressed(std::string_view name) const {
+    auto it = actions.find(std::string {name});
     if (it == actions.end()) {
         Log::warn(Log::Scope::ENGINE, "No input action found with this name {}", name);
         return false;
@@ -114,8 +114,8 @@ bool Input::is_action_just_pressed(const std::string& name) const {
     return false;
 }
 
-bool Input::is_action_just_released(const std::string& name) const {
-    auto it = actions.find(name);
+bool Input::is_action_just_released(std::string_view name) const {
+    auto it = actions.find(std::string {name});
     if (it == actions.end()) {
         Log::warn(Log::Scope::ENGINE, "No input action found with this name {}", name);
 
