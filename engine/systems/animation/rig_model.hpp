@@ -1,11 +1,8 @@
 #pragma once
 
-#include "engine.hpp"
+#include "engine/engine.hpp"
 #include "engine/core/ecs.hpp"
-// #include "../transform.hpp"
 #include "animation_data.hpp"
-
-// #include "tools/macros.hpp"
 
 struct BoneComp {
     int id = -1;

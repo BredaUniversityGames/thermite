@@ -56,19 +56,6 @@ void Engine::init(std::unique_ptr<Application> user_app) {
     ecs.systems.add<Goap>();
 
     OnEngineInit::dispatch(app->specs);
-
-    auto rig_ent = ecs.create_entity();
-    auto& rig_ent_transform = ecs.add_component<Transform>(rig_ent);
-    auto& rig_ent_rig_model_comp = ecs.add_component<RigModel>(rig_ent);
-
-    IO::FileLocation location {IO::Location::PROJECT, "Victory_animation.fbx"};
-    rig_ent_rig_model_comp.init(location, rig_ent);
-    rig_ent_rig_model_comp.data->animation_files.push_back(location);
-    rig_ent_rig_model_comp.data->reload();
-
-    rig_ent_rig_model_comp.set_current_animation("Victory_animation");
-    rig_ent_rig_model_comp.state = RigModel::State::ANIMATE_LOOP;
-    rig_ent_rig_model_comp.time = 0.0f;
 }
 
 // Example stuff
