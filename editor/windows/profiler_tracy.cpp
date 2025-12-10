@@ -1,11 +1,11 @@
 #include "profiler_tracy.hpp"
 
+#include "engine/core/io.hpp"
+
 #include <imgui.h>
 #include <SDL3/SDL_dialog.h>
 #include <windows.h>
 
-#include <algorithm>
-#include <cstring>
 #include <string>
 #include <vector>
 
@@ -15,15 +15,7 @@ namespace tmt {
 // only this file uses these
 namespace {
 
-// C style arrays for compatibility
-char profiler_path[256] = "tracy.exe";
-char capture_path[256] = "tracy-capture.exe";
-char output_path[256] = "profile.tracy";
-char address[128] = "127.0.0.1";
-int32_t port = 8086;
-bool overwrite = true;
-bool use_timer = false;
-int32_t duration = 10;
+ProfilerSettings settings;
 HANDLE capture_process = nullptr;
 
 constexpr SDL_DialogFileFilter k_exe_filters[] = {{"Executable", "exe"}, {"All files", "*"}};
@@ -37,9 +29,9 @@ void launch_profiler() {
     STARTUPINFOA si = {sizeof(si)};
     PROCESS_INFORMATION pi = {};
 
-    std::string cmd = std::string(profiler_path);
-    cmd += " -a " + std::string(address);
-    cmd += " -p " + std::to_string(port);
+    std::string cmd = std::string(settings.profiler_path);
+    cmd += " -a " + std::string(settings.address);
+    cmd += " -p " + std::to_string(settings.port);
 
     std::vector buf(cmd.begin(), cmd.end());
     buf.push_back('\0');
@@ -57,15 +49,15 @@ void launch_capture() {
     STARTUPINFOA si = {sizeof(si)};
     PROCESS_INFORMATION pi = {};
 
-    std::string cmd = std::string(capture_path);
-    cmd += " -o " + std::string(output_path);
-    cmd += " -a " + std::string(address);
-    cmd += " -p " + std::to_string(port);
-    if (overwrite) {
+    std::string cmd = std::string(settings.capture_path);
+    cmd += " -o " + std::string(settings.output_path);
+    cmd += " -a " + std::string(settings.address);
+    cmd += " -p " + std::to_string(settings.port);
+    if (settings.overwrite) {
         cmd += " -f";
     }
-    if (use_timer) {
-        cmd += " -s " + std::to_string(duration);
+    if (settings.use_timer) {
+        cmd += " -s " + std::to_string(settings.duration);
     }
 
     std::vector buf(cmd.begin(), cmd.end());
@@ -113,39 +105,51 @@ void SDLCALL on_file_selected(void* userdata, const char* const* filelist, int f
 
     switch (dialog) {
         case DialogType::PROFILER:
-            strncpy_s(profiler_path, *filelist, sizeof(profiler_path) - 1);
-            profiler_path[sizeof(profiler_path) - 1] = '\0';
-            Log::info("Selected profiler: {}", profiler_path);
+            strncpy_s(settings.profiler_path, *filelist, sizeof(settings.profiler_path) - 1);
+            settings.profiler_path[sizeof(settings.profiler_path) - 1] = '\0';
+            Log::info("Selected profiler: {}", settings.profiler_path);
             break;
         case DialogType::CAPTURE:
-            strncpy_s(capture_path, *filelist, sizeof(capture_path) - 1);
-            capture_path[sizeof(capture_path) - 1] = '\0';
-            Log::info("Selected capture: {}", capture_path);
+            strncpy_s(settings.capture_path, *filelist, sizeof(settings.capture_path) - 1);
+            settings.capture_path[sizeof(settings.capture_path) - 1] = '\0';
+            Log::info("Selected capture: {}", settings.capture_path);
             break;
         case DialogType::OUTPUT:
-            strncpy_s(output_path, *filelist, sizeof(output_path) - 1);
-            output_path[sizeof(output_path) - 1] = '\0';
-            Log::info("Selected output: {}", output_path);
+            strncpy_s(settings.output_path, *filelist, sizeof(settings.output_path) - 1);
+            settings.output_path[sizeof(settings.output_path) - 1] = '\0';
+            Log::info("Selected output: {}", settings.output_path);
             break;
     }
 }
 
 }  // namespace
 
-void Profiler::on_editor_start() {}
+void Profiler::on_editor_start() {
+    std::string text = tmt::IO::read_text_file(IO::FileLocation {.sub_location = IO::Location::EDITOR, .relative_path = "profiler_settings.json"});
+
+    if (text.empty()) {
+        tmt::Log::warn(Log::Scope::ENGINE, "Could not load profiler settings");
+        return;
+    }
+
+    tmt::Serializer::deserialize(json {text}, settings);
+}
 
 void Profiler::on_editor_update(const tmt::FrameData& time) { (void)time; }
 
-void Profiler::on_editor_end() {}
+void Profiler::on_editor_end() {
+    auto json = tmt::Serializer::serialize(settings);
+    tmt::IO::write_text_file(IO::FileLocation {.sub_location = IO::Location::EDITOR, .relative_path = "profiler_settings.json"}, json.dump());
+}
 
 void Profiler::display() {
-    ImGui::InputText("Address", address, sizeof(address));
-    ImGui::InputInt("Port", &port);
+    ImGui::InputText("settings.address", settings.address, sizeof(settings.address));
+    ImGui::InputInt("settings.port", &settings.port);
 
     ImGui::Separator();
 
     if (ImGui::CollapsingHeader("Profiler", ImGuiTreeNodeFlags_DefaultOpen)) {
-        ImGui::InputText("Path##profiler", profiler_path, sizeof(profiler_path));
+        ImGui::InputText("Path##profiler", settings.profiler_path, sizeof(settings.profiler_path));
         ImGui::SameLine();
         if (ImGui::Button("Browse##profiler")) {
             dialog = DialogType::PROFILER;
@@ -158,28 +162,28 @@ void Profiler::display() {
     }
 
     if (ImGui::CollapsingHeader("Capture", ImGuiTreeNodeFlags_DefaultOpen)) {
-        ImGui::InputText("Path##capture", capture_path, sizeof(capture_path));
+        ImGui::InputText("Path##capture", settings.capture_path, sizeof(settings.capture_path));
         ImGui::SameLine();
         if (ImGui::Button("Browse##capture")) {
             dialog = DialogType::CAPTURE;
             SDL_ShowOpenFileDialog(on_file_selected, nullptr, nullptr, k_exe_filters, SDL_arraysize(k_exe_filters), nullptr, false);
         }
 
-        ImGui::InputText("Output File", output_path, sizeof(output_path));
+        ImGui::InputText("Output File", settings.output_path, sizeof(settings.output_path));
         ImGui::SameLine();
         if (ImGui::Button("Browse##output")) {
             dialog = DialogType::OUTPUT;
             SDL_ShowSaveFileDialog(on_file_selected, nullptr, nullptr, k_output_filters, SDL_arraysize(k_output_filters), nullptr);
         }
 
-        ImGui::Checkbox("Overwrite existing", &overwrite);
+        ImGui::Checkbox("settings.overwrite existing", &settings.overwrite);
 
-        ImGui::Checkbox("Timed Capture", &use_timer);
-        if (use_timer) {
+        ImGui::Checkbox("Timed Capture", &settings.use_timer);
+        if (settings.use_timer) {
             ImGui::SameLine();
             ImGui::SetNextItemWidth(100);
-            ImGui::InputInt("seconds", &duration);
-            duration = max(1, duration);
+            ImGui::InputInt("seconds", &settings.duration);
+            settings.duration = max(1, settings.duration);
         }
 
         bool running = is_capture_running();
