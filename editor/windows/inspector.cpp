@@ -17,8 +17,8 @@
 
 #include "editor/windows/hierarchy.hpp"
 
-#include "editor/core/components/all.hpp"
-#include "editor/core/types/all.hpp"
+#include "editor/imgui/components/all.hpp"
+#include "editor/imgui/types/all.hpp"
 
 namespace tmt {
 

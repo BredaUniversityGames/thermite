@@ -1,10 +1,11 @@
 #pragma once
 #include <ImReflect.hpp>
 
-#include "editor/core/types/glm.hpp"
 #include "engine/core/components/transform.hpp"
 
-void tag_invoke(ImReflect::ImInput_t, const char* label, tmt::Transform& value, ImSettings& settings, ImResponse& response) {
+#include "editor/imgui/types/glm.hpp"
+
+void tag_invoke(ImReflect::ImInput_t, const char*, tmt::Transform& value, ImSettings& settings, ImResponse& response) {
     auto& type_settings = settings.get<tmt::Transform>();
     auto& type_response = response.get<tmt::Transform>();
 
@@ -49,7 +50,7 @@ void tag_invoke(ImReflect::ImInput_t, const char* label, tmt::Transform& value, 
         glm::vec3 scale = value.get_local_scale();
 
         ImReflect::Input("Scale", scale, scale_settings, scale_response);
-        
+
         if (scale_response.is_changed()) {
             scale_response.debug_log();
             value.set_local_scale(scale);

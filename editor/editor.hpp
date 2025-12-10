@@ -17,6 +17,7 @@ class Editor : public OnEngineInit, public OnEngineUpdate, public OnEngineFixedU
     void init();
 
     SystemCollection<IWindow> windows;
+
    private:
     void on_engine_init(const ApplicationSpecs& specs) override;
     void on_engine_update(const FrameData& time) override;

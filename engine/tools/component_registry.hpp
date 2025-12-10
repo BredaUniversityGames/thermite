@@ -4,7 +4,9 @@
 namespace tmt {
 
 template <typename T>
-struct type_tag { using type = T; };
+struct type_tag {
+    using type = T;
+};
 
 template <typename... Components>
 class ComponentRegistry {

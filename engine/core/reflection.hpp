@@ -31,8 +31,8 @@ struct Component {
     namespace tmt {                                              \
     template <>                                                  \
     struct Component<Type> {                                     \
-        static constexpr const char* name = Name;                \
-        static constexpr const char* get_name() { return name; } \
+        static constexpr const char* NAME = Name;                \
+        static constexpr const char* get_name() { return NAME; } \
     };                                                           \
     }                                                            \
     TMT_REFLECTION_IMPL(Type, ImguiFields, JsonFields)
