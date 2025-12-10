@@ -7,8 +7,6 @@
 #include "engine/core/logger.hpp"
 #include "engine/systems/animation/animation_system.hpp"
 
-
-
 class Game : public tmt::Application {
    public:
     Game(const tmt::ApplicationSpecs& specs) : Application(specs) {}
