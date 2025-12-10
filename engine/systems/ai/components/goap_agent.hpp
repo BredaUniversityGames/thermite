@@ -8,6 +8,7 @@ namespace tmt {
 
 struct GoapAgent {
     std::vector<std::unique_ptr<GoapAction>> actions;
+    GoapAction* current_action = nullptr;
 
     std::vector<GoapGoal> available_goals;
     GoapGoal active_goal;

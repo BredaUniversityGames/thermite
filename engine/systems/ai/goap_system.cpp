@@ -35,7 +35,7 @@ void Goap::process_agent(Entity entity, WorldState& ws, float dt) {
 
     update_goal(entity, agent, ws);
     if (agent.needs_replan) update_plan(entity, agent, ws);
-    update_action(entity, agent, dt);
+    update_action(entity, agent, ws, dt);
 }
 
 // ------------------------------------------------------
@@ -89,6 +89,13 @@ struct Node {
 // Step 2: planning
 // ------------------------------------------------------
 void Goap::update_plan(Entity entity, GoapAgent& agent, WorldState& ws) {
+    // Interrupt running action if any
+    if (agent.current_action) {
+        agent.current_action->on_interrupt(entity, engine.ecs.get_registry());
+        agent.current_action->is_running = false;
+        agent.current_action = nullptr;
+    }
+
     agent.clear_plan();
 
     // Storage for nodes
@@ -208,11 +215,56 @@ void Goap::update_plan(Entity entity, GoapAgent& agent, WorldState& ws) {
 // ------------------------------------------------------
 // Step 3: action execution
 // ------------------------------------------------------
-void Goap::update_action(Entity, GoapAgent& agent, float) {
-    GoapAction* action = agent.get_current_action();
-    if (!action) return;  // no plan yet
+void Goap::update_action(Entity entity, GoapAgent& agent, WorldState& ws, float dt) {
+    if (agent.plan.empty()) {
+        Log::info("GOAP No plan for agent {}", entity);
+        return;
+    }
 
-    // TODO: logic for running the action
+    // If no current action, pick from plan
+    GoapAction* action = agent.current_action;
+
+    if (!action) {
+        action = agent.plan[agent.current_index];
+        agent.current_action = action;
+
+        Log::info("GOAP {} START (index = {})", action->get_name(), agent.current_index);
+        action->is_running = true;
+        action->on_start(entity, engine.ecs.get_registry());
+    }
+
+    // Check for precondition invalidation
+    if (!action->check_preconditions(ws)) {
+        Log::info("GOAP {} INTERRUPT (preconditions failed)", action->get_name());
+        action->on_interrupt(entity, engine.ecs.get_registry());
+
+        action->is_running = false;
+        agent.current_action = nullptr;
+        agent.plan.clear();
+        agent.needs_replan = true;
+        return;
+    }
+
+    // Tick the action
+    action->on_tick(entity, engine.ecs.get_registry(), dt);
+
+    // Check if action is completed
+    if (action->is_done(entity, engine.ecs.get_registry())) {
+        Log::info("GOAP {} FINISHED", action->get_name());
+
+        action->apply_effects(ws);
+        action->on_finished(entity, engine.ecs.get_registry());
+        action->is_running = false;
+
+        agent.current_index++;
+        agent.current_action = nullptr;
+
+        // Check if plan is completed
+        if (agent.current_index >= (int)agent.plan.size()) {
+            Log::info("GOAP Plan completed for agent {}", entity);
+            agent.needs_replan = true;
+        }
+    }
 }
 
 }  // namespace tmt

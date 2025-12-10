@@ -27,7 +27,7 @@ class Goap : public ISystem {
     void update_plan(Entity entity, GoapAgent& agent, WorldState& ws);
 
     // Step 3: Execute current action
-    void update_action(Entity entity, GoapAgent& agent, float dt);
+    void update_action(Entity entity, GoapAgent& agent, WorldState& ws, float dt);
 };
 
 }  // namespace tmt
