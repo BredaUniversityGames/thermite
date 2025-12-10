@@ -32,8 +32,6 @@ class Renderer {
     DebugPipeline& debug_pipeline;
     GeometryPipeline& geometry_pipeline;
 
-    bool viewport_resized = true;
-
    public:
     RenderView render_view {};
 
