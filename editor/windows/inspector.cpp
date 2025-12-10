@@ -25,7 +25,7 @@ void Inspector::display() {
 
         const bool has_component = tmt::engine.ecs.has_component<T>(selected_entity);
         if (has_component) {
-            const auto& name = typeid(T).name();
+            const auto& name = tmt::Component<T>::get_name();
             if (ImGui::CollapsingHeader(name, ImGuiTreeNodeFlags_DefaultOpen)) {
                 T& component_instance = tmt::engine.ecs.get_component<T>(selected_entity);
                 ImReflect::Input("", component_instance);

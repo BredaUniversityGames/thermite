@@ -1,7 +1,6 @@
 #pragma once
 #include <string>
-#include <visit_struct/visit_struct.hpp>
-#include <ImReflect_macro.hpp>
+#include "engine/core/component.hpp"
 
 #include "engine/tools/fmt/helper.hpp"
 
@@ -12,4 +11,4 @@ struct Name {
 }  // namespace tmt
 
 FMT_LOGGING(tmt::Name, "name: \"{}\"", obj.name);
-IMGUI_REFLECT(tmt::Name, name);
+TMT_COMPONENT(tmt::Name, "Name", (name));
