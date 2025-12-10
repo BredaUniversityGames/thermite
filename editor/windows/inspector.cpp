@@ -4,8 +4,11 @@
 #include <ImReflect.hpp>
 
 #include "engine/engine.hpp"
+
 #include "engine/core/system_collection.hpp"
 #include "engine/core/components/all.hpp"
+
+#include "engine/tools/serialize_defines.hpp"
 
 #include "editor/editor.hpp"
 
@@ -14,7 +17,8 @@
 
 #include "editor/windows/hierarchy.hpp"
 
-#include "engine/tools/serialize_defines.hpp"
+#include "editor/core/components/all.hpp"
+#include "editor/core/types/all.hpp"
 
 namespace tmt {
 
