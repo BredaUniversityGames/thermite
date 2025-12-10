@@ -2,6 +2,7 @@
 
 #include <SDL3/SDL_events.h>
 #include <SDL3/SDL_keyboard.h>
+#include <SDL3/SDL_gamepad.h>
 
 #include "engine.hpp"
 #include "keys.hpp"
@@ -12,61 +13,86 @@
 #include "tools/profiler.hpp"
 
 using namespace tmt;
+
 void Input::init() {
     int32_t number_keys;
     keys = SDL_GetKeyboardState(&number_keys);
     prev_keys.resize(number_keys, false);
     setup_default_action();
-
-    int count = 0;
-    auto* gamepads = SDL_GetGamepads(&count);
-
-    for (int i = 0; i < count; i++) {
-        auto gamepad = gamepads[i];
-
-        const auto* name = SDL_GetGamepadNameForID(gamepad);
-        tmt::Log::info(Log::Scope::ENGINE, "Found gamepad connected: {}", name);
-    }
 }
 void Input::update() {
     TMT_ZONE_SCOPED_N("Input")
     SDL_Event event {};
-
     std::copy_n(keys, prev_keys.size(), prev_keys.begin());
     prev_mouse_buttons = mouse_buttons;
 
+    // Update gamepad states
+    for (auto& [id, state] : gamepads) {
+        state.prev_buttons = state.buttons;
+
+        for (int32_t i = 0; i < static_cast<int32_t>(GamepadButton::COUNT); i++) {
+            state.buttons[i] = SDL_GetGamepadButton(state.handle, static_cast<SDL_GamepadButton>(i));
+        }
+
+        for (int32_t i = 0; i < static_cast<int32_t>(GamepadAxis::COUNT); i++) {
+            int16_t raw = SDL_GetGamepadAxis(state.handle, static_cast<SDL_GamepadAxis>(i));
+            state.axes[i] = raw / 32767.0f;
+        }
+    }
+
     mouse_dx = 0;
     mouse_dy = 0;
-
     scroll_dx = 0;
     scroll_dy = 0;
     // Get current mouse state
     mouse_buttons = SDL_GetMouseState(&mouse_x, &mouse_y);
-
     while (SDL_PollEvent(&event)) {
         internal::OnSdlEvent::dispatch(event);
-
         switch (event.type) {
             case SDL_EVENT_QUIT: {
                 engine.set_is_running(false);
                 break;
             }
-            case SDL_EVENT_MOUSE_MOTION:
+            case SDL_EVENT_GAMEPAD_ADDED: {
+                int32_t id = event.gdevice.which;
+                SDL_Gamepad* handle = SDL_OpenGamepad(id);
+                if (handle) {
+                    GamepadState state;
+                    state.handle = handle;
+                    state.name = SDL_GetGamepadName(handle) ? SDL_GetGamepadName(handle) : "Unknown";
+                    gamepads[id] = state;
+                    Log::info(Log::Scope::ENGINE, "Gamepad added: {}", state.name);
+                }
+                break;
+            }
+            case SDL_EVENT_GAMEPAD_REMOVED: {
+                int32_t id = event.gdevice.which;
+                auto it = gamepads.find(id);
+                if (it != gamepads.end()) {
+                    Log::info(Log::Scope::ENGINE, "Gamepad removed: {}", it->second.name);
+                    gamepads.erase(it);
+                }
+                break;
+            }
+            case SDL_EVENT_MOUSE_MOTION: {
                 mouse_dx += event.motion.xrel;
                 mouse_dy += event.motion.yrel;
                 break;
-            case SDL_EVENT_WINDOW_RESIZED:
+            }
+            case SDL_EVENT_WINDOW_RESIZED: {
                 engine.window.width = event.window.data1;
                 engine.window.height = event.window.data2;
                 engine.window.resized = true;
                 break;
+            }
             case SDL_EVENT_WINDOW_RESTORED:
                 engine.window.resized = true;
                 break;
-            case SDL_EVENT_MOUSE_WHEEL:
+            case SDL_EVENT_MOUSE_WHEEL: {
                 scroll_dx = event.wheel.x;
                 scroll_dy = event.wheel.y;
                 break;
+            }
             default:
                 break;
         }
@@ -140,7 +166,6 @@ bool Input::is_action_just_released(std::string_view name) const {
 }
 void Input::set_mouse_relative_to_window(bool value) { SDL_SetWindowRelativeMouseMode(engine.window.window, value); }
 bool Input::get_mouse_relative_to_window() { return SDL_GetWindowRelativeMouseMode(engine.window.window); }
-void Input::get_all_connected_gamepad() {}
 void Input::setup_default_action() {
     add_action(action::CONFIRM);
     add_action_keys(action::CONFIRM, Key::SPACE, Key::RETURN);
@@ -168,4 +193,62 @@ void Input::add_action_event(const std::string& name, std::unique_ptr<InputEvent
 void Input::add_action_mouse(const std::string& name, MouseButton button) { add_action_event(name, std::make_unique<InputEventMouseButton>(button)); }
 
 void Input::remove_action(const std::string& name) { actions.erase(name); }
-void Input::add_action_mouse_motion(const std::string& name) { add_action_event(name, std::make_unique<InputEventMouse>()); }
+void Input::add_action_mouse_motion(const std::string& name) { add_action_event(name, std::make_unique<InputEventMouseMotion>()); }
+
+int32_t Input::get_default_gamepad_id() const {
+    if (gamepads.empty()) {
+        tmt::Log::warn("No gamepad is connected");
+        return -1;
+    }
+    return gamepads.begin()->first;
+}
+
+bool Input::is_gamepad_button_pressed(GamepadButton button, int32_t device_id) const {
+    if (device_id == -1) device_id = get_default_gamepad_id();
+    if (device_id == -1) return false;
+
+    auto it = gamepads.find(device_id);
+    if (it == gamepads.end()) {
+        Log::warn(Log::Scope::ENGINE, "Gamepad with id {} not found", device_id);
+        return false;
+    }
+    return it->second.buttons[static_cast<int32_t>(button)];
+}
+
+bool Input::is_gamepad_button_just_pressed(GamepadButton button, int32_t device_id) const {
+    if (device_id == -1) device_id = get_default_gamepad_id();
+    if (device_id == -1) return false;
+
+    auto it = gamepads.find(device_id);
+    if (it == gamepads.end()) {
+        Log::warn(Log::Scope::ENGINE, "Gamepad with id {} not found", device_id);
+        return false;
+    }
+    int32_t idx = static_cast<int32_t>(button);
+    return it->second.buttons[idx] && !it->second.prev_buttons[idx];
+}
+
+bool Input::is_gamepad_button_just_released(GamepadButton button, int32_t device_id) const {
+    if (device_id == -1) device_id = get_default_gamepad_id();
+    if (device_id == -1) return false;
+
+    auto it = gamepads.find(device_id);
+    if (it == gamepads.end()) {
+        Log::warn(Log::Scope::ENGINE, "Gamepad with id {} not found", device_id);
+        return false;
+    }
+    int32_t idx = static_cast<int32_t>(button);
+    return !it->second.buttons[idx] && it->second.prev_buttons[idx];
+}
+
+float Input::get_gamepad_axis(GamepadAxis axis, int32_t device_id) const {
+    if (device_id == -1) device_id = get_default_gamepad_id();
+    if (device_id == -1) return 0.0f;
+
+    auto it = gamepads.find(device_id);
+    if (it == gamepads.end()) {
+        Log::warn(Log::Scope::ENGINE, "Gamepad with id {} not found", device_id);
+        return 0.0f;
+    }
+    return it->second.axes[static_cast<int32_t>(axis)];
+}

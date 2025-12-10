@@ -2,9 +2,11 @@
 #include <string>
 #include <memory>
 #include <unordered_map>
+#include <array>
 
 #include "keys.hpp"
 #include "engine/events/input_event.hpp"
+struct SDL_Gamepad;
 
 namespace tmt {
 namespace action {
@@ -17,6 +19,13 @@ constexpr const char* MOUSE_MOTION = "mouse_motion";
 }  // namespace action
 struct InputAction {
     std::vector<std::unique_ptr<InputEvent>> events;
+};
+struct GamepadState {
+    SDL_Gamepad* handle {nullptr};
+    std::string name {};
+    std::array<bool, static_cast<int32_t>(GamepadButton::COUNT)> buttons {};
+    std::array<bool, static_cast<int32_t>(GamepadButton::COUNT)> prev_buttons {};
+    std::array<float, static_cast<int32_t>(GamepadAxis::COUNT)> axes {};
 };
 class Input {
    public:
@@ -60,8 +69,13 @@ class Input {
     void set_mouse_relative_to_window(bool value);
     bool get_mouse_relative_to_window();
 
-    // Gamepad related
-    void get_all_connected_gamepad();
+    // Gamepad
+    bool is_gamepad_button_pressed(GamepadButton button, int32_t device_id = -1) const;
+    bool is_gamepad_button_just_pressed(GamepadButton button, int32_t device_id = -1) const;
+    bool is_gamepad_button_just_released(GamepadButton button, int32_t device_id = -1) const;
+    float get_gamepad_axis(GamepadAxis axis, int32_t device_id = -1) const;
+    int32_t get_default_gamepad_id() const;
+
    private:
     void setup_default_action();
     // do not free this manually
@@ -80,5 +94,6 @@ class Input {
 
     std::vector<bool> prev_keys {};
     std::unordered_map<std::string, InputAction> actions {};
+    std::unordered_map<int32_t, GamepadState> gamepads {};
 };
 }  // namespace tmt
