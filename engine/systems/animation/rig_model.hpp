@@ -64,6 +64,3 @@ class RigModel {
 };
 
 }  // namespace tmt
-
-// VISITABLE_STRUCT(BoneComp, id);
-// VISITABLE_STRUCT(kudzu::RigModel, file_directory, rig_path, bone_entities, voxel_entities);

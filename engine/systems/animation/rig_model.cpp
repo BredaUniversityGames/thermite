@@ -1,13 +1,5 @@
 #include "rig_model.hpp"
 
-// #include "../resources.hpp"
-
-// #include "graphics/debug_render.hpp"
-// #include "voxel_resource.hpp"
-// #include "tools/profiler.hpp"
-//
-// #include "tools/log.hpp"
-
 #include "engine/core/logger.hpp"
 #include "engine/core/components/transform.hpp"
 #include "engine.hpp"
@@ -67,38 +59,7 @@ void RigModel::init(const IO::FileLocation& directory, Entity p) {
 }
 
 RigModel::RigModel(const IO::FileLocation& directory, Entity p) {
-    // init(directory, p);
 }
-
-// void tmt::RigModel::attach_voxel_objects(const IO::FileLocation& directory) {
-//     vox_is_loaded = true;
-//     VoxParser vox {directory, filename};
-//     const auto entity = vox.instantiate();
-//     voxel_entities = entity;
-//     glm::vec3 armature_pos = Engine.ecs().get_component<Transform>(armature_entity).GetWorldPosition();
-//
-//
-//     for (int i = 0; i < entity.size(); i++) {
-//         auto& transf = Engine.ecs().get_component<Transform>(entity[i]);
-//         for (int j = 0; j < bone_entities.size(); j++) {
-//             auto* rig_transf = kudzu::Engine.ecs().registry.try_get<kudzu::Transform>(bone_entities[j]);
-//             if (rig_transf->Name == transf.Name) {
-//                 BoneComp& bone_comp_id = Engine.ecs().registry.get<BoneComp>(bone_entities[j]);
-//                 Bone& b = data->bones[bone_comp_id.id];
-//
-//                 pivot_entities.push_back(Engine.ecs().create_entity());
-//                 auto& pivot_transf = Engine.ecs().get_component<Transform>(pivot_entities.back());
-//                 pivot_transf.SetParent(bone_entities[j]);
-//
-//                 transf.SetParent(pivot_entities.back());
-//                 transf.SetTranslation(b.mesh_offset - (rig_transf->GetWorldPosition() - armature_pos));
-//                 pivot_transf.SetRotation(glm::inverse(glm::toQuat(rig_transf->World())));
-//                 pivot_transf.Name = "pivot";
-//
-//             }
-//         }
-//     }
-// }
 
 std::string tmt::RigModel::current_animation_playing() {
     switch (state) {
