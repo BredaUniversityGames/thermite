@@ -19,10 +19,10 @@
 namespace tmt {
 template <typename T>
 struct Component {
-    static constexpr const char* name = "Unknown";
+    static constexpr const char* NAME = "Unknown";
 
     // Optional: helper function
-    static constexpr const char* get_name() { return name; }
+    static constexpr const char* get_name() { return NAME; }
 };
 }  // namespace tmt
 
