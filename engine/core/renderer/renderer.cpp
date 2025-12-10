@@ -126,11 +126,9 @@ void Renderer::update() {
 
     render_graph.new_graph().unwrap();
 
-#ifdef THERMITE_EDITOR
-
-#else
+#ifndef THERMITE_EDITOR
     render_view.resolution = glm::uvec2(engine.window.width, engine.window.height);
-#endif  // THERMITE_EDITOR
+#endif  // !THERMITE_EDITOR
     if (cam_entity != entt::null) {
         const float aspect_ratio = (float)render_view.resolution.x / (float)render_view.resolution.y;
         /* Get active camera */
