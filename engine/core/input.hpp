@@ -16,6 +16,9 @@ constexpr const char* LEFT_CLICK = "left_click";
 constexpr const char* RIGHT_CLICK = "right_click";
 constexpr const char* MIDDLE_CLICK = "middle_click";
 constexpr const char* MOUSE_MOTION = "mouse_motion";
+constexpr auto GAMEPAD_LEFT_STICK = "gamepad_left_stick";
+constexpr auto GAMEPAD_RIGHT_STICK = "gamepad_right_stick";
+constexpr auto GAMEPAD_TRIGGERS = "gamepad_triggers";
 }  // namespace action
 struct InputAction {
     std::vector<std::unique_ptr<InputEvent>> events;
@@ -44,6 +47,11 @@ class Input {
     void add_action_gamepad_buttons(const std::string& name, Buttons... buttons) {
         auto& action = actions[name];
         (action.events.push_back(std::make_unique<InputEventGamepadButton>(buttons)), ...);
+    }
+    template <typename... Axes>
+    void add_action_gamepad_axes(const std::string& name, Axes... axes) {
+        auto& action = actions[name];
+        (action.events.push_back(std::make_unique<InputEventGamepadMotion>(axes)), ...);
     }
     void add_action_event(const std::string& name, std::unique_ptr<InputEvent> event);
 
@@ -79,6 +87,8 @@ class Input {
     bool is_gamepad_button_just_pressed(GamepadButton button, int32_t device_id = -1) const;
     bool is_gamepad_button_just_released(GamepadButton button, int32_t device_id = -1) const;
     float get_gamepad_axis(GamepadAxis axis, int32_t device_id = -1) const;
+    const char* get_gamepad_button_name(GamepadButton button, int32_t device_id = -1) const;
+    const char* get_gamepad_axis_name(GamepadAxis axis) const;
     int32_t get_default_gamepad_id() const;
 
    private:

@@ -3,6 +3,7 @@
 #include <SDL3/SDL_events.h>
 #include <SDL3/SDL_keyboard.h>
 #include <SDL3/SDL_gamepad.h>
+#include <extern/JsonReflect/JsonReflect_primitives.hpp>
 
 #include "engine.hpp"
 #include "keys.hpp"
@@ -31,15 +32,27 @@ void Input::setup_default_action() {
 
     add_action(action::LEFT_CLICK);
     add_action_mouse(action::LEFT_CLICK, MouseButton::LEFT);
+    add_action_gamepad_buttons(action::LEFT_CLICK, GamepadButton::RIGHT_SHOULDER);
 
     add_action(action::RIGHT_CLICK);
     add_action_mouse(action::RIGHT_CLICK, MouseButton::RIGHT);
+    add_action_gamepad_buttons(action::RIGHT_CLICK, GamepadButton::LEFT_SHOULDER);
 
     add_action(action::MIDDLE_CLICK);
     add_action_mouse(action::MIDDLE_CLICK, MouseButton::MIDDLE);
+    add_action_gamepad_buttons(action::MIDDLE_CLICK, GamepadButton::RIGHT_STICK);
 
     add_action(action::MOUSE_MOTION);
     add_action_mouse_motion(action::MOUSE_MOTION);
+
+    add_action(action::GAMEPAD_LEFT_STICK);
+    add_action_gamepad_axes(action::GAMEPAD_LEFT_STICK, GamepadAxis::LEFT_X, GamepadAxis::LEFT_Y);
+
+    add_action(action::GAMEPAD_RIGHT_STICK);
+    add_action_gamepad_axes(action::GAMEPAD_RIGHT_STICK, GamepadAxis::RIGHT_X, GamepadAxis::RIGHT_Y);
+
+    add_action(action::GAMEPAD_TRIGGERS);
+    add_action_gamepad_axes(action::GAMEPAD_TRIGGERS, GamepadAxis::LEFT_TRIGGER, GamepadAxis::RIGHT_TRIGGER);
 }
 void Input::update() {
     TMT_ZONE_SCOPED_N("Input")
@@ -58,7 +71,7 @@ void Input::update() {
         for (int32_t i = 0; i < static_cast<int32_t>(GamepadAxis::COUNT); i++) {
             constexpr float INT16_MAX_F = 32767.0f;
             auto raw = SDL_GetGamepadAxis(state.handle, static_cast<SDL_GamepadAxis>(i));
-            state.axes[i] = static_cast<int32_t>(static_cast<float>(raw) / INT16_MAX_F);
+            state.axes[i] = static_cast<float>(raw) / INT16_MAX_F;
         }
     }
 
@@ -108,9 +121,10 @@ void Input::update() {
                 engine.window.resized = true;
                 break;
             }
-            case SDL_EVENT_WINDOW_RESTORED:
+            case SDL_EVENT_WINDOW_RESTORED: {
                 engine.window.resized = true;
                 break;
+            }
             case SDL_EVENT_MOUSE_WHEEL: {
                 scroll_dx = event.wheel.x;
                 scroll_dy = event.wheel.y;
@@ -201,7 +215,6 @@ void Input::add_action_mouse_motion(const std::string& name) { add_action_event(
 
 int32_t Input::get_default_gamepad_id() const {
     if (gamepads.empty()) {
-        tmt::Log::warn("No gamepad is connected");
         return -1;
     }
     return gamepads.begin()->first;
@@ -256,3 +269,15 @@ float Input::get_gamepad_axis(GamepadAxis axis, int32_t device_id) const {
     }
     return it->second.axes[static_cast<int32_t>(axis)];
 }
+
+const char* Input::get_gamepad_button_name(GamepadButton button, int32_t device_id) const {
+    if (device_id == -1) device_id = get_default_gamepad_id();
+    if (device_id == -1) return magic_enum::enum_name(button).data();
+
+    auto it = gamepads.find(device_id);
+    if (it == gamepads.end()) return magic_enum::enum_name(button).data();
+
+    return magic_enum::enum_name(button).data();
+}
+
+const char* Input::get_gamepad_axis_name(GamepadAxis axis) const { return magic_enum::enum_name(axis).data(); }
