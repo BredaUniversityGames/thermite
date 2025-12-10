@@ -1,4 +1,3 @@
-#include "windows/profiler_tracy.hpp"
 #if THERMITE_EDITOR
 #pragma message(" THERMITE_EDITOR=1 ")
 #else
@@ -19,6 +18,8 @@
 
 #include "editor/windows/hierarchy.hpp"
 #include "editor/windows/game_flow.hpp"
+
+#include "windows/profiler_tracy.hpp"
 
 /* Singleton */
 tmt::Editor tmt::editor;
