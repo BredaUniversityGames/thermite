@@ -30,7 +30,7 @@ tmt::Engine tmt::engine;
 
 namespace tmt {
 
-Engine::Engine() : input(*new Input()), window(*new Window()), ecs(*new Ecs()), renderer(*new Renderer()), resources(*new Resources()), job_manager(*new JobManager()) {}
+Engine::Engine() : window(*new Window()), input(*new Input()), ecs(*new Ecs()), renderer(*new Renderer()), resources(*new Resources()), job_manager(*new JobManager()) {}
 
 Engine::~Engine() {
     /* Destruction should be in reverse order */
@@ -38,8 +38,8 @@ Engine::~Engine() {
     delete &resources;
     delete &renderer;
     delete &ecs;
-    delete &window;
     delete &input;
+    delete &window;
 }
 
 void Engine::init(std::unique_ptr<Application> user_app) {
@@ -48,8 +48,8 @@ void Engine::init(std::unique_ptr<Application> user_app) {
     app = std::move(user_app);
     Log::init(app->specs.log_file.string());
 
-    input.init();
     window.init(app->specs);
+    input.init();
     renderer.init();
 
     ecs.systems.add<Physics>();

@@ -17,6 +17,16 @@ void Input::init() {
     keys = SDL_GetKeyboardState(&number_keys);
     prev_keys.resize(number_keys, false);
     setup_default_action();
+
+    int count = 0;
+    auto* gamepads = SDL_GetGamepads(&count);
+
+    for (int i = 0; i < count; i++) {
+        auto gamepad = gamepads[i];
+
+        const auto* name = SDL_GetGamepadNameForID(gamepad);
+        tmt::Log::info(Log::Scope::ENGINE, "Found gamepad connected: {}", name);
+    }
 }
 void Input::update() {
     TMT_ZONE_SCOPED_N("Input")
@@ -130,6 +140,7 @@ bool Input::is_action_just_released(std::string_view name) const {
 }
 void Input::set_mouse_relative_to_window(bool value) { SDL_SetWindowRelativeMouseMode(engine.window.window, value); }
 bool Input::get_mouse_relative_to_window() { return SDL_GetWindowRelativeMouseMode(engine.window.window); }
+void Input::get_all_connected_gamepad() {}
 void Input::setup_default_action() {
     add_action(action::CONFIRM);
     add_action_keys(action::CONFIRM, Key::SPACE, Key::RETURN);

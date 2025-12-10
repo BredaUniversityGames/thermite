@@ -60,6 +60,8 @@ class Input {
     void set_mouse_relative_to_window(bool value);
     bool get_mouse_relative_to_window();
 
+    // Gamepad related
+    void get_all_connected_gamepad();
    private:
     void setup_default_action();
     // do not free this manually
