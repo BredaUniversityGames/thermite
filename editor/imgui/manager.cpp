@@ -9,6 +9,7 @@
 
 #include "engine/core/window.hpp"
 #include "engine/core/renderer/renderer.hpp"
+#include "ImGuizmo.h"
 
 namespace tmt {
 
@@ -25,6 +26,7 @@ void ImGuiManager::new_frame() {
     imgui.new_frame();
     ImGui_ImplSDL3_NewFrame();
     ImGui::NewFrame();
+    ImGuizmo::BeginFrame();
 }
 
 void ImGuiManager::end_frame() {

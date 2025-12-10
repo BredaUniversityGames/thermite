@@ -89,7 +89,23 @@ if (THERMITE_EDITOR_BUILD)
     )
 
     target_compile_definitions(thermite-editor PRIVATE IMGUI_IMPL_VULKAN_USE_VOLK)
+
+    # ImGuizmo - ImGui based gizmo manipulation
+    # https://github.com/CedricGuillemet/ImGuizmo
+    target_sources(thermite-editor
+        PRIVATE "./imguizmo/GraphEditor.cpp"
+        PRIVATE "./imguizmo/ImCurveEdit.cpp"
+        PRIVATE "./imguizmo/ImGradient.cpp"
+        PRIVATE "./imguizmo/ImSequencer.cpp"
+        PRIVATE "./imguizmo/GraphEditor.cpp"
+        PRIVATE "./imguizmo/ImGuizmo.cpp"
+    )
+    target_include_directories(thermite-editor
+        PRIVATE "./imguizmo"
+    )
+
 endif()
+
 # tracy - profiler integration
 # https://github.com/wolfpld/tracy
 option(TRACY_ENABLE "" OFF)

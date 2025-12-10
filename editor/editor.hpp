@@ -16,6 +16,7 @@ class Editor : public OnEngineInit, public OnEngineUpdate, public OnEngineFixedU
 
     void init();
 
+    SystemCollection<IWindow> windows;
    private:
     void on_engine_init(const ApplicationSpecs& specs) override;
     void on_engine_update(const FrameData& time) override;
@@ -23,7 +24,6 @@ class Editor : public OnEngineInit, public OnEngineUpdate, public OnEngineFixedU
     void on_engine_end() override;
 
     ImGuiManager& imgui_manager;
-    SystemCollection<IWindow> windows;
 };
 
 /* Singleton */
