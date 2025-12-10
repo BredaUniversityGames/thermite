@@ -10,10 +10,10 @@ struct ProfilerSettings {
     int32_t port = 8086;
     int32_t duration = 10;
     // C style arrays for compatibility
-    char profiler_path[256] = "tracy.exe";
-    char capture_path[256] = "tracy-capture.exe";
-    char output_path[256] = "profile.tracy";
-    char address[128] = "127.0.0.1";
+    std::string profiler_path = "tracy.exe";
+    std::string capture_path = "tracy-capture.exe";
+    std::string output_path = "profile.tracy";
+    std::string address = "127.0.0.1";
 };
 // This implementation is windows specific
 class Profiler : public IWindow {

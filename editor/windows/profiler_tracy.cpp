@@ -29,8 +29,8 @@ void launch_profiler() {
     STARTUPINFOA si = {sizeof(si)};
     PROCESS_INFORMATION pi = {};
 
-    std::string cmd = std::string(settings.profiler_path);
-    cmd += " -a " + std::string(settings.address);
+    std::string cmd = settings.profiler_path;
+    cmd += " -a " + settings.address;
     cmd += " -p " + std::to_string(settings.port);
 
     std::vector buf(cmd.begin(), cmd.end());
@@ -49,9 +49,9 @@ void launch_capture() {
     STARTUPINFOA si = {sizeof(si)};
     PROCESS_INFORMATION pi = {};
 
-    std::string cmd = std::string(settings.capture_path);
-    cmd += " -o " + std::string(settings.output_path);
-    cmd += " -a " + std::string(settings.address);
+    std::string cmd = settings.capture_path;
+    cmd += " -o " + settings.output_path;
+    cmd += " -a " + settings.address;
     cmd += " -p " + std::to_string(settings.port);
     if (settings.overwrite) {
         cmd += " -f";
@@ -94,29 +94,33 @@ bool is_capture_running() {
     }
     return false;
 }
+bool InputTextString(const char* label, std::string& str, size_t max_size = 256) {
+    std::vector<char> buf(max_size);
+    strncpy_s(buf.data(), buf.size(), str.c_str(), _TRUNCATE);
 
+    if (ImGui::InputText(label, buf.data(), buf.size())) {
+        str = buf.data();
+        return true;
+    }
+    return false;
+}
 void SDLCALL on_file_selected(void* userdata, const char* const* filelist, int filter) {
     (void)userdata;
     (void)filter;
 
-    if (!filelist || !*filelist) {
-        return;
-    }
+    if (!filelist || !*filelist) return;
 
     switch (dialog) {
         case DialogType::PROFILER:
-            strncpy_s(settings.profiler_path, *filelist, sizeof(settings.profiler_path) - 1);
-            settings.profiler_path[sizeof(settings.profiler_path) - 1] = '\0';
+            settings.profiler_path = *filelist;
             Log::info("Selected profiler: {}", settings.profiler_path);
             break;
         case DialogType::CAPTURE:
-            strncpy_s(settings.capture_path, *filelist, sizeof(settings.capture_path) - 1);
-            settings.capture_path[sizeof(settings.capture_path) - 1] = '\0';
+            settings.capture_path = *filelist;
             Log::info("Selected capture: {}", settings.capture_path);
             break;
         case DialogType::OUTPUT:
-            strncpy_s(settings.output_path, *filelist, sizeof(settings.output_path) - 1);
-            settings.output_path[sizeof(settings.output_path) - 1] = '\0';
+            settings.output_path = *filelist;
             Log::info("Selected output: {}", settings.output_path);
             break;
     }
@@ -132,7 +136,7 @@ void Profiler::on_editor_start() {
         return;
     }
 
-    tmt::Serializer::deserialize(json {text}, settings);
+    tmt::Serializer::deserialize(json::parse(text), settings);
 }
 
 void Profiler::on_editor_update(const tmt::FrameData& time) { (void)time; }
@@ -143,13 +147,13 @@ void Profiler::on_editor_end() {
 }
 
 void Profiler::display() {
-    ImGui::InputText("settings.address", settings.address, sizeof(settings.address));
-    ImGui::InputInt("settings.port", &settings.port);
+    InputTextString("Address", settings.address);
+    ImGui::InputInt("Port", &settings.port);
 
     ImGui::Separator();
 
     if (ImGui::CollapsingHeader("Profiler", ImGuiTreeNodeFlags_DefaultOpen)) {
-        ImGui::InputText("Path##profiler", settings.profiler_path, sizeof(settings.profiler_path));
+        InputTextString("Path##profiler", settings.profiler_path);
         ImGui::SameLine();
         if (ImGui::Button("Browse##profiler")) {
             dialog = DialogType::PROFILER;
@@ -162,21 +166,21 @@ void Profiler::display() {
     }
 
     if (ImGui::CollapsingHeader("Capture", ImGuiTreeNodeFlags_DefaultOpen)) {
-        ImGui::InputText("Path##capture", settings.capture_path, sizeof(settings.capture_path));
+        InputTextString("Path##capture", settings.capture_path);
         ImGui::SameLine();
         if (ImGui::Button("Browse##capture")) {
             dialog = DialogType::CAPTURE;
             SDL_ShowOpenFileDialog(on_file_selected, nullptr, nullptr, k_exe_filters, SDL_arraysize(k_exe_filters), nullptr, false);
         }
 
-        ImGui::InputText("Output File", settings.output_path, sizeof(settings.output_path));
+        InputTextString("Output File", settings.output_path);
         ImGui::SameLine();
         if (ImGui::Button("Browse##output")) {
             dialog = DialogType::OUTPUT;
             SDL_ShowSaveFileDialog(on_file_selected, nullptr, nullptr, k_output_filters, SDL_arraysize(k_output_filters), nullptr);
         }
 
-        ImGui::Checkbox("settings.overwrite existing", &settings.overwrite);
+        ImGui::Checkbox("Overwrite existing", &settings.overwrite);
 
         ImGui::Checkbox("Timed Capture", &settings.use_timer);
         if (settings.use_timer) {
@@ -198,5 +202,4 @@ void Profiler::display() {
         }
     }
 }
-
 }  // namespace tmt
