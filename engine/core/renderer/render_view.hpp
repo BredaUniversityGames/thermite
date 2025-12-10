@@ -43,7 +43,7 @@ class RenderView {
     u64 imgui_viewport {};
 
     RenderTarget render_target {};
-    
+
     Buffer render_view_buffer {};
 
     GpuView gpu_view {};
