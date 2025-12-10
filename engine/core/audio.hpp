@@ -1,6 +1,7 @@
 #pragma once
 
 #include <set>
+#include <string>
 
 #include "fmod_common.h"
 
@@ -25,14 +26,17 @@ class Audio {
     void Init();
     void update();
 
-    // Load an FMOD bank into the system to initialize all the sounds.
-    FMOD::Studio::Bank* load_bank(const std::vector<char>& data);
+    // Load an FMOD bank into the system to initialize all its assets.
+    FMOD::Studio::Bank* load_bank(const std::vector<char>& data) const;
 
     /* Audio event functions. */
 
-    FMOD::Studio::EventInstance* start_event(const FMOD::Studio::EventDescription* event_description);
+    FMOD::Studio::EventDescription* get_event(const FMOD_GUID& guid) const;
+    static std::string get_event_path(const FMOD::Studio::EventDescription* description);
+    FMOD::Studio::EventInstance* play_event(const FMOD::Studio::EventDescription* event_description);
     [[nodiscard]] bool is_event_instance_valid(FMOD::Studio::EventInstance* instance) const;
     void stop_all_event_instances();
+
 
     /* VCA (aka, volume group) functions. */
 

@@ -120,7 +120,7 @@ add_subdirectory(zlib)
 # fmod - audio engine
 set(FMOD_POSTFIX "$<$<CONFIG:Debug>:L>")
 target_include_directories(thermite-engine
-    PRIVATE "./fmod/include"
+    PUBLIC "./fmod/include"
 )
 
 # Link engine libraries publicly
