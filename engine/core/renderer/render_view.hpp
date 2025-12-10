@@ -4,6 +4,10 @@
 
 #include <graphite/resources/handle.hh>
 
+#include "engine/core/entity.hpp"
+
+class RenderGraph;
+
 namespace tmt {
 
 /* Represents a renderable view in the scene. (used on the GPU) */
@@ -20,12 +24,13 @@ struct GpuView {
 
 class RenderView {
    public:
-    RenderView();
+    RenderView() = default;
     ~RenderView() = default;
 
     void init();
     void update();
-    void uninit();
+    void update_gpu_view(RenderGraph& render_graph, Entity cam_entity);
+    void deinit();
 
     /* If we are running the editor, we render to the viewport_image, otherwise we render directly to the render_target */
     BindHandle get_render_image() const;
