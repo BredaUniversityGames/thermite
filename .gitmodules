@@ -20,9 +20,13 @@
 [submodule "extern/imgui"]
 	path = extern/imgui
 	url = https://github.com/ocornut/imgui
+	branch = docking
 [submodule "extern/tracy"]
 	path = extern/tracy
 	url = https://github.com/wolfpld/tracy
 [submodule "extern/zlib"]
 	path = extern/zlib
 	url = https://github.com/madler/zlib
+[submodule "extern/ImReflect"]
+	path = extern/ImReflect
+	url = https://github.com/Sven-vh/ImReflect
