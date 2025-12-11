@@ -174,36 +174,13 @@ void Physics::generate_voxel_constraints_range(const int index, const int size) 
             Aabb current_aabb = vb.aabb();
 
             // Check against BVH
-            std::vector<Entity> bvh_overlaps {};
-            std::queue<uint32_t> node_queue {};
-            node_queue.push(0);
-            while (!node_queue.empty()) {
-                const uint32_t index = node_queue.front();
-                node_queue.pop();
-
-                // If leaf node, add to overlaps
-                if (bvh.nodes[index].is_leaf()) {
-                    // Add all primitives in leaf to overlaps if overlapping
-                    if (current_aabb.overlap({bvh.nodes[index].min_bounds, bvh.nodes[index].max_bounds})) {
-                        for (uint32_t i = 0; i < bvh.nodes[index].prim_count; i++) {
-                            bvh_overlaps.push_back(entities[bvh.nodes[index].left_first + i]);
-                        }
-                    }
-                    continue;
-                }
-
-                // Check for overlap
-                if (current_aabb.overlap({bvh.nodes[index].min_bounds, bvh.nodes[index].max_bounds})) {
-                    // On overlap add children to queue
-                    node_queue.push(bvh.nodes[index].left_first);
-                    node_queue.push(bvh.nodes[index].left_first + 1u);
-                }
-            }
-
+            std::vector<uint32_t> hits = bvh.overlap(current_aabb);
+            
             // Collision checks for entities in bvh_overlaps
-            for (Entity other_entity : entities) {
+            for (uint32_t hit : hits) {
+                const Entity other_entity = entities[hit];
                 if (other_entity == entity) continue;
-                Transform& other_transform = engine.ecs.get_component<Transform>(other_entity);
+                // Transform& other_transform = engine.ecs.get_component<Transform>(other_entity);
                 VoxelBody& other_vb = engine.ecs.get_component<VoxelBody>(other_entity);
 
                 if (sat_early_out(vb, other_vb)) continue;
