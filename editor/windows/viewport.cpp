@@ -22,6 +22,7 @@ void tmt::Viewport::display() {
     uint32_t flags = ImGuiWindowFlags_NoDecoration;
 
     auto vec2 = ImGui::GetContentRegionAvail();
+    size = ImVec2(std::max(size.x, 1.0f), std::max(size.y, 1.0f));
     width = vec2.x;
     height = vec2.y;
 
