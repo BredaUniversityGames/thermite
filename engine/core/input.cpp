@@ -204,6 +204,35 @@ bool Input::is_action_just_released(std::string_view name) const {
 void Input::set_mouse_relative_to_window(bool value) { SDL_SetWindowRelativeMouseMode(engine.window.window, value); }
 bool Input::get_mouse_relative_to_window() { return SDL_GetWindowRelativeMouseMode(engine.window.window); }
 
+void Input::lock_mouse(bool value) const {
+    if (value) {
+        const SDL_Rect rect {static_cast<int32_t>(mouse_x), static_cast<int32_t>(mouse_y), 1, 1};
+        SDL_SetWindowMouseRect(engine.window.window, &rect);
+    } else {
+        SDL_SetWindowMouseRect(engine.window.window, nullptr);
+    }
+}
+
+void Input::setup_default_action() {
+    add_action(action::CONFIRM);
+    add_action_keys(action::CONFIRM, Key::SPACE, Key::RETURN);
+
+    add_action(action::CANCEL);
+    add_action_keys(action::CANCEL, Key::ESCAPE);
+
+    add_action(action::LEFT_CLICK);
+    add_action_mouse(action::LEFT_CLICK, MouseButton::LEFT);
+
+    add_action(action::RIGHT_CLICK);
+    add_action_mouse(action::RIGHT_CLICK, MouseButton::RIGHT);
+
+    add_action(action::MIDDLE_CLICK);
+    add_action_mouse(action::MIDDLE_CLICK, MouseButton::MIDDLE);
+
+    add_action(action::MOUSE_MOTION);
+    add_action_mouse_motion(action::MOUSE_MOTION);
+}
+
 void Input::add_key_to_action(const std::string& name, Key key) { add_action_event(name, std::make_unique<InputEventKey>(key)); }
 
 void Input::add_action_event(const std::string& name, std::unique_ptr<InputEvent> event) { actions[name].events.push_back(std::move(event)); }

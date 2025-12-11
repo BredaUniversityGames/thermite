@@ -90,6 +90,7 @@ class Input {
     const char* get_gamepad_button_name(GamepadButton button, int32_t device_id = -1) const;
     const char* get_gamepad_axis_name(GamepadAxis axis) const;
     int32_t get_default_gamepad_id() const;
+    void lock_mouse(bool value) const;
 
    private:
     void setup_default_action();
