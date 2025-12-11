@@ -19,7 +19,8 @@
 	url = https://github.com/Sven-vh/JsonReflect
 [submodule "extern/imgui"]
 	path = extern/imgui
-	url = https://github.com/ocornut/imgui
+	url = https://github.com/ocornut/
+	branch = docking
 [submodule "extern/tracy"]
 	path = extern/tracy
 	url = https://github.com/wolfpld/tracy
