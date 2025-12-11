@@ -5,7 +5,7 @@
 #include <array>
 
 #include "keys.hpp"
-#include "engine/events/input_event.hpp"
+#include "input_event.hpp"
 struct SDL_Gamepad;
 
 namespace tmt {
@@ -95,7 +95,7 @@ class Input {
    private:
     void setup_default_action();
     // do not free this manually
-    const bool* keys = nullptr;
+    const bool* keys_sdl = nullptr;
     uint32_t mouse_buttons = 0u;
     uint32_t prev_mouse_buttons = 0u;
     float mouse_x = 0.0f;

@@ -3,21 +3,21 @@
 #include <SDL3/SDL_events.h>
 #include <SDL3/SDL_keyboard.h>
 #include <SDL3/SDL_gamepad.h>
+#include <magic_enum/magic_enum.hpp>
 
-#include "engine.hpp"
-#include "keys.hpp"
-#include "logger.hpp"
-#include "window.hpp"
+#include "engine/engine.hpp"
+#include "engine/core/logger.hpp"
+#include "engine/core/window.hpp"
+#include "engine/tools/profiler.hpp"
 
 #include "engine/events/sdl.hpp"
-#include "magic_enum/magic_enum.hpp"
-#include "tools/profiler.hpp"
+#include "keys.hpp"
 
 using namespace tmt;
 
 void Input::init() {
     int32_t number_keys;
-    keys = SDL_GetKeyboardState(&number_keys);
+    keys_sdl = SDL_GetKeyboardState(&number_keys);
     prev_keys.resize(number_keys, false);
     setup_default_action();
 }
@@ -57,7 +57,7 @@ void Input::setup_default_action() {
 void Input::update() {
     TMT_ZONE_SCOPED_N("Input")
     SDL_Event event {};
-    std::copy_n(keys, prev_keys.size(), prev_keys.begin());
+    std::copy_n(keys_sdl, prev_keys.size(), prev_keys.begin());
     prev_mouse_buttons = mouse_buttons;
 
     // Update gamepad states
@@ -136,14 +136,14 @@ void Input::update() {
     }
 }
 void Input::add_action(const std::string& name) { actions[name] = InputAction {}; }
-bool Input::is_keyboard_button_pressed(Key key) const { return keys[static_cast<SDL_Scancode>(key)]; }
+bool Input::is_keyboard_button_pressed(Key key) const { return keys_sdl[static_cast<SDL_Scancode>(key)]; }
 bool Input::is_keyboard_button_just_pressed(Key key) const {
     const auto sdl_scancode = static_cast<SDL_Scancode>(key);
-    return keys[sdl_scancode] == true && prev_keys[sdl_scancode] == false;
+    return keys_sdl[sdl_scancode] == true && prev_keys[sdl_scancode] == false;
 }
 bool Input::is_keyboard_button_released(Key key) const {
     auto sdl_scancode = static_cast<SDL_Scancode>(key);
-    return keys[sdl_scancode] == false && prev_keys[sdl_scancode] == true;
+    return keys_sdl[sdl_scancode] == false && prev_keys[sdl_scancode] == true;
 }
 
 bool Input::is_mouse_button_pressed(MouseButton button) const { return mouse_buttons & SDL_BUTTON_MASK(static_cast<int>(button)); }

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "engine/core/keys.hpp"
+#include "engine/core/input/keys.hpp"
 
 namespace tmt {
 class Input;

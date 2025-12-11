@@ -1,7 +1,7 @@
 #include "engine/entry_point.hpp"
 #include "engine/core/ecs.hpp"
 #include "engine/core/components/transform.hpp"
-#include "engine/core/input.hpp"
+#include "engine/core/input/input.hpp"
 #include "engine/core/logger.hpp"
 #include "engine/core/components/camera.hpp"
 #include "engine/core/components/voxel_renderer.hpp"

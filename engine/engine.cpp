@@ -4,7 +4,7 @@
 #include <chrono>
 
 #include "core/logger.hpp"
-#include "core/input.hpp"
+#include "core/input/input.hpp"
 
 #include "core/window.hpp"
 #include "core/ecs.hpp"
