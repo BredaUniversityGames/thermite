@@ -8,9 +8,9 @@
 #include "engine/core/window.hpp"
 #include "engine/core/renderer/renderer.hpp"
 
-void tmt::Viewport::on_editor_start() { 
+void tmt::Viewport::on_editor_start() {
     ImGuizmo::AllowAxisFlip(false);
-    
+
     setup_gizmo_style();
 }
 
@@ -109,7 +109,7 @@ void tmt::Viewport::gizmo_manip() {
 
                 multi_select_transform.set_world_matrix(delta * multi_matrix);
             }
-        } else { //relative to average
+        } else {  // relative to average
             uint32_t amount = static_cast<uint32_t>(selected_entities.size());
 
             glm::vec3 avg_translation = glm::vec3(0.f);
@@ -131,8 +131,7 @@ void tmt::Viewport::gizmo_manip() {
             glm::mat4 avg = glm::translate(glm::mat4(1.f), avg_translation) * glm::mat4_cast(avg_rotation) * glm::scale(glm::mat4(1.f), scale);
             glm::mat4 delta;
             ImGuizmo::Manipulate(
-                &view[0][0], &perspective[0][0], static_cast<ImGuizmo::OPERATION>(gizmo_operations[gizmo_operation]), static_cast<ImGuizmo::MODE>(gizmo_space), &avg[0][0],
-                &delta[0][0]
+                &view[0][0], &perspective[0][0], static_cast<ImGuizmo::OPERATION>(gizmo_operations[gizmo_operation]), static_cast<ImGuizmo::MODE>(gizmo_space), &avg[0][0], &delta[0][0]
             );
             for (auto entity : selected_entities) {
                 Transform& multi_select_transform = engine.ecs.get_component<Transform>(entity);
@@ -144,8 +143,7 @@ void tmt::Viewport::gizmo_manip() {
     }
 }
 
-void tmt::Viewport::setup_gizmo_style() 
-{
+void tmt::Viewport::setup_gizmo_style() {
     using namespace ImGuizmo;
     // style..
     auto& style = ImGuizmo::GetStyle();

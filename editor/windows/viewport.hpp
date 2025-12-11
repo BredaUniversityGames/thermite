@@ -23,7 +23,7 @@ class Viewport : public IWindow {
     uint8_t gizmo_multiselect_mode = 0;
     uint8_t gizmo_operation = 0;
 
-    static constexpr uint8_t GIZMO_OP_COUNT = 3; 
+    static constexpr uint8_t GIZMO_OP_COUNT = 3;
 
     uint32_t gizmo_operations[GIZMO_OP_COUNT] = {7, 120, 896};
 
