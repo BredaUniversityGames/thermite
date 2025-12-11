@@ -21,7 +21,7 @@ bool tmt::RigData::reload() {
 
 // from tools.cpp in kudzu
 // Courtesy of: http://stackoverflow.com/questions/5878775/how-to-find-and-replace-string
-std::string StringReplace(const std::string& subject, const std::string& search, const std::string& replace) {
+std::string string_replace(const std::string& subject, const std::string& search, const std::string& replace) {
     std::string result(subject);
     size_t pos = 0;
 
@@ -120,7 +120,7 @@ void RigData::extract_bone_keyframes_fbx(const ufbx_scene* animation_fbx, const 
             const auto& bone_iterator = std::find_if(bones.begin(), bones.end(), find_bone_predicate);
             if (bone_iterator == bones.end()) continue;
 
-            const std::filesystem::path generic_path = StringReplace(animation_fbx->metadata.original_file_path.data, "\\", "/");
+            const std::filesystem::path generic_path = string_replace(animation_fbx->metadata.original_file_path.data, "\\", "/");
             const std::string animation_name = generic_path.stem().generic_string();
 
             auto& bone_comp = *bone_iterator;
