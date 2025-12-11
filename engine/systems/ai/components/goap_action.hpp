@@ -2,6 +2,20 @@
 #include "engine/core/ecs.hpp"
 #include "world_state.hpp"
 
+/**
+ * Class GoapAction
+ * Base class for all GOAP actions. Inherit this to define behavior.
+ *
+ * GOAP actions consist of:
+ *   - Preconditions   (must be true to consider action)
+ *   - Effects         (world modifications)
+ *   - Cost            (the higher the cost, the less likely the GOAP planner will pick it)
+ *   - Execution logic (start, tick, finish, interrupt)
+ *
+ * The planner uses only the preconditions, effects, and cost.
+ * The GOAP system uses the execution callbacks.
+ */
+
 namespace tmt {
 
 class GoapAction {
@@ -20,18 +34,39 @@ class GoapAction {
     // readable name
     virtual const char* get_name() const = 0;
 
-    // Planner helper functions
+    /**
+     * Checks if world state satisfies the action's preconditions.
+     * Returns true if all preconditions match.
+     */
     virtual bool check_preconditions(const WorldState& ws) const;
+
+    /**
+     * Applies action effects to the world state.
+     */
     virtual void apply_effects(WorldState& ws) const;  // calls apply() from ws
 
-    // action execuion helpers
-    virtual void on_start(entt::entity agent, entt::registry& ecs) {}         // Called once when the action begins
-    virtual void on_tick(Entity agent, Registry& ecs, float dt) {}            // Called every fram while action is running
-    virtual void on_finished(Entity agent, Registry& ecs) {}                  // Called only when the action finishes normally
-    virtual bool is_done(Entity agent, Registry& ecs) const { return true; }  // Called by the GOAP system to check if the action is done
+    /**
+     * Execution Callbacks
+     *
+     * - start:      called once when the action begins.
+     * - tick:       called every frame while action is running.
+     * - finished:   called only when the action finished normally.
+     */
+    virtual void on_start(entt::entity agent, entt::registry& ecs) {}
+    virtual void on_tick(Entity agent, Registry& ecs, float dt) {}
+    virtual void on_finished(Entity agent, Registry& ecs) {}
 
-    // Interrupt callback
-    virtual void on_interrupt(Entity agent, Registry& ecs) {}  // Called when the action is cancelled before completion
+    /**
+     * Called every tick to determine whether the action is done,
+     * but only while the action is actively running.
+     * Returns true to advance to the next action, per actions this will be different.
+     */
+    virtual bool is_done(Entity agent, Registry& ecs) const { return true; }
+
+    /**
+     * Called when an action is externally interrupted.
+     */
+    virtual void on_interrupt(Entity agent, Registry& ecs) {}
 };
 
 }  // namespace tmt
