@@ -16,7 +16,7 @@ class PatrolArea : public GoapAction {
 
     const char* get_name() const override { return "PatrolArea"; }
 
-    void on_start(Entity agent, Registry& ecs) override { timer = 0.f; }
+    void on_start(Entity /*agent*/, Registry& /*ecs*/) override { timer = 0.f; }
 
     void on_tick(Entity agent, Registry& ecs, float dt) override {
         // random early interruption (5% chance per tick)
@@ -32,7 +32,7 @@ class PatrolArea : public GoapAction {
         return timer >= 3.0f;  // takes 3 seconds
     }
 
-    void on_finished(Entity agent, Registry& ecs) override {}
+    void on_finished(Entity /*agent*/, Registry& /*ecs*/) override {}
 
     void on_interrupt(Entity agent, Registry& ecs) override {
         // reset initial world state

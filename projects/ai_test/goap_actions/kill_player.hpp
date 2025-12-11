@@ -18,17 +18,17 @@ class KillPlayer : public GoapAction {
 
     const char* get_name() const override { return "KillPlayer"; }
 
-    void on_start(Entity agent, Registry& ecs) override {}
+    void on_start(Entity /*agent*/, Registry& /*ecs*/) override {}
 
-    bool is_done(Entity agent, Registry& ecs) const override {
+    bool is_done(Entity /*agent*/, Registry& /*ecs*/) const override {
         return true;  // Done instantly for testing purposes
     }
 
-    void on_tick(Entity agent, Registry& ecs, float dt) override {}
+    void on_tick(Entity /*agent*/, Registry& /*ecs*/, float /*dt*/) override {}
 
-    void on_finished(Entity agent, Registry& ecs) override {}
+    void on_finished(Entity /*agent*/, Registry& /*ecs*/) override {}
 
-    void on_interrupt(Entity agent, Registry& ecs) override {}
+    void on_interrupt(Entity /*agent*/, Registry& /*ecs*/) override {}
 };
 
 }  // namespace tmt
