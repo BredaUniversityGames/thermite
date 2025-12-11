@@ -11,13 +11,13 @@
 
 #include "engine/core/ecs.hpp"
 #include "engine/core/logger.hpp"
-#include "engine/core/renderer/renderer.hpp"
 #include "engine/core/window.hpp"
 
 #include "editor/imgui/manager.hpp"
 
 /* Windows */
 #include "editor/windows/hierarchy.hpp"
+#include "editor/windows/viewport.hpp"
 #include "editor/windows/game_flow.hpp"
 #include "editor/windows/inspector.hpp"
 
@@ -41,6 +41,7 @@ void Editor::on_engine_init(const ApplicationSpecs&) {
     windows.add<Hierarchy>();
     windows.add<GameFlow>();
     windows.add<Inspector>();
+    windows.add<Viewport>();
     windows.add<Profiler>();
 
     for (auto& system : windows) {
@@ -60,17 +61,6 @@ void Editor::on_engine_update(const FrameData& time) {
         system->display();
         ImGui::End();
     }
-
-    ImGui::Begin("Viewport");
-
-    auto size = ImGui::GetContentRegionAvail();
-    size = ImVec2(std::max(size.x, 1.0f), std::max(size.y, 1.0f));
-
-    engine.renderer.render_view.set_viewport_size(size.x, size.y);
-
-    ImGui::Image((ImTextureRef)engine.renderer.render_view.imgui_viewport, size);
-
-    ImGui::End();
 
     imgui_manager.end_frame();
 }

@@ -11,7 +11,7 @@
 #include "editor/core/window.hpp"
 
 namespace tmt {
-class Hierarchy : public IWindow {
+class Hierarchy : public IWindow, public IGameEvents {
    public:
     Hierarchy() = default;
     ~Hierarchy() = default;
@@ -50,7 +50,7 @@ class Hierarchy : public IWindow {
     };
     Entity get_first_selected_entity() const {
         if (selected_entities.empty()) return entt::null;
-        return *selected_entities.begin();
+        return first_selected_entity;
     };
 
     const std::unordered_set<Entity>& get_selected_entities() const { return selected_entities; };
@@ -58,6 +58,7 @@ class Hierarchy : public IWindow {
 
    private:
     std::unordered_set<Entity> selected_entities;
+    Entity first_selected_entity = entt::null;
 
     static constexpr glm::uvec2 NULL_INDEX {std::numeric_limits<uint32_t>::max()};
 
@@ -106,5 +107,10 @@ class Hierarchy : public IWindow {
 
     bool drag_drop_source(const Entity dragged_entity) const;
     bool drag_drop_target(const Entity dropped_entity);
+
+    // Inherited via IGameEvents
+    void on_start() override;
+    void on_update(const tmt::FrameData& time) override;
+    void on_end() override;
 };
 }  // namespace tmt
