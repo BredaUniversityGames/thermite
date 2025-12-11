@@ -21,9 +21,9 @@ Salvo::Salvo() {
 }
 
 void Salvo::init() {
-    Log::info(Log::Scope::ENGINE, "Starting Salvo job system module: creating worker threads");
     // Threads in the pool will be the amount of hardware threads - 2 (to account for main thread and background tasks).
     const size_t thread_count = std::max(std::thread::hardware_concurrency() - 2u, 1u);
+    Log::info(Log::Scope::ENGINE, "Starting Salvo job system module: creating {} worker threads", thread_count);
     for (size_t i = 0; i < thread_count; i++) {
         std::thread& worker = worker_threads.emplace_back(&Salvo::run_worker, this);
         SetThreadAffinityMask(worker.native_handle(), 0b1 << (i + 2));
