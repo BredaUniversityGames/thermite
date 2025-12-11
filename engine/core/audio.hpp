@@ -37,8 +37,8 @@ class Audio {
     void Init();
     void update();
 
-    // Load an FMOD bank into the system to initialize all its assets.
-    [[nodiscard]] Bank* load_bank(const std::vector<char>& data) const;
+    // Initialize an FMOD bank with all its assets from a .bank file in memory.
+    [[nodiscard]] Bank* init_bank(const std::vector<char>& bank_data) const;
 
     /* Audio event functions. */
 

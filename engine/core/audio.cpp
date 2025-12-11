@@ -2,7 +2,6 @@
 
 #include "core/logger.hpp"
 
-#include <fmod.hpp>
 #include <fmod_studio.hpp>
 #include <fmod_errors.h>
 
@@ -52,18 +51,18 @@ void Audio::update() {
     });
 }
 
-FMOD::Studio::Bank* Audio::load_bank(const std::vector<char>& data) const {
+FMOD::Studio::Bank* Audio::init_bank(const std::vector<char>& bank_data) const {
     FMOD::Studio::Bank* bank = nullptr;
-    FMOD_RESULT result = system->loadBankMemory(data.data(), static_cast<int>(data.size()), FMOD_STUDIO_LOAD_MEMORY, FMOD_STUDIO_LOAD_BANK_NORMAL, &bank);
-    if (TryLogError(result, "FMOD bank could not be loaded")) return nullptr;
+    FMOD_RESULT result = system->loadBankMemory(bank_data.data(), static_cast<int>(bank_data.size()), FMOD_STUDIO_LOAD_MEMORY, FMOD_STUDIO_LOAD_BANK_NORMAL, &bank);
+    if (TryLogError(result, "Bank could not be initialized from memory")) return nullptr;
 
     // Load all the bank's sample data immediately.
     result = bank->loadSampleData();
-    if (TryLogError(result, "FMOD bank could not load sample data")) return nullptr;
+    if (TryLogError(result, "Bank could not load sample data")) return nullptr;
 
     // Enable this to wait for loading to finish.
     result = system->flushSampleLoading();
-    if (TryLogError(result, "FMOD bank could not flush sample loading")) return nullptr;
+    if (TryLogError(result, "Bank could not flush sample loading")) return nullptr;
 
     return bank;
 }
@@ -125,14 +124,14 @@ void Audio::stop_all_event_instances() {
     active_instances.clear();
 }
 
-void Audio::set_global_parameter(const FMOD_STUDIO_PARAMETER_ID& id, const float value) const { 
-    const FMOD_RESULT result = system->setParameterByID(id, value); 
+void Audio::set_global_parameter(const FMOD_STUDIO_PARAMETER_ID& id, const float value) const {
+    const FMOD_RESULT result = system->setParameterByID(id, value);
 
     TryLogError(result, "Failed to set parameter");
 }
 
-void Audio::set_global_parameter(const FMOD_STUDIO_PARAMETER_ID& id, const std::string& value) const { 
-    const FMOD_RESULT result = system->setParameterByIDWithLabel(id, value.c_str()); 
+void Audio::set_global_parameter(const FMOD_STUDIO_PARAMETER_ID& id, const std::string& value) const {
+    const FMOD_RESULT result = system->setParameterByIDWithLabel(id, value.c_str());
 
     TryLogError(result, "Failed to set parameter with label");
 }
@@ -140,7 +139,7 @@ void Audio::set_global_parameter(const FMOD_STUDIO_PARAMETER_ID& id, const std::
 FMOD::Studio::VCA* Audio::get_vca(const FMOD_GUID& guid) const {
     FMOD::Studio::VCA* vca;
     const FMOD_RESULT result = system->getVCAByID(&guid, &vca);
-    
+
     if (TryLogError(result, "Failed to get VCA")) return nullptr;
 
     return vca;
