@@ -28,7 +28,7 @@ class PatrolArea : public GoapAction {
         }
     }
 
-    bool is_done(Entity agent, Registry& ecs) const override {
+    bool is_done(Entity /*agent*/, Registry& /*ecs*/) const override {
         return timer >= 3.0f;  // takes 3 seconds
     }
 

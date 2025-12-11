@@ -18,8 +18,7 @@ class ChasePlayer : public GoapAction {
 
     const char* get_name() const override { return "ChasePlayer"; }
 
-    void on_start(Entity /*agent*/, Registry& /*ecs*/) override { time_chasing = 0.f;
-    }
+    void on_start(Entity /*agent*/, Registry& /*ecs*/) override { time_chasing = 0.f; }
 
     void on_tick(Entity /*agent*/, Registry& /*ecs*/, float dt) override { time_chasing += dt; }
 
