@@ -12,112 +12,107 @@
 using namespace tmt;
 
 void NavMesh::generate_mesh(IO::FileLocation location) {
-    //auto voxel_file = engine.resources.load_resource<VoxelScene>(location);
-    //auto voxel_volume = engine.resources.copy_resource<VoxelVolume>(voxel_file);
+    auto voxel_file = engine.resources.load_resource<VoxelScene>(location);
+    auto voxel_volume = engine.resources.copy_resource<VoxelVolume>(voxel_file);
 
-    //{ /* Voxel entity */
-    //    auto voxel = engine.ecs.create_entity("Moving Voxel");
-    //    auto& transform = engine.ecs.add_component<Transform>(voxel);
-    //    auto& renderer = engine.ecs.add_component<VoxelRenderer>(voxel);
-    //    renderer.resource = voxel_volume;
-    //    transform.set_world_position(glm::vec3(2.0f, 2.0f, 0.0f));
-    //    transform.set_world_rotation(glm::vec3(glm::radians(45.0f), glm::radians(45.0f), 0.0f));
-    //    transform.set_world_scale(glm::vec3(1.0f, 1.0f, 1.0f));
-    //}
+    { /* Voxel entity */
+        auto voxel = engine.ecs.create_entity("Moving Voxel");
+        auto& transform = engine.ecs.add_component<Transform>(voxel);
+        auto& renderer = engine.ecs.add_component<VoxelRenderer>(voxel);
+        renderer.resource = voxel_volume;
+        transform.set_world_position(glm::vec3(2.0f, 2.0f, 0.0f));
+        transform.set_world_rotation(glm::vec3(glm::radians(45.0f), glm::radians(45.0f), 0.0f));
+        transform.set_world_scale(glm::vec3(1.0f, 1.0f, 1.0f));
+    }
 
-    //// Set size FIRST
-    //auto size = voxel_volume->size;
+    // Set size FIRST
+    auto size = voxel_volume->size;
 
-    //// Build dense occupancy grid from sparse tree
-    //std::vector<bool> occupied(size.x * size.y * size.z, false);
+    // Build dense occupancy grid from sparse tree
+    std::vector<bool> occupied(size.x * size.y * size.z, false);
 
-    //auto set_occupied = [&](glm::uvec3 pos, MaterialIndex) {
-    //    if (pos.x < size.x && pos.y < size.y && pos.z < size.z) occupied[pos.x + size.x * pos.y + size.x * size.y * pos.z] = true;
-    //};
+    auto set_occupied = [&](glm::uvec3 pos, MaterialIndex) {
+        if (pos.x < size.x && pos.y < size.y && pos.z < size.z) occupied[pos.x + size.x * pos.y + size.x * size.y * pos.z] = true;
+    };
 
-    //// Traverse the SVT
-    //std::function<void(uint32_t, glm::uvec3, uint32_t)> traverse = [&](uint32_t node_idx, glm::uvec3 origin, uint32_t scale) {
-    //    const auto& node = voxel_volume->blas->nodes[node_idx];
-    //    uint64_t mask = node.child_mask;
-    //    uint32_t base = node.abs_ptr();
+    // Traverse the SVT
+    std::function<void(uint32_t, glm::uvec3, uint32_t)> traverse = [&](uint32_t node_idx, glm::uvec3 origin, uint32_t scale) {
+        const auto& node = voxel_volume->blas->nodes[node_idx];
+        uint64_t mask = node.child_mask;
+        uint32_t base = node.abs_ptr();
 
-    //    for (int i = 0; mask; ++i, mask >>= 1) {
-    //        if (!(mask & 1)) continue;
+        for (int i = 0; mask; ++i, mask >>= 1) {
+            if (!(mask & 1)) continue;
 
-    //        glm::uvec3 local = {i & 3, (i >> 2) & 3, (i >> 4) & 3};
-    //        glm::uvec3 child_origin = origin + local * scale;
-    //        uint32_t child_idx = base + std::popcount(node.child_mask & ((1ull << i) - 1));
+            glm::uvec3 local = {i & 3, (i >> 2) & 3, (i >> 4) & 3};
+            glm::uvec3 child_origin = origin + local * scale;
+            uint32_t child_idx = base + std::popcount(node.child_mask & ((1ull << i) - 1));
 
-    //        if (node.is_leaf()) {
-    //            set_occupied(child_origin, voxel_volume->blas->voxels[child_idx]);
-    //        } else {
-    //            traverse(child_idx, child_origin, scale / 4);
-    //        }
-    //    }
-    //};
+            if (node.is_leaf()) {
+                set_occupied(child_origin, voxel_volume->blas->voxels[child_idx]);
+            } else {
+                traverse(child_idx, child_origin, scale / 4);
+            }
+        }
+    };
 
-    //uint32_t scale = 1u << ((voxel_volume->blas->depth - 1) * 2);
-    //traverse(0, {0, 0, 0}, scale);
+    uint32_t scale = 1u << ((voxel_volume->blas->depth - 1) * 2);
+    traverse(0, {0, 0, 0}, scale);
 
-    //// Helper lambda
-    //auto voxel_empty = [&](uint32_t x, uint32_t y, uint32_t z) { return !occupied[x + size.x * y + size.x * size.y * z]; };
+    // Helper lambda
+    auto voxel_empty = [&](uint32_t x, uint32_t y, uint32_t z) { return !occupied[x + size.x * y + size.x * size.y * z]; };
 
-    //// Initialize data vector
-    //auto data = std::vector<NavVoxel>(size.x * size.y * size.z);
-    //std::deque<uint32_t> queue {};
+    // Initialize data vector
+    auto data = std::vector<NavVoxel>(size.x * size.y * size.z);
 
-    //for (uint32_t z = 0; z < size.z; z++) {
-    //    for (uint32_t y = 0; y < size.y; y++) {
-    //        for (uint32_t x = 0; x < size.x; x++) {
-    //            const uint32_t index = x + size.x * y + size.x * size.y * z;
-    //            if (voxel_empty(x, y, z)) continue;  // <-- was model.voxel_empty
+    for (uint32_t z = 0; z < size.z; z++) {
+        for (uint32_t y = 0; y < size.y; y++) {
+            for (uint32_t x = 0; x < size.x; x++) {
+                const uint32_t index = x + size.x * y + size.x * size.y * z;
+                if (voxel_empty(x, y, z)) continue;  // <-- was model.voxel_empty
 
-    //            int empty_sides = 0;
-    //            glm::ivec3 normal = {};
-    //            for (size_t sign = 0; sign < 2; sign++) {
-    //                for (size_t dir = 0; dir < 3; dir++) {
-    //                    glm::uvec3 temp = {x, y, z};
-    //                    temp[(int)dir] += sign == 0 ? (int)1 : -((int)1);
+                int empty_sides = 0;
+                glm::ivec3 normal = {};
+                for (size_t sign = 0; sign < 2; sign++) {
+                    for (size_t dir = 0; dir < 3; dir++) {
+                        glm::uvec3 temp = {x, y, z};
+                        temp[(int)dir] += sign == 0 ? (int)1 : -((int)1);
 
-    //                    if (!(temp.x < size.x && temp.y < size.y && temp.z < size.z) || voxel_empty(temp.x, temp.y, temp.z)) {  // <-- was model.voxel_empty
-    //                        normal[(int)dir] += sign == 0 ? 1 : -1;
-    //                        empty_sides++;
-    //                    }
-    //                }
-    //            }
+                        if (!(temp.x < size.x && temp.y < size.y && temp.z < size.z) || voxel_empty(temp.x, temp.y, temp.z)) {  // <-- was model.voxel_empty
+                            normal[(int)dir] += sign == 0 ? 1 : -1;
+                            empty_sides++;
+                        }
+                    }
+                }
 
-    //            data[index].normal_index = 0;
-
-    //            if (empty_sides == 0)
-    //                data[index].type = VoxelType::Inside;
-    //            else if (empty_sides >= 1) {
-    //                for (size_t i = 1; i < 7; i++) {
-    //                    if (normal_lut[i] == normal) data[index].normal_index = i;
-    //                }
-    //                data[index].type = VoxelType::Face;
-    //                Node node;
-    //                node.pos = glm::vec3(x, y, z);
-    //                nodes.push_back(node);
-    //            } else if (empty_sides == 2) {
-    //                for (size_t i = 7; i < 19; i++) {
-    //                    if (normal_lut[i] == normal) data[index].normal_index = i;
-    //                }
-    //                data[index].type = VoxelType::Edge;
-    //            } else if (empty_sides >= 3) {
-    //                for (size_t i = 19; i < 27; i++) {
-    //                    if (normal_lut[i] == normal) data[index].normal_index = i;
-    //                }
-    //                data[index].type = VoxelType::Corner;
-    //            }
-
-    //            if (data[index].normal_index != 0) queue.push_back(index);
-    //        }
-    //    }
-    //}
+                if (empty_sides == 0)
+                    data[index].type = VoxelType::Inside;
+                else if (empty_sides >= 1) {
+                    data[index].type = VoxelType::Face;
+                    Node node;
+                    node.pos = glm::vec3(x, y, z);
+                    nodes.push_back(node);
+                } 
+            }
+        }
+    }
+    for (int i = 0; i < nodes.size(); i++) {
+        for (int j = 0; j < nodes.size(); j++) {
+            if (i == j) continue;
+            float dist = glm::distance(nodes[i].pos, nodes[j].pos);
+            if (dist < 1.5f) {
+                nodes[i].connectingNodes.push_back(j);
+            }
+        }
+    }
 }
 
 void tmt::NavMesh::inspect() {
     for (int i = 0; i < nodes.size(); i++) {
-        engine.renderer.draw_line(nodes[i].pos, nodes[i].pos + glm::vec3(0, 0.1f, 0), glm::vec3(1.0f, 0.0f, 0.0f));
+        engine.renderer.draw_line(nodes[i].pos, nodes[i].pos + glm::vec3(0, 0.2f, 0), glm::vec3(1.0f, 0.0f, 0.0f));
+        for (int j = 0; j < nodes[i].connectingNodes.size(); j++) {
+            int conn_idx = nodes[i].connectingNodes[j];
+            engine.renderer.draw_line(nodes[i].pos, nodes[conn_idx].pos, glm::vec3(0.0f, 1.0f, 0.0f));
+        }
     }
 }

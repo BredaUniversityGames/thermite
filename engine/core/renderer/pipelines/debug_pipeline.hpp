@@ -16,7 +16,7 @@ struct DebugPoint {
     glm::vec3 color {1.0f, 0.0f, 0.0f};
 };
 
-constexpr uint32_t MAX_DEBUG_POINTS = 128;
+constexpr uint32_t MAX_DEBUG_POINTS = 1000000;
 
 class DebugPipeline {
    private:

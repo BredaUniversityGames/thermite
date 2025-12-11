@@ -1,42 +1,7 @@
 #include "engine/core/ecs.hpp"
 
 #include "engine/core/resources.hpp"
-
-
 namespace tmt {
-
-static const glm::ivec3 normal_lut[27] {
-    {0, 0, 0},
-    // Cardinal directions 1-7
-    {1, 0, 0},
-    {0, 1, 0},
-    {0, 0, 1},
-    {-1, 0, 0},
-    {0, -1, 0},
-    {0, 0, -1},
-    // Edge directions 7-19
-    {1, 1, 0},
-    {1, 0, 1},
-    {0, 1, 1},
-    {-1, 1, 0},
-    {-1, 0, 1},
-    {0, -1, 1},
-    {1, -1, 0},
-    {1, 0, -1},
-    {0, 1, -1},
-    {-1, -1, 0},
-    {-1, 0, -1},
-    {0, -1, -1},
-    // Corner directions 19-27
-    {1, 1, 1},
-    {1, 1, -1},
-    {1, -1, 1},
-    {1, -1, -1},
-    {-1, 1, 1},
-    {-1, 1, -1},
-    {-1, -1, 1},
-    {-1, -1, -1}
-};
 
 enum VoxelType : uint8_t { Empty, Corner, Edge, Face, Inside };
 
