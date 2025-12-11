@@ -31,10 +31,10 @@ void tmt::Viewport::display() {
 
     if (height <= 0.f) return;
 
-    engine.renderer.set_viewport_size(static_cast<uint32_t>(width), static_cast<uint32_t>(height));
+    engine.renderer.render_view.set_viewport_size(static_cast<uint32_t>(width), static_cast<uint32_t>(height));
 
     ImGui::BeginChild("viewport_render", ImVec2(0, 0), 0, flags | ImGuiWindowFlags_NoMove);
-    ImGui::Image((ImTextureRef)engine.renderer.get_imgui_viewport(), vec2);
+    ImGui::Image((ImTextureRef)engine.renderer.render_view.imgui_viewport, vec2);
 
     ImGuizmo::SetDrawlist();
 

@@ -75,9 +75,9 @@ void Game::on_start() {
 void Game::on_update(const tmt::FrameData& time) {
     time_passed += time.delta_time;
     auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(voxel);
-    //transform.set_world_position(glm::vec3(1.0f, sinf(time_passed), 1.0f));
-    //transform.set_world_rotation(glm::vec3(sinf(time_passed), cosf(time_passed), 0.0f));
-    // transform.set_world_scale(glm::vec3(1.0f, 1.5f + sinf(time_passed), 1.0f));
+    // transform.set_world_position(glm::vec3(1.0f, sinf(time_passed), 1.0f));
+    // transform.set_world_rotation(glm::vec3(sinf(time_passed), cosf(time_passed), 0.0f));
+    //  transform.set_world_scale(glm::vec3(1.0f, 1.5f + sinf(time_passed), 1.0f));
 }
 
 void Game::on_end() {}

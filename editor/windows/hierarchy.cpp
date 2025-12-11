@@ -223,9 +223,6 @@ void Hierarchy::on_start() {}
 
 void Hierarchy::on_update(const tmt::FrameData& time) {}
 
-void Hierarchy::on_end() 
-{
-    selected_entities.clear();
-}
+void Hierarchy::on_end() { selected_entities.clear(); }
 
 }  // namespace tmt
