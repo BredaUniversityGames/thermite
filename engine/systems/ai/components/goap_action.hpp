@@ -52,21 +52,37 @@ class GoapAction {
      * - tick:       called every frame while action is running.
      * - finished:   called only when the action finished normally.
      */
-    virtual void on_start([[maybe_unused]] Entity agent, [[maybe_unused]] Registry& ecs) {}
-    virtual void on_tick([[maybe_unused]] Entity agent, [[maybe_unused]] Registry& ecs, [[maybe_unused]] float dt) {}
-    virtual void on_finished([[maybe_unused]] Entity agent, [[maybe_unused]] Registry& ecs) {}
+    virtual void on_start(Entity agent, Registry& ecs) {
+        (void)agent;
+        (void)ecs;
+    }
+    virtual void on_tick(Entity agent, Registry& ecs, float dt) {
+        (void)agent;
+        (void)ecs;
+    }
+    virtual void on_finished(Entity agent, Registry& ecs) {
+        (void)agent;
+        (void)ecs;
+    }
 
     /**
      * Called every tick to determine whether the action is done,
      * but only while the action is actively running.
      * Returns true to advance to the next action, per actions this will be different.
      */
-    virtual bool is_done([[maybe_unused]] Entity agent, [[maybe_unused]] Registry& ecs) const { return true; }
+    virtual bool is_done(Entity agent, Registry& ecs) const {
+        (void)agent;
+        (void)ecs;
+        return true;
+    }
 
     /**
      * Called when an action is externally interrupted.
      */
-    virtual void on_interrupt([[maybe_unused]] Entity agent, [[maybe_unused]] Registry& ecs) {}
+    virtual void on_interrupt(Entity agent, Registry& ecs) {
+        (void)agent;
+        (void)ecs;
+    }
 };
 
 }  // namespace tmt
