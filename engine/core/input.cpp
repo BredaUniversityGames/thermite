@@ -3,7 +3,6 @@
 #include <SDL3/SDL_events.h>
 #include <SDL3/SDL_keyboard.h>
 #include <SDL3/SDL_gamepad.h>
-#include <extern/JsonReflect/JsonReflect_primitives.hpp>
 
 #include "engine.hpp"
 #include "keys.hpp"
@@ -11,6 +10,7 @@
 #include "window.hpp"
 
 #include "engine/events/sdl.hpp"
+#include "magic_enum/magic_enum.hpp"
 #include "tools/profiler.hpp"
 
 using namespace tmt;
@@ -211,26 +211,6 @@ void Input::lock_mouse(bool value) const {
     } else {
         SDL_SetWindowMouseRect(engine.window.window, nullptr);
     }
-}
-
-void Input::setup_default_action() {
-    add_action(action::CONFIRM);
-    add_action_keys(action::CONFIRM, Key::SPACE, Key::RETURN);
-
-    add_action(action::CANCEL);
-    add_action_keys(action::CANCEL, Key::ESCAPE);
-
-    add_action(action::LEFT_CLICK);
-    add_action_mouse(action::LEFT_CLICK, MouseButton::LEFT);
-
-    add_action(action::RIGHT_CLICK);
-    add_action_mouse(action::RIGHT_CLICK, MouseButton::RIGHT);
-
-    add_action(action::MIDDLE_CLICK);
-    add_action_mouse(action::MIDDLE_CLICK, MouseButton::MIDDLE);
-
-    add_action(action::MOUSE_MOTION);
-    add_action_mouse_motion(action::MOUSE_MOTION);
 }
 
 void Input::add_key_to_action(const std::string& name, Key key) { add_action_event(name, std::make_unique<InputEventKey>(key)); }
