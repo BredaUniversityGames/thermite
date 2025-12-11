@@ -7,8 +7,6 @@
 #include "engine/core/renderer/pipelines/debug_pipeline.hpp"
 #include "engine/core/renderer/renderer.hpp"
 
-
-
 using namespace tmt;
 
 void NavMesh::generate_mesh(IO::FileLocation location) {
@@ -104,6 +102,81 @@ void NavMesh::generate_mesh(IO::FileLocation location) {
                 nodes[i].connectingNodes.push_back(j);
             }
         }
+    }
+}
+
+std::vector<glm::vec3> NavMesh::find_path(const int startingNodeID, const int endingNodeID) {
+    std::vector<int> open = std::vector<int>();
+    open.push_back(startingNodeID);
+    nodes[startingNodeID].g = 0.0f;
+    nodes[startingNodeID].parent = NULL;
+    int current = -1;
+
+    // A* search
+    // g is the cost from start to current node
+    // h is the heuristic cost from current node to end node
+    while (!open.empty()) {
+        current = -1;
+        int currentIndex = -1;
+
+        // find node in open list with lowest f = g + h
+        for (int i = 0; i < (int)open.size(); i++) {
+            // set first node as a valid node
+            if (current < 0) {
+                currentIndex = i;
+                current = open[i];
+            }
+            // get a better node if available
+            else if (nodes[open[i]].g + nodes[open[i]].h < nodes[current].g + nodes[current].h) {
+                currentIndex = i;
+                current = open[i];
+            }
+        }
+
+        if (current == endingNodeID) {
+            break;
+        }
+
+        // remove current from open list
+        open.erase(open.begin() + currentIndex);
+
+        // add all connecting nodes with a better path to open list
+        for (int i = 0; i < (int)nodes[current].connectingNodes.size(); i++) {
+            int next = nodes[current].connectingNodes[i];
+            float edgeCost = glm::distance(nodes[next].pos, nodes[current].pos);
+
+            // if g is not set or we found a better path to next node
+            if (nodes[next].g < 0 || nodes[current].g + edgeCost < nodes[next].g) {
+                nodes[next].g = nodes[current].g + edgeCost;
+                nodes[next].h = glm::distance(nodes[next].pos, nodes[endingNodeID].pos);
+                nodes[next].parent = current;
+
+                open.push_back(next);
+            }
+        }
+    }
+
+    // no path found
+    if (current != endingNodeID) {
+        std::vector<glm::vec3> noResult;
+        return noResult;
+    }
+
+    // reconstruct path and return it
+    std::vector<glm::vec3> path;
+    path.push_back(nodes[endingNodeID].pos);
+    current = endingNodeID;
+    while (1) {
+        if (current == startingNodeID) {
+            for (int i = 0; i < (int)nodes.size(); i++) {
+                nodes[i].g = -1.0f;
+                nodes[i].h = 0.0f;
+                nodes[i].parent = 0;
+            }
+            return path;
+        }
+        path.push_back(nodes[nodes[current].parent].pos);
+        current = nodes[current].parent;
     }
 }
 

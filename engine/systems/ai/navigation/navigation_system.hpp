@@ -11,6 +11,7 @@ class NavigationSystem : public ISystem {
     std::string get_name() override;
 
     NavMesh nav_mesh; 
+    std::vector<glm::vec3> path;
 
     void on_start() override;
     void on_update(const FrameData& time) override;

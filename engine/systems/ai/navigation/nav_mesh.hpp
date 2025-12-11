@@ -31,6 +31,7 @@ class NavMesh {
     std::vector<Node> nodes;
 
     void generate_mesh(IO::FileLocation location);
+    std::vector<glm::vec3> find_path(const int startingNodeID, const int endingNodeID);
     void inspect();
 };
 }  // namespace tmt
