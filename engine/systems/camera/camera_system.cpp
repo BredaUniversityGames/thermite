@@ -1,6 +1,7 @@
 #include "camera_system.hpp"
 
 #include "engine.hpp"
+#include "core/ecs.hpp"
 #include "core/input.hpp"
 #include "core/logger.hpp"
 #include "core/components/camera.hpp"
@@ -36,10 +37,12 @@ void CameraSystem::on_update(const FrameData& time) {
     if (!enable_mouse_look) {
         /* Show mouse cursor */
         input.set_mouse_relative_to_window(false);
+        input.lock_mouse(false);
         return;
     }
     /* Hide mouse cursor */
     input.set_mouse_relative_to_window(true);
+    input.lock_mouse(true);
 
     Camera& camera = engine.ecs.get_component<Camera>(camera_entity);
     Transform& transform = engine.ecs.get_component<Transform>(camera_entity);
