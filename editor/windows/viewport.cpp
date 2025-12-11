@@ -21,10 +21,10 @@ void tmt::Viewport::on_editor_end() {}
 void tmt::Viewport::display() {
     uint32_t flags = ImGuiWindowFlags_NoDecoration;
 
-    auto vec2 = ImGui::GetContentRegionAvail();
+    auto size = ImGui::GetContentRegionAvail();
     size = ImVec2(std::max(size.x, 1.0f), std::max(size.y, 1.0f));
-    width = vec2.x;
-    height = vec2.y;
+    width = size.x;
+    height = size.y;
 
     auto image_pos = ImGui::GetCursorScreenPos();
 
@@ -35,7 +35,7 @@ void tmt::Viewport::display() {
     engine.renderer.render_view.set_viewport_size(static_cast<uint32_t>(width), static_cast<uint32_t>(height));
 
     ImGui::BeginChild("viewport_render", ImVec2(0, 0), 0, flags | ImGuiWindowFlags_NoMove);
-    ImGui::Image((ImTextureRef)engine.renderer.render_view.imgui_viewport, vec2);
+    ImGui::Image((ImTextureRef)engine.renderer.render_view.imgui_viewport, size);
 
     ImGuizmo::SetDrawlist();
 
