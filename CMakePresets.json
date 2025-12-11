@@ -34,7 +34,7 @@
       "displayName": "Unit Tests",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
-        "THERMITE_EDITOR_BUILD": "ON",
+        "THERMITE_EDITOR_BUILD": "OFF",
         "THERMITE_DEBUG_BUILD": "ON",
         "THERMITE_BUILD_TESTS": "ON"
       }
