@@ -22,7 +22,7 @@ class PatrolArea : public GoapAction {
         // random early interruption (5% chance per tick)
         timer += dt;
         if (rand() % 100 < 5) {
-            Log::info("PatrolArea random interrupt triggered");
+            // Log::info("PatrolArea random interrupt triggered");
             on_interrupt(agent, ecs);  // on_interrupt usually gets called outside of its own action,
                                        // when something changes the world state that doesnt make the preconditions true anymore
         }
