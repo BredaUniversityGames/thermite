@@ -1,5 +1,7 @@
 #include "engine/entry_point.hpp"
 #include "engine/core/ecs.hpp"
+#include "engine/core/resources.hpp"
+#include "engine/core/resources/voxel_volume.hpp"
 #include "engine/core/components/transform.hpp"
 #include "engine/core/components/camera.hpp"
 #include "engine/core/components/voxel_renderer.hpp"
@@ -35,7 +37,7 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
 
 void Game::on_start() {
     { /* Camera entity */
-        tmt::Entity entity = tmt::engine.ecs.create_entity();
+        tmt::Entity entity = tmt::engine.ecs.create_entity("Camera");
         auto& transform = tmt::engine.ecs.add_component<tmt::Transform>(entity);
         auto& camera = tmt::engine.ecs.add_component<tmt::Camera>(entity);
         transform.set_world_position(glm::vec3(0.0f, 86.25f, -5.0f));

@@ -16,6 +16,7 @@ void ImGuiManager::init() {
     /* Initialize the immediate mode GUI */
     ImGui::CreateContext();
     ImGui_ImplSDL3_InitForVulkan(engine.window.window);
+    imgui.set_clear_screen(true);
     tmt::engine.renderer.set_imgui(&imgui, IMGUI_FUNCTIONS);
 }
 
@@ -34,5 +35,7 @@ void ImGuiManager::end_frame() {
 void ImGuiManager::deinit() { imgui.deinit().expect("Failed to deinitialize ImGui"); }
 
 void ImGuiManager::on_sdl_event(SDL_Event& event) { ImGui_ImplSDL3_ProcessEvent(&event); }
+
+void ImGuiManager::on_engine_update(const FrameData&) {}
 
 }  // namespace tmt

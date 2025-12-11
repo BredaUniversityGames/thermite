@@ -15,6 +15,7 @@
 
 #include "pipelines/debug_pipeline.hpp"
 #include "pipelines/geometry_pipeline.hpp"
+#include "tools/profiler.hpp"
 
 namespace tmt {
 
@@ -71,6 +72,22 @@ void Renderer::init() {
         render_target = r.unwrap();
     }
 
+    /* Viewport Texture */
+    if (const Result r = bank.create_texture(
+            TextureUsage::ColorAttachment | TextureUsage::Sampled | TextureUsage::Storage, TextureFormat::RGBA8Unorm, {(uint32_t)engine.window.width, (uint32_t)engine.window.height, 0}
+        );
+        r.is_err()) {
+        Log::error(Log::Scope::RENDERER, "failed to initialize attachment texture.\nreason: {}", r.unwrap_err());
+        return;
+    } else
+        viewport_texture = r.unwrap();
+    /* Viewport Image */
+    if (const Result r = bank.create_image(viewport_texture); r.is_err()) {
+        Log::error(Log::Scope::RENDERER, "failed to initialize attachment image.\nreason: {}", r.unwrap_err());
+        return;
+    } else
+        viewport_image = r.unwrap();
+
     /* Create the active render view buffer */
     if (const Result r = bank.create_buffer(BufferUsage::Constant | BufferUsage::TransferDst, sizeof(RenderView)); r.is_err()) {
         Log::error(Log::Scope::RENDERER, "failed to create render view buffer.\nreason: {}", r.unwrap_err().c_str());
@@ -85,6 +102,7 @@ void Renderer::init() {
 }
 
 void Renderer::update() {
+    TMT_ZONE_SCOPED_N("Rendering")
     // Temporary
     draw_line({-0.5f, 0.5f, 0.0f}, {0.0f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f});
     draw_line({0.0f, -0.5f, 0.0f}, {0.5f, 0.5f, 0.0f}, {0.0f, 1.0f, 0.0f});
@@ -92,37 +110,45 @@ void Renderer::update() {
 
     draw_line({0.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f});
 
+    if (engine.window.resized) {
+        if (const Result r = gpu.get_vram_bank().resize_render_target(render_target, engine.window.width, engine.window.height); r.is_err()) {
+            Log::error(Log::Scope::RENDERER, "failed to resize the swapchain.\nreason: {}", r.unwrap_err().c_str());
+        } else {
+            engine.window.resized = false;
+            Log::info(Log::Scope::RENDERER, "Swapchain has been resized.");
+        }
+    }
+
     Entity cam_entity = Camera::get_active_camera();
     if (cam_entity == entt::null) {
         Log::error(Log::Scope::RENDERER, "Camera Entity is NULL. Are there any active cameras in the scene?");
-        return;
     }
 
     render_graph.new_graph().unwrap();
 
-    /* Get active camera */
-    Camera& camera = engine.ecs.get_component<Camera>(cam_entity);
-    Transform& transform = engine.ecs.get_component<Transform>(cam_entity);
-
+#ifndef THERMITE_EDITOR
     render_view.resolution = glm::uvec2(engine.window.width, engine.window.height);
-    const float aspect_ratio = (float)engine.window.width / (float)engine.window.height;
+#endif  // !THERMITE_EDITOR
+    if (cam_entity != entt::null) {
+        const float aspect_ratio = (float)render_view.resolution.x / (float)render_view.resolution.y;
+        /* Get active camera */
+        Camera& camera = engine.ecs.get_component<Camera>(cam_entity);
+        Transform& transform = engine.ecs.get_component<Transform>(cam_entity);
 
-    /* Iterate over all cameras to find an active one to use as render view */
-    static float rotation = 0.0f;
-    rotation += 0.01f;
-    glm::mat4 p = glm::perspective(glm::radians(camera.fov), aspect_ratio, 0.05f, 1000.0f);
-    const glm::mat4 v = glm::inverse(transform.get_world_matrix());
-    p[1][1] *= -1.0f;
-    render_view.world_to_clip = p * v;
-    render_view.clip_to_world = glm::inverse(render_view.world_to_clip);
-    render_view.origin = glm::vec4(transform.get_world_position(), 0.0f);
+        /* Iterate over all cameras to find an active one to use as render view */
+        glm::mat4 p = glm::perspective(glm::radians(camera.fov), aspect_ratio, 0.05f, 1000.0f);
+        const glm::mat4 v = glm::inverse(transform.get_world_matrix());
+        p[1][1] *= -1.0f;
+        render_view.world_to_clip = p * v;
+        render_view.clip_to_world = glm::inverse(render_view.world_to_clip);
+        render_view.origin = glm::vec4(transform.get_world_position(), 0.0f);
 
-    /* Upload the active render view */
-    render_graph.upload_buffer(render_view_buffer, &render_view, 0u, sizeof(RenderView));
-
-    /* Pipelines enqueue */
-    geometry_pipeline.enqueue(render_graph, render_view_buffer, render_target);
-    debug_pipeline.enqueue(render_graph, render_view_buffer, render_target);
+        /* Upload the active render view */
+        render_graph.upload_buffer(render_view_buffer, &render_view, 0u, sizeof(RenderView));
+        /* Pipelines enqueue */
+        geometry_pipeline.enqueue(render_graph, render_view_buffer);
+        debug_pipeline.enqueue(render_graph, render_view_buffer);
+    }
 
     /* Add the immediate mode GUI to the render graph */
     if (imgui != nullptr) {
@@ -137,11 +163,14 @@ void Renderer::update() {
     if (const Result r = render_graph.dispatch(); r.is_err()) {
         Log::error(Log::Scope::RENDERER, "failed to dispatch render graph.\nreason: {}", r.unwrap_err());
     }
+    TMT_FRAME_MARK;
 }
 
 void Renderer::end() {
     VRAMBank& bank = gpu.get_vram_bank();
     bank.destroy(render_view_buffer);
+    bank.destroy(viewport_texture);
+    bank.destroy(viewport_image);
     bank.destroy(render_target);
 
     /* Pipelines cleanup */
@@ -154,15 +183,44 @@ void Renderer::end() {
     gpu.deinit().expect("failed to destroy gpu adapter.");
 }
 
-void Renderer::set_imgui(ImGUI* imgui, ImGUIFunctions functions) {
-    this->imgui = imgui;
+void Renderer::set_imgui(ImGUI* new_imgui, ImGUIFunctions functions) {
+    imgui = new_imgui;
     /* Initialize the immediate mode GUI */
     if (const Result r = imgui->init(gpu, render_target, functions); r.is_err()) {
         Log::error(Log::Scope::RENDERER, "failed to initialize imgui.\nreason: {}", r.unwrap_err());
         return;
     }
+
+    imgui_viewport = imgui->add_image(viewport_image);
+}
+
+BindHandle Renderer::get_render_image() const {
+#ifdef THERMITE_EDITOR
+    return viewport_image;
+#else
+    return render_target;
+#endif  // THERMITE_EDITOR
+}
+
+u64 Renderer::get_imgui_viewport() const { return imgui_viewport; }
+
+void Renderer::set_viewport_size(uint32_t width, uint32_t height) {
+    if (width != render_view.resolution.x || height != render_view.resolution.y) {
+        render_view.resolution = {width, height};
+
+        if (const Result r = gpu.get_vram_bank().resize_texture(viewport_texture, {width, height, 0}); r.is_err()) {
+            Log::error(Log::Scope::RENDERER, "failed to resize the viewport texture.\nreason: {}", r.unwrap_err().c_str());
+        } else {
+            Log::info(Log::Scope::RENDERER, "viewport texture has been resized.");
+        }
+
+        imgui->remove_image(viewport_image);
+        imgui_viewport = imgui->add_image(viewport_image);
+    }
 }
 
 void Renderer::draw_line(const glm::vec3 start, const glm::vec3 end, const glm::vec3 color) { debug_pipeline.draw_line(start, end, color); }
+
+VRAMBank& Renderer::vram_bank() { return gpu.get_vram_bank(); }
 
 }  // namespace tmt

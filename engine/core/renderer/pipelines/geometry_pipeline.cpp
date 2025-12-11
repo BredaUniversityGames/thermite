@@ -9,6 +9,7 @@
 #include "core/ecs.hpp"
 #include "core/logger.hpp"
 #include "core/window.hpp"
+#include "core/renderer/renderer.hpp"
 
 #include "core/components/transform.hpp"
 #include "core/components/voxel_renderer.hpp"
@@ -27,20 +28,30 @@ void GeometryPipeline::init(GPUAdapter& gpu) {
     object_data = bank.create_buffer(usage, MAX_VOXEL_OBJECTS, sizeof(VoxelObject)).expect("failed to create object data buffer.");
 }
 
-void GeometryPipeline::enqueue(RenderGraph& render_graph, Buffer render_view, RenderTarget render_target) {
+void GeometryPipeline::enqueue(RenderGraph& render_graph, Buffer render_view) {
     /* Capture all voxel renderers in the scene */
     const entt::basic_group group = engine.ecs.get_registry().group<const VoxelRenderer>(entt::get<Transform>);
+
+    /* Get Render Image */
+    const BindHandle render_image = engine.renderer.get_render_image();
+
     /* Allocate space for all voxel objects */
     std::vector<VoxelObject> objects {};
     objects.reserve(std::min(group.size(), (size_t)MAX_VOXEL_OBJECTS));
 
     /* Iterate over all voxel renderers */
     for (auto&& [entity, renderer, transform] : group.each()) {
+        if (objects.size() >= (size_t)MAX_VOXEL_OBJECTS) break;
+        if (renderer.resource == nullptr) continue;
+
         /* Convert the entity to a voxel object */
         VoxelObject object {};
         object.local_to_world = transform.get_world_matrix();
         object.world_to_local = glm::inverse(object.local_to_world);
-        object.size = renderer.size;
+        object.size = renderer.resource->size;
+        object.blas_handle = renderer.resource->blas_nodes.get_index();
+        object.voxels_handle = renderer.resource->blas_voxels.get_index();
+        object.palette_handle = renderer.resource->blas_palette.get_index();
         objects.push_back(std::move(object));
     }
 
@@ -55,6 +66,8 @@ void GeometryPipeline::enqueue(RenderGraph& render_graph, Buffer render_view, Re
     /* clang-format off */
 
     /* Enqueue the geometry compute pass */
+    const glm::uvec2 render_res = engine.renderer.render_view.resolution;
+
     render_graph.add_compute_pass("geometry pass", "geometry.cs")
         /* Render view */
         .read(render_view)
@@ -63,9 +76,9 @@ void GeometryPipeline::enqueue(RenderGraph& render_graph, Buffer render_view, Re
         .read(object_indices)
         .read(object_data)
         /* Render target */
-        .write(render_target)
+        .write(render_image)
         .group_size(16, 8)
-        .work_size(engine.window.width, engine.window.height);
+        .work_size(render_res.x, render_res.y);
 
     /* clang-format on */
 }

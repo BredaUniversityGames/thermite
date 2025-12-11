@@ -28,7 +28,7 @@ public struct Bvh2Node {
 };
 
 /* Trace a ray through a BVH2. */
-public inline float trace_bvh2(
+public inline Hit trace_bvh2<let DEBUG : bool>(
     StructuredBuffer<float4> nodes,
     StructuredBuffer<uint> indices,
     StructuredBuffer<VoxelObject> prims,
@@ -38,7 +38,7 @@ public inline float trace_bvh2(
     const float3 rcp_origin = ray.origin * -ray.rcp_dir;
 
     /* Traversal state */
-    float min_t = 1e30f;
+    Hit hit = Hit::miss();
     uint node_index = 0u, stack[24], stack_ptr = 0u;
     for (;;) {
         const float4 rmax_prim_count = nodes[node_index + 3u];
@@ -51,9 +51,12 @@ public inline float trace_bvh2(
             const uint prim_index = asuint(rmin_prim_index.w);
             for (uint i = 0u; i < prim_count; ++i) {
                 const VoxelObject prim = prims[indices[prim_index + i]];
-                float hit_t;
-                intersect_voxel_object(ray, prim, hit_t);
-                min_t = min(min_t, hit_t);
+                const Hit prim_hit = intersect_voxel_object<DEBUG>(ray, prim);
+                if (DEBUG) hit.steps += prim_hit.steps;
+                if (prim_hit.t < hit.t) {
+                    hit.t = prim_hit.t;
+                    hit.albedo = prim_hit.albedo;
+                }
             }
 
             /* Pop the node stack */
@@ -73,10 +76,11 @@ public inline float trace_bvh2(
         const float3 mintb = min(t1b, t2b), maxtb = max(t1b, t2b);
         const float tmina = max(max(max(minta.x, minta.y), minta.z), 0.0f);
         const float tminb = max(max(max(mintb.x, mintb.y), mintb.z), 0.0f);
-        const float tmaxa = min(min(min(maxta.x, maxta.y), maxta.z), min_t);
-        const float tmaxb = min(min(min(maxtb.x, maxtb.y), maxtb.z), min_t);
+        const float tmaxa = min(min(min(maxta.x, maxta.y), maxta.z), hit.t);
+        const float tmaxb = min(min(min(maxtb.x, maxtb.y), maxtb.z), hit.t);
         float dist1 = tmina > tmaxa ? 1e30f : tmina;
         float dist2 = tminb > tmaxb ? 1e30f : tminb;
+        if (DEBUG) hit.steps++;
 
         /* Swap traversal order to traverse nearest node first */
         if (dist1 > dist2) {
@@ -96,5 +100,6 @@ public inline float trace_bvh2(
             if (dist2 != 1e30f) stack[stack_ptr++] = right;
         }
     }
-    return min_t;
+
+    return hit;
 }

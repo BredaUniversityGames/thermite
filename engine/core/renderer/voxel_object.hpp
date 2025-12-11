@@ -15,7 +15,13 @@ struct alignas(16) VoxelObject {
 
     /* Size of the object in voxels. */
     glm::uvec3 size {};
-    uint8_t padding : 8;
+    uint32_t blas_handle = 0u;
+    uint32_t voxels_handle = 0u;
+    uint32_t palette_handle = 0u;
+
+    /* Padding */
+    uint32_t : 32;
+    uint32_t : 32;
 
     /* Get the axis-aligned bounding box of this voxel object. */
     inline Aabb aabb() const {

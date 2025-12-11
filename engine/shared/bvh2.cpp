@@ -20,13 +20,13 @@ inline float half_area(const glm::vec3& v) { return v.x < -BIG_F32 ? 0.0f : (v.x
 template <typename T>
 void Bvh2<T>::build(const T* input_prims, const uint32_t input_count) {
     /* Delete old BVH data if it exists */
-    if (nodes) {
+    if (node_count > 0u) {
         delete[] nodes;
         delete[] prims;
         delete[] bounds;
         delete[] indices;
         delete[] gpu_nodes;
-        nodes = nullptr;
+        node_count = 0u;
     }
 
     /* Allocate space for nodes */
@@ -59,6 +59,12 @@ void Bvh2<T>::build(const T* input_prims, const uint32_t input_count) {
         root.max_bounds.x = fmaxf(root.max_bounds.x, bounds[i].max.x);
         root.max_bounds.y = fmaxf(root.max_bounds.y, bounds[i].max.y);
         root.max_bounds.z = fmaxf(root.max_bounds.z, bounds[i].max.z);
+    }
+
+    /* If there are no primitives, set root bounds to zero */
+    if (prim_count == 0u) {
+        root.min_bounds = glm::vec3(0.0f);
+        root.max_bounds = glm::vec3(0.0f);
     }
 
     /* Build the node hierarchy */
@@ -175,7 +181,7 @@ void Bvh2<T>::build(const T* input_prims, const uint32_t input_count) {
         const Bvh2Node& node = nodes[node_index];
         const uint32_t idx = alt_node++;
         /* Handle case where the tree is only a root node */
-        if (node.is_leaf()) {
+        if ((node_index == 0u && node.left_first == 0u) || node.is_leaf()) {
             gpu_nodes[idx].prim_count = node.prim_count;
             gpu_nodes[idx].prim_index = node.left_first;
             if (!stack_ptr) break;
@@ -260,12 +266,14 @@ Hit Bvh2<T>::trace(const Ray& ray) const {
 
 template <typename T>
 Bvh2<T>::~Bvh2() {
-    if (nodes == nullptr) return;
-    delete[] nodes;
-    delete[] prims;
-    delete[] bounds;
-    delete[] indices;
-    delete[] gpu_nodes;
+    if (node_count > 0u) {
+        delete[] nodes;
+        delete[] prims;
+        delete[] bounds;
+        delete[] indices;
+        delete[] gpu_nodes;
+        node_count = 0u;
+    }
 }
 
 /* Explicit template instantiations */
