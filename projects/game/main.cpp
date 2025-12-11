@@ -143,7 +143,7 @@ void Game::on_start() {
 
         vb.gravity = 0.0f;
         vb.type = tmt::VoxelBody::DYNAMIC;
-        renderer.size = glm::uvec3(20u, 20u, 20u);
+        //renderer.size = glm::uvec3(20u, 20u, 20u);
         transform.set_world_position(glm::vec3(0.0f, 85.0f, 10.0f));
     }
 
@@ -235,7 +235,7 @@ void Game::on_start() {
         //vb.gravity = 9.81f;
         vb.gravity = 0.0f;
         vb.type = tmt::VoxelBody::DYNAMIC;
-        renderer.size = glm::uvec3(10u, 10u, 10u);
+        //renderer.size = glm::uvec3(10u, 10u, 10u);
         glm::vec3 random_pos = glm::vec3(static_cast<float>(rand() % 10000) / 10000.0f - 0.5f, static_cast<float>(rand() % 10000) / 10000.0f, static_cast<float>(rand() % 10000) / 10000.0f - 0.5f);
 
         transform.set_world_position(random_pos * 100.0f);
@@ -328,7 +328,7 @@ void Game::on_start() {
         vb.gravity = 2.0f;
         vb.type = tmt::VoxelBody::DYNAMIC;
         vb.density = 100.0f;
-        renderer.size = glm::uvec3(10u, 10u, 10u);
+        //renderer.size = glm::uvec3(10u, 10u, 10u);
         transform.set_world_position(glm::vec3(-0.4f, 90.25f, 10.0f));
     }
 

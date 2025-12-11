@@ -12,6 +12,8 @@
 #include "core/renderer/renderer.hpp"
 #include <queue>
 
+#include "tools/profiler.hpp"
+
 namespace tmt {
 
 void Physics::on_start() {
@@ -70,8 +72,8 @@ void Physics::on_update(const FrameData&) {
         }
     }
 
-    //if (bvh.nodes) draw_node(bvh, 0u);
-    // draw_node(bvh, bvh.nodes[0].left_first + 1u);
+    // if (bvh.nodes) draw_node(bvh, 0u);
+    //  draw_node(bvh, bvh.nodes[0].left_first + 1u);
 }
 
 void Physics::on_fixed_update(const FrameData&) {
@@ -110,8 +112,7 @@ void Physics::on_fixed_update(const FrameData&) {
         }
 
         // practicly not moving
-        if (vb.accumulated_forces <= 150.0f && forces <= 150.0f)
-            vb.type = VoxelBody::SLEEPING;
+        if (vb.accumulated_forces <= 150.0f && forces <= 150.0f) vb.type = VoxelBody::SLEEPING;
     }
 
     // Detect Colllisions
@@ -135,96 +136,102 @@ void Physics::on_end() { Log::info("Physics on_end"); }
 void Physics::generate_voxel_constraints_range(const int index, const int size) {
     // Build BVH
     // NOTE: BVH needs to move to another function when multithreading is implemented
+
     const entt::basic_group group = engine.ecs.get_registry().group<VoxelBody>(entt::get<Transform>);
     std::vector<VoxelObject> objects {};
     std::vector<Entity> entities {};
     objects.reserve(group.size());
-
-    for (auto&& [entity, vb, transform] : group.each()) {
-        /* Convert the entity to a voxel object */
-        VoxelObject object {};
-        object.local_to_world = transform.get_world_matrix();
-        object.world_to_local = glm::inverse(object.local_to_world);
-        object.size = vb.voxels.size;
-        objects.push_back(std::move(object));
-        entities.push_back(entity);
-    }
-
-    bvh.build(objects.data(), (uint32_t)objects.size());
-
-    // auto& physics_layers = Engine.layers();
-    const int min = index * size;
-    const int max = (index + 1) * size;
-    auto vox_view = engine.ecs.get_registry().view<VoxelBody, Transform>();
-
-    int curr = -1;
-    for (const auto& [entity, vb, transform] : vox_view.each()) {
-        // if (!transform.is_enabled()) continue;
-        curr++;
-        if (curr < min || curr >= max) continue;
-        if (vb.type == VoxelBody::STATIC || vb.type == VoxelBody::SLEEPING) continue;
-
-        // Get current AABB
-        Aabb current_aabb = vb.aabb();
-
-        // Check against BVH
-        std::vector<Entity> bvh_overlaps {};
-        std::queue<uint32_t> node_queue {};
-        node_queue.push(0);
-        while (!node_queue.empty()) {
-            const uint32_t index = node_queue.front();
-            node_queue.pop();
-
-            // If leaf node, add to overlaps
-            if (bvh.nodes[index].is_leaf()) {
-                // Add all primitives in leaf to overlaps if overlapping
-                if (current_aabb.overlap({bvh.nodes[index].min_bounds, bvh.nodes[index].max_bounds})) {
-                    for (uint32_t i = 0; i < bvh.nodes[index].prim_count; i++) {
-                        bvh_overlaps.push_back(entities[bvh.nodes[index].left_first + i]);
-                    }
-                }
-                continue;
-            }
-
-            // Check for overlap
-            if (current_aabb.overlap({bvh.nodes[index].min_bounds, bvh.nodes[index].max_bounds})) {
-                // On overlap add children to queue
-                node_queue.push(bvh.nodes[index].left_first);
-                node_queue.push(bvh.nodes[index].left_first + 1u);
-            }
+    {
+        TMT_ZONE_SCOPED_N("Physics BVH Build")
+        for (auto&& [entity, vb, transform] : group.each()) {
+            /* Convert the entity to a voxel object */
+            VoxelObject object {};
+            object.local_to_world = transform.get_world_matrix();
+            object.world_to_local = glm::inverse(object.local_to_world);
+            object.size = vb.voxels.size;
+            objects.push_back(std::move(object));
+            entities.push_back(entity);
         }
 
-        // Collision checks for entities in bvh_overlaps
-        for (Entity other_entity : entities) {
-            if (other_entity == entity) continue;
-            Transform& other_transform = engine.ecs.get_component<Transform>(other_entity);
-            VoxelBody& other_vb = engine.ecs.get_component<VoxelBody>(other_entity);
+        bvh.build(objects.data(), (uint32_t)objects.size());
+    }
 
-            if (sat_early_out(vb, other_vb)) continue;
+    {
+        TMT_ZONE_SCOPED_N("Physics Collision Detection")
+        // auto& physics_layers = Engine.layers();
+        const int min = index * size;
+        const int max = (index + 1) * size;
+        auto vox_view = engine.ecs.get_registry().view<VoxelBody, Transform>();
 
-            Collision coll(entity, other_entity);
-            coll.contacts.reserve(64);
+        int curr = -1;
+        for (const auto& [entity, vb, transform] : vox_view.each()) {
+            // if (!transform.is_enabled()) continue;
+            curr++;
+            if (curr < min || curr >= max) continue;
+            if (vb.type == VoxelBody::STATIC || vb.type == VoxelBody::SLEEPING) continue;
 
-            // Find overlapping area's
-            // A's local collision overlap
-            glm::ivec3 min_a = {};
-            glm::ivec3 max_a = {};
-            get_overlap(vb, other_vb, min_a, max_a);
+            // Get current AABB
+            Aabb current_aabb = vb.aabb();
 
-            for (size_t z = min_a.z; z < max_a.z; z++) {
-                for (size_t y = min_a.y; y < max_a.y; y++) {
-                    for (size_t x = min_a.x; x < max_a.x; x++) {
-                        if (coll.contacts.size() >= max_contacts) continue;
-                        check_neighbors(vb, other_vb, x, y, z, coll);
+            // Check against BVH
+            std::vector<Entity> bvh_overlaps {};
+            std::queue<uint32_t> node_queue {};
+            node_queue.push(0);
+            while (!node_queue.empty()) {
+                const uint32_t index = node_queue.front();
+                node_queue.pop();
+
+                // If leaf node, add to overlaps
+                if (bvh.nodes[index].is_leaf()) {
+                    // Add all primitives in leaf to overlaps if overlapping
+                    if (current_aabb.overlap({bvh.nodes[index].min_bounds, bvh.nodes[index].max_bounds})) {
+                        for (uint32_t i = 0; i < bvh.nodes[index].prim_count; i++) {
+                            bvh_overlaps.push_back(entities[bvh.nodes[index].left_first + i]);
+                        }
                     }
+                    continue;
+                }
+
+                // Check for overlap
+                if (current_aabb.overlap({bvh.nodes[index].min_bounds, bvh.nodes[index].max_bounds})) {
+                    // On overlap add children to queue
+                    node_queue.push(bvh.nodes[index].left_first);
+                    node_queue.push(bvh.nodes[index].left_first + 1u);
                 }
             }
 
-            if (coll.contacts.size() <= 0) continue;
+            // Collision checks for entities in bvh_overlaps
+            for (Entity other_entity : entities) {
+                if (other_entity == entity) continue;
+                Transform& other_transform = engine.ecs.get_component<Transform>(other_entity);
+                VoxelBody& other_vb = engine.ecs.get_component<VoxelBody>(other_entity);
 
-            if (other_vb.type == VoxelBody::SLEEPING) other_vb.accumulated_forces = 10000;
-            coll.normal = glm::normalize(other_vb.position - vb.position);
-            solver.collisions.push_back(coll);
+                if (sat_early_out(vb, other_vb)) continue;
+
+                Collision coll(entity, other_entity);
+                coll.contacts.reserve(64);
+
+                // Find overlapping area's
+                // A's local collision overlap
+                glm::ivec3 min_a = {};
+                glm::ivec3 max_a = {};
+                get_overlap(vb, other_vb, min_a, max_a);
+
+                for (size_t z = min_a.z; z < max_a.z; z++) {
+                    for (size_t y = min_a.y; y < max_a.y; y++) {
+                        for (size_t x = min_a.x; x < max_a.x; x++) {
+                            if (coll.contacts.size() >= max_contacts) continue;
+                            check_neighbors(vb, other_vb, x, y, z, coll);
+                        }
+                    }
+                }
+
+                if (coll.contacts.size() <= 0) continue;
+
+                if (other_vb.type == VoxelBody::SLEEPING) other_vb.accumulated_forces = 10000;
+                coll.normal = glm::normalize(other_vb.position - vb.position);
+                solver.collisions.push_back(coll);
+            }
         }
 
         // for (const auto& [other_entity, other_vb, other_transform] : vox_view.each()) {
