@@ -40,7 +40,7 @@ void Game::on_start() {
         transform.set_world_position(glm::vec3(0.0f, 0.0f, -16.0f));
     }
 
-    auto voxel_file = tmt::engine.resources.load_resource<tmt::VoxelScene>({tmt::IO::Location::PROJECT, "dragon128.vengi"});
+    auto voxel_file = tmt::engine.resources.load_resource<tmt::VoxelScene>({tmt::IO::Location::PROJECT, "table.vengi"});
     auto voxel_volume = tmt::engine.resources.copy_resource<tmt::VoxelVolume>(voxel_file);
 
     { /* Voxel entity */
@@ -49,8 +49,7 @@ void Game::on_start() {
         auto& renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(voxel);
         renderer.resource = voxel_volume;
         transform.set_world_position(glm::vec3(0.0f, 0.0f, 0.0f));
-        // transform.set_world_rotation(glm::vec3(glm::radians(45.0f), glm::radians(45.0f), 0.0f));
-        transform.set_world_scale(glm::vec3(4.0f, 4.0f, 4.0f));
+        transform.set_world_scale(glm::vec3(1.0f, 1.0f, 1.0f));
     }
 
     // constexpr float PRIM_RANGE = 128.0f;
@@ -73,7 +72,7 @@ void Game::on_start() {
 
 void Game::on_update(const tmt::FrameData& time) {
     time_passed += time.delta_time;
-    auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(voxel);
+    // auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(voxel);
     // transform.set_world_position(glm::vec3(1.0f, sinf(time_passed), 1.0f));
     // transform.set_world_rotation(glm::vec3(sinf(time_passed), cosf(time_passed), 0.0f));
     // transform.set_world_scale(glm::vec3(1.0f, 1.5f + sinf(time_passed), 1.0f));

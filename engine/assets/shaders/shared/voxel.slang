@@ -35,19 +35,18 @@ public inline Hit intersect_voxel_object<let DEBUG : bool>(Ray ray, VoxelObject 
     const float t_far = min(min(min(t_max.x, t_max.y), t_max.z), t);
     if (t_near > t_far) return Hit::miss();
 
+    /* Calculate the entry point */
+    const float3 entry_point = ray.origin + ray.dir * t_near;
+    ray.origin = (entry_point / half_extent) + 2.0f;
+
 #if 0
     Hit hit;
     hit.t = t_near;
     hit.steps = 1u;
     hit.voxel_index = 0u;
+    hit.debug = ray.origin - 1.0f;
     return hit;
 #else
-    /* Move to the point of entry */
-    ray.origin = ray.origin + ray.dir * t_near;
-
-    /* Move the origin into [1, 2) space for 64 tree traversal */
-    ray.origin = ray.origin / half_extent * 0.5f + 1.5f;
-
     /* Fetch the SVT64 buffers */
     const StructuredBuffer<Svt64Node> nodes = bindless::storage_buffer<StructuredBuffer<Svt64Node>>(object.blas_handle);
 
@@ -56,14 +55,14 @@ public inline Hit intersect_voxel_object<let DEBUG : bool>(Ray ray, VoxelObject 
 
     Hit hit = Hit::miss(); /* Fill-in hit info */
     if (DEBUG) hit.steps = local_hit.steps;
-    if (local_hit.miss()) return Hit::miss();
+    if (local_hit.miss()) return hit;
 
     /* Calculate world-space hit point and distance */
     const float3 hit_ndc = local_hit.point * 4.0f - 5.0f;
     const float3 hit_point = mul(object.local_to_world, float4(hit_ndc * half_extent, 1.0f)).xyz;
     hit.t = distance(world_origin, hit_point);
     hit.voxel_index = local_hit.voxel_index;
-    hit.debug = hit_ndc;
+    hit.debug = float3(1.0, 1.0, 1.0);
     return hit;
 #endif
 }
