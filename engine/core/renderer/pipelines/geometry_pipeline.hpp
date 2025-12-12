@@ -5,6 +5,7 @@
 #include "core/renderer/render_view.hpp"
 
 #include "engine/shared/bvh2.hpp"
+#include "engine/shared/cwbvh.hpp"
 #include "engine/shared/svt64.hpp"
 
 class GPUAdapter;
@@ -16,6 +17,8 @@ struct VoxelObject;
 
 constexpr uint32_t MAX_VOXEL_OBJECTS = 10000u;
 
+#define CWBVH 1
+
 class GeometryPipeline {
    private:
     /* GPU resources */
@@ -25,6 +28,9 @@ class GeometryPipeline {
 
     /* Acceleration structures */
     Bvh2<VoxelObject> bvh {};
+#if CWBVH
+    CwBvh<VoxelObject> cwbvh {};
+#endif
 
    public:
     GeometryPipeline() {}

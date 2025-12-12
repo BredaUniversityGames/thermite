@@ -35,7 +35,7 @@ public inline Hit intersect_voxel_object<let DEBUG : bool>(Ray ray, VoxelObject 
     const float t_far = min(min(t_max.x, t_max.y), t_max.z);
     if (t_near > t_far) return Hit::miss();
 
-#if 0
+#if 1
     Hit hit;
     hit.t = t_near;
     hit.steps = 1u;

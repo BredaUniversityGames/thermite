@@ -23,7 +23,11 @@ void GeometryPipeline::init(GPUAdapter& gpu) {
 
     /* Create GPU resources */
     const BufferUsage usage = BufferUsage::Storage | BufferUsage::TransferDst;
+#if CWBVH
+    bvh_nodes = bank.create_buffer(usage, MAX_VOXEL_OBJECTS * 2u + 1u, sizeof(CwBvhNode)).expect("failed to create bvh nodes buffer.");
+#else
     bvh_nodes = bank.create_buffer(usage, MAX_VOXEL_OBJECTS * 2u + 1u, sizeof(AilaLaineNode)).expect("failed to create bvh nodes buffer.");
+#endif
     object_indices = bank.create_buffer(usage, MAX_VOXEL_OBJECTS, sizeof(uint32_t)).expect("failed to create object indices buffer.");
     object_data = bank.create_buffer(usage, MAX_VOXEL_OBJECTS, sizeof(VoxelObject)).expect("failed to create object data buffer.");
 }
@@ -59,8 +63,14 @@ void GeometryPipeline::enqueue(RenderGraph& render_graph, RenderView render_view
     bvh.build(objects.data(), (uint32_t)objects.size());
 
     /* Upload the object buffers */
+#if CWBVH
+    cwbvh.convert(bvh);
+    render_graph.upload_buffer(bvh_nodes, cwbvh.nodes, 0u, cwbvh.node_count * sizeof(CwBvhNode));
+    render_graph.upload_buffer(object_indices, cwbvh.indices, 0u, bvh.prim_count * sizeof(uint32_t));
+#else
     render_graph.upload_buffer(bvh_nodes, bvh.gpu_nodes, 0u, bvh.node_count * sizeof(AilaLaineNode));
     render_graph.upload_buffer(object_indices, bvh.indices, 0u, bvh.prim_count * sizeof(uint32_t));
+#endif
     render_graph.upload_buffer(object_data, bvh.prims, 0u, bvh.prim_count * sizeof(VoxelObject));
 
     /* clang-format off */
