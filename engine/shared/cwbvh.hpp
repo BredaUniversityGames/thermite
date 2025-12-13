@@ -32,6 +32,8 @@ struct CwBvhNode {
     uint8_t hi_z[8] {};
 };
 
+static_assert(sizeof(CwBvhNode) == 80);
+
 /*/
  * NOTE:
  * All BVH primitive types must implement the following functions:

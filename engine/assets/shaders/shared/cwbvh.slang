@@ -3,7 +3,17 @@ module bvh2;
 import view;
 import voxel;
 
-inline uint extract_byte(const uint i, const uint n) { return (i >> (n * 8)) & 0xFF; }
+struct CwBvhNode {
+    float4 cqf0; /* .xyz = Minimum bounds ~ .w = Log extent & Intersection mask */
+    float4 cqf1; /* .x = Child base index ~ .y = Prim base index ~ .zw = Child meta data */
+    float4 cqf2; /* .xy = Quantized min x ~ .zw = Quantized min y */
+    float4 cqf3; /* .xy = Quantized min z ~ .zw = Quantized max x */
+    float4 cqf4; /* .xy = Quantized max y ~ .zw = Quantized max z */
+};
+
+inline uint extract_byte(const uint a, const uint b) { return (a >> (b * 8u)) & 0xFFu; }
+inline int extract_byte(const int a, const int b) { return (a >> (b * 8u)) & 0xFFu; }
+
 inline uint sign_extend_s8x4(const uint i) {
     // asm("prmt.b32 %0, %1, 0x0, 0x0000BA98;" : "=r"(v) : "r"(i)); // BA98: 1011`1010`1001`1000
     // with the given parameters, prmt will extend the sign to all bits in a byte.
@@ -12,6 +22,12 @@ inline uint sign_extend_s8x4(const uint i) {
     uint b2 = (i & 0b00000000000000001000000000000000u) != 0u ? 0x0000ff00u : 0u;
     uint b3 = (i & 0b00000000000000000000000010000000u) != 0u ? 0x000000ffu : 0u;
     return b0 + b1 + b2 + b3;  // probably can do better than this.
+}
+
+inline uint ray_octant_inv4(float3 dir) {
+    return (dir.x < 0.0f ? 0u : 0x04040404u) |
+           (dir.y < 0.0f ? 0u : 0x02020202u) |
+           (dir.z < 0.0f ? 0u : 0x01010101u);
 }
 
 /* Trace a ray through a CWBVH. */
@@ -25,14 +41,17 @@ public inline Hit trace_cwbvh<let DEBUG : bool>(
 
     /* Traversal state */
     uint2 stack[32];
-    const uint octinv = 7u - ((ray.dir.x < 0.0f ? 4u : 0u) | (ray.dir.y < 0.0f ? 2u : 0u) | (ray.dir.z < 0.0f ? 1u : 0u));
-    uint2 node_group = 0u, prim_group = 0u;
+    uint2 node_group = uint2(0u, 0b10000000000000000000000000000000u);
+    uint2 prim_group = 0u;
     uint stack_ptr = 0u;
+
+    const uint inv_oct4 = ray_octant_inv4(ray.dir);
 
     for (;;) {
         if (DEBUG) hit.steps += 1;
 
         /* If there's nodes in the current group to intersect */
+        /* Nodes are in the 8 most significant bits of the node_group.y */
         if (node_group.y > 0x00FFFFFFu) {
             const uint imask = node_group.y;
 
@@ -49,141 +68,119 @@ public inline Hit trace_cwbvh<let DEBUG : bool>(
                 stack[stack_ptr++] = node_group;
             }
 
-            const uint slot_index = (child_bit_index - 24u) ^ octinv;
-            const uint octinv4 = octinv * 0x01010101u;
-            const uint relative_index = countbits(imask & ~(0xFFFFFFFFu << slot_index));
-            const uint child_node_index = child_base_index + relative_index;
+            /* Find the node index of the child node */
+            const uint child_index = child_bit_index - 24u;
+            const uint relative_index = countbits(imask & ~(0xFFFFFFFFu << (child_index ^ (inv_oct4 & 0xFFu))));
+            const uint node_index = child_base_index + relative_index;
 
-            /* Fetch the compressed node data */
-            const float4 n0 = nodes[child_node_index * 5u + 0u];
-            const float4 n1 = nodes[child_node_index * 5u + 1u];
-            const float4 n2 = nodes[child_node_index * 5u + 2u];
-            const float4 n3 = nodes[child_node_index * 5u + 3u];
-            const float4 n4 = nodes[child_node_index * 5u + 4u];
+            /* Fetch the compressed quad float node data */
+            const float4 cqf0 = nodes[node_index * 5u + 0u]; /* .xyz = Minimum bounds ~ .w = Log extent & Intersection mask */
+            const float4 cqf1 = nodes[node_index * 5u + 1u]; /* .x = Child base index ~ .y = Prim base index ~ .zw = Child meta data */
+            const float4 cqf2 = nodes[node_index * 5u + 2u]; /* .xy = Quantized min x ~ .zw = Quantized min y */
+            const float4 cqf3 = nodes[node_index * 5u + 3u]; /* .xy = Quantized min z ~ .zw = Quantized max x */
+            const float4 cqf4 = nodes[node_index * 5u + 4u]; /* .xy = Quantized max y ~ .zw = Quantized max z */
 
-            const float3 p = n0.xyz;
-            const int3 e = int3(
-                (asint(n0.w) >> 24u) & 0xFFu,
-                (asint(n0.w) >> 16u) & 0xFFu,
-                (asint(n0.w) >> 8u ) & 0xFFu
+            /* Extract the minimum bounds and log extent of the node */
+            const float3 min_bounds = cqf0.xyz;
+            const uint3 log_extent = uint3(
+                // (asint(cqf0.w) >> 24u) & 0xFFu,
+                // (asint(cqf0.w) >> 16u) & 0xFFu,
+                // (asint(cqf0.w) >> 8u ) & 0xFFu
+                extract_byte(asuint(cqf0.w), 0u),
+                extract_byte(asuint(cqf0.w), 1u),
+                extract_byte(asuint(cqf0.w), 2u)
             );
+
+            uint hitmask = 0u;
+
+            /* Transform the ray into local quantized space */
+            const float3 lq_rcp_dir = asfloat((log_extent + 127) << 23) * ray.rcp_dir;
+            const float3 lq_origin = (min_bounds - ray.origin) * ray.rcp_dir;
+
+            [ForceUnroll] /* Process 4 nodes at a time */
+            for (int i = 0; i < 2; i++) {
+                const uint meta4 = asuint((i == 0) ? cqf1.z : cqf1.w);
+
+                const uint is_inner4 = (meta4 & (meta4 << 1u)) & 0x10101010u;
+                const uint inner_mask4 = (is_inner4 >> 4u) * 0xFFu;
+                const uint bit_index4 = (meta4 ^ (inv_oct4 & inner_mask4)) & 0x1F1F1F1Fu;
+                const uint child_bits4 = (meta4 >> 5u) & 0x07070707u;
+
+                // const uint meta4 = asuint((i == 0) ? cqf1.z : cqf1.w);
+                // const uint is_inner4 = (meta4 & (meta4 << 1u)) & 0x10101010u;
+                // const uint inner_mask4 = sign_extend_s8x4(is_inner4 << 3u);
+                // const uint bit_index4 = (meta4 ^ (inv_oct4 & inner_mask4)) & 0x1F1F1F1Fu;
+                // const uint child_bits4 = (meta4 >> 5u) & 0x07070707u;
+
+                /* Load quantized low and high bounds for child nodes */
+                const uint q_lo_x = asuint((i == 0) ? cqf2.x : cqf2.y);
+                const uint q_lo_y = asuint((i == 0) ? cqf2.z : cqf2.w);
+                const uint q_lo_z = asuint((i == 0) ? cqf3.x : cqf3.y);
+                const uint q_hi_x = asuint((i == 0) ? cqf3.z : cqf3.w);
+                const uint q_hi_y = asuint((i == 0) ? cqf4.x : cqf4.y);
+                const uint q_hi_z = asuint((i == 0) ? cqf4.z : cqf4.w);
+
+                /* Select min and max based on ray octant */
+                const uint x_min = (ray.dir.x < 0.0f) ? q_hi_x : q_lo_x;
+                const uint x_max = (ray.dir.x < 0.0f) ? q_lo_x : q_hi_x;
+                const uint y_min = (ray.dir.y < 0.0f) ? q_hi_y : q_lo_y;
+                const uint y_max = (ray.dir.y < 0.0f) ? q_lo_y : q_hi_y;
+                const uint z_min = (ray.dir.z < 0.0f) ? q_hi_z : q_lo_z;
+                const uint z_max = (ray.dir.z < 0.0f) ? q_lo_z : q_hi_z;
+
+                [ForceUnroll] /* Perform ray AABB intersection for each child node */
+                for (int j = 0; j < 4; j++) {
+                    const float3 bmin = float3(extract_byte(x_min, j), extract_byte(y_min, j), extract_byte(z_min, j));
+                    const float3 bmax = float3(extract_byte(x_max, j), extract_byte(y_max, j), extract_byte(z_max, j));
+                    const float3 t_to_min = bmin * lq_rcp_dir + lq_origin;
+                    const float3 t_to_max = bmax * lq_rcp_dir + lq_origin;
+                    const float tmin = max(max(max(t_to_min.x, t_to_min.y), t_to_min.z), 0.0f);
+                    const float tmax = min(min(min(t_to_max.x, t_to_max.y), t_to_max.z), hit.t);
+
+                    /* If we hit the AABB, update the hit mask */
+                    if (tmin <= tmax) {
+                        const uint child_bits = extract_byte(child_bits4, j);
+                        const uint bit_index = extract_byte(bit_index4, j);
+                        hitmask |= child_bits << bit_index;
+                    }
+                }
+            }
+
+            /* Store the child and primitive base indices inside the groups */
+            node_group.x = asuint(cqf1.x); /* <- Child base index */
+            prim_group.x = asuint(cqf1.y); /* <- Prim base index */
+
+            /* Update the intersection mask stored in the node and primitive groups */
+            node_group.y = (hitmask & 0xFF000000u) | extract_byte(asuint(cqf0.w), 3u);  // (asuint(cqf0.w) & 0xFFu);
+            prim_group.y = hitmask & 0x00FFFFFFu;
+        } else {
+            /* No nodes left in the current group */
+            prim_group = node_group;
+            node_group = 0u;
+        }
+
+        /* Process all primitives in the primitive group */
+        for (; prim_group.y != 0u;) {
+            const uint local_prim_index = firstbithigh(prim_group.y);
+            prim_group.y &= ~(1u << local_prim_index);
+
+            const uint prim_index = prim_group.x + local_prim_index;
+            const VoxelObject prim = prims[indices[prim_index]];
+
+            const Hit prim_hit = intersect_voxel_object<DEBUG>(ray, prim);
+            if (DEBUG) hit.steps++;
+
+            if (prim_hit.t < hit.t) {
+                hit.t = prim_hit.t;
+            }
+        }
+
+        /* Pop the stack if there are entries left */
+        if ((node_group.y & 0xFF000000u) == 0u) {
+            if (stack_ptr == 0u) break;
+            node_group = stack[--stack_ptr];
         }
     }
 
-    // Hit hit = Hit::miss();
-    // uint2 traversalStack[32];
-    // uint hitAddr = 0, stackPtr = 0;
-    // float tmin = 0, tmax = 1e30f;
-    // const uint octinv = (7 - ((ray.dir.x < 0 ? 4 : 0) | (ray.dir.y < 0 ? 2 : 0) | (ray.dir.z < 0 ? 1 : 0))) * 0x1010101;
-    // uint2 ngroup = uint2(0, 0b10000000000000000000000000000000), tgroup = uint2(0);
-    // for (uint qjk = 0u; qjk < 64u; ++qjk) {
-    //     hit.steps += 1;
-    //     if (ngroup.y > 0x00FFFFFF) {
-    //         const uint hits = ngroup.y; 
-    //         uint imask = ngroup.y;
-    //         const uint child_bit_index = firstbithigh(hits), child_node_base_index = ngroup.x;
-    //         ngroup.y &= ~(1 << child_bit_index);
-    //         if (ngroup.y > 0x00FFFFFF) { traversalStack[stackPtr++] = ngroup; }
-    //         {
-    //             const uint slot_index = (child_bit_index - 24) ^ (octinv & 255);
-    //             const uint relative_index = countbits(imask & ~(0xFFFFFFFF << slot_index));
-    //             const uint child_node_index = child_node_base_index + relative_index;
-    //             const float4 n0 = nodes[child_node_index * 5 + 0], n1 = nodes[child_node_index * 5 + 1];
-    //             const float4 n2 = nodes[child_node_index * 5 + 2], n3 = nodes[child_node_index * 5 + 3];
-    //             const float4 n4 = nodes[child_node_index * 5 + 4], p = n0;
-    //             int3 e;
-    //             // e.x = (int32_t) * ((int8_t*)&n0.w + 0), e.y = (int32_t) * ((int8_t*)&n0.w + 1), e.z = (int32_t) * ((int8_t*)&n0.w + 2);
-    //             e.x = (asint(n0.w) >> 0) & 0xFF;
-    //             e.y = (asint(n0.w) >> 8) & 0xFF;
-    //             e.z = (asint(n0.w) >> 16) & 0xFF;
-    //             ngroup.x = asuint(n1.x);
-    //             tgroup.x = asuint(n1.y); 
-    //             tgroup.y = 0;
-    //             uint hitmask = 0;
-    //             const uint vx = (e.x + 127) << 23u; const float adjusted_idirx = asfloat(vx) * ray.rcp_dir.x;
-    //             const uint vy = (e.y + 127) << 23u; const float adjusted_idiry = asfloat(vy) * ray.rcp_dir.y;
-    //             const uint vz = (e.z + 127) << 23u; const float adjusted_idirz = asfloat(vz) * ray.rcp_dir.z;
-    //             const float origx = -(ray.origin.x - p.x) * ray.rcp_dir.x;
-    //             const float origy = -(ray.origin.y - p.y) * ray.rcp_dir.y;
-    //             const float origz = -(ray.origin.z - p.z) * ray.rcp_dir.z;
-    //             {  // First 4
-    //                 const uint meta4 = asuint(n1.z), is_inner4 = (meta4 & (meta4 << 1)) & 0x10101010;
-    //                 const uint inner_mask4 = sign_extend_s8x4(is_inner4 << 3);
-    //                 const uint bit_index4 = (meta4 ^ (octinv & inner_mask4)) & 0x1F1F1F1F;
-    //                 const uint child_bits4 = (meta4 >> 5) & 0x07070707;
-    //                 uint swizzledLox = (ray.rcp_dir.x < 0) ? asuint(n3.z) : asuint(n2.x), swizzledHix = (ray.rcp_dir.x < 0) ? asuint(n2.x) : asuint(n3.z);
-    //                 uint swizzledLoy = (ray.rcp_dir.y < 0) ? asuint(n4.x) : asuint(n2.z), swizzledHiy = (ray.rcp_dir.y < 0) ? asuint(n2.z) : asuint(n4.x);
-    //                 uint swizzledLoz = (ray.rcp_dir.z < 0) ? asuint(n4.z) : asuint(n3.x), swizzledHiz = (ray.rcp_dir.z < 0) ? asuint(n3.x) : asuint(n4.z);
-    //                 float tminx[4], tminy[4], tminz[4], tmaxx[4], tmaxy[4], tmaxz[4];
-    //                 tminx[0] = ((swizzledLox >> 0) & 0xFF) * adjusted_idirx + origx; tminx[1] = ((swizzledLox >> 8) & 0xFF) * adjusted_idirx + origx; tminx[2] = ((swizzledLox >> 16) & 0xFF) * adjusted_idirx + origx;
-    //                 tminx[3] = ((swizzledLox >> 24) & 0xFF) * adjusted_idirx + origx; tminy[0] = ((swizzledLoy >> 0) & 0xFF) * adjusted_idiry + origy; tminy[1] = ((swizzledLoy >> 8) & 0xFF) * adjusted_idiry + origy;
-    //                 tminy[2] = ((swizzledLoy >> 16) & 0xFF) * adjusted_idiry + origy; tminy[3] = ((swizzledLoy >> 24) & 0xFF) * adjusted_idiry + origy; tminz[0] = ((swizzledLoz >> 0) & 0xFF) * adjusted_idirz + origz;
-    //                 tminz[1] = ((swizzledLoz >> 8) & 0xFF) * adjusted_idirz + origz; tminz[2] = ((swizzledLoz >> 16) & 0xFF) * adjusted_idirz + origz; tminz[3] = ((swizzledLoz >> 24) & 0xFF) * adjusted_idirz + origz;
-    //                 tmaxx[0] = ((swizzledHix >> 0) & 0xFF) * adjusted_idirx + origx; tmaxx[1] = ((swizzledHix >> 8) & 0xFF) * adjusted_idirx + origx; tmaxx[2] = ((swizzledHix >> 16) & 0xFF) * adjusted_idirx + origx;
-    //                 tmaxx[3] = ((swizzledHix >> 24) & 0xFF) * adjusted_idirx + origx; tmaxy[0] = ((swizzledHiy >> 0) & 0xFF) * adjusted_idiry + origy; tmaxy[1] = ((swizzledHiy >> 8) & 0xFF) * adjusted_idiry + origy;
-    //                 tmaxy[2] = ((swizzledHiy >> 16) & 0xFF) * adjusted_idiry + origy; tmaxy[3] = ((swizzledHiy >> 24) & 0xFF) * adjusted_idiry + origy; tmaxz[0] = ((swizzledHiz >> 0) & 0xFF) * adjusted_idirz + origz;
-    //                 tmaxz[1] = ((swizzledHiz >> 8) & 0xFF) * adjusted_idirz + origz; tmaxz[2] = ((swizzledHiz >> 16) & 0xFF) * adjusted_idirz + origz; tmaxz[3] = ((swizzledHiz >> 24) & 0xFF) * adjusted_idirz + origz;
-    //                 for (int32_t i = 0; i < 4; i++) {
-    //                     // Use VMIN, VMAX to compute the slabs
-    //                     const float cmin = max(max(max(tminx[i], tminy[i]), tminz[i]), tmin);
-    //                     const float cmax = min(min(min(tmaxx[i], tmaxy[i]), tmaxz[i]), tmax);
-    //                     if (cmin <= cmax) hitmask |= extract_byte(child_bits4, i) << extract_byte(bit_index4, i);
-    //                 }
-    //             }
-    //             {  // Second 4
-    //                 const uint meta4 = asuint(n1.w), is_inner4 = (meta4 & (meta4 << 1)) & 0x10101010;
-    //                 const uint inner_mask4 = sign_extend_s8x4(is_inner4 << 3);
-    //                 const uint bit_index4 = (meta4 ^ (octinv & inner_mask4)) & 0x1F1F1F1F;
-    //                 const uint child_bits4 = (meta4 >> 5) & 0x07070707;
-    //                 uint swizzledLox = (ray.rcp_dir.x < 0) ? asuint(n3.w) : asuint(n2.y), swizzledHix = (ray.rcp_dir.x < 0) ? asuint(n2.y) : asuint(n3.w);
-    //                 uint swizzledLoy = (ray.rcp_dir.y < 0) ? asuint(n4.y) : asuint(n2.w), swizzledHiy = (ray.rcp_dir.y < 0) ? asuint(n2.w) : asuint(n4.y);
-    //                 uint swizzledLoz = (ray.rcp_dir.z < 0) ? asuint(n4.w) : asuint(n3.y), swizzledHiz = (ray.rcp_dir.z < 0) ? asuint(n3.y) : asuint(n4.w);
-    //                 float tminx[4], tminy[4], tminz[4], tmaxx[4], tmaxy[4], tmaxz[4];
-    //                 tminx[0] = ((swizzledLox >> 0) & 0xFF) * adjusted_idirx + origx; tminx[1] = ((swizzledLox >> 8) & 0xFF) * adjusted_idirx + origx; tminx[2] = ((swizzledLox >> 16) & 0xFF) * adjusted_idirx + origx;
-    //                 tminx[3] = ((swizzledLox >> 24) & 0xFF) * adjusted_idirx + origx; tminy[0] = ((swizzledLoy >> 0) & 0xFF) * adjusted_idiry + origy; tminy[1] = ((swizzledLoy >> 8) & 0xFF) * adjusted_idiry + origy;
-    //                 tminy[2] = ((swizzledLoy >> 16) & 0xFF) * adjusted_idiry + origy; tminy[3] = ((swizzledLoy >> 24) & 0xFF) * adjusted_idiry + origy; tminz[0] = ((swizzledLoz >> 0) & 0xFF) * adjusted_idirz + origz;
-    //                 tminz[1] = ((swizzledLoz >> 8) & 0xFF) * adjusted_idirz + origz; tminz[2] = ((swizzledLoz >> 16) & 0xFF) * adjusted_idirz + origz; tminz[3] = ((swizzledLoz >> 24) & 0xFF) * adjusted_idirz + origz;
-    //                 tmaxx[0] = ((swizzledHix >> 0) & 0xFF) * adjusted_idirx + origx; tmaxx[1] = ((swizzledHix >> 8) & 0xFF) * adjusted_idirx + origx; tmaxx[2] = ((swizzledHix >> 16) & 0xFF) * adjusted_idirx + origx;
-    //                 tmaxx[3] = ((swizzledHix >> 24) & 0xFF) * adjusted_idirx + origx; tmaxy[0] = ((swizzledHiy >> 0) & 0xFF) * adjusted_idiry + origy; tmaxy[1] = ((swizzledHiy >> 8) & 0xFF) * adjusted_idiry + origy;
-    //                 tmaxy[2] = ((swizzledHiy >> 16) & 0xFF) * adjusted_idiry + origy; tmaxy[3] = ((swizzledHiy >> 24) & 0xFF) * adjusted_idiry + origy; tmaxz[0] = ((swizzledHiz >> 0) & 0xFF) * adjusted_idirz + origz;
-    //                 tmaxz[1] = ((swizzledHiz >> 8) & 0xFF) * adjusted_idirz + origz; tmaxz[2] = ((swizzledHiz >> 16) & 0xFF) * adjusted_idirz + origz; tmaxz[3] = ((swizzledHiz >> 24) & 0xFF) * adjusted_idirz + origz;
-    //                 for (int32_t i = 0; i < 4; i++) {
-    //                     const float cmin = max(max(max(tminx[i], tminy[i]), tminz[i]), tmin);
-    //                     const float cmax = min(min(min(tmaxx[i], tmaxy[i]), tmaxz[i]), tmax);
-    //                     if (cmin <= cmax) hitmask |= extract_byte(child_bits4, i) << extract_byte(bit_index4, i);
-    //                 }
-    //             }
-    //             ngroup.y = (hitmask & 0xFF000000) | (asuint(n0.w) >> 24);
-    //             tgroup.y = hitmask & 0x00FFFFFF;
-    //         }
-    //     } else {
-    //         tgroup = ngroup; 
-    //         ngroup = uint2(0);
-    //     }
-    //     while (tgroup.y != 0) {
-    //         uint primIndex = firstbithigh(tgroup.y);
-    //         tgroup.y -= (1u << primIndex);
-    //         int32_t primAddr = tgroup.x + primIndex;
-    //         const VoxelObject prim = prims[indices[primAddr]];
-
-    //         // const float t = intersect_aabb(ray, prim.min, prim.max);
-    //         const Hit prim_hit = intersect_voxel_object<DEBUG>(ray, prim);
-    //         if (DEBUG) hit.steps += prim_hit.steps;
-    //         // if (prim_hit.t < hit.t) {
-    //         //     hit.t = prim_hit.t;
-    //         //     hit.albedo = prim_hit.albedo;
-    //         // }
-
-    //         if (prim_hit.t < 0.0f || prim_hit.t >= tmax) continue;
-    //         tmax = prim_hit.t;
-    //     }
-    //     if (ngroup.y > 0x00FFFFFF) continue;
-    //     if (stackPtr > 0) { ngroup = traversalStack[--stackPtr]; }
-    //     else {
-    //         hit.t = tmax;
-    //         break;
-    //     }
-    // }
-
-    // return hit;
+    return hit;
 }

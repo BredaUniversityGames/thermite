@@ -68,7 +68,7 @@ void main(int2 thread_id: SV_DispatchThreadID, int group_id: SV_GroupIndex) {
     if (hit.t < BIG_F32) {
         render_target[thread_id] = float4(1.0f - (hit.t * 0.01f).xxx, 1.0f);
     } else {
-        const float3 color = heat_color((float)hit.steps / 128.0f);
+        const float3 color = heat_color((float)hit.steps / 32.0f);
         render_target[thread_id] = float4(color, 1.0f);
     }
 }

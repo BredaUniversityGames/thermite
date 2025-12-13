@@ -203,13 +203,23 @@ void CwBvh<T>::convert(const Bvh2<T>& bvh2) {
             dst.hi_y[i] = (uint8_t)ceilf((child.max_bounds.y - src.min_bounds.y) * rq_y);
             dst.hi_z[i] = (uint8_t)ceilf((child.max_bounds.z - src.min_bounds.z) * rq_z);
 
+            // if (child.is_leaf()) {
+            //     printf("leaf:\n");
+            //     printf("lo = %d, %d, %d\n", dst.lo_x[i], dst.lo_y[i], dst.lo_z[i]);
+            //     printf("hi = %d, %d, %d\n", dst.hi_x[i], dst.hi_y[i], dst.hi_z[i]);
+            // } else {
+            //     printf("node:\n");
+            //     printf("lo = %d, %d, %d\n", dst.lo_x[i], dst.lo_y[i], dst.lo_z[i]);
+            //     printf("hi = %d, %d, %d\n", dst.hi_x[i], dst.hi_y[i], dst.hi_z[i]);
+            // }
+
             if (child.is_leaf()) {
                 /* Unary encode primitive count */
                 if (dst.prim_base_index == 0xFFFFFFFFu) dst.prim_base_index = prim_ptr;
                 const uint32_t unaryEncodedTriCount = child.prim_count == 1u ? 0b001u : child.prim_count == 2u ? 0b011u : 0b111u;
 
                 /* Set the child metadata */
-                dst.meta[i] = (uint8_t)((unaryEncodedTriCount << 5u) | leaf_prim_count);
+                dst.meta[i] = (uint8_t)((unaryEncodedTriCount << 5u) | (leaf_prim_count & 0b11111u));
 
                 /* Copy over primitive indices */
                 leaf_prim_count += child.prim_count;
@@ -222,7 +232,7 @@ void CwBvh<T>::convert(const Bvh2<T>& bvh2) {
                 dst.intersection_mask |= (1u << i);
 
                 /* Set the child metadata */
-                dst.meta[i] = (1u << 5u) | (24u + (uint8_t)i);
+                dst.meta[i] = (1u << 5u) | (24u + (i & 0b11111u));
 
                 /* Push the child onto the stack */
                 src_stack[stack_ptr] = children[i];
