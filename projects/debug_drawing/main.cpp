@@ -46,15 +46,15 @@ void DebugDrawing::on_update(const tmt::FrameData& time) {
     tmt::engine.renderer.draw_line({0.0f, -0.5f, 0.0f}, {0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 0.0f}, 0.0f);
     tmt::engine.renderer.draw_line({0.5f, 0.5f, 0.0f}, {-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 0.0f}, 0.0f);
 
-    tmt::engine.renderer.draw_circle({2.0f, 2.0f, 2.0f}, 4.0f, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, 32);
+    tmt::engine.renderer.draw_circle({2.0f, 2.0f, 2.0f}, 4.0f, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f}, 32);
 
-    tmt::engine.renderer.draw_sphere({5.0f, 0.0f, 0.0f}, 2.0f, 8);
+    tmt::engine.renderer.draw_sphere({5.0f, 0.0f, 0.0f}, 2.0f, {1.0f, 0.0f, 0.0f}, 8);
 
     tmt::engine.renderer.draw_arrow({1.0f, 1.0f, 1.0f}, {1.0f, 0.0f, 1.0f});
 
     tmt::engine.renderer.draw_cross({2.0f, 0.0f, 0.0f});
 
-    tmt::engine.renderer.draw_obb({0.0f, -3.0f, 0.0f}, 1.0f, 1.0f, 1.0f, glm::angleAxis(glm::radians(45.0f), glm::vec3(0, 0, 1)));
+    tmt::engine.renderer.draw_obb({0.0f, -3.0f, 0.0f}, 1.0f, 1.0f, 1.0f, {1.0f, 0.0f, 0.0f}, glm::angleAxis(glm::radians(45.0f), glm::vec3(0, 0, 1)));
 }
 
 void DebugDrawing::on_end() {}

@@ -92,7 +92,7 @@ void DebugPipeline::draw_line(const glm::vec3 start, const glm::vec3 end, const 
     num_points += 2;
 }
 
-void DebugPipeline::draw_circle(const glm::vec3 center, const float radius, const glm::vec3 axis_a, const glm::vec3 axis_b, int segments, const glm::vec3 color, const float time) {
+void DebugPipeline::draw_circle(const glm::vec3 center, const float radius, const glm::vec3 axis_a, const glm::vec3 axis_b, const glm::vec3 color, int segments, const float time) {
     if (segments < 4) segments = 4;
 
     const float step = glm::two_pi<float>() / static_cast<float>(segments);
@@ -109,7 +109,7 @@ void DebugPipeline::draw_circle(const glm::vec3 center, const float radius, cons
     }
 }
 
-void DebugPipeline::draw_sphere(const glm::vec3 center, float radius, int rings, int segments, const glm::vec3 color, const float time) {
+void DebugPipeline::draw_sphere(const glm::vec3 center, float radius, const glm::vec3 color, int rings, int segments, const float time) {
     if (segments < 4) segments = 4;
     if (rings < 2) rings = 2;
 
@@ -117,9 +117,9 @@ void DebugPipeline::draw_sphere(const glm::vec3 center, float radius, int rings,
     const int longitude_rings = rings - latitude_rings;
 
     // Great circles (always draw these)
-    draw_circle(center, radius, {1, 0, 0}, {0, 1, 0}, segments, color, time);
-    draw_circle(center, radius, {1, 0, 0}, {0, 0, 1}, segments, color, time);
-    draw_circle(center, radius, {0, 1, 0}, {0, 0, 1}, segments, color, time);
+    draw_circle(center, radius, {1, 0, 0}, {0, 1, 0}, color, segments, time);
+    draw_circle(center, radius, {1, 0, 0}, {0, 0, 1}, color, segments,  time);
+    draw_circle(center, radius, {0, 1, 0}, {0, 0, 1}, color, segments,  time);
 
     // Latitude rings (horizontal)
     for (int i = 1; i <= latitude_rings; ++i) {
@@ -128,7 +128,7 @@ void DebugPipeline::draw_sphere(const glm::vec3 center, float radius, int rings,
 
         const float ring_radius = sqrtf(radius * radius - y * y);
 
-        draw_circle(center + glm::vec3(0, y, 0), ring_radius, {1, 0, 0}, {0, 0, 1}, segments, color, time);
+        draw_circle(center + glm::vec3(0, y, 0), ring_radius, {1, 0, 0}, {0, 0, 1}, color, segments, time);
     }
 
     // Longitude rings (vertical)
@@ -139,11 +139,11 @@ void DebugPipeline::draw_sphere(const glm::vec3 center, float radius, int rings,
 
         const glm::vec3 axis_b = {0.0f, 1.0f, 0.0f};
 
-        draw_circle(center, radius, axis_a, axis_b, segments, color, time);
+        draw_circle(center, radius, axis_a, axis_b, color, segments, time);
     }
 }
 
-void DebugPipeline::draw_arrow(const glm::vec3 start, glm::vec3 dir, float length, float head_length, float head_angle, const glm::vec3 color, const float time) {
+void DebugPipeline::draw_arrow(const glm::vec3 start, glm::vec3 dir, const glm::vec3 color, float length, float head_length, float head_angle, const float time) {
     if (glm::length2(dir) < 1e-6f) return;
 
     dir = glm::normalize(dir);
@@ -177,7 +177,7 @@ void DebugPipeline::draw_arrow(const glm::vec3 start, glm::vec3 dir, float lengt
     draw_line(end, end - head_dir4 * head_len, color, time);
 }
 
-void DebugPipeline::draw_cross(const glm::vec3 center, const float size, const glm::quat rot, const glm::vec3 color, const float time) {
+void DebugPipeline::draw_cross(const glm::vec3 center, const glm::vec3 color, const float size, const glm::quat rot, const float time) {
     static const glm::quat default_rotation = glm::angleAxis(glm::radians(45.0f), glm::vec3(0, 0, 1));
 
     const glm::quat final_rotation = (rot == glm::quat()) ? default_rotation : rot;
@@ -195,7 +195,7 @@ void DebugPipeline::draw_cross(const glm::vec3 center, const float size, const g
     draw_line(center - ry, center + ry, color, time);
 }
 
-void DebugPipeline::draw_obb(const glm::vec3 center, const float width, const float height, const float depth, const glm::quat rot, const glm::vec3 color, const float time) {
+void DebugPipeline::draw_obb(const glm::vec3 center, const float width, const float height, const float depth, const glm::vec3 color, const glm::quat rot, const float time) {
     const glm::vec3 half = glm::vec3(width, height, depth) * 0.5f;
 
     // Local corners (before rotation)
