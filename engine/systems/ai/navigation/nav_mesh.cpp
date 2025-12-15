@@ -63,43 +63,47 @@ void NavMesh::generate_mesh(IO::FileLocation location) {
     // Initialize data vector
     auto data = std::vector<NavVoxel>(size.x * size.y * size.z);
 
+    std::unordered_map<uint32_t, int> node_map;
+
     for (uint32_t z = 0; z < size.z; z++) {
         for (uint32_t y = 0; y < size.y; y++) {
             for (uint32_t x = 0; x < size.x; x++) {
-                const uint32_t index = x + size.x * y + size.x * size.y * z;
-                if (voxel_empty(x, y, z)) continue;  // <-- was model.voxel_empty
+                const uint32_t pos_index = x + size.x * y + size.x * size.y * z;
+                if (voxel_empty(x, y, z)) continue;
 
-                int empty_sides = 0;
+                int node_index = -1;
+                if (node_map.contains(pos_index)) {
+                    node_index = node_map[pos_index];
+                } else {
+                    // Create node
+                    Node node;
+                    node_map[pos_index] = (int)nodes.size();
+                    node_index = (int)nodes.size();
+                    nodes.push_back(node);
+                }
+
                 glm::ivec3 normal = {};
                 for (size_t sign = 0; sign < 2; sign++) {
                     for (size_t dir = 0; dir < 3; dir++) {
                         glm::uvec3 temp = {x, y, z};
                         temp[(int)dir] += sign == 0 ? (int)1 : -((int)1);
+                        const uint32_t connecting_pos_index = temp.x + size.x * temp.y + size.x * size.y * temp.z;
 
-                        if (!(temp.x < size.x && temp.y < size.y && temp.z < size.z) || voxel_empty(temp.x, temp.y, temp.z)) {  // <-- was model.voxel_empty
-                            normal[(int)dir] += sign == 0 ? 1 : -1;
-                            empty_sides++;
+                        if ((temp.x < size.x && temp.y < size.y && temp.z < size.z) && !voxel_empty(temp.x, temp.y, temp.z)) {
+                            int connecting_node_index = -1;
+                            if (node_map.contains(connecting_pos_index)) {
+                                connecting_node_index = node_map[connecting_pos_index];
+                            } else {
+                                Node node;
+                                node_map[connecting_pos_index] = (int)nodes.size();
+                                connecting_node_index = (int)nodes.size();
+                                nodes.push_back(node);
+                            }
+
+                            nodes[node_index].connectingNodes.push_back(connecting_node_index);
                         }
                     }
                 }
-
-                if (empty_sides == 0)
-                    data[index].type = VoxelType::Inside;
-                else if (empty_sides >= 1) {
-                    data[index].type = VoxelType::Face;
-                    Node node;
-                    node.pos = glm::vec3(x, y, z);
-                    nodes.push_back(node);
-                } 
-            }
-        }
-    }
-    for (int i = 0; i < nodes.size(); i++) {
-        for (int j = 0; j < nodes.size(); j++) {
-            if (i == j) continue;
-            float dist = glm::distance(nodes[i].pos, nodes[j].pos);
-            if (dist < 1.5f) {
-                nodes[i].connectingNodes.push_back(j);
             }
         }
     }
@@ -182,10 +186,11 @@ std::vector<glm::vec3> NavMesh::find_path(const int startingNodeID, const int en
 
 void tmt::NavMesh::inspect() {
     for (int i = 0; i < nodes.size(); i++) {
-        engine.renderer.draw_line(nodes[i].pos, nodes[i].pos + glm::vec3(0, 0.2f, 0), glm::vec3(1.0f, 0.0f, 0.0f));
         for (int j = 0; j < nodes[i].connectingNodes.size(); j++) {
             int conn_idx = nodes[i].connectingNodes[j];
-            engine.renderer.draw_line(nodes[i].pos, nodes[conn_idx].pos, glm::vec3(0.0f, 1.0f, 0.0f));
+            glm::vec3 color = glm::vec3(0.0f, 1.0f, 0.0f);
+            if (nodes[i].too_steep || nodes[j].too_steep) color = glm::vec3(1.0f, 0.0f, 0.0f);
+            engine.renderer.draw_line(nodes[i].pos, nodes[conn_idx].pos, color);
         }
     }
 }

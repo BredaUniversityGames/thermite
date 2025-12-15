@@ -3,7 +3,40 @@
 #include "engine/core/resources.hpp"
 namespace tmt {
 
-enum VoxelType : uint8_t { Empty, Corner, Edge, Face, Inside };
+static const glm::ivec3 normal_lut[27] {
+    {0, 0, 0},
+    // Cardinal directions 1-7
+    {1, 0, 0},
+    {0, 1, 0},
+    {0, 0, 1},
+    {-1, 0, 0},
+    {0, -1, 0},
+    {0, 0, -1},
+    // Edge directions 7-19
+    {1, 1, 0},
+    {1, 0, 1},
+    {0, 1, 1},
+    {-1, 1, 0},
+    {-1, 0, 1},
+    {0, -1, 1},
+    {1, -1, 0},
+    {1, 0, -1},
+    {0, 1, -1},
+    {-1, -1, 0},
+    {-1, 0, -1},
+    {0, -1, -1},
+    // Corner directions 19-27
+    {1, 1, 1},
+    {1, 1, -1},
+    {1, -1, 1},
+    {1, -1, -1},
+    {-1, 1, 1},
+    {-1, 1, -1},
+    {-1, -1, 1},
+    {-1, -1, -1}
+};
+
+enum VoxelType : uint8_t { Empty, Outside, Inside };
 
 struct NavVoxel {
     VoxelType type = VoxelType::Empty;
@@ -15,9 +48,13 @@ class Node {
     glm::vec3 pos;
     int parent = 0;
 
+    uint32_t voxel_index = 0;
+
     float g = -1.0f;
     float h = 0.0f;
 
+    int normal_index;
+    bool too_steep = false;
     int id = -1;
 
     std::vector<int> connectingNodes;
