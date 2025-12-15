@@ -1,5 +1,5 @@
 #include "engine/entry_point.hpp"
-#include "engine/core/ecs.hpp"  
+#include "engine/core/ecs.hpp"
 #include "engine/core/resources.hpp"
 #include "engine/core/resources/voxel_volume.hpp"
 #include "engine/core/components/transform.hpp"
