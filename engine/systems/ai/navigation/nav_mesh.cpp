@@ -71,18 +71,34 @@ void NavMesh::generate_mesh(IO::FileLocation location) {
                 const uint32_t pos_index = x + size.x * y + size.x * size.y * z;
                 if (voxel_empty(x, y, z)) continue;
 
+                auto voxel_empty = [&](uint32_t x, uint32_t y, uint32_t z) { return !occupied[x + size.x * y + size.x * size.y * z]; };
+
+                int sides = 6;
+                for (size_t sign = 0; sign < 2; sign++) {
+                    for (size_t dir = 0; dir < 3; dir++) {
+                        glm::uvec3 temp = {x, y, z};
+                        temp[(int)dir] += sign == 0 ? (int)1 : -((int)1);
+                        if (!(temp.x >= 0 && temp.x < size.x && temp.y >= 0 && temp.y < size.y && temp.z >= 0 && temp.z < size.z) || voxel_empty(temp.x, temp.y, temp.z)) {
+                            sides--;
+                        }
+                    }
+                }
+                if (sides == 6) {
+                    continue;
+                }
+
                 int node_index = -1;
                 if (node_map.contains(pos_index)) {
                     node_index = node_map[pos_index];
                 } else {
                     // Create node
                     Node node;
+                    node.pos = glm::vec3(x, y, z);
                     node_map[pos_index] = (int)nodes.size();
                     node_index = (int)nodes.size();
                     nodes.push_back(node);
                 }
 
-                glm::ivec3 normal = {};
                 for (size_t sign = 0; sign < 2; sign++) {
                     for (size_t dir = 0; dir < 3; dir++) {
                         glm::uvec3 temp = {x, y, z};
@@ -95,12 +111,22 @@ void NavMesh::generate_mesh(IO::FileLocation location) {
                                 connecting_node_index = node_map[connecting_pos_index];
                             } else {
                                 Node node;
+                                node.pos = glm::vec3(x, y, z);
                                 node_map[connecting_pos_index] = (int)nodes.size();
                                 connecting_node_index = (int)nodes.size();
                                 nodes.push_back(node);
                             }
 
-                            nodes[node_index].connectingNodes.push_back(connecting_node_index);
+                            auto& neighborsA = nodes[node_index].connectingNodes;
+                            if (std::find(neighborsA.begin(), neighborsA.end(), connecting_node_index) == neighborsA.end()) {
+                                neighborsA.push_back(connecting_node_index);
+                            }
+
+                            // Add node_index to connecting_node_index's list
+                            auto& neighborsB = nodes[connecting_node_index].connectingNodes;
+                            if (std::find(neighborsB.begin(), neighborsB.end(), node_index) == neighborsB.end()) {
+                                neighborsB.push_back(node_index);
+                            }
                         }
                     }
                 }
