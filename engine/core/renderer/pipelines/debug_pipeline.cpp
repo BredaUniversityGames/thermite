@@ -1,12 +1,12 @@
 #include "debug_pipeline.hpp"
 
+#include <glm/gtc/constants.hpp>
+#include <glm/gtx/norm.hpp>
+
 #include <graphite/vram_bank.hh>
 #include <graphite/gpu_adapter.hh>
 #include <graphite/render_graph.hh>
 #include <graphite/nodes/raster_node.hh>
-
-#include <glm/gtc/constants.hpp>
-#include <glm/gtx/norm.hpp>
 
 #include "engine.hpp"
 #include "core/logger.hpp"
@@ -147,34 +147,95 @@ void DebugPipeline::draw_arrow(const glm::vec3 start, glm::vec3 dir, float lengt
     if (glm::length2(dir) < 1e-6f) return;
 
     dir = glm::normalize(dir);
-    glm::vec3 end = start + dir * length;
+    const glm::vec3 end = start + dir * length;
 
     // Shaft
     draw_line(start, end, color, time);
 
-    // --- Arrow head ---
+    // Arrow head
     const float head_len = length * head_length;
     const float angle_rad = glm::radians(head_angle);
 
     // Build a perpendicular basis
     glm::vec3 up = fabs(dir.y) < 0.99f ? glm::vec3(0, 1, 0) : glm::vec3(1, 0, 0);
 
-    glm::vec3 right = glm::normalize(glm::cross(dir, up));
+    const glm::vec3 right = glm::normalize(glm::cross(dir, up));
     up = glm::normalize(glm::cross(right, dir));
 
     // Two head lines
-    glm::vec3 head_dir1 = glm::normalize(dir * cosf(angle_rad) + right * sinf(angle_rad));
-    glm::vec3 head_dir2 = glm::normalize(dir * cosf(angle_rad) - right * sinf(angle_rad));
+    const glm::vec3 head_dir1 = glm::normalize(dir * cosf(angle_rad) + right * sinf(angle_rad));
+    const glm::vec3 head_dir2 = glm::normalize(dir * cosf(angle_rad) - right * sinf(angle_rad));
 
     draw_line(end, end - head_dir1 * head_len, color, time);
     draw_line(end, end - head_dir2 * head_len, color, time);
 
-    // Optional: add vertical lines for a 3D look
-    glm::vec3 head_dir3 = glm::normalize(dir * cosf(angle_rad) + up * sinf(angle_rad));
-    glm::vec3 head_dir4 = glm::normalize(dir * cosf(angle_rad) - up * sinf(angle_rad));
+    // Add vertical lines for a 3D look
+    const glm::vec3 head_dir3 = glm::normalize(dir * cosf(angle_rad) + up * sinf(angle_rad));
+    const glm::vec3 head_dir4 = glm::normalize(dir * cosf(angle_rad) - up * sinf(angle_rad));
 
     draw_line(end, end - head_dir3 * head_len, color, time);
     draw_line(end, end - head_dir4 * head_len, color, time);
+}
+
+void DebugPipeline::draw_cross(const glm::vec3 center, const float size, const glm::quat rot, const glm::vec3 color, const float time) {
+    static const glm::quat default_rotation = glm::angleAxis(glm::radians(45.0f), glm::vec3(0, 0, 1));
+
+    const glm::quat final_rotation = (rot == glm::quat()) ? default_rotation : rot;
+
+    // Base axes (local cross)
+    const glm::vec3 x = glm::vec3(size, 0, 0);
+    const glm::vec3 y = glm::vec3(0, size, 0);
+
+    // Rotate axes
+    const glm::vec3 rx = final_rotation * x;
+    const glm::vec3 ry = final_rotation * y;
+
+    // Draw lines
+    draw_line(center - rx, center + rx, color, time);
+    draw_line(center - ry, center + ry, color, time);
+}
+
+void DebugPipeline::draw_obb(const glm::vec3 center, const float width, const float height, const float depth, const glm::quat rot, const glm::vec3 color, const float time) {
+    const glm::vec3 half = glm::vec3(width, height, depth) * 0.5f;
+
+    // Local corners (before rotation)
+    glm::vec3 p0 = glm::vec3(-half.x, -half.y, -half.z);
+    glm::vec3 p1 = glm::vec3(half.x, -half.y, -half.z);
+    glm::vec3 p2 = glm::vec3(half.x, -half.y, half.z);
+    glm::vec3 p3 = glm::vec3(-half.x, -half.y, half.z);
+
+    glm::vec3 p4 = glm::vec3(-half.x, half.y, -half.z);
+    glm::vec3 p5 = glm::vec3(half.x, half.y, -half.z);
+    glm::vec3 p6 = glm::vec3(half.x, half.y, half.z);
+    glm::vec3 p7 = glm::vec3(-half.x, half.y, half.z);
+
+    // Rotate and translate corners
+    p0 = center + rot * p0;
+    p1 = center + rot * p1;
+    p2 = center + rot * p2;
+    p3 = center + rot * p3;
+    p4 = center + rot * p4;
+    p5 = center + rot * p5;
+    p6 = center + rot * p6;
+    p7 = center + rot * p7;
+
+    // Bottom face
+    draw_line(p0, p1, color, time);
+    draw_line(p1, p2, color, time);
+    draw_line(p2, p3, color, time);
+    draw_line(p3, p0, color, time);
+
+    // Top face
+    draw_line(p4, p5, color, time);
+    draw_line(p5, p6, color, time);
+    draw_line(p6, p7, color, time);
+    draw_line(p7, p4, color, time);
+
+    // Vertical edges
+    draw_line(p0, p4, color, time);
+    draw_line(p1, p5, color, time);
+    draw_line(p2, p6, color, time);
+    draw_line(p3, p7, color, time);
 }
 
 }  // namespace tmt

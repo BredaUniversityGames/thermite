@@ -72,7 +72,7 @@ void Renderer::init() {
 void Renderer::update() {
     TMT_ZONE_SCOPED_N("Rendering")
     // Temporary
-    draw_line({-0.5f, 0.5f, 0.0f}, {0.0f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, 0.0f);
+    /*draw_line({-0.5f, 0.5f, 0.0f}, {0.0f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, 0.0f);
     draw_line({0.0f, -0.5f, 0.0f}, {0.5f, 0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, 0.0f);
     draw_line({0.5f, 0.5f, 0.0f}, {-0.5f, 0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, 0.0f);
 
@@ -81,6 +81,8 @@ void Renderer::update() {
     debug_pipeline.draw_circle({2.0f, 2.0f, 2.0f}, 4.0f, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, 32);
     debug_pipeline.draw_sphere({5.0f, 0.0f, 0.0f}, 2.0f, 8);
     debug_pipeline.draw_arrow({1.0f, 1.0f, 1.0f}, {1.0f, 0.0f, 1.0f});
+    debug_pipeline.draw_cross({2.0f, 0.0f, 0.0f});
+    debug_pipeline.draw_obb({0.0f, -3.0f, 0.0f}, 1.0f, 1.0f, 1.0f, glm::angleAxis(glm::radians(45.0f), glm::vec3(0, 0, 1)));*/
 
     render_view.update();
 
@@ -145,6 +147,24 @@ void Renderer::set_imgui(ImGUI* new_imgui) {
 #endif
 
 void Renderer::draw_line(const glm::vec3 start, const glm::vec3 end, const glm::vec3 color, const float time) { debug_pipeline.draw_line(start, end, color, time); }
+
+void Renderer::draw_circle(const glm::vec3 center, const float radius, const glm::vec3 axis_a, const glm::vec3 axis_b, int segments, const glm::vec3 color, const float time) {
+    debug_pipeline.draw_circle(center, radius, axis_a, axis_b, segments, color, time);
+}
+
+void Renderer::draw_sphere(const glm::vec3 center, const float radius, int rings, int segments, const glm::vec3 color, const float time) {
+    debug_pipeline.draw_sphere(center, radius, rings, segments, color, time);
+}
+
+void Renderer::draw_arrow(const glm::vec3 start, glm::vec3 dir, float length, float head_length, float head_angle, const glm::vec3 color, const float time) {
+    debug_pipeline.draw_arrow(start, dir, length, head_length, head_angle, color, time);
+}
+
+void Renderer::draw_cross(const glm::vec3 center, const float size, const glm::quat rot, const glm::vec3 color, const float time) { debug_pipeline.draw_cross(center, size, rot, color, time); }
+
+void Renderer::draw_obb(const glm::vec3 center, const float width, const float height, const float depth, const glm::quat rot, const glm::vec3 color, const float time) {
+    debug_pipeline.draw_obb(center, width, height, depth, rot, color, time);
+}
 
 VRAMBank& Renderer::vram_bank() { return gpu.get_vram_bank(); }
 
