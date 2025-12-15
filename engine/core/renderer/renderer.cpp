@@ -78,6 +78,9 @@ void Renderer::update() {
 
     draw_line({0.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, 0.0f);
 
+    debug_pipeline.draw_circle({2.0f, 2.0f, 2.0f}, 4.0f, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, 32);
+    debug_pipeline.draw_sphere({5.0f, 0.0f, 0.0f}, 2.0f, 8);
+
     render_view.update();
 
     Entity cam_entity = Camera::get_active_camera();

@@ -5,8 +5,9 @@
 #include <graphite/render_graph.hh>
 #include <graphite/nodes/raster_node.hh>
 
+#include <glm/gtc/constants.hpp>
+
 #include "engine.hpp"
-// #include "core/window.hpp"
 #include "core/logger.hpp"
 #include "core/renderer/renderer.hpp"
 
@@ -88,6 +89,57 @@ void DebugPipeline::draw_line(const glm::vec3 start, const glm::vec3 end, const 
         persistent_points.push_back({{end, color}, time});
     }
     num_points += 2;
+}
+
+void DebugPipeline::draw_circle(const glm::vec3 center, const float radius, const glm::vec3 axis_a, const glm::vec3 axis_b, int segments, const glm::vec3 color, const float time) {
+    if (segments < 4) segments = 4;
+
+    const float step = glm::two_pi<float>() / static_cast<float>(segments);
+
+    glm::vec3 prev = center + radius * (axis_a * cosf(0.0f) + axis_a * sinf(0.0f));
+
+    for (int i = 1; i <= segments; ++i) {
+        float angle = step * i;
+
+        glm::vec3 curr = center + radius * (axis_a * cosf(angle) + axis_b * sinf(angle));
+
+        draw_line(prev, curr, color, time);
+        prev = curr;
+    }
+}
+
+void DebugPipeline::draw_sphere(const glm::vec3 center, float radius, int rings, int segments, const glm::vec3 color, const float time) {
+    if (segments < 4) segments = 4;
+    if (rings < 2) rings = 2;
+
+    const int latitude_rings = rings / 2;
+    const int longitude_rings = rings - latitude_rings;
+
+    // --- Great circles (always draw these) ---
+    draw_circle(center, radius, {1, 0, 0}, {0, 1, 0}, segments, color, time);
+    draw_circle(center, radius, {1, 0, 0}, {0, 0, 1}, segments, color, time);
+    draw_circle(center, radius, {0, 1, 0}, {0, 0, 1}, segments, color, time);
+
+    // --- Latitude rings (horizontal) ---
+    for (int i = 1; i <= latitude_rings; ++i) {
+        float t = float(i) / float(latitude_rings + 1);
+        float y = glm::mix(-radius, radius, t);
+
+        float ring_radius = sqrtf(radius * radius - y * y);
+
+        draw_circle(center + glm::vec3(0, y, 0), ring_radius, {1, 0, 0}, {0, 0, 1}, segments, color, time);
+    }
+
+    // --- Longitude rings (vertical) ---
+    for (int i = 0; i < longitude_rings; ++i) {
+        float angle = glm::two_pi<float>() * float(i) / float(longitude_rings);
+
+        glm::vec3 axisA = {cosf(angle), 0.0f, sinf(angle)};
+
+        glm::vec3 axisB = {0.0f, 1.0f, 0.0f};
+
+        draw_circle(center, radius, axisA, axisB, segments, color, time);
+    }
 }
 
 }  // namespace tmt
