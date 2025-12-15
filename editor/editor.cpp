@@ -60,7 +60,7 @@ void Editor::on_engine_update(const FrameData& time) {
     }
 
     for (auto& system : windows) {
-        const ImGuiWindowFlags_ flags = system->get_window_flags();
+        const ImGuiWindowFlags_ flags = static_cast<ImGuiWindowFlags_>(system->get_window_flags());
         const auto& name = system->get_title();
         if (editor.save_data.open_windows.contains(name) == false) {
             editor.save_data.open_windows[name] = true;
