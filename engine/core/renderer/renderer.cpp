@@ -69,6 +69,8 @@ void Renderer::init() {
     geometry_pipeline.init(gpu);
 }
 
+static bool flag = true;
+
 void Renderer::update() {
     TMT_ZONE_SCOPED_N("Rendering")
     // Temporary
@@ -77,6 +79,11 @@ void Renderer::update() {
     draw_line({0.5f, 0.5f, 0.0f}, {-0.5f, 0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, 0.0f);
 
     draw_line({0.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, 0.0f);
+
+    if (flag) {
+        flag = false;
+        draw_line({1.0f, 1.0f, 1.0f}, {4.0f, 1.0f, 4.0f}, {1.0f, 0.0f, 1.0f}, 5.0f);
+    }
 
     render_view.update();
 

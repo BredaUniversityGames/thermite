@@ -6,7 +6,7 @@
 #include <graphite/nodes/raster_node.hh>
 
 #include "engine.hpp"
-#include "core/window.hpp"
+//#include "core/window.hpp"
 #include "core/logger.hpp"
 #include "core/renderer/renderer.hpp"
 
@@ -25,10 +25,10 @@ void DebugPipeline::init(GPUAdapter& gpu) {
 }
 
 void DebugPipeline::on_engine_update(const FrameData& time) {
-    if (timed_points.size() > 0) {
+    if (!timed_points.empty()) {
         for (auto& p : timed_points) p.time -= time.delta_time;
 
-        timed_points.erase(std::remove_if(timed_points.begin(), timed_points.end(), [](const DebugPoint& p) { return p.time <= 0.0f; }), timed_points.end());
+        std::erase_if(timed_points, [](const DebugPoint& p) { return p.time <= 0.0f; });
     }
 
     num_points = timed_points.size() + persistent_points.size();

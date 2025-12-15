@@ -31,11 +31,11 @@ class DebugPipeline : public OnEngineUpdate {
     std::vector<DebugPoint> timed_points {};
     std::vector<DebugPoint> persistent_points {};
 
-    u32 num_points = 0;
+    uint32_t num_points = 0;
 
    public:
     DebugPipeline() {}
-    ~DebugPipeline() {}
+    ~DebugPipeline() override {}
 
     DebugPipeline(const DebugPipeline&) = delete;
     DebugPipeline& operator=(const DebugPipeline&) = delete;
