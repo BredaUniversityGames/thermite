@@ -41,8 +41,11 @@ void GeometryPipeline::enqueue(RenderGraph& render_graph, RenderView render_view
 
     /* Iterate over all voxel renderers */
     for (auto&& [entity, renderer, transform] : group.each()) {
+        /* Respect the object limit */
         if (objects.size() >= (size_t)MAX_VOXEL_OBJECTS) break;
-        if (renderer.resource == nullptr) continue;
+
+        /* Don't render objects with a zero scale or null resource */
+        if (glm::any(glm::equal(transform.get_world_scale(), glm::vec3(0.0f))) || renderer.resource == nullptr) continue;
 
         /* Convert the entity to a voxel object */
         VoxelObject object {};
