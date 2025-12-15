@@ -6,7 +6,7 @@
 #include <graphite/nodes/raster_node.hh>
 
 #include "engine.hpp"
-//#include "core/window.hpp"
+// #include "core/window.hpp"
 #include "core/logger.hpp"
 #include "core/renderer/renderer.hpp"
 
