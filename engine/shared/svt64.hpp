@@ -87,6 +87,10 @@ class Svt64 {
         return *this;
     }
 
+    bool is_empty(const uint32_t x, const uint32_t y, const uint32_t z);
+
+    Material* get_voxel(const uint32_t x, const uint32_t y, const uint32_t z);
+
     /* Build the Sparse Voxel Tree. */
     void build(const RawVoxels& raw_data);
 };

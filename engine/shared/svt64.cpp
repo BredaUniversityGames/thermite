@@ -1,4 +1,5 @@
 #include "svt64.hpp"
+#include <nmmintrin.h>
 
 namespace tmt {
 
@@ -99,6 +100,51 @@ Svt64Node Svt64::subdivide(const RawVoxels& raw_data, uint32_t scale, glm::uvec3
     memcpy(nodes + node_count, child_nodes, child_count * sizeof(Svt64Node));
     node_count += child_count;
     return node;
+}
+
+bool Svt64::is_empty(const uint32_t x, const uint32_t y, const uint32_t z) { 
+    Svt64Node* current = &nodes[0]; 
+
+    for (uint32_t level = 1u; level <= depth; ++level) {
+        const uint32_t x_index = (x >> ((depth - level) * 2u)) & 3u;
+        const uint32_t y_index = (y >> ((depth - level) * 2u)) & 3u;
+        const uint32_t z_index = (z >> ((depth - level) * 2u)) & 3u;
+
+        const uint32_t child_index = (x_index << 0u) | (z_index << 2u) | (y_index << 4u);
+        if ((current->child_mask & (1ull << child_index)) == 0u) {
+            return true;
+        } else if (level == depth) {
+            return false;
+        }
+
+        const uint32_t child_pos = __popcnt64(current->child_mask & ((1ull << child_index) - 1u));
+        current = &nodes[current->abs_ptr() + child_pos];
+    }
+
+    return true;
+}
+
+Material* Svt64::get_voxel(const uint32_t x, const uint32_t y, const uint32_t z) {
+    Svt64Node* current = &nodes[0];
+
+    for (uint32_t level = 1u; level <= depth; ++level) {
+        const uint32_t x_index = (x >> ((depth - level) * 2u)) & 3u;
+        const uint32_t y_index = (y >> ((depth - level) * 2u)) & 3u;
+        const uint32_t z_index = (z >> ((depth - level) * 2u)) & 3u;
+
+        const uint32_t child_index = (x_index << 0u) | (z_index << 2u) | (y_index << 4u);
+        if ((current->child_mask & (1ull << child_index)) == 0u) {
+            return nullptr;
+        } else if (level == depth) {
+            const uint32_t child_pos = __popcnt64(current->child_mask & ((1ull << child_index) - 1u));
+            return &palette.entries[voxels[current->abs_ptr() + child_pos]];
+        }
+
+        const uint32_t child_pos = __popcnt64(current->child_mask & ((1ull << child_index) - 1u));
+        current = &nodes[current->abs_ptr() + child_pos];
+    }
+
+    return nullptr;
 }
 
 void Svt64::build(const RawVoxels& raw_data) {
