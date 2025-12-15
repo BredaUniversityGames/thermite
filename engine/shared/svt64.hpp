@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "engine/core/renderer/material.hpp"
+#include "engine/systems/physics/physics_voxel_data.hpp"
 
 namespace tmt {
 
@@ -12,7 +13,8 @@ constexpr uint32_t SVT64_BUFFER_MEMORY = 10000u /* 10 kb */;
 
 struct RawVoxels {
     MaterialPalette palette {};
-    std::vector<MaterialIndex> voxels {};
+    std::vector<MaterialIndex> materials {};
+    std::vector<PhysicsVoxel> physics_data {};
     uint32_t w = 0u, h = 0u, d = 0u;
 };
 
@@ -57,7 +59,8 @@ class Svt64 {
 
     /* List of voxel data. */
     MaterialPalette palette {};
-    MaterialIndex* voxels = nullptr;
+    MaterialIndex* materials = nullptr;
+    PhysicsVoxel* physics_data = nullptr;
     uint32_t voxel_count = 0u;
     uint32_t depth = 0u;
 
@@ -70,9 +73,9 @@ class Svt64 {
         voxel_count = src.voxel_count;
         depth = src.depth;
         nodes = new Svt64Node[node_count + SVT64_BUFFER_MEMORY / sizeof(Svt64Node)];
-        voxels = new MaterialIndex[voxel_count + SVT64_BUFFER_MEMORY / sizeof(MaterialIndex)];
+        materials = new MaterialIndex[voxel_count + SVT64_BUFFER_MEMORY / sizeof(MaterialIndex)];
         memcpy(nodes, src.nodes, node_count * sizeof(Svt64Node));
-        memcpy(voxels, src.voxels, voxel_count * sizeof(MaterialIndex));
+        memcpy(materials, src.materials, voxel_count * sizeof(MaterialIndex));
         palette = src.palette;
     }
     Svt64& operator=(const Svt64& src) {
@@ -80,9 +83,9 @@ class Svt64 {
         voxel_count = src.voxel_count;
         depth = src.depth;
         nodes = new Svt64Node[node_count + SVT64_BUFFER_MEMORY / sizeof(Svt64Node)];
-        voxels = new MaterialIndex[voxel_count + SVT64_BUFFER_MEMORY / sizeof(MaterialIndex)];
+        materials = new MaterialIndex[voxel_count + SVT64_BUFFER_MEMORY / sizeof(MaterialIndex)];
         memcpy(nodes, src.nodes, node_count * sizeof(Svt64Node));
-        memcpy(voxels, src.voxels, voxel_count * sizeof(MaterialIndex));
+        memcpy(materials, src.materials, voxel_count * sizeof(MaterialIndex));
         palette = src.palette;
         return *this;
     }

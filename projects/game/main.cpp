@@ -57,6 +57,10 @@ void Game::on_start() {
         auto entity = tmt::engine.ecs.create_entity();
         auto& transform = tmt::engine.ecs.add_component<tmt::Transform>(entity);
         auto& renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(entity);
+        auto voxel_file = tmt::engine.resources.load_resource<tmt::VoxelScene>({tmt::IO::Location::PROJECT, "dragon128.vengi"});
+        auto voxel_volume = tmt::engine.resources.copy_resource<tmt::VoxelVolume>(voxel_file);
+        renderer.resource = voxel_volume;
+
         auto& vb = tmt::engine.ecs.add_component<tmt::VoxelBody>(entity);
         vb.voxels.size = glm::uvec3(20u, 20u, 20u);
         vb.width = 2.0f;

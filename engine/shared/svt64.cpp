@@ -28,7 +28,7 @@ inline uint32_t raw_voxel_count(const RawVoxels& data) {
     for (uint32_t z = 0u; z < data.d; ++z) {
         for (uint32_t y = 0u; y < data.h; ++y) {
             for (uint32_t x = 0u; x < data.w; ++x) {
-                if (data.voxels[z * data.w * data.h + y * data.w + x] != 0u) count++;
+                if (data.materials[z * data.w * data.h + y * data.w + x] != 0u) count++;
             }
         }
     }
@@ -62,10 +62,10 @@ Svt64Node Svt64::subdivide(const RawVoxels& raw_data, uint32_t scale, glm::uvec3
             const uint32_t voxel_z = index.z + ((i >> 2u) & 3u);
             if (voxel_x >= raw_data.w || voxel_y >= raw_data.h || voxel_z >= raw_data.d) continue;
             const uint32_t voxel_offset = voxel_z * wh + voxel_y * raw_data.w + voxel_x;
-            const MaterialIndex material = raw_data.voxels[voxel_offset];
+            const MaterialIndex material = raw_data.materials[voxel_offset];
 
             if (material != AIR_INDEX) {
-                voxels[voxel_count++] = material;
+                materials[voxel_count++] = material;
                 leaf_node.child_mask |= (1ull << i);
             }
         }
@@ -137,7 +137,7 @@ Material* Svt64::get_voxel(const uint32_t x, const uint32_t y, const uint32_t z)
             return nullptr;
         } else if (level == depth) {
             const uint32_t child_pos = __popcnt64(current->child_mask & ((1ull << child_index) - 1u));
-            return &palette.entries[voxels[current->abs_ptr() + child_pos]];
+            return &palette.entries[materials[current->abs_ptr() + child_pos]];
         }
 
         const uint32_t child_pos = __popcnt64(current->child_mask & ((1ull << child_index) - 1u));
@@ -151,7 +151,7 @@ void Svt64::build(const RawVoxels& raw_data) {
     /* Delete old data */
     if (depth > 0u) {
         delete[] nodes;
-        delete[] voxels;
+        delete[] materials;
         depth = 0u;
     }
 
@@ -163,7 +163,7 @@ void Svt64::build(const RawVoxels& raw_data) {
     /* Allocate space for new tree */
     nodes = new Svt64Node[max_nodes];  // (Node*)malloc(1ull << 26);
     node_count = 1u;
-    voxels = new MaterialIndex[raw_voxels + SVT64_BUFFER_MEMORY];  // (MaterialIndex*)malloc(1ull << 26);
+    materials = new MaterialIndex[raw_voxels + SVT64_BUFFER_MEMORY];  // (MaterialIndex*)malloc(1ull << 26);
     voxel_count = 0u;
 
     /* Copy the material palette */
@@ -179,7 +179,7 @@ void Svt64::build(const RawVoxels& raw_data) {
 Svt64::~Svt64() {
     if (depth > 0u) {
         delete[] nodes;
-        delete[] voxels;
+        delete[] materials;
         depth = 0u;
     }
 }
