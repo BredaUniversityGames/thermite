@@ -27,6 +27,10 @@ void Physics::on_start() {
             }
         }
 
+        glm::uvec3 size = vb.resource->size;
+        vb.width = (float)size.x * UNITS_PER_VOXEL;
+        vb.height = (float)size.y * UNITS_PER_VOXEL;
+        vb.depth = (float)size.z * UNITS_PER_VOXEL;
         vb.position = transform.get_world_position();
         vb.rotation = transform.get_world_rotation();
         vb.center_of_mass = vb.position + (vb.rotation * vb.com_local_offset);
@@ -148,7 +152,7 @@ void Physics::generate_voxel_constraints_range(const int index, const int size) 
             VoxelObject object {};
             object.local_to_world = transform.get_world_matrix();
             object.world_to_local = glm::inverse(object.local_to_world);
-            object.size = vb.voxels.size;
+            object.size = vb.resource.get()->size;  // glm::uvec3(vb.width * VOXELS_PER_UNIT, vb.height * VOXELS_PER_UNIT, vb.depth * VOXELS_PER_UNIT)  // vb.voxels.size;
             objects.push_back(std::move(object));
             entities.push_back(entity);
         }
@@ -445,8 +449,11 @@ bool Physics::is_separated(const glm::vec3& axis, const VoxelBody::Box& box_a, c
 }
 
 void Physics::check_neighbors(const VoxelBody& vb_a, const VoxelBody& vb_b, const size_t x, const size_t y, const size_t z, Collision& coll) const {
-    const PhysicsVoxel& voxel_a = vb_a.voxels.get_voxel(x, y, z);
-    if (voxel_a.type == PhysicsVoxelType::EMPTY) return;
+    auto voxels_a = vb_a.resource.get();
+    auto voxels_b = vb_b.resource.get();
+    
+    const PhysicsVoxel* voxel_a = voxels_a->blas.get()->get_physics_voxel(x, y, z);   //.voxels.get_voxel(x, y, z);
+    if (voxel_a == nullptr) return;
 
     const glm::vec3 pos_a = vb_a.position;
     const glm::vec3 half_scale_a = glm::vec3(vb_a.width, vb_a.height, vb_a.depth) * 0.5f;
@@ -474,12 +481,12 @@ void Physics::check_neighbors(const VoxelBody& vb_a, const VoxelBody& vb_b, cons
                 if (coll.contacts.size() >= max_contacts || added_contact) continue;
                 const glm::uvec3 coord(voxel_coord + glm::ivec3(x_b, y_b, z_b));
                 // Check if in range
-                if (!(coord.x >= 0 && coord.x < vb_b.voxels.get_size().x && coord.y >= 0 && coord.y < vb_b.voxels.get_size().y && coord.z >= 0 && coord.z < vb_b.voxels.get_size().z)) continue;
+                if (!(coord.x >= 0 && coord.x < voxels_b->size.x && coord.y >= 0 && coord.y < voxels_b->size.y && coord.z >= 0 && coord.z < voxels_b->size.z)) continue;
 
-                const PhysicsVoxel& voxel_b = vb_b.voxels.get_voxel(coord.x, coord.y, coord.z);
-                if (voxel_b.type == PhysicsVoxelType::EMPTY) continue;
+                const PhysicsVoxel* voxel_b = voxels_b->blas.get()->get_physics_voxel(coord.x, coord.y, coord.z);
+                if (voxel_b == nullptr) continue;
 
-                if (voxel_a.type != PhysicsVoxelType::CORNER && !(voxel_a.type == PhysicsVoxelType::EDGE && voxel_b.type == PhysicsVoxelType::EDGE)) continue;
+                if (voxel_a->type != PhysicsVoxelType::CORNER && !(voxel_a->type == PhysicsVoxelType::EDGE && voxel_b->type == PhysicsVoxelType::EDGE)) continue;
 
                 // Transform the voxel from local voxel space B to world space
                 glm::vec3 local_pos_b = {coord.x, coord.y, coord.z};
@@ -497,21 +504,21 @@ void Physics::check_neighbors(const VoxelBody& vb_a, const VoxelBody& vb_b, cons
                 contact.point = world_pos_a;
 
                 // Decide penetration
-                if (voxel_a.type == PhysicsVoxelType::INSIDE || voxel_b.type == PhysicsVoxelType::INSIDE)
+                if (voxel_a->type == PhysicsVoxelType::INSIDE || voxel_b->type == PhysicsVoxelType::INSIDE)
                     contact.penetration = UNITS_PER_VOXEL;
                 else
                     contact.penetration = UNITS_PER_VOXEL - sqrtf(dist);
 
                 // Decide normal
-                if (voxel_a.type == PhysicsVoxelType::INSIDE || voxel_a.type == PhysicsVoxelType::FACE)
-                    contact.normal = glm::normalize((glm::vec3)voxel_a.get_normal() * glm::inverse(rot_a));
-                else if (voxel_b.type == PhysicsVoxelType::INSIDE || voxel_b.type == PhysicsVoxelType::FACE)
-                    contact.normal = -glm::normalize((glm::vec3)voxel_b.get_normal() * glm::inverse(rot_b));
-                else if (voxel_a.normal_index == 0)  // if there is no valid normal index
+                if (voxel_a->type == PhysicsVoxelType::INSIDE || voxel_a->type == PhysicsVoxelType::FACE)
+                    contact.normal = glm::normalize((glm::vec3)voxel_a->get_normal() * glm::inverse(rot_a));
+                else if (voxel_b->type == PhysicsVoxelType::INSIDE || voxel_b->type == PhysicsVoxelType::FACE)
+                    contact.normal = -glm::normalize((glm::vec3)voxel_b->get_normal() * glm::inverse(rot_b));
+                else if (voxel_a->normal_index == 0)  // if there is no valid normal index
                     contact.normal = glm::normalize(dir);
                 else {
                     // if there is a valid normal index use its value to check validity of normal
-                    const glm::vec3 lut_normal = (glm::vec3)voxel_a.get_normal() * glm::inverse(rot_a);
+                    const glm::vec3 lut_normal = (glm::vec3)voxel_a->get_normal() * glm::inverse(rot_a);
                     const glm::vec3 normal = glm::dot(dir, -lut_normal) < 0 ? glm::normalize(dir) : -glm::normalize(dir);
                     contact.normal = normal;
                 }
@@ -553,10 +560,13 @@ void Physics::initialize_voxel_body(VoxelBody& vb) {
     glm::vec3 sum = {};
     const glm::vec3 half_scale = glm::vec3(vb.width, vb.height, vb.depth) * 0.5f;
 
-    for (size_t z = 0; z < vb.voxels.get_size().z; z++) {
-        for (size_t y = 0; y < vb.voxels.get_size().y; y++) {
-            for (size_t x = 0; x < vb.voxels.get_size().x; x++) {
-                if (vb.voxels.get_voxel(x, y, z).type == PhysicsVoxelType::EMPTY) continue;
+    auto voxels = vb.resource.get();
+
+    for (size_t z = 0; z < voxels->size.z; z++) {
+        for (size_t y = 0; y < voxels->size.y; y++) {
+            for (size_t x = 0; x < voxels->size.x; x++) {
+                if (voxels->blas.get()->get_voxel(x, y, z) == nullptr) continue;
+                //if (vb.voxels.get_voxel(x, y, z).type == PhysicsVoxelType::EMPTY) continue;
 
                 filled_counter++;
                 sum += glm::vec3(x, y, z) * UNITS_PER_VOXEL - half_scale + VOXEL_SIZE_HALF;
@@ -569,10 +579,10 @@ void Physics::initialize_voxel_body(VoxelBody& vb) {
     vb.inv_mass = 1.0f / (voxel_mass * filled_counter);
 
     glm::mat3 inertia_tensor(0.0f);
-    for (size_t z = 0; z < vb.voxels.get_size().z; z++) {
-        for (size_t y = 0; y < vb.voxels.get_size().y; y++) {
-            for (size_t x = 0; x < vb.voxels.get_size().x; x++) {
-                if (vb.voxels.get_voxel(x, y, z).type == PhysicsVoxelType::EMPTY) continue;
+    for (size_t z = 0; z < voxels->size.z; z++) {
+        for (size_t y = 0; y < voxels->size.y; y++) {
+            for (size_t x = 0; x < voxels->size.x; x++) {
+                if (voxels->blas.get()->get_voxel(x, y, z) == nullptr) continue;
 
                 const glm::vec3 pos = glm::vec3(x, y, z) * UNITS_PER_VOXEL - half_scale + VOXEL_SIZE_HALF;
                 const glm::vec3 r = pos - vb.com_local_offset;

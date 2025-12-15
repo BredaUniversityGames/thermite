@@ -3,6 +3,7 @@
 #include "engine/systems/physics/physics_voxel_data.hpp"
 #include "engine/tools/serializer.hpp"
 #include "engine/shared/aabb.hpp"
+#include "engine/core/resources/voxel_volume.hpp"
 
 namespace tmt {
 
@@ -59,7 +60,8 @@ struct VoxelBody {
     float height = 1.0f;
     float depth = 1.0f;
 
-    PhysicsVoxelData voxels = {};
+    std::shared_ptr<VoxelVolume> resource {};
+    //PhysicsVoxelData voxels = {};
 
     Aabb aabb() const;
     Box get_local_bounds() const;

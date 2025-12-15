@@ -63,9 +63,11 @@ Svt64Node Svt64::subdivide(const RawVoxels& raw_data, uint32_t scale, glm::uvec3
             if (voxel_x >= raw_data.w || voxel_y >= raw_data.h || voxel_z >= raw_data.d) continue;
             const uint32_t voxel_offset = voxel_z * wh + voxel_y * raw_data.w + voxel_x;
             const MaterialIndex material = raw_data.materials[voxel_offset];
+            const PhysicsVoxel physics_voxel = raw_data.physics_data[voxel_offset];
 
             if (material != AIR_INDEX) {
-                materials[voxel_count++] = material;
+                materials[voxel_count] = material;
+                physics_data[voxel_count++] = physics_voxel;
                 leaf_node.child_mask |= (1ull << i);
             }
         }
@@ -147,11 +149,35 @@ Material* Svt64::get_voxel(const uint32_t x, const uint32_t y, const uint32_t z)
     return nullptr;
 }
 
+PhysicsVoxel* Svt64::get_physics_voxel(const uint32_t x, const uint32_t y, const uint32_t z) {
+    Svt64Node* current = &nodes[0];
+
+    for (uint32_t level = 1u; level <= depth; ++level) {
+        const uint32_t x_index = (x >> ((depth - level) * 2u)) & 3u;
+        const uint32_t y_index = (y >> ((depth - level) * 2u)) & 3u;
+        const uint32_t z_index = (z >> ((depth - level) * 2u)) & 3u;
+
+        const uint32_t child_index = (x_index << 0u) | (z_index << 2u) | (y_index << 4u);
+        if ((current->child_mask & (1ull << child_index)) == 0u) {
+            return nullptr;
+        } else if (level == depth) {
+            const uint32_t child_pos = __popcnt64(current->child_mask & ((1ull << child_index) - 1u));
+            return &physics_data[current->abs_ptr() + child_pos];
+        }
+
+        const uint32_t child_pos = __popcnt64(current->child_mask & ((1ull << child_index) - 1u));
+        current = &nodes[current->abs_ptr() + child_pos];
+    }
+
+    return nullptr;
+}
+
 void Svt64::build(const RawVoxels& raw_data) {
     /* Delete old data */
     if (depth > 0u) {
         delete[] nodes;
         delete[] materials;
+        delete[] physics_data;
         depth = 0u;
     }
 
@@ -164,6 +190,7 @@ void Svt64::build(const RawVoxels& raw_data) {
     nodes = new Svt64Node[max_nodes];  // (Node*)malloc(1ull << 26);
     node_count = 1u;
     materials = new MaterialIndex[raw_voxels + SVT64_BUFFER_MEMORY];  // (MaterialIndex*)malloc(1ull << 26);
+    physics_data = new PhysicsVoxel[raw_voxels + SVT64_BUFFER_MEMORY];
     voxel_count = 0u;
 
     /* Copy the material palette */
@@ -180,6 +207,7 @@ Svt64::~Svt64() {
     if (depth > 0u) {
         delete[] nodes;
         delete[] materials;
+        delete[] physics_data;
         depth = 0u;
     }
 }

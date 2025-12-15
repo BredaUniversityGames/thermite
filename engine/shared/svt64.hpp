@@ -74,8 +74,10 @@ class Svt64 {
         depth = src.depth;
         nodes = new Svt64Node[node_count + SVT64_BUFFER_MEMORY / sizeof(Svt64Node)];
         materials = new MaterialIndex[voxel_count + SVT64_BUFFER_MEMORY / sizeof(MaterialIndex)];
+        physics_data = new PhysicsVoxel[voxel_count + SVT64_BUFFER_MEMORY / sizeof(PhysicsVoxel)];
         memcpy(nodes, src.nodes, node_count * sizeof(Svt64Node));
         memcpy(materials, src.materials, voxel_count * sizeof(MaterialIndex));
+        memcpy(physics_data, src.physics_data, voxel_count * sizeof(PhysicsVoxel));
         palette = src.palette;
     }
     Svt64& operator=(const Svt64& src) {
@@ -84,8 +86,10 @@ class Svt64 {
         depth = src.depth;
         nodes = new Svt64Node[node_count + SVT64_BUFFER_MEMORY / sizeof(Svt64Node)];
         materials = new MaterialIndex[voxel_count + SVT64_BUFFER_MEMORY / sizeof(MaterialIndex)];
+        physics_data = new PhysicsVoxel[voxel_count + SVT64_BUFFER_MEMORY / sizeof(PhysicsVoxel)];
         memcpy(nodes, src.nodes, node_count * sizeof(Svt64Node));
         memcpy(materials, src.materials, voxel_count * sizeof(MaterialIndex));
+        memcpy(physics_data, src.physics_data, voxel_count * sizeof(PhysicsVoxel));
         palette = src.palette;
         return *this;
     }
@@ -93,6 +97,7 @@ class Svt64 {
     bool is_empty(const uint32_t x, const uint32_t y, const uint32_t z);
 
     Material* get_voxel(const uint32_t x, const uint32_t y, const uint32_t z);
+    PhysicsVoxel* get_physics_voxel(const uint32_t x, const uint32_t y, const uint32_t z);
 
     /* Build the Sparse Voxel Tree. */
     void build(const RawVoxels& raw_data);

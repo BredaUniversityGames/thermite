@@ -11,37 +11,7 @@
 
 namespace tmt {
 
-/* Gather all voxels inside a voxel model node. */
-inline RawVoxels gather_voxels(const vengi::Node* file_node) {
-    const vengi::Region& region = file_node->voxel_data->region;
-
-    /* Create a new collection of raw voxels */
-    RawVoxels voxels {};
-    voxels.w = region.width();
-    voxels.h = region.height();
-    voxels.d = region.depth();
-
-    /* Gather all voxels from the file node */
-    voxels.materials.resize(voxels.w * voxels.h * voxels.d);
-    voxels.physics_data.resize(voxels.w * voxels.h * voxels.d);
-    for (int32_t z = region.lower.z; z < region.upper.z; ++z) {
-        for (int32_t y = region.lower.y; y < region.upper.y; ++y) {
-            for (int32_t x = region.lower.x; x < region.upper.x; ++x) {
-                const uint32_t i = (z - region.lower.z) * region.height() * region.width() + (y - region.lower.y) * region.width() + (x - region.lower.x);
-                const vengi::VoxelInformation& voxel = file_node->voxel_data->voxels[i];
-                if (voxel.is_air) {
-                    voxels.materials[i] = AIR_INDEX;
-                    voxels.physics_data[i] = {PhysicsVoxelType::EMPTY, 0};
-                } else {
-                    voxels.materials[i] = voxel.color_index;
-                    voxels.physics_data[i] = {PhysicsVoxelType::INSIDE, 0};
-                }
-            }
-        }
-    }
-
-
-
+void compute_physics_data(RawVoxels& voxels) {
     // Precompute physics voxel data
     std::queue<uint32_t> queue {};
 
@@ -121,6 +91,38 @@ inline RawVoxels gather_voxels(const vengi::Node* file_node) {
 
         queue.pop();
     }
+}
+
+/* Gather all voxels inside a voxel model node. */
+inline RawVoxels gather_voxels(const vengi::Node* file_node) {
+    const vengi::Region& region = file_node->voxel_data->region;
+
+    /* Create a new collection of raw voxels */
+    RawVoxels voxels {};
+    voxels.w = region.width();
+    voxels.h = region.height();
+    voxels.d = region.depth();
+
+    /* Gather all voxels from the file node */
+    voxels.materials.resize(voxels.w * voxels.h * voxels.d);
+    voxels.physics_data.resize(voxels.w * voxels.h * voxels.d);
+    for (int32_t z = region.lower.z; z < region.upper.z; ++z) {
+        for (int32_t y = region.lower.y; y < region.upper.y; ++y) {
+            for (int32_t x = region.lower.x; x < region.upper.x; ++x) {
+                const uint32_t i = (z - region.lower.z) * region.height() * region.width() + (y - region.lower.y) * region.width() + (x - region.lower.x);
+                const vengi::VoxelInformation& voxel = file_node->voxel_data->voxels[i];
+                if (voxel.is_air) {
+                    voxels.materials[i] = AIR_INDEX;
+                    voxels.physics_data[i] = {PhysicsVoxelType::EMPTY, 0};
+                } else {
+                    voxels.materials[i] = voxel.color_index;
+                    voxels.physics_data[i] = {PhysicsVoxelType::INSIDE, 0};
+                }
+            }
+        }
+    }
+
+    compute_physics_data(voxels);
 
     return voxels;
 }
