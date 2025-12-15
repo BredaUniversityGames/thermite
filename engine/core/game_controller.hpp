@@ -27,8 +27,7 @@ class GameController {
 #ifndef THERMITE_EDITOR
     bool should_start_game = true;
 #else
-    /* Will be set to false when we have an editor camera */
-    bool should_start_game = true;
+    bool should_start_game = false;
 #endif
     bool should_end_game = false;
 };
