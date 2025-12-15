@@ -7,6 +7,7 @@
 #include "engine/core/components/voxel_renderer.hpp"
 #include "engine/core/input/input.hpp"
 #include "engine/core/logger.hpp"
+#include "engine/systems/camera/camera_system.hpp"
 
 class Game : public tmt::Application {
    public:
@@ -33,11 +34,13 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
 }
 
 void Game::on_start() {
+    tmt::engine.ecs.systems.add<tmt::CameraSystem>();
+
     { /* Camera entity */
         tmt::Entity entity = tmt::engine.ecs.create_entity("Camera");
         auto& transform = tmt::engine.ecs.add_component<tmt::Transform>(entity);
         auto& camera = tmt::engine.ecs.add_component<tmt::Camera>(entity);
-        transform.set_world_position(glm::vec3(0.0f, 0.0f, -16.0f));
+        //transform.set_world_position(glm::vec3(0.0f, 0.0f, -16.0f));
     }
 
     auto voxel_file = tmt::engine.resources.load_resource<tmt::VoxelScene>({tmt::IO::Location::PROJECT, "dragon128.vengi"});

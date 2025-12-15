@@ -5,6 +5,7 @@ class GameController {
    public:
     bool is_playing() const { return is_game_playing; }
     bool is_paused() const { return is_game_paused; }
+    bool is_running() const { return is_game_playing && !is_game_paused; }
 
     void start_game() { should_start_game = true; }
     void pause_game() { is_game_paused = true; }

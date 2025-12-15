@@ -23,6 +23,9 @@ class Renderer {
     DebugPipeline& debug_pipeline;
     GeometryPipeline& geometry_pipeline;
 
+    Transform debug_transform;
+    Camera debug_camera;
+
    public:
     RenderView render_view {};
 #ifdef THERMITE_EDITOR
@@ -42,6 +45,9 @@ class Renderer {
     void draw_line(const glm::vec3 start, const glm::vec3 end, const glm::vec3 color = {1.0f, 0.0f, 0.0f}, const float time = 0.0f);
 
     VRAMBank& vram_bank();
+
+    Transform& get_debug_transform() { return debug_transform; }
+    Camera& get_debug_camera() { return debug_camera; }
 
 #ifdef THERMITE_EDITOR
     void set_imgui(ImGUI* imgui);
