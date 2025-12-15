@@ -68,7 +68,6 @@ void tmt::Viewport::display() {
 
     toolbar(image_pos);
 
-
     ImGui::EndChild();
 }
 
