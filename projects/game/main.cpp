@@ -40,7 +40,7 @@ void Game::on_start() {
         tmt::Entity entity = tmt::engine.ecs.create_entity("Camera");
         auto& transform = tmt::engine.ecs.add_component<tmt::Transform>(entity);
         auto& camera = tmt::engine.ecs.add_component<tmt::Camera>(entity);
-        //transform.set_world_position(glm::vec3(0.0f, 0.0f, -16.0f));
+        transform.set_world_position(glm::vec3(0.0f, 0.0f, -16.0f));
     }
 
     auto voxel_file = tmt::engine.resources.load_resource<tmt::VoxelScene>({tmt::IO::Location::PROJECT, "dragon128.vengi"});
