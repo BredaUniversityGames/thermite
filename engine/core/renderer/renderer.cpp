@@ -80,6 +80,7 @@ void Renderer::update() {
 
     debug_pipeline.draw_circle({2.0f, 2.0f, 2.0f}, 4.0f, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, 32);
     debug_pipeline.draw_sphere({5.0f, 0.0f, 0.0f}, 2.0f, 8);
+    debug_pipeline.draw_arrow({1.0f, 1.0f, 1.0f}, {1.0f, 0.0f, 1.0f});
 
     render_view.update();
 

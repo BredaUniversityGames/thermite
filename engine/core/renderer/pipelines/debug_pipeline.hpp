@@ -52,5 +52,9 @@ class DebugPipeline : public OnEngineUpdate {
     );
     /* Needs at least 4 segments and 2 rings */
     void draw_sphere(const glm::vec3 center, const float radius, int rings = 4, int segments = 16, const glm::vec3 color = {1.0f, 0.0f, 0.0f}, const float time = 0.0f);
+    /* head_angle is in degrees */
+    void draw_arrow(
+        const glm::vec3 start, glm::vec3 dir, float length = 1.0f, float head_length = 0.1f, float head_angle = 10.0f, const glm::vec3 color = {1.0f, 0.0f, 0.0f}, const float time = 0.0f
+    );
 };
 }  // namespace tmt
