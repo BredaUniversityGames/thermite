@@ -62,6 +62,43 @@ void GoapDebugger::display() {
                 ImGui::TreePop();
             }
 
+            // Available goals
+            if (ImGui::TreeNode("Available Goals")) {
+                for (auto& goal : agent.available_goals) {
+                    bool relevant = goal.is_relevant(ws);
+                    ImGui::Text("%s [priority: %d] %s", goal.name.c_str(), goal.priority, relevant ? "(relevant)" : "(satisfied)");
+                }
+                ImGui::TreePop();
+            }
+
+            // Available actions
+            if (ImGui::TreeNode("Available Actions")) {
+                for (auto& action_ptr : agent.actions) {
+                    GoapAction* action = action_ptr.get();  // get the raw pointer
+                    if (!action) continue;
+
+                    bool can_run = action->check_preconditions(ws);
+                    ImGui::Text("%s [cost: %.1f] %s", action->get_name(), action->cost, can_run ? "(can run)" : "(cannot run)");
+
+                    // Preconditions
+                    if (ImGui::TreeNode((std::string("Preconditions##") + std::to_string((uintptr_t)action)).c_str())) {
+                        for (auto& [key, val] : action->preconditions) {
+                            ImGui::Text("%s = %s", key.c_str(), val ? "true" : "false");
+                        }
+                        ImGui::TreePop();
+                    }
+
+                    // Effects
+                    if (ImGui::TreeNode((std::string("Effects##") + std::to_string((uintptr_t)action)).c_str())) {
+                        for (auto& [key, val] : action->effects) {
+                            ImGui::Text("%s = %s", key.c_str(), val ? "true" : "false");
+                        }
+                        ImGui::TreePop();
+                    }
+                }
+                ImGui::TreePop();
+            }
+
             // Manual replan
             if (ImGui::Button("Force Replan")) {
                 agent.needs_replan = true;

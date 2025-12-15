@@ -103,7 +103,6 @@ void Game::on_start() {
         kill_goal.priority = 10;
         kill_goal.valid = true;
 
-
         agent.available_goals.push_back(patrol_goal);
         agent.available_goals.push_back(kill_goal);
 
