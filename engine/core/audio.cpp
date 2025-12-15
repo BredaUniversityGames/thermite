@@ -1,5 +1,6 @@
 #include "audio.hpp"
 
+#include "engine.hpp"
 #include "core/logger.hpp"
 
 #include <fmod_studio.hpp>
@@ -24,6 +25,93 @@ bool TryLogError(const bool fail, const spdlog::string_view_t message) {
     return fail;
 }
 }  // namespace
+
+bool AudioInstance::is_valid() const { return engine.audio.active_instances.contains(instance); }
+
+void AudioInstance::stop(const FMOD_STUDIO_STOP_MODE stop_mode) const {
+    if (TryLogError(!is_valid(), "Invalid AudioInstance for get_path")) return;
+
+    instance->stop(stop_mode);
+}
+
+void AudioInstance::set_parameter(const AudioParameter& event_parameter, const float value) const {
+    const FMOD_RESULT result = instance->setParameterByID(event_parameter.id, value);
+
+    TryLogError(result, "Failed to set instance parameter");
+}
+
+void AudioInstance::set_parameter(const AudioParameter& event_parameter, const int value) const {
+    const FMOD_RESULT result = instance->setParameterByID(event_parameter.id, static_cast<float>(value));
+}
+
+void AudioInstance::set_label_parameter(const AudioParameter& event_parameter, const std::string& value) const {
+    const FMOD_RESULT result = instance->setParameterByIDWithLabel(event_parameter.id, value.c_str());
+
+    TryLogError(result, "Failed to set parameter with label");
+}
+
+bool AudioEvent::is_valid() const { return description != nullptr; }
+
+std::string AudioEvent::get_path() const {
+#if defined(THERMITE_EDITOR) || defined(THERMITE_DEBUG)
+    if (TryLogError(description == nullptr, "Invalid AudioEvent for get_path")) return "";
+
+    // This function only returns useful paths in the editor or in debug mode, since these aren't necessary for audio to function, and it allows us to skip loading string banks in release
+    // game.
+    std::string name;
+    name.resize(512);
+
+    int size = 0;
+    const FMOD_RESULT result = description->getPath(name.data(), static_cast<int>(name.size()), &size);
+    name.resize(size);
+
+    TryLogError(result, "Failed to get the path of the event");
+
+    return name;
+#else
+    return "";
+#endif
+}
+
+AudioInstance AudioEvent::play() const {
+    if (TryLogError(description == nullptr, "Invalid AudioEvent for play")) return {nullptr};
+
+    // Play the event, creating an instance.
+    FMOD::Studio::EventInstance* event_instance = nullptr;
+    FMOD_RESULT result = description->createInstance(&event_instance);
+    if (TryLogError(result, "Event instance with this description could not be created")) return {nullptr};
+
+    engine.audio.active_instances.emplace(event_instance);
+
+    // trigger the event
+    result = event_instance->start();
+    if (TryLogError(result, "Event instance failed to start")) return {nullptr};
+
+    // mark it for release immediately
+    result = event_instance->release();
+    if (TryLogError(result, "Event instance failed to mark for release")) return {nullptr};
+
+    return {event_instance};
+}
+
+bool VolumeControl::is_valid() const { return vca != nullptr; }
+
+float VolumeControl::get_volume() const {
+    if (TryLogError(vca == nullptr, "Invalid VolumeControl for get_volume")) return 0.0f;
+
+    float volume = 0.0f;
+    const FMOD_RESULT result = vca->getVolume(&volume);
+    if (TryLogError(result, "Failed to get VCA volume")) return 0.0f;
+
+    return volume;
+}
+
+void VolumeControl::set_volume(const float volume) const {
+    if (TryLogError(vca == nullptr, "Invalid VolumeControl for set_volume")) return;
+
+    const FMOD_RESULT result = vca->setVolume(volume);
+    TryLogError(result, "Failed to set VCA volume");
+}
 
 Audio::~Audio() { system->release(); }
 
@@ -67,56 +155,14 @@ FMOD::Studio::Bank* Audio::init_bank(const std::vector<char>& bank_data) const {
     return bank;
 }
 
-FMOD::Studio::EventDescription* Audio::get_event(const FMOD_GUID& guid) const {
+AudioEvent Audio::get_event(const FMOD_GUID& guid) const {
     FMOD::Studio::EventDescription* description;
     system->getEventByID(&guid, &description);
 
-    return description;
+    return {description};
 }
 
-std::string Audio::get_event_path([[maybe_unused]] const FMOD::Studio::EventDescription* description) {
-#if defined(THERMITE_EDITOR) || defined(THERMITE_DEBUG)
-    // This function only returns useful paths in the editor or in debug mode, since these aren't necessary for audio to function, and it allows us to skip loading string banks in release
-    // game.
-    std::string name;
-    name.resize(512);
-
-    int size = 0;
-    const FMOD_RESULT result = description->getPath(name.data(), static_cast<int>(name.size()), &size);
-    name.resize(size);
-
-    TryLogError(result, "Failed to get the name of event");
-
-    return name;
-#else
-    return "";
-#endif
-}
-
-FMOD::Studio::EventInstance* Audio::play_event(const FMOD::Studio::EventDescription* description) {
-    if (TryLogError(description == nullptr, "Invalid EventDescription pointer")) return nullptr;
-
-    // Play the event, creating an instance.
-    FMOD::Studio::EventInstance* event_instance = nullptr;
-    FMOD_RESULT result = description->createInstance(&event_instance);
-    if (TryLogError(result, "Event instance with this description could not be created")) return nullptr;
-
-    active_instances.emplace(event_instance);
-
-    // trigger the event
-    result = event_instance->start();
-    if (TryLogError(result, "Event instance failed to start")) return nullptr;
-
-    // mark it for release immediately
-    result = event_instance->release();
-    if (TryLogError(result, "Event instance failed to mark for release")) return nullptr;
-
-    return event_instance;
-}
-
-bool Audio::is_event_instance_valid(FMOD::Studio::EventInstance* instance) const { return active_instances.contains(instance); }
-
-void Audio::stop_all_event_instances() {
+void Audio::stop_all_audio_instances() {
     for (FMOD::Studio::EventInstance* instance : active_instances) {
         instance->stop(FMOD_STUDIO_STOP_IMMEDIATE);
     }
@@ -124,42 +170,27 @@ void Audio::stop_all_event_instances() {
     active_instances.clear();
 }
 
-void Audio::set_global_parameter(const FMOD_STUDIO_PARAMETER_ID& id, const float value) const {
-    const FMOD_RESULT result = system->setParameterByID(id, value);
+void Audio::set_global_parameter(const AudioParameter& id, const float value) const {
+    const FMOD_RESULT result = system->setParameterByID(id.id, value);
 
     TryLogError(result, "Failed to set parameter");
 }
 
-void Audio::set_global_parameter(const FMOD_STUDIO_PARAMETER_ID& id, const std::string& value) const {
-    const FMOD_RESULT result = system->setParameterByIDWithLabel(id, value.c_str());
+void Audio::set_global_parameter(const AudioParameter& id, int value) const { set_global_parameter(id, static_cast<float>(value)); }
+
+void Audio::set_global_label_parameter(const AudioParameter& id, const std::string& value) const {
+    const FMOD_RESULT result = system->setParameterByIDWithLabel(id.id, value.c_str());
 
     TryLogError(result, "Failed to set parameter with label");
 }
 
-FMOD::Studio::VCA* Audio::get_vca(const FMOD_GUID& guid) const {
+VolumeControl Audio::get_volume_control(const FMOD_GUID& guid) const {
     FMOD::Studio::VCA* vca;
     const FMOD_RESULT result = system->getVCAByID(&guid, &vca);
 
-    if (TryLogError(result, "Failed to get VCA")) return nullptr;
+    if (TryLogError(result, "Failed to get VolumeControl")) return nullptr;
 
-    return vca;
-}
-
-float Audio::get_vca_volume(const FMOD::Studio::VCA* vca) {
-    if (TryLogError(vca == nullptr, "Invalid VCA pointer")) return 0.0f;
-
-    float volume = 0.0f;
-    const FMOD_RESULT result = vca->getVolume(&volume);
-    if (TryLogError(result, "Failed to get VCA volume")) return 0.0f;
-
-    return volume;
-}
-
-void Audio::set_vca_volume(FMOD::Studio::VCA* vca, const float volume) {
-    if (TryLogError(vca == nullptr, "Invalid VCA pointer")) return;
-
-    FMOD_RESULT result = vca->setVolume(volume);
-    TryLogError(result, "Failed to set VCA volume");
+    return {vca};
 }
 
 }  // namespace tmt

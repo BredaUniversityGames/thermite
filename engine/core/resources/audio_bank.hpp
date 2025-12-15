@@ -19,12 +19,13 @@ class AudioBank : public FileResource {
     bool load() override;
     void unload() override;
 
-    std::vector<EventDescription*> get_event_descriptions() const;
+    std::vector<AudioEvent> get_audio_events() const;
+    std::vector<VolumeControl> get_volume_controls() const;
 
    private:
     bool is_master;
-    Bank* bank {nullptr};
-    Bank* string_bank {nullptr};
+    FMOD::Studio::Bank* bank {nullptr};
+    FMOD::Studio::Bank* string_bank {nullptr};
 };
 
 }  // namespace tmt

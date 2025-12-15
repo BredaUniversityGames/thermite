@@ -40,22 +40,52 @@ void AudioBank::unload() {
     bank->unload();
 }
 
-std::vector<EventDescription*> AudioBank::get_event_descriptions() const {
+std::vector<AudioEvent> AudioBank::get_audio_events() const {
     int description_count;
     FMOD_RESULT result = bank->getEventCount(&description_count);
     if (result != FMOD_OK) {
-        Log::error(Log::Scope::ENGINE, "FMOD, Failed to get event description count from bank resource: {}", FMOD_ErrorString(result));
+        Log::error(Log::Scope::ENGINE, "FMOD, Failed to get AudioEvent count from bank resource: {}", FMOD_ErrorString(result));
         return {};
     }
 
-    std::vector<EventDescription*> descriptions(description_count);
+    std::vector<FMOD::Studio::EventDescription*> descriptions(description_count);
     result = bank->getEventList(descriptions.data(), description_count, nullptr);
+
     if (result != FMOD_OK) {
-        Log::error(Log::Scope::ENGINE, "FMOD, Failed to get event descriptions from bank resource: {}", FMOD_ErrorString(result));
+        Log::error(Log::Scope::ENGINE, "FMOD, Failed to get AudioEvents from bank resource: {}", FMOD_ErrorString(result));
         return {};
     }
 
-    return descriptions;
+    std::vector<AudioEvent> events;
+    events.reserve(descriptions.size());
+    for (auto& description : descriptions) {
+        events.emplace_back(description);
+    }
+    return events;
+}
+
+std::vector<VolumeControl> AudioBank::get_volume_controls() const {
+    int vca_count;
+    FMOD_RESULT result = bank->getVCACount(&vca_count);
+    if (result != FMOD_OK) {
+        Log::error(Log::Scope::ENGINE, "FMOD, Failed to get VolumeControl count from bank resource: {}", FMOD_ErrorString(result));
+        return {};
+    }
+
+    std::vector<FMOD::Studio::VCA*> vcas(vca_count);
+    result = bank->getVCAList(vcas.data(), vca_count, nullptr);
+
+    if (result != FMOD_OK) {
+        Log::error(Log::Scope::ENGINE, "FMOD, Failed to get VolumeControls from bank resource: {}", FMOD_ErrorString(result));
+        return {};
+    }
+
+    std::vector<VolumeControl> volume_controls;
+    volume_controls.reserve(vcas.size());
+    for (auto& vca : vcas) {
+        volume_controls.emplace_back(vca);
+    }
+    return volume_controls;
 }
 
 }  // namespace tmt
