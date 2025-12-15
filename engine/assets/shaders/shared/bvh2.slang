@@ -59,7 +59,6 @@ public inline Hit trace_bvh2<let DEBUG : bool>(
                 hit.t = prim_hit.t;
                 hit.voxel_index = prim_hit.voxel_index;
                 hit.object_index = indices[prim_index + i];
-                hit.debug = prim_hit.debug;
             }
 
             /* Pop the node stack */

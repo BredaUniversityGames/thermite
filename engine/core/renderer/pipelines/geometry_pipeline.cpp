@@ -35,8 +35,8 @@ void GeometryPipeline::enqueue(RenderGraph& render_graph, RenderView render_view
     /* Get Render Image */
     const BindHandle render_image = render_view.get_render_image();
 
-    // static bool test = false;
-    // if (test == false) {
+    static bool test = false;
+    if (test == false) {
         /* Capture all voxel renderers in the scene */
         const entt::basic_group group = engine.ecs.get_registry().group<const VoxelRenderer>(entt::get<Transform>);
 
@@ -54,6 +54,7 @@ void GeometryPipeline::enqueue(RenderGraph& render_graph, RenderView render_view
             object.local_to_world = transform.get_world_matrix();
             object.world_to_local = glm::inverse(object.local_to_world);
             object.size = renderer.resource->size;
+            object.rcp_tree_width = 1.0f / powf(4.0f, (float)renderer.resource->blas->depth);
             object.blas_handle = renderer.resource->blas_nodes.get_index();
             object.voxels_handle = renderer.resource->blas_voxels.get_index();
             object.palette_handle = renderer.resource->blas_palette.get_index();
@@ -63,8 +64,8 @@ void GeometryPipeline::enqueue(RenderGraph& render_graph, RenderView render_view
         /* Build a BVH over the scene */
         bvh.build(objects.data(), (uint32_t)objects.size());
 
-    //     test = true;
-    // }
+        test = true;
+    }
 
     /* Upload the object buffers */
     render_graph.upload_buffer(bvh_nodes, bvh.gpu_nodes, 0u, bvh.node_count * sizeof(AilaLaineNode));

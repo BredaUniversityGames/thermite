@@ -170,14 +170,12 @@ public inline Svt64Hit trace_svt64<let DEBUG : bool>(
     if (node.is_leaf() && scale_exp <= 21) {
         /* Find the hit position & calculate the hit distance */
         pos = mirror_pos(pos, ray.dir, false);
-        hit.point = pos; // distance(ray.origin, pos);
+        hit.point = pos;
 
         /* Fetch the material of the voxel we hit */
         const uint child_index = get_node_cell_index(pos, scale_exp);
         const uint voxel_index = node.abs_ptr() + popcnt_var64(node.child_mask_lo, node.child_mask_hi, child_index);
         hit.voxel_index = voxel_index;
-        // const uint palette_index = (voxels[voxel_index >> 2u] >> ((4u - (voxel_index % 4u)) << 3u)) & 0xFFu;
-        // hit.albedo = palette[palette_index].albedo;
     }
 
     return hit;
