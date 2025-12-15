@@ -148,7 +148,7 @@ void Game::on_start() {
     }
 
     /* Voxel Physics Entity */ //9998
-    for (int i = 0; i < 9998; i++) { 
+    for (int i = 0; i < 0; i++) { 
         auto entity = tmt::engine.ecs.create_entity();
         auto& transform = tmt::engine.ecs.add_component<tmt::Transform>(entity);
         auto& renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(entity);
