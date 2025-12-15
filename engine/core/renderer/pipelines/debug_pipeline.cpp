@@ -118,8 +118,8 @@ void DebugPipeline::draw_sphere(const glm::vec3 center, float radius, const glm:
 
     // Great circles (always draw these)
     draw_circle(center, radius, {1, 0, 0}, {0, 1, 0}, color, segments, time);
-    draw_circle(center, radius, {1, 0, 0}, {0, 0, 1}, color, segments,  time);
-    draw_circle(center, radius, {0, 1, 0}, {0, 0, 1}, color, segments,  time);
+    draw_circle(center, radius, {1, 0, 0}, {0, 0, 1}, color, segments, time);
+    draw_circle(center, radius, {0, 1, 0}, {0, 0, 1}, color, segments, time);
 
     // Latitude rings (horizontal)
     for (int i = 1; i <= latitude_rings; ++i) {
