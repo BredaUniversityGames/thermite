@@ -71,19 +71,6 @@ void Renderer::init() {
 
 void Renderer::update() {
     TMT_ZONE_SCOPED_N("Rendering")
-    // Temporary
-    /*draw_line({-0.5f, 0.5f, 0.0f}, {0.0f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, 0.0f);
-    draw_line({0.0f, -0.5f, 0.0f}, {0.5f, 0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, 0.0f);
-    draw_line({0.5f, 0.5f, 0.0f}, {-0.5f, 0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, 0.0f);
-
-    draw_line({0.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, 0.0f);
-
-    debug_pipeline.draw_circle({2.0f, 2.0f, 2.0f}, 4.0f, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, 32);
-    debug_pipeline.draw_sphere({5.0f, 0.0f, 0.0f}, 2.0f, 8);
-    debug_pipeline.draw_arrow({1.0f, 1.0f, 1.0f}, {1.0f, 0.0f, 1.0f});
-    debug_pipeline.draw_cross({2.0f, 0.0f, 0.0f});
-    debug_pipeline.draw_obb({0.0f, -3.0f, 0.0f}, 1.0f, 1.0f, 1.0f, glm::angleAxis(glm::radians(45.0f), glm::vec3(0, 0, 1)));*/
-
     render_view.update();
 
     Entity cam_entity = Camera::get_active_camera();
