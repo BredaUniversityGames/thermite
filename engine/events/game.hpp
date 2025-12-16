@@ -44,6 +44,20 @@ class OnGameFixedUpdate : public EventListenerBase<OnGameFixedUpdate, FrameData>
     void on_event(const FrameData& time) final override { on_game_fixed_update(time); }
 };
 
+class OnGamePause : public EventListenerBase<OnGamePause, void> {
+   public:
+    OnGamePause() : EventListenerBase() {}
+    virtual void on_game_pause() = 0;
+    void on_event() final override { on_game_pause(); }
+};
+
+class OnGameResume : public EventListenerBase<OnGameResume, void> {
+   public:
+    OnGameResume() : EventListenerBase() {}
+    virtual void on_game_resume() = 0;
+    void on_event() final override { on_game_resume(); }
+};
+
 class OnGameEnd : public EventListenerBase<OnGameEnd, void> {
    public:
     OnGameEnd() : EventListenerBase() {}
