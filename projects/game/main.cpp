@@ -30,11 +30,16 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     };
     // clang-format on
 
+    /* Register Systems */
+    tmt::engine.ecs.systems.add<tmt::CameraSystem>();
+
+    /* Register Scenes */
+
+
     return std::make_unique<Game>(specs);
 }
 
 void Game::on_start() {
-    tmt::engine.ecs.systems.add<tmt::CameraSystem>();
 
     { /* Camera entity */
         tmt::Entity entity = tmt::engine.ecs.create_entity("Camera");

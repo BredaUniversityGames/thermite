@@ -14,6 +14,10 @@ class SystemCollection {
         auto system = std::make_unique<T>(std::forward<Args>(args)...);
         T& ref = *system;
 
+        if (try_get<T>() != nullptr) {
+            throw std::runtime_error("System of this type already exists");
+        }
+
         systems.push_back(std::move(system));
         return ref;
     }
@@ -44,7 +48,7 @@ class SystemCollection {
     auto begin() { return systems.begin(); }
     auto end() { return systems.end(); }
 
-   private:
+   protected:
     std::vector<std::unique_ptr<SystemType>> systems;
 };
 }  // namespace tmt
