@@ -112,7 +112,21 @@ void Game::on_start() {
         ws.facts[std::hash<std::string>()("player_alive")] = true;
         ws.facts[std::hash<std::string>()("area_secure")] = false;
 
-        tmt::Log::info("GOAP Agent created!");
+        // Agent 2
+        tmt::Entity ai1 = tmt::engine.ecs.create_entity();
+        auto& transform1 = tmt::engine.ecs.add_component<tmt::Transform>(ai1);
+        auto& agent1 = tmt::engine.ecs.add_component<tmt::GoapAgent>(ai1);
+        auto& ws1 = tmt::engine.ecs.add_component<tmt::WorldState>(ai1);
+        transform1.set_world_position({0.f, 0.f, 0.f});
+        agent1.actions.push_back(std::make_unique<tmt::PatrolArea>());
+        agent1.actions.push_back(std::make_unique<tmt::ChasePlayer>());
+        agent1.actions.push_back(std::make_unique<tmt::KillPlayer>());
+        ws1.facts[std::hash<std::string>()("player_visible")] = true;
+        ws1.facts[std::hash<std::string>()("player_in_range")] = false;
+        ws1.facts[std::hash<std::string>()("player_alive")] = true;
+        ws1.facts[std::hash<std::string>()("area_secure")] = false;
+        agent1.available_goals.push_back(patrol_goal);
+        agent1.available_goals.push_back(kill_goal);
     }
 }
 

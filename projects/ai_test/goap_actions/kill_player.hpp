@@ -16,15 +16,16 @@ class KillPlayer : public GoapAction {
         cost = 2.f;
     }
 
+    float time_killing = 0.f;
+    float kill_duration = 0.5f;  // seconds
+
     const char* get_name() const override { return "KillPlayer"; }
 
-    void on_start(Entity /*agent*/, Registry& /*ecs*/) override {}
+    void on_start(Entity /*agent*/, Registry& /*ecs*/) override { time_killing = 0.f; }
 
-    bool is_done(Entity /*agent*/, Registry& /*ecs*/) const override {
-        return true;  // Done instantly for testing purposes
-    }
+    void on_tick(Entity /*agent*/, Registry& /*ecs*/, float dt) override { time_killing += dt; }
 
-    void on_tick(Entity /*agent*/, Registry& /*ecs*/, float /*dt*/) override {}
+    bool is_done(Entity /*agent*/, Registry& /*ecs*/) const override { return time_killing >= kill_duration; }
 
     void on_finished(Entity /*agent*/, Registry& /*ecs*/) override {}
 
