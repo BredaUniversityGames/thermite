@@ -118,7 +118,7 @@ void ConstraintSolver::solve_positions(const float) {
             auto& body_b = engine.ecs.get_registry().get<VoxelBody>(collision.entity_b);
 
             for (auto& contact : collision.contacts) {
-                const float steering_constant = 0.05f;
+                const float steering_constant = 0.005f;
                 const float max_correction = -VOXEL_SIZE_HALF;
                 const float slop = VOXEL_SIZE_SQR;
 
