@@ -51,7 +51,6 @@ class IO {
    private:
     static const char* path_str[3];
 
-
     static bool stream_open(std::fstream& file_stream, const std::filesystem::path& absolute, std::ios::openmode open_mode);
     static bool create_directories(const std::filesystem::path& absolute);
 };

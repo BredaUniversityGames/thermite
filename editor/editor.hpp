@@ -21,6 +21,7 @@ class Editor : public OnEngineInit, public OnEngineUpdate, public OnEngineFixedU
     SystemCollection<IWindow> windows;
 
     FontManager& font_manager;
+
    private:
     ImGuiManager& imgui_manager;
     SaveData save_data;
