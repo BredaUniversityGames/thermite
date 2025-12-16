@@ -31,15 +31,17 @@ namespace tmt {
 
 Editor::Editor() : imgui_manager(*new ImGuiManager()), font_manager(*new FontManager()) {}
 
-Editor::~Editor() { delete &imgui_manager; delete &font_manager; }
+Editor::~Editor() {
+    delete &imgui_manager;
+    delete &font_manager;
+}
 
-void Editor::init() 
-{
+void Editor::init() {
     Log::info("Thermite Editor initialized.");
 
     font_manager.load("Rubik", {IO::Location::EDITOR, "Rubik-Regular.ttf"}, 22.f);
     const uint16_t glyph_ranges[] = {ICON_MIN_MS, ICON_MAX_MS, 0};
-    ImFontConfig config{};
+    ImFontConfig config {};
     config.MergeMode = true;
     config.GlyphOffset.y = 9.f;
     font_manager.load("MaterialSymbols", {IO::Location::EDITOR, "MaterialSymbolsRounded.ttf"}, 37.f, config, glyph_ranges);
