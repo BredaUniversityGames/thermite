@@ -79,10 +79,12 @@ void Engine::run() {
             game_controller.is_game_playing = true;
         }
         if (game_controller.should_game_pause()) {
+            pause_game();
             game_controller.is_game_paused = true;
             game_controller.should_pause_game = false;
         }
         if (game_controller.should_game_resume()) {
+            resume_game();
             game_controller.is_game_paused = false;
             game_controller.should_resume_game = false;
         }
