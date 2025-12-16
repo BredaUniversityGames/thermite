@@ -8,17 +8,28 @@
 #include "engine/core/input/input.hpp"
 #include "engine/core/logger.hpp"
 #include "engine/systems/camera/camera_system.hpp"
+#include "engine/core/scene.hpp"
+#include "engine/core/scenes.hpp"
 
 class Game : public tmt::Application {
    public:
     Game(const tmt::ApplicationSpecs& specs) : Application(specs) {}
 
-    tmt::Entity voxel {};
-    float time_passed = 0.0f;
+    void on_start() override;
+    void on_update(const tmt::FrameData& time) override {};
+    void on_end() override {};
+};
 
+class DragonScene : public tmt::Scene {
+   public:
     void on_start() override;
     void on_update(const tmt::FrameData& time) override;
     void on_end() override;
+
+    tmt::Entity voxel {};
+    float time_passed = 0.0f;
+
+    std::string get_name() const override { return "Dragon Scene"; }
 };
 
 std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs& args) {
@@ -34,13 +45,14 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     tmt::engine.ecs.systems.add<tmt::CameraSystem>();
 
     /* Register Scenes */
-
+    tmt::engine.scenes.add<DragonScene>();
 
     return std::make_unique<Game>(specs);
 }
 
-void Game::on_start() {
+void Game::on_start() {}
 
+void DragonScene::on_start() {
     { /* Camera entity */
         tmt::Entity entity = tmt::engine.ecs.create_entity("Camera");
         auto& transform = tmt::engine.ecs.add_component<tmt::Transform>(entity);
@@ -78,12 +90,6 @@ void Game::on_start() {
     }
 }
 
-void Game::on_update(const tmt::FrameData& time) {
-    time_passed += time.delta_time;
-    // auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(voxel);
-    // transform.set_world_position(glm::vec3(1.0f, sinf(time_passed), 1.0f));
-    // transform.set_world_rotation(glm::vec3(sinf(time_passed), cosf(time_passed), 0.0f));
-    // transform.set_world_scale(glm::vec3(1.0f, 1.5f + sinf(time_passed), 1.0f));
-}
+void DragonScene::on_update(const tmt::FrameData& time) {}
 
-void Game::on_end() {}
+void DragonScene::on_end() {}

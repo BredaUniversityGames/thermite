@@ -9,6 +9,10 @@ class Scene : public IGameEvents {
     Scene() = default;
     virtual ~Scene() = default;
 
-    constexpr virtual std::string get_name() const = 0;
+    /* [Optional] */
+    /* Gets called before deserialization */
+    virtual void on_pre_load() {};
+    /* Gets called after deserialization */
+    virtual void on_post_load() {};
 };
 }  // namespace tmt

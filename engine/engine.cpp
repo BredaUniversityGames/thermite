@@ -8,6 +8,7 @@
 
 #include "core/window.hpp"
 #include "core/ecs.hpp"
+#include "core/scenes.hpp"
 #include "core/timer.hpp"
 
 #include "core/renderer/renderer.hpp"
@@ -30,10 +31,11 @@ tmt::Engine tmt::engine;
 
 namespace tmt {
 
-Engine::Engine() : input(*new Input()), window(*new Window()), ecs(*new Ecs()), renderer(*new Renderer()), resources(*new Resources()), salvo(*new Salvo()) {}
+Engine::Engine() : input(*new Input()), window(*new Window()), ecs(*new Ecs()), renderer(*new Renderer()), resources(*new Resources()), salvo(*new Salvo()), scenes(*new Scenes()) {}
 
 Engine::~Engine() {
     /* Destruction should be in reverse order */
+    delete &scenes;
     delete &salvo;
     delete &resources;
     delete &renderer;
@@ -106,6 +108,7 @@ void Engine::run() {
         OnEndFrame::dispatch();
 
         renderer.update();
+        scenes.update();
         frame_count++;
     }
 
@@ -144,6 +147,7 @@ void Engine::start_game() {
     TMT_ZONE_SCOPED_N("Engine::start_game")
 
     app->on_start();
+    scenes.get_active_scene()->on_start();
     OnGameStart::dispatch();
 }
 
@@ -151,17 +155,20 @@ void Engine::update_game(const FrameData& frame_data) {
     TMT_ZONE_SCOPED_N("Engine::update_game")
 
     app->on_update(frame_data);
+    scenes.get_active_scene()->on_update(frame_data);
     OnGameUpdate::dispatch(frame_data);
 }
 
 void Engine::fixed_update_game(const FrameData& frame_data) {
     TMT_ZONE_SCOPED_N("Engine::fixed_update_game")
     app->on_fixed_update(frame_data);
+    scenes.get_active_scene()->on_fixed_update(frame_data);
     OnGameFixedUpdate::dispatch(frame_data);
 }
 
 void Engine::end_game() {
     app->on_end();
+    scenes.get_active_scene()->on_end();
     OnGameEnd::dispatch();
 }
 
