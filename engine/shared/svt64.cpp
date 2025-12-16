@@ -104,8 +104,8 @@ Svt64Node Svt64::subdivide(const RawVoxels& raw_data, uint32_t scale, glm::uvec3
     return node;
 }
 
-bool Svt64::is_empty(const uint32_t x, const uint32_t y, const uint32_t z) { 
-    Svt64Node* current = &nodes[0]; 
+bool Svt64::is_empty(const uint32_t x, const uint32_t y, const uint32_t z) {
+    Svt64Node* current = &nodes[0];
 
     for (uint32_t level = 1u; level <= depth; ++level) {
         const uint32_t x_index = (x >> ((depth - level) * 2u)) & 3u;

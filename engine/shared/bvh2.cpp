@@ -215,7 +215,7 @@ std::vector<uint32_t> Bvh2<T>::overlap(const Aabb& aabb) const {
             /* Intersect all primitives */
             for (uint32_t i = 0u; i < node.prim_count; ++i) {
                 const uint32_t index = indices[node.left_first + i];
-                if (bounds[index].overlap(aabb) == false) continue; 
+                if (bounds[index].overlap(aabb) == false) continue;
                 hits.push_back(index);
             }
 

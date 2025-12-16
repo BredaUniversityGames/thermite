@@ -179,7 +179,7 @@ void Physics::generate_voxel_constraints_range(const int index, const int size) 
 
             // Check against BVH
             std::vector<uint32_t> hits = bvh.overlap(current_aabb);
-            
+
             // Collision checks for entities in bvh_overlaps
             for (uint32_t hit : hits) {
                 const Entity other_entity = entities[hit];
@@ -451,8 +451,8 @@ bool Physics::is_separated(const glm::vec3& axis, const VoxelBody::Box& box_a, c
 void Physics::check_neighbors(const VoxelBody& vb_a, const VoxelBody& vb_b, const size_t x, const size_t y, const size_t z, Collision& coll) const {
     auto voxels_a = vb_a.resource.get();
     auto voxels_b = vb_b.resource.get();
-    
-    const PhysicsVoxel* voxel_a = voxels_a->blas.get()->get_physics_voxel(x, y, z);   //.voxels.get_voxel(x, y, z);
+
+    const PhysicsVoxel* voxel_a = voxels_a->blas.get()->get_physics_voxel(x, y, z);  //.voxels.get_voxel(x, y, z);
     if (voxel_a == nullptr) return;
 
     const glm::vec3 pos_a = vb_a.position;
@@ -566,7 +566,7 @@ void Physics::initialize_voxel_body(VoxelBody& vb) {
         for (size_t y = 0; y < voxels->size.y; y++) {
             for (size_t x = 0; x < voxels->size.x; x++) {
                 if (voxels->blas.get()->get_voxel(x, y, z) == nullptr) continue;
-                //if (vb.voxels.get_voxel(x, y, z).type == PhysicsVoxelType::EMPTY) continue;
+                // if (vb.voxels.get_voxel(x, y, z).type == PhysicsVoxelType::EMPTY) continue;
 
                 filled_counter++;
                 sum += glm::vec3(x, y, z) * UNITS_PER_VOXEL - half_scale + VOXEL_SIZE_HALF;

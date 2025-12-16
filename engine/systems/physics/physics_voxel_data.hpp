@@ -65,8 +65,8 @@ struct PhysicsVoxelData {
     glm::uvec3 size = {};
 
    private:
-    //std::vector<PhysicsVoxel> data = {};
-    //glm::uvec3 size = {};
+    // std::vector<PhysicsVoxel> data = {};
+    // glm::uvec3 size = {};
 };
 
 }  // namespace tmt
