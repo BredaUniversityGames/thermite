@@ -32,8 +32,8 @@ namespace tmt {
 Editor::Editor() : imgui_manager(*new ImGuiManager()), font_manager(*new FontManager()) {}
 
 Editor::~Editor() {
-    delete &imgui_manager;
     delete &font_manager;
+    delete &imgui_manager;
 }
 
 void Editor::init() {
