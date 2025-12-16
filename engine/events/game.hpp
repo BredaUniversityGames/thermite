@@ -4,6 +4,10 @@
 
 namespace tmt {
 
+/*
+This is an interface only, these functions do not get called auotmatically
+Use OnEvents below to listen to game events
+ */
 class IGameEvents {
    public:
     virtual ~IGameEvents() = default;
