@@ -16,7 +16,7 @@ public struct VoxelObject {
     public uint palette_handle;
 };
 
-public inline Hit intersect_voxel_object<let DEBUG : bool>(Ray ray, VoxelObject object, float t) {
+public [ForceInline] void intersect_voxel_object<let DEBUG : bool>(Ray ray, VoxelObject object, uint index, inout Hit hit) {
     /* Transform the ray into the local space of the object */
     const float3 world_origin = ray.origin;
     ray.origin = mul(object.world_to_local, float4(ray.origin, 1.0f)).xyz;
@@ -30,8 +30,8 @@ public inline Hit intersect_voxel_object<let DEBUG : bool>(Ray ray, VoxelObject 
     const float3 t_min = min(t_to_min, t_to_max);
     const float3 t_max = max(t_to_min, t_to_max);
     const float t_near = max(max(max(t_min.x, t_min.y), t_min.z), 0.0f);
-    const float t_far = min(min(min(t_max.x, t_max.y), t_max.z), t);
-    if (t_near > t_far) return Hit::miss();
+    const float t_far = min(min(min(t_max.x, t_max.y), t_max.z), hit.t);
+    if (t_near > t_far) return;
 
     /* Calculate the ratio between the object size and its tree size */
     const float3 width_ratio = float3(object.size_rcp_width.xyz) * asfloat(object.size_rcp_width.w);
@@ -46,18 +46,21 @@ public inline Hit intersect_voxel_object<let DEBUG : bool>(Ray ray, VoxelObject 
     const Svt64Hit local_hit = trace_svt64<DEBUG>(nodes, ray);
 
     /* Check if we missed */
-    Hit hit = Hit::miss();
-    if (DEBUG) hit.steps = local_hit.steps;
-    if (local_hit.miss()) return hit;
-    hit.voxel_index = local_hit.voxel_index;
-    hit.face_index = local_hit.face_index;
+    if (DEBUG) hit.steps += local_hit.steps;
+    if (local_hit.miss()) return;
 
     /* Calculate world-space hit point and distance */
     const float3 hit_uvw = (local_hit.point - 1.0f) / width_ratio;
     const float3 hit_ndc = hit_uvw * 2.0f - 1.0f;
     const float3 hit_point = mul(object.local_to_world, float4(hit_ndc * half_extent, 1.0f)).xyz;
-    hit.t = distance(world_origin, hit_point);
-    return hit;
+    const float hit_dist = distance(world_origin, hit_point);
+    if (hit_dist > hit.t) return;
+
+    /* Overwrite the current hit with the closer one */
+    hit.t = hit_dist;
+    hit.voxel_index = local_hit.voxel_index;
+    hit.object_index = index;
+    hit.face_index = local_hit.face_index;
 }
 
 /* XXHash32 <https://jcgt.org/published/0009/03/02/> */

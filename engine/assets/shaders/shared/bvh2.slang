@@ -28,7 +28,7 @@ public struct Bvh2Node {
 };
 
 /* Trace a ray through a BVH2. */
-public inline Hit trace_bvh2<let DEBUG : bool>(
+public [ForceInline] Hit trace_bvh2<let DEBUG : bool>(
     StructuredBuffer<float4> nodes,
     StructuredBuffer<uint> indices,
     StructuredBuffer<VoxelObject> prims,
@@ -55,16 +55,18 @@ public inline Hit trace_bvh2<let DEBUG : bool>(
             /* Intersect all primitives */
             const uint prim_index = asuint(rmin_prim_index.w);
             for (uint i = 0u; i < prim_count; ++i) {
-                const VoxelObject prim = prims[indices[prim_index + i]];
-                const Hit prim_hit = intersect_voxel_object<DEBUG>(ray, prim, hit.t);
+                const uint index = indices[prim_index + i];
+                const VoxelObject prim = prims[index];
+                intersect_voxel_object<DEBUG>(ray, prim, index, hit);
+                // const Hit prim_hit = 
                 
-                if (DEBUG) hit.steps += prim_hit.steps;
-                if (prim_hit.t >= hit.t) continue;
+                // if (DEBUG) hit.steps += prim_hit.steps;
+                // if (prim_hit.t >= hit.t) continue;
 
-                hit.t = prim_hit.t;
-                hit.voxel_index = prim_hit.voxel_index;
-                hit.object_index = indices[prim_index + i];
-                hit.face_index = prim_hit.face_index;
+                // hit.t = prim_hit.t;
+                // hit.voxel_index = prim_hit.voxel_index;
+                // hit.object_index = indices[prim_index + i];
+                // hit.face_index = prim_hit.face_index;
             }
 
             /* Pop the node stack */

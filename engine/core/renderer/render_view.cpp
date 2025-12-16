@@ -55,7 +55,7 @@ void RenderView::init() {
 
     /* Create the visibility buffer */
     const Size3D view_size { gpu_view.resolution.x, gpu_view.resolution.y };
-    vbuffer_texture = bank.create_texture(TextureUsage::Storage, TextureFormat::RGBA8Unorm, view_size).expect("failed to create vbuffer texture.");
+    vbuffer_texture = bank.create_texture(TextureUsage::Storage, TextureFormat::RG32Uint, view_size).expect("failed to create vbuffer texture.");
     vbuffer = bank.create_image(vbuffer_texture).expect("failed to create vbuffer image.");
 }
 

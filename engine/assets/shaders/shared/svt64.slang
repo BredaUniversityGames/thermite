@@ -92,7 +92,7 @@ uint face_index(float3 side_dist) {
 }
 
 /* Trace a ray through a SVT64. */
-public inline Svt64Hit trace_svt64<let DEBUG : bool>(
+public [ForceInline] Svt64Hit trace_svt64<let DEBUG : bool>(
     StructuredBuffer<Svt64Node> nodes,
     Ray ray
 ) {

@@ -12,6 +12,7 @@
 #include "engine/core/ecs.hpp"
 #include "engine/core/logger.hpp"
 #include "engine/core/window.hpp"
+#include "engine/core/renderer/renderer.hpp"
 
 #include "editor/imgui/manager.hpp"
 #include "editor/core/font_manager.hpp"
@@ -24,6 +25,7 @@
 #include "editor/windows/goap_debugger.hpp"
 #include "editor/windows/font_control.hpp"
 #include "windows/profiler_tracy.hpp"
+
 /* Singleton */
 tmt::Editor tmt::editor;
 
@@ -122,6 +124,31 @@ void Editor::main_menu_bar() {
             }
             ImGui::EndMenu();
         }
+
+        if (ImGui::BeginMenu("Renderer")) {
+            static uint32_t display_mode_index = 0u;
+            const std::string display_mode = DISPLAY_MODE_NAMES[display_mode_index];
+
+            if (ImGui::BeginMenu(("Display Mode (" + display_mode + ")").c_str())) {
+                /* Render all display mode options */
+                constexpr uint32_t COUNT = sizeof(DISPLAY_MODES) / sizeof(DisplayMode);
+                const char* SELECTED_PREFIX = "* ";
+                const char* DEFAULT_PREFIX = "";
+                for (uint32_t i = 0u; i < COUNT; ++i) {
+                    const bool selected = engine.renderer.display_mode == DISPLAY_MODES[i];
+                    const std::string prefix = selected ? SELECTED_PREFIX : DEFAULT_PREFIX;
+
+                    if (ImGui::MenuItem((prefix + DISPLAY_MODE_NAMES[i]).c_str())) {
+                        display_mode_index = i;
+                        engine.renderer.display_mode = DISPLAY_MODES[i];
+                    }
+                }
+                ImGui::EndMenu();
+            }
+
+            ImGui::EndMenu();
+        }
+
         ImGui::EndMainMenuBar();
     }
 }

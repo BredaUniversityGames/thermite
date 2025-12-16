@@ -71,7 +71,6 @@ void GeometryPipeline::enqueue(RenderGraph& render_graph, RenderView render_view
 
     /* Enqueue the geometry compute pass */
     const glm::uvec2 render_res = render_view.gpu_view.resolution;
-
     render_graph.add_compute_pass("geometry pass", "geometry.cs")
         /* Render view */
         .read(render_view.render_view_buffer)
@@ -79,7 +78,16 @@ void GeometryPipeline::enqueue(RenderGraph& render_graph, RenderView render_view
         .read(bvh_nodes)
         .read(object_indices)
         .read(object_data)
-        /* Render target */
+        /* Visibility buffer */
+        .write(render_view.vbuffer)
+        .group_size(16, 8)
+        .work_size(render_res.x, render_res.y);
+
+    /* [Debug] Visibility data visualization */
+    if (engine.renderer.display_mode != DisplayMode::Visibility) return;
+    render_graph.add_compute_pass("[debug] visibility pass", "debug/visibility.cs")
+        .read(render_view.render_view_buffer)
+        .read(render_view.vbuffer)
         .write(render_image)
         .group_size(16, 8)
         .work_size(render_res.x, render_res.y);

@@ -3,7 +3,6 @@
 #include <vector>
 
 #include <glm/gtc/quaternion.hpp>
-
 #include <graphite/imgui.hh>
 
 #include "render_view.hpp"
@@ -14,17 +13,23 @@ class VRAMBank;
 
 namespace tmt {
 
-class DebugPipeline;
-class GeometryPipeline;
+/* Renderer display mode. */
+enum class DisplayMode : uint32_t {
+    Default = 0u,
+    Visibility, /* Visualize visibility buffer data. */
+};
+static const DisplayMode DISPLAY_MODES[] { DisplayMode::Default, DisplayMode::Visibility };
+static const char* DISPLAY_MODE_NAMES[] { "Default", "Visibility" };
 
 class Renderer {
     GPUAdapter& gpu;
     RenderGraph& render_graph;
 
     /* Pipelines */
-    DebugPipeline& debug_pipeline;
-    GeometryPipeline& geometry_pipeline;
+    class DebugPipeline& debug_pipeline;
+    class GeometryPipeline& geometry_pipeline;
 
+    /* Debug camera */
     Transform debug_transform;
     Camera debug_camera;
 
@@ -33,6 +38,8 @@ class Renderer {
 #ifdef THERMITE_EDITOR
     ImGUI* imgui = nullptr;
 #endif
+    /* Display mode for debugging */
+    DisplayMode display_mode = DisplayMode::Default;
 
     Renderer();
     ~Renderer();
@@ -66,6 +73,7 @@ class Renderer {
         const glm::vec3 center, const float width, const float height, const float depth, const glm::vec3 color = {1.0f, 0.0f, 0.0f}, const glm::quat rot = glm::quat(), const float time = 0.0f
     );
 
+    /* Get a reference to the VRAM bank, for creating and destroying graphics resources. */
     VRAMBank& vram_bank();
 
     Transform& get_debug_transform() { return debug_transform; }
