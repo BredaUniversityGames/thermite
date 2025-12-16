@@ -44,10 +44,12 @@ class IO {
     // Read text file (primarily for json)
     static std::string read_text_file(const FileLocation& file_location);
 
-   private:
-    static const char* path_str[3];
+    static std::string read_or_create_text_file(const FileLocation& file_location, const std::string& default_contents = "");
 
     static std::filesystem::path get_absolute_path(Location sub_cat, const std::filesystem::path& relative_path);
+
+   private:
+    static const char* path_str[3];
 
     static bool stream_open(std::fstream& file_stream, const std::filesystem::path& absolute, std::ios::openmode open_mode);
     static bool create_directories(const std::filesystem::path& absolute);
