@@ -40,6 +40,10 @@ class RenderView {
 
     void set_viewport_size(uint32_t width, uint32_t height);
 
+    /* Visibility buffer (WxH) */
+    Texture vbuffer_texture {};
+    Image vbuffer {};
+
     /* Renderer output */
     Texture viewport_texture {};
     Image viewport_image {};
@@ -50,6 +54,9 @@ class RenderView {
     Buffer render_view_buffer {};
 
     GpuView gpu_view {};
+
+   private:
+    void resize_textures();
 };
 
 }  // namespace tmt

@@ -52,23 +52,28 @@ void RenderView::init() {
     } else {
         render_view_buffer = r.unwrap();
     }
+
+    /* Create the visibility buffer */
+    const Size3D view_size { gpu_view.resolution.x, gpu_view.resolution.y };
+    vbuffer_texture = bank.create_texture(TextureUsage::Storage, TextureFormat::RGBA8Unorm, view_size).expect("failed to create vbuffer texture.");
+    vbuffer = bank.create_image(vbuffer_texture).expect("failed to create vbuffer image.");
 }
 
 void RenderView::update() {
-    VRAMBank& bank = engine.renderer.vram_bank();
-
-    if (engine.window.resized) {
-        if (const Result r = bank.resize_render_target(render_target, engine.window.width, engine.window.height); r.is_err()) {
-            Log::error(Log::Scope::RENDERER, "failed to resize the swapchain.\nreason: {}", r.unwrap_err().c_str());
-        } else {
-            engine.window.resized = false;
-            Log::info(Log::Scope::RENDERER, "Swapchain has been resized.");
-        }
-    }
-
 #ifndef THERMITE_EDITOR
     gpu_view.resolution = glm::uvec2(engine.window.width, engine.window.height);
 #endif  // !THERMITE_EDITOR
+
+    /* Resize the render target if the window was resized */
+    if (engine.window.resized) {
+        VRAMBank& bank = engine.renderer.vram_bank();
+
+        /* Resize the render target */
+        if (const Result r = bank.resize_render_target(render_target, gpu_view.resolution.x, gpu_view.resolution.y); r.is_err()) {
+            Log::error(Log::Scope::RENDERER, "failed to resize the swapchain.\nreason: {}", r.unwrap_err().c_str());
+        }
+        engine.window.resized = false;
+    }
 }
 
 void RenderView::update_gpu_view(RenderGraph& render_graph, const Camera& camera, const Transform& transform) {
@@ -89,6 +94,9 @@ void RenderView::update_gpu_view(RenderGraph& render_graph, const Camera& camera
 void RenderView::deinit() {
     VRAMBank& bank = engine.renderer.vram_bank();
 
+    bank.destroy(vbuffer);
+    bank.destroy(vbuffer_texture);
+
     bank.destroy(render_view_buffer);
     bank.destroy(viewport_texture);
     bank.destroy(viewport_image);
@@ -107,20 +115,24 @@ void RenderView::set_viewport_size(uint32_t width, uint32_t height) {
     if (width != gpu_view.resolution.x || height != gpu_view.resolution.y) {
         height = height <= 0 ? 1 : height;
         gpu_view.resolution = {width, height};
-
-        VRAMBank& bank = engine.renderer.vram_bank();
-
-        if (const Result r = bank.resize_texture(viewport_texture, {width, height, 0}); r.is_err()) {
-            Log::error(Log::Scope::RENDERER, "failed to resize the viewport texture.\nreason: {}", r.unwrap_err().c_str());
-        } else {
-            Log::info(Log::Scope::RENDERER, "viewport texture has been resized.");
-        }
+        resize_textures();
 
 #ifdef THERMITE_EDITOR
         engine.renderer.imgui->remove_image(viewport_image);
         imgui_viewport = engine.renderer.imgui->add_image(viewport_image);
 #endif
     }
+}
+
+void RenderView::resize_textures() {
+    const Size3D view_size { gpu_view.resolution.x, gpu_view.resolution.y };
+    VRAMBank& bank = engine.renderer.vram_bank();
+
+    /* Resize the viewport */
+    bank.resize_texture(viewport_texture, view_size).expect("failed to resize vbuffer texture.");
+
+    /* Resize the vbuffer */
+    bank.resize_texture(vbuffer_texture, view_size).expect("failed to resize vbuffer texture.");
 }
 
 }  // namespace tmt
