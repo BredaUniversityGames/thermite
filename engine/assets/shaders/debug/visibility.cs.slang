@@ -1,5 +1,6 @@
 import view;
 import voxel;
+import math;
 
 /* Active render view. */
 ConstantBuffer<RenderView> render_view;
@@ -23,28 +24,33 @@ RWTexture2D<float4> render_target;
 
 /* Unpack voxel visibility. */
 [ForceInline] Hit unpack_visibility(uint2 packed) {
+    /* x = voxel_index (32) */
+    /* y = face_index (3), object_index (16) */
     Hit hit;
     hit.voxel_index = packed.x;
-    hit.object_index = packed.y & 0x0000FFFFu;
+    hit.object_index = packed.y & 0xFFFFu;
     hit.face_index = packed.y >> 16;
     return hit;
+}
+
+/* Returns true if the visibility data doesn't contain a surface. */
+[ForceInline] bool null_visibility(uint2 packed) {
+    return packed.y == uint::maxValue;
 }
 
 [shader("compute")]
 [numthreads(16, 8, 1)]
 void main(int2 thread_id: SV_DispatchThreadID) {
-    /* Generate a ray for our render view */
-    // const Ray ray = pinhole_ray(render_view, thread_id);
-
-    /* Unpack visibility buffer data */
+    /* Load visibility buffer data */
     const uint2 packed = vbuffer[thread_id];
 
-    if (packed.x == uint::maxValue) {
+    if (null_visibility(packed)) {
         render_target[thread_id] = float4(0.075f, 0.075f, 0.075f, 1.0f);
-        return;
-    }
+    } else {
+        /* Unpack visibility buffer data */
+        const Hit hit = unpack_visibility(vbuffer[thread_id]);
 
-    /* Render the visibility data as hash */
-    const Hit hit = unpack_visibility(packed);
-    render_target[thread_id] = float4(color(voxel_hash(hit.voxel_index, hit.object_index, hit.face_index)), 1.0f);
+        /* Render the visibility data as hash */
+        render_target[thread_id] = float4(color(voxel_hash(hit.voxel_index, hit.object_index, hit.face_index)), 1.0f);
+    }
 }

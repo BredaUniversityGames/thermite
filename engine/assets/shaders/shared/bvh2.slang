@@ -58,15 +58,6 @@ public [ForceInline] Hit trace_bvh2<let DEBUG : bool>(
                 const uint index = indices[prim_index + i];
                 const VoxelObject prim = prims[index];
                 intersect_voxel_object<DEBUG>(ray, prim, index, hit);
-                // const Hit prim_hit = 
-                
-                // if (DEBUG) hit.steps += prim_hit.steps;
-                // if (prim_hit.t >= hit.t) continue;
-
-                // hit.t = prim_hit.t;
-                // hit.voxel_index = prim_hit.voxel_index;
-                // hit.object_index = indices[prim_index + i];
-                // hit.face_index = prim_hit.face_index;
             }
 
             /* Pop the node stack */
