@@ -4,12 +4,12 @@
 #include <stdexcept>
 
 namespace tmt {
-template <typename SystemType>
-class SystemCollection {
+template <typename CollectionType>
+class Collection {
    public:
     /* Systems */
     template <typename T, typename... Args>
-        requires std::is_base_of_v<SystemType, T>
+        requires std::is_base_of_v<CollectionType, T>
     T& add(Args&&... args) {
         auto system = std::make_unique<T>(std::forward<Args>(args)...);
         T& ref = *system;
@@ -23,7 +23,7 @@ class SystemCollection {
     }
 
     template <typename T>
-        requires std::is_base_of_v<SystemType, T>
+        requires std::is_base_of_v<CollectionType, T>
     T& get() {
         for (auto& system : systems) {
             if (T* casted = dynamic_cast<T*>(system.get())) {
@@ -34,7 +34,7 @@ class SystemCollection {
     }
 
     template <typename T>
-        requires std::is_base_of_v<SystemType, T>
+        requires std::is_base_of_v<CollectionType, T>
     T* try_get() {
         for (auto& system : systems) {
             if (T* casted = dynamic_cast<T*>(system.get())) {
@@ -49,6 +49,6 @@ class SystemCollection {
     auto end() { return systems.end(); }
 
    protected:
-    std::vector<std::unique_ptr<SystemType>> systems;
+    std::vector<std::unique_ptr<CollectionType>> systems;
 };
 }  // namespace tmt

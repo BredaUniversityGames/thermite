@@ -1,9 +1,9 @@
 #pragma once
 #include "engine/core/scene.hpp"
-#include "engine/core/system_collection.hpp"
+#include "engine/core/collection.hpp"
 
 namespace tmt {
-class Scenes : public SystemCollection<Scene> {
+class Scenes : public Collection<Scene> {
    public:
     Scenes() = default;
     ~Scenes() = default;
