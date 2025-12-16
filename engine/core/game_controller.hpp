@@ -9,7 +9,7 @@ class GameController {
 
     void start_game() { should_start_game = true; }
     void pause_game() { should_pause_game = true; }
-    void resume_game() { should_resume_game = false; }
+    void resume_game() { should_resume_game = true; }
     void end_game() {
         should_end_game = true;
         is_game_paused = false;
