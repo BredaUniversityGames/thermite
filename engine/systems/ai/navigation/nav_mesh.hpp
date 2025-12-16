@@ -1,60 +1,28 @@
 #include "engine/core/ecs.hpp"
 
 #include "engine/core/resources.hpp"
-namespace tmt {
+#include "engine/core/resources/voxel_volume.hpp"
 
-static const glm::ivec3 normal_lut[27] {
-    {0, 0, 0},
-    // Cardinal directions 1-7
-    {1, 0, 0},
-    {0, 1, 0},
-    {0, 0, 1},
-    {-1, 0, 0},
-    {0, -1, 0},
-    {0, 0, -1},
-    // Edge directions 7-19
-    {1, 1, 0},
-    {1, 0, 1},
-    {0, 1, 1},
-    {-1, 1, 0},
-    {-1, 0, 1},
-    {0, -1, 1},
-    {1, -1, 0},
-    {1, 0, -1},
-    {0, 1, -1},
-    {-1, -1, 0},
-    {-1, 0, -1},
-    {0, -1, -1},
-    // Corner directions 19-27
-    {1, 1, 1},
-    {1, 1, -1},
-    {1, -1, 1},
-    {1, -1, -1},
-    {-1, 1, 1},
-    {-1, 1, -1},
-    {-1, -1, 1},
-    {-1, -1, -1}
-};
+class VoxelVolume;
+
+namespace tmt {
 
 enum VoxelType : uint8_t { Empty, Outside, Inside };
 
 struct NavVoxel {
     VoxelType type = VoxelType::Empty;
-    uint8_t normal_index = 0;
 };
 
 class Node {
    public:
-    glm::vec3 pos;
+    glm::vec3 local_pos;
+    glm::vec3 world_pos;
     int parent = 0;
 
     uint32_t voxel_index = 0;
 
     float g = -1.0f;
     float h = 0.0f;
-
-    int normal_index;
-    bool too_steep = false;
     int id = -1;
 
     std::vector<int> connectingNodes;
@@ -66,9 +34,10 @@ class NavMesh {
     ~NavMesh() = default;
 
     std::vector<Node> nodes;
+    std::vector<int> path;
 
-    void generate_mesh(IO::FileLocation location);
-    std::vector<glm::vec3> find_path(const int startingNodeID, const int endingNodeID);
+    void generate_mesh(std::shared_ptr<tmt::VoxelVolume> voxel_volume, int lod_level = 1);
+    std::vector<int> find_path(const int startingNodeID, const int endingNodeID);
     void inspect();
 };
 }  // namespace tmt

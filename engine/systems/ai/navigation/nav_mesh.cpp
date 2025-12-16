@@ -1,40 +1,28 @@
 #include "nav_mesh.hpp"
 
-#include "engine/core/resources/voxel_volume.hpp"
+
 #include "engine/engine.hpp"
-#include "engine/core/resources.hpp"
-#include "engine/core/components/voxel_renderer.hpp"
-#include "engine/core/renderer/pipelines/debug_pipeline.hpp"
 #include "engine/core/renderer/renderer.hpp"
 
 using namespace tmt;
 
-void NavMesh::generate_mesh(IO::FileLocation location) {
-    auto voxel_file = engine.resources.load_resource<VoxelScene>(location);
-    auto voxel_volume = engine.resources.copy_resource<VoxelVolume>(voxel_file);
+void NavMesh::generate_mesh(std::shared_ptr<tmt::VoxelVolume> voxel_volume, int lod_level) {
+    nodes.clear();
 
-    { /* Voxel entity */
-        auto voxel = engine.ecs.create_entity("Moving Voxel");
-        auto& transform = engine.ecs.add_component<Transform>(voxel);
-        auto& renderer = engine.ecs.add_component<VoxelRenderer>(voxel);
-        renderer.resource = voxel_volume;
-        transform.set_world_position(glm::vec3(2.0f, 2.0f, 0.0f));
-        transform.set_world_rotation(glm::vec3(glm::radians(45.0f), glm::radians(45.0f), 0.0f));
-        transform.set_world_scale(glm::vec3(1.0f, 1.0f, 1.0f));
-    }
+    uint32_t full_depth = voxel_volume->blas->depth;
+    uint32_t target_depth = (lod_level < full_depth) ? (full_depth - lod_level) : 1;
 
-    // Set size FIRST
-    auto size = voxel_volume->size;
+    // Each level is 4x coarser, so divide size accordingly
+    uint32_t divisor = 1u << (lod_level * 2);                         // 1, 4, 16, 64...
+    glm::uvec3 size = (voxel_volume->size + divisor - 1u) / divisor;  // round up
 
-    // Build dense occupancy grid from sparse tree
     std::vector<bool> occupied(size.x * size.y * size.z, false);
 
-    auto set_occupied = [&](glm::uvec3 pos, MaterialIndex) {
+    auto set_occupied = [&](glm::uvec3 pos) {
         if (pos.x < size.x && pos.y < size.y && pos.z < size.z) occupied[pos.x + size.x * pos.y + size.x * size.y * pos.z] = true;
     };
 
-    // Traverse the SVT
-    std::function<void(uint32_t, glm::uvec3, uint32_t)> traverse = [&](uint32_t node_idx, glm::uvec3 origin, uint32_t scale) {
+    std::function<void(uint32_t, glm::uvec3, uint32_t, uint32_t)> traverse = [&](uint32_t node_idx, glm::uvec3 origin, uint32_t scale, uint32_t depth) {
         const auto& node = voxel_volume->blas->nodes[node_idx];
         uint64_t mask = node.child_mask;
         uint32_t base = node.abs_ptr();
@@ -44,26 +32,28 @@ void NavMesh::generate_mesh(IO::FileLocation location) {
 
             glm::uvec3 local = {i & 3, (i >> 2) & 3, (i >> 4) & 3};
             glm::uvec3 child_origin = origin + local * scale;
-            uint32_t child_idx = base + std::popcount(node.child_mask & ((1ull << i) - 1));
 
-            if (node.is_leaf()) {
-                set_occupied(child_origin, voxel_volume->blas->voxels[child_idx]);
+            // Stop early at target depth, or if we hit a leaf
+            if (depth >= target_depth || node.is_leaf()) {
+                set_occupied(child_origin / divisor);
             } else {
-                traverse(child_idx, child_origin, scale / 4);
+                uint32_t child_idx = base + std::popcount(node.child_mask & ((1ull << i) - 1));
+                traverse(child_idx, child_origin, scale / 4, depth + 1);
             }
         }
     };
 
-    uint32_t scale = 1u << ((voxel_volume->blas->depth - 1) * 2);
-    traverse(0, {0, 0, 0}, scale);
+    uint32_t scale = 1u << ((full_depth - 1) * 2);
+    traverse(0, {0, 0, 0}, scale, 1);
+
 
     // Helper lambda
     auto voxel_empty = [&](uint32_t x, uint32_t y, uint32_t z) { return !occupied[x + size.x * y + size.x * size.y * z]; };
-
     // Initialize data vector
     auto data = std::vector<NavVoxel>(size.x * size.y * size.z);
-
     std::unordered_map<uint32_t, int> node_map;
+
+    const float scale_factor = 0.5f;
 
     for (uint32_t z = 0; z < size.z; z++) {
         for (uint32_t y = 0; y < size.y; y++) {
@@ -93,7 +83,7 @@ void NavMesh::generate_mesh(IO::FileLocation location) {
                 } else {
                     // Create node
                     Node node;
-                    node.pos = glm::vec3(x, y, z);
+                    node.local_pos = glm::vec3(x * scale_factor - size.x * 0.25f, z * scale_factor - size.y * 0.25f, y * scale_factor - size.z * 0.25f);
                     node_map[pos_index] = (int)nodes.size();
                     node_index = (int)nodes.size();
                     nodes.push_back(node);
@@ -111,7 +101,7 @@ void NavMesh::generate_mesh(IO::FileLocation location) {
                                 connecting_node_index = node_map[connecting_pos_index];
                             } else {
                                 Node node;
-                                node.pos = glm::vec3(x, y, z);
+                                node.local_pos = glm::vec3(x * scale_factor - size.x * 0.25f, z * scale_factor - size.y * 0.25f, y * scale_factor - size.z * 0.25f);
                                 node_map[connecting_pos_index] = (int)nodes.size();
                                 connecting_node_index = (int)nodes.size();
                                 nodes.push_back(node);
@@ -135,7 +125,7 @@ void NavMesh::generate_mesh(IO::FileLocation location) {
     }
 }
 
-std::vector<glm::vec3> NavMesh::find_path(const int startingNodeID, const int endingNodeID) {
+std::vector<int> NavMesh::find_path(const int startingNodeID, const int endingNodeID) {
     std::vector<int> open = std::vector<int>();
     open.push_back(startingNodeID);
     nodes[startingNodeID].g = 0.0f;
@@ -173,12 +163,12 @@ std::vector<glm::vec3> NavMesh::find_path(const int startingNodeID, const int en
         // add all connecting nodes with a better path to open list
         for (int i = 0; i < (int)nodes[current].connectingNodes.size(); i++) {
             int next = nodes[current].connectingNodes[i];
-            float edgeCost = glm::distance(nodes[next].pos, nodes[current].pos);
+            float edgeCost = glm::distance(nodes[next].local_pos, nodes[current].local_pos);
 
             // if g is not set or we found a better path to next node
             if (nodes[next].g < 0 || nodes[current].g + edgeCost < nodes[next].g) {
                 nodes[next].g = nodes[current].g + edgeCost;
-                nodes[next].h = glm::distance(nodes[next].pos, nodes[endingNodeID].pos);
+                nodes[next].h = glm::distance(nodes[next].local_pos, nodes[endingNodeID].local_pos);
                 nodes[next].parent = current;
 
                 open.push_back(next);
@@ -188,13 +178,13 @@ std::vector<glm::vec3> NavMesh::find_path(const int startingNodeID, const int en
 
     // no path found
     if (current != endingNodeID) {
-        std::vector<glm::vec3> noResult;
+        std::vector<int> noResult;
         return noResult;
     }
 
     // reconstruct path and return it
-    std::vector<glm::vec3> path;
-    path.push_back(nodes[endingNodeID].pos);
+    std::vector<int> path;
+    path.push_back(endingNodeID);
     current = endingNodeID;
     while (1) {
         if (current == startingNodeID) {
@@ -205,7 +195,7 @@ std::vector<glm::vec3> NavMesh::find_path(const int startingNodeID, const int en
             }
             return path;
         }
-        path.push_back(nodes[nodes[current].parent].pos);
+        path.push_back(nodes[current].parent);
         current = nodes[current].parent;
     }
 }
@@ -215,8 +205,7 @@ void tmt::NavMesh::inspect() {
         for (int j = 0; j < nodes[i].connectingNodes.size(); j++) {
             int conn_idx = nodes[i].connectingNodes[j];
             glm::vec3 color = glm::vec3(0.0f, 1.0f, 0.0f);
-            if (nodes[i].too_steep || nodes[j].too_steep) color = glm::vec3(1.0f, 0.0f, 0.0f);
-            engine.renderer.draw_line(nodes[i].pos, nodes[conn_idx].pos, color);
+            engine.renderer.draw_line(nodes[i].world_pos, nodes[conn_idx].world_pos, color);
         }
     }
 }
