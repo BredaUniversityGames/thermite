@@ -61,7 +61,6 @@ struct VoxelBody {
     float depth = 1.0f;
 
     std::shared_ptr<VoxelVolume> resource {};
-    // PhysicsVoxelData voxels = {};
 
     Aabb aabb() const;
     Box get_local_bounds() const;

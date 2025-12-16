@@ -63,11 +63,10 @@ Svt64Node Svt64::subdivide(const RawVoxels& raw_data, uint32_t scale, glm::uvec3
             if (voxel_x >= raw_data.w || voxel_y >= raw_data.h || voxel_z >= raw_data.d) continue;
             const uint32_t voxel_offset = voxel_z * wh + voxel_y * raw_data.w + voxel_x;
             const MaterialIndex material = raw_data.materials[voxel_offset];
-            const PhysicsVoxel physics_voxel = raw_data.physics_data[voxel_offset];
 
             if (material != AIR_INDEX) {
                 materials[voxel_count] = material;
-                physics_data[voxel_count++] = physics_voxel;
+                physics_data[voxel_count++] = raw_data.physics_data[voxel_offset];
                 leaf_node.child_mask |= (1ull << i);
             }
         }

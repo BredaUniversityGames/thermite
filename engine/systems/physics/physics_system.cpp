@@ -67,7 +67,6 @@ void draw_node(tmt::Bvh2<VoxelObject>& bvh, uint32_t current_node) {
     if (bvh.nodes[current_node].is_leaf()) return;
     draw_node(bvh, bvh.nodes[current_node].left_first);
     draw_node(bvh, bvh.nodes[current_node].left_first + 1);
-    // bvh.prims[0].
 }
 
 void Physics::on_update(const FrameData&) {
@@ -217,39 +216,6 @@ void Physics::generate_voxel_constraints_range(const int index, const int size) 
                 solver.collisions.push_back(coll);
             }
         }
-
-        // for (const auto& [other_entity, other_vb, other_transform] : vox_view.each()) {
-        //     // if (!other_transform.is_enabled()) continue;
-        //     if (entity == other_entity) continue;
-
-        //    // if (!(physics_layers.collides_with_layer(layer, other_layer))) continue;
-
-        //    if (sat_early_out(vb, other_vb)) continue;
-
-        //    Collision coll(entity, other_entity);
-        //    coll.contacts.reserve(64);
-
-        //    // Find overlapping area's
-        //    // A's local collision overlap
-        //    glm::ivec3 min_a = {};
-        //    glm::ivec3 max_a = {};
-        //    get_overlap(vb, other_vb, min_a, max_a);
-
-        //    for (size_t z = min_a.z; z < max_a.z; z++) {
-        //        for (size_t y = min_a.y; y < max_a.y; y++) {
-        //            for (size_t x = min_a.x; x < max_a.x; x++) {
-        //                if (coll.contacts.size() >= max_contacts) continue;
-        //                check_neighbors(vb, other_vb, x, y, z, coll);
-        //            }
-        //        }
-        //    }
-
-        //    if (coll.contacts.size() <= 0) continue;
-
-        //    coll.normal = glm::normalize(other_vb.position - vb.position);
-        //    solver.collisions.push_back(coll);
-        //    // thread_collisions[index].push_back(coll);
-        //}
     }
 }
 
