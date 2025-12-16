@@ -12,7 +12,7 @@ void Resources::unload_unused() {
             collection.file_resource->unload();
             collection.file_resource->loaded = false;
             tmt::Log::info(tmt::Log::Scope::ENGINE, "Unloaded unused file resource {}", file_location);
-            resource_type_locations[resources.at(file_location).type_hash].erase(file_location); // Get the type hash
+            resource_type_locations[resources.at(file_location).type_hash].erase(file_location);  // Get the type hash
             resources.erase(file_location);
             i--;
         }
