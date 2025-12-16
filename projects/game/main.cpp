@@ -45,7 +45,6 @@ void Game::on_start() {
     }
 
     auto voxel_file = tmt::engine.resources.load_resource<tmt::VoxelScene>({tmt::IO::Location::PROJECT, "dragon128.vengi"});
-
     auto voxel_volume = tmt::engine.resources.copy_resource<tmt::VoxelVolume>(voxel_file);
 
     { /* Voxel Physics Entity */
