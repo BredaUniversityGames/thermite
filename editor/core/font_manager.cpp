@@ -9,24 +9,24 @@ void tmt::FontManager::load(const std::string& name, const IO::FileLocation& loc
 
     const auto& full_path = IO::get_absolute_path(location.sub_location, location.relative_path);
     ImFont* font = io.Fonts->AddFontFromFileTTF(full_path.string().c_str(), size, &config, glyph_ranges);
-    if (font) {
-        FontData data {};
-        data.im_font = font;
-        data.size = size;
-        data.file_location = location;
-        data.config = config;
-        data.name = name;
-
-        if (glyph_ranges) {
-            for (uint8_t i = 0; i < 3; i++) {
-                data.glyph_ranges[i] = glyph_ranges[i];
-            }
-        }
-
-        m_fonts.push_back(data);
-    } else {
+    if (!font) {
         Log::error(Log::Scope::ENGINE, "Failed to load font from file, {}", full_path.string());
+        return;
     }
+
+    FontData data {};
+    data.im_font = font;
+    data.size = size;
+    data.file_location = location;
+    data.config = config;
+    data.name = name;
+
+    if (glyph_ranges) {
+        for (uint8_t i = 0; i < 3; i++) {
+            data.glyph_ranges[i] = glyph_ranges[i];
+        }
+    }
+    m_fonts.push_back(data);
 }
 
 void tmt::FontManager::reload_fonts() {
