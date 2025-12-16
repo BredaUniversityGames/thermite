@@ -59,6 +59,7 @@ void Game::on_start() {
         vb.type = tmt::VoxelBody::DYNAMIC;
         // renderer.size = glm::uvec3(20u, 20u, 20u);
         transform.set_world_position(glm::vec3(0.0f, 0.0f, 0.0f));
+        transform.set_world_rotation(glm::vec3(3.1415f, 0.0f, 0.0f));
     }
 
     { /* Voxel Physics Entity */
@@ -70,10 +71,10 @@ void Game::on_start() {
         auto& vb = tmt::engine.ecs.add_component<tmt::VoxelBody>(entity);
         vb.resource = voxel_volume;
 
-        vb.gravity = 0.5f;
+        vb.gravity = 2.0f;
         vb.type = tmt::VoxelBody::DYNAMIC;
         // renderer.size = glm::uvec3(20u, 20u, 20u);
-        transform.set_world_position(glm::vec3(0.5f, 50.0f, 0.0f));
+        transform.set_world_position(glm::vec3(0.5f, 30.0f, 0.0f));
     }
 }
 

@@ -14,6 +14,9 @@
 
 #include "tools/profiler.hpp"
 
+#undef min
+#undef max
+
 namespace tmt {
 
 void Physics::on_start() {
@@ -96,8 +99,8 @@ void Physics::on_fixed_update(const FrameData&) {
         vb.velocity += glm::vec3(0, -1, 0) * vb.gravity * Engine::Config::FIXED_TIME_STEP;
 
         // Add drag
-        vb.velocity *= max(0.0f, 1.0f - vb.linear_drag * Engine::Config::FIXED_TIME_STEP);
-        vb.angular_velocity *= max(0.0f, 1.0f - vb.angular_drag * Engine::Config::FIXED_TIME_STEP);
+        vb.velocity *= std::max(0.0f, 1.0f - vb.linear_drag * Engine::Config::FIXED_TIME_STEP);
+        vb.angular_velocity *= std::max(0.0f, 1.0f - vb.angular_drag * Engine::Config::FIXED_TIME_STEP);
 
         if (vb.type == VoxelBody::STATIC) continue;
 
@@ -408,11 +411,11 @@ float Physics::ray_aabb(const glm::vec3& min, const glm::vec3& max, const glm::v
         const float t1 = (min[axis] - ro[axis]) / rd[axis];
         const float t2 = (max[axis] - ro[axis]) / rd[axis];
 
-        const float dmin = min(t1, t2);
-        const float dmax = max(t1, t2);
+        const float dmin = std::min(t1, t2);
+        const float dmax = std::max(t1, t2);
 
-        tmin = max(dmin, tmin);
-        tmax = min(dmax, tmax);
+        tmin = std::max(dmin, tmin);
+        tmax = std::min(dmax, tmax);
     }
 
     if (tmax >= tmin) return tmin;
@@ -425,20 +428,20 @@ bool Physics::is_separated(const glm::vec3& axis, const VoxelBody::Box& box_a, c
 
     for (size_t i = 0; i < 8; i++) {
         float projection = glm::dot(box_a.vertex[i], axis);
-        min_a = min(min_a, projection);
-        max_a = max(max_a, projection);
+        min_a = std::min(min_a, projection);
+        max_a = std::max(max_a, projection);
     }
 
     for (size_t i = 0; i < 8; i++) {
         float projection = glm::dot(box_b.vertex[i], axis);
-        min_b = min(min_b, projection);
-        max_b = max(max_b, projection);
+        min_b = std::min(min_b, projection);
+        max_b = std::max(max_b, projection);
     }
 
     if (max_a < min_b || max_b < min_a) return true;
 
-    float max = min(max_a, max_b);
-    float min = max(min_a, min_b);
+    float max = std::min(max_a, max_b);
+    float min = std::max(min_a, min_b);
 
     // Calculate overlap
     overlap = max - min;
