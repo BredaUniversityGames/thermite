@@ -26,6 +26,7 @@ public struct Hit {
     public float t;
     public uint voxel_index;
     public uint object_index;
+    public uint face_index;
     public uint steps;
 
     public inline static Hit miss() {

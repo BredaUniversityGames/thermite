@@ -7,6 +7,7 @@ import material;
 public struct Svt64Hit {
     public float3 point;
     public uint voxel_index;
+    public uint face_index;
     public uint steps;
 
     /* Returns true if this was a miss. */
@@ -83,6 +84,11 @@ public struct Svt64Node {
     const uint m = 1u << (width & 31u);
     count += countbits(himask & (m - 1u));
     return count;
+}
+
+uint face_index(float3 side_dist) {
+    const float tmax = min3(side_dist.x, side_dist.y, side_dist.z);
+    return (tmax >= side_dist.x ? 0b001u : 0u) | (tmax >= side_dist.y ? 0b010u : 0u) | (tmax >= side_dist.z ? 0b100u : 0u);
 }
 
 /* Trace a ray through a SVT64. */
@@ -176,6 +182,7 @@ public inline Svt64Hit trace_svt64<let DEBUG : bool>(
         const uint child_index = get_node_cell_index(pos, scale_exp);
         const uint voxel_index = node.abs_ptr() + popcnt_var64(node.child_mask_lo, node.child_mask_hi, child_index);
         hit.voxel_index = voxel_index;
+        hit.face_index = face_index(side_dist);
     }
 
     return hit;

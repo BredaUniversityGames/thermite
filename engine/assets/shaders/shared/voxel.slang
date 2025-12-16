@@ -50,6 +50,7 @@ public inline Hit intersect_voxel_object<let DEBUG : bool>(Ray ray, VoxelObject 
     if (DEBUG) hit.steps = local_hit.steps;
     if (local_hit.miss()) return hit;
     hit.voxel_index = local_hit.voxel_index;
+    hit.face_index = local_hit.face_index;
 
     /* Calculate world-space hit point and distance */
     const float3 hit_uvw = (local_hit.point - 1.0f) / width_ratio;
@@ -57,4 +58,21 @@ public inline Hit intersect_voxel_object<let DEBUG : bool>(Ray ray, VoxelObject 
     const float3 hit_point = mul(object.local_to_world, float4(hit_ndc * half_extent, 1.0f)).xyz;
     hit.t = distance(world_origin, hit_point);
     return hit;
+}
+
+/* XXHash32 <https://jcgt.org/published/0009/03/02/> */
+public inline uint xxhash32(const uint p) {
+    const uint PRIME32_2 = 2246822519u, PRIME32_3 = 3266489917u;
+    const uint PRIME32_4 = 668265263u, PRIME32_5 = 374761393u;
+    uint h32 = p + PRIME32_5;
+    h32 = PRIME32_4 * ((h32 << 17u) | (h32 >> (32u - 17u)));
+    h32 = PRIME32_2 * (h32 ^ (h32 >> 15u));
+    h32 = PRIME32_3 * (h32 ^ (h32 >> 13u));
+    return h32 ^ (h32 >> 16u);
+}
+
+public inline uint voxel_hash(uint voxel_index, uint object_index, uint face_index) {
+    return xxhash32((voxel_index & 0x001FFFFFu)
+        | ((object_index & 0x000000FFu) << 21u)
+        | ((face_index & 0x00000007u) << 29u));
 }

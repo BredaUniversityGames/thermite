@@ -39,7 +39,7 @@ public inline Hit trace_bvh2<let DEBUG : bool>(
 
     /* Traversal state */
     Hit hit = Hit::miss();
-    uint node_index = 0u, stack[24], stack_ptr = 0u;
+    uint node_index = 0u, stack[14], stack_ptr = 0u;
     for (;;) {
         const float4 rmax_prim_count = nodes[node_index + 3u];
         const float4 rmin_prim_index = nodes[node_index + 2u];
@@ -59,6 +59,7 @@ public inline Hit trace_bvh2<let DEBUG : bool>(
                 hit.t = prim_hit.t;
                 hit.voxel_index = prim_hit.voxel_index;
                 hit.object_index = indices[prim_index + i];
+                hit.face_index = prim_hit.face_index;
             }
 
             /* Pop the node stack */
