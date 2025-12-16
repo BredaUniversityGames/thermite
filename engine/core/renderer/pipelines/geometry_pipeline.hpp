@@ -14,7 +14,10 @@ namespace tmt {
 
 struct VoxelObject;
 
+/* Maximum number of voxel objects we support in the scene at once. */
 constexpr uint32_t MAX_VOXEL_OBJECTS = 10000u;
+/* We have a hard limit due to technical limitations. */
+static_assert(MAX_VOXEL_OBJECTS < (1u << 14));
 
 class GeometryPipeline {
    private:
