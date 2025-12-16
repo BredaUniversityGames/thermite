@@ -4,7 +4,7 @@
 namespace tmt {
 class Inspector : public IWindow {
     // Inherited via IWindow
-    std::string get_title() const { return "Inspector"; }
+    std::string get_title() const { return ICON_MS_FRAME_INSPECT "  Inspector"; }
 
     void display() override;
 
