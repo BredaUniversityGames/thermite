@@ -1,1 +1,0 @@
-{"profiler_path":"tracy.exe","capture_path":"tracy-capture.exe","output_path":"profile.tracy","address":"127.0.0.1","port":8086,"overwrite":true,"use_timer":false,"duration":10}
