@@ -13,8 +13,6 @@ void tmt::FontControl::display()
 {
 	auto& fonts = tmt::editor.font_manager.m_fonts;
 
-    //ImGui::ShowStyleEditor();
-
     if (ImGui::Button("Reload")) {
         tmt::editor.font_manager.queue_reload();
     }
