@@ -11,3 +11,5 @@ tidy_results/report.txt
 
 # binary files
 engine/assets/shaders/bin
+editor_save.json
+profiler_settings.json
