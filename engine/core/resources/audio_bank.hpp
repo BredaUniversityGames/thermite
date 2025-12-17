@@ -24,9 +24,6 @@ class AudioBank : public FileResource {
     [[nodiscard]] std::vector<AudioEvent> get_audio_events() const;
     [[nodiscard]] std::vector<VolumeControl> get_volume_controls() const;
 
-    [[nodiscard]] bool operator==(const AudioBank& other) const { return bank == other.bank; }
-    [[nodiscard]] bool operator!=(const AudioBank& other) const { return bank != other.bank; }
-
    private:
     bool is_master;
     FMOD::Studio::Bank* bank {nullptr};

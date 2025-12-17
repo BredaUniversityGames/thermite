@@ -51,7 +51,7 @@ void AudioInstance::set_label_parameter(const AudioParameter& event_parameter, c
     TryLogError(result, "Failed to set parameter with label");
 }
 
-bool AudioEvent::is_valid() const { return description != nullptr; }
+bool AudioEvent::is_valid() const { return description != nullptr && description->isValid(); }
 
 std::string AudioEvent::get_path() const {
 #if defined(THERMITE_EDITOR) || defined(THERMITE_DEBUG)
@@ -114,7 +114,7 @@ AudioInstance AudioEvent::play() const {
     return {event_instance};
 }
 
-bool VolumeControl::is_valid() const { return vca != nullptr; }
+bool VolumeControl::is_valid() const { return vca != nullptr && vca->isValid(); }
 
 std::string VolumeControl::get_path() const {
 #if defined(THERMITE_EDITOR) || defined(THERMITE_DEBUG)
@@ -203,6 +203,15 @@ AudioEvent Audio::get_event(const FMOD_GUID& guid) const {
     return {description};
 }
 
+VolumeControl Audio::get_volume_control(const FMOD_GUID& guid) const {
+    FMOD::Studio::VCA* vca;
+    const FMOD_RESULT result = system->getVCAByID(&guid, &vca);
+
+    if (TryLogError(result, "Failed to get VolumeControl")) return nullptr;
+
+    return {vca};
+}
+
 void Audio::stop_all_audio_instances() {
     for (FMOD::Studio::EventInstance* instance : active_instances) {
         instance->stop(FMOD_STUDIO_STOP_IMMEDIATE);
@@ -223,15 +232,6 @@ void Audio::set_global_label_parameter(const AudioParameter& parameter, const st
     const FMOD_RESULT result = system->setParameterByIDWithLabel(parameter.get_id(), value.c_str());
 
     TryLogError(result, "Failed to set parameter with label");
-}
-
-VolumeControl Audio::get_volume_control(const FMOD_GUID& guid) const {
-    FMOD::Studio::VCA* vca;
-    const FMOD_RESULT result = system->getVCAByID(&guid, &vca);
-
-    if (TryLogError(result, "Failed to get VolumeControl")) return nullptr;
-
-    return {vca};
 }
 
 }  // namespace tmt

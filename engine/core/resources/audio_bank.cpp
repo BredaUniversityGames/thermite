@@ -84,7 +84,7 @@ std::vector<AudioEvent> AudioBank::get_audio_events() const {
 
     std::vector<AudioEvent> events;
     events.reserve(descriptions.size());
-    for (auto& description : descriptions) {
+    for (FMOD::Studio::EventDescription* description : descriptions) {
         events.emplace_back(description);
     }
     return events;
@@ -110,7 +110,7 @@ std::vector<VolumeControl> AudioBank::get_volume_controls() const {
 
     std::vector<VolumeControl> volume_controls;
     volume_controls.reserve(vcas.size());
-    for (auto& vca : vcas) {
+    for (FMOD::Studio::VCA* vca : vcas) {
         volume_controls.emplace_back(vca);
     }
     return volume_controls;

@@ -105,18 +105,14 @@ class Audio {
     // Initialize an FMOD bank with all its assets from a .bank file in memory.
     [[nodiscard]] FMOD::Studio::Bank* init_bank(const std::vector<char>& bank_data) const;
 
-    /* Audio event functions. */
-
     [[nodiscard]] AudioEvent get_event(const FMOD_GUID& guid) const;
-    void stop_all_audio_instances();
+    [[nodiscard]] VolumeControl get_volume_control(const FMOD_GUID& guid) const;
 
+    void stop_all_audio_instances();
     void set_global_parameter(const AudioParameter& parameter, float value) const;
     void set_global_parameter(const AudioParameter& parameter, int value) const;
     void set_global_label_parameter(const AudioParameter& parameter, const std::string& value) const;
 
-    /* VCA (aka, volume group) functions. */
-
-    [[nodiscard]] VolumeControl get_volume_control(const FMOD_GUID& guid) const;
 
    private:
     FMOD::Studio::System* system;
