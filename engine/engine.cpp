@@ -81,6 +81,16 @@ void Engine::run() {
             game_controller.should_start_game = false;
             game_controller.is_game_playing = true;
         }
+        if (game_controller.should_game_pause()) {
+            pause_game();
+            game_controller.is_game_paused = true;
+            game_controller.should_pause_game = false;
+        }
+        if (game_controller.should_game_resume()) {
+            resume_game();
+            game_controller.is_game_paused = false;
+            game_controller.should_resume_game = false;
+        }
 
         input.update();
 
@@ -165,7 +175,18 @@ void Engine::fixed_update_game(const FrameData& frame_data) {
     OnGameFixedUpdate::dispatch(frame_data);
 }
 
+void Engine::pause_game() {
+    TMT_ZONE_SCOPED_N("Engine::pause_game")
+    OnGamePause::dispatch();
+}
+
+void Engine::resume_game() {
+    TMT_ZONE_SCOPED_N("Engine::resume_game")
+    OnGameResume::dispatch();
+}
+
 void Engine::end_game() {
+    TMT_ZONE_SCOPED_N("Engine::end_game")
     app->on_end();
     OnGameEnd::dispatch();
 }
