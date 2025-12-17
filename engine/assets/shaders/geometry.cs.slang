@@ -1,7 +1,7 @@
 import view;
 import voxel;
 import bvh2;
-import math;
+import visibility;
 
 /* Active render view. */
 ConstantBuffer<RenderView> render_view;
@@ -11,27 +11,6 @@ StructuredBuffer<uint> object_indices;
 StructuredBuffer<VoxelObject> object_data;
 /* Visibility buffer. (Output) */
 RWTexture2D<uint2> vbuffer;
-
-/* Pack voxel visibility into two 32-bit unsigned integers. */
-[ForceInline] uint2 pack_visibility(Hit hit) {
-    if (hit.t == BIG_F32) return uint::maxValue;
-    /* x = voxel_index (32) */
-    /* y = face_index (3), object_index (16) */
-    const uint x = hit.voxel_index;
-    const uint y = (hit.face_index << 16) | (hit.object_index & 0xFFFFu);
-    return uint2(x, y);
-}
-
-/* Unpack voxel visibility. */
-[ForceInline] Hit unpack_visibility(uint2 packed) {
-    /* x = voxel_index (32) */
-    /* y = face_index (3), object_index (16) */
-    Hit hit;
-    hit.voxel_index = packed.x;
-    hit.object_index = packed.y & 0xFFFFu;
-    hit.face_index = packed.y >> 16;
-    return hit;
-}
 
 [shader("compute")]
 [numthreads(16, 8, 1)]

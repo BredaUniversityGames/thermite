@@ -1,6 +1,6 @@
 import view;
 import voxel;
-import math;
+import visibility;
 
 /* Active render view. */
 ConstantBuffer<RenderView> render_view;
@@ -22,22 +22,6 @@ RWTexture2D<float4> render_target;
     return 0.25 + 0.75 * ((float3)r * (1.0 / float(0xffffffffu)));
 }
 
-/* Unpack voxel visibility. */
-[ForceInline] Hit unpack_visibility(uint2 packed) {
-    /* x = voxel_index (32) */
-    /* y = face_index (3), object_index (16) */
-    Hit hit;
-    hit.voxel_index = packed.x;
-    hit.object_index = packed.y & 0xFFFFu;
-    hit.face_index = packed.y >> 16;
-    return hit;
-}
-
-/* Returns true if the visibility data doesn't contain a surface. */
-[ForceInline] bool null_visibility(uint2 packed) {
-    return packed.y == uint::maxValue;
-}
-
 [shader("compute")]
 [numthreads(16, 8, 1)]
 void main(int2 thread_id: SV_DispatchThreadID) {
@@ -48,9 +32,9 @@ void main(int2 thread_id: SV_DispatchThreadID) {
         render_target[thread_id] = float4(0.075f, 0.075f, 0.075f, 1.0f);
     } else {
         /* Unpack visibility buffer data */
-        const Hit hit = unpack_visibility(vbuffer[thread_id]);
+        const VisData vis = unpack_visibility(vbuffer[thread_id]);
 
         /* Render the visibility data as hash */
-        render_target[thread_id] = float4(color(voxel_hash(hit.voxel_index, hit.object_index, hit.face_index)), 1.0f);
+        render_target[thread_id] = float4(color(voxel_hash(vis.voxel_index, vis.object_index, vis.face_index)), 1.0f);
     }
 }
