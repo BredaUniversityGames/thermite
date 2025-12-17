@@ -52,6 +52,10 @@ class Scenes {
         requires std::is_base_of_v<SceneBase, T>
     void enqueue_scene() {
         const std::type_index type_id = typeid(T);
+        enqueue_scene(type_id);
+    }
+
+    void enqueue_scene(const std::type_index& type_id) {
         auto it = registered_scenes.find(type_id);
         if (it == registered_scenes.end()) {
             Log::error(Log::Scope::ENGINE, "Scenes::enqueue_scene: Scene not registered");
@@ -69,6 +73,8 @@ class Scenes {
     }
 
     std::unique_ptr<SceneBase>& get_active_scene() { return active_scene; }
+
+    const std::unordered_map<std::type_index, SceneInfo>& get_registered_scenes() const { return registered_scenes; }
 
    private:
     std::unique_ptr<SceneBase> active_scene = nullptr;
