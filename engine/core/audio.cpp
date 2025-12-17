@@ -154,9 +154,7 @@ void VolumeControl::set_volume(const float volume) const {
     TryLogError(result, "Failed to set VCA volume");
 }
 
-Audio::~Audio() { system->release(); }
-
-void Audio::Init() {
+void Audio::init() {
     Log::info("Audio Engine: FMOD Studio by Firelight Technologies Pty Ltd.");
 
     FMOD_RESULT result = FMOD::Studio::System::create(&system);
@@ -179,6 +177,8 @@ void Audio::update() {
         return state == FMOD_STUDIO_PLAYBACK_STOPPED;
     });
 }
+
+void Audio::end() const { system->release(); }
 
 FMOD::Studio::Bank* Audio::init_bank(const std::vector<char>& bank_data) const {
     FMOD::Studio::Bank* bank = nullptr;

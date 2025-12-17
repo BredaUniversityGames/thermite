@@ -97,10 +97,11 @@ class Audio {
 
    public:
     Audio() = default;
-    ~Audio();
+    ~Audio() = default;
 
-    void Init();
+    void init();
     void update();
+    void end() const;
 
     // Initialize an FMOD bank with all its assets from a .bank file in memory.
     [[nodiscard]] FMOD::Studio::Bank* init_bank(const std::vector<char>& bank_data) const;
@@ -112,7 +113,6 @@ class Audio {
     void set_global_parameter(const AudioParameter& parameter, float value) const;
     void set_global_parameter(const AudioParameter& parameter, int value) const;
     void set_global_label_parameter(const AudioParameter& parameter, const std::string& value) const;
-
 
    private:
     FMOD::Studio::System* system;

@@ -53,7 +53,7 @@ void Engine::init(std::unique_ptr<Application> user_app) {
     window.init(app->specs);
     input.init();
     renderer.init();
-    audio.Init();
+    audio.init();
     salvo.init();
 
     ecs.systems.add<Physics>();
