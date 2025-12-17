@@ -26,8 +26,18 @@ class EventDescription;
 
 namespace tmt {
 
-struct AudioParameter {
-    FMOD_STUDIO_PARAMETER_ID id;
+class AudioParameter {
+   public:
+    AudioParameter(const FMOD_STUDIO_PARAMETER_DESCRIPTION& description) : description {description} {}
+
+    // Get the name of the AudioParameter.
+    [[nodiscard]] std::string get_name() const { return description.name; }
+    [[nodiscard]] const FMOD_STUDIO_PARAMETER_ID& get_id() const { return description.id; }
+    [[nodiscard]] float get_min() const { return description.minimum; }
+    [[nodiscard]] float get_max() const { return description.maximum; }
+
+   private:
+    FMOD_STUDIO_PARAMETER_DESCRIPTION description;
 };
 
 class AudioInstance {
@@ -49,8 +59,14 @@ class AudioEvent {
     AudioEvent(FMOD::Studio::EventDescription* description) : description {description} {}
 
     [[nodiscard]] bool is_valid() const;
+    // Get the path/name of the AudioEvent (returns empty string when not in debug mode and not using the editor).
     [[nodiscard]] std::string get_path() const;
+
+    [[nodiscard]] std::vector<AudioParameter> get_parameters() const;
     AudioInstance play() const;
+
+    [[nodiscard]] bool operator==(const AudioEvent& other) const { return description == other.description; }
+    [[nodiscard]] bool operator!=(const AudioEvent& other) const { return description != other.description; }
 
    private:
     FMOD::Studio::EventDescription* description {nullptr};
@@ -61,14 +77,21 @@ class VolumeControl {
     VolumeControl(FMOD::Studio::VCA* vca) : vca {vca} {}
 
     [[nodiscard]] bool is_valid() const;
+    // Get the path/name of the VolumeControl (returns empty string when not in debug mode and not using the editor).
+    [[nodiscard]] std::string get_path() const;
+
     [[nodiscard]] float get_volume() const;
     void set_volume(float volume) const;
+
+    [[nodiscard]] bool operator==(const VolumeControl& other) const { return vca == other.vca; }
+    [[nodiscard]] bool operator!=(const VolumeControl& other) const { return vca != other.vca; }
 
    private:
     FMOD::Studio::VCA* vca {nullptr};
 };
 
 class Audio {
+    friend class AudioParameter;
     friend class AudioInstance;
     friend class AudioEvent;
 
@@ -87,9 +110,9 @@ class Audio {
     [[nodiscard]] AudioEvent get_event(const FMOD_GUID& guid) const;
     void stop_all_audio_instances();
 
-    void set_global_parameter(const AudioParameter& id, float value) const;
-    void set_global_parameter(const AudioParameter& id, int value) const;
-    void set_global_label_parameter(const AudioParameter& id, const std::string& value) const;
+    void set_global_parameter(const AudioParameter& parameter, float value) const;
+    void set_global_parameter(const AudioParameter& parameter, int value) const;
+    void set_global_label_parameter(const AudioParameter& parameter, const std::string& value) const;
 
     /* VCA (aka, volume group) functions. */
 

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "core/resource.hpp"
-#include "core/audio.hpp"
+#include "engine/core/resource.hpp"
+#include "engine/core/audio.hpp"
 
 namespace FMOD {
 namespace Studio {
@@ -19,8 +19,13 @@ class AudioBank : public FileResource {
     bool load() override;
     void unload() override;
 
-    std::vector<AudioEvent> get_audio_events() const;
-    std::vector<VolumeControl> get_volume_controls() const;
+    // Get the path/name of the bank (returns empty string when not in debug mode and not using the editor).
+    [[nodiscard]] std::string get_path() const;
+    [[nodiscard]] std::vector<AudioEvent> get_audio_events() const;
+    [[nodiscard]] std::vector<VolumeControl> get_volume_controls() const;
+
+    [[nodiscard]] bool operator==(const AudioBank& other) const { return bank == other.bank; }
+    [[nodiscard]] bool operator!=(const AudioBank& other) const { return bank != other.bank; }
 
    private:
     bool is_master;

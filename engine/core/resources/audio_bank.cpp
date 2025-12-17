@@ -40,6 +40,30 @@ void AudioBank::unload() {
     bank->unload();
 }
 
+std::string AudioBank::get_path() const {
+#if defined(THERMITE_EDITOR) || defined(THERMITE_DEBUG)
+    if (bank == nullptr) Log::error(Log::Scope::ENGINE, "FMOD, Invalid AudioEvent for get_path");
+
+    // This function only returns useful paths in the editor or in debug mode, since these aren't necessary for audio to function, and it allows us to skip loading string banks in release
+    // game.
+    std::string name;
+    name.resize(512);
+
+    int size = 0;
+    const FMOD_RESULT result = bank->getPath(name.data(), static_cast<int>(name.size()), &size);
+    name.resize(size);
+
+    if (result != FMOD_OK) {
+        Log::error(Log::Scope::ENGINE, "FMOD, Failed to get the path of the event: {}", FMOD_ErrorString(result));
+        return "";
+    }
+
+    return name;
+#else
+    return "";
+#endif
+}
+
 std::vector<AudioEvent> AudioBank::get_audio_events() const {
     int description_count;
     FMOD_RESULT result = bank->getEventCount(&description_count);
@@ -47,6 +71,8 @@ std::vector<AudioEvent> AudioBank::get_audio_events() const {
         Log::error(Log::Scope::ENGINE, "FMOD, Failed to get AudioEvent count from bank resource: {}", FMOD_ErrorString(result));
         return {};
     }
+
+    if (description_count <= 0) return {};
 
     std::vector<FMOD::Studio::EventDescription*> descriptions(description_count);
     result = bank->getEventList(descriptions.data(), description_count, nullptr);
@@ -71,6 +97,8 @@ std::vector<VolumeControl> AudioBank::get_volume_controls() const {
         Log::error(Log::Scope::ENGINE, "FMOD, Failed to get VolumeControl count from bank resource: {}", FMOD_ErrorString(result));
         return {};
     }
+
+    if (vca_count <= 0) return {};
 
     std::vector<FMOD::Studio::VCA*> vcas(vca_count);
     result = bank->getVCAList(vcas.data(), vca_count, nullptr);

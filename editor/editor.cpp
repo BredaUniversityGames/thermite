@@ -23,7 +23,8 @@
 #include "editor/windows/inspector.hpp"
 #include "editor/windows/goap_debugger.hpp"
 #include "editor/windows/font_control.hpp"
-#include "windows/profiler_tracy.hpp"
+#include "editor/windows/audio_mixer.hpp"
+#include "editor/windows/profiler_tracy.hpp"
 /* Singleton */
 tmt::Editor tmt::editor;
 
@@ -59,6 +60,7 @@ void Editor::on_engine_init(const ApplicationSpecs&) {
     windows.add<Profiler>();
     windows.add<GoapDebugger>();
     windows.add<FontControl>();
+    windows.add<AudioMixer>();
 
     for (auto& system : windows) {
         system->on_editor_start();
