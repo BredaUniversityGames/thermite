@@ -1,31 +1,16 @@
 #pragma once
+#include <type_traits>
+#include <typeindex>
+
 #include "engine/core/scene.hpp"
 #include "engine/core/collection.hpp"
+#include "engine/core/logger.hpp"
 
-#include "engine/events/engine.hpp"
-
-#include <functional>
-#include <type_traits>
+#include "engine/tools/type_factory.hpp"
 
 namespace tmt {
 
-template <typename T>
-class TypeFactory {
-   public:
-    using Type = T;
-
-    template <typename U>
-    void register_type() {
-        factory = []() { return U(); };
-    }
-
-    T create() { return factory(); }
-
-   private:
-    std::function<T()> factory;
-};
-
-class Scenes : public OnEndFrame {
+class Scenes {
     using SceneFactory = TypeFactory<std::unique_ptr<Scene>>;
 
     struct SceneInfo {
@@ -33,12 +18,15 @@ class Scenes : public OnEndFrame {
         SceneFactory factory;
     };
 
+    /* empty type_index */
+    static inline const std::type_index TYPE_INDEX_NULL = std::type_index(typeid(void));
+
    public:
     Scenes() = default;
     ~Scenes() = default;
 
     /* Checks if the scenes need to be switched */
-    void update() override;
+    void update();
 
     /* Swaps the active scene with the next scene */
     void swap_scenes();
@@ -49,17 +37,35 @@ class Scenes : public OnEndFrame {
         SceneInfo info;
         info.name = name;
         info.factory.register_type<T>();
-        registered_scenes[typeid(T)] = std::move(info);
+
+        const std::type_index type_id = typeid(T);
+        registered_scenes[type_id] = std::move(info);
+
+        if (next_scene == TYPE_INDEX_NULL) {
+            /* Set the first registered scene as the next scene */
+            next_scene = type_id;
+        }
     }
 
+    /* Enqueue a new scene to be loaded at the end of the frame */
     template <typename T>
         requires std::is_base_of_v<Scene, T>
     void enqueue_scene() {
-        auto it = registered_scenes.find(typeid(T));
+        const std::type_index type_id = typeid(T);
+        auto it = registered_scenes.find(type_id);
         if (it == registered_scenes.end()) {
-            throw std::runtime_error("Scene not registered");
+            Log::error(Log::Scope::ENGINE, "Scenes::enqueue_scene: Scene not registered");
+            return;
         }
-        next_scene = &it->second;
+        next_scene = type_id;
+    }
+
+    /* Immediatly load a new scene */
+    template <typename T>
+        requires std::is_base_of_v<Scene, T>
+    void load_scene() {
+        enqueue_scene<T>();
+        swap_scenes();
     }
 
     std::unique_ptr<Scene>& get_active_scene() { return active_scene; }
@@ -67,8 +73,8 @@ class Scenes : public OnEndFrame {
    private:
     std::unique_ptr<Scene> active_scene = nullptr;
 
-    SceneInfo* next_scene = nullptr;
+    std::type_index next_scene = TYPE_INDEX_NULL;
 
-    std::unordered_map<std::type_info, SceneInfo> registered_scenes;
+    std::unordered_map<std::type_index, SceneInfo> registered_scenes;
 };
 }  // namespace tmt

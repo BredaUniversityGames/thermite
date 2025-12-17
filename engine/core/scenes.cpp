@@ -4,18 +4,34 @@
 
 namespace tmt {
 void Scenes::update() {
-    if (next_scene == nullptr) return;
+    // next_scene is type index
+    if (next_scene == TYPE_INDEX_NULL) {
+        return;
+    }
 
     swap_scenes();
 }
+
 void Scenes::swap_scenes() {
+    if (next_scene == TYPE_INDEX_NULL) {
+        Log::error(Log::Scope::ENGINE, "Scenes::swap_scenes: No scene enqueued");
+        return;
+    }
+    if (registered_scenes.contains(next_scene) == false) {
+        Log::error(Log::Scope::ENGINE, "Scenes::swap_scenes: Scene not registered");
+        return;
+    }
+
     /* Unload */
-    active_scene->on_end();
-    engine.ecs.clear();
+    if (active_scene) {
+        active_scene->on_end();
+        engine.ecs.clear();
+    }
 
     /* Load */
-    active_scene = next_scene->factory.create();
-    next_scene = nullptr;
+    SceneInfo& info = registered_scenes.at(next_scene);
+    active_scene = info.factory.create();
+    next_scene = TYPE_INDEX_NULL;
     active_scene->on_pre_load();
     /* Deserialize */
     {
