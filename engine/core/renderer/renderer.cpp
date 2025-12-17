@@ -78,10 +78,15 @@ void Renderer::init() {
 
 void Renderer::update() {
     TMT_ZONE_SCOPED_N("Rendering")
-    render_view.update();
 
+    /* Start a new render graph */
     render_graph.new_graph().unwrap();
 
+    /* Update the rendering views */
+    render_view.update();
+    scene_view.update(render_graph);
+
+    /* Update the camera view */
     Entity cam_entity = Camera::get_active_camera();
     if (engine.game_controller.is_running() && cam_entity != entt::null) {
         const Camera& camera = engine.ecs.get_component<Camera>(cam_entity);
@@ -90,7 +95,8 @@ void Renderer::update() {
     } else {
         render_view.update_gpu_view(render_graph, debug_camera, debug_transform);
     }
-    /* Pipelines enqueue */
+
+    /* Enqueue pipelines */
     geometry_pipeline.enqueue(render_graph, render_view, scene_view);
     debug_pipeline.enqueue(render_graph, render_view);
 
