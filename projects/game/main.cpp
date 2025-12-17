@@ -21,8 +21,10 @@ class Game : public tmt::Application {
     void on_end() override {};
 };
 
-class DragonScene : public tmt::Scene {
+class DragonScene : public tmt::Scene<DragonScene> {
    public:
+    static constexpr std::string_view scene_name() { return "DragonScene"; }
+
     void on_start() override;
     void on_update(const tmt::FrameData& time) override;
     void on_end() override;
@@ -31,8 +33,10 @@ class DragonScene : public tmt::Scene {
     float elapsed_time = 0.0f;
 };
 
-class TableScene : public tmt::Scene {
+class TableScene : public tmt::Scene<TableScene> {
    public:
+    static constexpr std::string_view scene_name() { return "TableScene"; }
+
     void on_start() override;
     void on_update(const tmt::FrameData& time) override;
     void on_end() override;
@@ -51,8 +55,8 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     tmt::engine.ecs.systems.add<tmt::CameraSystem>();
 
     /* Register Scenes */
-    tmt::engine.scenes.register_scene<TableScene>("Sphere Scene");
-    tmt::engine.scenes.register_scene<DragonScene>("Dragon Scene");
+    tmt::engine.scenes.register_scene<TableScene>();
+    tmt::engine.scenes.register_scene<DragonScene>();
 
     return std::make_unique<Game>(specs);
 }

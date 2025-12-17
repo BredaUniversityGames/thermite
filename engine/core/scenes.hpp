@@ -11,7 +11,7 @@
 namespace tmt {
 
 class Scenes {
-    using SceneFactory = TypeFactory<std::unique_ptr<Scene>>;
+    using SceneFactory = TypeFactory<std::unique_ptr<SceneBase>>;
 
     struct SceneInfo {
         std::string name;
@@ -32,10 +32,10 @@ class Scenes {
     void swap_scenes();
 
     template <typename T>
-        requires std::is_base_of_v<Scene, T>
-    void register_scene(const std::string& name) {
+        requires std::is_base_of_v<SceneBase, T>
+    void register_scene() {
         SceneInfo info;
-        info.name = name;
+        info.name = T::scene_name();
         info.factory.register_type<T>();
 
         const std::type_index type_id = typeid(T);
@@ -49,7 +49,7 @@ class Scenes {
 
     /* Enqueue a new scene to be loaded at the end of the frame */
     template <typename T>
-        requires std::is_base_of_v<Scene, T>
+        requires std::is_base_of_v<SceneBase, T>
     void enqueue_scene() {
         const std::type_index type_id = typeid(T);
         auto it = registered_scenes.find(type_id);
@@ -62,16 +62,16 @@ class Scenes {
 
     /* Immediatly load a new scene */
     template <typename T>
-        requires std::is_base_of_v<Scene, T>
+        requires std::is_base_of_v<SceneBase, T>
     void load_scene() {
         enqueue_scene<T>();
         swap_scenes();
     }
 
-    std::unique_ptr<Scene>& get_active_scene() { return active_scene; }
+    std::unique_ptr<SceneBase>& get_active_scene() { return active_scene; }
 
    private:
-    std::unique_ptr<Scene> active_scene = nullptr;
+    std::unique_ptr<SceneBase> active_scene = nullptr;
 
     std::type_index next_scene = TYPE_INDEX_NULL;
 
