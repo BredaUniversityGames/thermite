@@ -9,6 +9,9 @@
 #include "engine/core/renderer/voxel_object.hpp"
 #include "engine/core/components/voxel_renderer.hpp"
 
+#undef min
+#undef max
+
 namespace tmt {
 
 void SceneView::init() {
