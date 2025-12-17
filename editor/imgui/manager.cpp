@@ -8,6 +8,7 @@
 #include "engine/engine.hpp"
 
 #include "engine/core/window.hpp"
+#include "engine/core/io.hpp"
 #include "engine/core/renderer/renderer.hpp"
 #include "ImGuizmo.h"
 
@@ -23,6 +24,11 @@ void ImGuiManager::init() {
     auto& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     io.ConfigWindowsMoveFromTitleBarOnly = true;
+
+    const auto ini_location = IO::FileLocation(IO::Location::EDITOR, "imgui.ini");
+    /* Needs static storage duration */
+    static const auto ini_path = ini_location.get_absolute_path().string();
+    io.IniFilename = ini_path.c_str();
 }
 
 void ImGuiManager::new_frame() {

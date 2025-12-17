@@ -7,7 +7,7 @@
 void tmt::FontManager::load(const std::string& name, const IO::FileLocation& location, const float size, const ImFontConfig& config, const uint16_t* glyph_ranges) {
     auto& io = ImGui::GetIO();
 
-    const auto& full_path = IO::get_absolute_path(location.sub_location, location.relative_path);
+    const auto& full_path = location.get_absolute_path();
     ImFont* font = io.Fonts->AddFontFromFileTTF(full_path.string().c_str(), size, &config, glyph_ranges);
     if (!font) {
         Log::error(Log::Scope::ENGINE, "Failed to load font from file, {}", full_path.string());
