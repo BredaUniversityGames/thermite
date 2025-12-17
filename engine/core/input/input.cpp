@@ -137,6 +137,7 @@ void Input::update() {
 }
 void Input::add_action(const std::string& name) { actions[name] = InputAction {}; }
 bool Input::is_keyboard_button_pressed(Key key) const { return keys_sdl[static_cast<SDL_Scancode>(key)]; }
+
 bool Input::is_keyboard_button_just_pressed(Key key) const {
     const auto sdl_scancode = static_cast<SDL_Scancode>(key);
     return keys_sdl[sdl_scancode] == true && prev_keys[sdl_scancode] == false;
@@ -200,6 +201,17 @@ bool Input::is_action_just_released(std::string_view name) const {
     }
 
     return false;
+}
+float tmt::Input::get_action_strength(std::string_view name) { return 0.0f; }
+float tmt::Input::get_action_raw_strength(std::string_view name) {
+    auto it = actions.find(std::string {name});
+    if (it == actions.end()) {
+        Log::warn(Log::Scope::ENGINE, "No input action found with this name {}", name);
+
+        return false;
+    }
+
+    return 0.0f;
 }
 void Input::set_mouse_relative_to_window(bool value) { SDL_SetWindowRelativeMouseMode(engine.window.window, value); }
 bool Input::get_mouse_relative_to_window() { return SDL_GetWindowRelativeMouseMode(engine.window.window); }

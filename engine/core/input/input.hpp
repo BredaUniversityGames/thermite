@@ -22,6 +22,7 @@ constexpr auto GAMEPAD_TRIGGERS = "gamepad_triggers";
 }  // namespace action
 struct InputAction {
     std::vector<std::unique_ptr<InputEvent>> events;
+    float deadzone = 0.5f;
 };
 struct GamepadState {
     SDL_Gamepad* handle {nullptr};
@@ -63,6 +64,9 @@ class Input {
     bool is_action_pressed(std::string_view name) const;
     bool is_action_just_pressed(std::string_view name) const;
     bool is_action_just_released(std::string_view name) const;
+
+    float get_action_strength(std::string_view name);
+    float get_action_raw_strength(std::string_view name);
 
     bool is_keyboard_button_just_pressed(Key key) const;
     bool is_keyboard_button_pressed(Key key) const;

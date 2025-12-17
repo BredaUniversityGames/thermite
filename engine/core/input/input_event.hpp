@@ -11,6 +11,7 @@ class InputEvent {
     virtual bool is_pressed() const = 0;
     virtual bool is_just_pressed() const = 0;
     virtual bool is_just_released() const = 0;
+    virtual float get_action_strength() const = 0;
 };
 
 class InputEventKey : public InputEvent {
@@ -20,6 +21,7 @@ class InputEventKey : public InputEvent {
     bool is_pressed() const override;
     bool is_just_pressed() const override;
     bool is_just_released() const override;
+    float get_action_strength() const override;
 
     Key get_key() const { return key; }
     void set_key(Key new_key) { key = new_key; }
@@ -34,6 +36,7 @@ class InputEventMouseMotion : public InputEvent {
     bool is_pressed() const { return false; }
     bool is_just_pressed() const { return false; }
     bool is_just_released() const { return false; }
+    float get_action_strength() const override;
 
     float get_position_x() const;
     float get_position_y() const;
@@ -65,6 +68,8 @@ class InputEventMouseButton : public InputEventMouseMotion {
     bool is_pressed() const override;
     bool is_just_pressed() const override;
     bool is_just_released() const override;
+    float get_action_strength() const override;
+
     MouseButton get_button() const { return button; }
     void set_button(MouseButton new_button) { button = new_button; }
 
@@ -78,6 +83,8 @@ class InputEventGamepadButton : public InputEvent {
     bool is_pressed() const override;
     bool is_just_pressed() const override;
     bool is_just_released() const override;
+    float get_action_strength() const override;
+
     GamepadButton get_button() const { return button; }
     void set_button(GamepadButton button) { button = button; }
 
@@ -97,6 +104,7 @@ class InputEventGamepadMotion : public InputEvent {
     bool is_pressed() const override;
     bool is_just_pressed() const override;
     bool is_just_released() const override;
+    float get_action_strength() const override;
 
     float get_axis_value() const;
     GamepadAxis get_axis() const { return axis; }
