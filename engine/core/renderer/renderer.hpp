@@ -6,6 +6,7 @@
 #include <graphite/imgui.hh>
 
 #include "render_view.hpp"
+#include "scene_view.hpp"
 
 class GPUAdapter;
 class RenderGraph;
@@ -34,7 +35,10 @@ class Renderer {
     Camera debug_camera;
 
    public:
+    /* Rendering views */
     RenderView render_view {};
+    SceneView scene_view {};
+
 #ifdef THERMITE_EDITOR
     ImGUI* imgui = nullptr;
 #endif

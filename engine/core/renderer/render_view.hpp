@@ -25,8 +25,7 @@ struct GpuView {
     glm::uvec2 resolution {1, 1};
 };
 
-class RenderView {
-   public:
+struct RenderView {
     RenderView() = default;
     ~RenderView() = default;
 

@@ -66,12 +66,12 @@ void Renderer::init() {
         return;
     }
 
-    /* Initialize the Render View */
+    /* Initialize the rendering views */
     render_view.init();
+    scene_view.init();
 
     /* Initialize pipelines */
     debug_pipeline.init(gpu);
-    geometry_pipeline.init(gpu);
 
     debug_transform.set_local_position({0.0f, 0.0f, -1.0f});
 }
@@ -91,7 +91,7 @@ void Renderer::update() {
         render_view.update_gpu_view(render_graph, debug_camera, debug_transform);
     }
     /* Pipelines enqueue */
-    geometry_pipeline.enqueue(render_graph, render_view);
+    geometry_pipeline.enqueue(render_graph, render_view, scene_view);
     debug_pipeline.enqueue(render_graph, render_view);
 
 #ifdef THERMITE_EDITOR
@@ -114,11 +114,13 @@ void Renderer::update() {
 
 void Renderer::end() {
     VRAMBank& bank = gpu.get_vram_bank();
+
+    /* De-initialize the rendering views */
     render_view.deinit();
+    scene_view.deinit();
 
     /* Pipelines cleanup */
     debug_pipeline.deinit(gpu);
-    geometry_pipeline.deinit(gpu);
 
     /* Cleanup the VRAM bank & GPU adapter */
     render_graph.deinit().expect("failed to destroy render graph.");
