@@ -16,20 +16,6 @@ void ConstraintSolver::solve_velocities(const float) {
             auto& body_a = engine.ecs.get_registry().get<VoxelBody>(collision.entity_a);
             auto& body_b = engine.ecs.get_registry().get<VoxelBody>(collision.entity_b);
 
-            // Check if we want to go into sleep state
-            // if ((body_a.type == VoxelBody::SLEEPING && body_b.type == VoxelBody::DYNAMIC) || (body_b.type == VoxelBody::SLEEPING && body_a.type == VoxelBody::DYNAMIC)) {
-            //    body_a.type = VoxelBody::DYNAMIC;
-            //    body_b.type = VoxelBody::DYNAMIC;
-            //} else if (body_a.type == VoxelBody::WANTS_SLEEP && body_b.type == VoxelBody::WANTS_SLEEP) {
-            //    body_a.type = VoxelBody::SLEEPING;
-            //    body_b.type = VoxelBody::SLEEPING;
-            //} else if (body_a.type == VoxelBody::WANTS_SLEEP && body_b.type == VoxelBody::STATIC)
-            //    body_a.type = VoxelBody::SLEEPING;
-            // else if (body_a.type == VoxelBody::STATIC && body_b.type == VoxelBody::WANTS_SLEEP)
-            //    body_b.type = VoxelBody::SLEEPING;
-
-            /*if ((body_a.type == VoxelBody::SLEEPING || body_a.type == VoxelBody::STATIC) && (body_b.type == VoxelBody::SLEEPING || body_b.type == VoxelBody::STATIC)) continue;*/
-
             const float inv_mass_a = body_a.get_inv_mass();
             const float inv_mass_b = body_b.get_inv_mass();
 
