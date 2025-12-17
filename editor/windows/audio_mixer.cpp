@@ -7,6 +7,19 @@
 
 #include <imgui.h>
 
+namespace {
+
+template <typename Type>
+void audio_drag_source(const std::string& type_name, const Type& value) {
+    if (!ImGui::BeginDragDropSource()) return;
+
+    ImGui::Text("%s: %s", type_name.c_str(), value.get_path().c_str());
+    ImGui::SetDragDropPayload(type_name.c_str(), &value, sizeof(Type));
+    ImGui::EndDragDropSource();
+}
+
+}  // namespace
+
 namespace tmt {
 
 void AudioMixer::display() {
@@ -29,27 +42,25 @@ void AudioMixer::display() {
             const std::string bank_path = ICON_MS_INVENTORY_2 " " + bank->get_path();
 
             const bool bank_is_leaf = audio_events.empty() && volume_controls.empty();
-            const bool bank_node_open = ImGui::TreeNodeEx(
-                bank_path.c_str(), default_flags | (bank_is_leaf ? leaf_flags : 0) | get_selection_flags(std::weak_ptr {bank})
-            );  //(selection_equals(std::weak_ptr {bank}) ? ImGuiTreeNodeFlags_Bullet : 0));
+            const bool bank_node_open = ImGui::TreeNodeEx(bank_path.c_str(), default_flags | (bank_is_leaf ? leaf_flags : 0) | get_selection_flags(std::weak_ptr {bank}));
             if (ImGui::IsItemClicked()) selection = bank;
             if (bank_node_open) {
                 for (const AudioEvent& event : audio_events) {
                     const std::string event_path = ICON_MS_PLAYLIST_PLAY " " + event.get_path();
 
-                    ImGui::TreeNodeEx(
-                        event_path.c_str(), default_flags | leaf_flags | ImGuiTreeNodeFlags_NoTreePushOnOpen | get_selection_flags(event)
-                    );  //(selection_equals(event) ? ImGuiTreeNodeFlags_Bullet : 0));
+                    ImGui::TreeNodeEx(event_path.c_str(), default_flags | leaf_flags | ImGuiTreeNodeFlags_NoTreePushOnOpen | get_selection_flags(event));
                     if (ImGui::IsItemClicked()) selection = event;
+
+                    audio_drag_source("AudioEvent", event);
                 }
 
                 for (const VolumeControl& control : volume_controls) {
-                    const std::string event_path = ICON_MS_GRAPHIC_EQ " " + control.get_path();
+                    const std::string control_path = ICON_MS_GRAPHIC_EQ " " + control.get_path();
 
-                    ImGui::TreeNodeEx(
-                        event_path.c_str(), default_flags | leaf_flags | ImGuiTreeNodeFlags_NoTreePushOnOpen | get_selection_flags(control)
-                    );  // (selection_equals(control) ? ImGuiTreeNodeFlags_Bullet : 0));
+                    ImGui::TreeNodeEx(control_path.c_str(), default_flags | leaf_flags | ImGuiTreeNodeFlags_NoTreePushOnOpen | get_selection_flags(control));
                     if (ImGui::IsItemClicked()) selection = control;
+
+                    audio_drag_source("VolumeControl", control);
                 }
 
                 ImGui::TreePop();
@@ -61,14 +72,14 @@ void AudioMixer::display() {
     ImGui::TableNextColumn();
     if (ImGui::BeginChild("Info")) {
         switch (selection.index()) {
-            case 0: {
+            case 0: {  // AudioBank selected.
                 const auto& bank = std::get<std::weak_ptr<AudioBank>>(selection);
 
                 ImGui::Text("Path: %s", bank.lock()->get_path().c_str());
                 break;
             }
 
-            case 1: {
+            case 1: {  // AudioEvent selected
                 const auto& event = std::get<AudioEvent>(selection);
                 if (event.is_valid()) {
                     static AudioInstance playing_instance {nullptr};
@@ -97,7 +108,7 @@ void AudioMixer::display() {
                 break;
             }
 
-            case 2: {
+            case 2: {  // VolumeControl selected.
                 const auto& control = std::get<VolumeControl>(selection);
                 if (control.is_valid()) {
                     ImGui::Text("Path: %s", control.get_path().c_str());
