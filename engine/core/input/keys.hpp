@@ -116,4 +116,12 @@ enum class GamepadAxis : int32_t {
     RIGHT_TRIGGER = 5,
     COUNT = 6,
 };
+enum class MouseButton : int32_t {
+    LEFT = 1,
+    MIDDLE = 2,
+    RIGHT = 3,
+    X1 = 4,
+    X2 = 5,
+};
+
 }  // namespace tmt

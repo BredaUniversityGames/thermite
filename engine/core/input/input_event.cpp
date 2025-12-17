@@ -9,9 +9,7 @@ bool tmt::InputEventMouseButton::is_pressed() const { return engine.input.is_mou
 bool tmt::InputEventMouseButton::is_just_pressed() const { return engine.input.is_mouse_button_just_pressed(button); }
 bool tmt::InputEventMouseButton::is_just_released() const { return engine.input.is_mouse_button_just_released(button); }
 
-bool tmt::InputEventMouseMotion::is_pressed() const { return false; }
-bool tmt::InputEventMouseMotion::is_just_pressed() const { return false; }
-bool tmt::InputEventMouseMotion::is_just_released() const { return false; }
+
 
 float tmt::InputEventMouseMotion::get_position_x() const { return position_x; }
 float tmt::InputEventMouseMotion::get_position_y() const { return position_y; }
