@@ -150,8 +150,7 @@ void Inspector::display() {
 }
 
 void Inspector::add_component(const MenuContext& menu_context) {
-    
-    if(menu_context.primary_entity == entt::null) return; 
+    if (menu_context.primary_entity == entt::null) return;
 
     if (ImGui::Button("Add Component")) {
         ImGui::OpenPopup("AddComponentPopup");
