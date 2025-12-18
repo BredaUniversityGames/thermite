@@ -25,6 +25,7 @@
 #include "editor/windows/font_control.hpp"
 #include "editor/windows/profiler_tracy.hpp"
 #include "editor/windows/scenes.hpp"
+#include "editor/windows/asset_browser.hpp"
 
 /* Singleton */
 tmt::Editor tmt::editor;
@@ -50,6 +51,7 @@ void Editor::on_engine_init(const ApplicationSpecs&) {
     windows.add<GoapDebugger>();
     windows.add<FontControl>();
     windows.add<ScenesWindow>();
+    windows.add<AssetBrowser>();
 
     for (auto& system : windows) {
         system->on_editor_start();
