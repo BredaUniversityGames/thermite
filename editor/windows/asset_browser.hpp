@@ -1,9 +1,11 @@
 #pragma once
 
 #include "editor/core/window.hpp"
+#include "engine/core/io.hpp"
 
 #include <filesystem>
 #include <stack>
+
 
 namespace tmt {
 
@@ -19,13 +21,13 @@ class AssetBrowser : public IWindow {
     void on_editor_end() override {}
 
    private:
-    std::filesystem::path pending_viewing_dir;
-    std::filesystem::path viewing_dir;
-    std::vector<std::filesystem::path> viewing_paths;
-    std::vector<std::filesystem::path> selected_paths;
+    std::optional<IO::FileLocation> pending_viewing_location{};
+    IO::FileLocation viewing_location{};
+    std::vector<IO::FileLocation> viewing_locations;
+    std::vector<IO::FileLocation> selected_locations;
 
-    std::stack<std::filesystem::path> undo_viewing_dirs;
-    std::stack<std::filesystem::path> redo_viewing_dirs;
+    std::stack<IO::FileLocation> undo_viewing_locations;
+    std::stack<IO::FileLocation> redo_viewing_locations;
 
     void update_viewing_paths();
 
