@@ -10,7 +10,6 @@
 #include "engine/core/components/transform.hpp"
 
 namespace tmt {
-
 void Hierarchy::start_section() {
     /* Begin child section for hierarchy */
     ImGui::BeginChild("HierarchySection", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
@@ -52,7 +51,26 @@ void Hierarchy::clear_selection() {
     previous_end_below = NULL_INDEX;
 }
 
-void Hierarchy::display() { render_hierarchy(); }
+void Hierarchy::display() {
+    top_bar();
+    render_hierarchy();
+}
+
+int Hierarchy::get_window_flags() const { return ImGuiWindowFlags_MenuBar; }
+
+void Hierarchy::top_bar() {
+    /*menu bar*/
+    if (ImGui::BeginMenuBar()) {
+        if (ImGui::BeginMenu("Create")) {
+            if (ImGui::MenuItem("Empty Entity")) {
+                auto entity = engine.ecs.create_entity();
+                engine.ecs.add_or_get_component<Transform>(entity);
+            }
+            ImGui::EndMenu();
+        }
+        ImGui::EndMenuBar();
+    }
+}
 
 bool Hierarchy::display_entity(const HierarchyState& state) {
     const bool root_indent = state.depth() == 0;
@@ -76,7 +94,7 @@ bool Hierarchy::display_entity(const HierarchyState& state) {
 
     /* Debug name */
     // const auto name = state.name.name + " " + std::to_string(state.position.x) + "-" + std::to_string(state.position.y);
-    const auto name = state.name.name;
+    const auto name = state.name.name.empty() ? "Entity_" + EntityHelper::to_string(state.entity) : state.name.name;
 
     const ImGuiID tree_node_id = ImGui::GetID(name.c_str());
     bool open_node = ImGui::TreeNodeBehavior(tree_node_id, flags, name.c_str(), NULL);
