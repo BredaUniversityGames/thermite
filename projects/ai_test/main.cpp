@@ -130,7 +130,7 @@ void Game::on_start() {
         auto& nav_mesh = tmt::engine.ecs.add_component<tmt::NavMesh>(voxel);
 
 
-        nav_mesh.generate_mesh(voxel_volume, 1);
+        nav_mesh.generate_mesh(voxel_volume, 3);
     }
 }
 

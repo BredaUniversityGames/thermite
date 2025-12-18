@@ -49,12 +49,6 @@ void NavMesh::generate_mesh(std::shared_ptr<tmt::VoxelVolume> voxel_volume, int 
 
     // Helper lambda
     auto voxel_empty = [&](uint32_t x, uint32_t y, uint32_t z) { return !occupied[x + size.x * y + size.x * size.y * z]; };
-    // Initialize data vector
-    auto data = std::vector<NavVoxel>(size.x * size.y * size.z);
-    std::unordered_map<uint32_t, int> node_map;
-    constexpr float voxel_scale = 0.1f;
-    glm::vec3 full_size = glm::vec3(voxel_volume->size);
-
     auto is_surface = [&](uint32_t x, uint32_t y, uint32_t z) {
         if (voxel_empty(x, y, z)) return false;
         for (size_t sign = 0; sign < 2; sign++) {
@@ -69,45 +63,64 @@ void NavMesh::generate_mesh(std::shared_ptr<tmt::VoxelVolume> voxel_volume, int 
         return false;
     };
 
-    // PASS 1: Create all surface nodes
+    std::unordered_map<uint32_t, int> node_map;
+    constexpr float voxel_scale = 0.1f;
+    glm::vec3 full_size = glm::vec3(voxel_volume->size);
+
     for (uint32_t z = 0; z < size.z; z++) {
         for (uint32_t y = 0; y < size.y; y++) {
             for (uint32_t x = 0; x < size.x; x++) {
                 if (!is_surface(x, y, z)) continue;
 
                 const uint32_t pos_index = x + size.x * y + size.x * size.y * z;
-                Node node;
-                glm::vec3 voxel_pos = (glm::vec3(x, y, z) + 0.5f) * float(divisor);
-                glm::vec3 centered = voxel_pos - full_size * 0.5f;
-                node.local_pos = centered * voxel_scale;
-                node_map[pos_index] = (int)nodes.size();
-                nodes.push_back(node);
-            }
-        }
-    }
 
-    for (auto& [pos_index, node_index] : node_map) {
-        uint32_t x = pos_index % size.x;
-        uint32_t y = (pos_index / size.x) % size.y;
-        uint32_t z = pos_index / (size.x * size.y);
+                int node_index;
+                if (node_map.contains(pos_index)) {
+                    node_index = node_map[pos_index];
+                } else {
+                    Node node;
+                    glm::vec3 voxel_pos = (glm::vec3(x, y, z) + 0.5f) * float(divisor);
+                    glm::vec3 centered = voxel_pos - full_size * 0.5f;
+                    node.local_pos = centered * voxel_scale;
+                    node_map[pos_index] = (int)nodes.size();
+                    node_index = (int)nodes.size();
+                    nodes.push_back(node);
+                }
 
-        for (int dz = -1; dz <= 1; dz++) {
-            for (int dy = -1; dy <= 1; dy++) {
-                for (int dx = -1; dx <= 1; dx++) {
-                    if (dx == 0 && dy == 0 && dz == 0) continue;  // skip self
+                for (int dz = -1; dz <= 1; dz++) {
+                    for (int dy = -1; dy <= 1; dy++) {
+                        for (int dx = -1; dx <= 1; dx++) {
+                            if (dx == 0 && dy == 0 && dz == 0) continue;
 
-                    glm::uvec3 neighbor = {x + dx, y + dy, z + dz};
+                            glm::uvec3 neighbor = {x + dx, y + dy, z + dz};
+                            if (neighbor.x >= size.x || neighbor.y >= size.y || neighbor.z >= size.z) continue;
+                            if (!is_surface(neighbor.x, neighbor.y, neighbor.z)) continue;
 
-                    if (neighbor.x >= size.x || neighbor.y >= size.y || neighbor.z >= size.z) continue;
+                            const uint32_t neighbor_pos_index = neighbor.x + size.x * neighbor.y + size.x * size.y * neighbor.z;
 
-                    const uint32_t neighbor_pos_index = neighbor.x + size.x * neighbor.y + size.x * size.y * neighbor.z;
-                    if (!node_map.contains(neighbor_pos_index)) continue;
+                            int neighbor_node_index;
+                            if (node_map.contains(neighbor_pos_index)) {
+                                neighbor_node_index = node_map[neighbor_pos_index];
+                            } else {
+                                Node node;
+                                glm::vec3 voxel_pos = (glm::vec3(neighbor.x, neighbor.y, neighbor.z) + 0.5f) * float(divisor);
+                                glm::vec3 centered = voxel_pos - full_size * 0.5f;
+                                node.local_pos = centered * voxel_scale;
+                                node_map[neighbor_pos_index] = (int)nodes.size();
+                                neighbor_node_index = (int)nodes.size();
+                                nodes.push_back(node);
+                            }
 
-                    int neighbor_node_index = node_map[neighbor_pos_index];
+                            auto& neighborsA = nodes[node_index].connectingNodes;
+                            if (std::find(neighborsA.begin(), neighborsA.end(), neighbor_node_index) == neighborsA.end()) {
+                                neighborsA.push_back(neighbor_node_index);
+                            }
 
-                    auto& neighbors = nodes[node_index].connectingNodes;
-                    if (std::find(neighbors.begin(), neighbors.end(), neighbor_node_index) == neighbors.end()) {
-                        neighbors.push_back(neighbor_node_index);
+                            auto& neighborsB = nodes[neighbor_node_index].connectingNodes;
+                            if (std::find(neighborsB.begin(), neighborsB.end(), node_index) == neighborsB.end()) {
+                                neighborsB.push_back(node_index);
+                            }
+                        }
                     }
                 }
             }
