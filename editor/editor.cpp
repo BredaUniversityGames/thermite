@@ -26,6 +26,7 @@
 #include "editor/windows/audio_mixer.hpp"
 #include "editor/windows/profiler_tracy.hpp"
 #include "editor/windows/scenes.hpp"
+#include "editor/windows/imgui_demo.hpp"
 
 /* Singleton */
 tmt::Editor tmt::editor;
@@ -52,6 +53,7 @@ void Editor::on_engine_init(const ApplicationSpecs&) {
     windows.add<FontControl>();
     windows.add<AudioMixer>();
     windows.add<ScenesWindow>();
+    windows.add<ImguiDemo>();
 
     for (auto& system : windows) {
         system->on_editor_start();
