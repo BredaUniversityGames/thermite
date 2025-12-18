@@ -11,7 +11,9 @@ class Window;
 class Renderer;
 class Ecs;
 class Resources;
+class Audio;
 class Salvo;
+class Scenes;
 
 class Engine {
    public:
@@ -41,11 +43,14 @@ class Engine {
     */
 
     Window& window;
+    Audio& audio;
+
     Input& input;
     Ecs& ecs;
     Renderer& renderer;
     Resources& resources;
     Salvo& salvo;
+    Scenes& scenes;
 
     GameController game_controller;
 
@@ -73,6 +78,8 @@ class Engine {
     void start_game();
     void update_game(const FrameData& frame_data);
     void fixed_update_game(const FrameData& frame_data);
+    void pause_game();
+    void resume_game();
     void end_game();
 };
 

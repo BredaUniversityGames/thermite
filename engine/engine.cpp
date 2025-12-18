@@ -7,7 +7,9 @@
 #include "core/input/input.hpp"
 
 #include "core/window.hpp"
+#include "core/audio.hpp"
 #include "core/ecs.hpp"
+#include "core/scenes.hpp"
 #include "core/timer.hpp"
 
 #include "core/renderer/renderer.hpp"
@@ -30,15 +32,18 @@ tmt::Engine tmt::engine;
 
 namespace tmt {
 
-Engine::Engine() : input(*new Input()), window(*new Window()), ecs(*new Ecs()), renderer(*new Renderer()), resources(*new Resources()), salvo(*new Salvo()) {}
+Engine::Engine()
+    : window(*new Window()), audio(*new Audio()), input(*new Input()), ecs(*new Ecs()), renderer(*new Renderer()), resources(*new Resources()), salvo(*new Salvo()), scenes(*new Scenes()) {}
 
 Engine::~Engine() {
     /* Destruction should be in reverse order */
+    delete &scenes;
     delete &salvo;
     delete &resources;
     delete &renderer;
     delete &ecs;
     delete &input;
+    delete &audio;
     delete &window;
 }
 
@@ -51,6 +56,7 @@ void Engine::init(std::unique_ptr<Application> user_app) {
     window.init(app->specs);
     input.init();
     renderer.init();
+    audio.init();
     salvo.init();
 
     ecs.systems.add<Physics>();
@@ -78,17 +84,29 @@ void Engine::run() {
             game_controller.should_start_game = false;
             game_controller.is_game_playing = true;
         }
+        if (game_controller.should_game_pause()) {
+            pause_game();
+            game_controller.is_game_paused = true;
+            game_controller.should_pause_game = false;
+        }
+        if (game_controller.should_game_resume()) {
+            resume_game();
+            game_controller.is_game_paused = false;
+            game_controller.should_resume_game = false;
+        }
 
         input.update();
 
         const FrameData frame_data = {.delta_time = timer.tick()};
 
-        const bool shoulld_update = game_controller.is_playing() && !game_controller.is_paused();
+        const bool should_update = game_controller.is_playing() && !game_controller.is_paused();
         /* Update */
-        if (shoulld_update) {
+        if (should_update) {
             update_game(frame_data);
         }
         update_engine(frame_data);
+
+        audio.update();
 
         accumulator += frame_data.delta_time;
         while (accumulator >= Config::FIXED_TIME_STEP) {
@@ -97,7 +115,7 @@ void Engine::run() {
             TMT_ZONE_SCOPED_N("Fixed Update")
 
             /* Fixed Update */
-            if (shoulld_update) {
+            if (should_update) {
                 fixed_update_game(frame_data);
             }
             fixed_update_engine(frame_data);
@@ -106,6 +124,7 @@ void Engine::run() {
         OnEndFrame::dispatch();
 
         renderer.update();
+        scenes.update();
         frame_count++;
     }
 
@@ -144,6 +163,7 @@ void Engine::start_game() {
     TMT_ZONE_SCOPED_N("Engine::start_game")
 
     app->on_start();
+    if (scenes.get_active_scene()) scenes.get_active_scene()->on_start();
     OnGameStart::dispatch();
 }
 
@@ -151,17 +171,31 @@ void Engine::update_game(const FrameData& frame_data) {
     TMT_ZONE_SCOPED_N("Engine::update_game")
 
     app->on_update(frame_data);
+    if (scenes.get_active_scene()) scenes.get_active_scene()->on_update(frame_data);
     OnGameUpdate::dispatch(frame_data);
 }
 
 void Engine::fixed_update_game(const FrameData& frame_data) {
     TMT_ZONE_SCOPED_N("Engine::fixed_update_game")
     app->on_fixed_update(frame_data);
+    if (scenes.get_active_scene()) scenes.get_active_scene()->on_fixed_update(frame_data);
     OnGameFixedUpdate::dispatch(frame_data);
 }
 
+void Engine::pause_game() {
+    TMT_ZONE_SCOPED_N("Engine::pause_game")
+    OnGamePause::dispatch();
+}
+
+void Engine::resume_game() {
+    TMT_ZONE_SCOPED_N("Engine::resume_game")
+    OnGameResume::dispatch();
+}
+
 void Engine::end_game() {
+    TMT_ZONE_SCOPED_N("Engine::end_game")
     app->on_end();
+    if (scenes.get_active_scene()) scenes.get_active_scene()->on_end();
     OnGameEnd::dispatch();
 }
 
