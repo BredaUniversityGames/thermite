@@ -16,6 +16,7 @@ namespace tmt {
 
 class DebugPipeline;
 class GeometryPipeline;
+class VfxPipeline;
 
 class Renderer {
     GPUAdapter& gpu;
@@ -24,6 +25,7 @@ class Renderer {
     /* Pipelines */
     DebugPipeline& debug_pipeline;
     GeometryPipeline& geometry_pipeline;
+    VfxPipeline& vfx_pipeline;
 
     Transform debug_transform;
     Camera debug_camera;

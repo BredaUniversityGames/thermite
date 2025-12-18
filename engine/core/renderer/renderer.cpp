@@ -13,15 +13,19 @@
 
 #include "engine/engine.hpp"
 
+#include "pipelines/vfx_pipeline.hpp"
 #include "pipelines/debug_pipeline.hpp"
 #include "pipelines/geometry_pipeline.hpp"
+
 #include "tools/profiler.hpp"
 
 namespace tmt {
 
-Renderer::Renderer() : gpu(*new GPUAdapter()), render_graph(*new RenderGraph()), debug_pipeline(*new DebugPipeline()), geometry_pipeline(*new GeometryPipeline()) {}
+Renderer::Renderer()
+    : gpu(*new GPUAdapter()), render_graph(*new RenderGraph()), debug_pipeline(*new DebugPipeline()), geometry_pipeline(*new GeometryPipeline()), vfx_pipeline(*new VfxPipeline()) {}
 
 Renderer::~Renderer() {
+    delete &vfx_pipeline;
     delete &geometry_pipeline;
     delete &debug_pipeline;
     delete &render_graph;
@@ -72,6 +76,7 @@ void Renderer::init() {
     /* Initialize pipelines */
     debug_pipeline.init(gpu);
     geometry_pipeline.init(gpu);
+    vfx_pipeline.init(gpu);
 
     debug_transform.set_local_position({0.0f, 0.0f, -1.0f});
 }
@@ -92,6 +97,7 @@ void Renderer::update() {
     }
     /* Pipelines enqueue */
     geometry_pipeline.enqueue(render_graph, render_view);
+    vfx_pipeline.enqueue(render_graph, render_view);
     debug_pipeline.enqueue(render_graph, render_view);
 
 #ifdef THERMITE_EDITOR
@@ -119,6 +125,7 @@ void Renderer::end() {
     /* Pipelines cleanup */
     debug_pipeline.deinit(gpu);
     geometry_pipeline.deinit(gpu);
+    vfx_pipeline.deinit(gpu);
 
     /* Cleanup the VRAM bank & GPU adapter */
     render_graph.deinit().expect("failed to destroy render graph.");

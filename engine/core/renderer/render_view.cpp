@@ -50,7 +50,7 @@ void RenderView::init() {
         Log::error(Log::Scope::RENDERER, "failed to create render view buffer.\nreason: {}", r.unwrap_err().c_str());
         return;
     } else {
-        render_view_buffer = r.unwrap();
+        gpu_view_buffer = r.unwrap();
     }
 }
 
@@ -76,20 +76,21 @@ void RenderView::update_gpu_view(RenderGraph& render_graph, const Camera& camera
 
     /* Iterate over all cameras to find an active one to use as render view */
     glm::mat4 p = glm::perspective(glm::radians(camera.fov), aspect_ratio, 0.05f, 1000.0f);
-    const glm::mat4 v = glm::inverse(transform.get_world_matrix());
+    const glm::mat4 world = transform.get_world_matrix();
     p[1][1] *= -1.0f;
-    gpu_view.world_to_clip = p * v;
+    gpu_view.world_to_clip = p * glm::inverse(world); // p * v
     gpu_view.clip_to_world = glm::inverse(gpu_view.world_to_clip);
+    gpu_view.inv_view = world; // the world matrix is the inverse view matrix
     gpu_view.origin = glm::vec4(transform.get_world_position(), 0.0f);
 
     /* Upload the active render view */
-    render_graph.upload_buffer(render_view_buffer, &gpu_view, 0u, sizeof(GpuView));
+    render_graph.upload_buffer(gpu_view_buffer, &gpu_view, 0u, sizeof(GpuView));
 }
 
 void RenderView::deinit() {
     VRAMBank& bank = engine.renderer.vram_bank();
 
-    bank.destroy(render_view_buffer);
+    bank.destroy(gpu_view_buffer);
     bank.destroy(viewport_texture);
     bank.destroy(viewport_image);
     bank.destroy(render_target);

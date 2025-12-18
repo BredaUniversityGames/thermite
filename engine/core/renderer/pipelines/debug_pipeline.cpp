@@ -59,7 +59,7 @@ void DebugPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
                                 .topology(Topology::LineList)
                                 .attribute(AttrFormat::XYZ32_SFloat)  // Position
                                 .attribute(AttrFormat::XYZ32_SFloat)  // Color
-                                .read(render_view.render_view_buffer, ShaderStages::Vertex)
+                                .read(render_view.gpu_view_buffer, ShaderStages::Vertex)
                                 .attach(render_image)
                                 .raster_extent(render_res.x, render_res.y);
     line_pass.draw(point_buffer, num_points);

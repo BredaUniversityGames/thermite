@@ -8,6 +8,20 @@ class GPUAdapter;
 class RenderGraph;
 
 namespace tmt {
+
+constexpr uint32_t MAX_PARTICLES = 100;
+
+//struct GpuParticle {
+//    glm::vec4 color {};
+//    glm::vec3 pos {};
+//};
+
+struct Billboard {
+    glm::vec4 color {};
+    glm::vec3 pos {};
+    float size {};
+};
+
 class VfxPipeline {
    public:
     VfxPipeline() {}
@@ -19,5 +33,8 @@ class VfxPipeline {
     void init(GPUAdapter& gpu);
     void enqueue(RenderGraph& render_graph, RenderView render_view);
     void deinit(GPUAdapter& gpu);
+
+    Buffer billboard_vertices {};
+    Buffer billboards {};
 };
 }  // namespace tmt

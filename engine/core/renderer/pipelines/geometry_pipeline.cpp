@@ -74,7 +74,7 @@ void GeometryPipeline::enqueue(RenderGraph& render_graph, RenderView render_view
 
     render_graph.add_compute_pass("geometry pass", "geometry.cs")
         /* Render view */
-        .read(render_view.render_view_buffer)
+        .read(render_view.gpu_view_buffer)
         /* Object buffers */
         .read(bvh_nodes)
         .read(object_indices)
