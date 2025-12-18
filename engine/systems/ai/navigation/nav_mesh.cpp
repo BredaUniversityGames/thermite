@@ -7,7 +7,7 @@
 
 using namespace tmt;
 
-void NavMesh::generate_mesh(std::shared_ptr<tmt::VoxelVolume> voxel_volume, glm::vec3 pivot, int lod_level) {
+void NavMesh::generate_mesh(std::shared_ptr<tmt::VoxelVolume> voxel_volume, int lod_level) {
     Log::warn("Volume size:  {}, {}, {}", voxel_volume->size.x, voxel_volume->size.y, voxel_volume->size.z);
     Log::warn("Depth: {}", voxel_volume->blas->depth);
     Log::warn("Voxel count: {}", voxel_volume->blas->voxel_count);
@@ -30,8 +30,6 @@ void NavMesh::generate_mesh(std::shared_ptr<tmt::VoxelVolume> voxel_volume, glm:
             Log::warn(Log::Scope::ENGINE, "Rejected voxel at ({},{},{}) - size is ({},{},{})", pos.x, pos.y, pos.z, size.x, size.y, size.z);
         }
     };
-
-    glm::vec3 pivot_grid = pivot / float(divisor);
 
     std::function<void(uint32_t, glm::uvec3, uint32_t, uint32_t)> traverse = [&](uint32_t node_idx, glm::uvec3 origin, uint32_t scale, uint32_t depth) {
         const auto& node = voxel_volume->blas->nodes[node_idx];
