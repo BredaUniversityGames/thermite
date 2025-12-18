@@ -23,8 +23,8 @@ StructuredBuffer<Billboard> billboards;
 VertexOutput main(VertexInput input, uint instance_id: SV_InstanceID) {
     VertexOutput output;
 
-    float3 cam_right = gpu_view.inv_view[0].xyz;
-    float3 cam_up = gpu_view.inv_view[1].xyz;
+    float3 cam_right = normalize(float3(gpu_view.inv_view[0][0], gpu_view.inv_view[1][0], gpu_view.inv_view[2][0]));
+    float3 cam_up = normalize(float3(gpu_view.inv_view[0][1], gpu_view.inv_view[1][1], gpu_view.inv_view[2][1]));
 
     Billboard b = billboards[instance_id];
     float3 world_pos = b.pos + 

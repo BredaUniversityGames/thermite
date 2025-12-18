@@ -38,13 +38,13 @@ void VfxPipeline::init(GPUAdapter& gpu) {
 static Billboard billboard {};
 
 void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
-    billboard.pos = {0, 0, 0};
-    billboard.color = {1, 0, 0, 0};
+    billboard.color = {1, 0, 0, 1};
+    billboard.pos = {0, 4, 0};
     billboard.size = 1.0f;
 
-    const BindHandle render_image = render_view.get_render_image();
-
     render_graph.upload_buffer(billboards, &billboard, 0, sizeof(billboard));
+
+    const BindHandle render_image = render_view.get_render_image();
 
     const glm::uvec2 render_res = render_view.gpu_view.resolution;
     RasterNode& line_pass = render_graph.add_raster_pass("billboard pass", "billboard.vx", "billboard.px")
