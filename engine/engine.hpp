@@ -13,6 +13,7 @@ class Ecs;
 class Resources;
 class Audio;
 class Salvo;
+class Scenes;
 
 class Engine {
    public:
@@ -49,6 +50,7 @@ class Engine {
     Renderer& renderer;
     Resources& resources;
     Salvo& salvo;
+    Scenes& scenes;
 
     GameController game_controller;
 
