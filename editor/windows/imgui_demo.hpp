@@ -6,7 +6,7 @@ namespace tmt {
 class ImguiDemo : public IWindow {
    public:
     // Inherited via IWindow
-    std::string get_title() const override { return ICON_MS_BUG_REPORT " ImGui Demo"; }
+    std::string get_title() const override { return "Dear ImGui Demo"; }
     
     void display() override { ImGui::ShowDemoWindow(); }
 
