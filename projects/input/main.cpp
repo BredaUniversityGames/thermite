@@ -51,35 +51,37 @@ void Game::on_start() {
 void Game::on_update(const tmt::FrameData& time) {
     time_passed += time.delta_time;
 
-    // AI generated for testing inputs
-    //  Testing code here, please move when scenes can be added elegantly
-    if (tmt::engine.input.is_action_just_pressed("confirm")) {
+    // Button action tests using constexpr names
+    if (tmt::engine.input.is_action_just_pressed(tmt::action::CONFIRM)) {
         tmt::Log::info(tmt::Log::Scope::GAME, "Confirm action pressed!");
         tmt::engine.input.set_mouse_relative_to_window(true);
         tmt::Log::info(tmt::Log::Scope::GAME, "Cursor locked");
     }
-    if (tmt::engine.input.is_action_just_pressed("cancel")) {
+    if (tmt::engine.input.is_action_just_pressed(tmt::action::CANCEL)) {
         tmt::Log::info(tmt::Log::Scope::GAME, "Cancel action pressed!");
         tmt::engine.input.set_mouse_relative_to_window(false);
         tmt::Log::info(tmt::Log::Scope::GAME, "Cursor unlocked");
     }
-    if (tmt::engine.input.is_action_pressed("confirm")) {
+    if (tmt::engine.input.is_action_pressed(tmt::action::CONFIRM)) {
         tmt::Log::info(tmt::Log::Scope::GAME, "Confirm pressed continuously!");
     }
-    if (tmt::engine.input.is_action_just_released("confirm")) {
+    if (tmt::engine.input.is_action_just_released(tmt::action::CONFIRM)) {
         tmt::Log::info(tmt::Log::Scope::GAME, "Confirm released!");
     }
-    if (tmt::engine.input.is_action_just_pressed("left_click")) {
+
+    // Mouse button tests
+    if (tmt::engine.input.is_action_just_pressed(tmt::action::LEFT_CLICK)) {
         tmt::Log::info(tmt::Log::Scope::ENGINE, "Left click!");
     }
-    if (tmt::engine.input.is_action_just_released("right_click")) {
+    if (tmt::engine.input.is_action_just_released(tmt::action::RIGHT_CLICK)) {
         tmt::Log::info(tmt::Log::Scope::ENGINE, "Right click!");
     }
-    if (tmt::engine.input.is_action_pressed("middle_click")) {
+    if (tmt::engine.input.is_action_pressed(tmt::action::MIDDLE_CLICK)) {
         tmt::Log::info(tmt::Log::Scope::ENGINE, "Middle click!");
     }
+
     // Mouse motion test
-    if (tmt::engine.input.is_action_pressed("left_click")) {
+    if (tmt::engine.input.is_action_pressed(tmt::action::LEFT_CLICK)) {
         tmt::Log::info(
             tmt::Log::Scope::ENGINE, "Mouse moved: pos({}, {}) delta({}, {})", tmt::engine.input.get_mouse_x(), tmt::engine.input.get_mouse_y(), tmt::engine.input.get_mouse_delta_x(),
             tmt::engine.input.get_mouse_delta_y()
@@ -87,28 +89,25 @@ void Game::on_update(const tmt::FrameData& time) {
         tmt::Log::info(tmt::Log::Scope::ENGINE, "Mouse scroll wheel: wheel({}, {})", tmt::engine.input.get_mouse_wheel_x(), tmt::engine.input.get_mouse_wheel_y());
     }
 
-    // Gamepad tests
+    // Gamepad axes - comparing raw vs cooked (deadzone = 0.5)
+    float left_raw = tmt::engine.input.get_action_raw_strength(tmt::action::GAMEPAD_LEFT_STICK);
+    float left_cooked = tmt::engine.input.get_action_strength(tmt::action::GAMEPAD_LEFT_STICK);
 
-    // Gamepad axes (log when stick is moved past deadzone)
-    float lx = tmt::engine.input.get_gamepad_axis(tmt::GamepadAxis::LEFT_X);
-    float ly = tmt::engine.input.get_gamepad_axis(tmt::GamepadAxis::LEFT_Y);
-    float rx = tmt::engine.input.get_gamepad_axis(tmt::GamepadAxis::RIGHT_X);
-    float ry = tmt::engine.input.get_gamepad_axis(tmt::GamepadAxis::RIGHT_Y);
-    float lt = tmt::engine.input.get_gamepad_axis(tmt::GamepadAxis::LEFT_TRIGGER);
-    float rt = tmt::engine.input.get_gamepad_axis(tmt::GamepadAxis::RIGHT_TRIGGER);
+    float right_raw = tmt::engine.input.get_action_raw_strength(tmt::action::GAMEPAD_RIGHT_STICK);
+    float right_cooked = tmt::engine.input.get_action_strength(tmt::action::GAMEPAD_RIGHT_STICK);
 
-    constexpr float DEADZONE = 0.15f;
-    if (std::abs(lx) > DEADZONE || std::abs(ly) > DEADZONE) {
-        tmt::Log::info(tmt::Log::Scope::ENGINE, "Left stick: ({:.2f}, {:.2f})", lx, ly);
+    float trigger_raw = tmt::engine.input.get_action_raw_strength(tmt::action::GAMEPAD_TRIGGERS);
+    float trigger_cooked = tmt::engine.input.get_action_strength(tmt::action::GAMEPAD_TRIGGERS);
+
+    // Log when there's any input (raw > 0.1 to filter noise)
+    if (left_raw > 0.1f) {
+        tmt::Log::info(tmt::Log::Scope::ENGINE, "Left stick - raw: {:.2f}, cooked (>0.5): {:.2f}", left_raw, left_cooked);
     }
-    if (std::abs(rx) > DEADZONE || std::abs(ry) > DEADZONE) {
-        tmt::Log::info(tmt::Log::Scope::ENGINE, "Right stick: ({:.2f}, {:.2f})", rx, ry);
+    if (right_raw > 0.1f) {
+        tmt::Log::info(tmt::Log::Scope::ENGINE, "Right stick - raw: {:.2f}, cooked (>0.5): {:.2f}", right_raw, right_cooked);
     }
-    if (lt > DEADZONE) {
-        tmt::Log::info(tmt::Log::Scope::ENGINE, "Left trigger: {:.2f}", lt);
-    }
-    if (rt > DEADZONE) {
-        tmt::Log::info(tmt::Log::Scope::ENGINE, "Right trigger: {:.2f}", rt);
+    if (trigger_raw > 0.1f) {
+        tmt::Log::info(tmt::Log::Scope::ENGINE, "Triggers - raw: {:.2f}, cooked (>0.5): {:.2f}", trigger_raw, trigger_cooked);
     }
 
     // Gamepad buttons
@@ -133,5 +132,4 @@ void Game::on_update(const tmt::FrameData& time) {
     log_button(tmt::GamepadButton::DPAD_LEFT);
     log_button(tmt::GamepadButton::DPAD_RIGHT);
 }
-
 void Game::on_end() {}

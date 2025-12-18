@@ -202,16 +202,39 @@ bool Input::is_action_just_released(std::string_view name) const {
 
     return false;
 }
-float tmt::Input::get_action_strength(std::string_view name) { return 0.0f; }
+float tmt::Input::get_action_strength(std::string_view name) {
+    auto it = actions.find(std::string {name});
+    if (it == actions.end()) {
+        Log::warn(Log::Scope::ENGINE, "No input action found with this name {}", name);
+
+        return 0.0f;
+    }
+
+    // TODO inneficient in principle, could cache it once
+    float max_strength = 0.0f;
+    for (const auto& event : it->second.events) {
+        auto strength = event->get_action_strength();
+        if (strength < it->second.deadzone) {
+            continue;
+        }
+        max_strength = std::max(strength, max_strength);
+    }
+    return max_strength;
+}
 float tmt::Input::get_action_raw_strength(std::string_view name) {
     auto it = actions.find(std::string {name});
     if (it == actions.end()) {
         Log::warn(Log::Scope::ENGINE, "No input action found with this name {}", name);
 
-        return false;
+        return 0.0f;
     }
 
-    return 0.0f;
+    // TODO inneficient in principle, could cache it once
+    float max_strength = 0.0f;
+    for (const auto& event : it->second.events) {
+        max_strength = std::max(event->get_action_strength(), max_strength);
+    }
+    return max_strength;
 }
 void Input::set_mouse_relative_to_window(bool value) { SDL_SetWindowRelativeMouseMode(engine.window.window, value); }
 bool Input::get_mouse_relative_to_window() { return SDL_GetWindowRelativeMouseMode(engine.window.window); }

@@ -55,11 +55,10 @@ class Input {
         (action.events.push_back(std::make_unique<InputEventGamepadMotion>(axes)), ...);
     }
     void add_action_event(const std::string& name, std::unique_ptr<InputEvent> event);
-
     void add_key_to_action(const std::string& name, Key key);
     void add_action_mouse(const std::string& name, MouseButton button);
-    void remove_action(const std::string& name);
     void add_action_mouse_motion(const std::string& name);
+    void remove_action(const std::string& name);
 
     bool is_action_pressed(std::string_view name) const;
     bool is_action_just_pressed(std::string_view name) const;
