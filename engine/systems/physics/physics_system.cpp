@@ -154,7 +154,7 @@ void Physics::generate_voxel_constraints_range(const int index, const int size) 
             VoxelObject object {};
             object.local_to_world = transform.get_world_matrix();
             object.world_to_local = glm::inverse(object.local_to_world);
-            object.size = vb.resource.get()->size;  // glm::uvec3(vb.width * VOXELS_PER_UNIT, vb.height * VOXELS_PER_UNIT, vb.depth * VOXELS_PER_UNIT)  // vb.voxels.size;
+            object.size = vb.resource->size;  // glm::uvec3(vb.width * VOXELS_PER_UNIT, vb.height * VOXELS_PER_UNIT, vb.depth * VOXELS_PER_UNIT)  // vb.voxels.size;
             objects.push_back(std::move(object));
             entities.push_back(entity);
         }
@@ -418,8 +418,8 @@ bool Physics::is_separated(const glm::vec3& axis, const VoxelBody::Box& box_a, c
 }
 
 void Physics::check_neighbors(const VoxelBody& vb_a, const VoxelBody& vb_b, const size_t x, const size_t y, const size_t z, Collision& coll) const {
-    auto voxels_a = vb_a.resource.get();
-    auto voxels_b = vb_b.resource.get();
+    const auto& voxels_a = vb_a.resource.resource;
+    const auto& voxels_b = vb_b.resource.resource;
 
     const PhysicsVoxel* voxel_a = voxels_a->blas.get()->get_physics_voxel(x, y, z);  //.voxels.get_voxel(x, y, z);
     if (voxel_a == nullptr) return;
@@ -529,7 +529,7 @@ void Physics::initialize_voxel_body(VoxelBody& vb) {
     glm::vec3 sum = {};
     const glm::vec3 half_scale = glm::vec3(vb.width, vb.height, vb.depth) * 0.5f;
 
-    auto voxels = vb.resource.get();
+    const auto& voxels = vb.resource;
 
     for (size_t z = 0; z < voxels->size.z; z++) {
         for (size_t y = 0; y < voxels->size.y; y++) {

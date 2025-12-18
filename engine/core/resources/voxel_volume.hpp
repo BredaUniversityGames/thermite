@@ -30,4 +30,4 @@ class VoxelVolume : public tmt::RuntimeResource<VoxelScene> {
 
 }  // namespace tmt
 
-TMT_OBJECT(tmt::VoxelVolume, (size));
+TMT_OBJECT(tmt::VoxelVolume, (size, file_resource));

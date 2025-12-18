@@ -9,7 +9,7 @@
 #include "engine/core/components/all.hpp"
 #include "engine/core/logger.hpp"
 
-#include "engine/tools/serialize_defines.hpp"
+#include "engine/tools/serializer/all.hpp"
 
 #include "editor/editor.hpp"
 

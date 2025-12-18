@@ -2,6 +2,7 @@
 
 #include "engine/core/resource.hpp"
 #include "engine/shared/svt64.hpp"
+#include "engine/core/reflection.hpp"
 
 namespace tmt {
 
@@ -34,3 +35,6 @@ class VoxelScene : public tmt::FileResource {
 };
 
 }  // namespace tmt
+
+TMT_OBJECT(tmt::VoxelSceneNode, (size, children));
+TMT_OBJECT(tmt::VoxelScene, (hierarchy, file_location));
