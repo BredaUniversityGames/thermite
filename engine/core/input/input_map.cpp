@@ -25,12 +25,13 @@ void InputMap::setup_default_actions() {
     add_action(action::MOUSE_MOTION);
     add_action_mouse_motion(action::MOUSE_MOTION);
 
+    // SDL has inputs in opposite direction
     add_action(action::MOVE_LEFT);
     add_action_gamepad_axes(action::MOVE_LEFT, GamepadAxisDirection {.axis = GamepadAxis::LEFT_X, .negative = true});
     add_action_keys(action::MOVE_LEFT, Key::A);
 
     add_action(action::MOVE_RIGHT);
-    add_action_gamepad_axes(action::MOVE_RIGHT, GamepadAxisDirection {.axis = GamepadAxis::RIGHT_X});
+    add_action_gamepad_axes(action::MOVE_RIGHT, GamepadAxisDirection {.axis = GamepadAxis::LEFT_X});
     add_action_keys(action::MOVE_RIGHT, Key::D);
 
     add_action(action::MOVE_DOWN);
