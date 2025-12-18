@@ -14,7 +14,6 @@ class Inspector : public IWindow {
     void on_editor_update(const tmt::FrameData& time) override;
     void on_editor_end() override;
 
-
     struct MenuContext {
         const Entity primary_entity;
         const std::unordered_set<Entity>& selected_entities;

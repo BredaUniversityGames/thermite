@@ -35,4 +35,3 @@ class VoxelScene : public tmt::FileResource {
 };
 
 }  // namespace tmt
-
