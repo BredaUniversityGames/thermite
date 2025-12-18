@@ -24,9 +24,15 @@ bool tmt::InputEventGamepadButton::is_just_pressed() const { return engine.input
 bool tmt::InputEventGamepadButton::is_just_released() const { return engine.input.is_gamepad_button_just_released(button, device_id); }
 float tmt::InputEventGamepadButton::get_action_strength() const { return is_pressed() ? 1.0f : 0.0f; }
 
-bool tmt::InputEventGamepadMotion::is_pressed() const { return std::abs(get_axis_value()) > 0.5f; }
+bool tmt::InputEventGamepadMotion::is_pressed() const { return get_action_strength() > 0.0f; }
 bool tmt::InputEventGamepadMotion::is_just_pressed() const { return false; }
 bool tmt::InputEventGamepadMotion::is_just_released() const { return false; }
-float tmt::InputEventGamepadMotion::get_action_strength() const { return std::abs(engine.input.get_gamepad_axis(axis, device_id)); }
+float tmt::InputEventGamepadMotion::get_action_strength() const {
+    float raw = engine.input.get_gamepad_axis(axis, device_id);
+    if (negative) {
+        return std::max(0.0f, -raw);
+    }
+    return std::max(0.0f, raw);
+}
 
-float tmt::InputEventGamepadMotion::get_axis_value() const { return engine.input.get_gamepad_axis(axis, device_id); }
+float tmt::InputEventGamepadMotion::get_axis_value() const { return std::abs(engine.input.get_gamepad_axis(axis, device_id)); }

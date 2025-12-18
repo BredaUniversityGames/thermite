@@ -6,15 +6,23 @@
 
 namespace tmt {
 namespace action {
-constexpr const char* CONFIRM = "confirm";
-constexpr const char* CANCEL = "cancel";
-constexpr const char* LEFT_CLICK = "left_click";
-constexpr const char* RIGHT_CLICK = "right_click";
-constexpr const char* MIDDLE_CLICK = "middle_click";
-constexpr const char* MOUSE_MOTION = "mouse_motion";
-constexpr auto GAMEPAD_LEFT_STICK = "gamepad_left_stick";
-constexpr auto GAMEPAD_RIGHT_STICK = "gamepad_right_stick";
-constexpr auto GAMEPAD_TRIGGERS = "gamepad_triggers";
+constexpr auto CONFIRM = "confirm";
+constexpr auto CANCEL = "cancel";
+constexpr auto LEFT_CLICK = "left_click";
+constexpr auto RIGHT_CLICK = "right_click";
+constexpr auto MIDDLE_CLICK = "middle_click";
+constexpr auto MOUSE_MOTION = "mouse_motion";
+constexpr auto MOVE_UP = "move_up";
+constexpr auto MOVE_DOWN = "move_down";
+constexpr auto MOVE_RIGHT = "move_right";
+constexpr auto MOVE_LEFT = "move_left";
+constexpr auto LOOK_UP = "Look_up";
+constexpr auto LOOK_DOWN = "Look_down";
+constexpr auto LOOK_RIGHT = "Look_right";
+constexpr auto LOOK_LEFT = "Look_left";
+
+constexpr auto LEFT_TRIGGER = "left_trigger";
+constexpr auto RIGHT_TRIGGER = "right_trigger";
 }  // namespace action
 struct InputAction {
     std::vector<std::unique_ptr<InputEvent>> events;
@@ -33,10 +41,10 @@ class InputMap {
         auto& action = actions[name];
         (action.events.push_back(std::make_unique<InputEventGamepadButton>(buttons)), ...);
     }
-    template <typename... Axes>
-    void add_action_gamepad_axes(const std::string& name, Axes... axes) {
+    template <std::same_as<GamepadAxisDirection>... Args>
+    void add_action_gamepad_axes(const std::string& name, Args... axes) {
         auto& action = actions[name];
-        (action.events.push_back(std::make_unique<InputEventGamepadMotion>(axes)), ...);
+        (action.events.push_back(std::make_unique<InputEventGamepadMotion>(axes.axis, axes.negative)), ...);
     }
     void add_action_event(const std::string& name, std::unique_ptr<InputEvent> event);
     void add_key_to_action(const std::string& name, Key key);
@@ -47,6 +55,7 @@ class InputMap {
     const InputAction* get_action(std::string_view name) const;
     bool has_action(std::string_view name) const;
     float get_action_deadzone(std::string_view name) const;
+    void set_action_deadzone(std::string_view name, float deadzone);
 
    private:
     // to not break the whole codebase, these are still tighly coupled

@@ -88,26 +88,26 @@ void Game::on_update(const tmt::FrameData& time) {
         );
         tmt::Log::info(tmt::Log::Scope::ENGINE, "Mouse scroll wheel: wheel({}, {})", tmt::engine.input.get_mouse_wheel_x(), tmt::engine.input.get_mouse_wheel_y());
     }
-
-    // Gamepad axes - comparing raw vs cooked (deadzone = 0.5)
-    float left_raw = tmt::engine.input.get_action_raw_strength(tmt::action::GAMEPAD_LEFT_STICK);
-    float left_cooked = tmt::engine.input.get_action_strength(tmt::action::GAMEPAD_LEFT_STICK);
-
-    float right_raw = tmt::engine.input.get_action_raw_strength(tmt::action::GAMEPAD_RIGHT_STICK);
-    float right_cooked = tmt::engine.input.get_action_strength(tmt::action::GAMEPAD_RIGHT_STICK);
-
-    float trigger_raw = tmt::engine.input.get_action_raw_strength(tmt::action::GAMEPAD_TRIGGERS);
-    float trigger_cooked = tmt::engine.input.get_action_strength(tmt::action::GAMEPAD_TRIGGERS);
-
-    // Log when there's any input (raw > 0.1 to filter noise)
-    if (left_raw > 0.1f) {
-        tmt::Log::info(tmt::Log::Scope::ENGINE, "Left stick - raw: {:.2f}, cooked (>0.5): {:.2f}", left_raw, left_cooked);
+    float throttle = tmt::engine.input.get_axis(tmt::action::LEFT_TRIGGER, tmt::action::RIGHT_TRIGGER);
+    bool display_triggers = true;
+    if (std::abs(throttle) > 0.0f) {
+        tmt::Log::info(tmt::Log::Scope::GAME, "Throttle: {:.2f}", throttle);
+        display_triggers = false;
     }
-    if (right_raw > 0.1f) {
-        tmt::Log::info(tmt::Log::Scope::ENGINE, "Right stick - raw: {:.2f}, cooked (>0.5): {:.2f}", right_raw, right_cooked);
+
+    glm::vec2 move_dir = tmt::engine.input.get_vector(tmt::action::MOVE_LEFT, tmt::action::MOVE_RIGHT, tmt::action::MOVE_DOWN, tmt::action::MOVE_UP, 0.2f);
+    if (glm::length(move_dir) > 0.0f) {
+        float speed = 1.0f + throttle;  // 0 to 2 range (brake to sprint)
+        tmt::Log::info(tmt::Log::Scope::GAME, "Move: ({:.2f}, {:.2f}) speed: {:.2f}", move_dir.x, move_dir.y, speed);
     }
-    if (trigger_raw > 0.1f) {
-        tmt::Log::info(tmt::Log::Scope::ENGINE, "Triggers - raw: {:.2f}, cooked (>0.5): {:.2f}", trigger_raw, trigger_cooked);
+    glm::vec2 look_dir = tmt::engine.input.get_vector(tmt::action::LOOK_LEFT, tmt::action::LOOK_RIGHT, tmt::action::LOOK_DOWN, tmt::action::LOOK_UP, 0.2f);
+    if (glm::length(look_dir) > 0.0f) {
+        tmt::Log::info(tmt::Log::Scope::GAME, "Look: ({:.2f}, {:.2f})", look_dir.x, look_dir.y);
+    }
+    float left_trigger = tmt::engine.input.get_action_strength(tmt::action::LEFT_TRIGGER);
+    float right_trigger = tmt::engine.input.get_action_strength(tmt::action::RIGHT_TRIGGER);
+    if (display_triggers && (left_trigger > 0.0f || right_trigger > 0.0f)) {
+        tmt::Log::info(tmt::Log::Scope::GAME, "Triggers: L={:.2f} R={:.2f}", left_trigger, right_trigger);
     }
 
     // Gamepad buttons

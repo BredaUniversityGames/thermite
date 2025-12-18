@@ -1,4 +1,5 @@
 #pragma once
+
 #include <string>
 #include <memory>
 #include <unordered_map>
@@ -72,23 +73,6 @@ class Input {
     int32_t get_default_gamepad_id() const;
     void lock_mouse(bool value) const;
 
-    // forward call to the input map
-    void add_action(const std::string& name);
-    template <typename... Keys>
-    void add_action_keys(const std::string& name, Keys... keys) {
-        auto& action = input_map.actions[name];
-        (action.events.push_back(std::make_unique<InputEventKey>(keys)), ...);
-    }
-    template <typename... Buttons>
-    void add_action_gamepad_buttons(const std::string& name, Buttons... buttons) {
-        auto& action = input_map.actions[name];
-        (action.events.push_back(std::make_unique<InputEventGamepadButton>(buttons)), ...);
-    }
-    template <typename... Axes>
-    void add_action_gamepad_axes(const std::string& name, Axes... axes) {
-        auto& action = input_map.actions[name];
-        (action.events.push_back(std::make_unique<InputEventGamepadMotion>(axes)), ...);
-    }
     void add_action_event(const std::string& name, std::unique_ptr<InputEvent> event);
     void add_key_to_action(const std::string& name, Key key);
     void add_action_mouse(const std::string& name, MouseButton button);

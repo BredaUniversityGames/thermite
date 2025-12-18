@@ -169,7 +169,7 @@ bool Input::is_action_just_released(std::string_view name) const {
 
     return false;
 }
-float tmt::Input::get_action_strength(std::string_view name) {
+float Input::get_action_strength(std::string_view name) {
     auto it = engine.input_map.actions.find(std::string {name});
     if (it == engine.input_map.actions.end()) {
         Log::warn(Log::Scope::ENGINE, "No input action found with this name {}", name);
@@ -188,7 +188,7 @@ float tmt::Input::get_action_strength(std::string_view name) {
     }
     return max_strength;
 }
-float tmt::Input::get_action_raw_strength(std::string_view name) {
+float Input::get_action_raw_strength(std::string_view name) {
     auto it = engine.input_map.actions.find(std::string {name});
     if (it == engine.input_map.actions.end()) {
         Log::warn(Log::Scope::ENGINE, "No input action found with this name {}", name);
@@ -203,11 +203,9 @@ float tmt::Input::get_action_raw_strength(std::string_view name) {
     }
     return max_strength;
 }
-float tmt::Input::get_axis(std::string_view negative_action, std::string_view positive_action) { return get_action_strength(positive_action) - get_action_strength(negative_action); }
+float Input::get_axis(std::string_view negative_action, std::string_view positive_action) { return get_action_strength(positive_action) - get_action_strength(negative_action); }
 // https://github.com/godotengine/godot/blob/79603b2f28fdd8b0dce14064e488a3783d51d1ff/core/input/input.cpp#L548C1-L572C2
-glm::vec2 tmt::Input::get_vector(
-    std::string_view negative_action_x, std::string_view positive_action_x, std::string_view negative_action_y, std::string_view positive_action_y, float deadzone
-) {
+glm::vec2 Input::get_vector(std::string_view negative_action_x, std::string_view positive_action_x, std::string_view negative_action_y, std::string_view positive_action_y, float deadzone) {
     glm::vec2 vector {
         get_action_raw_strength(positive_action_x) - get_action_raw_strength(negative_action_x), get_action_raw_strength(positive_action_y) - get_action_raw_strength(negative_action_y)
     };

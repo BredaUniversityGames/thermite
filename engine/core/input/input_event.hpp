@@ -86,7 +86,7 @@ class InputEventGamepadButton : public InputEvent {
     float get_action_strength() const override;
 
     GamepadButton get_button() const { return button; }
-    void set_button(GamepadButton button) { button = button; }
+    void set_button(GamepadButton new_button) { button = new_button; }
 
     int32_t get_device_id() const { return device_id; }
     void set_device_id(int32_t new_device_id) { device_id = new_device_id; }
@@ -98,7 +98,7 @@ class InputEventGamepadButton : public InputEvent {
 
 class InputEventGamepadMotion : public InputEvent {
    public:
-    explicit InputEventGamepadMotion(GamepadAxis axis, int32_t device_id = -1) : axis(axis), device_id(device_id) {}
+    explicit InputEventGamepadMotion(GamepadAxis axis, bool negative = false, int32_t device_id = -1) : axis(axis), negative(negative), device_id(device_id) {}
 
     // TODO add a configurable way to define when an axis is pressed
     bool is_pressed() const override;
@@ -115,6 +115,7 @@ class InputEventGamepadMotion : public InputEvent {
 
    private:
     GamepadAxis axis;
+    bool negative = false;
     int32_t device_id = -1;
 };
 }  // namespace tmt
