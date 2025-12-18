@@ -3,10 +3,15 @@
 
 #include "engine/engine.hpp"
 #include "engine/core/renderer/renderer.hpp"
+#include "engine/core/logger.hpp"
 
 using namespace tmt;
 
-void NavMesh::generate_mesh(std::shared_ptr<tmt::VoxelVolume> voxel_volume, int lod_level) {
+void NavMesh::generate_mesh(std::shared_ptr<tmt::VoxelVolume> voxel_volume, glm::vec3 pivot, int lod_level) {
+    Log::warn("Volume size:  {}, {}, {}", voxel_volume->size.x, voxel_volume->size.y, voxel_volume->size.z);
+    Log::warn("Depth: {}", voxel_volume->blas->depth);
+    Log::warn("Voxel count: {}", voxel_volume->blas->voxel_count);
+
     nodes.clear();
 
     uint32_t full_depth = voxel_volume->blas->depth;
@@ -19,8 +24,14 @@ void NavMesh::generate_mesh(std::shared_ptr<tmt::VoxelVolume> voxel_volume, int 
     std::vector<bool> occupied(size.x * size.y * size.z, false);
 
     auto set_occupied = [&](glm::uvec3 pos) {
-        if (pos.x < size.x && pos.y < size.y && pos.z < size.z) occupied[pos.x + size.x * pos.y + size.x * size.y * pos.z] = true;
+        if (pos.x < size.x && pos.y < size.y && pos.z < size.z) {
+            occupied[pos.x + size.x * pos.y + size.x * size.y * pos.z] = true;
+        } else {
+            Log::warn(Log::Scope::ENGINE, "Rejected voxel at ({},{},{}) - size is ({},{},{})", pos.x, pos.y, pos.z, size.x, size.y, size.z);
+        }
     };
+
+    glm::vec3 pivot_grid = pivot / float(divisor);
 
     std::function<void(uint32_t, glm::uvec3, uint32_t, uint32_t)> traverse = [&](uint32_t node_idx, glm::uvec3 origin, uint32_t scale, uint32_t depth) {
         const auto& node = voxel_volume->blas->nodes[node_idx];
@@ -30,7 +41,7 @@ void NavMesh::generate_mesh(std::shared_ptr<tmt::VoxelVolume> voxel_volume, int 
         for (int i = 0; mask; ++i, mask >>= 1) {
             if (!(mask & 1)) continue;
 
-            glm::uvec3 local = {i & 3, (i >> 2) & 3, (i >> 4) & 3};
+            glm::uvec3 local = {i & 3, (i >> 4) & 3, (i >> 2) & 3};
             glm::uvec3 child_origin = origin + local * scale;
 
             // Stop early at target depth, or if we hit a leaf
@@ -46,14 +57,31 @@ void NavMesh::generate_mesh(std::shared_ptr<tmt::VoxelVolume> voxel_volume, int 
     uint32_t scale = 1u << ((full_depth - 1) * 2);
     traverse(0, {0, 0, 0}, scale, 1);
 
-
     // Helper lambda
     auto voxel_empty = [&](uint32_t x, uint32_t y, uint32_t z) { return !occupied[x + size.x * y + size.x * size.y * z]; };
+
+
+    Log::warn(Log::Scope::ENGINE, "Grid size: ({},{},{})", size.x, size.y, size.z);
+
+    for (uint32_t z = 0; z < size.z; z++) {
+        uint32_t count = 0;
+        for (uint32_t y = 0; y < size.y; y++) {
+            for (uint32_t x = 0; x < size.x; x++) {
+                if (!voxel_empty(x, y, z)) count++;
+            }
+        }
+        Log::warn(Log::Scope::ENGINE, "Layer z={}: {} occupied", z, count);
+    }
+
+
+
     // Initialize data vector
     auto data = std::vector<NavVoxel>(size.x * size.y * size.z);
     std::unordered_map<uint32_t, int> node_map;
 
-    const float scale_factor = 0.5f;
+    constexpr float voxel_scale = 0.1f;               // 1/10 = 0.1 units per voxel
+    float cell_scale = voxel_scale * float(divisor);  // size of one LOD cell in world units
+    glm::vec3 grid_size = glm::vec3(size);  // LOD grid dimensions
 
     for (uint32_t z = 0; z < size.z; z++) {
         for (uint32_t y = 0; y < size.y; y++) {
@@ -81,9 +109,15 @@ void NavMesh::generate_mesh(std::shared_ptr<tmt::VoxelVolume> voxel_volume, int 
                 if (node_map.contains(pos_index)) {
                     node_index = node_map[pos_index];
                 } else {
-                    // Create node
                     Node node;
-                    node.local_pos = glm::vec3(x * scale_factor - size.x * 0.25f, z * scale_factor - size.y * 0.25f, y * scale_factor - size.z * 0.25f);
+                    glm::vec3 grid_pos = glm::vec3(x, y, z) + 0.5f;
+                    glm::vec3 centered = grid_pos - grid_size * 0.5f;
+                    node.local_pos = glm::vec3(centered.x * cell_scale, centered.y * cell_scale, centered.z * cell_scale);
+
+                    //glm::vec3 grid_pos = glm::vec3(x, y, z) + 0.5f;
+                    //glm::vec3 centered = grid_pos - pivot_grid;
+                    //node.local_pos = glm::vec3(centered.x * cell_scale - size.x / 1, centered.z * cell_scale - size.z / 1, centered.y * cell_scale - size.y * 1);
+
                     node_map[pos_index] = (int)nodes.size();
                     node_index = (int)nodes.size();
                     nodes.push_back(node);
@@ -101,7 +135,13 @@ void NavMesh::generate_mesh(std::shared_ptr<tmt::VoxelVolume> voxel_volume, int 
                                 connecting_node_index = node_map[connecting_pos_index];
                             } else {
                                 Node node;
-                                node.local_pos = glm::vec3(x * scale_factor - size.x * 0.25f, z * scale_factor - size.y * 0.25f, y * scale_factor - size.z * 0.25f);
+                                glm::vec3 grid_pos = glm::vec3(x, y, z) + 0.5f;
+                                glm::vec3 centered = grid_pos - grid_size * 0.5f;
+                                node.local_pos = glm::vec3(centered.x * cell_scale, centered.y * cell_scale, centered.z * cell_scale);
+
+                                //glm::vec3 grid_pos = glm::vec3(x, y, z) + 0.5f;
+                                //glm::vec3 centered = grid_pos - pivot_grid;
+                                //node.local_pos = glm::vec3(centered.x * cell_scale - size.x / 1, centered.z * cell_scale - size.z / 1, centered.y * cell_scale - size.y * 1);
                                 node_map[connecting_pos_index] = (int)nodes.size();
                                 connecting_node_index = (int)nodes.size();
                                 nodes.push_back(node);
