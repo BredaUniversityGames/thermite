@@ -56,7 +56,7 @@ void Game::on_start() {
 
     { /* Voxel entity */
         voxel = tmt::engine.ecs.create_entity("Moving Voxel");
-        auto& transform = tmt::engine.ecs.add_component<tmt::Transform>(voxel);
+        auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(voxel);
         auto& renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(voxel);
         // renderer.size = glm::uvec3(64u, 64u, 64u);
         transform.set_world_position(glm::vec3(2.0f, 2.0f, 0.0f));
