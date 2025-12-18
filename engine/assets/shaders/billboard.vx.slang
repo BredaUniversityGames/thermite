@@ -27,7 +27,7 @@ VertexOutput main(VertexInput input, uint instance_id: SV_InstanceID) {
     float3 cam_up = normalize(float3(gpu_view.inv_view[0][1], gpu_view.inv_view[1][1], gpu_view.inv_view[2][1]));
 
     Billboard b = billboards[instance_id];
-    float3 world_pos = b.pos + 
+    float3 world_pos = b.pos +  
                        cam_right * input.quad_pos.x * b.size + 
                        cam_up * input.quad_pos.y * b.size;
 

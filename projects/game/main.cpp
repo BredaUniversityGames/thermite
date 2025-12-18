@@ -3,6 +3,7 @@
 #include "engine/core/resources.hpp"
 #include "engine/core/resources/voxel_volume.hpp"
 #include "engine/core/components/transform.hpp"
+#include "engine/core/components/emitter.hpp"
 #include "engine/core/components/camera.hpp"
 #include "engine/core/components/voxel_renderer.hpp"
 #include "engine/core/input/input.hpp"
@@ -85,6 +86,16 @@ void DragonScene::on_start() {
     }
 
     generate_random_entities(voxel_volume);
+
+    auto entity = tmt::engine.ecs.create_entity();
+    auto& transform = tmt::engine.ecs.add_component<tmt::Transform>(entity);
+    auto& emitter = tmt::engine.ecs.add_component<tmt::ParticleEmitter>(entity);
+    emitter.start_color = {1.0f, 0.0f, 0.0f, 1.0f};
+    emitter.end_color = {1.0f, 0.0f, 1.0f, 1.0f};
+    emitter.start_pos = {0.0f, 1.0f, 1.0f};
+    emitter.end_pos = {5.0f, 3.0f, 0.0f};
+    emitter.particle_lifetime = 10.0f;
+    emitter.particles = 32;
 }
 
 void DragonScene::on_update(const tmt::FrameData& time) {
