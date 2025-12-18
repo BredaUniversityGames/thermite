@@ -150,6 +150,7 @@ void Physics::generate_voxel_constraints_range(const int index, const int size) 
     {
         TMT_ZONE_SCOPED_N("Physics BVH Build")
         for (auto&& [entity, vb, transform] : group.each()) {
+            if (vb.resource == nullptr) continue;
             /* Convert the entity to a voxel object */
             VoxelObject object {};
             object.local_to_world = transform.get_world_matrix();
@@ -175,6 +176,7 @@ void Physics::generate_voxel_constraints_range(const int index, const int size) 
             curr++;
             if (curr < min || curr >= max) continue;
             if (vb.type == VoxelBody::STATIC || vb.type == VoxelBody::SLEEPING) continue;
+            if (vb.resource == nullptr) continue;
 
             // Get current AABB
             Aabb current_aabb = vb.aabb();

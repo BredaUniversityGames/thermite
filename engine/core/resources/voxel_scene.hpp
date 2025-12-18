@@ -36,5 +36,3 @@ class VoxelScene : public tmt::FileResource {
 
 }  // namespace tmt
 
-TMT_OBJECT(tmt::VoxelSceneNode, (size, children));
-TMT_OBJECT(tmt::VoxelScene, (hierarchy, file_location));

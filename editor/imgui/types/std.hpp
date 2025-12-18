@@ -16,6 +16,7 @@ void tag_invoke(ImReflect::ImInput_t, const char* label, const ExactlyPath auto&
     ImReflect::Input(label, str, settings, response);
 }
 
+/*
 void tag_invoke(ImReflect::ImInput_t, const char* label, std::vector<tmt::VoxelSceneNode>& value, ImSettings& settings, ImResponse& response) {
     constexpr bool is_const = false;
     constexpr bool allow_insert = false;
@@ -39,3 +40,4 @@ void tag_invoke(ImReflect::ImInput_t, const char* label, const std::vector<tmt::
         label, value, settings, response
     );
 }
+*/

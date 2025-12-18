@@ -71,4 +71,4 @@ struct VoxelBody {
 
 }  // namespace tmt
 
-TMT_OBJECT(tmt::VoxelBody, (type, resource));
+TMT_COMPONENT(tmt::VoxelBody, "Voxel Body", (resource, type, gravity));
