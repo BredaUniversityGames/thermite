@@ -61,8 +61,8 @@ class ResourceRef {
     using ResourceType = T;
 
     ResourceRef() = default;
-    ResourceRef(const IO::FileLocation& file_location) : file_location(file_location), resource(nullptr) {}
-    ResourceRef(const IO::FileLocation& file_location, std::shared_ptr<T> resource) : file_location(file_location), resource(std::move(resource)) {}
+    ResourceRef(IO::FileLocation file_location) : file_location(std::move(file_location)), resource(nullptr) {}
+    ResourceRef(IO::FileLocation file_location, std::shared_ptr<T> resource) : file_location(std::move(file_location)), resource(std::move(resource)) {}
 
     IO::FileLocation file_location;
     std::shared_ptr<T> resource = nullptr;
