@@ -46,6 +46,7 @@ class Engine {
     Audio& audio;
 
     Input& input;
+    InputMap& input_map;
     Ecs& ecs;
     Renderer& renderer;
     Resources& resources;
