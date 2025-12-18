@@ -8,6 +8,7 @@
 struct FMOD_GUID;
 struct FMOD_STUDIO_PARAMETER_ID;
 
+// NOLINTBEGIN(readability-identifier-naming)
 namespace FMOD {
 
 class System;
@@ -23,6 +24,7 @@ class EventDescription;
 }  // namespace Studio
 
 }  // namespace FMOD
+// NOLINTEND(readability-identifier-naming)
 
 namespace tmt {
 
