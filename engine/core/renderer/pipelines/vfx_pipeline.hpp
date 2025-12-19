@@ -9,17 +9,17 @@ class RenderGraph;
 
 namespace tmt {
 
-constexpr uint32_t MAX_PARTICLES = 2048;
+constexpr uint32_t MAX_PARTICLES = 100'000;
 
 struct GpuEmitter {
-    glm::vec4 start_color {};
-    glm::vec4 end_color {};
-
     glm::vec3 pos {};
     float particle_lifetime {};
 
-    glm::vec3 velocity_min {};
-    float velocity_max {};
+    glm::vec3 dir {};
+    float cone_angle {};
+
+    float min_speed {};
+    float max_speed {};
     uint32_t spawn_count {};
 };
 

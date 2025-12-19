@@ -31,6 +31,7 @@ class DragonScene : public tmt::Scene<DragonScene> {
     void on_end() override;
 
     tmt::Entity voxel {};
+    tmt::Entity emitter {};
     float elapsed_time = 0.0f;
 };
 
@@ -87,16 +88,16 @@ void DragonScene::on_start() {
 
     generate_random_entities(voxel_volume);
 
-    auto entity = tmt::engine.ecs.create_entity();
-    auto& transform = tmt::engine.ecs.add_component<tmt::Transform>(entity);
-    auto& emitter = tmt::engine.ecs.add_component<tmt::ParticleEmitter>(entity);
-    emitter.start_color = {1.0f, 0.0f, 0.0f, 1.0f};
-    emitter.end_color = {1.0f, 0.0f, 1.0f, 1.0f};
-    emitter.pos = {0.0f, 6.0f, 1.0f};
-    emitter.velocity_min = {2.0f, 2.0f, 2.0f};
-    emitter.velocity_max = 7.0f;
-    emitter.particle_lifetime = 4.0f;
-    emitter.spawn_count = 512;
+    emitter = tmt::engine.ecs.create_entity();
+    auto& transform = tmt::engine.ecs.add_component<tmt::Transform>(emitter);
+    auto& p_emitter = tmt::engine.ecs.add_component<tmt::ParticleEmitter>(emitter);
+    p_emitter.pos = transform.get_world_position();
+    p_emitter.dir = {0.0f, 1.0f, 0.0f};
+    p_emitter.cone_angle = 25.0f;
+    p_emitter.min_speed = 2.0f;
+    p_emitter.max_speed = 7.0f;
+    p_emitter.particle_lifetime = 1.0f;
+    p_emitter.spawn_count = 500;
 }
 
 void DragonScene::on_update(const tmt::FrameData& time) {
@@ -106,6 +107,11 @@ void DragonScene::on_update(const tmt::FrameData& time) {
     transform.set_world_position(glm::vec3(1.0f, sinf(elapsed_time), 1.0f));
     transform.set_world_rotation(glm::vec3(sinf(elapsed_time), cosf(elapsed_time), 0.0f));
     transform.set_world_scale(glm::vec3(1.0f, 1.5f + sinf(elapsed_time), 1.0f));
+
+    /* Emitter Update */
+    auto& e_transform = tmt::engine.ecs.get_component<tmt::Transform>(emitter);
+    auto& p_emitter = tmt::engine.ecs.get_component<tmt::ParticleEmitter>(emitter);
+    p_emitter.pos = e_transform.get_world_position();
 
     if (tmt::engine.input.is_keyboard_button_released(tmt::Key::SPACE)) {
         tmt::engine.scenes.enqueue_scene<TableScene>();

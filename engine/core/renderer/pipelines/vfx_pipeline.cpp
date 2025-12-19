@@ -50,7 +50,7 @@ void VfxPipeline::init(GPUAdapter& gpu) {
         uint32_t arr[MAX_PARTICLES] {};
         size_t size = sizeof(uint32_t) * MAX_PARTICLES;
         memset(&arr, 0, size);
-
+        
         bank.upload_buffer(alive_list, &arr, 0, size);
         bank.upload_buffer(alive_list_new, &arr, 0, size);
     }
@@ -134,6 +134,7 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
     VRAMBank& bank = engine.renderer.vram_bank();
 
     const BindHandle render_image = render_view.get_render_image();
+    std::swap(alive_list, alive_list_new);
 
     /* clang-format off */
     const entt::basic_group group = engine.ecs.get_registry().group<ParticleEmitter>(entt::get<Transform>);
@@ -142,11 +143,11 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
         if (!emitter.active) continue;
 
         GpuEmitter em {};
-        em.start_color = emitter.start_color;
-        em.end_color = emitter.end_color;
         em.pos = emitter.pos;
-        em.velocity_max = emitter.velocity_max;
-        em.velocity_min = emitter.velocity_min;
+        em.dir = glm::normalize(emitter.dir);
+        em.cone_angle = glm::radians(emitter.cone_angle);
+        em.max_speed = emitter.max_speed;
+        em.min_speed = emitter.min_speed;
         em.particle_lifetime = emitter.particle_lifetime;
         em.spawn_count = emitter.spawn_count;
         
@@ -161,8 +162,6 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
                     .write(particle_buffer)
                     .group_size(64, 1, 1)
                     .work_size(emitter.spawn_count, 1, 1);
-
-        emitter.active = false;
     }
 
     render_graph.add_compute_pass("Particle Begin Update", "particle_begin_update.cs")
@@ -178,7 +177,6 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
                 .write(alive_list_new)
                 .write(dead_list)
                 .write(counter_buffer)
-                //.write(billboard_vertices)
                 .indirect_size(dispatch_args_buffer);
 
     render_graph.add_compute_pass("Particle End Update", "particle_end_update.cs")
@@ -187,7 +185,6 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
                 .group_size(1, 1, 1)
                 .work_size(1, 1, 1);
 
-    std::swap(alive_list, alive_list_new);
 
     const glm::uvec2 render_res = render_view.gpu_view.resolution;
     RasterNode& line_pass = render_graph.add_raster_pass("billboard pass", "billboard.vx", "billboard.px")
