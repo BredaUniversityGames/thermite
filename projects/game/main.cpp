@@ -56,8 +56,8 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     tmt::engine.ecs.systems.add<tmt::CameraSystem>();
 
     /* Register Scenes */
-    tmt::engine.scenes.register_scene<TableScene>();
     tmt::engine.scenes.register_scene<DragonScene>();
+    tmt::engine.scenes.register_scene<TableScene>();
 
     return std::make_unique<Game>(specs);
 }
@@ -70,7 +70,7 @@ void DragonScene::on_start() {
         tmt::Entity entity = tmt::engine.ecs.create_entity("Camera");
         auto& transform = tmt::engine.ecs.add_component<tmt::Transform>(entity);
         auto& camera = tmt::engine.ecs.add_component<tmt::Camera>(entity);
-        transform.set_world_position(glm::vec3(0.0f, 0.25f, -5.0f));
+        transform.set_world_position(glm::vec3(0.0f, 0.25f, -10.0f));
     }
 
     auto voxel_file = tmt::engine.resources.load_resource<tmt::VoxelScene>({tmt::IO::Location::PROJECT, "dragon128.vengi"});
@@ -92,10 +92,11 @@ void DragonScene::on_start() {
     auto& emitter = tmt::engine.ecs.add_component<tmt::ParticleEmitter>(entity);
     emitter.start_color = {1.0f, 0.0f, 0.0f, 1.0f};
     emitter.end_color = {1.0f, 0.0f, 1.0f, 1.0f};
-    emitter.start_pos = {0.0f, 1.0f, 1.0f};
-    emitter.end_pos = {10.0f, 0.0f, 10.0f};
-    emitter.particle_lifetime = 100.0f;
-    emitter.particles = 64;
+    emitter.pos = {0.0f, 6.0f, 1.0f};
+    emitter.velocity_min = {2.0f, 2.0f, 2.0f};
+    emitter.velocity_max = 7.0f;
+    emitter.particle_lifetime = 4.0f;
+    emitter.spawn_count = 512;
 }
 
 void DragonScene::on_update(const tmt::FrameData& time) {

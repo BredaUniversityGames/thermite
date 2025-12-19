@@ -117,38 +117,52 @@ void VfxPipeline::init(GPUAdapter& gpu) {
     }
 
     /* Initialize the Billboard Vertex Buffer */
-    if (const Result r = bank.create_buffer(BufferUsage::Vertex | BufferUsage::Storage | BufferUsage::TransferDst, MAX_PARTICLES * 6, sizeof(glm::vec4)); r.is_err()) {
+    if (const Result r = bank.create_buffer(BufferUsage::Vertex /*| BufferUsage::Storage*/ | BufferUsage::TransferDst, 6, sizeof(glm::vec2)); r.is_err()) {
         Log::error(Log::Scope::RENDERER, "failed to initialise billboard vertex buffer.\nreason: {}", r.unwrap_err().c_str());
         return;
     } else
         billboard_vertices = r.unwrap();
+
+    glm::vec2 quad[6] = {
+        {-0.5f, -0.5f}, {0.5f, -0.5f}, {0.5f, 0.5f}, {-0.5f, -0.5f}, {0.5f, 0.5f}, {-0.5f, 0.5f},
+    };
+
+    bank.upload_buffer(billboard_vertices, &quad, 0, sizeof(glm::vec2) * 6);
 }
 
-static bool flag = true;
-
 void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
-
     VRAMBank& bank = engine.renderer.vram_bank();
 
     const BindHandle render_image = render_view.get_render_image();
 
     /* clang-format off */
-    if (flag) {
-        const entt::basic_group group = engine.ecs.get_registry().group<const ParticleEmitter>(entt::get<Transform>);
-        for (auto&& [entity, emitter, transform] : group.each()) {
-            render_graph.upload_buffer(emitter_buffer, &emitter, 0, sizeof(ParticleEmitter));
+    const entt::basic_group group = engine.ecs.get_registry().group<ParticleEmitter>(entt::get<Transform>);
+    for (auto&& [entity, emitter, transform] : group.each()) {
+        /* Skip inactive emitters */
+        if (!emitter.active) continue;
 
-            render_graph.add_compute_pass("Emit Particles", "emit.cs")
-                        .read(emitter_buffer)
-                        .write(counter_buffer)
-                        .write(alive_list)
-                        .write(alive_list_new)
-                        .write(dead_list)
-                        .write(particle_buffer)
-                        .group_size(64, 1, 1)
-                        .work_size(emitter.particles, 1, 1);
-        }
-        //flag = false;
+        GpuEmitter em {};
+        em.start_color = emitter.start_color;
+        em.end_color = emitter.end_color;
+        em.pos = emitter.pos;
+        em.velocity_max = emitter.velocity_max;
+        em.velocity_min = emitter.velocity_min;
+        em.particle_lifetime = emitter.particle_lifetime;
+        em.spawn_count = emitter.spawn_count;
+        
+        render_graph.upload_buffer(emitter_buffer, &em, 0, sizeof(GpuEmitter));
+
+        render_graph.add_compute_pass("Emit Particles", "emit.cs")
+                    .read(emitter_buffer)
+                    .write(counter_buffer)
+                    .write(alive_list)
+                    .write(alive_list_new)
+                    .write(dead_list)
+                    .write(particle_buffer)
+                    .group_size(64, 1, 1)
+                    .work_size(emitter.spawn_count, 1, 1);
+
+        emitter.active = false;
     }
 
     render_graph.add_compute_pass("Particle Begin Update", "particle_begin_update.cs")
@@ -164,7 +178,7 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
                 .write(alive_list_new)
                 .write(dead_list)
                 .write(counter_buffer)
-                .write(billboard_vertices)
+                //.write(billboard_vertices)
                 .indirect_size(dispatch_args_buffer);
 
     render_graph.add_compute_pass("Particle End Update", "particle_end_update.cs")
@@ -173,17 +187,19 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
                 .group_size(1, 1, 1)
                 .work_size(1, 1, 1);
 
+    std::swap(alive_list, alive_list_new);
+
     const glm::uvec2 render_res = render_view.gpu_view.resolution;
     RasterNode& line_pass = render_graph.add_raster_pass("billboard pass", "billboard.vx", "billboard.px")
                                 .topology(Topology::TriangleList)
-                                .attribute(AttrFormat::XYZW32_SFloat)  // Position
+                                .attribute(AttrFormat::XY32_SFloat)  // Position
                                 .read(render_view.gpu_view_buffer, ShaderStages::Vertex)
+                                .read(particle_buffer, ShaderStages::Vertex)
+                                .read(alive_list, ShaderStages::Vertex)
                                 .load_op(LoadOp::Load)
                                 .attach(render_image)
                                 .raster_extent(render_res.x, render_res.y);
     line_pass.draw_indirect(billboard_vertices, instanced_draw_args_buffer);
-
-    std::swap(alive_list, alive_list_new);
 
     /* clang-format on */
 }

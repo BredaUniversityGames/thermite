@@ -96,7 +96,7 @@ void RenderView::update_gpu_view(RenderGraph& render_graph, const Camera& camera
     render_graph.upload_buffer(gpu_view_buffer, &gpu_view, 0u, sizeof(GpuView));
 
     Utils utils {};
-    utils.dt = engine.get_dt();
+    utils.dt = engine.dt;
 
     render_graph.upload_buffer(utils_buffer, &utils, 0u, sizeof(Utils));
 }

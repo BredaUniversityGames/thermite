@@ -6,6 +6,7 @@
 #include "engine/core/components/name.hpp"
 #include "engine/core/components/voxel_renderer.hpp"
 #include "engine/core/components/camera.hpp"
+#include "engine/core/components/emitter.hpp"
 
 namespace tmt {
 
@@ -15,7 +16,8 @@ using AllComponents = ComponentRegistry<
 	Name, 
 	Transform, 
 	VoxelRenderer, 
-	Camera
+	Camera,
+	ParticleEmitter
 >;
 // clang-format on
 }  // namespace tmt

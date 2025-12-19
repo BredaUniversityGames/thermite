@@ -98,6 +98,7 @@ void Engine::run() {
         input.update();
 
         const FrameData frame_data = {.delta_time = timer.tick()};
+        dt = frame_data.delta_time;
 
         const bool should_update = game_controller.is_playing() && !game_controller.is_paused();
         /* Update */

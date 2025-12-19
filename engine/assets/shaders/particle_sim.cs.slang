@@ -1,9 +1,9 @@
 struct Particle {
     float3 pos;
-    float speed;
+    float age;
 
-    float3 dir;
-    float life;
+    float3 velocity;
+    float lifetime;
 };
 
 struct Counters {
@@ -34,7 +34,9 @@ RWStructuredBuffer<uint32_t> alive_list_new;
 RWStructuredBuffer<uint32_t> dead_list;
 RWStructuredBuffer<Counters> counters;
 
-RWStructuredBuffer<float4> vertex_positions;
+//RWStructuredBuffer<float4> vertex_positions;
+
+static const float3 GRAVITY = float3(0, -9.81f, 0);
 
 [shader("compute")]
 [numthreads(256, 1, 1)]
@@ -44,25 +46,22 @@ void main(uint3 thread_id: SV_DispatchThreadID) {
         return;
 
     uint32_t particle_index = alive_list[thread_id.x];
-    Particle particle = particles[particle_index];
+    Particle p = particles[particle_index];
     uint32_t v0 = particle_index * 6;
 
-    if (particle.life > 0) {
-        particle.life -= utils.dt;
+    p.age += utils.dt;
 
-        particle.pos += particle.dir * particle.speed * utils.dt;
+    if (p.age < p.lifetime) {
+        // p.velocity += GRAVITY * utils.dt;
+        p.pos += p.velocity * utils.dt;
 
-        particles[particle_index] = particle;
+        particles[particle_index] = p;
 
         uint32_t new_alive_index;
         InterlockedAdd<uint32_t>(counters[0].alive_count_after_sim, 1, new_alive_index);
         alive_list_new[new_alive_index] = particle_index;
 
         InterlockedAdd(counters[0].draw_count, 1);
-
-        for (uint32_t vertex_id = 0; vertex_id < 6; ++vertex_id) {
-            vertex_positions[v0 + vertex_id] = float4(particle.pos, 0.0f);
-        }
     }
     else {
         uint32_t dead_index;

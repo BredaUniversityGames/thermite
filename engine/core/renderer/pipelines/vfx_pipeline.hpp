@@ -9,18 +9,33 @@ class RenderGraph;
 
 namespace tmt {
 
-constexpr uint32_t MAX_PARTICLES = 100;
+constexpr uint32_t MAX_PARTICLES = 2048;
+
+struct GpuEmitter {
+    glm::vec4 start_color {};
+    glm::vec4 end_color {};
+
+    glm::vec3 pos {};
+    float particle_lifetime {};
+
+    glm::vec3 velocity_min {};
+    float velocity_max {};
+    uint32_t spawn_count {};
+};
 
 struct GpuParticle {
-    glm::vec4 color {};
     glm::vec3 pos {};
+    float age {};
+
+    glm::vec3 velocity {};
+    float lifetime {};
 };
 
 struct Counters {
     uint32_t alive_count {};
     uint32_t alive_count_after_sim {};
     uint32_t dead_count {};
-    uint32_t draw_count {}; // Amount of particles to be drawed
+    uint32_t draw_count {};  // Amount of particles to be drawed
 };
 
 struct Billboard {
