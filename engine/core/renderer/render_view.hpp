@@ -27,6 +27,10 @@ struct GpuView {
     glm::uvec2 resolution {1, 1};
 };
 
+struct Utils {
+    float dt {};
+};
+
 class RenderView {
    public:
     RenderView() = default;
@@ -50,6 +54,7 @@ class RenderView {
     RenderTarget render_target {};
 
     Buffer gpu_view_buffer {};
+    Buffer utils_buffer {};
 
     GpuView gpu_view {};
 };

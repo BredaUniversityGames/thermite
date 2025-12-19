@@ -42,7 +42,7 @@ void main(uint3 thread_id: SV_DispatchThreadID) {
     particle.dir = normalize(emitter.end_pos - emitter.start_pos);
     particle.life = emitter.lifetime;
     particle.pos = emitter.start_pos;
-    particle.speed = 4.0f;
+    particle.speed = 0.1f;
 
     uint32_t count_dead;
     InterlockedAdd<uint32_t>(counters[0].dead_count, -1, count_dead);

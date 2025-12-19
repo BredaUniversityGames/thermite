@@ -8,9 +8,10 @@
 #include "engine.hpp"
 #include "renderer.hpp"
 
-#include "core/logger.hpp"
-#include "core/window.hpp"
 #include "core/ecs.hpp"
+#include "core/timer.hpp"
+#include "core/window.hpp"
+#include "core/logger.hpp"
 
 #include "core/components/camera.hpp"
 #include "core/components/transform.hpp"
@@ -52,6 +53,14 @@ void RenderView::init() {
     } else {
         gpu_view_buffer = r.unwrap();
     }
+
+    /* Create the active render view buffer */
+    if (const Result r = bank.create_buffer(BufferUsage::Constant | BufferUsage::TransferDst, sizeof(Utils)); r.is_err()) {
+        Log::error(Log::Scope::RENDERER, "failed to create utils buffer.\nreason: {}", r.unwrap_err().c_str());
+        return;
+    } else {
+        utils_buffer = r.unwrap();
+    }
 }
 
 void RenderView::update() {
@@ -85,11 +94,17 @@ void RenderView::update_gpu_view(RenderGraph& render_graph, const Camera& camera
 
     /* Upload the active render view */
     render_graph.upload_buffer(gpu_view_buffer, &gpu_view, 0u, sizeof(GpuView));
+
+    Utils utils {};
+    utils.dt = engine.get_dt();
+
+    render_graph.upload_buffer(utils_buffer, &utils, 0u, sizeof(Utils));
 }
 
 void RenderView::deinit() {
     VRAMBank& bank = engine.renderer.vram_bank();
 
+    bank.destroy(utils_buffer);
     bank.destroy(gpu_view_buffer);
     bank.destroy(viewport_texture);
     bank.destroy(viewport_image);

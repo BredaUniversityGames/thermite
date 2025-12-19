@@ -117,66 +117,73 @@ void VfxPipeline::init(GPUAdapter& gpu) {
     }
 
     /* Initialize the Billboard Vertex Buffer */
-    if (const Result r = bank.create_buffer(BufferUsage::Vertex | BufferUsage::TransferDst, 6, sizeof(glm::vec2)); r.is_err()) {
+    if (const Result r = bank.create_buffer(BufferUsage::Vertex | BufferUsage::Storage | BufferUsage::TransferDst, MAX_PARTICLES * 6, sizeof(glm::vec4)); r.is_err()) {
         Log::error(Log::Scope::RENDERER, "failed to initialise billboard vertex buffer.\nreason: {}", r.unwrap_err().c_str());
         return;
     } else
         billboard_vertices = r.unwrap();
-
-    /* Initialize the Billboards Buffer */
-    if (const Result r = bank.create_buffer(BufferUsage::Storage | BufferUsage::TransferDst, 1, sizeof(Billboard)); r.is_err()) {
-        Log::error(Log::Scope::RENDERER, "failed to initialise billboards buffer.\nreason: {}", r.unwrap_err().c_str());
-        return;
-    } else
-        billboards = r.unwrap();
-
-    glm::vec2 vertices[6] = {
-        {-0.5f, -0.5f}, {0.5f, -0.5f}, {0.5f, 0.5f},
-
-        {-0.5f, -0.5f}, {0.5f, 0.5f},  {-0.5f, 0.5f},
-    };
-    bank.upload_buffer(billboard_vertices, &vertices, 0, sizeof(vertices));
 }
 
-static Billboard billboard {};
+static bool flag = true;
 
 void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
-    billboard.color = {1, 0, 0, 1};
-    billboard.pos = {0, 4, 0};
-    billboard.size = 1.0f;
 
     VRAMBank& bank = engine.renderer.vram_bank();
 
-    render_graph.upload_buffer(billboards, &billboard, 0, sizeof(billboard));
-
     const BindHandle render_image = render_view.get_render_image();
+
     /* clang-format off */
+    if (flag) {
+        const entt::basic_group group = engine.ecs.get_registry().group<const ParticleEmitter>(entt::get<Transform>);
+        for (auto&& [entity, emitter, transform] : group.each()) {
+            render_graph.upload_buffer(emitter_buffer, &emitter, 0, sizeof(ParticleEmitter));
 
-    const entt::basic_group group = engine.ecs.get_registry().group<const ParticleEmitter>(entt::get<Transform>);
-    for (auto&& [entity, emitter, transform] : group.each()) {
-        render_graph.upload_buffer(emitter_buffer, &emitter, 0, sizeof(ParticleEmitter));
-
-        render_graph.add_compute_pass("Emit Particles", "emit.cs")
-                    .read(emitter_buffer)
-                    .write(counter_buffer)
-                    .write(alive_list)
-                    .write(alive_list_new)
-                    .write(dead_list)
-                    .write(particle_buffer)
-                    .group_size(64, 1, 1)
-                    .work_size(emitter.particles, 1, 1);
+            render_graph.add_compute_pass("Emit Particles", "emit.cs")
+                        .read(emitter_buffer)
+                        .write(counter_buffer)
+                        .write(alive_list)
+                        .write(alive_list_new)
+                        .write(dead_list)
+                        .write(particle_buffer)
+                        .group_size(64, 1, 1)
+                        .work_size(emitter.particles, 1, 1);
+        }
+        //flag = false;
     }
+
+    render_graph.add_compute_pass("Particle Begin Update", "particle_begin_update.cs")
+                .write(counter_buffer)
+                .write(dispatch_args_buffer)
+                .group_size(1, 1, 1)
+                .work_size(1, 1, 1);
+
+    render_graph.add_compute_pass("Simulate Particles", "particle_sim.cs")
+                .read(render_view.utils_buffer)
+                .write(particle_buffer)
+                .write(alive_list)
+                .write(alive_list_new)
+                .write(dead_list)
+                .write(counter_buffer)
+                .write(billboard_vertices)
+                .indirect_size(dispatch_args_buffer);
+
+    render_graph.add_compute_pass("Particle End Update", "particle_end_update.cs")
+                .read(counter_buffer)
+                .write(instanced_draw_args_buffer)
+                .group_size(1, 1, 1)
+                .work_size(1, 1, 1);
 
     const glm::uvec2 render_res = render_view.gpu_view.resolution;
     RasterNode& line_pass = render_graph.add_raster_pass("billboard pass", "billboard.vx", "billboard.px")
                                 .topology(Topology::TriangleList)
-                                .attribute(AttrFormat::XY32_SFloat)  // Position
+                                .attribute(AttrFormat::XYZW32_SFloat)  // Position
                                 .read(render_view.gpu_view_buffer, ShaderStages::Vertex)
-                                .read(billboards, ShaderStages::Vertex)
                                 .load_op(LoadOp::Load)
                                 .attach(render_image)
                                 .raster_extent(render_res.x, render_res.y);
-    line_pass.draw(billboard_vertices, 6, 0, 1, 0);
+    line_pass.draw_indirect(billboard_vertices, instanced_draw_args_buffer);
+
+    std::swap(alive_list, alive_list_new);
 
     /* clang-format on */
 }

@@ -12,3 +12,5 @@ struct ParticleEmitter {
     uint32_t particles = 8u;
 };
 }  // namespace tmt
+
+TMT_COMPONENT(tmt::ParticleEmitter, "Particle Emitter", (start_color, end_color, start_pos, particle_lifetime, end_pos, particles));

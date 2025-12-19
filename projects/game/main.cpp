@@ -93,9 +93,9 @@ void DragonScene::on_start() {
     emitter.start_color = {1.0f, 0.0f, 0.0f, 1.0f};
     emitter.end_color = {1.0f, 0.0f, 1.0f, 1.0f};
     emitter.start_pos = {0.0f, 1.0f, 1.0f};
-    emitter.end_pos = {5.0f, 3.0f, 0.0f};
-    emitter.particle_lifetime = 10.0f;
-    emitter.particles = 32;
+    emitter.end_pos = {10.0f, 0.0f, 10.0f};
+    emitter.particle_lifetime = 100.0f;
+    emitter.particles = 64;
 }
 
 void DragonScene::on_update(const tmt::FrameData& time) {
