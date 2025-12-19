@@ -11,6 +11,11 @@ namespace tmt {
 
 constexpr uint32_t MAX_PARTICLES = 100'000;
 
+struct GpuQuad {
+    glm::vec2 pos {};
+    glm::vec2 uvs {};
+};
+
 struct GpuEmitter {
     glm::vec3 pos {};
     float particle_lifetime {};
@@ -21,6 +26,7 @@ struct GpuEmitter {
     float min_speed {};
     float max_speed {};
     uint32_t spawn_count {};
+    uint32_t tex_index {};
 };
 
 struct GpuParticle {
@@ -29,6 +35,9 @@ struct GpuParticle {
 
     glm::vec3 velocity {};
     float lifetime {};
+
+    uint32_t tex_index {};
+    glm::vec3 _pad;
 };
 
 struct Counters {
@@ -55,7 +64,8 @@ class VfxPipeline {
     void init(GPUAdapter& gpu);
     void enqueue(RenderGraph& render_graph, RenderView render_view);
     void deinit(GPUAdapter& gpu);
-
+    
+    /* Buffers */
     Buffer counter_buffer {};
     Buffer alive_list {};
     Buffer alive_list_new {};
@@ -64,8 +74,10 @@ class VfxPipeline {
     Buffer dispatch_args_buffer {};
     Buffer instanced_draw_args_buffer {};
     Buffer emitter_buffer {};
-
     Buffer billboard_vertices {};
-    Buffer billboards {};
+
+    Sampler linear_sampler {};
+    Texture temp_texture {};
+    Image temp_image {};
 };
 }  // namespace tmt

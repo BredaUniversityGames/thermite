@@ -6,15 +6,19 @@ struct Particle {
 
     float3 velocity;
     float lifetime;
+
+    uint32_t tex_index;
 };
 
 struct VertexInput {
     float2 pos;
+    float2 uv;
 };
 
 struct VertexOutput {
     float4 pos : SV_Position;
-    float4 color : COLOR0;
+    float2 uv : TEXCOORD0;
+    uint32_t tex_index : TEXINDEX0;
 };
 
 ConstantBuffer<RenderView> gpu_view;
@@ -36,7 +40,8 @@ VertexOutput main(VertexInput input, uint32_t instance_id: SV_InstanceID) {
                        cam_up * input.pos.y /** b.size*/;
 
     output.pos = mul(gpu_view.world_to_clip, float4(world_pos, 1.0f));
-    output.color = float4(1.0f, 0.0f, 0.0f, 1.0f);
+    output.uv = input.uv;
+    output.tex_index = particle.tex_index;
 
     return output;
 }

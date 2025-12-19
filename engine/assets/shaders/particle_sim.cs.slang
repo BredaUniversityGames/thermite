@@ -4,6 +4,8 @@ struct Particle {
 
     float3 velocity;
     float lifetime;
+
+    uint32_t tex_index;
 };
 
 struct Counters {

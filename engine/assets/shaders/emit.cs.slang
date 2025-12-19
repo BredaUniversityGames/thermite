@@ -7,8 +7,8 @@ struct ParticleEmitter {
 
     float min_speed;
     float max_speed;
-
     uint32_t spawn_count;
+    uint32_t tex_index;
 };
 
 struct Particle {
@@ -17,6 +17,8 @@ struct Particle {
 
     float3 velocity;
     float lifetime;
+
+    uint32_t tex_index;
 };
 
 struct Counters {
@@ -82,6 +84,7 @@ void main(uint3 thread_id: SV_DispatchThreadID) {
     p.pos = emitter.pos;
     p.age = 0.0f;
     p.lifetime = emitter.lifetime;
+    p.tex_index = emitter.tex_index;
 
     uint seed = thread_id.x + counters[0].alive_count * 1337;
     float3 dir = random_in_cone(emitter.dir, emitter.cone_angle, seed);

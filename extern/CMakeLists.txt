@@ -106,6 +106,12 @@ target_include_directories(JsonReflect
 # https://github.com/nlohmann/json
 add_subdirectory(nlohmann_json)
 
+# STB Image
+# https://github.com/nothings/stb
+target_include_directories(thermite-engine
+    PRIVATE "./stb_image"
+)
+
 if (THERMITE_EDITOR_BUILD)
     # ImGUI - immediate mode gui
     # https://github.com/ocornut/imgui

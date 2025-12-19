@@ -6,6 +6,9 @@
 #include <graphite/nodes/raster_node.hh>
 #include <graphite/nodes/compute_node.hh>
 
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
+
 #include "engine.hpp"
 #include "core/ecs.hpp"
 #include "core/logger.hpp"
@@ -50,7 +53,7 @@ void VfxPipeline::init(GPUAdapter& gpu) {
         uint32_t arr[MAX_PARTICLES] {};
         size_t size = sizeof(uint32_t) * MAX_PARTICLES;
         memset(&arr, 0, size);
-        
+
         bank.upload_buffer(alive_list, &arr, 0, size);
         bank.upload_buffer(alive_list_new, &arr, 0, size);
     }
@@ -117,17 +120,62 @@ void VfxPipeline::init(GPUAdapter& gpu) {
     }
 
     /* Initialize the Billboard Vertex Buffer */
-    if (const Result r = bank.create_buffer(BufferUsage::Vertex /*| BufferUsage::Storage*/ | BufferUsage::TransferDst, 6, sizeof(glm::vec2)); r.is_err()) {
+    if (const Result r = bank.create_buffer(BufferUsage::Vertex | BufferUsage::TransferDst, 6, sizeof(GpuQuad)); r.is_err()) {
         Log::error(Log::Scope::RENDERER, "failed to initialise billboard vertex buffer.\nreason: {}", r.unwrap_err().c_str());
         return;
     } else
         billboard_vertices = r.unwrap();
 
-    glm::vec2 quad[6] = {
-        {-0.5f, -0.5f}, {0.5f, -0.5f}, {0.5f, 0.5f}, {-0.5f, -0.5f}, {0.5f, 0.5f}, {-0.5f, 0.5f},
-    };
+    /* clang-format off */
+    GpuQuad quads[6] = { {{-0.5f, -0.5f}, {0.0f, 1.0f}},
+                         {{0.5f, -0.5f},  {1.0f, 1.0f}},
+                         {{0.5f, 0.5f},   {1.0f, 0.0f}},
+                         {{-0.5f, -0.5f}, {0.0f, 1.0f}},
+                         {{0.5f, 0.5f},   {1.0f, 0.0f}},
+                         {{-0.5f, 0.5f},  {0.0f, 0.0f}},
+                        };
+    /* clang-format on */
 
-    bank.upload_buffer(billboard_vertices, &quad, 0, sizeof(glm::vec2) * 6);
+    bank.upload_buffer(billboard_vertices, &quads, 0, sizeof(GpuQuad) * 6);
+
+    /* Initialize the Temp Texture, Image and Sampler */
+    {
+        int tex_width = -1;
+        int tex_height = -1;
+        int channels = -1;
+        unsigned char* data = nullptr;
+
+        data = stbi_load("assets/engine/bojan.jpg", &tex_width, &tex_height, &channels, 4);
+        if (!data) {
+            Log::error(Log::Scope::RENDERER, "failed to load bojan.");
+            return;
+        }
+
+        /* Initialise a bojan texture */
+        if (const Result r = bank.create_texture(TextureUsage::Sampled | TextureUsage::TransferDst, TextureFormat::RGBA8Unorm, {(u32)tex_width, (u32)tex_height, 0}); r.is_err()) {
+            Log::error(Log::Scope::RENDERER, "failed to initialise bojan texture.\nreason: {}", r.unwrap_err().c_str());
+            return;
+        } else
+            temp_texture = r.unwrap();
+
+        if (const Result r = bank.upload_texture(temp_texture, data, tex_width * tex_height * 4); r.is_err()) {
+            Log::error(Log::Scope::RENDERER, "failed to upload bojan texture.\nreason: {}", r.unwrap_err().c_str());
+            return;
+        }
+        free(data);
+
+        if (const Result r = bank.create_image(temp_texture); r.is_err()) {
+            Log::error(Log::Scope::RENDERER, "failed to initialize bojan image.\nreason: {}", r.unwrap_err().c_str());
+            return;
+        } else
+            temp_image = r.unwrap();
+
+        if (const Result r = bank.create_sampler(); r.is_err()) {
+            Log::error(Log::Scope::RENDERER, "failed to initialize linear sampler.\nreason: {}", r.unwrap_err().c_str());
+            return;
+        } else
+            linear_sampler = r.unwrap();
+    }
 }
 
 void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
@@ -150,6 +198,7 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
         em.min_speed = emitter.min_speed;
         em.particle_lifetime = emitter.particle_lifetime;
         em.spawn_count = emitter.spawn_count;
+        em.tex_index = temp_image.get_index();
         
         render_graph.upload_buffer(emitter_buffer, &em, 0, sizeof(GpuEmitter));
 
@@ -190,9 +239,11 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
     RasterNode& line_pass = render_graph.add_raster_pass("billboard pass", "billboard.vx", "billboard.px")
                                 .topology(Topology::TriangleList)
                                 .attribute(AttrFormat::XY32_SFloat)  // Position
+                                .attribute(AttrFormat::XY32_SFloat)  // UVs
                                 .read(render_view.gpu_view_buffer, ShaderStages::Vertex)
                                 .read(particle_buffer, ShaderStages::Vertex)
                                 .read(alive_list, ShaderStages::Vertex)
+                                .read(linear_sampler, ShaderStages::Pixel | ShaderStages::Vertex)
                                 .load_op(LoadOp::Load)
                                 .attach(render_image)
                                 .raster_extent(render_res.x, render_res.y);
@@ -211,9 +262,11 @@ void VfxPipeline::deinit(GPUAdapter& gpu) {
     bank.destroy(alive_list);
     bank.destroy(counter_buffer);
     bank.destroy(emitter_buffer);
-
-    bank.destroy(billboards);
     bank.destroy(billboard_vertices);
+
+    bank.destroy(linear_sampler);
+    bank.destroy(temp_texture);
+    bank.destroy(temp_image);
 }
 
 }  // namespace tmt
