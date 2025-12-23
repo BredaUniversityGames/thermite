@@ -67,8 +67,8 @@ void main(int2 thread_id: SV_DispatchThreadID, int group_id: SV_GroupIndex) {
         const uint palette_index = (voxels[hit.voxel_index >> 2u] >> ((4u - (hit.voxel_index % 4u)) << 3u)) & 0xFFu;
         const float3 albedo = palette[palette_index].albedo;
         render_target[thread_id] = float4(albedo, 1.0f);
-    } else {
-        render_target[thread_id] = float4(0.075f, 0.075f, 0.075f, 1.0f);
+    } else { 
+        render_target[thread_id] = float4(0.575f, 0.675f, 0.9f, 1.0f);
         // const float3 color = heat_color((float)hit.steps / 128.0f);
         // render_target[thread_id] = float4(color, 1.0f);
     }

@@ -1,14 +1,12 @@
 #pragma once
-#include "core/system.hpp"
-#include "core/components/transform.hpp"
+#include "engine/core/system.hpp"
+#include "engine/core/components/transform.hpp"
 
 #include "collision.hpp"
 #include "constraint_solver.hpp"
 #include "components/voxel_body.hpp"
-#include "core/renderer/voxel_object.hpp"
+#include "engine/core/renderer/voxel_object.hpp"
 #include "engine/shared/bvh2.hpp"
-// #include "components/rigidbody.hpp"
-// #include "components/voxel_collider.hpp"
 
 namespace tmt {
 

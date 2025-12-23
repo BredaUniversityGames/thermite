@@ -76,6 +76,29 @@ void Physics::on_update(const FrameData&) {
         for (size_t i = 0; i < edges.size(); i++) {
             tmt::engine.renderer.draw_line(edges[i].start, edges[i].end, color);
         }
+
+        engine.renderer.draw_cross(vb.center_of_mass, glm::vec3(1.0f, 0.0f, 1.0f), 0.2f);
+        engine.renderer.draw_cross(vb.position, glm::vec3(1.0f, 0.0f, 0.0f), 0.2f);
+        engine.renderer.draw_cross(vb.position + vb.rotation * vb.com_local_offset, glm::vec3(0.0f, 0.0f, 1.0f), 0.2f);
+
+        // glm::uvec3 size = vb.resource.get()->size;
+        // auto* tree = vb.resource.get()->blas.get();
+        // for (size_t z = 0; z < size.z; z++) {
+        //     for (size_t y = 0; y < size.y; y++) {
+        //         for (size_t x = 0; x < size.x; x++) {
+        //             const tmt::PhysicsVoxel* voxel = tree->get_physics_voxel(x, y, z);
+        //             if (voxel == nullptr || voxel->normal_index == 0 || voxel->normal_index == 28) continue;
+
+        //            glm::ivec3 local_normal = voxel->get_normal();
+        //            glm::vec3 normal = vb.rotation * glm::vec3((float)local_normal.x, (float)local_normal.y, (float)local_normal.z);
+        //            glm::vec3 local_pos = glm::vec3(
+        //                ((float)x + 0.5f - (size.x * 0.5f)) * UNITS_PER_VOXEL, ((float)y + 0.5f - (size.y * 0.5f)) * UNITS_PER_VOXEL, ((float)z + 0.5f - (size.z * 0.5f)) * UNITS_PER_VOXEL
+        //            );
+        //            glm::vec3 world_pos = vb.position + (vb.rotation * local_pos);
+        //            tmt::engine.renderer.draw_arrow(world_pos, normal, glm::vec3(0.0f, 0.6f, 0.0f), 0.15f, 0.05f);
+        //        }
+        //    }
+        //}
     }
 
     // if (bvh.nodes) draw_node(bvh, 0u);
@@ -483,7 +506,7 @@ void Physics::check_neighbors(const VoxelBody& vb_a, const VoxelBody& vb_b, cons
                     contact.normal = glm::normalize((glm::vec3)voxel_a->get_normal() * glm::inverse(rot_a));
                 else if (voxel_b->type == PhysicsVoxelType::INSIDE || voxel_b->type == PhysicsVoxelType::FACE)
                     contact.normal = -glm::normalize((glm::vec3)voxel_b->get_normal() * glm::inverse(rot_b));
-                else if (voxel_a->normal_index == 0)  // if there is no valid normal index
+                else if (voxel_a->normal_index == 0 || voxel_a->normal_index == 28)  // if there is no valid normal index
                     contact.normal = glm::normalize(dir);
                 else {
                     // if there is a valid normal index use its value to check validity of normal
@@ -527,18 +550,22 @@ void Physics::initialize_voxel_body(VoxelBody& vb) {
     // Calculate mass and inertia
     size_t filled_counter = 0;
     glm::vec3 sum = {};
-    const glm::vec3 half_scale = glm::vec3(vb.width, vb.height, vb.depth) * 0.5f;
-
     auto voxels = vb.resource.get();
+    const glm::uvec3 size = voxels->size;
+    const glm::vec3 half_scale = glm::vec3(size.x, size.y, size.z) * 0.5f;
 
-    for (size_t z = 0; z < voxels->size.z; z++) {
-        for (size_t y = 0; y < voxels->size.y; y++) {
-            for (size_t x = 0; x < voxels->size.x; x++) {
+    for (size_t z = 0; z < size.z; z++) {
+        for (size_t y = 0; y < size.y; y++) {
+            for (size_t x = 0; x < size.x; x++) {
                 if (voxels->blas.get()->get_voxel(x, y, z) == nullptr) continue;
                 // if (vb.voxels.get_voxel(x, y, z).type == PhysicsVoxelType::EMPTY) continue;
 
                 filled_counter++;
-                sum += glm::vec3(x, y, z) * UNITS_PER_VOXEL - half_scale + VOXEL_SIZE_HALF;
+
+                glm::vec3 local_pos =
+                    glm::vec3(((float)x + 0.5f - half_scale.x) * UNITS_PER_VOXEL, ((float)y + 0.5f - half_scale.y) * UNITS_PER_VOXEL, ((float)z + 0.5f - half_scale.z) * UNITS_PER_VOXEL
+                );
+                sum += local_pos;
             }
         }
     }

@@ -25,7 +25,7 @@ struct DebugPoint {
 };
 
 // Should be 2x the amount of maximum lines (a line is made of 2 points)
-constexpr uint32_t MAX_DEBUG_POINTS = 1024;
+constexpr uint32_t MAX_DEBUG_POINTS = 1 << 18;
 
 class DebugPipeline : public OnEngineUpdate {
    private:
