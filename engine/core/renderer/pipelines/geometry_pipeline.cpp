@@ -31,14 +31,30 @@ void GeometryPipeline::enqueue(RenderGraph& render_graph, RenderView& render_vie
         .group_size(16, 8)
         .work_size(render_res.x, render_res.y);
 
-    /* [Debug] Visibility data visualization */
-    if (engine.renderer.display_mode != DisplayMode::Visibility) return;
-    render_graph.add_compute_pass("[debug] visibility pass", "debug/visibility.cs")
-        .read(render_view.render_view_buffer)
-        .read(render_view.vbuffer)
-        .write(render_image)
-        .group_size(16, 8)
-        .work_size(render_res.x, render_res.y);
+    /* Debug visualizations */
+    switch (engine.renderer.display_mode) {
+        /* [Debug] Visibility data visualization */
+        case DisplayMode::Visibility:
+            render_graph.add_compute_pass("[debug] visibility pass", "debug/visibility.cs")
+                .read(render_view.render_view_buffer)
+                .read(render_view.vbuffer)
+                .write(render_image)
+                .group_size(16, 8)
+                .work_size(render_res.x, render_res.y);
+            break;
+        /* [Debug] Normal data visualization */
+        case DisplayMode::Normals:
+            render_graph.add_compute_pass("[debug] normals pass", "debug/normals.cs")
+                .read(render_view.render_view_buffer)
+                .read(scene_view.object_data)
+                .read(render_view.vbuffer)
+                .write(render_image)
+                .group_size(16, 8)
+                .work_size(render_res.x, render_res.y);
+            break;
+        default:
+            break;
+    }
 
     /* clang-format on */
 }

@@ -18,9 +18,10 @@ namespace tmt {
 enum class DisplayMode : uint32_t {
     Default = 0u,
     Visibility, /* Visualize visibility buffer data. */
+    Normals, /* Visualize geometric normal data. */
 };
-static const DisplayMode DISPLAY_MODES[] { DisplayMode::Default, DisplayMode::Visibility };
-static const char* DISPLAY_MODE_NAMES[] { "Default", "Visibility" };
+static const DisplayMode DISPLAY_MODES[] { DisplayMode::Default, DisplayMode::Visibility, DisplayMode::Normals };
+static const char* DISPLAY_MODE_NAMES[] { "Default", "Visibility", "Normals" };
 
 class Renderer {
     GPUAdapter& gpu;

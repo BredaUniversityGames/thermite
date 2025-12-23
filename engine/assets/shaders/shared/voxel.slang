@@ -8,13 +8,24 @@ import bindless;
 
 /* Represents a renderable voxel object. */
 public struct VoxelObject {
-    float4x4 world_to_local;
-    float4x4 local_to_world;
-    uint4 size_rcp_width; /* .xyz = voxel size ~ .w = reciprocal tree width */
-    uint blas_handle;
+    public float4x4 world_to_local;
+    public float4x4 local_to_world;
+    public uint4 size_rcp_width; /* .xyz = voxel size ~ .w = reciprocal tree width */
+    public uint blas_handle;
     public uint voxels_handle;
     public uint palette_handle;
 };
+
+/* Get the face_index of the local-space AABB, in case we instantly hit a voxel in the object. */
+inline uint aabb_face_index(float3 entry_uvw) {
+    const float3 entry_ndc = entry_uvw * 2.0f - 1.0f;
+    const float2 entry_abs = abs(entry_ndc.xy);
+    const float max_axis = max3(entry_abs.x, entry_abs.y, abs(entry_ndc.z));
+
+    if (entry_abs.x == max_axis) return entry_ndc.x >= 0.0f ? 0b100u : 0b000u;
+    else if (entry_abs.y == max_axis) return (entry_ndc.y >= 0.0f ? 0b100u : 0b000u) | 1u;
+    return (entry_ndc.z >= 0.0f ? 0b100u : 0b000u) | 2u;
+}
 
 public [ForceInline] void intersect_voxel_object<let DEBUG : bool>(Ray ray, VoxelObject object, uint index, inout Hit hit) {
     /* Transform the ray into the local space of the object */
@@ -60,7 +71,7 @@ public [ForceInline] void intersect_voxel_object<let DEBUG : bool>(Ray ray, Voxe
     hit.t = hit_dist;
     hit.voxel_index = local_hit.voxel_index;
     hit.object_index = index;
-    hit.face_index = local_hit.face_index;
+    hit.face_index = local_hit.face_index == 3u ? aabb_face_index(entry_uvw) : local_hit.face_index;
 }
 
 /* XXHash32 <https://jcgt.org/published/0009/03/02/> */

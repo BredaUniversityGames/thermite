@@ -86,9 +86,12 @@ public struct Svt64Node {
     return count;
 }
 
-uint face_index(float3 side_dist) {
+uint face_index(float3 side_dist, float3 ray_dir) {
     const float tmax = min3(side_dist.x, side_dist.y, side_dist.z);
-    return (tmax >= side_dist.x ? 0b001u : 0u) | (tmax >= side_dist.y ? 0b010u : 0u) | (tmax >= side_dist.z ? 0b100u : 0u);
+
+    if (side_dist.x == tmax) return ray_dir.x < 0.0f ? 0b100u : 0b000u;
+    else if (side_dist.y == tmax) return (ray_dir.y < 0.0f ? 0b100u : 0b000u) | 1u;
+    return (ray_dir.z < 0.0f ? 0b100u : 0b000u) | 2u;
 }
 
 /* Trace a ray through a SVT64. */
@@ -182,7 +185,9 @@ public [ForceInline] Svt64Hit trace_svt64<let DEBUG : bool>(
         const uint child_index = get_node_cell_index(pos, scale_exp);
         const uint voxel_index = node.abs_ptr() + popcnt_var64(node.child_mask_lo, node.child_mask_hi, child_index);
         hit.voxel_index = voxel_index;
-        hit.face_index = face_index(side_dist);
+        /* Set the face index to an invalid value if we instantly hit a voxel */
+        /* This case should be handled outside the SVT64 traversal */
+        hit.face_index = side_dist.x == 0.0f ? 3u : face_index(side_dist, ray.dir);
     }
 
     return hit;
