@@ -28,6 +28,6 @@ void main(int2 thread_id: SV_DispatchThreadID) {
         const VisData vis = unpack_visibility(vbuffer[thread_id]);
         const GeoData geo = unpack_geometry(vis, objects, ray);
 
-        render_target[thread_id] = float4(geo.normal * 0.5f + 0.5f, 1.0f);
+        render_target[thread_id] = float4(geo.normal, 1.0f);
     }
 }

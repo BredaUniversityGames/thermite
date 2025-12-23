@@ -66,5 +66,13 @@ public [ForceInline] GeoData unpack_geometry(const VisData vis, StructuredBuffer
     local_normal[axis_index] = (axis_sign == 0u) ? -1.0f : 1.0f;
     data.normal = normalize(mul(object.local_to_world, float4(local_normal, 0.0f)).xyz);
 
+    /* Unpack the voxel position index */
+    const uint3 voxel_pos = uint3(
+        vis.voxel_index & 0b1111111111u,
+        (vis.voxel_index >> 10) & 0b1111111111u,
+        vis.voxel_index >> 20
+    );
+    // data.normal = float3(voxel_pos) / (object.size_rcp_width.xyz - 1u);
+
     return data;
 }
