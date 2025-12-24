@@ -19,7 +19,7 @@ class ConsoleSink : public spdlog::sinks::base_sink<Mutex> {
         std::string message = fmt::to_string(formatted);
         if (!message.empty() && message.back() == '\n') message.pop_back();
 
-        csys::ItemType type;
+        csys::ItemType type {};
         switch (msg.level) {
             case spdlog::level::info:
                 type = csys::ItemType::INFO;

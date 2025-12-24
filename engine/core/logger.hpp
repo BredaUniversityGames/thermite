@@ -80,13 +80,13 @@ class Log {
         loggers[Scope::GLOBAL]->error(fmt, std::forward<Args>(args)...);
         ;
     }
-    static void add_sink(std::shared_ptr<spdlog::sinks::sink> sink) {
+    static void add_sink(const std::shared_ptr<spdlog::sinks::sink>& sink) {
         for (auto& [scope, logger] : loggers) {
             logger->sinks().push_back(sink);
         }
     }
 
-    static void remove_sink(std::shared_ptr<spdlog::sinks::sink> sink) {
+    static void remove_sink(const std::shared_ptr<spdlog::sinks::sink>& sink) {
         for (auto& [scope, logger] : loggers) {
             auto& sinks = logger->sinks();
             std::erase(sinks, sink);
