@@ -1,4 +1,3 @@
-#include "windows/console.hpp"
 #if THERMITE_EDITOR
 #pragma message(" THERMITE_EDITOR=1 ")
 #else
@@ -28,6 +27,7 @@
 #include "editor/windows/profiler_tracy.hpp"
 #include "editor/windows/scenes.hpp"
 #include "editor/windows/imgui_demo.hpp"
+#include "editor/windows/console.hpp"
 
 /* Singleton */
 tmt::Editor tmt::editor;

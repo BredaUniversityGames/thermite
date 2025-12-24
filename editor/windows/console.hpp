@@ -46,7 +46,6 @@ class ConsoleSink : public spdlog::sinks::base_sink<Mutex> {
 };
 
 using ConsoleSink_st = ConsoleSink<spdlog::details::null_mutex>;
-using ConsoleSink_mt = ConsoleSink<std::mutex>;
 
 class Console : public IWindow {
    public:
