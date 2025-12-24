@@ -6,7 +6,6 @@
 #include <filesystem>
 #include <stack>
 
-
 namespace tmt {
 
 class AssetBrowser : public IWindow {
@@ -21,8 +20,8 @@ class AssetBrowser : public IWindow {
     void on_editor_end() override {}
 
    private:
-    std::optional<IO::FileLocation> pending_viewing_location{};
-    IO::FileLocation viewing_location{};
+    std::optional<IO::FileLocation> pending_viewing_location {viewing_location};
+    IO::FileLocation viewing_location {};
     std::vector<IO::FileLocation> viewing_locations;
     std::vector<IO::FileLocation> selected_locations;
 

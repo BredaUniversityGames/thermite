@@ -91,10 +91,7 @@ void AssetBrowser::display() {
 void AssetBrowser::on_editor_update(const FrameData&) { update_viewing_paths(); }
 
 void AssetBrowser::update_viewing_paths() {
-    if (!pending_viewing_location.has_value() || pending_viewing_location == viewing_location) {
-        pending_viewing_location.reset();
-        return;
-    }
+    if (!pending_viewing_location.has_value()) return;
 
     const std::filesystem::path& path = pending_viewing_location->relative_path;
     if (!path.empty() && path.filename().empty()) pending_viewing_location->relative_path = path.parent_path();
@@ -213,7 +210,12 @@ void AssetBrowser::display_files() {
         ImGui::SetNextItemSelectionUserData(i);
         ImGui::Selectable(location_name.c_str(), is_selected);
         if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
-            if (location_is_directory) pending_viewing_location = location;
+            if (location_is_directory)
+                pending_viewing_location = location;
+            else {
+                const std::string open_file_command = std::format(R"(start "" "{}")", location.get_relative_path().generic_string());
+                if (system(open_file_command.c_str()) != 0) Log::warn(Log::Scope::ENGINE, "Couldn't open file.");
+            }
         }
         ++i;
     }
