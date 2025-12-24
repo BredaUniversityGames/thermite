@@ -11,6 +11,7 @@
 
 #include "engine/core/ecs.hpp"
 #include "engine/core/logger.hpp"
+#include "editor/windows/console.hpp"
 #include "engine/core/window.hpp"
 
 #include "editor/imgui/manager.hpp"
@@ -27,7 +28,6 @@
 #include "editor/windows/profiler_tracy.hpp"
 #include "editor/windows/scenes.hpp"
 #include "editor/windows/imgui_demo.hpp"
-#include "editor/windows/console.hpp"
 
 /* Singleton */
 tmt::Editor tmt::editor;
