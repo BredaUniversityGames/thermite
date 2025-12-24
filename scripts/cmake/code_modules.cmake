@@ -50,11 +50,12 @@ function(find_and_add_targets)
 			set_target_properties(${target_name} PROPERTIES
 				RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/${target_name}"
 				# Disables the windows console
-				WIN32_EXECUTABLE TRUE
+				# WIN32_EXECUTABLE TRUE
 			)
-			if(MSVC)
-				target_link_options(${target_name} PRIVATE "/ENTRY:mainCRTStartup")
-			endif()
+			# Disables the windows console
+			#if(MSVC)
+			#	target_link_options(${target_name} PRIVATE "/ENTRY:mainCRTStartup")
+			#endif()
 
 			# Copy over dll files for FMOD
 			set(FMOD_POSTFIX "$<$<CONFIG:Debug>:L>")
