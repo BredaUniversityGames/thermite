@@ -1,7 +1,6 @@
 import view;
 import voxel;
 import visibility;
-import material;
 
 /* Active render view. */
 ConstantBuffer<RenderView> render_view;

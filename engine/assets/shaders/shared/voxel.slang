@@ -11,6 +11,7 @@ public struct VoxelObject {
     public float4x4 world_to_local;
     public float4x4 local_to_world;
     public uint4 size_rcp_width; /* .xyz = voxel size ~ .w = reciprocal tree width */
+    public uint tree_depth; /* Depth of this objects SVT64. */
     public uint blas_handle;
     public uint voxels_handle;
     public uint palette_handle;
@@ -85,8 +86,15 @@ public inline uint xxhash32(const uint p) {
     return h32 ^ (h32 >> 16u);
 }
 
-public inline uint voxel_hash(uint voxel_index, uint object_index, uint face_index) {
-    return xxhash32((voxel_index & 0x001FFFFFu)
-        | ((object_index & 0x000000FFu) << 21u)
-        | ((face_index & 0x00000007u) << 29u));
+public inline uint voxel_hash(const uint voxel_index, const uint object_index, const uint face_index) {
+    /* Cut away 3 bits on each axis, 10 bit -> 7 bit */
+    const uint voxel_x = voxel_index & 0b1111111u;
+    const uint voxel_y = voxel_index >> 10 & 0b1111111u;
+    const uint voxel_z = voxel_index >> 20 & 0b1111111u;
+    const uint voxel21 = voxel_x | (voxel_y << 7) | (voxel_z << 14);
+
+    /* 21 bit voxel index, 8 bit object index, 3 bit face index */
+    return xxhash32(voxel21
+        | ((object_index & 0b11111111u) << 21u)
+        | ((face_index & 0b111u) << 29u));
 }

@@ -10,12 +10,23 @@
 #include "engine/core/renderer/renderer.hpp"
 
 namespace tmt {
+    
+/* clang-format off */
+
+/* Geometry display mode switch case macro. */
+#define DISPLAY_MODE(ENUM, NAME, PATH) case DisplayMode::ENUM: \
+    render_graph.add_compute_pass(NAME, PATH) \
+        .read(render_view.render_view_buffer) \
+        .read(scene_view.object_data) \
+        .read(render_view.vbuffer) \
+        .write(render_image) \
+        .group_size(16, 8) \
+        .work_size(render_res.x, render_res.y); \
+    break;
 
 void GeometryPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, SceneView& scene_view) {
     /* Get Render Image */
     const BindHandle render_image = render_view.get_render_image();
-
-    /* clang-format off */
 
     /* Enqueue the geometry compute pass */
     const glm::uvec2 render_res = render_view.gpu_view.resolution;
@@ -33,30 +44,15 @@ void GeometryPipeline::enqueue(RenderGraph& render_graph, RenderView& render_vie
 
     /* Debug visualizations */
     switch (engine.renderer.display_mode) {
-        /* [Debug] Visibility data visualization */
-        case DisplayMode::Visibility:
-            render_graph.add_compute_pass("[debug] visibility pass", "debug/visibility.cs")
-                .read(render_view.render_view_buffer)
-                .read(render_view.vbuffer)
-                .write(render_image)
-                .group_size(16, 8)
-                .work_size(render_res.x, render_res.y);
-            break;
-        /* [Debug] Normal data visualization */
-        case DisplayMode::Normals:
-            render_graph.add_compute_pass("[debug] normals pass", "debug/normals.cs")
-                .read(render_view.render_view_buffer)
-                .read(scene_view.object_data)
-                .read(render_view.vbuffer)
-                .write(render_image)
-                .group_size(16, 8)
-                .work_size(render_res.x, render_res.y);
-            break;
-        default:
+        DISPLAY_MODE(Visibility, "[debug] visibility pass", "debug/visibility.cs")
+        DISPLAY_MODE(Depth, "[debug] depth pass", "debug/depth.cs")
+        DISPLAY_MODE(Normals, "[debug] normals pass", "debug/normals.cs")
+        DISPLAY_MODE(Albedo, "[debug] albedo pass", "debug/albedo.cs")
+        default: 
             break;
     }
-
-    /* clang-format on */
 }
+
+/* clang-format on */
 
 }  // namespace tmt

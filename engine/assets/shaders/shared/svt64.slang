@@ -90,7 +90,7 @@ public struct Svt64Node {
 [ForceInline] uint voxel_index(float3 pos, int scale_exp) {
     const uint inv_scale = (1u << (23 - scale_exp)) - 1u;
     const uint3 voxel_pos = inv_scale - (~asuint(pos) >> scale_exp & 0b1111111111u);
-    return voxel_pos.x | (voxel_pos.z << 10) | (voxel_pos.y << 20);
+    return voxel_pos.x | (voxel_pos.y << 10) | (voxel_pos.z << 20);
 }
 
 /* Get the face index of a voxel. */
@@ -189,13 +189,44 @@ public [ForceInline] Svt64Hit trace_svt64<let DEBUG : bool>(
         hit.point = pos;
 
         /* Fetch the material of the voxel we hit */
-        // const uint child_index = get_node_cell_index(pos, scale_exp);
-        // const uint voxel_index = node.abs_ptr() + popcnt_var64(node.child_mask_lo, node.child_mask_hi, child_index);
-        hit.voxel_index = voxel_index(pos, scale_exp); // voxel_index;
+        hit.voxel_index = voxel_index(pos, scale_exp);
         /* Set the face index to an invalid value if we instantly hit a voxel */
         /* This case should be handled outside the SVT64 traversal */
         hit.face_index = side_dist.x == 0.0f ? 3u : face_index(side_dist, ray.dir);
     }
 
     return hit;
+}
+
+/* Fetch the voxel index at a given voxel position in a SVT64. */
+public [ForceInline] uint fetch_svt64(
+    StructuredBuffer<Svt64Node> nodes,
+    uint root_depth, uint3 voxel
+) {
+    /* Traversal state */
+    Svt64Node node = nodes[0];
+    uint depth = root_depth - 1u;
+
+    for (;;) {
+        /* Find the local index at the current tree depth (0..4) */
+        const uint3 local_index = voxel >> (depth << 1) & 0b11u;
+        const uint child_pos = (local_index.x << 0) | (local_index.z << 2) | (local_index.y << 4);
+
+        /* Get the sparse child node / voxel pointer */
+        const uint child_ptr = node.abs_ptr() + popcnt_var64(node.child_mask_lo, node.child_mask_hi, child_pos);
+
+        if (node.child_active(child_pos) == false) {
+            return uint::maxValue; /* Voxel doesn't exist */
+        } else if (depth == 0u) {
+            /* Found the voxel, return it's absolute pointer */
+            return child_ptr;
+        }
+
+        /* Traverse further down the tree */
+        depth -= 1u;
+        node = nodes[child_ptr];
+    }
+
+    /* Unreachable code path */
+    return uint::maxValue;
 }

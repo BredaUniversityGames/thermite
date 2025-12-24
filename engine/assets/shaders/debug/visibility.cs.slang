@@ -4,6 +4,8 @@ import visibility;
 
 /* Active render view. */
 ConstantBuffer<RenderView> render_view;
+/* Object buffers. */
+StructuredBuffer<VoxelObject> objects; /* ! Not used ! */
 /* Visibility buffer. (Input) */
 RWTexture2D<uint2> vbuffer;
 /* Render target. (Output) */

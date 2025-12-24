@@ -47,6 +47,7 @@ void SceneView::update(RenderGraph& render_graph) {
         object.world_to_local = glm::inverse(object.local_to_world);
         object.size = renderer.resource->size;
         object.rcp_tree_width = 1.0f / powf(4.0f, (float)renderer.resource->blas->depth);
+        object.tree_depth = renderer.resource->blas->depth;
         object.blas_handle = renderer.resource->blas_nodes.get_index();
         object.voxels_handle = renderer.resource->blas_voxels.get_index();
         object.palette_handle = renderer.resource->blas_palette.get_index();
