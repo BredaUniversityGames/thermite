@@ -20,7 +20,8 @@ class Hierarchy : public IWindow, public OnGameEnd, public OnPreUnloadScene {
     void display() override;
 
     virtual int get_window_flags() const override;
-    std::string get_title() const override { return ICON_MS_FLOWCHART " Hierarchy"; };
+    constexpr std::string get_title() const override { return ICON_MS_FLOWCHART " Hierarchy"; };
+    constexpr bool default_open() const override { return true; }
 
     void on_editor_start() override {};
     void on_editor_update(const FrameData&) override {};
