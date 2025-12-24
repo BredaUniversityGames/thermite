@@ -78,6 +78,8 @@ class Hierarchy : public IWindow, public OnGameEnd, public OnPreUnloadScene {
 
     Entity selection_parent = entt::null;
 
+    std::string filter = "";
+
     static inline bool is_between(const glm::uvec2& value, const glm::uvec2& begin, const glm::uvec2& end) {
         if (begin == NULL_INDEX || end == NULL_INDEX) return false;
         const bool between_begin_end = (value.y >= begin.y && value.y <= end.y);
@@ -120,5 +122,8 @@ class Hierarchy : public IWindow, public OnGameEnd, public OnPreUnloadScene {
 
     // Inherited via OnPreUnloadScene
     void on_pre_unload_scene() override;
+
+    void before_begin() override;
+    void end_display() override;
 };
 }  // namespace tmt
