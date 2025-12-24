@@ -49,57 +49,191 @@ void Game::on_start() {
     auto voxel_file_piece = tmt::engine.resources.load_resource<tmt::VoxelScene>({tmt::IO::Location::PROJECT, "piece_1.vengi"});
     auto voxel_volume_piece = tmt::engine.resources.copy_resource<tmt::VoxelVolume>(voxel_file_piece);
 
-    auto voxel_file_ass = tmt::engine.resources.load_resource<tmt::VoxelScene>({tmt::IO::Location::PROJECT, "test_asteroid_3.vengi"});
-    auto voxel_volume_ass = tmt::engine.resources.copy_resource<tmt::VoxelVolume>(voxel_file_ass);
+    auto voxel_file_ass3 = tmt::engine.resources.load_resource<tmt::VoxelScene>({tmt::IO::Location::PROJECT, "test_asteroid_3.vengi"});
+    auto voxel_volume_ass3 = tmt::engine.resources.copy_resource<tmt::VoxelVolume>(voxel_file_ass3);
 
-    { /* Voxel Physics Entity */
-        auto entity = tmt::engine.ecs.create_entity();
-        auto& transform = tmt::engine.ecs.add_component<tmt::Transform>(entity);
-        auto& renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(entity);
-        renderer.resource = voxel_volume_ass;
-        auto& vb = tmt::engine.ecs.add_component<tmt::VoxelBody>(entity);
-        vb.resource = voxel_volume_ass;
+    auto voxel_file_ass7 = tmt::engine.resources.load_resource<tmt::VoxelScene>({tmt::IO::Location::PROJECT, "test_asteroid_7.vengi"});
+    auto voxel_volume_ass7 = tmt::engine.resources.copy_resource<tmt::VoxelVolume>(voxel_file_ass7);
 
-        vb.gravity = 0.0f;
-        vb.type = tmt::VoxelBody::DYNAMIC;
-        // renderer.size = glm::uvec3(20u, 20u, 20u);
-        transform.set_world_position(glm::vec3(0.0f, 50.0f, 110.0f));
+    for (size_t z = 0; z < 5; z++) {
+        for (size_t i = 0; i < 300; i++) { /* Voxel Physics Entity */
+            auto entity = tmt::engine.ecs.create_entity();
+            auto& transform = tmt::engine.ecs.add_component<tmt::Transform>(entity);
+            auto& renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(entity);
+            renderer.resource = voxel_volume_piece;
+
+            auto& vb = tmt::engine.ecs.add_component<tmt::VoxelBody>(entity);
+            vb.resource = voxel_volume_piece;
+
+            vb.gravity = 0.0f;
+            vb.type = tmt::VoxelBody::DYNAMIC;
+            float random_x = ((float)(rand() % 1000) / 1000.0f - 0.5f) * 150.0f;
+            float random_y = ((float)(rand() % 1000) / 1000.0f - 0.5f) * 150.0f;
+            transform.set_world_position(glm::vec3(random_x, random_y, (5 - z) * 5.0f));
+
+            float random_rot_x = ((float)(rand() % 1000) / 1000.0f) * 3.1415f * 2.0f;
+            float random_rot_y = ((float)(rand() % 1000) / 1000.0f) * 3.1415f * 2.0f;
+            float random_rot_z = ((float)(rand() % 1000) / 1000.0f) * 3.1415f * 2.0f;
+            transform.set_world_rotation(glm::vec3(random_rot_x, random_rot_y, random_rot_z));
+            voxels.push_back(entity);
+        }
     }
 
-    for (size_t i = 0; i < 1000; i++) 
-    { /* Voxel Physics Entity */
+    { /* Voxel Physics Entity, Asteroid 3 */
         auto entity = tmt::engine.ecs.create_entity();
         auto& transform = tmt::engine.ecs.add_component<tmt::Transform>(entity);
         auto& renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(entity);
-        renderer.resource = voxel_volume_piece;
-
+        renderer.resource = voxel_volume_ass3;
         auto& vb = tmt::engine.ecs.add_component<tmt::VoxelBody>(entity);
-        vb.resource = voxel_volume_piece;
-
+        vb.resource = voxel_volume_ass3;
         vb.gravity = 0.0f;
-        vb.type = tmt::VoxelBody::DYNAMIC;
-        // renderer.size = glm::uvec3(20u, 20u, 20u);
-        float random_x = ((float)(rand() % 1000) / 1000.0f - 0.5f) * 200.0f;
-        float random_y = ((float)(rand() % 1000) / 1000.0f - 0.5f) * 200.0f;
-        transform.set_world_position(glm::vec3(random_x, random_y, 0.0f));
+        vb.type = tmt::VoxelBody::STATIC;
+        transform.set_world_position(glm::vec3(0.0f, 50.0f, 110.0f));
 
         float random_rot_x = ((float)(rand() % 1000) / 1000.0f) * 3.1415f * 2.0f;
         float random_rot_y = ((float)(rand() % 1000) / 1000.0f) * 3.1415f * 2.0f;
         float random_rot_z = ((float)(rand() % 1000) / 1000.0f) * 3.1415f * 2.0f;
         transform.set_world_rotation(glm::vec3(random_rot_x, random_rot_y, random_rot_z));
-        voxels.push_back(entity);
+    }
+
+    { /* Voxel Physics Entity, Asteroid 3 */
+        auto entity = tmt::engine.ecs.create_entity();
+        auto& transform = tmt::engine.ecs.add_component<tmt::Transform>(entity);
+        auto& renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(entity);
+        renderer.resource = voxel_volume_ass3;
+        auto& vb = tmt::engine.ecs.add_component<tmt::VoxelBody>(entity);
+        vb.resource = voxel_volume_ass3;
+        vb.gravity = 0.0f;
+        vb.type = tmt::VoxelBody::STATIC;
+        transform.set_world_position(glm::vec3(40.0f, 20.0f, 100.0f));
+        float random_rot_x = ((float)(rand() % 1000) / 1000.0f) * 3.1415f * 2.0f;
+        float random_rot_y = ((float)(rand() % 1000) / 1000.0f) * 3.1415f * 2.0f;
+        float random_rot_z = ((float)(rand() % 1000) / 1000.0f) * 3.1415f * 2.0f;
+        transform.set_world_rotation(glm::vec3(random_rot_x, random_rot_y, random_rot_z));
+    }
+
+    { /* Voxel Physics Entity, Asteroid 3 */
+        auto entity = tmt::engine.ecs.create_entity();
+        auto& transform = tmt::engine.ecs.add_component<tmt::Transform>(entity);
+        auto& renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(entity);
+        renderer.resource = voxel_volume_ass3;
+        auto& vb = tmt::engine.ecs.add_component<tmt::VoxelBody>(entity);
+        vb.resource = voxel_volume_ass3;
+        vb.gravity = 0.0f;
+        vb.type = tmt::VoxelBody::STATIC;
+        transform.set_world_position(glm::vec3(-24.0f, -20.0f, 90.0f));
+        float random_rot_x = ((float)(rand() % 1000) / 1000.0f) * 3.1415f * 2.0f;
+        float random_rot_y = ((float)(rand() % 1000) / 1000.0f) * 3.1415f * 2.0f;
+        float random_rot_z = ((float)(rand() % 1000) / 1000.0f) * 3.1415f * 2.0f;
+        transform.set_world_rotation(glm::vec3(random_rot_x, random_rot_y, random_rot_z));
+    }
+
+    { /* Voxel Physics Entity, Asteroid 7 */
+        auto entity = tmt::engine.ecs.create_entity();
+        auto& transform = tmt::engine.ecs.add_component<tmt::Transform>(entity);
+        auto& renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(entity);
+        renderer.resource = voxel_volume_ass7;
+        auto& vb = tmt::engine.ecs.add_component<tmt::VoxelBody>(entity);
+        vb.resource = voxel_volume_ass7;
+        vb.gravity = 0.0f;
+        vb.type = tmt::VoxelBody::STATIC;
+        transform.set_world_position(glm::vec3(50.0f, 35.0f, 100.0f));
+        float random_rot_x = ((float)(rand() % 1000) / 1000.0f) * 3.1415f * 2.0f;
+        float random_rot_y = ((float)(rand() % 1000) / 1000.0f) * 3.1415f * 2.0f;
+        float random_rot_z = ((float)(rand() % 1000) / 1000.0f) * 3.1415f * 2.0f;
+        transform.set_world_rotation(glm::vec3(random_rot_x, random_rot_y, random_rot_z));
+    }
+
+    { /* Voxel Physics Entity, Asteroid 7 */
+        auto entity = tmt::engine.ecs.create_entity();
+        auto& transform = tmt::engine.ecs.add_component<tmt::Transform>(entity);
+        auto& renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(entity);
+        renderer.resource = voxel_volume_ass7;
+        auto& vb = tmt::engine.ecs.add_component<tmt::VoxelBody>(entity);
+        vb.resource = voxel_volume_ass7;
+        vb.gravity = 0.0f;
+        vb.type = tmt::VoxelBody::STATIC;
+        transform.set_world_position(glm::vec3(20.0f, -35.0f, 120.0f));
+        float random_rot_x = ((float)(rand() % 1000) / 1000.0f) * 3.1415f * 2.0f;
+        float random_rot_y = ((float)(rand() % 1000) / 1000.0f) * 3.1415f * 2.0f;
+        float random_rot_z = ((float)(rand() % 1000) / 1000.0f) * 3.1415f * 2.0f;
+        transform.set_world_rotation(glm::vec3(random_rot_x, random_rot_y, random_rot_z));
+    }
+
+    { /* Voxel Physics Entity, Asteroid 7 */
+        auto entity = tmt::engine.ecs.create_entity();
+        auto& transform = tmt::engine.ecs.add_component<tmt::Transform>(entity);
+        auto& renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(entity);
+        renderer.resource = voxel_volume_ass7;
+        auto& vb = tmt::engine.ecs.add_component<tmt::VoxelBody>(entity);
+        vb.resource = voxel_volume_ass7;
+        vb.gravity = 0.0f;
+        vb.type = tmt::VoxelBody::STATIC;
+        transform.set_world_position(glm::vec3(-20.0f, 55.0f, 100.0f));
+        float random_rot_x = ((float)(rand() % 1000) / 1000.0f) * 3.1415f * 2.0f;
+        float random_rot_y = ((float)(rand() % 1000) / 1000.0f) * 3.1415f * 2.0f;
+        float random_rot_z = ((float)(rand() % 1000) / 1000.0f) * 3.1415f * 2.0f;
+        transform.set_world_rotation(glm::vec3(random_rot_x, random_rot_y, random_rot_z));
+    }
+
+        { /* Voxel Physics Entity, Asteroid 7 */
+        auto entity = tmt::engine.ecs.create_entity();
+        auto& transform = tmt::engine.ecs.add_component<tmt::Transform>(entity);
+        auto& renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(entity);
+        renderer.resource = voxel_volume_ass7;
+        auto& vb = tmt::engine.ecs.add_component<tmt::VoxelBody>(entity);
+        vb.resource = voxel_volume_ass7;
+        vb.gravity = 0.0f;
+        vb.type = tmt::VoxelBody::STATIC;
+        transform.set_world_position(glm::vec3(-14.0f, 17.0f, 70.0f));
+        float random_rot_x = ((float)(rand() % 1000) / 1000.0f) * 3.1415f * 2.0f;
+        float random_rot_y = ((float)(rand() % 1000) / 1000.0f) * 3.1415f * 2.0f;
+        float random_rot_z = ((float)(rand() % 1000) / 1000.0f) * 3.1415f * 2.0f;
+        transform.set_world_rotation(glm::vec3(random_rot_x, random_rot_y, random_rot_z));
+    }
+
+                { /* Voxel Physics Entity, Asteroid 7 */
+        auto entity = tmt::engine.ecs.create_entity();
+        auto& transform = tmt::engine.ecs.add_component<tmt::Transform>(entity);
+        auto& renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(entity);
+        renderer.resource = voxel_volume_ass7;
+        auto& vb = tmt::engine.ecs.add_component<tmt::VoxelBody>(entity);
+        vb.resource = voxel_volume_ass7;
+        vb.gravity = 0.0f;
+        vb.type = tmt::VoxelBody::STATIC;
+        transform.set_world_position(glm::vec3(19.0f, 0.0f, 90.0f));
+        float random_rot_x = ((float)(rand() % 1000) / 1000.0f) * 3.1415f * 2.0f;
+        float random_rot_y = ((float)(rand() % 1000) / 1000.0f) * 3.1415f * 2.0f;
+        float random_rot_z = ((float)(rand() % 1000) / 1000.0f) * 3.1415f * 2.0f;
+        transform.set_world_rotation(glm::vec3(random_rot_x, random_rot_y, random_rot_z));
+    }
+
+                                { /* Voxel Physics Entity, Asteroid 7 */
+        auto entity = tmt::engine.ecs.create_entity();
+        auto& transform = tmt::engine.ecs.add_component<tmt::Transform>(entity);
+        auto& renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(entity);
+        renderer.resource = voxel_volume_ass7;
+        auto& vb = tmt::engine.ecs.add_component<tmt::VoxelBody>(entity);
+        vb.resource = voxel_volume_ass7;
+        vb.gravity = 0.0f;
+        vb.type = tmt::VoxelBody::STATIC;
+        transform.set_world_position(glm::vec3(54.0f, -48.0f, 75.0f));
+        float random_rot_x = ((float)(rand() % 1000) / 1000.0f) * 3.1415f * 2.0f;
+        float random_rot_y = ((float)(rand() % 1000) / 1000.0f) * 3.1415f * 2.0f;
+        float random_rot_z = ((float)(rand() % 1000) / 1000.0f) * 3.1415f * 2.0f;
+        transform.set_world_rotation(glm::vec3(random_rot_x, random_rot_y, random_rot_z));
     }
 }
 
 void Game::on_update(const tmt::FrameData& time) {
     time_passed += time.delta_time;
 
-    if (time_passed > 0.025f) {
+    if (time_passed > 0.005f) {
         if (num >= voxels.size()) return;
         auto& vb = tmt::engine.ecs.get_component<tmt::VoxelBody>(voxels[num++]);
         float random_x = ((float)(rand() % 1000) / 1000.0f - 0.5f) * 50.0f;
         float random_y = ((float)(rand() % 1000) / 1000.0f - 0.5f) * 50.0f;
-        tmt::Physics::add_force(vb, glm::vec3(random_x, random_y, 30.0f));
+        tmt::Physics::add_force(vb, glm::vec3(random_x, random_y, 35.0f));
         time_passed = 0.0f;
     }
 
