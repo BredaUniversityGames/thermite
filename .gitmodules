@@ -30,3 +30,6 @@
 [submodule "extern/ImReflect"]
 	path = extern/ImReflect
 	url = https://github.com/Sven-vh/ImReflect
+[submodule "extern/imgui-console"]
+	path = extern/imgui-console
+	url = https://github.com/rmxbalanque/imgui-console.git
