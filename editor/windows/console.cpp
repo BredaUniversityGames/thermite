@@ -6,7 +6,7 @@ void Console::display() { console.DrawContent(); }
 
 void Console::on_editor_start() {
     sink = std::make_shared<ConsoleSink_st>(console.System());
-    sink->set_pattern("[%n] %v");  // No [%l], csys handles the type
+    sink->set_pattern("[%n] %v");
     Log::add_sink(sink);
 }
 
