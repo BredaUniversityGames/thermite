@@ -1,3 +1,4 @@
+#include "windows/console.hpp"
 #if THERMITE_EDITOR
 #pragma message(" THERMITE_EDITOR=1 ")
 #else
@@ -53,6 +54,7 @@ void Editor::on_engine_init(const ApplicationSpecs&) {
     windows.add<FontControl>();
     windows.add<AudioMixer>();
     windows.add<ScenesWindow>();
+    windows.add<Console>();
     windows.add<ImguiDemo>();
 
     for (auto& window : windows) {
