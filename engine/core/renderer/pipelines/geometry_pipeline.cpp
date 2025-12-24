@@ -18,7 +18,7 @@ namespace tmt {
     render_graph.add_compute_pass(NAME, PATH) \
         .read(render_view.render_view_buffer) \
         .read(scene_view.object_data) \
-        .read(render_view.vbuffer) \
+        .read(render_view.vbuffer.image) \
         .write(render_image) \
         .group_size(16, 8) \
         .work_size(render_res.x, render_res.y); \
@@ -38,7 +38,7 @@ void GeometryPipeline::enqueue(RenderGraph& render_graph, RenderView& render_vie
         .read(scene_view.object_indices)
         .read(scene_view.object_data)
         /* Visibility buffer */
-        .write(render_view.vbuffer)
+        .write(render_view.vbuffer.image)
         .group_size(16, 8)
         .work_size(render_res.x, render_res.y);
 

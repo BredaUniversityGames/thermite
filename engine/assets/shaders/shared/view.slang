@@ -57,3 +57,12 @@ public inline Ray pinhole_ray(RenderView view, int2 pixel) {
     ray.rcp_dir = clamp(rcp(ray.dir), -1e30f, 1e30f);
     return ray;
 }
+
+/* Generate a custom ray. */
+public inline Ray custom_ray(float3 origin, float3 dir) {
+    Ray ray; /* Fill in the ray struct */
+    ray.origin = origin;
+    ray.dir = dir;
+    ray.rcp_dir = clamp(rcp(ray.dir), -1e30f, 1e30f);
+    return ray;
+}

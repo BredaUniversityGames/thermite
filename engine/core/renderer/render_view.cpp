@@ -37,13 +37,13 @@ void RenderView::init() {
         Log::error(Log::Scope::RENDERER, "failed to initialize attachment texture.\nreason: {}", r.unwrap_err());
         return;
     } else
-        viewport_texture = r.unwrap();
+        viewport.texture = r.unwrap();
     /* Viewport Image */
-    if (const Result r = bank.create_image(viewport_texture); r.is_err()) {
+    if (const Result r = bank.create_image(viewport.texture); r.is_err()) {
         Log::error(Log::Scope::RENDERER, "failed to initialize attachment image.\nreason: {}", r.unwrap_err());
         return;
     } else
-        viewport_image = r.unwrap();
+        viewport.image = r.unwrap();
 
     /* Create the active render view buffer */
     if (const Result r = bank.create_buffer(BufferUsage::Constant | BufferUsage::TransferDst, sizeof(RenderView)); r.is_err()) {
@@ -55,8 +55,12 @@ void RenderView::init() {
 
     /* Create the visibility buffer */
     const Size3D view_size { gpu_view.resolution.x, gpu_view.resolution.y };
-    vbuffer_texture = bank.create_texture(TextureUsage::Storage, TextureFormat::RG32Uint, view_size).expect("failed to create vbuffer texture.");
-    vbuffer = bank.create_image(vbuffer_texture).expect("failed to create vbuffer image.");
+    vbuffer.texture = bank.create_texture(TextureUsage::Storage, TextureFormat::RG32Uint, view_size).expect("failed to create vbuffer texture.");
+    vbuffer.image = bank.create_image(vbuffer.texture).expect("failed to create vbuffer image.");
+
+    /* Create the illuminance buffer */
+    ibuffer.texture = bank.create_texture(TextureUsage::Storage, TextureFormat::RG11B10Ufloat, view_size).expect("failed to create ibuffer texture.");
+    ibuffer.image = bank.create_image(vbuffer.texture).expect("failed to create ibuffer image.");
 }
 
 void RenderView::update() {
@@ -94,18 +98,21 @@ void RenderView::update_gpu_view(RenderGraph& render_graph, const Camera& camera
 void RenderView::deinit() {
     VRAMBank& bank = engine.renderer.vram_bank();
 
-    bank.destroy(vbuffer);
-    bank.destroy(vbuffer_texture);
+    /* Destroy screen buffers */
+    bank.destroy(vbuffer.image);
+    bank.destroy(vbuffer.texture);
+    bank.destroy(ibuffer.image);
+    bank.destroy(ibuffer.texture);
+    bank.destroy(viewport.texture);
+    bank.destroy(viewport.image);
 
     bank.destroy(render_view_buffer);
-    bank.destroy(viewport_texture);
-    bank.destroy(viewport_image);
     bank.destroy(render_target);
 }
 
 BindHandle RenderView::get_render_image() const {
 #ifdef THERMITE_EDITOR
-    return viewport_image;
+    return viewport.image;
 #else
     return render_target;
 #endif  // THERMITE_EDITOR
@@ -118,8 +125,8 @@ void RenderView::set_viewport_size(uint32_t width, uint32_t height) {
         resize_textures();
 
 #ifdef THERMITE_EDITOR
-        engine.renderer.imgui->remove_image(viewport_image);
-        imgui_viewport = engine.renderer.imgui->add_image(viewport_image);
+        engine.renderer.imgui->remove_image(viewport.image);
+        imgui_viewport = engine.renderer.imgui->add_image(viewport.image);
 #endif
     }
 }
@@ -128,11 +135,10 @@ void RenderView::resize_textures() {
     const Size3D view_size { gpu_view.resolution.x, gpu_view.resolution.y };
     VRAMBank& bank = engine.renderer.vram_bank();
 
-    /* Resize the viewport */
-    bank.resize_texture(viewport_texture, view_size).expect("failed to resize vbuffer texture.");
-
-    /* Resize the vbuffer */
-    bank.resize_texture(vbuffer_texture, view_size).expect("failed to resize vbuffer texture.");
+    /* Resize the screen buffers */
+    bank.resize_texture(viewport.texture, view_size).expect("failed to resize viewport texture.");
+    bank.resize_texture(vbuffer.texture, view_size).expect("failed to resize vbuffer texture.");
+    bank.resize_texture(ibuffer.texture, view_size).expect("failed to resize ibuffer texture.");
 }
 
 }  // namespace tmt

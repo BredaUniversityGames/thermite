@@ -7,6 +7,7 @@ namespace tmt {
 struct RenderView;
 struct SceneView;
 
+/* Geometry / Visibility pipeline. */
 class GeometryPipeline {
    public:
     GeometryPipeline() {}

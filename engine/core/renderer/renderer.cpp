@@ -15,13 +15,15 @@
 
 #include "pipelines/debug_pipeline.hpp"
 #include "pipelines/geometry_pipeline.hpp"
+#include "pipelines/di_pipeline.hpp"
 #include "tools/profiler.hpp"
 
 namespace tmt {
 
-Renderer::Renderer() : gpu(*new GPUAdapter()), render_graph(*new RenderGraph()), debug_pipeline(*new DebugPipeline()), geometry_pipeline(*new GeometryPipeline()) {}
+Renderer::Renderer() : gpu(*new GPUAdapter()), render_graph(*new RenderGraph()), debug_pipeline(*new DebugPipeline()), geometry_pipeline(*new GeometryPipeline()), di_pipeline(*new DiPipeline()) {}
 
 Renderer::~Renderer() {
+    delete &di_pipeline;
     delete &geometry_pipeline;
     delete &debug_pipeline;
     delete &render_graph;
@@ -98,6 +100,7 @@ void Renderer::update() {
 
     /* Enqueue pipelines */
     geometry_pipeline.enqueue(render_graph, render_view, scene_view);
+    di_pipeline.enqueue(render_graph, render_view, scene_view);
     debug_pipeline.enqueue(render_graph, render_view);
 
 #ifdef THERMITE_EDITOR
@@ -143,7 +146,7 @@ void Renderer::set_imgui(ImGUI* new_imgui) {
         return;
     }
 
-    render_view.imgui_viewport = imgui->add_image(render_view.viewport_image);
+    render_view.imgui_viewport = imgui->add_image(render_view.viewport.image);
 }
 #endif
 

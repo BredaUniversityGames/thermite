@@ -32,6 +32,7 @@ class Renderer {
     /* Pipelines */
     class DebugPipeline& debug_pipeline;
     class GeometryPipeline& geometry_pipeline;
+    class DiPipeline& di_pipeline;
 
     /* Debug camera */
     Transform debug_transform;

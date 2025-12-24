@@ -25,6 +25,12 @@ struct GpuView {
     glm::uvec2 resolution {1, 1};
 };
 
+/* Screen buffer resource. */
+struct ScreenBuffer {
+    Texture texture {};
+    Image image {};
+};
+
 struct RenderView {
     RenderView() = default;
     ~RenderView() = default;
@@ -39,20 +45,20 @@ struct RenderView {
 
     void set_viewport_size(uint32_t width, uint32_t height);
 
-    /* Visibility buffer (WxH) */
-    Texture vbuffer_texture {};
-    Image vbuffer {};
+    /* Screen buffers */
+    ScreenBuffer vbuffer {}; /* Visibility buffer (WxH, 6->8 bytes) */
+    ScreenBuffer ibuffer {}; /* Illuminance buffer (WxH, 4 bytes) */
 
     /* Renderer output */
-    Texture viewport_texture {};
-    Image viewport_image {};
+    ScreenBuffer viewport {};
     u64 imgui_viewport {};
 
-    RenderTarget render_target {};
-
+    /* Render view constant buffer */
     Buffer render_view_buffer {};
-
     GpuView gpu_view {};
+    
+    /* (Final) Render target */
+    RenderTarget render_target {};
 
    private:
     void resize_textures();

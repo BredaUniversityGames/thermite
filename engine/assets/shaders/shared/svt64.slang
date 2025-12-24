@@ -198,6 +198,89 @@ public [ForceInline] Svt64Hit trace_svt64<let DEBUG : bool>(
     return hit;
 }
 
+/* Trace a ray through a SVT64 to check for occlusion. */
+public [ForceInline] float3 occlusion_svt64(
+    StructuredBuffer<Svt64Node> nodes,
+    Ray ray
+) {
+    const uint group_id = spirv_asm {
+        result:$$uint = OpLoad builtin(LocalInvocationIndex:uint);
+    };
+
+    /* 16x8 thread group, 11 stack slots each. */
+    static groupshared uint gs_stack[16 * 8][11];
+
+    /* Mirror ray origin for more efficient ray-octant traversal */
+    ray.origin = mirror_pos(ray.origin, ray.dir, true);
+    ray.rcp_dir = 1.0f / -abs(ray.dir);
+
+    /* Mirror coordinates to simplify cell intersections */
+    uint mirror_mask = 0x00u;
+    if (ray.dir.x > 0.0f) mirror_mask |= 3u << 0u;
+    if (ray.dir.y > 0.0f) mirror_mask |= 3u << 4u;
+    if (ray.dir.z > 0.0f) mirror_mask |= 3u << 2u;
+
+    /* Traversal state */
+    uint node_index = 0u; /* root node */
+    int scale_exp = 21;   /* 23 mantissa bits - 2 */
+    Svt64Node node = nodes[node_index];
+    float3 pos = clamp(ray.origin, 1.0f, 1.9999999f);
+    for (;;) {
+        uint child_index = get_node_cell_index(pos, scale_exp) ^ mirror_mask;
+
+        /* Descend down the tree until we find an empty node or leaf node */
+        while (node.child_active(child_index) && !node.is_leaf()) {
+            /* Push the current node on the stack (at `scale_exp / 2`) */
+            gs_stack[group_id][scale_exp >> 1] = node_index;
+
+            /* Fetch the child node */
+            node_index = node.abs_ptr() + popcnt_var64(node.child_mask_lo, node.child_mask_hi, child_index);
+            node = nodes[node_index];
+
+            /* Decrease the scale & get the next child index */
+            scale_exp -= 2;
+            child_index = get_node_cell_index(pos, scale_exp) ^ mirror_mask;
+        }
+
+        /* If this node is a leaf, check if we hit a voxel */
+        if (node.child_active(child_index) && node.is_leaf()) break;
+
+        /* Check if we can actually take a larger step based on the child mask */
+        const int sub_scale_exp = node.child_coalesced_skip(child_index) ? (scale_exp + 1) : scale_exp;
+
+        /* Compute the next position by intersecting the max cell sides */
+        const float3 cell_min = floor_scale(pos, sub_scale_exp);
+        const float3 side_dist = (cell_min - ray.origin) * ray.rcp_dir;
+        const float tmax = min(min(side_dist.x, side_dist.y), side_dist.z);
+        const int3 neighbor_max = asint(cell_min) + select(side_dist == tmax, -1, (1 << sub_scale_exp) - 1);
+        pos = min(ray.origin - abs(ray.dir) * tmax, asfloat(neighbor_max));
+
+        /* Find the first common ancestor node based on left-most carry bit */
+        const uint3 diff_pos = asuint(pos) ^ asuint(cell_min);
+        const int diff_exp = firstbithigh((diff_pos.x | diff_pos.y | diff_pos.z) & 0xFFAAAAAAu);
+
+        /* Traverse back up the tree if we need to */
+        if (diff_exp > scale_exp) {
+            /* Break if we're exiting the root node */
+            scale_exp = diff_exp;
+            if (diff_exp > 21) break;
+
+            /* Read the first common ancestor node from the stack */
+            node_index = gs_stack[group_id][scale_exp >> 1];
+            node = nodes[node_index];
+        }
+    }
+
+    /* If we hit a leaf node, return the voxel we hit */
+    if (node.is_leaf() && scale_exp <= 21) {
+        /* Find the hit position & calculate the hit distance */
+        pos = mirror_pos(pos, ray.dir, false);
+        return pos;
+    }
+
+    return float::maxValue;
+}
+
 /* Fetch the voxel index at a given voxel position in a SVT64. */
 public [ForceInline] uint fetch_svt64(
     StructuredBuffer<Svt64Node> nodes,
