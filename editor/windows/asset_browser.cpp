@@ -56,12 +56,14 @@ void recurse_parse_directory(tmt::AssetBrowser::Directory& directory) {
 namespace tmt {
 
 void AssetBrowser::display() {
-    if (ImGui::SmallButton(ICON_MS_ARROW_BACK))
-        ;
+    ImGui::BeginDisabled(undo_viewing_locations.empty());
+    if (ImGui::SmallButton(ICON_MS_ARROW_BACK)) move_location_stacks(undo_viewing_locations, redo_viewing_locations);
+    ImGui::EndDisabled();
     ImGui::SameLine();
 
-    if (ImGui::SmallButton(ICON_MS_ARROW_FORWARD))
-        ;
+    ImGui::BeginDisabled(redo_viewing_locations.empty());
+    if (ImGui::SmallButton(ICON_MS_ARROW_FORWARD)) move_location_stacks(redo_viewing_locations, undo_viewing_locations);
+    ImGui::EndDisabled();
     ImGui::SameLine();
 
     const std::filesystem::path& current_path = viewing_location.relative_path;
@@ -109,7 +111,12 @@ void AssetBrowser::on_editor_start() {
 }
 
 void AssetBrowser::on_editor_update(const FrameData&) {
-    update_viewing_locations();
+    if (pending_viewing_location.has_value()) {
+        // Clear the redo history.
+        redo_viewing_locations = {};
+        if (*pending_viewing_location != viewing_location) undo_viewing_locations.push(viewing_location);
+        update_viewing_locations();
+    }
 
     update_bookmark_directories();
 }
@@ -159,6 +166,14 @@ void AssetBrowser::update_bookmark_directories() {
         directory.sub_directories.clear();
         recurse_parse_directory(directory);
     }
+}
+
+void AssetBrowser::move_location_stacks(std::stack<IO::FileLocation>& from, std::stack<IO::FileLocation>& to) {
+    to.push(viewing_location);
+    pending_viewing_location = from.top();
+    from.pop();
+
+    update_viewing_locations();
 }
 
 void AssetBrowser::display_directory_bar() {

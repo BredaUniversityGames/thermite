@@ -37,6 +37,7 @@ class AssetBrowser : public IWindow {
     void update_viewing_locations();
     void update_bookmark_directories();
 
+    void move_location_stacks(std::stack<IO::FileLocation>& from, std::stack<IO::FileLocation>& to);
     void recurse_display_bookmark_dirs(const Directory& directory);
 
     void display_directory_bar();
