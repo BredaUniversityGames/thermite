@@ -3,19 +3,22 @@
 #include "editor/core/window.hpp"
 #include "engine/core/io.hpp"
 
-#include <filesystem>
 #include <stack>
 
 namespace tmt {
 
 class AssetBrowser : public IWindow {
    public:
+    struct Directory {
+        IO::FileLocation location;
+        std::vector<Directory> sub_directories;
+    };
+
     constexpr std::string get_title() const override { return ICON_MS_FOLDER " Asset Browser"; }
 
-    // Inherited via IWindow.
     void display() override;
 
-    void on_editor_start() override {}
+    void on_editor_start() override;
     void on_editor_update(const FrameData&) override;
     void on_editor_end() override {}
 
@@ -28,7 +31,13 @@ class AssetBrowser : public IWindow {
     std::stack<IO::FileLocation> undo_viewing_locations;
     std::stack<IO::FileLocation> redo_viewing_locations;
 
-    void update_viewing_paths();
+    std::vector<Directory> default_bookmarked_dirs;
+    std::vector<Directory> bookmarked_dirs;
+
+    void update_viewing_locations();
+    void update_bookmark_directories();
+
+    void recurse_display_bookmark_dirs(const Directory& directory);
 
     void display_directory_bar();
     void display_bookmarks();

@@ -38,6 +38,17 @@ void apply_requests(ImGuiMultiSelectIO* io, std::vector<ItemType>& selection, co
     }
 }
 
+void recurse_parse_directory(tmt::AssetBrowser::Directory& directory) {
+    std::filesystem::directory_iterator iterator {directory.location.get_relative_path()};
+    for (const auto& entry : iterator) {
+        if (!entry.is_directory()) continue;
+
+        tmt::AssetBrowser::Directory& sub_directory = directory.sub_directories.emplace_back();
+        sub_directory.location = {directory.location.sub_location, directory.location.relative_path / entry.path().filename()};
+        recurse_parse_directory(sub_directory);
+    }
+}
+
 [[nodiscard]] bool path_valid(const std::filesystem::path& path) { return !path.empty() && exists(path); }
 
 }  // namespace
@@ -55,9 +66,9 @@ void AssetBrowser::display() {
 
     ImGui::SameLine();
 
-    const std::filesystem::path parent_path = viewing_location.relative_path;
-    ImGui::BeginDisabled(!path_valid(parent_path));
-    if (ImGui::SmallButton(ICON_MS_ARROW_UPWARD_ALT)) pending_viewing_location = {viewing_location.sub_location, parent_path};
+    const std::filesystem::path& current_path = viewing_location.relative_path;
+    ImGui::BeginDisabled(current_path.empty());
+    if (ImGui::SmallButton(ICON_MS_ARROW_UPWARD_ALT)) pending_viewing_location = {viewing_location.sub_location, current_path.parent_path()};
     ImGui::EndDisabled();
 
     ImGui::SameLine();
@@ -67,6 +78,12 @@ void AssetBrowser::display() {
     ImGui::SameLine();
 
     display_directory_bar();
+    // ImGui::SameLine();
+
+    const auto& bookmark_iterator = std::ranges::find_if(bookmarked_dirs, [this](const Directory& dir) { return dir.location == viewing_location; });
+    ImGui::BeginDisabled(viewing_location.relative_path.empty() || bookmark_iterator != bookmarked_dirs.end());
+    if (ImGui::SmallButton(ICON_MS_BOOKMARK)) bookmarked_dirs.emplace_back(viewing_location);
+    ImGui::EndDisabled();
 
     const float available_width = ImGui::GetContentRegionAvail().x;
     if (!ImGui::BeginTable("AssetBrowserTable", 2, ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_Resizable)) return;
@@ -88,9 +105,20 @@ void AssetBrowser::display() {
     ImGui::EndTable();
 }
 
-void AssetBrowser::on_editor_update(const FrameData&) { update_viewing_paths(); }
+void AssetBrowser::on_editor_start() {
+    constexpr std::array bookmark_paths = magic_enum::enum_entries<IO::Location>();
+    for (const auto& [location, name] : bookmark_paths) {
+        default_bookmarked_dirs.emplace_back(IO::FileLocation {location, ""});
+    }
+}
 
-void AssetBrowser::update_viewing_paths() {
+void AssetBrowser::on_editor_update(const FrameData&) {
+    update_viewing_locations();
+
+    update_bookmark_directories();
+}
+
+void AssetBrowser::update_viewing_locations() {
     if (!pending_viewing_location.has_value()) return;
 
     const std::filesystem::path& path = pending_viewing_location->relative_path;
@@ -110,9 +138,10 @@ void AssetBrowser::update_viewing_paths() {
 
     const std::filesystem::directory_iterator directory_iterator {viewing_location.get_relative_path()};
     for (const std::filesystem::directory_entry& entry : directory_iterator) {
-        viewing_locations.emplace_back(viewing_location.sub_location, std::filesystem::relative(entry.path(), IO::get_sub_location_path(viewing_location.sub_location)));
+        viewing_locations.emplace_back(viewing_location.sub_location, relative(entry.path(), IO::get_sub_location_path(viewing_location.sub_location)));
     }
 
+    // Sort the paths by name but make sure that directories are always first (just like how file explorer does it).
     std::ranges::sort(viewing_locations, [](const IO::FileLocation& a, const IO::FileLocation& b) {
         const std::filesystem::path& a_path = a.get_relative_path();
         const std::filesystem::path& b_path = b.get_relative_path();
@@ -120,6 +149,20 @@ void AssetBrowser::update_viewing_paths() {
         if (is_directory(a_path) == is_directory(b_path)) return a_path < b_path;
         return is_directory(a_path);
     });
+}
+
+void AssetBrowser::update_bookmark_directories() {
+    // Update the default bookmarks (asset dirs for: engine, editor and project).
+    for (auto& directory : default_bookmarked_dirs) {
+        directory.sub_directories.clear();
+        recurse_parse_directory(directory);
+    }
+
+    // Update the user added bookmarks.
+    for (auto& directory : bookmarked_dirs) {
+        directory.sub_directories.clear();
+        recurse_parse_directory(directory);
+    }
 }
 
 void AssetBrowser::display_directory_bar() {
@@ -152,8 +195,20 @@ void AssetBrowser::display_directory_bar() {
 
     // Adjust to get the text in the middle of the InputText().
     ImGui::SetCursorScreenPos(ImGui::GetItemRectMin() + ImGui::GetStyle().FramePadding);
+
+    // Add the sub_path button which has to be handled separately.
+    const std::string sub_path_name = IO::get_sub_location_path(viewing_location.sub_location).stem().generic_string();
+    if (ImGui::SmallButton(sub_path_name.c_str())) pending_viewing_location = {viewing_location.sub_location, ""};
+
+    ImGui::SameLine();
+
+    // Add the ">" for the sub_path button.
     const bool valid_relative_path = !viewing_location.relative_path.empty();
-    ImGui::Text((valid_relative_path ? "%s >" : "%s"), IO::get_sub_location_path(viewing_location.sub_location).stem().generic_string().c_str());
+    if (valid_relative_path) {
+        // Adjust to get the text in the middle of the InputText().
+        ImGui::SetCursorPos(ImGui::GetCursorPos() + ImGui::GetStyle().FramePadding);
+        ImGui::Text(">");
+    }
 
     ImGui::SameLine();
 
@@ -177,17 +232,36 @@ void AssetBrowser::display_directory_bar() {
     ImGui::NewLine();
 }
 
-void AssetBrowser::display_bookmarks() {
-    constexpr ImGuiTreeNodeFlags node_flags =
-        ImGuiTreeNodeFlags_DrawLinesFull | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_AllowOverlap | ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_OpenOnArrow;
+void AssetBrowser::recurse_display_bookmark_dirs(const Directory& directory) {
+    constexpr ImGuiTreeNodeFlags node_flags = ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_AllowOverlap | ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_OpenOnArrow;
     constexpr ImGuiTreeNodeFlags leaf_node_flags = ImGuiTreeNodeFlags_Leaf;
 
-    constexpr std::array bookmark_paths = magic_enum::enum_entries<IO::Location>();
-    for (const auto& [location, name] : bookmark_paths) {
-        const std::filesystem::path sub_location_path = IO::get_sub_location_path(location);
-        ImGui::TreeNodeEx(sub_location_path.stem().generic_string().c_str(), node_flags | leaf_node_flags | ImGuiTreeNodeFlags_NoTreePushOnOpen);
+    const std::string& directory_path = ICON_MS_FOLDER_OPEN " " + directory.location.get_relative_path().filename().generic_string();
+    const bool node_open = ImGui::TreeNodeEx(directory_path.c_str(), node_flags | (directory.sub_directories.empty() ? leaf_node_flags : 0));
 
-        if (ImGui::IsItemClicked()) pending_viewing_location = {location, ""};
+    if (ImGui::IsItemClicked()) pending_viewing_location = directory.location;
+    if (node_open) {
+        for (const auto& sub_directory : directory.sub_directories) {
+            recurse_display_bookmark_dirs(sub_directory);
+        }
+
+        ImGui::TreePop();
+    }
+}
+
+void AssetBrowser::display_bookmarks() {
+    for (const auto& directory : default_bookmarked_dirs) {
+        recurse_display_bookmark_dirs(directory);
+    }
+
+    ImGui::SeparatorText("Bookmarks");
+
+    for (const auto& directory : bookmarked_dirs) {
+        const std::string absolute_path_string = absolute(directory.location.get_relative_path()).generic_string();
+
+        ImGui::PushID(absolute_path_string.c_str());
+        recurse_display_bookmark_dirs(directory);
+        ImGui::PopID();
     }
 }
 
@@ -210,9 +284,9 @@ void AssetBrowser::display_files() {
         ImGui::SetNextItemSelectionUserData(i);
         ImGui::Selectable(location_name.c_str(), is_selected);
         if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
-            if (location_is_directory)
+            if (location_is_directory) {
                 pending_viewing_location = location;
-            else {
+            } else {
                 const std::string open_file_command = std::format(R"(start "" "{}")", location.get_relative_path().generic_string());
                 if (system(open_file_command.c_str()) != 0) Log::warn(Log::Scope::ENGINE, "Couldn't open file.");
             }

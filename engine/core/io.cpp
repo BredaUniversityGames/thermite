@@ -6,7 +6,12 @@
 namespace tmt {
 
 /* Relative to working directory */
-std::filesystem::path IO::FileLocation::get_relative_path() const { return get_sub_location_path(sub_location) / relative_path; }
+std::filesystem::path IO::FileLocation::get_relative_path() const {
+    const std::filesystem::path& sub_path = get_sub_location_path(sub_location);
+    if (relative_path.empty()) return sub_path;
+
+    return sub_path / relative_path;
+}
 
 /* Absolute path */
 std::filesystem::path IO::FileLocation::get_absolute_path() const {
