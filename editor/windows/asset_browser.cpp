@@ -58,27 +58,23 @@ namespace tmt {
 void AssetBrowser::display() {
     if (ImGui::SmallButton(ICON_MS_ARROW_BACK))
         ;
-
     ImGui::SameLine();
 
     if (ImGui::SmallButton(ICON_MS_ARROW_FORWARD))
         ;
-
     ImGui::SameLine();
 
     const std::filesystem::path& current_path = viewing_location.relative_path;
     ImGui::BeginDisabled(current_path.empty());
     if (ImGui::SmallButton(ICON_MS_ARROW_UPWARD_ALT)) pending_viewing_location = {viewing_location.sub_location, current_path.parent_path()};
     ImGui::EndDisabled();
-
     ImGui::SameLine();
 
     ImGui::Text("Directory:");
-
     ImGui::SameLine();
 
     display_directory_bar();
-    // ImGui::SameLine();
+    // Because of some trickery, this function calls "ImGui::SameLine" itself.
 
     const auto& bookmark_iterator = std::ranges::find_if(bookmarked_dirs, [this](const Directory& dir) { return dir.location == viewing_location; });
     ImGui::BeginDisabled(viewing_location.relative_path.empty() || bookmark_iterator != bookmarked_dirs.end());
@@ -168,6 +164,9 @@ void AssetBrowser::update_bookmark_directories() {
 void AssetBrowser::display_directory_bar() {
     static std::string viewing_dir_name;
 
+    const float margin_width = ImGui::CalcTextSize(ICON_MS_BOOKMARK).x + (ImGui::GetWindowWidth() / 5.0f);
+
+    ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - margin_width);
     ImGui::SetNextItemAllowOverlap();
     if (ImGui::InputText("##ViewingDirEdit", &viewing_dir_name, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_ElideLeft)) {
         IO::FileLocation new_location {viewing_location.sub_location, viewing_dir_name};
@@ -177,6 +176,7 @@ void AssetBrowser::display_directory_bar() {
 
         viewing_dir_name.clear();
     }
+    ImGui::SameLine();
 
     if (ImGui::IsItemActive()) return;
     if (ImGui::IsItemDeactivated()) viewing_dir_name.clear();
@@ -188,13 +188,14 @@ void AssetBrowser::display_directory_bar() {
     if (ImGui::InvisibleButton("##InputSelect", ImGui::GetItemRectSize())) {
         viewing_dir_name = viewing_location.relative_path.generic_string();
 
+        // Activate (start editing) the text input widget if the invisible button is clicked (button is necessary to set the input text).
         ImGui::ActivateItemByID(viewing_dir_edit_id);
     }
-
     ImGui::SameLine();
+    const ImVec2 cursor_end_position = ImGui::GetCursorPos();
 
     // Adjust to get the text in the middle of the InputText().
-    ImGui::SetCursorScreenPos(ImGui::GetItemRectMin() + ImGui::GetStyle().FramePadding);
+    ImGui::SetCursorScreenPos(ImGui::GetItemRectMin() + ImVec2 {ImGui::GetStyle().FramePadding.x, 0.0f});
 
     // Add the sub_path button which has to be handled separately.
     const std::string sub_path_name = IO::get_sub_location_path(viewing_location.sub_location).stem().generic_string();
@@ -204,11 +205,7 @@ void AssetBrowser::display_directory_bar() {
 
     // Add the ">" for the sub_path button.
     const bool valid_relative_path = !viewing_location.relative_path.empty();
-    if (valid_relative_path) {
-        // Adjust to get the text in the middle of the InputText().
-        ImGui::SetCursorPos(ImGui::GetCursorPos() + ImGui::GetStyle().FramePadding);
-        ImGui::Text(">");
-    }
+    if (valid_relative_path) ImGui::Text(">");
 
     ImGui::SameLine();
 
@@ -216,20 +213,17 @@ void AssetBrowser::display_directory_bar() {
     for (const std::filesystem::path& sub_directory : viewing_location.relative_path) {
         intermediate_dir /= sub_directory;
 
-        // Adjust to get the buttons in the middle of the InputText().
-        ImGui::SetCursorPos(ImGui::GetCursorPos() + ImGui::GetStyle().FramePadding);
-
         if (ImGui::SmallButton(sub_directory.generic_string().c_str())) pending_viewing_location = {viewing_location.sub_location, intermediate_dir};
         ImGui::SameLine();
 
         if (viewing_location.relative_path != intermediate_dir) {
-            ImGui::SetCursorPos(ImGui::GetCursorPos() + ImGui::GetStyle().FramePadding);
             ImGui::Text(">");
             ImGui::SameLine();
         }
     }
 
-    ImGui::NewLine();
+    // Reset ImGui cursor to allow us to continue adding widgets.
+    ImGui::SetCursorPos(cursor_end_position);
 }
 
 void AssetBrowser::recurse_display_bookmark_dirs(const Directory& directory) {
@@ -254,7 +248,7 @@ void AssetBrowser::display_bookmarks() {
         recurse_display_bookmark_dirs(directory);
     }
 
-    ImGui::SeparatorText("Bookmarks");
+    ImGui::SeparatorText(ICON_MS_BOOKMARKS " Bookmarks");
 
     for (const auto& directory : bookmarked_dirs) {
         const std::string absolute_path_string = absolute(directory.location.get_relative_path()).generic_string();
