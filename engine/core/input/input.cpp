@@ -206,16 +206,18 @@ float Input::get_action_strength(std::string_view name) {
         return 0.0f;
     }
 
-    // TODO inneficient in principle, could cache it once
+    // TODO inneficient in principle, could cache it once, but first it should be a bottleneck through profiling
     float max_strength = 0.0f;
     for (const auto& event : it->second.events) {
         auto strength = event->get_action_strength();
         if (strength < it->second.deadzone) {
             continue;
         }
+
         max_strength = std::max(strength, max_strength);
     }
-    return max_strength;
+
+    return max_strength * it->second.sensitivity;
 }
 float Input::get_action_raw_strength(std::string_view name) {
     auto it = engine.input_map.actions.find(std::string {name});
