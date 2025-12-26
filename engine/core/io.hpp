@@ -50,8 +50,10 @@ class IO {
 
     static std::string read_or_create_text_file(const FileLocation& file_location, const std::string& default_contents = "");
 
+    [[nodiscard]] static const std::filesystem::path& get_sub_location_path(const IO::Location sub_location) { return sub_locations[static_cast<uint8_t>(sub_location)]; }
+
    private:
-    static const char* path_str[3];
+    static inline const std::filesystem::path sub_locations[3] {"assets/game", "assets/engine", "assets/editor"};
 
     static bool stream_open(std::fstream& file_stream, const std::filesystem::path& absolute, std::ios::openmode open_mode);
     static bool create_directories(const std::filesystem::path& absolute);
