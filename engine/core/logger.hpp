@@ -22,12 +22,11 @@ class Log {
         // the info part is the colored output which can be info, warning,
         // error, etc check
         // https://github.com/gabime/spdlog/wiki/Custom-formatting
-        spdlog::set_pattern("%^[%l]%$ %v");
-
         loggers[Scope::ENGINE] = spdlog::stdout_color_mt("Engine");
         loggers[Scope::GAME] = spdlog::stdout_color_mt("Game");
         loggers[Scope::RENDERER] = spdlog::stdout_color_mt("Renderer");
         loggers[Scope::EDITOR] = spdlog::stdout_color_mt("Editor");
+        loggers[Scope::GLOBAL] = spdlog::stdout_color_mt("Global");
 
         std::shared_ptr<spdlog::sinks::basic_file_sink_mt> file_sink = nullptr;
         if (!log_file.empty()) {
@@ -49,6 +48,7 @@ class Log {
         RENDERER,
         GAME,
         EDITOR,
+        GLOBAL,
     };
 
     template <typename... Args>
@@ -68,17 +68,31 @@ class Log {
 
     template <typename... Args>
     static void info(spdlog::format_string_t<Args...> fmt, Args&&... args) {
-        spdlog::info(fmt, std::forward<Args>(args)...);
+        loggers[Scope::GLOBAL]->info(fmt, std::forward<Args>(args)...);
     }
 
     template <typename... Args>
     static void warn(spdlog::format_string_t<Args...> fmt, Args&&... args) {
         spdlog::warn(fmt, std::forward<Args>(args)...);
+        loggers[Scope::GLOBAL]->warn(fmt, std::forward<Args>(args)...);
     }
 
     template <typename... Args>
     static void error(spdlog::format_string_t<Args...> fmt, Args&&... args) {
-        spdlog::error(fmt, std::forward<Args>(args)...);
+        loggers[Scope::GLOBAL]->error(fmt, std::forward<Args>(args)...);
+        ;
+    }
+    static void add_sink(const std::shared_ptr<spdlog::sinks::sink>& sink) {
+        for (auto& [scope, logger] : loggers) {
+            logger->sinks().push_back(sink);
+        }
+    }
+
+    static void remove_sink(const std::shared_ptr<spdlog::sinks::sink>& sink) {
+        for (auto& [scope, logger] : loggers) {
+            auto& sinks = logger->sinks();
+            std::erase(sinks, sink);
+        }
     }
 
    private:

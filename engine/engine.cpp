@@ -21,6 +21,7 @@
 
 #include "events/engine.hpp"
 #include "events/game.hpp"
+#include "events/scene.hpp"
 #include "core/resources.hpp"
 #include "core/salvo.hpp"
 #include "tools/profiler.hpp"
@@ -33,7 +34,15 @@ tmt::Engine tmt::engine;
 namespace tmt {
 
 Engine::Engine()
-    : window(*new Window()), audio(*new Audio()), input(*new Input()), ecs(*new Ecs()), renderer(*new Renderer()), resources(*new Resources()), salvo(*new Salvo()), scenes(*new Scenes()) {}
+    : window(*new Window()),
+      audio(*new Audio()),
+      input_map(*new InputMap()),
+      input(*new Input()),
+      ecs(*new Ecs()),
+      renderer(*new Renderer()),
+      resources(*new Resources()),
+      salvo(*new Salvo()),
+      scenes(*new Scenes()) {}
 
 Engine::~Engine() {
     /* Destruction should be in reverse order */
@@ -43,6 +52,7 @@ Engine::~Engine() {
     delete &renderer;
     delete &ecs;
     delete &input;
+    delete &input_map;
     delete &audio;
     delete &window;
 }
@@ -164,8 +174,9 @@ void Engine::start_game() {
     TMT_ZONE_SCOPED_N("Engine::start_game")
 
     app->on_start();
-    if (scenes.get_active_scene()) scenes.get_active_scene()->on_start();
     OnGameStart::dispatch();
+    if (scenes.get_active_scene()) scenes.get_active_scene()->on_start();
+    OnSceneStart::dispatch();
 }
 
 void Engine::update_game(const FrameData& frame_data) {
@@ -196,8 +207,9 @@ void Engine::resume_game() {
 void Engine::end_game() {
     TMT_ZONE_SCOPED_N("Engine::end_game")
     app->on_end();
-    if (scenes.get_active_scene()) scenes.get_active_scene()->on_end();
     OnGameEnd::dispatch();
+    if (scenes.get_active_scene()) scenes.get_active_scene()->on_end();
+    OnSceneEnd::dispatch();
 }
 
 }  // namespace tmt
