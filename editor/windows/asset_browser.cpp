@@ -56,32 +56,39 @@ void recurse_parse_directory(tmt::AssetBrowser::Directory& directory) {
 namespace tmt {
 
 void AssetBrowser::display() {
-    ImGui::BeginDisabled(undo_viewing_locations.empty());
-    if (ImGui::SmallButton(ICON_MS_ARROW_BACK)) move_location_stacks(undo_viewing_locations, redo_viewing_locations);
-    ImGui::EndDisabled();
-    ImGui::SameLine();
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImGui::GetStyle().FramePadding);
+    const bool menu_bar_open = ImGui::BeginMenuBar();
+    ImGui::PopStyleVar();
+    if (menu_bar_open) {
+        ImGui::BeginDisabled(undo_viewing_locations.empty());
+        if (ImGui::Button(ICON_MS_ARROW_BACK)) move_location_stacks(undo_viewing_locations, redo_viewing_locations);
+        ImGui::EndDisabled();
 
-    ImGui::BeginDisabled(redo_viewing_locations.empty());
-    if (ImGui::SmallButton(ICON_MS_ARROW_FORWARD)) move_location_stacks(redo_viewing_locations, undo_viewing_locations);
-    ImGui::EndDisabled();
-    ImGui::SameLine();
+        ImGui::BeginDisabled(redo_viewing_locations.empty());
+        if (ImGui::Button(ICON_MS_ARROW_FORWARD)) move_location_stacks(redo_viewing_locations, undo_viewing_locations);
+        ImGui::EndDisabled();
 
-    const std::filesystem::path& current_path = viewing_location.relative_path;
-    ImGui::BeginDisabled(current_path.empty());
-    if (ImGui::SmallButton(ICON_MS_ARROW_UPWARD_ALT)) pending_viewing_location = {viewing_location.sub_location, current_path.parent_path()};
-    ImGui::EndDisabled();
-    ImGui::SameLine();
+        const std::filesystem::path& current_path = viewing_location.relative_path;
+        ImGui::BeginDisabled(current_path.empty());
+        if (ImGui::Button(ICON_MS_ARROW_UPWARD_ALT)) pending_viewing_location = {viewing_location.sub_location, current_path.parent_path()};
+        ImGui::EndDisabled();
 
-    ImGui::Text("Directory:");
-    ImGui::SameLine();
+        if (ImGui::Button(ICON_MS_AUTORENEW)) pending_viewing_location = viewing_location;
 
-    display_directory_bar();
-    // Because of some trickery, this function calls "ImGui::SameLine" itself.
+        ImGui::Text("Directory:");
+        display_directory_bar();
 
-    const auto& bookmark_iterator = std::ranges::find_if(bookmarked_dirs, [this](const Directory& dir) { return dir.location == viewing_location; });
-    ImGui::BeginDisabled(viewing_location.relative_path.empty() || bookmark_iterator != bookmarked_dirs.end());
-    if (ImGui::SmallButton(ICON_MS_BOOKMARK)) bookmarked_dirs.emplace_back(viewing_location);
-    ImGui::EndDisabled();
+        const auto& bookmark_iterator = std::ranges::find_if(bookmarked_dirs, [this](const Directory& dir) { return dir.location == viewing_location; });
+        ImGui::BeginDisabled(viewing_location.relative_path.empty() || bookmark_iterator != bookmarked_dirs.end());
+        if (ImGui::Button(ICON_MS_BOOKMARK)) bookmarked_dirs.emplace_back(viewing_location);
+        ImGui::EndDisabled();
+
+        ImGui::EndMenuBar();
+    }
+
+    // Adds a line under the MenuBar to make it look *slightly* nicer.
+    ImGui::SetCursorScreenPos(ImVec2{ImGui::GetCursorScreenPos().x, ImGui::GetItemRectMax().y});
+    ImGui::Separator();
 
     const float available_width = ImGui::GetContentRegionAvail().x;
     if (!ImGui::BeginTable("AssetBrowserTable", 2, ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_Resizable)) return;
@@ -191,9 +198,8 @@ void AssetBrowser::display_directory_bar() {
 
         viewing_dir_name.clear();
     }
-    ImGui::SameLine();
 
-    if (ImGui::IsItemActive()) return;
+    if (ImGui::IsItemActive() || ImGui::GetItemRectSize().x <= 0.0f) return;
     if (ImGui::IsItemDeactivated()) viewing_dir_name.clear();
 
     const ImGuiID viewing_dir_edit_id = ImGui::GetItemID();
@@ -206,7 +212,6 @@ void AssetBrowser::display_directory_bar() {
         // Activate (start editing) the text input widget if the invisible button is clicked (button is necessary to set the input text).
         ImGui::ActivateItemByID(viewing_dir_edit_id);
     }
-    ImGui::SameLine();
     const ImVec2 cursor_end_position = ImGui::GetCursorPos();
 
     // Adjust to get the text in the middle of the InputText().
@@ -216,25 +221,17 @@ void AssetBrowser::display_directory_bar() {
     const std::string sub_path_name = IO::get_sub_location_path(viewing_location.sub_location).stem().generic_string();
     if (ImGui::SmallButton(sub_path_name.c_str())) pending_viewing_location = {viewing_location.sub_location, ""};
 
-    ImGui::SameLine();
-
     // Add the ">" for the sub_path button.
     const bool valid_relative_path = !viewing_location.relative_path.empty();
     if (valid_relative_path) ImGui::Text(">");
-
-    ImGui::SameLine();
 
     std::filesystem::path intermediate_dir;
     for (const std::filesystem::path& sub_directory : viewing_location.relative_path) {
         intermediate_dir /= sub_directory;
 
         if (ImGui::SmallButton(sub_directory.generic_string().c_str())) pending_viewing_location = {viewing_location.sub_location, intermediate_dir};
-        ImGui::SameLine();
 
-        if (viewing_location.relative_path != intermediate_dir) {
-            ImGui::Text(">");
-            ImGui::SameLine();
-        }
+        if (viewing_location.relative_path != intermediate_dir) ImGui::Text(">");
     }
 
     // Reset ImGui cursor to allow us to continue adding widgets.
