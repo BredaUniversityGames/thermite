@@ -35,7 +35,7 @@ void remove_component(const tmt::Inspector::MenuContext& menu_context) {
 void paste_component(const auto& name, const tmt::Inspector::MenuContext& menu_context) {
     const char* clipboard_text = ImGui::GetClipboardText();
     if (clipboard_text == nullptr) {
-        Log::warn("Failed to paste component, clipboard is empty.")
+        Log::warn("Failed to paste component, clipboard is empty.");
         return;
     }
     const json deserialized = json::parse(clipboard_text, nullptr, false);
@@ -61,8 +61,8 @@ void paste_component(const auto& name, const tmt::Inspector::MenuContext& menu_c
 void paste_values(const auto& name, const tmt::Inspector::MenuContext& menu_context) {
     const char* clipboard_text = ImGui::GetClipboardText();
     if (clipboard_text == nullptr) {
-        Log::warn("Failed to paste values, clipboard is empty.")
-        return
+        Log::warn("Failed to paste values, clipboard is empty.");
+        return;
     }
     const json deserialized = json::parse(clipboard_text, nullptr, false);
     if (deserialized.is_discarded()) {
