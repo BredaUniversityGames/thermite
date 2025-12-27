@@ -4,6 +4,8 @@
 #include "engine/engine.hpp"
 #include "engine/core/ecs.hpp"
 
+#include "engine/tools/serializer/ecs.hpp"
+
 namespace tmt {
 
 void GameFlow::display() {
@@ -15,6 +17,8 @@ void GameFlow::display() {
     } else {
         if (ImGui::Button("Start")) {
             engine.game_controller.start_game();
+            auto json = Serializer::serialize(engine.ecs);
+            auto dump = json.dump();
         }
     }
     ImGui::SameLine();

@@ -40,7 +40,7 @@ void paste_component(const auto& name, const tmt::Inspector::MenuContext& menu_c
     }
     const json deserialized = json::parse(clipboard_text, nullptr, false);
     if (deserialized.is_discarded()) {
-        Log::error("Failed to parse clipboard JSON for component '{}'. Clipboard is:", name, clipboard_text);
+        Log::error("Failed to parse clipboard JSON for component '{}'. Clipboard is: \"{}\"", name, clipboard_text);
         return;
     }
 
@@ -66,7 +66,7 @@ void paste_values(const auto& name, const tmt::Inspector::MenuContext& menu_cont
     }
     const json deserialized = json::parse(clipboard_text, nullptr, false);
     if (deserialized.is_discarded()) {
-        Log::error("Failed to parse clipboard JSON for component '{}'. Clipboard is:", name, clipboard_text);
+        Log::error("Failed to parse clipboard JSON for component '{}'. Clipboard is: \"{}\"", name, clipboard_text);
         return;
     }
 
