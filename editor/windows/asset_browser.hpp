@@ -36,11 +36,16 @@ class AssetBrowser : public IWindow {
     std::vector<Directory> default_bookmarked_dirs;
     std::vector<Directory> bookmarked_dirs;
 
+    [[nodiscard]] bool location_is_bookmarked(const IO::FileLocation& location);
+
     void update_viewing_locations();
     void update_bookmark_directories();
 
     void move_location_stacks(std::stack<IO::FileLocation>& from, std::stack<IO::FileLocation>& to);
-    void recurse_display_bookmark_dirs(const Directory& directory);
+    ImGuiID recurse_display_bookmark_dirs(const Directory& directory);
+
+    void location_context_menu(const IO::FileLocation& location, bool allow_bookmark);
+    void viewing_context_menu() const;
 
     void display_directory_bar();
     void display_bookmarks();

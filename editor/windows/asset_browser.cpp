@@ -55,6 +55,13 @@ void recurse_parse_directory(tmt::AssetBrowser::Directory& directory) {
 
 namespace tmt {
 
+bool AssetBrowser::location_is_bookmarked(const IO::FileLocation& location) {
+    if (location.relative_path.empty()) return true;
+
+    const auto& bookmark_iterator = std::ranges::find_if(bookmarked_dirs, [&location](const Directory& dir) { return dir.location == location; });
+    return bookmark_iterator != bookmarked_dirs.end();
+}
+
 void AssetBrowser::display() {
     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImGui::GetStyle().FramePadding);
     const bool menu_bar_open = ImGui::BeginMenuBar();
@@ -78,16 +85,15 @@ void AssetBrowser::display() {
         ImGui::Text("Directory:");
         display_directory_bar();
 
-        const auto& bookmark_iterator = std::ranges::find_if(bookmarked_dirs, [this](const Directory& dir) { return dir.location == viewing_location; });
-        ImGui::BeginDisabled(viewing_location.relative_path.empty() || bookmark_iterator != bookmarked_dirs.end());
-        if (ImGui::Button(ICON_MS_BOOKMARK)) bookmarked_dirs.emplace_back(viewing_location);
+        ImGui::BeginDisabled(location_is_bookmarked(viewing_location));
+        if (ImGui::Button(ICON_MS_BOOKMARK_ADD)) bookmarked_dirs.emplace_back(viewing_location);
         ImGui::EndDisabled();
 
         ImGui::EndMenuBar();
     }
 
     // Adds a line under the MenuBar to make it look *slightly* nicer.
-    ImGui::SetCursorScreenPos(ImVec2{ImGui::GetCursorScreenPos().x, ImGui::GetItemRectMax().y});
+    ImGui::SetCursorScreenPos(ImVec2 {ImGui::GetCursorScreenPos().x, ImGui::GetItemRectMax().y});
     ImGui::Separator();
 
     const float available_width = ImGui::GetContentRegionAvail().x;
@@ -238,14 +244,24 @@ void AssetBrowser::display_directory_bar() {
     ImGui::SetCursorPos(cursor_end_position);
 }
 
-void AssetBrowser::recurse_display_bookmark_dirs(const Directory& directory) {
-    constexpr ImGuiTreeNodeFlags node_flags = ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_AllowOverlap | ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_OpenOnArrow;
-    constexpr ImGuiTreeNodeFlags leaf_node_flags = ImGuiTreeNodeFlags_Leaf;
+ImGuiID AssetBrowser::recurse_display_bookmark_dirs(const Directory& directory) {
+    constexpr ImGuiTreeNodeFlags default_flags = ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_AllowOverlap | ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_OpenOnArrow;
 
-    const std::string& directory_path = ICON_MS_FOLDER_OPEN " " + directory.location.get_relative_path().filename().generic_string();
-    const bool node_open = ImGui::TreeNodeEx(directory_path.c_str(), node_flags | (directory.sub_directories.empty() ? leaf_node_flags : 0));
+    const std::string& directory_path = directory.location.get_relative_path().filename().generic_string();
+    const ImGuiID node_id = ImGui::GetID(directory_path.c_str());  // Generate node id ourselves to get some info about the id later.
 
+    ImGuiTreeNodeFlags flags = default_flags;
+    flags |= (directory.sub_directories.empty() ? ImGuiTreeNodeFlags_Leaf : 0);
+    // Checks for context menu popup being open (has the same id as the node), lets us draw the node as selected.
+    flags |= (ImGui::IsPopupOpen(node_id, ImGuiPopupFlags_None) ? ImGuiTreeNodeFlags_Selected : 0);
+
+    // Check ImGui internal storage to check if the node is already toggled open, this allows us to set the display label based on if the folder is toggled open.
+    const std::string node_display_text = (ImGui::GetStateStorage()->GetBool(node_id) ? ICON_MS_FOLDER_OPEN " " : ICON_MS_FOLDER " ") + directory_path;
+    const bool node_open = ImGui::TreeNodeBehavior(node_id, flags, node_display_text.c_str(), nullptr);
+
+    location_context_menu(directory.location, true);
     if (ImGui::IsItemClicked()) pending_viewing_location = directory.location;
+
     if (node_open) {
         for (const auto& sub_directory : directory.sub_directories) {
             recurse_display_bookmark_dirs(sub_directory);
@@ -253,6 +269,66 @@ void AssetBrowser::recurse_display_bookmark_dirs(const Directory& directory) {
 
         ImGui::TreePop();
     }
+
+    return node_id;
+}
+
+void AssetBrowser::location_context_menu(const IO::FileLocation& location, const bool allow_bookmark) {
+    constexpr ImGuiPopupFlags flags = ImGuiPopupFlags_NoOpenOverExistingPopup | ImGuiPopupFlags_MouseButtonRight;
+    if (!ImGui::BeginPopupContextItem(nullptr, flags)) return;
+
+    // Open the folder in file explorer and select the specific file.
+    if (ImGui::MenuItem(ICON_MS_OPEN_IN_NEW " Show In File Explorer")) {
+        // We use "string()" instead of "generic_string()" because it automatically keeps the file separators consistent which is necessary for this command.
+        const std::string show_command = std::format(R"(explorer.exe /select,"{}")", location.get_absolute_path().string());
+        system(show_command.c_str());
+    }
+
+    if (ImGui::BeginMenu(ICON_MS_ASSIGNMENT " Copy As Path")) {
+        if (ImGui::MenuItem("Relative")) {
+            const std::filesystem::path generic_path {location.get_relative_path(), std::filesystem::path::generic_format};
+            ImGui::SetClipboardText(generic_path.generic_string().c_str());
+        }
+        if (ImGui::MenuItem("Absolute")) {
+            const std::filesystem::path generic_path {location.get_absolute_path(), std::filesystem::path::generic_format};
+            ImGui::SetClipboardText(generic_path.generic_string().c_str());
+        }
+
+        ImGui::EndMenu();
+    }
+
+    ImGui::BeginDisabled(location_is_bookmarked(location));
+    if (allow_bookmark && ImGui::MenuItem(ICON_MS_BOOKMARK_ADD " Add Bookmark")) bookmarked_dirs.emplace_back(location);
+    ImGui::EndDisabled();
+
+    ImGui::EndPopup();
+}
+
+void AssetBrowser::viewing_context_menu() const {
+    constexpr ImGuiPopupFlags flags = ImGuiPopupFlags_NoOpenOverExistingPopup | ImGuiPopupFlags_MouseButtonRight;
+    if (!ImGui::BeginPopupContextWindow(nullptr, flags)) return;
+
+    if (ImGui::MenuItem(ICON_MS_OPEN_IN_NEW " Open In File Explorer")) {
+        // We use "string()" instead of "generic_string()" because it automatically keeps the file separators consistent which is necessary for this command.
+        const std::string open_command = std::format(R"(explorer.exe "{}")", viewing_location.get_absolute_path().string());
+
+        system(open_command.c_str());
+    }
+
+    if (ImGui::BeginMenu(ICON_MS_ASSIGNMENT " Copy Current Path")) {
+        if (ImGui::MenuItem("Relative")) {
+            const std::filesystem::path generic_path {viewing_location.get_relative_path(), std::filesystem::path::generic_format};
+            ImGui::SetClipboardText(generic_path.generic_string().c_str());
+        }
+        if (ImGui::MenuItem("Absolute")) {
+            const std::filesystem::path generic_path {viewing_location.get_absolute_path(), std::filesystem::path::generic_format};
+            ImGui::SetClipboardText(generic_path.generic_string().c_str());
+        }
+
+        ImGui::EndMenu();
+    }
+
+    ImGui::EndPopup();
 }
 
 void AssetBrowser::display_bookmarks() {
@@ -262,12 +338,22 @@ void AssetBrowser::display_bookmarks() {
 
     ImGui::SeparatorText(ICON_MS_BOOKMARKS " Bookmarks");
 
+    int64_t i = 0;
     for (const auto& directory : bookmarked_dirs) {
-        const std::string absolute_path_string = absolute(directory.location.get_relative_path()).generic_string();
+        const std::string absolute_path_string = directory.location.get_absolute_path().generic_string();
 
         ImGui::PushID(absolute_path_string.c_str());
-        recurse_display_bookmark_dirs(directory);
+        const ImGuiID node_id = recurse_display_bookmark_dirs(directory);
         ImGui::PopID();
+
+        //
+        if (ImGui::BeginPopupEx(node_id, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoSavedSettings)) {
+            ImGui::SeparatorEx(ImGuiSeparatorFlags_Horizontal, 3.0f);
+            if (ImGui::MenuItem(ICON_MS_BOOKMARK_REMOVE " Remove Bookmark")) bookmarked_dirs.erase(bookmarked_dirs.begin() + i);
+
+            ImGui::EndPopup();
+        }
+        ++i;
     }
 }
 
@@ -289,6 +375,7 @@ void AssetBrowser::display_files() {
 
         ImGui::SetNextItemSelectionUserData(i);
         ImGui::Selectable(location_name.c_str(), is_selected);
+        location_context_menu(location, location_is_directory);
         if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
             if (location_is_directory) {
                 pending_viewing_location = location;
@@ -302,5 +389,8 @@ void AssetBrowser::display_files() {
 
     select_io = ImGui::EndMultiSelect();
     apply_requests(select_io, selected_locations, viewing_locations);
+
+    viewing_context_menu();
 }
+
 }  // namespace tmt
