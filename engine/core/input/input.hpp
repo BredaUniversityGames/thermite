@@ -23,12 +23,6 @@ class Input {
    public:
     // Rule of 0
 
-    void init();
-    void update(const tmt::FrameData& time);
-
-    float get_action_strength(std::string_view name);
-    float get_action_raw_strength(std::string_view name);
-    float get_axis(std::string_view negative_action, std::string_view positive_action);
     /// <summary>
     /// Initializes the input system and retrieves the SDL keyboard state.
     /// </summary>
