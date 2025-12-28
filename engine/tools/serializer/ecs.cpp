@@ -48,7 +48,10 @@ Json tag_invoke(JsonReflect::serialize_t, const tmt::Ecs& ecs) {
     return tmt::Serializer::serialize(entities, ecs);
 }
 
-void tag_invoke(JsonReflect::deserialize_t, const Json& j, tmt::Ecs& ecs) {}
+void tag_invoke(JsonReflect::deserialize_t, const Json& j, tmt::Ecs& ecs) {
+    std::set<tmt::Entity> new_entities;
+    tmt::Serializer::deserialize(j, new_entities, ecs);
+}
 
 /* Single entity */
 Json tag_invoke(JsonReflect::serialize_t, const tmt::Entity& entity, const tmt::Ecs& ecs) {
@@ -56,7 +59,9 @@ Json tag_invoke(JsonReflect::serialize_t, const tmt::Entity& entity, const tmt::
     return tmt::Serializer::serialize(entities, ecs);
 }
 
-void tag_invoke(JsonReflect::deserialize_t, const Json& j, tmt::Entity& entity, tmt::Ecs& ecs) {}
+void tag_invoke(JsonReflect::deserialize_t, const Json& j, tmt::Entity& entity, tmt::Ecs& ecs) {
+
+}
 
 /* Set of entities */
 Json tag_invoke(JsonReflect::serialize_t, const std::set<tmt::Entity>& entities_original, const tmt::Ecs& ecs) {

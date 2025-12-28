@@ -7,6 +7,7 @@
 #include "engine/core/logger.hpp"
 
 #include "engine/tools/type_factory.hpp"
+#include "engine/core/io.hpp"
 
 namespace tmt {
 
@@ -14,7 +15,9 @@ class Scenes {
     using SceneFactory = TypeFactory<std::unique_ptr<SceneBase>>;
 
     struct SceneInfo {
-        std::string name;
+        const std::string name;
+        const IO::FileLocation file_location;
+
         SceneFactory factory;
     };
 
@@ -34,12 +37,13 @@ class Scenes {
     template <typename T>
         requires std::is_base_of_v<SceneBase, T>
     void register_scene() {
-        SceneInfo info;
-        info.name = T::scene_name();
+        const auto name = std::string(T::scene_name());
+        const auto scene_path = std::filesystem::path(Config::SCENES_FOLDER) / (name + Config::SCENE_EXTENSION);
+        SceneInfo info {name, {IO::Location::PROJECT, scene_path}};
         info.factory.register_type<T>();
 
         const std::type_index type_id = typeid(T);
-        registered_scenes[type_id] = std::move(info);
+        registered_scenes.emplace(type_id, std::move(info));
 
         if (next_scene == TYPE_INDEX_NULL) {
             /* Set the first registered scene as the next scene */
@@ -76,11 +80,18 @@ class Scenes {
 
     const std::unordered_map<std::type_index, SceneInfo>& get_registered_scenes() const { return registered_scenes; }
 
+    struct Config {
+        constexpr static const char* SCENE_EXTENSION = ".scene";
+        constexpr static const char* SCENES_FOLDER = "scenes";
+    };
+
    private:
     std::unique_ptr<SceneBase> active_scene = nullptr;
 
     std::type_index next_scene = TYPE_INDEX_NULL;
 
     std::unordered_map<std::type_index, SceneInfo> registered_scenes;
+
+    void deserialize_scene(const SceneInfo& info);
 };
 }  // namespace tmt

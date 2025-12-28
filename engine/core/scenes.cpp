@@ -3,6 +3,11 @@
 #include "engine/core/ecs.hpp"
 
 #include "engine/events/scene.hpp"
+#include "engine/core/io.hpp"
+#include "engine/core/resources.hpp"
+#include "engine/core/resources/json.hpp"
+
+#include "engine/tools/serializer/ecs.hpp"
 
 namespace tmt {
 void Scenes::update() {
@@ -16,11 +21,11 @@ void Scenes::update() {
 
 void Scenes::swap_scenes() {
     if (next_scene == TYPE_INDEX_NULL) {
-        Log::error(Log::Scope::ENGINE, "Scenes::swap_scenes: No scene enqueued");
+        Log::error(Log::Scope::ENGINE, "[Scenes] No scene enqueued");
         return;
     }
     if (registered_scenes.contains(next_scene) == false) {
-        Log::error(Log::Scope::ENGINE, "Scenes::swap_scenes: Scene not registered");
+        Log::error(Log::Scope::ENGINE, "[Scenes] Scene not registered");
         return;
     }
 
@@ -39,10 +44,10 @@ void Scenes::swap_scenes() {
 
     OnPreLoadScene::dispatch();
     active_scene->on_pre_load();
+
     /* Deserialize */
-    {
-        // TODO
-    }
+    deserialize_scene(info);
+
     OnPostLoadScene::dispatch();
     active_scene->on_post_load();
 
@@ -52,4 +57,10 @@ void Scenes::swap_scenes() {
         OnSceneStart::dispatch();
     }
 }
+
+void Scenes::deserialize_scene(const SceneInfo& info) {
+    const ResourceRef<Json> json = engine.resources.load_resource<Json>(info.file_location);
+    Serializer::deserialize(json->get_parsed_json(), tmt::engine.ecs);
+}
+
 }  // namespace tmt
