@@ -61,6 +61,15 @@ void RenderView::init() {
     /* Create the illuminance buffer */
     ibuffer.texture = bank.create_texture(TextureUsage::Storage, TextureFormat::RG11B10Ufloat, view_size).expect("failed to create ibuffer texture.");
     ibuffer.image = bank.create_image(vbuffer.texture).expect("failed to create ibuffer image.");
+
+    /* Create the illuminance cache */
+    const uint32_t cache_capacity = 10'000'000u;
+    cache = bank.create_buffer(BufferUsage::Storage, cache_capacity, 12u).expect("failed to create cache buffer.");
+    cache_info = bank.create_buffer(BufferUsage::Constant | BufferUsage::TransferDst, 4u).expect("failed to create cache info buffer.");
+    bank.upload_buffer(cache_info, &cache_capacity, 0u, sizeof(uint32_t));
+    macrofacets = bank.create_buffer(BufferUsage::Storage | BufferUsage::TransferDst | BufferUsage::Indirect, 10'000'000u, sizeof(uint32_t)).expect("failed to create cache buffer.");
+    const glm::uvec4 args = glm::uvec4(0u, 1u, 1u, 0u);
+    bank.upload_buffer(macrofacets, &args.x, 0u, sizeof(glm::uvec4));
 }
 
 void RenderView::update() {
@@ -97,6 +106,10 @@ void RenderView::update_gpu_view(RenderGraph& render_graph, const Camera& camera
 
 void RenderView::deinit() {
     VRAMBank& bank = engine.renderer.vram_bank();
+    
+    bank.destroy(cache);
+    bank.destroy(cache_info);
+    bank.destroy(macrofacets);
 
     /* Destroy screen buffers */
     bank.destroy(vbuffer.image);

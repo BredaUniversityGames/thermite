@@ -1,0 +1,30 @@
+import visibility;
+import cache;
+import debug;
+
+/* Visibility buffer. (Input) */
+RWTexture2D<uint2> vbuffer;
+/* Illuminance Cache Info (Input) */
+ConstantBuffer<CacheInfo> cache_info;
+/* Illuminance Cache (Output) */
+RWStructuredBuffer<CacheEntry> cache_entries;
+/* Render target. (Output) */
+RWTexture2D<float4> render_target;
+
+[shader("compute")]
+[numthreads(16, 8, 1)]
+void main(int2 thread_id: SV_DispatchThreadID) {
+    /* Load visibility buffer data */
+    const uint2 packed = vbuffer[thread_id];
+
+    if (null_visibility(packed)) {
+        render_target[thread_id] = float4(0.075f, 0.075f, 0.075f, 1.0f);
+    } else {
+        /* Unpack visibility buffer data */
+        const VisData vis = unpack_visibility(vbuffer[thread_id]);
+
+        /* Read the occupancy of the cache */
+        const uint occupancy = cache::read(cache_entries, cache_info, packed).occupancy;
+        render_target[thread_id] = float4(heat_color((float)occupancy * 0.01f), 1.0f);
+    }
+}

@@ -4,54 +4,46 @@ import visibility;
 import material;
 import math;
 import bvh2;
+import cache;
 
-/* Active render view. */
-ConstantBuffer<RenderView> render_view;
 /* Object buffers. */
 StructuredBuffer<float4> bvh_nodes;
 StructuredBuffer<uint> object_indices;
 StructuredBuffer<VoxelObject> object_data;
-/* Visibility buffer. (Input) */
-RWTexture2D<uint2> vbuffer;
-/* Render target. (Output) */
-RWTexture2D<float4> render_target;
+/* Macro-facet Buffer (Input) */
+/* First 4 uints are indirect dispatch args, after that uint2 keys. */
+RWStructuredBuffer<uint> macrofacets;
+/* Illuminance Cache Info (Input) */
+ConstantBuffer<CacheInfo> cache_info;
+/* Illuminance Cache (Output) */
+RWStructuredBuffer<CacheEntry> cache_entries;
 
+/* TEMPORARY */
 static const float3 LIGHT_COLOR = float3(1.0f, 0.1f, 0.1f);
 static const float3 LIGHT_POS = float3(2.0f, 12.0f, 4.0f);
 static const float LIGHT_STRENGTH = 256.0f;
+/* TEMPORARY */
 
 [shader("compute")]
-[numthreads(16, 8, 1)]
-void main(int2 thread_id: SV_DispatchThreadID) {
+[numthreads(128, 1, 1)]
+void main(int thread_id: SV_DispatchThreadID) {
     /* Load visibility buffer data */
-    const uint2 packed = vbuffer[thread_id];
-
-    /* Exit early if the visibility for this pixel is null */
-    if (null_visibility(packed)) {
-        render_target[thread_id] = float4(0.075f, 0.075f, 0.075f, 1.0f);
-        return;
-    }
-
-    /* Generate a ray for our render view */
-    const Ray ray = pinhole_ray(render_view, thread_id);
+    const uint2 packed = uint2(macrofacets[4 + thread_id * 2], macrofacets[4 + thread_id * 2 + 1]);
 
     /* Unpack visibility buffer data */
-    const VisData vis = unpack_visibility(vbuffer[thread_id]);
-    const GeoData geo = unpack_geometry(vis, object_data, ray);
+    const VisData vis = unpack_visibility(packed);
+    // const GeoData geo = unpack_geometry(vis, object_data);
 
-    /* Find the hit position in world-space */
-    const float3 hit_pos = ray.origin + ray.dir * geo.depth + geo.normal * (UNITS_PER_VOXEL * 0.01f);
-    const float3 dir_to_light = normalize(LIGHT_POS - hit_pos);
-    const float light_distance = distance(hit_pos, LIGHT_POS);
+    // TODO: Reset occupancy counter inside cache. (for next frame)
+    const uint occupancy = cache::reset_occupancy(cache_entries, cache_info, packed);
 
-    /* Trace the scene BVH for visibility */
-    const Ray vis_ray = custom_ray(hit_pos, dir_to_light);
-    const float hit_t = occlusion_bvh2(bvh_nodes, object_indices, object_data, vis_ray, light_distance);
+    macrofacets[0] = 0u;
+    macrofacets[1] = 1u;
+    macrofacets[2] = 1u;
+    macrofacets[3] = 0u;
 
-    float3 illuminance = 0.0f;
-    if (hit_t >= light_distance) {
-        illuminance = max(0.0f, dot(geo.normal, dir_to_light)) * LIGHT_STRENGTH * LIGHT_COLOR * (1.0f / (light_distance * light_distance));
-    }
-
-    render_target[thread_id] = float4(geo.material.albedo * illuminance, 1.0f);
+    // TODO: Reset indirect dispatch arguments for macrofacets. (for next frame)
+    // TODO: Unpack geometry info, get position and normal of voxel facet.
+    // TODO: Evaluate lighting for voxel facet.
+    // TODO: Write evaluated lighting to illuminance cache.
 }

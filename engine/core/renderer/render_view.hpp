@@ -49,6 +49,11 @@ struct RenderView {
     ScreenBuffer vbuffer {}; /* Visibility buffer (WxH, 6->8 bytes) */
     ScreenBuffer ibuffer {}; /* Illuminance buffer (WxH, 4 bytes) */
 
+    /* Cache buffers */
+    Buffer cache {}; /* Illuminance cache buffer */
+    Buffer cache_info {}; /* Illuminance cache info buffer */
+    Buffer macrofacets {}; /* Macro-facets buffer */
+
     /* Renderer output */
     ScreenBuffer viewport {};
     u64 imgui_viewport {};
