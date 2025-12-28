@@ -20,9 +20,6 @@ void main(int2 thread_id: SV_DispatchThreadID) {
     if (null_visibility(packed)) {
         render_target[thread_id] = float4(0.075f, 0.075f, 0.075f, 1.0f);
     } else {
-        /* Unpack visibility buffer data */
-        const VisData vis = unpack_visibility(vbuffer[thread_id]);
-
         /* Read the occupancy of the cache */
         const uint occupancy = cache::read(cache_entries, cache_info, packed).occupancy;
         render_target[thread_id] = float4(heat_color((float)occupancy * 0.01f), 1.0f);

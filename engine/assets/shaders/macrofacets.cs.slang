@@ -1,8 +1,11 @@
 import cache;
 import voxel;
 import visibility;
+import view;
 
-/* Visibility buffer. (Input) */
+/* Active render view (Input) */
+ConstantBuffer<RenderView> render_view;
+/* Visibility buffer (Input) */
 RWTexture2D<uint2> vbuffer;
 /* Illuminance Cache Info (Input) */
 ConstantBuffer<CacheInfo> cache_info;
@@ -22,7 +25,7 @@ void main(int2 thread_id: SV_DispatchThreadID) {
     if (null_visibility(packed)) return;
 
     /* Increment cache occupancy, and register new macrofacet if this was its first occurrence */
-    if (cache::inc_occupancy(cache_entries, cache_info, packed)) {
+    if (cache::inc_occupancy(cache_entries, cache_info, packed, render_view.frame_index)) {
         /* Increment the atomic macrofacet counter */
         uint facet_index = 0u;
         InterlockedAdd(macrofacets[3], 1u, facet_index);

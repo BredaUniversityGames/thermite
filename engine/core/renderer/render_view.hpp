@@ -23,6 +23,8 @@ struct GpuView {
     glm::vec4 origin {};
     /* Resolution of the view in pixels. */
     glm::uvec2 resolution {1, 1};
+    /* Index of the current frame. */
+    glm::uint frame_index = 0u;
 };
 
 /* Screen buffer resource. */
@@ -64,6 +66,7 @@ struct RenderView {
     
     /* (Final) Render target */
     RenderTarget render_target {};
+    glm::uint frame_counter = 0u;
 
    private:
     void resize_textures();

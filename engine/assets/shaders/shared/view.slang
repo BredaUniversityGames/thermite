@@ -12,6 +12,8 @@ public struct RenderView {
     public float4 origin;
     /* Resolution of the view in pixels. */
     public uint2 resolution;
+    /* Index of the current frame. */
+    public uint frame_index;
 };
 
 /* Represents a ray that can be traced. */

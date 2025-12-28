@@ -20,6 +20,7 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
     /* Enqueue the direct illumination compute pass */
     const glm::uvec2 render_res = render_view.gpu_view.resolution;
     render_graph.add_compute_pass("macro-facets pass", "macrofacets.cs")
+        .read(render_view.render_view_buffer)
         /* Visibility buffer */
         .read(render_view.vbuffer.image)
         /* Cache buffers */

@@ -63,8 +63,8 @@ void RenderView::init() {
     ibuffer.image = bank.create_image(vbuffer.texture).expect("failed to create ibuffer image.");
 
     /* Create the illuminance cache */
-    const uint32_t cache_capacity = 10'000'000u;
-    cache = bank.create_buffer(BufferUsage::Storage, cache_capacity, 12u).expect("failed to create cache buffer.");
+    const uint32_t cache_capacity = 20'000'000u;
+    cache = bank.create_buffer(BufferUsage::Storage, cache_capacity, 16u).expect("failed to create cache buffer.");
     cache_info = bank.create_buffer(BufferUsage::Constant | BufferUsage::TransferDst, 4u).expect("failed to create cache info buffer.");
     bank.upload_buffer(cache_info, &cache_capacity, 0u, sizeof(uint32_t));
     macrofacets = bank.create_buffer(BufferUsage::Storage | BufferUsage::TransferDst | BufferUsage::Indirect, 10'000'000u, sizeof(uint32_t)).expect("failed to create cache buffer.");
@@ -99,9 +99,11 @@ void RenderView::update_gpu_view(RenderGraph& render_graph, const Camera& camera
     gpu_view.world_to_clip = p * v;
     gpu_view.clip_to_world = glm::inverse(gpu_view.world_to_clip);
     gpu_view.origin = glm::vec4(transform.get_world_position(), 0.0f);
+    gpu_view.frame_index = frame_counter;
 
     /* Upload the active render view */
     render_graph.upload_buffer(render_view_buffer, &gpu_view, 0u, sizeof(GpuView));
+    frame_counter++; /* Update frame counter */
 }
 
 void RenderView::deinit() {
