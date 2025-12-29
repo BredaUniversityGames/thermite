@@ -1,7 +1,4 @@
 #pragma once
-#include <type_traits>
-#include <typeindex>
-
 #include "engine/core/scene.hpp"
 #include "engine/core/collection.hpp"
 #include "engine/core/logger.hpp"
@@ -9,28 +6,16 @@
 
 #include "engine/core/resources/json.hpp"
 
-#include "engine/tools/type_factory.hpp"
+#include "engine/tools/scene_types.hpp"
+#include "engine/events/scene.hpp"
 
 namespace tmt {
 
 class Scenes {
-    using SceneFactory = TypeFactory<std::unique_ptr<SceneBase>>;
-    using SceneIndex = std::type_index;
-
-    struct SceneInfo {
-        const std::string name;
-        const IO::FileLocation file_location;
-
-        SceneFactory factory;
-    };
-
-    /* empty type_index */
-    static inline const SceneIndex NULL_SCENE = SceneIndex(typeid(void));
-
    public:
     Scenes() = default;
     ~Scenes() = default;
-
+    
     /* Checks if the scenes need to be switched */
     void update();
 
@@ -73,8 +58,12 @@ class Scenes {
     }
 
     bool is_scene_loaded() const { return active_scene_type != NULL_SCENE && active_scene != nullptr; }
+
     std::unique_ptr<SceneBase>& get_active_scene() { return active_scene; }
+    SceneIndex get_active_scene_type() const { return active_scene_type; }
+
     const SceneInfo& get_active_scene_info() const;
+    const SceneInfo& get_scene_info(const SceneIndex& type_index) const;
 
     const std::unordered_map<SceneIndex, SceneInfo>& get_registered_scenes() const { return registered_scenes; }
 
@@ -95,6 +84,6 @@ class Scenes {
 
     std::unordered_map<SceneIndex, SceneInfo> registered_scenes;
 
-    void deserialize_scene(const SceneInfo& info);
+    void deserialize_scene(PreLoadSceneEvent& event);
 };
 }  // namespace tmt

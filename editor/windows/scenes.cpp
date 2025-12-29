@@ -32,13 +32,15 @@ void ScenesWindow::on_editor_update(const FrameData& time) {}
 
 void ScenesWindow::on_editor_end() {}
 
-void ScenesWindow::on_scene_modified() { 
+void ScenesWindow::on_scene_modified() {
     /* Don't mark dirty if game is running */
     if (engine.game_controller.is_running()) return;
 
-    dirty_scene = true; 
+    dirty_scene = true;
 }
 
 void ScenesWindow::on_scene_serialized() { dirty_scene = false; }
+
+void ScenesWindow::on_post_load_scene() { dirty_scene = false; }
 
 }  // namespace tmt

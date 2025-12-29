@@ -12,12 +12,15 @@ void GameFlow::display() {
     if (engine.game_controller.is_playing()) {
         if (ImGui::Button("End")) {
             engine.game_controller.end_game();
-            engine.ecs.clear();
+            engine.scenes.enqueue_scene(working_scene);
+            has_ended = true;
         }
     } else {
         if (ImGui::Button("Start")) {
             engine.game_controller.start_game();
             // Todo: save scene temporarily to load after ending the game
+            working_scene = engine.scenes.get_active_scene_type();
+            cached_scene = Serializer::serialize(engine.ecs);
         }
     }
     ImGui::SameLine();
@@ -37,5 +40,12 @@ void GameFlow::on_editor_start() {}
 void GameFlow::on_editor_update(const FrameData&) {}
 
 void GameFlow::on_editor_end() {}
+
+void GameFlow::on_pre_load_scene(PreLoadSceneEvent& event) {
+    if (has_ended == false) return;
+    event.scene_json = cached_scene;
+    event.handled = true;
+    has_ended = false;
+}
 
 }  // namespace tmt

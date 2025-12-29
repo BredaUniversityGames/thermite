@@ -41,11 +41,22 @@ void Scenes::swap_scenes() {
     active_scene_type = next_scene_type;
     next_scene_type = NULL_SCENE;
 
-    OnPreLoadScene::dispatch();
+    PreLoadSceneEvent pre_load_event(active_scene_type);
+
+    if (IO::file_exists(info.file_location)) {
+        active_scene_json = engine.resources.load_resource<Json>(info.file_location);
+        if (active_scene_json == nullptr) {
+            Log::error(Log::Scope::ENGINE, "[Scenes] deserialize_scene: Failed to load active scene JSON");
+        } else {
+            pre_load_event.scene_json = active_scene_json->get_parsed_json();
+        }
+    }
+
+    OnPreLoadScene::dispatch(pre_load_event);
     active_scene->on_pre_load();
 
     /* Deserialize */
-    deserialize_scene(info);
+    deserialize_scene(pre_load_event);
 
     OnPostLoadScene::dispatch();
     active_scene->on_post_load();
@@ -74,15 +85,17 @@ void Scenes::serialize_active_scene() {
     OnSceneSerialized::dispatch();
 }
 
-void Scenes::deserialize_scene(const SceneInfo& info) {
-    if (IO::file_exists(info.file_location) == false) return;
-
-    active_scene_json = engine.resources.load_resource<Json>(info.file_location);
-    if (active_scene_json == nullptr) {
-        Log::error(Log::Scope::ENGINE, "[Scenes] deserialize_scene: Failed to load active scene JSON");
+void Scenes::deserialize_scene(PreLoadSceneEvent& event) {
+    if (event.scene_json.empty()) {
+        Log::warn(Log::Scope::ENGINE, "[Scenes] deserialize_scene: Empty json, skipping deserialization");
         return;
     }
-    Serializer::deserialize(active_scene_json->get_parsed_json(), tmt::engine.ecs);
+    if (event.scene_json.is_discarded()) {
+        Log::error(Log::Scope::ENGINE, "[Scenes] deserialize_scene: Discarded json, cannot deserialize");
+        return;
+    }
+
+    Serializer::deserialize(event.scene_json, tmt::engine.ecs);
 }
 
 void Scenes::enqueue_scene(const SceneIndex& type_id) {
@@ -93,12 +106,14 @@ void Scenes::enqueue_scene(const SceneIndex& type_id) {
     next_scene_type = type_id;
 }
 
-const Scenes::SceneInfo& Scenes::get_active_scene_info() const {
-    if (active_scene_type == NULL_SCENE) {
-        Log::error(Log::Scope::ENGINE, "[Scenes] get_active_scene_info: No active scene");
-        throw std::runtime_error("No active scene");
+const SceneInfo& Scenes::get_active_scene_info() const { return get_scene_info(active_scene_type); }
+
+const SceneInfo& Scenes::get_scene_info(const SceneIndex& type_index) const {
+    if (registered_scenes.contains(type_index) == false) {
+        Log::error(Log::Scope::ENGINE, "[Scenes] get_scene_info: Scene not registered");
+        throw std::runtime_error("Scene not registered");
     }
-    return registered_scenes.at(active_scene_type);
+    return registered_scenes.at(type_index);
 }
 
 }  // namespace tmt
