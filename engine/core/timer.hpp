@@ -33,7 +33,7 @@ class ScopedTimer {
     std::string name;
 
    public:
-    ScopedTimer(const std::string& name) : timer(), name(name) {}
+    ScopedTimer(std::string name) : timer(), name(std::move(name)) {}
     ~ScopedTimer() {
         float elapsed_time = timer.elapsed();
         printf("[Timer] %s: %.6f seconds\n", name.c_str(), elapsed_time);

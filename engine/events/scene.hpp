@@ -27,7 +27,7 @@ class OnPreLoadScene : public EventListenerBase<OnPreLoadScene, PreLoadSceneEven
     OnPreLoadScene() : EventListenerBase() {}
     virtual void on_pre_load_scene(PreLoadSceneEvent& event) = 0;
     void on_event(PreLoadSceneEvent& event) final override { on_pre_load_scene(event); }
-    void on_event(const PreLoadSceneEvent& event) final override { throw std::runtime_error("OnPreLoadScene::on_event: const reference not supported"); }
+    void on_event(const PreLoadSceneEvent&) final override { throw std::runtime_error("OnPreLoadScene::on_event: const reference not supported"); }
 };
 
 class OnPostLoadScene : public EventListenerBase<OnPostLoadScene, void> {

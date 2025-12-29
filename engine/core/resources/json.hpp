@@ -5,7 +5,7 @@
 namespace tmt {
 class Json : public FileResource {
    public:
-    Json(IO::FileLocation file_location) : FileResource(file_location) {};
+    Json(IO::FileLocation file_location) : FileResource(std::move(file_location)) {};
 
     bool load() override;
     void unload() override;
