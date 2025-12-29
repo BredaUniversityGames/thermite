@@ -17,8 +17,7 @@ void GameFlow::display() {
     } else {
         if (ImGui::Button("Start")) {
             engine.game_controller.start_game();
-            auto json = Serializer::serialize(engine.ecs);
-            auto dump = json.dump();
+            // Todo: save scene temporarily to load after ending the game
         }
     }
     ImGui::SameLine();

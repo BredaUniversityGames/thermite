@@ -11,21 +11,18 @@
 
 namespace tmt {
 void Scenes::update() {
-    // next_scene is type index
-    if (next_scene == TYPE_INDEX_NULL) {
-        return;
-    }
+    if (next_scene_type == TYPE_INDEX_NULL) return;
 
     swap_scenes();
 }
 
 void Scenes::swap_scenes() {
-    if (next_scene == TYPE_INDEX_NULL) {
-        Log::error(Log::Scope::ENGINE, "[Scenes] No scene enqueued");
+    if (next_scene_type == TYPE_INDEX_NULL) {
+        Log::error(Log::Scope::ENGINE, "[Scenes] swap_scenes: No scene enqueued");
         return;
     }
-    if (registered_scenes.contains(next_scene) == false) {
-        Log::error(Log::Scope::ENGINE, "[Scenes] Scene not registered");
+    if (registered_scenes.contains(next_scene_type) == false) {
+        Log::error(Log::Scope::ENGINE, "[Scenes] swap_scenes: Scene not registered");
         return;
     }
 
@@ -33,14 +30,16 @@ void Scenes::swap_scenes() {
     if (active_scene) {
         OnPreUnloadScene::dispatch();
         active_scene->on_end();
+        active_scene_type = TYPE_INDEX_NULL;
         engine.ecs.clear();
         OnSceneEnd::dispatch();
     }
 
     /* Load */
-    SceneInfo& info = registered_scenes.at(next_scene);
+    SceneInfo& info = registered_scenes.at(next_scene_type);
     active_scene = info.factory.create();
-    next_scene = TYPE_INDEX_NULL;
+    active_scene_type = next_scene_type;
+    next_scene_type = TYPE_INDEX_NULL;
 
     OnPreLoadScene::dispatch();
     active_scene->on_pre_load();
@@ -58,9 +57,42 @@ void Scenes::swap_scenes() {
     }
 }
 
+void Scenes::serialize_active_scene() {
+    if (active_scene_type == TYPE_INDEX_NULL) {
+        Log::error(Log::Scope::ENGINE, "[Scenes] serialize_active_scene: No active scene");
+        return;
+    }
+
+    const SceneInfo& info = registered_scenes.at(active_scene_type);
+
+    json serialized = Serializer::serialize(engine.ecs);
+    IO::write_text_file(info.file_location, serialized.dump(4), true);
+
+    active_scene_json->unload();
+    active_scene_json->load();
+
+    OnSceneSerialized::dispatch();
+}
+
 void Scenes::deserialize_scene(const SceneInfo& info) {
-    const ResourceRef<Json> json = engine.resources.load_resource<Json>(info.file_location);
-    Serializer::deserialize(json->get_parsed_json(), tmt::engine.ecs);
+    active_scene_json = engine.resources.load_resource<Json>(info.file_location);
+    Serializer::deserialize(active_scene_json->get_parsed_json(), tmt::engine.ecs);
+}
+
+void Scenes::enqueue_scene(const std::type_index& type_id) {
+    if (registered_scenes.contains(type_id) == false) {
+        Log::error(Log::Scope::ENGINE, "[Scenes] Enqueue scene: Scene not registered");
+        return;
+    }
+    next_scene_type = type_id;
+}
+
+const Scenes::SceneInfo& Scenes::get_active_scene_info() const {
+    if (active_scene_type == TYPE_INDEX_NULL) {
+        Log::error(Log::Scope::ENGINE, "[Scenes] get_active_scene_info: No active scene");
+        throw std::runtime_error("No active scene");
+    }
+    return registered_scenes.at(active_scene_type);
 }
 
 }  // namespace tmt

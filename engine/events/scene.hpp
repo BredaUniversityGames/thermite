@@ -38,4 +38,11 @@ class OnSceneEnd : public EventListenerBase<OnSceneEnd, void> {
     void on_event() final override { on_scene_end(); }
 };
 
+class OnSceneSerialized : public EventListenerBase<OnSceneSerialized, void> {
+   public:
+    OnSceneSerialized() : EventListenerBase() {}
+    virtual void on_scene_serialized() = 0;
+    void on_event() final override { on_scene_serialized(); }
+};
+
 }  // namespace tmt

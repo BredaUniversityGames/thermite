@@ -13,6 +13,8 @@
 
 #include "engine/tools/serializer/ecs.hpp"
 
+#include "editor/events/scene.hpp"
+
 namespace tmt {
 
 void Hierarchy::before_begin() {
@@ -118,6 +120,7 @@ void Hierarchy::paste_entities() {
 
     clear_selection();
     selected_entities = std::unordered_set(new_entities.begin(), new_entities.end());
+    OnSceneModified::dispatch();
 }
 
 void Hierarchy::clear_selection() {
@@ -357,6 +360,7 @@ bool Hierarchy::drag_drop_target(const Entity dropped_entity) {
             selection_parent = entt::null;
             selected_index_end_above = NULL_INDEX;
             selected_index_end_below = NULL_INDEX;
+            OnSceneModified::dispatch();
             return true;
         }
         ImGui::EndDragDropTarget();
