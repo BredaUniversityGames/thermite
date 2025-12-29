@@ -8,11 +8,11 @@ bool Json::load() {
         return false;
     }
 
-	const std::string file_content = IO::read_text_file(file_location);
+    const std::string file_content = IO::read_text_file(file_location);
     nlohmann::ordered_json temp_json;
     try {
         temp_json = nlohmann::json::parse(file_content, nullptr, true);
-    } catch (json::parse_error& ex){
+    } catch (json::parse_error& ex) {
         Log::error(Log::Scope::ENGINE, "[Json] Failed to parse JSON: {}", ex.what());
         return false;
     }
@@ -20,7 +20,5 @@ bool Json::load() {
     parsed_json = std::move(temp_json);
     return true;
 }
-void Json::unload() {
-    parsed_json.clear();
-}
+void Json::unload() { parsed_json.clear(); }
 }  // namespace tmt

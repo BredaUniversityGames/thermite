@@ -154,7 +154,7 @@ void Inspector::display() {
         const bool changed = response.get<T>().is_changed();
 
         if (changed == false) return;
-        
+
         OnSceneModified::dispatch();
 
         if (menu_context.selected_entities.size() <= 1) return;

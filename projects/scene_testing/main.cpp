@@ -52,12 +52,8 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
 }
 
 /* Dragon Scene */
-void DragonScene::on_start() {
+void DragonScene::on_start() {}
 
-}
-
-void DragonScene::on_update(const tmt::FrameData& time) {
-
-}
+void DragonScene::on_update(const tmt::FrameData& time) {}
 
 void DragonScene::on_end() {}

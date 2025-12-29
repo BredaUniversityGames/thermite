@@ -15,7 +15,7 @@ class Scenes {
    public:
     Scenes() = default;
     ~Scenes() = default;
-    
+
     /* Checks if the scenes need to be switched */
     void update();
 
