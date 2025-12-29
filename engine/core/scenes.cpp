@@ -27,13 +27,11 @@ void Scenes::swap_scenes() {
     }
 
     /* Unload */
-    if (active_scene) {
-        OnPreUnloadScene::dispatch();
-        active_scene->on_end();
-        active_scene_type = NULL_SCENE;
-        engine.ecs.clear();
-        OnSceneEnd::dispatch();
-    }
+    OnPreUnloadScene::dispatch();
+    if (active_scene) active_scene->on_end();
+    active_scene_type = NULL_SCENE;
+    engine.ecs.clear();
+    OnSceneEnd::dispatch();
 
     /* Load */
     SceneInfo& info = registered_scenes.at(next_scene_type);
@@ -62,7 +60,7 @@ void Scenes::swap_scenes() {
     active_scene->on_post_load();
 
     /* Start */
-    if (engine.game_controller.is_playing()) {
+    if (engine.game_controller.is_playing() && engine.game_controller.should_game_end() == false) {
         active_scene->on_start();
         OnSceneStart::dispatch();
     }
@@ -79,8 +77,15 @@ void Scenes::serialize_active_scene() {
     json serialized = Serializer::serialize(engine.ecs);
     IO::write_text_file(info.file_location, serialized.dump(4), true);
 
-    active_scene_json->unload();
-    active_scene_json->load();
+    if (active_scene_json == nullptr) {
+        active_scene_json = engine.resources.load_resource<Json>(info.file_location);
+        if (active_scene_json == nullptr) {
+            Log::error(Log::Scope::ENGINE, "[Scenes] serialize_active_scene: Failed to load active scene JSON after serialization");
+        }
+    } else {
+        active_scene_json->unload();
+        active_scene_json->load();
+    }
 
     OnSceneSerialized::dispatch();
 }

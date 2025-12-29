@@ -17,10 +17,10 @@ void GameFlow::display() {
         }
     } else {
         if (ImGui::Button("Start")) {
-            engine.game_controller.start_game();
-            // Todo: save scene temporarily to load after ending the game
             working_scene = engine.scenes.get_active_scene_type();
             cached_scene = Serializer::serialize(engine.ecs);
+
+            engine.game_controller.start_game();
         }
     }
     ImGui::SameLine();

@@ -27,9 +27,9 @@ void Hierarchy::display() {
 
     top_bar();
     render_hierarchy();
-    ImGui::PopStyleVar();
-
     context_menu();
+
+    ImGui::PopStyleVar();
 }
 
 void Hierarchy::end_display() { ImGui::PopStyleVar(); }
