@@ -15,6 +15,7 @@ class Resources;
 class Audio;
 class Salvo;
 class Scenes;
+class GameComponentRegistry;
 
 class Engine {
    public:
@@ -53,6 +54,7 @@ class Engine {
     Resources& resources;
     Salvo& salvo;
     Scenes& scenes;
+    GameComponentRegistry& component_registry;
 
     GameController game_controller;
 

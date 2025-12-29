@@ -11,6 +11,7 @@
 #include "core/ecs.hpp"
 #include "core/scenes.hpp"
 #include "core/timer.hpp"
+#include "core/game/game_component_registry.hpp"
 
 #include "core/renderer/renderer.hpp"
 
@@ -43,10 +44,12 @@ Engine::Engine()
       renderer(*new Renderer()),
       resources(*new Resources()),
       salvo(*new Salvo()),
-      scenes(*new Scenes()) {}
+      scenes(*new Scenes()),
+      component_registry(*new GameComponentRegistry()) {}
 
 Engine::~Engine() {
     /* Destruction should be in reverse order */
+    delete &component_registry;
     delete &scenes;
     delete &salvo;
     delete &resources;
