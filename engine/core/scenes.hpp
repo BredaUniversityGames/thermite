@@ -15,6 +15,7 @@ namespace tmt {
 
 class Scenes {
     using SceneFactory = TypeFactory<std::unique_ptr<SceneBase>>;
+    using SceneIndex = std::type_index;
 
     struct SceneInfo {
         const std::string name;
@@ -24,7 +25,7 @@ class Scenes {
     };
 
     /* empty type_index */
-    static inline const std::type_index TYPE_INDEX_NULL = std::type_index(typeid(void));
+    static inline const SceneIndex NULL_SCENE = SceneIndex(typeid(void));
 
    public:
     Scenes() = default;
@@ -44,10 +45,10 @@ class Scenes {
         SceneInfo info {name, {IO::Location::PROJECT, scene_path}};
         info.factory.register_type<T>();
 
-        const std::type_index type_id = typeid(T);
+        const SceneIndex type_id = typeid(T);
         registered_scenes.emplace(type_id, std::move(info));
 
-        if (next_scene_type == TYPE_INDEX_NULL) {
+        if (next_scene_type == NULL_SCENE) {
             /* Set the first registered scene as the next scene */
             next_scene_type = type_id;
         }
@@ -57,11 +58,11 @@ class Scenes {
     template <typename T>
         requires std::is_base_of_v<SceneBase, T>
     void enqueue_scene() {
-        const std::type_index type_id = typeid(T);
+        const SceneIndex type_id = typeid(T);
         enqueue_scene(type_id);
     }
 
-    void enqueue_scene(const std::type_index& type_id);
+    void enqueue_scene(const SceneIndex& type_id);
 
     /* Immediatly load a new scene */
     template <typename T>
@@ -71,11 +72,11 @@ class Scenes {
         swap_scenes();
     }
 
-    bool is_scene_loaded() const { return active_scene_type != TYPE_INDEX_NULL && active_scene != nullptr; }
+    bool is_scene_loaded() const { return active_scene_type != NULL_SCENE && active_scene != nullptr; }
     std::unique_ptr<SceneBase>& get_active_scene() { return active_scene; }
     const SceneInfo& get_active_scene_info() const;
 
-    const std::unordered_map<std::type_index, SceneInfo>& get_registered_scenes() const { return registered_scenes; }
+    const std::unordered_map<SceneIndex, SceneInfo>& get_registered_scenes() const { return registered_scenes; }
 
     struct Config {
         constexpr static const char* SCENE_EXTENSION = ".scene";
@@ -87,12 +88,12 @@ class Scenes {
    private:
     std::unique_ptr<SceneBase> active_scene = nullptr;
 
-    std::type_index active_scene_type = TYPE_INDEX_NULL;
-    std::type_index next_scene_type = TYPE_INDEX_NULL;
+    SceneIndex active_scene_type = NULL_SCENE;
+    SceneIndex next_scene_type = NULL_SCENE;
 
     ResourceRef<Json> active_scene_json = {};
 
-    std::unordered_map<std::type_index, SceneInfo> registered_scenes;
+    std::unordered_map<SceneIndex, SceneInfo> registered_scenes;
 
     void deserialize_scene(const SceneInfo& info);
 };

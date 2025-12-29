@@ -11,13 +11,13 @@
 
 namespace tmt {
 void Scenes::update() {
-    if (next_scene_type == TYPE_INDEX_NULL) return;
+    if (next_scene_type == NULL_SCENE) return;
 
     swap_scenes();
 }
 
 void Scenes::swap_scenes() {
-    if (next_scene_type == TYPE_INDEX_NULL) {
+    if (next_scene_type == NULL_SCENE) {
         Log::error(Log::Scope::ENGINE, "[Scenes] swap_scenes: No scene enqueued");
         return;
     }
@@ -30,7 +30,7 @@ void Scenes::swap_scenes() {
     if (active_scene) {
         OnPreUnloadScene::dispatch();
         active_scene->on_end();
-        active_scene_type = TYPE_INDEX_NULL;
+        active_scene_type = NULL_SCENE;
         engine.ecs.clear();
         OnSceneEnd::dispatch();
     }
@@ -39,7 +39,7 @@ void Scenes::swap_scenes() {
     SceneInfo& info = registered_scenes.at(next_scene_type);
     active_scene = info.factory.create();
     active_scene_type = next_scene_type;
-    next_scene_type = TYPE_INDEX_NULL;
+    next_scene_type = NULL_SCENE;
 
     OnPreLoadScene::dispatch();
     active_scene->on_pre_load();
@@ -58,7 +58,7 @@ void Scenes::swap_scenes() {
 }
 
 void Scenes::serialize_active_scene() {
-    if (active_scene_type == TYPE_INDEX_NULL) {
+    if (active_scene_type == NULL_SCENE) {
         Log::error(Log::Scope::ENGINE, "[Scenes] serialize_active_scene: No active scene");
         return;
     }
@@ -75,11 +75,17 @@ void Scenes::serialize_active_scene() {
 }
 
 void Scenes::deserialize_scene(const SceneInfo& info) {
+    if (IO::file_exists(info.file_location) == false) return;
+
     active_scene_json = engine.resources.load_resource<Json>(info.file_location);
+    if (active_scene_json == nullptr) {
+        Log::error(Log::Scope::ENGINE, "[Scenes] deserialize_scene: Failed to load active scene JSON");
+        return;
+    }
     Serializer::deserialize(active_scene_json->get_parsed_json(), tmt::engine.ecs);
 }
 
-void Scenes::enqueue_scene(const std::type_index& type_id) {
+void Scenes::enqueue_scene(const SceneIndex& type_id) {
     if (registered_scenes.contains(type_id) == false) {
         Log::error(Log::Scope::ENGINE, "[Scenes] Enqueue scene: Scene not registered");
         return;
@@ -88,7 +94,7 @@ void Scenes::enqueue_scene(const std::type_index& type_id) {
 }
 
 const Scenes::SceneInfo& Scenes::get_active_scene_info() const {
-    if (active_scene_type == TYPE_INDEX_NULL) {
+    if (active_scene_type == NULL_SCENE) {
         Log::error(Log::Scope::ENGINE, "[Scenes] get_active_scene_info: No active scene");
         throw std::runtime_error("No active scene");
     }
