@@ -25,23 +25,17 @@ public struct Svt64Node {
     /* Absolute offset into an array of child nodes / voxels. */
     [ForceInline] uint abs_ptr() { return child_ptr & 0x7FFFFFFFu; };
 
+    /* Get the 64 bit child mask by combining the low and high unit of the child mask. */
+    [ForceInline] uint64_t child_mask() { return child_mask_hi | (uint64_t)child_mask_lo << 32; };
+
     /* Is a given child node index active? */
     [ForceInline] bool child_active(uint child_index) {
-        if (child_index < 32u) {
-            return (child_mask_hi >> child_index & 1u) != 0u;
-        } else {
-            return (child_mask_lo >> (child_index - 32u) & 1u) != 0u;
-        }
+        return (child_mask() >> child_index & 1u) != 0u;
     }
 
     /* Can we perform a coalesced skip? */
     [ForceInline] bool child_coalesced_skip(uint child_index) {
-        child_index = child_index & 0b101010;
-        if (child_index < 32u) {
-            return (child_mask_hi >> child_index & 0x00330033u) == 0u;
-        } else {
-            return (child_mask_lo >> (child_index - 32u) & 0x00330033u) == 0u;
-        }
+        return (child_mask() >> (child_index & 0b101010) & 0x00330033u) == 0u;
     }
 };
 
@@ -75,15 +69,8 @@ public struct Svt64Node {
 }
 
 /* Count number of set bits in variable range [0..width] */
-[ForceInline] uint popcnt_var64(uint mask_lo, uint mask_hi, uint width) {
-    uint count = 0u, himask = mask_hi;
-    if (width >= 32u) {
-        count = countbits(himask);
-        himask = mask_lo;
-    }
-    const uint m = 1u << (width & 31u);
-    count += countbits(himask & (m - 1u));
-    return count;
+[ForceInline] uint popcnt_var64(uint64_t mask, uint width) {
+    return countbits(mask & ((1ull << width) - 1));
 }
 
 /* Get the index of the voxel at a given position and traversal scale. */
@@ -139,7 +126,7 @@ public [ForceInline] Svt64Hit trace_svt64<let DEBUG : bool>(
             gs_stack[group_id][scale_exp >> 1] = node_index;
 
             /* Fetch the child node */
-            node_index = node.abs_ptr() + popcnt_var64(node.child_mask_lo, node.child_mask_hi, child_index);
+            node_index = node.abs_ptr() + popcnt_var64(node.child_mask(), child_index);
             node = nodes[node_index];
 
             /* Decrease the scale & get the next child index */
@@ -234,7 +221,7 @@ public [ForceInline] float3 occlusion_svt64(
             gs_stack[group_id][scale_exp >> 1] = node_index;
 
             /* Fetch the child node */
-            node_index = node.abs_ptr() + popcnt_var64(node.child_mask_lo, node.child_mask_hi, child_index);
+            node_index = node.abs_ptr() + popcnt_var64(node.child_mask(), child_index);
             node = nodes[node_index];
 
             /* Decrease the scale & get the next child index */
@@ -296,7 +283,7 @@ public [ForceInline] uint fetch_svt64(
         const uint child_pos = (local_index.x << 0) | (local_index.z << 2) | (local_index.y << 4);
 
         /* Get the sparse child node / voxel pointer */
-        const uint child_ptr = node.abs_ptr() + popcnt_var64(node.child_mask_lo, node.child_mask_hi, child_pos);
+        const uint child_ptr = node.abs_ptr() + popcnt_var64(node.child_mask(), child_pos);
 
         if (node.child_active(child_pos) == false) {
             return uint::maxValue; /* Voxel doesn't exist */

@@ -30,17 +30,33 @@ void GeometryPipeline::enqueue(RenderGraph& render_graph, RenderView& render_vie
 
     /* Enqueue the geometry compute pass */
     const glm::uvec2 render_res = render_view.gpu_view.resolution;
-    render_graph.add_compute_pass("geometry pass", "geometry.cs")
-        /* Render view */
-        .read(render_view.render_view_buffer)
-        /* Object buffers */
-        .read(scene_view.bvh_nodes)
-        .read(scene_view.object_indices)
-        .read(scene_view.object_data)
-        /* Visibility buffer */
-        .write(render_view.vbuffer.image)
-        .group_size(16, 8)
-        .work_size(render_res.x, render_res.y);
+    if (engine.renderer.display_mode != DisplayMode::Steps) {
+        render_graph.add_compute_pass("geometry pass", "geometry.cs")
+            /* Render view */
+            .read(render_view.render_view_buffer)
+            /* Object buffers */
+            .read(scene_view.bvh_nodes)
+            .read(scene_view.object_indices)
+            .read(scene_view.object_data)
+            /* Visibility buffer */
+            .write(render_view.vbuffer.image)
+            .group_size(16, 8)
+            .work_size(render_res.x, render_res.y);
+    } else {
+        /* Debug visualization for visibility step count */
+        render_graph.add_compute_pass("[debug] step count pass", "debug/steps.cs")
+            /* Render view */
+            .read(render_view.render_view_buffer)
+            /* Object buffers */
+            .read(scene_view.bvh_nodes)
+            .read(scene_view.object_indices)
+            .read(scene_view.object_data)
+            /* Render target */
+            .write(render_image)
+            .group_size(16, 8)
+            .work_size(render_res.x, render_res.y);
+        return;
+    }
 
     /* Debug visualizations */
     switch (engine.renderer.display_mode) {

@@ -17,13 +17,14 @@ namespace tmt {
 /* Renderer display mode. */
 enum class DisplayMode : uint32_t {
     Default = 0u,
+    Steps, /* Visualize visibility pass step count. (0..128) */
     Visibility, /* Visualize visibility buffer data. */
     Depth, /* Visualize geometric depth data. (0..100) */
     Normals, /* Visualize geometric normal data. */
     Albedo, /* Visualize material albedo. */
 };
-static const DisplayMode DISPLAY_MODES[] { DisplayMode::Default, DisplayMode::Visibility, DisplayMode::Depth, DisplayMode::Normals, DisplayMode::Albedo };
-static const char* DISPLAY_MODE_NAMES[] { "Default", "Visibility", "Depth", "Normals", "Albedo" };
+static const DisplayMode DISPLAY_MODES[] { DisplayMode::Default, DisplayMode::Steps, DisplayMode::Visibility, DisplayMode::Depth, DisplayMode::Normals, DisplayMode::Albedo };
+static const char* DISPLAY_MODE_NAMES[] { "Default", "Steps (0..128)", "Visibility", "Depth (0..100)", "Normals", "Albedo" };
 
 class Renderer {
     GPUAdapter& gpu;
