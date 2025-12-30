@@ -10,7 +10,7 @@ public struct Svt64Hit {
     public uint steps;
 
     /* Returns true if this was a miss. */
-    public bool miss() { return voxel_index == 0xFFFFFFFFu; }
+    public bool miss() { return voxel_index == uint::maxValue; }
 };
 
 public struct Svt64Node {
@@ -19,7 +19,7 @@ public struct Svt64Node {
     uint child_mask_lo;
 
     /* Is this node a leaf node? */
-    [ForceInline] bool is_leaf() { return (child_ptr & 0x80000000u) != 0; };
+    [ForceInline] bool is_leaf() { return (child_ptr & 0x80000000u) != 0u; };
 
     /* Absolute offset into an array of child nodes / voxels. */
     [ForceInline] uint abs_ptr() { return child_ptr & 0x7FFFFFFFu; };
@@ -35,7 +35,7 @@ public struct Svt64Node {
 
     /* Can we perform a coalesced skip? */
     [ForceInline] bool child_coalesced_skip(uint child_index) {
-        child_index = child_index & 0b101010;
+        child_index = child_index & 0b101010u;
         if (child_index < 32u) {
             return (child_mask_hi >> child_index & 0x00330033u) == 0u;
         } else {
@@ -100,7 +100,7 @@ public inline Svt64Hit trace_svt64<let DEBUG : bool>(
 
     /* Mirror ray origin for more efficient ray-octant traversal */
     ray.origin = mirror_pos(ray.origin, ray.dir, true);
-    ray.rcp_dir = 1.0f / -abs(ray.dir);
+    ray.rcp_dir = clamp(1.0f / -abs(ray.dir), -1e30f, 1e30f);
 
     /* Mirror coordinates to simplify cell intersections */
     uint mirror_mask = 0x00u;
@@ -164,7 +164,7 @@ public inline Svt64Hit trace_svt64<let DEBUG : bool>(
     }
 
     Svt64Hit hit;
-    hit.voxel_index = 0xFFFFFFFFu;
+    hit.voxel_index = uint::maxValue;
     if (DEBUG) hit.steps = steps;
 
     /* If we hit a leaf node, return the voxel we hit */

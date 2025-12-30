@@ -21,7 +21,7 @@ public inline Hit intersect_voxel_object<let DEBUG : bool>(Ray ray, VoxelObject 
     const float3 world_origin = ray.origin;
     ray.origin = mul(object.world_to_local, float4(ray.origin, 1.0f)).xyz;
     ray.dir = mul(object.world_to_local, float4(ray.dir, 0.0f)).xyz;
-    ray.rcp_dir = 1.0f / ray.dir;
+    ray.rcp_dir = clamp(1.0f / ray.dir, -1e30f, 1e30f);
 
     /* Intersect the object AABB in local-space */
     const float3 half_extent = float3(object.size_rcp_width.xyz) * UNITS_PER_VOXEL * 0.5f;
