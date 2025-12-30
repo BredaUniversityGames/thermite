@@ -21,7 +21,7 @@ void tag_invoke(ImReflect::ImInput_t, const char*, tmt::ComponentCollection& val
     const auto& registered_components = tmt::engine.component_registry.get_registered_components();
     for (const auto& [type_id, component_info] : registered_components) {
         if (value.has_component(type_id)) continue;
-     
+        // Todo: make this a dropdown or potentially move to inspector.cpp
         ImGui::PushID(component_info.name.c_str());
         if (ImGui::Button(("Add " + component_info.name).c_str())) {
             value.add_component(type_id);
