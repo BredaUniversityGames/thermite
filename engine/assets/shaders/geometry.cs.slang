@@ -2,6 +2,7 @@ import view;
 import voxel;
 import bvh2;
 import visibility;
+import math;
 
 /* Active render view. */
 ConstantBuffer<RenderView> render_view;
@@ -22,5 +23,5 @@ void main(int2 thread_id: SV_DispatchThreadID) {
     const Hit hit = trace_bvh2<false>(bvh_nodes, object_indices, object_data, ray);
 
     /* Write packed visibility info into the visibility buffer */
-    vbuffer[thread_id] = pack_visibility(hit);
+    vbuffer[thread_id] = asuint2(pack_visibility(hit));
 }

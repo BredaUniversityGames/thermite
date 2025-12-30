@@ -10,7 +10,7 @@ public struct CacheInfo {
 
 /* Cache entry data. */
 public struct CacheEntry {
-    public uint2 key;
+    public uint64_t key;
     public uint occupancy;
     public uint last_used;
 };
@@ -22,7 +22,7 @@ namespace cache {
 public bool inc_occupancy(
     RWStructuredBuffer<CacheEntry> entries, 
     const ConstantBuffer<CacheInfo> info, 
-    const uint2 key, const uint frame_index
+    const uint64_t key, const uint frame_index
 ) {
     /* Unpack the key into its voxel components */
     const VisData v = unpack_visibility(key);
@@ -46,20 +46,33 @@ public bool inc_occupancy(
         //     return occupancy == 0u;
         // }
 
-        const uint stale_threshold = frame_index - 30u;
-        uint original_frame;
-        InterlockedMax(entries[hash].last_used, frame_index, original_frame);
+        // const uint stale_threshold = frame_index - 30u;
+        // uint original_frame;
+        // InterlockedMax(entries[hash].last_used, frame_index, original_frame);
 
-        if (original_frame <= stale_threshold) {
-            /* We claimed a stale slot, initialize it */
-            entries[hash].key = key;
-            entries[hash].occupancy = 1u;
-            return true;
-        } else if (all(entries[hash].key == key)) {
-            /* Found existing match, increment it */
-            uint occupancy;
-            InterlockedAdd(entries[hash].occupancy, 1u, occupancy);
-            return occupancy == 0u;
+        // if (original_frame <= stale_threshold) {
+        //     /* We claimed a stale slot, initialize it */
+        //     entries[hash].key = key;
+        //     entries[hash].occupancy = 1u;
+        //     return true;
+        // } else if (all(entries[hash].key == key)) {
+        //     /* Found existing match, increment it */
+        //     uint occupancy;
+        //     InterlockedAdd(entries[hash].occupancy, 1u, occupancy);
+        //     return occupancy == 0u;
+        // }
+
+        if (entries[hash].key == uint64_t::maxValue) {
+            /* Try to claim this slot */
+            uint64_t prev_key = 0u;
+            InterlockedCompareExchange(entries[hash].key, uint64_t::maxValue, key, prev_key);
+
+            /* If this thread or another thread succeeded in claiming the slot */
+            if (prev_key == uint64_t::maxValue || prev_key == key) {
+                uint occupancy;
+                InterlockedAdd(entries[hash].occupancy, 1u, occupancy);
+                return occupancy == 0u;
+            }
         }
 
         /* Move to the next hash cache slot */
@@ -73,7 +86,7 @@ public bool inc_occupancy(
 public CacheEntry read(
     RWStructuredBuffer<CacheEntry> entries, 
     const ConstantBuffer<CacheInfo> info, 
-    const uint2 key
+    const uint64_t key
 ) {
     /* Unpack the key into its voxel components */
     const VisData v = unpack_visibility(key);
@@ -81,10 +94,10 @@ public CacheEntry read(
     uint hash = voxel_hash(v.voxel_index, v.object_index, v.face_index) % info.capacity;
 
     for (uint i = 0u; i < 8u; ++i) {
-        const uint2 entry_key = entries[hash].key;
+        const uint64_t entry_key = entries[hash].key;
 
         /* Check if the key in this entry matches */
-        if (all(entry_key == key)) {
+        if (entry_key == key) {
             return entries[hash];
         }
 
@@ -100,7 +113,7 @@ public CacheEntry read(
 public uint reset_occupancy(
     RWStructuredBuffer<CacheEntry> entries, 
     const ConstantBuffer<CacheInfo> info, 
-    const uint2 key
+    const uint64_t key
 ) {
     /* Unpack the key into its voxel components */
     const VisData v = unpack_visibility(key);
@@ -108,10 +121,10 @@ public uint reset_occupancy(
     uint hash = voxel_hash(v.voxel_index, v.object_index, v.face_index) % info.capacity;
 
     for (uint i = 0u; i < 8u; ++i) {
-        const uint2 entry_key = entries[hash].key;
+        const uint64_t entry_key = entries[hash].key;
 
         /* Check if the key in this entry matches */
-        if (all(entry_key == key)) {
+        if (entry_key == key) {
             const uint occupancy = entries[hash].occupancy;
             entries[hash].occupancy = 0u; /* <- Reset */
             return occupancy;

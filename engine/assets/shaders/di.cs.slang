@@ -28,7 +28,7 @@ static const float LIGHT_STRENGTH = 256.0f;
 [numthreads(128, 1, 1)]
 void main(int thread_id: SV_DispatchThreadID) {
     /* Load visibility buffer data */
-    const uint2 packed = uint2(macrofacets[4 + thread_id * 2], macrofacets[4 + thread_id * 2 + 1]);
+    const uint64_t packed = asuint64(uint2(macrofacets[4 + thread_id * 2], macrofacets[4 + thread_id * 2 + 1]));
 
     /* Unpack visibility buffer data */
     const VisData vis = unpack_visibility(packed);

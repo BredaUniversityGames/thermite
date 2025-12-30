@@ -1,6 +1,7 @@
 import view;
 import voxel;
 import visibility;
+import math;
 
 /* Active render view. */
 ConstantBuffer<RenderView> render_view;
@@ -28,13 +29,13 @@ RWTexture2D<float4> render_target;
 [numthreads(16, 8, 1)]
 void main(int2 thread_id: SV_DispatchThreadID) {
     /* Load visibility buffer data */
-    const uint2 packed = vbuffer[thread_id];
+    const uint64_t packed = asuint64(vbuffer[thread_id]);
 
     if (null_visibility(packed)) {
         render_target[thread_id] = float4(0.075f, 0.075f, 0.075f, 1.0f);
     } else {
         /* Unpack visibility buffer data */
-        const VisData vis = unpack_visibility(vbuffer[thread_id]);
+        const VisData vis = unpack_visibility(packed);
 
         /* Render the visibility data as hash */
         render_target[thread_id] = float4(color(voxel_hash(vis.voxel_index, vis.object_index, vis.face_index)), 1.0f);

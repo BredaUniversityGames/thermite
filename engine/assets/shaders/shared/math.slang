@@ -13,3 +13,13 @@ public [ForceInline] bool bit_set(const uint x, const uint i) {
     const uint mask = 1u << i;
     return (x & mask) != 0u;
 }
+
+/* Convert a uint64 into two uint32s. */
+public [ForceInline] uint2 asuint2(const uint64_t i) {
+    return uint2((uint)i, (uint)(i >> 32));
+}
+
+/* Convert two uint32s into a single uint64. */
+public [ForceInline] uint64_t asuint64(const uint2 i) {
+    return ((uint64_t)i.y << 32) | i.x;
+}
