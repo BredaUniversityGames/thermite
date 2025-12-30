@@ -75,3 +75,51 @@ class ComponentCollection {
 }  // namespace tmt
 
 TMT_COMPONENT(tmt::ComponentCollection, "ComponentCollection", (components));
+
+/* Specialization for IGameComponent derived types */
+namespace tmt {
+template <typename T>
+struct EcsComponentTraits<T, std::enable_if_t<std::is_base_of_v<IGameComponent, T>>> {
+    static T& add(Registry& registry, Entity entity) {
+        auto& collection = registry.emplace_or_replace<ComponentCollection>(entity);
+        return collection.add_component<T>();
+    }
+    static void remove(Registry& registry, Entity entity) {
+        auto& collection = registry.emplace_or_replace<ComponentCollection>(entity);
+        collection.remove_component<T>();
+    }
+    static T& get(Registry& registry, Entity entity) {
+        auto& collection = registry.emplace_or_replace<ComponentCollection>(entity);
+        return collection.get_component<T>();
+    }
+    static const T& get(const Registry& registry, Entity entity) {
+        const auto& collection = registry.emplace_or_replace<ComponentCollection>(entity);
+        return collection.get_component<T>();
+    }
+    static bool has(const Registry& registry, Entity entity) {
+        const auto& collection = registry.emplace_or_replace<ComponentCollection>(entity);
+        return collection.has_component<T>();
+    }
+    static T& add_or_get(Registry& registry, Entity entity) {
+        auto& collection = registry.emplace_or_replace<ComponentCollection>(entity);
+        if (!collection.has_component<T>()) {
+            return collection.add_component<T>();
+        }
+        return collection.get_component<T>();
+    }
+    static T* try_get(Registry& registry, Entity entity) {
+        auto& collection = registry.emplace_or_replace<ComponentCollection>(entity);
+        if (collection.has_component<T>()) {
+            return &collection.get_component<T>();
+        }
+        return nullptr;
+    }
+    static const T* try_get(const Registry& registry, Entity entity) {
+        const auto& collection = registry.emplace_or_replace<ComponentCollection>(entity);
+        if (collection.has_component<T>()) {
+            return &collection.get_component<T>();
+        }
+        return nullptr;
+    }
+};
+}  // namespace tmt

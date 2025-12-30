@@ -28,16 +28,16 @@ struct Delete {};
 template <typename T>
 concept System = std::is_base_of_v<ISystem, T>;
 
-template <typename T>
-struct ComponentTraits {
+template <typename T, typename = void>
+struct EcsComponentTraits {
     static T& add(Registry& registry, Entity entity) { return registry.emplace<T>(entity); }
     static void remove(Registry& registry, Entity entity) { registry.remove<T>(entity); }
     static T& get(Registry& registry, Entity entity) { return registry.get<T>(entity); }
-    static const T& get(Registry& registry, Entity entity) { return registry.get<T>(entity); }
-    static bool has(Registry& registry, Entity entity) { return registry.all_of<T>(entity); }
+    static const T& get(const Registry& registry, Entity entity) { return registry.get<T>(entity); }
+    static bool has(const Registry& registry, Entity entity) { return registry.all_of<T>(entity); }
     static T& add_or_get(Registry& registry, Entity entity) { return registry.emplace_or_replace<T>(entity); }
     static T* try_get(Registry& registry, Entity entity) { return registry.try_get<T>(entity); }
-    static const T* try_get(Registry& registry, Entity entity) { return registry.try_get<T>(entity); }
+    static const T* try_get(const Registry& registry, Entity entity) { return registry.try_get<T>(entity); }
 };
 
 class Ecs : public OnGameStart, public OnGameUpdate, public OnGameFixedUpdate, public OnGameEnd, public OnEndFrame {
@@ -82,7 +82,7 @@ class Ecs : public OnGameStart, public OnGameUpdate, public OnGameFixedUpdate, p
     decltype(auto) add_component(Entity entity) {
         constexpr size_t COUNT = sizeof...(Component);
         if constexpr (COUNT == 1) {
-            return registry.emplace<Component...>(entity);
+            return EcsComponentTraits<Component...>::add(registry, entity);
         } else {
             return std::make_tuple(add_component<Component>(entity)...);
         }
@@ -93,7 +93,7 @@ class Ecs : public OnGameStart, public OnGameUpdate, public OnGameFixedUpdate, p
     void remove_component(Entity entity) {
         constexpr size_t COUNT = sizeof...(Component);
         if constexpr (COUNT == 1) {
-            registry.remove<Component...>(entity);
+            EcsComponentTraits<Component...>::remove(registry, entity);
         } else {
             (remove_component<Component>(entity), ...);
         }
@@ -104,7 +104,7 @@ class Ecs : public OnGameStart, public OnGameUpdate, public OnGameFixedUpdate, p
     decltype(auto) get_component(const Entity entity) {
         constexpr size_t COUNT = sizeof...(Component);
         if constexpr (COUNT == 1) {
-            return registry.get<Component...>(entity);
+            return EcsComponentTraits<Component...>::get(registry, entity);
         } else {
             return std::make_tuple(get_component<Component>(entity)...);
         }
@@ -115,7 +115,7 @@ class Ecs : public OnGameStart, public OnGameUpdate, public OnGameFixedUpdate, p
     decltype(auto) get_component(const Entity entity) const {
         constexpr size_t COUNT = sizeof...(Component);
         if constexpr (COUNT == 1) {
-            return registry.get<Component...>(entity);
+            return EcsComponentTraits<Component...>::get(registry, entity);
         } else {
             return std::make_tuple(get_component<Component>(entity)...);
         }
@@ -125,7 +125,7 @@ class Ecs : public OnGameStart, public OnGameUpdate, public OnGameFixedUpdate, p
     bool has_component(const Entity entity) const {
         constexpr size_t COUNT = sizeof...(Component);
         if constexpr (COUNT == 1) {
-            return registry.all_of<Component...>(entity);
+            return EcsComponentTraits<Component...>::has(registry, entity);
         } else {
             return (has_component<Component>(entity) && ...);
         }
@@ -135,7 +135,7 @@ class Ecs : public OnGameStart, public OnGameUpdate, public OnGameFixedUpdate, p
     decltype(auto) add_or_get_component(const Entity entity) {
         constexpr size_t COUNT = sizeof...(Component);
         if constexpr (COUNT == 1) {
-            return registry.emplace_or_replace<Component...>(entity);
+            return EcsComponentTraits<Component...>::add_or_get(registry, entity);
         } else {
             return std::make_tuple(add_or_get_component<Component>(entity)...);
         }

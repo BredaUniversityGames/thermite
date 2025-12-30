@@ -76,6 +76,8 @@ void DragonScene::on_start() {
 
         auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
         transform.set_world_position(glm::vec3(0.0f, 0.25f, -5.0f));
+
+        auto& move_comp = tmt::engine.ecs.add_component<MoveComponent>(entity);
     }
 }
 

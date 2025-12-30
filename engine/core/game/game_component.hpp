@@ -2,6 +2,7 @@
 #include <nlohmann/json.hpp>
 #include "engine/core/frame_data.hpp"
 #include "engine/tools/serializer.hpp"
+#include "engine/core/components/component_collection.hpp"
 #ifdef THERMITE_EDITOR
 // TODO
 // #include <ImReflect.hpp>
