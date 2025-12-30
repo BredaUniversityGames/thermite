@@ -139,7 +139,9 @@ void Profiler::on_editor_start() {
     tmt::Serializer::deserialize(json::parse(text), settings);
 }
 
-void Profiler::on_editor_update(const tmt::FrameData& time) { (void)time; }
+void Profiler::on_editor_update(const tmt::FrameData& time) {
+    (void)time;
+}
 
 void Profiler::on_editor_end() {
     auto json = tmt::Serializer::serialize(settings);

@@ -4,7 +4,9 @@
 namespace tmt {
 
 /* Log with base. */
-inline uint32_t log_base(const uint32_t x, const uint32_t b) { return (uint32_t)ceil(log((double)x) / log((double)b)); }
+inline uint32_t log_base(const uint32_t x, const uint32_t b) {
+    return (uint32_t)ceil(log((double)x) / log((double)b));
+}
 
 /* Calculate the depth of a SVT64 based on its input voxel grid size. */
 inline uint32_t tree_depth(uint32_t width, uint32_t height, uint32_t depth) {

@@ -2,7 +2,9 @@
 #include <glm/gtx/quaternion.hpp>
 #include <array>
 
-float tmt::VoxelBody::get_inv_mass() const { return type == STATIC ? 0 : inv_mass; }
+float tmt::VoxelBody::get_inv_mass() const {
+    return type == STATIC ? 0 : inv_mass;
+}
 
 glm::mat3 tmt::VoxelBody::get_inv_world_inertia() const {
     if (type == STATIC) return glm::mat3(0);

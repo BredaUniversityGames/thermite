@@ -62,7 +62,9 @@ void ImGuiManager::deinit() {
     delete imgui;
 }
 
-void ImGuiManager::on_sdl_event(SDL_Event& event) { ImGui_ImplSDL3_ProcessEvent(&event); }
+void ImGuiManager::on_sdl_event(SDL_Event& event) {
+    ImGui_ImplSDL3_ProcessEvent(&event);
+}
 
 void ImGuiManager::on_engine_update(const FrameData&) {}
 

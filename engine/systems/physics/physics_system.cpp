@@ -134,7 +134,9 @@ void Physics::on_fixed_update(const FrameData&) {
     solver.solve_positions(Engine::Config::FIXED_TIME_STEP);
 }
 
-void Physics::on_end() { Log::info("Physics on_end"); }
+void Physics::on_end() {
+    Log::info("Physics on_end");
+}
 
 void Physics::generate_voxel_constraints_range(const int index, const int size) {
     // Build BVH
@@ -585,9 +587,13 @@ void Physics::initialize_voxel_body(VoxelBody& vb) {
     vb.inv_inertia = glm::inverse(inertia_tensor);
 }
 
-void Physics::add_force(VoxelBody& vb, const glm::vec3& force) { vb.stored_velocity += force; }
+void Physics::add_force(VoxelBody& vb, const glm::vec3& force) {
+    vb.stored_velocity += force;
+}
 
-void Physics::add_torque(VoxelBody& vb, const glm::vec3& torque) { vb.stored_torque += torque; }
+void Physics::add_torque(VoxelBody& vb, const glm::vec3& torque) {
+    vb.stored_torque += torque;
+}
 
 void Physics::add_force_at_position(VoxelBody& vb, const glm::vec3& force, const glm::vec3& p) {
     const glm::vec3 r = p - vb.position;

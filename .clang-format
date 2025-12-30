@@ -14,3 +14,4 @@ Cpp11BracedListStyle: false # Adds a space between words and {}, like this: { fo
 AlignTrailingComments: # Keep comments that are above eachother aligned
   Kind: Always
   OverEmptyLines: 2
+AllowShortFunctionsOnASingleLine: Inline # Makes normal function go to new lines while keeping inline functions in one line

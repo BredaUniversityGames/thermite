@@ -36,9 +36,13 @@ namespace tmt {
 
 Editor::Editor() : imgui_manager(*new ImGuiManager()) {}
 
-Editor::~Editor() { delete &imgui_manager; }
+Editor::~Editor() {
+    delete &imgui_manager;
+}
 
-void Editor::init() { Log::info("Thermite Editor initialized."); }
+void Editor::init() {
+    Log::info("Thermite Editor initialized.");
+}
 
 void Editor::on_engine_init(const ApplicationSpecs&) {
     tmt::Log::info("Starting Thermite Editor...");

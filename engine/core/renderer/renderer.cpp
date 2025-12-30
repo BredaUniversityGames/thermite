@@ -140,7 +140,9 @@ void Renderer::set_imgui(ImGUI* new_imgui) {
 }
 #endif
 
-void Renderer::draw_line(const glm::vec3 start, const glm::vec3 end, const glm::vec3 color, const float time) { debug_pipeline.draw_line(start, end, color, time); }
+void Renderer::draw_line(const glm::vec3 start, const glm::vec3 end, const glm::vec3 color, const float time) {
+    debug_pipeline.draw_line(start, end, color, time);
+}
 
 void Renderer::draw_circle(const glm::vec3 center, const float radius, const glm::vec3 axis_a, const glm::vec3 axis_b, const glm::vec3 color, int segments, const float time) {
     debug_pipeline.draw_circle(center, radius, axis_a, axis_b, color, segments, time);
@@ -154,12 +156,16 @@ void Renderer::draw_arrow(const glm::vec3 start, glm::vec3 dir, const glm::vec3 
     debug_pipeline.draw_arrow(start, dir, color, length, head_length, head_angle, time);
 }
 
-void Renderer::draw_cross(const glm::vec3 center, const glm::vec3 color, const float size, const glm::quat rot, const float time) { debug_pipeline.draw_cross(center, color, size, rot, time); }
+void Renderer::draw_cross(const glm::vec3 center, const glm::vec3 color, const float size, const glm::quat rot, const float time) {
+    debug_pipeline.draw_cross(center, color, size, rot, time);
+}
 
 void Renderer::draw_obb(const glm::vec3 center, const float width, const float height, const float depth, const glm::vec3 color, const glm::quat rot, const float time) {
     debug_pipeline.draw_obb(center, width, height, depth, color, rot, time);
 }
 
-VRAMBank& Renderer::vram_bank() { return gpu.get_vram_bank(); }
+VRAMBank& Renderer::vram_bank() {
+    return gpu.get_vram_bank();
+}
 
 }  // namespace tmt

@@ -15,7 +15,9 @@ inline float surface_area(const Bvh2Node& node) {
 }
 
 /* Returns half the area of an extent `v`. */
-inline float half_area(const glm::vec3& v) { return v.x < -BIG_F32 ? 0.0f : (v.x * v.y + v.y * v.z + v.z * v.x); }
+inline float half_area(const glm::vec3& v) {
+    return v.x < -BIG_F32 ? 0.0f : (v.x * v.y + v.y * v.z + v.z * v.x);
+}
 
 template <typename T>
 void Bvh2<T>::build(const T* input_prims, const uint32_t input_count) {

@@ -31,7 +31,9 @@ void tmt::Viewport::register_input_actions() {
     engine.input_map.add_action_keys(Config::DOWN, Key::LEFT_CTRL);
 }
 
-void tmt::Viewport::on_editor_update(const tmt::FrameData& frame_data) { update_debug_camera(frame_data); }
+void tmt::Viewport::on_editor_update(const tmt::FrameData& frame_data) {
+    update_debug_camera(frame_data);
+}
 
 void tmt::Viewport::on_editor_end() {}
 
@@ -43,7 +45,9 @@ void tmt::Viewport::before_begin() {
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
 }
 
-void tmt::Viewport::end_display() { ImGui::PopStyleVar(); }
+void tmt::Viewport::end_display() {
+    ImGui::PopStyleVar();
+}
 
 void tmt::Viewport::display() {
     auto size = ImGui::GetContentRegionAvail();

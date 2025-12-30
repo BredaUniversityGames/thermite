@@ -148,5 +148,8 @@ int AudioMixer::get_selection_flags(const Type& selection_compare) {
     return ImGuiTreeNodeFlags_Bullet;
 }
 
-void AudioMixer::invalidate_selection() { selection = AudioEvent { nullptr }; }
+void AudioMixer::invalidate_selection() {
+    selection = AudioEvent { nullptr };
+}
+
 }  // namespace tmt

@@ -176,6 +176,8 @@ bool VoxelScene::load() {
     return true;
 }
 
-void VoxelScene::unload() { hierarchy = {}; }
+void VoxelScene::unload() {
+    hierarchy = {};
+}
 
 }  // namespace tmt

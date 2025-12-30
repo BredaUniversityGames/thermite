@@ -25,7 +25,9 @@ void Hierarchy::display() {
     ImGui::PopStyleVar();
 }
 
-void Hierarchy::end_display() { ImGui::PopStyleVar(); }
+void Hierarchy::end_display() {
+    ImGui::PopStyleVar();
+}
 
 void Hierarchy::start_section() {
     /* Begin child section for hierarchy */
@@ -72,7 +74,9 @@ void Hierarchy::clear_selection() {
     previous_end_below = NULL_INDEX;
 }
 
-int Hierarchy::get_window_flags() const { return ImGuiWindowFlags_MenuBar; }
+int Hierarchy::get_window_flags() const {
+    return ImGuiWindowFlags_MenuBar;
+}
 
 void Hierarchy::top_bar() {
     /*menu bar*/
@@ -314,8 +318,12 @@ bool Hierarchy::drag_drop_target(const Entity dropped_entity) {
     }
     return false;
 }
-void Hierarchy::on_game_end() { clear_selection(); }
+void Hierarchy::on_game_end() {
+    clear_selection();
+}
 
-void Hierarchy::on_pre_unload_scene() { clear_selection(); }
+void Hierarchy::on_pre_unload_scene() {
+    clear_selection();
+}
 
 }  // namespace tmt

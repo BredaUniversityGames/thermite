@@ -61,17 +61,29 @@ void InputMap::setup_default_actions() {
     add_action_gamepad_axes(action::RIGHT_TRIGGER, GamepadAxisDirection { .axis = GamepadAxis::RIGHT_TRIGGER });
 }
 
-void InputMap::add_action(const std::string& name) { actions[name] = InputAction {}; }
+void InputMap::add_action(const std::string& name) {
+    actions[name] = InputAction {};
+}
 
-void InputMap::add_action_event(const std::string& name, std::unique_ptr<InputEvent> event) { actions[name].events.push_back(std::move(event)); }
+void InputMap::add_action_event(const std::string& name, std::unique_ptr<InputEvent> event) {
+    actions[name].events.push_back(std::move(event));
+}
 
-void InputMap::add_key_to_action(const std::string& name, Key key) { add_action_event(name, std::make_unique<InputEventKey>(key)); }
+void InputMap::add_key_to_action(const std::string& name, Key key) {
+    add_action_event(name, std::make_unique<InputEventKey>(key));
+}
 
-void InputMap::add_action_mouse(const std::string& name, MouseButton button) { add_action_event(name, std::make_unique<InputEventMouseButton>(button)); }
+void InputMap::add_action_mouse(const std::string& name, MouseButton button) {
+    add_action_event(name, std::make_unique<InputEventMouseButton>(button));
+}
 
-void InputMap::add_action_mouse_motion(const std::string& name) { add_action_event(name, std::make_unique<InputEventMouseMotion>()); }
+void InputMap::add_action_mouse_motion(const std::string& name) {
+    add_action_event(name, std::make_unique<InputEventMouseMotion>());
+}
 
-void InputMap::remove_action(const std::string& name) { actions.erase(name); }
+void InputMap::remove_action(const std::string& name) {
+    actions.erase(name);
+}
 
 const InputAction* InputMap::get_action(std::string_view name) const {
     auto it = actions.find(std::string { name });
@@ -79,7 +91,9 @@ const InputAction* InputMap::get_action(std::string_view name) const {
     return &it->second;
 }
 
-bool InputMap::has_action(std::string_view name) const { return actions.find(std::string { name }) != actions.end(); }
+bool InputMap::has_action(std::string_view name) const {
+    return actions.find(std::string { name }) != actions.end();
+}
 
 float InputMap::get_action_deadzone(std::string_view name) const {
     const auto* action = get_action(name);

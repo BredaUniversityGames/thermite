@@ -27,8 +27,12 @@
 #include "core/input/input_map.hpp"
 #include "tools/profiler.hpp"
 
-bool tmt::Engine::get_is_running() const { return is_running; }
-void tmt::Engine::set_is_running(bool value) { is_running = value; }
+bool tmt::Engine::get_is_running() const {
+    return is_running;
+}
+void tmt::Engine::set_is_running(bool value) {
+    is_running = value;
+}
 /* Singleton */
 tmt::Engine tmt::engine;
 

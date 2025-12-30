@@ -107,7 +107,9 @@ void RigModel::stop_loop(float transfer_time_t) {
     transfer_time = 0.0f;
 }
 
-void tmt::RigModel::set_animation_speed(float s) { animation_speed = s; }
+void tmt::RigModel::set_animation_speed(float s) {
+    animation_speed = s;
+}
 
 void RigModel::animate_translation(Transform& t, Bone& b) {
     auto& keyframes = b.animations[get_current_animation()].keyframes_pos;

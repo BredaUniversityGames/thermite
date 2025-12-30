@@ -26,7 +26,9 @@ bool TryLogError(const bool fail, const spdlog::string_view_t message) {
 }
 }  // namespace
 
-bool AudioInstance::is_valid() const { return engine.audio.active_instances.contains(instance); }
+bool AudioInstance::is_valid() const {
+    return engine.audio.active_instances.contains(instance);
+}
 
 void AudioInstance::stop(const FMOD_STUDIO_STOP_MODE stop_mode) const {
     if (TryLogError(!is_valid(), "Invalid AudioInstance for get_path")) return;
@@ -51,7 +53,9 @@ void AudioInstance::set_label_parameter(const AudioParameter& event_parameter, c
     TryLogError(result, "Failed to set parameter with label");
 }
 
-bool AudioEvent::is_valid() const { return description != nullptr && description->isValid(); }
+bool AudioEvent::is_valid() const {
+    return description != nullptr && description->isValid();
+}
 
 std::string AudioEvent::get_path() const {
 #if defined(THERMITE_EDITOR) || defined(THERMITE_DEBUG)
@@ -114,7 +118,9 @@ AudioInstance AudioEvent::play() const {
     return { event_instance };
 }
 
-bool VolumeControl::is_valid() const { return vca != nullptr && vca->isValid(); }
+bool VolumeControl::is_valid() const {
+    return vca != nullptr && vca->isValid();
+}
 
 std::string VolumeControl::get_path() const {
 #if defined(THERMITE_EDITOR) || defined(THERMITE_DEBUG)
@@ -178,7 +184,9 @@ void Audio::update() {
     });
 }
 
-void Audio::end() const { system->release(); }
+void Audio::end() const {
+    system->release();
+}
 
 FMOD::Studio::Bank* Audio::init_bank(const std::vector<char>& bank_data) const {
     FMOD::Studio::Bank* bank = nullptr;
@@ -226,7 +234,9 @@ void Audio::set_global_parameter(const AudioParameter& parameter, const float va
     TryLogError(result, "Failed to set parameter");
 }
 
-void Audio::set_global_parameter(const AudioParameter& parameter, int value) const { set_global_parameter(parameter, static_cast<float>(value)); }
+void Audio::set_global_parameter(const AudioParameter& parameter, int value) const {
+    set_global_parameter(parameter, static_cast<float>(value));
+}
 
 void Audio::set_global_label_parameter(const AudioParameter& parameter, const std::string& value) const {
     const FMOD_RESULT result = system->setParameterByIDWithLabel(parameter.get_id(), value.c_str());

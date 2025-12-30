@@ -15,7 +15,9 @@ std::filesystem::path IO::FileLocation::get_relative_path() const {
 }
 
 /* Absolute path */
-std::filesystem::path IO::FileLocation::get_absolute_path() const { return absolute(get_relative_path()); }
+std::filesystem::path IO::FileLocation::get_absolute_path() const {
+    return absolute(get_relative_path());
+}
 
 bool IO::write_file(const FileLocation& file_location, const char* data, const size_t size) {
     const std::filesystem::path absolute = file_location.get_absolute_path();
