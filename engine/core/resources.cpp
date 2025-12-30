@@ -28,7 +28,9 @@ void Resources::ResourceCollection::push_back(const std::shared_ptr<Resource>& r
 }
 
 void Resources::ResourceCollection::clean_up() {
-    std::erase_if(runtime_resources, [](const std::weak_ptr<Resource>& res) { return res.expired(); });
+    std::erase_if(runtime_resources, [](const std::weak_ptr<Resource>& res) {
+        return res.expired();
+    });
 }
 
 }  // namespace tmt

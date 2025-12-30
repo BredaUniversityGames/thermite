@@ -30,7 +30,9 @@ void DebugPipeline::on_engine_update(const FrameData& time) {
     if (!timed_points.empty()) {
         for (auto& p : timed_points) p.time -= time.delta_time;
 
-        std::erase_if(timed_points, [](const DebugPoint& p) { return p.time <= 0.0f; });
+        std::erase_if(timed_points, [](const DebugPoint& p) {
+            return p.time <= 0.0f;
+        });
     }
 
     num_points = timed_points.size() + persistent_points.size();

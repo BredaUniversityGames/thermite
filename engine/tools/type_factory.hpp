@@ -11,7 +11,9 @@ class TypeFactory {
 
     template <typename U>
     void register_type() {
-        factory = []() { return U(); };
+        factory = []() {
+            return U();
+        };
     }
 
     T create() { return factory(); }
@@ -27,7 +29,9 @@ class TypeFactory<std::unique_ptr<T>> {
 
     template <typename U>
     void register_type() {
-        factory = []() -> T* { return new U(); };
+        factory = []() -> T* {
+            return new U();
+        };
     }
 
     std::unique_ptr<T> create() { return std::unique_ptr<T>(factory()); }

@@ -20,7 +20,9 @@ TEST(LogTest, GlobalLoggingToConsoleOnly) {
 }
 std::string log_file { "log_tests.txt" };
 std::string read_log_file() {
-    spdlog::apply_all([](const std::shared_ptr<spdlog::logger>& l) { l->flush(); });
+    spdlog::apply_all([](const std::shared_ptr<spdlog::logger>& l) {
+        l->flush();
+    });
 
     EXPECT_TRUE(std::filesystem::exists(log_file)) << "Log file missing: " << log_file;
 

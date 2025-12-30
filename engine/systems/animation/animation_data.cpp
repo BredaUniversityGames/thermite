@@ -67,7 +67,9 @@ void RigData::load_fbx(const IO::FileLocation& directory) {
 
     // Use std::find to find the node with the root bone (to start off our bone initialization)
     const ufbx_bone* root_bone = rig_fbx->bones[0];
-    const ufbx_node* root_node = *std::find_if(rig_fbx->nodes.begin(), rig_fbx->nodes.end(), [&root_bone](const ufbx_node* bone_node) { return bone_node->bone == root_bone; });
+    const ufbx_node* root_node = *std::find_if(rig_fbx->nodes.begin(), rig_fbx->nodes.end(), [&root_bone](const ufbx_node* bone_node) {
+        return bone_node->bone == root_bone;
+    });
 
     init_bone_fbx(root_node, mesh_connections);
 
@@ -103,8 +105,9 @@ void RigData::extract_bone_keyframes_fbx(const ufbx_scene* animation_fbx, const 
             const std::string& bone_name = bone_node->name.data;
 
             // Get the bone node of the rig from the animation fbx file, since we are animating based on rig_fbx names.
-            const auto animation_bone_node =
-                std::find_if(rig_fbx->nodes.begin(), rig_fbx->nodes.end(), [bone_node](const ufbx_node* rig_node) { return check_correct_bone(rig_node->name.data, bone_node->name.data); });
+            const auto animation_bone_node = std::find_if(rig_fbx->nodes.begin(), rig_fbx->nodes.end(), [bone_node](const ufbx_node* rig_node) {
+                return check_correct_bone(rig_node->name.data, bone_node->name.data);
+            });
 
             if (animation_bone_node == rig_fbx->nodes.end()) continue;
 
@@ -112,9 +115,13 @@ void RigData::extract_bone_keyframes_fbx(const ufbx_scene* animation_fbx, const 
 
             const auto connection = mesh_connections.find(bone_node);
             if (connection != mesh_connections.end()) {
-                find_bone_predicate = [connection](const Bone& rig_bone) { return check_correct_bone(rig_bone.name, connection->second->name.data); };
+                find_bone_predicate = [connection](const Bone& rig_bone) {
+                    return check_correct_bone(rig_bone.name, connection->second->name.data);
+                };
             } else {
-                find_bone_predicate = [bone_node](const Bone& rig_bone) { return check_correct_bone(rig_bone.name, bone_node->name.data); };
+                find_bone_predicate = [bone_node](const Bone& rig_bone) {
+                    return check_correct_bone(rig_bone.name, bone_node->name.data);
+                };
             }
 
             const auto& bone_iterator = std::find_if(bones.begin(), bones.end(), find_bone_predicate);
@@ -129,8 +136,9 @@ void RigData::extract_bone_keyframes_fbx(const ufbx_scene* animation_fbx, const 
             bone_comp.animations[animation_name].name = animation_name;
 
             for (const ufbx_baked_vec3& translation : bake_node.translation_keys) {
-                bone_comp.animations[animation_name].keyframes_pos.push_back(KeyframePos { static_cast<float>(translation.time),
-                                                                                           glm::vec3 { translation.value.x, translation.value.y, translation.value.z } });
+                bone_comp.animations[animation_name].keyframes_pos.push_back(
+                    KeyframePos { static_cast<float>(translation.time), glm::vec3 { translation.value.x, translation.value.y, translation.value.z } }
+                );
             }
 
             for (const ufbx_baked_vec3& scale : bake_node.scale_keys) {
@@ -138,8 +146,9 @@ void RigData::extract_bone_keyframes_fbx(const ufbx_scene* animation_fbx, const 
             }
 
             for (const ufbx_baked_quat& rotation : bake_node.rotation_keys) {
-                bone_comp.animations[animation_name].keyframes_rot.push_back(KeyframeRot { static_cast<float>(rotation.time),
-                                                                                           glm::quat(rotation.value.w, rotation.value.x, rotation.value.y, rotation.value.z) });
+                bone_comp.animations[animation_name].keyframes_rot.push_back(
+                    KeyframeRot { static_cast<float>(rotation.time), glm::quat(rotation.value.w, rotation.value.x, rotation.value.y, rotation.value.z) }
+                );
             }
         }
     }

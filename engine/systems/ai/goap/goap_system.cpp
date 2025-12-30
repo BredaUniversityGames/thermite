@@ -87,7 +87,9 @@ void Goap::update_goal(Entity entity, GoapAgent& agent, WorldState& ws) {
     }
 
     // Higher priority first
-    std::sort(agent.available_goals.begin(), agent.available_goals.end(), [](const GoapGoal& a, const GoapGoal& b) { return a.priority > b.priority; });
+    std::sort(agent.available_goals.begin(), agent.available_goals.end(), [](const GoapGoal& a, const GoapGoal& b) {
+        return a.priority > b.priority;
+    });
 
     // Select first relevant goal
     for (const auto& goal : agent.available_goals) {
@@ -159,7 +161,9 @@ void Goap::update_plan(Entity entity, GoapAgent& agent, WorldState& ws) {
     using NodePtr = Node*;
 
     // Min-heap priority queue by total_cost
-    auto cmp = [](NodePtr a, NodePtr b) { return a->total_cost() > b->total_cost(); };
+    auto cmp = [](NodePtr a, NodePtr b) {
+        return a->total_cost() > b->total_cost();
+    };
     std::priority_queue<NodePtr, std::vector<NodePtr>, decltype(cmp)> open_list(cmp);
 
     // Closed set: storing only raw pointers to GoapAction

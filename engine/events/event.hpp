@@ -51,7 +51,9 @@ class EventListenerBase {
 
    private:
     static void sort_listeners() {
-        std::sort(listeners.begin(), listeners.end(), [](T* a, T* b) { return a->priority > b->priority; });
+        std::sort(listeners.begin(), listeners.end(), [](T* a, T* b) {
+            return a->priority > b->priority;
+        });
     }
 
     inline static std::vector<T*> listeners;
@@ -80,7 +82,9 @@ class EventListenerBase<T, void> {
 
    private:
     static void sort_listeners() {
-        std::sort(listeners.begin(), listeners.end(), [](T* a, T* b) { return a->priority > b->priority; });
+        std::sort(listeners.begin(), listeners.end(), [](T* a, T* b) {
+            return a->priority > b->priority;
+        });
     }
 
     inline static std::vector<T*> listeners;

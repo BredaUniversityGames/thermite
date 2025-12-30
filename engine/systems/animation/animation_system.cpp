@@ -7,7 +7,10 @@
 #include "engine/core/renderer/pipelines/debug_pipeline.hpp"
 #include "engine/core/renderer/renderer.hpp"
 
-#define CONDITION(comparison) [](const Variant& parameter, const Variant& value) -> bool { return parameter comparison value; }
+#define CONDITION(comparison)                                    \
+    [](const Variant& parameter, const Variant& value) -> bool { \
+        return parameter comparison value;                       \
+    }
 
 using namespace tmt;
 
