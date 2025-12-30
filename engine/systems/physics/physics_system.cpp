@@ -432,7 +432,7 @@ void Physics::check_neighbors(const VoxelBody& vb_a, const VoxelBody& vb_b, cons
     const glm::quat rot_b = vb_b.rotation;
 
     // Transform the voxel from local voxel space A to world space
-    glm::vec3 local_pos_a = {x, y, z};
+    glm::vec3 local_pos_a = { x, y, z };
     local_pos_a *= UNITS_PER_VOXEL;
     local_pos_a -= half_scale_a - glm::vec3(VOXEL_SIZE_HALF);
     const glm::vec3 world_pos_a = pos_a + rot_a * local_pos_a;
@@ -457,7 +457,7 @@ void Physics::check_neighbors(const VoxelBody& vb_a, const VoxelBody& vb_b, cons
                 if (voxel_a->type != PhysicsVoxelType::CORNER && !(voxel_a->type == PhysicsVoxelType::EDGE && voxel_b->type == PhysicsVoxelType::EDGE)) continue;
 
                 // Transform the voxel from local voxel space B to world space
-                glm::vec3 local_pos_b = {coord.x, coord.y, coord.z};
+                glm::vec3 local_pos_b = { coord.x, coord.y, coord.z };
                 local_pos_b *= UNITS_PER_VOXEL;
                 local_pos_b -= half_scale_b - glm::vec3(VOXEL_SIZE_HALF);
                 glm::vec3 world_pos_b = pos_b + rot_b * local_pos_b;

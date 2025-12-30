@@ -25,7 +25,7 @@ void compute_physics_data(RawVoxels& voxels) {
                 glm::ivec3 normal = {};
                 for (size_t sign = 0; sign < 2; sign++) {
                     for (size_t dir = 0; dir < 3; dir++) {
-                        glm::uvec3 temp = {x, y, z};
+                        glm::uvec3 temp = { x, y, z };
                         temp[(int)dir] += sign == 0 ? (int)1 : -((int)1);
                         const uint32_t temp_index = temp.x + voxels.w * temp.y + voxels.w * voxels.h * temp.z;
 
@@ -113,10 +113,10 @@ inline RawVoxels gather_voxels(const vengi::Node* file_node) {
                 const vengi::VoxelInformation& voxel = file_node->voxel_data->voxels[i];
                 if (voxel.is_air) {
                     voxels.materials[i] = AIR_INDEX;
-                    voxels.physics_data[i] = {PhysicsVoxelType::EMPTY, 0};
+                    voxels.physics_data[i] = { PhysicsVoxelType::EMPTY, 0 };
                 } else {
                     voxels.materials[i] = voxel.color_index;
-                    voxels.physics_data[i] = {PhysicsVoxelType::INSIDE, 0};
+                    voxels.physics_data[i] = { PhysicsVoxelType::INSIDE, 0 };
                 }
             }
         }

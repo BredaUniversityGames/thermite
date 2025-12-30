@@ -69,7 +69,7 @@ class Engine {
    private:
     Timer timer;
     uint64_t frame_count = 0;
-    bool is_running {true};
+    bool is_running { true };
     std::unique_ptr<Application> app;
 
     /* Engine events */

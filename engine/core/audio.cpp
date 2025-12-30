@@ -95,23 +95,23 @@ std::vector<AudioParameter> AudioEvent::get_parameters() const {
 }
 
 AudioInstance AudioEvent::play() const {
-    if (TryLogError(description == nullptr, "Invalid AudioEvent for play")) return {nullptr};
+    if (TryLogError(description == nullptr, "Invalid AudioEvent for play")) return { nullptr };
 
     // Play the event, creating an instance.
     FMOD::Studio::EventInstance* event_instance = nullptr;
     FMOD_RESULT result = description->createInstance(&event_instance);
-    if (TryLogError(result, "Event instance with this description could not be created")) return {nullptr};
+    if (TryLogError(result, "Event instance with this description could not be created")) return { nullptr };
 
     engine.audio.active_instances.emplace(event_instance);
 
     result = event_instance->start();
-    if (TryLogError(result, "Event instance failed to start")) return {nullptr};
+    if (TryLogError(result, "Event instance failed to start")) return { nullptr };
 
     // Mark it for release immediately, once it ends it can immediately be cleaned up.
     result = event_instance->release();
-    if (TryLogError(result, "Event instance failed to mark for release")) return {nullptr};
+    if (TryLogError(result, "Event instance failed to mark for release")) return { nullptr };
 
-    return {event_instance};
+    return { event_instance };
 }
 
 bool VolumeControl::is_valid() const { return vca != nullptr && vca->isValid(); }
@@ -200,7 +200,7 @@ AudioEvent Audio::get_event(const FMOD_GUID& guid) const {
     FMOD::Studio::EventDescription* description;
     system->getEventByID(&guid, &description);
 
-    return {description};
+    return { description };
 }
 
 VolumeControl Audio::get_volume_control(const FMOD_GUID& guid) const {
@@ -209,7 +209,7 @@ VolumeControl Audio::get_volume_control(const FMOD_GUID& guid) const {
 
     if (TryLogError(result, "Failed to get VolumeControl")) return nullptr;
 
-    return {vca};
+    return { vca };
 }
 
 void Audio::stop_all_audio_instances() {

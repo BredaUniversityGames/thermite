@@ -30,11 +30,11 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
 }
 
 void Game::on_start() {
-    tmt::engine.resources.load_resource<tmt::AudioBank>({tmt::IO::Location::PROJECT, "Master.bank"}, true);
-    tmt::engine.resources.load_resource<tmt::AudioBank>({tmt::IO::Location::PROJECT, "Music.bank"});
-    tmt::engine.resources.load_resource<tmt::AudioBank>({tmt::IO::Location::PROJECT, "SFX.bank"});
-    tmt::engine.resources.load_resource<tmt::AudioBank>({tmt::IO::Location::PROJECT, "Vehicles.bank"});
-    tmt::engine.resources.load_resource<tmt::AudioBank>({tmt::IO::Location::PROJECT, "VO.bank"});
+    tmt::engine.resources.load_resource<tmt::AudioBank>({ tmt::IO::Location::PROJECT, "Master.bank" }, true);
+    tmt::engine.resources.load_resource<tmt::AudioBank>({ tmt::IO::Location::PROJECT, "Music.bank" });
+    tmt::engine.resources.load_resource<tmt::AudioBank>({ tmt::IO::Location::PROJECT, "SFX.bank" });
+    tmt::engine.resources.load_resource<tmt::AudioBank>({ tmt::IO::Location::PROJECT, "Vehicles.bank" });
+    tmt::engine.resources.load_resource<tmt::AudioBank>({ tmt::IO::Location::PROJECT, "VO.bank" });
 }
 
 void Game::on_update(const tmt::FrameData& time) {}

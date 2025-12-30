@@ -27,7 +27,7 @@ class Profiler : public IWindow {
 
     class Config {
        public:
-        static inline const IO::FileLocation FILE_LOCATION {IO::Location::EDITOR, "profiler_settings.json"};
+        static inline const IO::FileLocation FILE_LOCATION { IO::Location::EDITOR, "profiler_settings.json" };
     };
 };
 

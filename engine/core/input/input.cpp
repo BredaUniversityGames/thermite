@@ -149,7 +149,7 @@ bool Input::is_mouse_button_just_released(MouseButton button) const {
 }
 
 bool Input::is_action_pressed(std::string_view name) const {
-    auto it = engine.input_map.actions.find(std::string {name});
+    auto it = engine.input_map.actions.find(std::string { name });
     if (it == engine.input_map.actions.end()) {
         Log::warn(Log::Scope::ENGINE, "No input action found with this name {}", name);
         return false;
@@ -162,7 +162,7 @@ bool Input::is_action_pressed(std::string_view name) const {
 }
 
 bool Input::is_action_just_pressed(std::string_view name) const {
-    auto it = engine.input_map.actions.find(std::string {name});
+    auto it = engine.input_map.actions.find(std::string { name });
     if (it == engine.input_map.actions.end()) {
         Log::warn(Log::Scope::ENGINE, "No input action found with this name {}", name);
         return false;
@@ -176,7 +176,7 @@ bool Input::is_action_just_pressed(std::string_view name) const {
 }
 
 bool Input::is_action_just_released(std::string_view name) const {
-    auto it = engine.input_map.actions.find(std::string {name});
+    auto it = engine.input_map.actions.find(std::string { name });
     if (it == engine.input_map.actions.end()) {
         Log::warn(Log::Scope::ENGINE, "No input action found with this name {}", name);
 
@@ -190,7 +190,7 @@ bool Input::is_action_just_released(std::string_view name) const {
     return false;
 }
 float Input::get_action_duration(std::string_view name) const {
-    auto it = engine.input_map.actions.find(std::string {name});
+    auto it = engine.input_map.actions.find(std::string { name });
     if (it == engine.input_map.actions.end()) {
         Log::warn(Log::Scope::ENGINE, "No input action found with this name {}", name);
 
@@ -199,7 +199,7 @@ float Input::get_action_duration(std::string_view name) const {
     return it->second.time_since_being_pressed;
 }
 float Input::get_action_strength(std::string_view name) {
-    auto it = engine.input_map.actions.find(std::string {name});
+    auto it = engine.input_map.actions.find(std::string { name });
     if (it == engine.input_map.actions.end()) {
         Log::warn(Log::Scope::ENGINE, "No input action found with this name {}", name);
 
@@ -218,7 +218,7 @@ float Input::get_action_strength(std::string_view name) {
     return max_strength;
 }
 float Input::get_action_raw_strength(std::string_view name) {
-    auto it = engine.input_map.actions.find(std::string {name});
+    auto it = engine.input_map.actions.find(std::string { name });
     if (it == engine.input_map.actions.end()) {
         Log::warn(Log::Scope::ENGINE, "No input action found with this name {}", name);
 
@@ -235,9 +235,8 @@ float Input::get_action_raw_strength(std::string_view name) {
 float Input::get_axis(std::string_view negative_action, std::string_view positive_action) { return get_action_strength(positive_action) - get_action_strength(negative_action); }
 // https://github.com/godotengine/godot/blob/79603b2f28fdd8b0dce14064e488a3783d51d1ff/core/input/input.cpp#L548C1-L572C2
 glm::vec2 Input::get_vector(std::string_view negative_action_x, std::string_view positive_action_x, std::string_view negative_action_y, std::string_view positive_action_y, float deadzone) {
-    glm::vec2 vector {
-        get_action_raw_strength(positive_action_x) - get_action_raw_strength(negative_action_x), get_action_raw_strength(positive_action_y) - get_action_raw_strength(negative_action_y)
-    };
+    glm::vec2 vector { get_action_raw_strength(positive_action_x) - get_action_raw_strength(negative_action_x),
+                       get_action_raw_strength(positive_action_y) - get_action_raw_strength(negative_action_y) };
     auto& input_map = engine.input_map;
     if (deadzone < 0.0f) {
         deadzone = 0.25f * (input_map.get_action_deadzone(negative_action_x) + input_map.get_action_deadzone(negative_action_y) + input_map.get_action_deadzone(positive_action_x) +
@@ -258,7 +257,7 @@ bool Input::get_mouse_relative_to_window() { return SDL_GetWindowRelativeMouseMo
 
 void Input::lock_mouse(bool value) const {
     if (value) {
-        const SDL_Rect rect {static_cast<int32_t>(mouse_x), static_cast<int32_t>(mouse_y), 1, 1};
+        const SDL_Rect rect { static_cast<int32_t>(mouse_x), static_cast<int32_t>(mouse_y), 1, 1 };
         SDL_SetWindowMouseRect(engine.window.window, &rect);
     } else {
         SDL_SetWindowMouseRect(engine.window.window, nullptr);

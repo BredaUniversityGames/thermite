@@ -106,7 +106,7 @@ void Engine::run() {
             game_controller.should_resume_game = false;
         }
 
-        const FrameData frame_data = {.delta_time = timer.tick()};
+        const FrameData frame_data = { .delta_time = timer.tick() };
 
         input.update(frame_data);
 

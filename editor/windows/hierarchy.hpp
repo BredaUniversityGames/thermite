@@ -37,7 +37,7 @@ class Hierarchy : public IWindow, public OnGameEnd, public OnPreUnloadScene {
         uint32_t index = 0;
         for (auto [entity, transform, name] : view.each()) {
             HierarchyState state(entity, transform, name);
-            state.position = {0, index};
+            state.position = { 0, index };
 
             const bool displayed = display_entity(state);
 
@@ -63,7 +63,7 @@ class Hierarchy : public IWindow, public OnGameEnd, public OnPreUnloadScene {
     std::unordered_set<Entity> selected_entities;
     Entity first_selected_entity = entt::null;
 
-    static constexpr glm::uvec2 NULL_INDEX {std::numeric_limits<uint32_t>::max()};
+    static constexpr glm::uvec2 NULL_INDEX { std::numeric_limits<uint32_t>::max() };
 
     glm::uvec2 selected_index_begin = NULL_INDEX;
 

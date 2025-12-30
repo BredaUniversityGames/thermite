@@ -110,8 +110,8 @@ void Bvh2<T>::build(const T* input_prims, const uint32_t input_count) {
                 if ((node.max_bounds[a] - node.min_bounds[a]) <= min_extent[a]) continue;
 
                 /* Evaluate the cost of each bin configuration */
-                glm::vec3 lb_min[BVH_SPLITS] {}, rb_min[BVH_SPLITS] {}, l1 {BIG_F32}, l2 {-BIG_F32};
-                glm::vec3 lb_max[BVH_SPLITS] {}, rb_max[BVH_SPLITS] {}, r1 {BIG_F32}, r2 {-BIG_F32};
+                glm::vec3 lb_min[BVH_SPLITS] {}, rb_min[BVH_SPLITS] {}, l1 { BIG_F32 }, l2 { -BIG_F32 };
+                glm::vec3 lb_max[BVH_SPLITS] {}, rb_max[BVH_SPLITS] {}, r1 { BIG_F32 }, r2 { -BIG_F32 };
                 float l_cost[BVH_SPLITS] {}, r_cost[BVH_SPLITS] {};
                 for (uint32_t ln = 0u, rn = 0u, i = 0u; i < BVH_SPLITS; ++i) {
                     lb_min[i] = l1 = glm::min(l1, bin_min[a][i]);

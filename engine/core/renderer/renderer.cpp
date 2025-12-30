@@ -74,7 +74,7 @@ void Renderer::init() {
     debug_pipeline.init(gpu);
     geometry_pipeline.init(gpu);
 
-    debug_transform.set_local_position({0.0f, 0.0f, -1.0f});
+    debug_transform.set_local_position({ 0.0f, 0.0f, -1.0f });
 }
 
 void Renderer::update() {

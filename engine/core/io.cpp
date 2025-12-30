@@ -93,7 +93,7 @@ std::string IO::read_text_file(const FileLocation& file_location) {
         return {};
     }
 
-    return {bytes.data(), bytes.size()};
+    return { bytes.data(), bytes.size() };
 }
 
 std::string IO::read_or_create_text_file(const FileLocation& file_location, const std::string& default_contents) {

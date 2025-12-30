@@ -16,7 +16,7 @@ namespace tmt {
 struct FrameData;
 
 struct GamepadState {
-    SDL_Gamepad* handle {nullptr};
+    SDL_Gamepad* handle { nullptr };
     std::string name {};
     std::array<bool, static_cast<int32_t>(GamepadButton::COUNT)> buttons {};
     std::array<bool, static_cast<int32_t>(GamepadButton::COUNT)> prev_buttons {};

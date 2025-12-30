@@ -32,6 +32,6 @@ class AudioMixer : public IWindow {
 
     void invalidate_selection();
     // Selection can be any of these 3 audio types, so an std::variant gives us a convenient way of checking what type is selected and letting us access that type.
-    std::variant<std::weak_ptr<AudioBank>, AudioEvent, VolumeControl> selection = AudioEvent {nullptr};
+    std::variant<std::weak_ptr<AudioBank>, AudioEvent, VolumeControl> selection = AudioEvent { nullptr };
 };
 }  // namespace tmt

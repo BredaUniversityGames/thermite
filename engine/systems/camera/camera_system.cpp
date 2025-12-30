@@ -80,7 +80,7 @@ void CameraSystem::on_update(const FrameData& time) {
         pos += (horizontal_move + vertical_move);
     } else {
         // Movement (WASD + QE)
-        glm::vec3 move_dir = {0.0f, 0.0f, 0.0f};
+        glm::vec3 move_dir = { 0.0f, 0.0f, 0.0f };
         if (input.is_action_pressed(FORWARD)) move_dir += transform.get_forward();
         if (input.is_action_pressed(BACKWARD)) move_dir -= transform.get_forward();
         if (input.is_action_pressed(LEFT)) move_dir -= transform.get_right();

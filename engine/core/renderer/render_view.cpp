@@ -21,7 +21,7 @@ void RenderView::init() {
     VRAMBank& bank = engine.renderer.vram_bank();
 
     /* Initialize the Render Target */
-    const TargetDesc target {static_cast<HWND>(engine.window.get_window_handle())};
+    const TargetDesc target { static_cast<HWND>(engine.window.get_window_handle()) };
     if (const Result r = bank.create_render_target(target); r.is_err()) {
         Log::error(Log::Scope::RENDERER, "failed to initialize render target.\nreason: {}", r.unwrap_err());
         return;
@@ -31,7 +31,7 @@ void RenderView::init() {
 
     /* Viewport Texture */
     if (const Result r = bank.create_texture(
-            TextureUsage::ColorAttachment | TextureUsage::Sampled | TextureUsage::Storage, TextureFormat::RGBA8Unorm, {(uint32_t)engine.window.width, (uint32_t)engine.window.height, 0}
+            TextureUsage::ColorAttachment | TextureUsage::Sampled | TextureUsage::Storage, TextureFormat::RGBA8Unorm, { (uint32_t)engine.window.width, (uint32_t)engine.window.height, 0 }
         );
         r.is_err()) {
         Log::error(Log::Scope::RENDERER, "failed to initialize attachment texture.\nreason: {}", r.unwrap_err());
@@ -106,11 +106,11 @@ BindHandle RenderView::get_render_image() const {
 void RenderView::set_viewport_size(uint32_t width, uint32_t height) {
     if (width != gpu_view.resolution.x || height != gpu_view.resolution.y) {
         height = height <= 0 ? 1 : height;
-        gpu_view.resolution = {width, height};
+        gpu_view.resolution = { width, height };
 
         VRAMBank& bank = engine.renderer.vram_bank();
 
-        if (const Result r = bank.resize_texture(viewport_texture, {width, height, 0}); r.is_err()) {
+        if (const Result r = bank.resize_texture(viewport_texture, { width, height, 0 }); r.is_err()) {
             Log::error(Log::Scope::RENDERER, "failed to resize the viewport texture.\nreason: {}", r.unwrap_err().c_str());
         } else {
             Log::info(Log::Scope::RENDERER, "viewport texture has been resized.");

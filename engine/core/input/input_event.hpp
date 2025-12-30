@@ -27,7 +27,7 @@ class InputEventKey : public InputEvent {
     void set_key(Key new_key) { key = new_key; }
 
    private:
-    Key key {Key::UNKNOWN};
+    Key key { Key::UNKNOWN };
 };
 
 class InputEventMouseMotion : public InputEvent {

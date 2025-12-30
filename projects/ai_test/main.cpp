@@ -84,7 +84,7 @@ void Game::on_start() {
         // Add world state (facts relevant to planning)
         auto& ws = tmt::engine.ecs.add_component<tmt::WorldState>(ai);
 
-        transform.set_world_position({0.f, 0.f, 0.f});
+        transform.set_world_position({ 0.f, 0.f, 0.f });
 
         // --- Give the agent actions ---
         agent.actions.push_back(std::make_unique<tmt::PatrolArea>());
@@ -93,13 +93,13 @@ void Game::on_start() {
 
         tmt::GoapGoal patrol_goal;
         patrol_goal.name = "patrol area";
-        patrol_goal.desired_state = {{tmt::FactId("area_secure"), tmt::FactValue(true)}};
+        patrol_goal.desired_state = { { tmt::FactId("area_secure"), tmt::FactValue(true) } };
         patrol_goal.priority = 1;
         patrol_goal.valid = true;
 
         tmt::GoapGoal kill_goal;
         kill_goal.name = "kill player";
-        kill_goal.desired_state = {{tmt::FactId("player_alive"), tmt::FactValue(false)}};
+        kill_goal.desired_state = { { tmt::FactId("player_alive"), tmt::FactValue(false) } };
         kill_goal.priority = 10;
         kill_goal.valid = true;
 

@@ -53,7 +53,7 @@ class IO {
     [[nodiscard]] static const std::filesystem::path& get_sub_location_path(const IO::Location sub_location) { return SUB_LOCATIONS[static_cast<uint8_t>(sub_location)]; }
 
    private:
-    static inline const std::filesystem::path SUB_LOCATIONS[3] {"assets/game", "assets/engine", "assets/editor"};
+    static inline const std::filesystem::path SUB_LOCATIONS[3] { "assets/game", "assets/engine", "assets/editor" };
 
     static bool stream_open(std::fstream& file_stream, const std::filesystem::path& absolute, std::ios::openmode open_mode);
     static bool create_directories(const std::filesystem::path& absolute);

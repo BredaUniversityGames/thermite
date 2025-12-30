@@ -6,7 +6,7 @@
 namespace tmt {
 struct SaveData {
     struct Config {
-        static inline const IO::FileLocation FILE_LOCATION {IO::Location::EDITOR, "save_data/editor_save.json"};
+        static inline const IO::FileLocation FILE_LOCATION { IO::Location::EDITOR, "save_data/editor_save.json" };
     };
 
     void save() const {

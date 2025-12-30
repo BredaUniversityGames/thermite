@@ -6,7 +6,7 @@
 
 namespace tmt {
 struct Name {
-    std::string name {"Unnamed Entity"};
+    std::string name { "Unnamed Entity" };
 };
 }  // namespace tmt
 

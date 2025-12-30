@@ -26,8 +26,8 @@ class AudioBank : public FileResource {
 
    private:
     bool is_master;
-    FMOD::Studio::Bank* bank {nullptr};
-    FMOD::Studio::Bank* string_bank {nullptr};
+    FMOD::Studio::Bank* bank { nullptr };
+    FMOD::Studio::Bank* string_bank { nullptr };
 };
 
 }  // namespace tmt

@@ -83,11 +83,11 @@ void DebugPipeline::draw_line(const glm::vec3 start, const glm::vec3 end, const 
 
     // Timed Lines
     if (time > 0.0f) {
-        timed_points.push_back({{start, color}, time});
-        timed_points.push_back({{end, color}, time});
+        timed_points.push_back({ { start, color }, time });
+        timed_points.push_back({ { end, color }, time });
     } else {  // Persistent Lines
-        persistent_points.push_back({{start, color}, time});
-        persistent_points.push_back({{end, color}, time});
+        persistent_points.push_back({ { start, color }, time });
+        persistent_points.push_back({ { end, color }, time });
     }
     num_points += 2;
 }
@@ -117,9 +117,9 @@ void DebugPipeline::draw_sphere(const glm::vec3 center, float radius, const glm:
     const int longitude_rings = rings - latitude_rings;
 
     // Great circles (always draw these)
-    draw_circle(center, radius, {1, 0, 0}, {0, 1, 0}, color, segments, time);
-    draw_circle(center, radius, {1, 0, 0}, {0, 0, 1}, color, segments, time);
-    draw_circle(center, radius, {0, 1, 0}, {0, 0, 1}, color, segments, time);
+    draw_circle(center, radius, { 1, 0, 0 }, { 0, 1, 0 }, color, segments, time);
+    draw_circle(center, radius, { 1, 0, 0 }, { 0, 0, 1 }, color, segments, time);
+    draw_circle(center, radius, { 0, 1, 0 }, { 0, 0, 1 }, color, segments, time);
 
     // Latitude rings (horizontal)
     for (int i = 1; i <= latitude_rings; ++i) {
@@ -128,16 +128,16 @@ void DebugPipeline::draw_sphere(const glm::vec3 center, float radius, const glm:
 
         const float ring_radius = sqrtf(radius * radius - y * y);
 
-        draw_circle(center + glm::vec3(0, y, 0), ring_radius, {1, 0, 0}, {0, 0, 1}, color, segments, time);
+        draw_circle(center + glm::vec3(0, y, 0), ring_radius, { 1, 0, 0 }, { 0, 0, 1 }, color, segments, time);
     }
 
     // Longitude rings (vertical)
     for (int i = 0; i <= longitude_rings; ++i) {
         const float angle = glm::two_pi<float>() * float(i + 0.5f) / float(longitude_rings);
 
-        const glm::vec3 axis_a = {cosf(angle), 0.0f, sinf(angle)};
+        const glm::vec3 axis_a = { cosf(angle), 0.0f, sinf(angle) };
 
-        const glm::vec3 axis_b = {0.0f, 1.0f, 0.0f};
+        const glm::vec3 axis_b = { 0.0f, 1.0f, 0.0f };
 
         draw_circle(center, radius, axis_a, axis_b, color, segments, time);
     }

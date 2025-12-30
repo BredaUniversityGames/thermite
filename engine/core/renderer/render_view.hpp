@@ -22,7 +22,7 @@ struct GpuView {
     /* Origin of the view in world-space. */
     glm::vec4 origin {};
     /* Resolution of the view in pixels. */
-    glm::uvec2 resolution {1, 1};
+    glm::uvec2 resolution { 1, 1 };
 };
 
 class RenderView {

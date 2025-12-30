@@ -30,7 +30,7 @@ namespace tmt {
 
 class AudioParameter {
    public:
-    AudioParameter(const FMOD_STUDIO_PARAMETER_DESCRIPTION& description) : description {description} {}
+    AudioParameter(const FMOD_STUDIO_PARAMETER_DESCRIPTION& description) : description { description } {}
 
     // Get the name of the AudioParameter.
     [[nodiscard]] std::string get_name() const { return description.name; }
@@ -44,7 +44,7 @@ class AudioParameter {
 
 class AudioInstance {
    public:
-    AudioInstance(FMOD::Studio::EventInstance* instance) : instance {instance} {}
+    AudioInstance(FMOD::Studio::EventInstance* instance) : instance { instance } {}
 
     [[nodiscard]] bool is_valid() const;
     void stop(FMOD_STUDIO_STOP_MODE stop_mode = FMOD_STUDIO_STOP_IMMEDIATE) const;
@@ -53,12 +53,12 @@ class AudioInstance {
     void set_label_parameter(const AudioParameter& event_parameter, const std::string& value) const;
 
    private:
-    FMOD::Studio::EventInstance* instance {nullptr};
+    FMOD::Studio::EventInstance* instance { nullptr };
 };
 
 class AudioEvent {
    public:
-    AudioEvent(FMOD::Studio::EventDescription* description) : description {description} {}
+    AudioEvent(FMOD::Studio::EventDescription* description) : description { description } {}
 
     [[nodiscard]] bool is_valid() const;
     // Get the path/name of the AudioEvent (returns empty string when not in debug mode and not using the editor).
@@ -71,12 +71,12 @@ class AudioEvent {
     [[nodiscard]] bool operator!=(const AudioEvent& other) const { return description != other.description; }
 
    private:
-    FMOD::Studio::EventDescription* description {nullptr};
+    FMOD::Studio::EventDescription* description { nullptr };
 };
 
 class VolumeControl {
    public:
-    VolumeControl(FMOD::Studio::VCA* vca) : vca {vca} {}
+    VolumeControl(FMOD::Studio::VCA* vca) : vca { vca } {}
 
     [[nodiscard]] bool is_valid() const;
     // Get the path/name of the VolumeControl (returns empty string when not in debug mode and not using the editor).
@@ -89,7 +89,7 @@ class VolumeControl {
     [[nodiscard]] bool operator!=(const VolumeControl& other) const { return vca != other.vca; }
 
    private:
-    FMOD::Studio::VCA* vca {nullptr};
+    FMOD::Studio::VCA* vca { nullptr };
 };
 
 class Audio {

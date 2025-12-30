@@ -58,7 +58,7 @@ class RigModel {
     std::string next_animation;
     std::string current_animation;
     std::string name;
-    glm::vec3 base = {0, 0, 0};
+    glm::vec3 base = { 0, 0, 0 };
     Entity transform_entity = entt::null;
     void init_bones(const Bone& b, Entity p);
 };

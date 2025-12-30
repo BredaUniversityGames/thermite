@@ -103,7 +103,7 @@ void Inspector::display() {
         T& component_instance = tmt::engine.ecs.get_component<T>(menu_context.primary_entity);
 
         const auto& name = tmt::Component<T>::get_name();
-        ImReflect::Detail::scope_id scope_id {name};
+        ImReflect::Detail::scope_id scope_id { name };
 
         const bool is_header_open = ImGui::CollapsingHeader(name, ImGuiTreeNodeFlags_DefaultOpen);
         const bool right_clicked = ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right);

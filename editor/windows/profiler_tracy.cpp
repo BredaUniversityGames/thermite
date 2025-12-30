@@ -18,15 +18,15 @@ namespace {
 ProfilerSettings settings;
 HANDLE capture_process = nullptr;
 
-constexpr SDL_DialogFileFilter k_exe_filters[] = {{"Executable", "exe"}, {"All files", "*"}};
+constexpr SDL_DialogFileFilter k_exe_filters[] = { { "Executable", "exe" }, { "All files", "*" } };
 
-constexpr SDL_DialogFileFilter k_output_filters[] = {{"Tracy trace", "tracy"}, {"All files", "*"}};
+constexpr SDL_DialogFileFilter k_output_filters[] = { { "Tracy trace", "tracy" }, { "All files", "*" } };
 
 enum class DialogType { PROFILER, CAPTURE, OUTPUT };
 DialogType dialog = DialogType::PROFILER;
 
 void launch_profiler() {
-    STARTUPINFOA si = {sizeof(si)};
+    STARTUPINFOA si = { sizeof(si) };
     PROCESS_INFORMATION pi = {};
 
     std::string cmd = settings.profiler_path;
@@ -46,7 +46,7 @@ void launch_profiler() {
 }
 
 void launch_capture() {
-    STARTUPINFOA si = {sizeof(si)};
+    STARTUPINFOA si = { sizeof(si) };
     PROCESS_INFORMATION pi = {};
 
     std::string cmd = settings.capture_path;

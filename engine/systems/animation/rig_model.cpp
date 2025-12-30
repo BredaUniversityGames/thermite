@@ -53,7 +53,7 @@ void RigModel::init(const IO::FileLocation& directory, Entity p) {
         auto& compn = engine.ecs.get_component<Name>(p);
         compn.name = name;
         auto trans = compt.get_local_position();
-        compt.set_local_position({trans.x, trans.y, trans.z});
+        compt.set_local_position({ trans.x, trans.y, trans.z });
     }
 }
 

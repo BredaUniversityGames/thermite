@@ -225,7 +225,7 @@ void tmt::Viewport::update_debug_camera(const tmt::FrameData& time) {
         pos += (horizontal_move + vertical_move);
     } else {
         // Movement (WASD + QE)
-        glm::vec3 move_dir = {0.0f, 0.0f, 0.0f};
+        glm::vec3 move_dir = { 0.0f, 0.0f, 0.0f };
         if (input.is_action_pressed(Config::FORWARD)) move_dir += transform.get_forward();
         if (input.is_action_pressed(Config::BACKWARD)) move_dir -= transform.get_forward();
         if (input.is_action_pressed(Config::LEFT)) move_dir -= transform.get_right();

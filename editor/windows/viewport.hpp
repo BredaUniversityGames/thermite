@@ -33,8 +33,8 @@ class Viewport : public IWindow {
 
     static constexpr uint8_t GIZMO_OP_COUNT = 3;
 
-    uint32_t gizmo_operations[GIZMO_OP_COUNT] = {7, 120, 896};
-    const char* gizmo_op_icons[GIZMO_OP_COUNT] = {ICON_MS_DRAG_PAN, ICON_MS_ROTATE_RIGHT, ICON_MS_ZOOM_OUT_MAP};
+    uint32_t gizmo_operations[GIZMO_OP_COUNT] = { 7, 120, 896 };
+    const char* gizmo_op_icons[GIZMO_OP_COUNT] = { ICON_MS_DRAG_PAN, ICON_MS_ROTATE_RIGHT, ICON_MS_ZOOM_OUT_MAP };
 
     float width = -1;
     float height = -1;

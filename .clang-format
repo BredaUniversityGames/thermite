@@ -1,3 +1,4 @@
+# https://clang.llvm.org/docs/ClangFormatStyleOptions.html
 BasedOnStyle: Google
 AlignAfterOpenBracket: BlockIndent
 SortIncludes: Never
@@ -8,3 +9,5 @@ PointerAlignment: Left
 ReferenceAlignment: Left
 DerivePointerAlignment: false
 ColumnLimit: 192
+
+Cpp11BracedListStyle: false # Adds a space between words and {}, like this: { foo }
