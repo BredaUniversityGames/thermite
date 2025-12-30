@@ -115,11 +115,11 @@ public inline Svt64Hit trace_svt64<let DEBUG : bool>(
     float3 pos = clamp(ray.origin, 1.0f, 1.9999999f);
     float3 side_dist = 0.0f;
     uint steps = 0u;
-    for (int wtf0 = 0; wtf0 < 128; ++wtf0) {
+    for (;;) {
         uint child_index = get_node_cell_index(pos, scale_exp) ^ mirror_mask;
 
         /* Descend down the tree until we find an empty node or leaf node */
-        for (int wtf1 = 0; wtf1 < 32 && node.child_active(child_index) && !node.is_leaf(); ++wtf1) {
+        while (node.child_active(child_index) && !node.is_leaf()) {
             /* Push the current node on the stack (at `scale_exp / 2`) */
             stack[scale_exp >> 1] = node_index;
 
