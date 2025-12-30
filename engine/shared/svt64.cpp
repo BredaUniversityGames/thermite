@@ -186,7 +186,7 @@ void Svt64::build(const RawVoxels& raw_data) {
     const uint32_t raw_voxels = raw_voxel_count(raw_data);
 
     /* Allocate space for new tree */
-    nodes = new Svt64Node[max_nodes];  // (Node*)malloc(1ull << 26);
+    nodes = new Svt64Node[max_nodes];                                 // (Node*)malloc(1ull << 26);
     node_count = 1u;
     materials = new MaterialIndex[raw_voxels + SVT64_BUFFER_MEMORY];  // (MaterialIndex*)malloc(1ull << 26);
     physics_data = new PhysicsVoxel[raw_voxels + SVT64_BUFFER_MEMORY];

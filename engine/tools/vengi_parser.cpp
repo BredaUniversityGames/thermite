@@ -314,7 +314,7 @@ bool BinaryParser::parse_animation(vengi::Animation& anim) {
     while (!eof()) {
         uint32_t fourCC = read_four_cc();
 
-        if (fourCC == 0x41444E45) {  // "ENDA"
+        if (fourCC == 0x41444E45) {         // "ENDA"
             break;
         } else if (fourCC == 0x4659454B) {  // "KEYF"
             Keyframe keyframe;

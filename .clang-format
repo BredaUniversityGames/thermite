@@ -11,3 +11,6 @@ DerivePointerAlignment: false
 ColumnLimit: 192
 
 Cpp11BracedListStyle: false # Adds a space between words and {}, like this: { foo }
+AlignTrailingComments: # Keep comments that are above eachother aligned
+  Kind: Always
+  OverEmptyLines: 2

@@ -49,7 +49,7 @@ void tmt::FontControl::display() {
                     tmt::editor.imgui_manager.font_manager.queue_reload();  // implicitly reload
             }
             if (ImGui::DragFloat2("Glyph Offset (req. reload)", &font.config.GlyphOffset.x, 0.20f, -100.f, 100.0f, "%.0f")) {
-                tmt::editor.imgui_manager.font_manager.queue_reload();  // implicitly reload
+                tmt::editor.imgui_manager.font_manager.queue_reload();      // implicitly reload
             }
 
             first = false;
