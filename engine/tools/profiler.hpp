@@ -109,6 +109,6 @@ inline void operator delete(void* ptr) noexcept {
 #define TMT_ZONE_NAME(text, len)
 #define TMT_ZONE_NAME_V(text)
 
-#define TMT_ZONE_SCOPED_RUNTIME(str)
+#define TMT_ZONE_SCOPED_STRING(str)
 
 #endif

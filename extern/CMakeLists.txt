@@ -75,6 +75,15 @@ target_include_directories(JsonReflect
 # https://github.com/nlohmann/json
 add_subdirectory(nlohmann_json)
 
+# ImReflect - ImGui reflection
+# https://github.com/Sven-vh/ImReflect
+add_library(ImReflect INTERFACE)
+target_include_directories(JsonReflect
+    INTERFACE
+    ${CMAKE_CURRENT_SOURCE_DIR}/ImReflect/
+    ${CMAKE_CURRENT_SOURCE_DIR}/ImReflect/imgui/imgui/misc/cpp
+)
+
 if (THERMITE_EDITOR_BUILD)
     # ImGUI - immediate mode gui
     # https://github.com/ocornut/imgui
@@ -109,15 +118,6 @@ if (THERMITE_EDITOR_BUILD)
     )
     target_include_directories(thermite-editor
         PRIVATE "./imguizmo"
-    )
-
-    # ImReflect - ImGui reflection
-    # https://github.com/Sven-vh/ImReflect
-    add_library(ImReflect INTERFACE)
-    target_include_directories(JsonReflect
-        INTERFACE
-        ${CMAKE_CURRENT_SOURCE_DIR}/ImReflect/
-        ${CMAKE_CURRENT_SOURCE_DIR}/ImReflect/imgui/imgui/misc/cpp
     )
 endif()
 

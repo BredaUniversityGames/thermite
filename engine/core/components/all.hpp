@@ -27,11 +27,10 @@ using SerializeComponents = ComponentRegistry<
 using InspectComponents = ComponentRegistry<
 	/* Order in which components are displayed in the editor */
 	Name, 
-	Transform, 
+	Transform,
 	VoxelRenderer, 
 	Camera,
-	VoxelBody,
-	ComponentCollection
+	VoxelBody
 >;
 // clang-format on
 

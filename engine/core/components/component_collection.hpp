@@ -76,6 +76,11 @@ class ComponentCollection {
         return *components.at(type_id);
     }
 
+    const IGameComponent& get_component(const ComponentIndex& type_id) const {
+        GameComponentRegistry::is_registered_or_throw(type_id);
+        return *components.at(type_id);
+    }
+
     void remove_component(const ComponentIndex& type_id) {
         GameComponentRegistry::is_registered_or_throw(type_id);
         components.erase(type_id);

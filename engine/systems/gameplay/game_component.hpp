@@ -5,6 +5,9 @@
 #include "engine/core/components/component_collection.hpp"
 #ifdef THERMITE_EDITOR && !defined(THERMITE_ENGINE)
 #include <ImReflect.hpp>
+#else
+class ImSettings;
+class ImResponse;
 #endif
 
 namespace tmt {
@@ -30,7 +33,7 @@ class IGameComponent {
     /* [ Auto ] Helpers for engine */
     virtual nlohmann::json serialize() const = 0;
     virtual void deserialize(const nlohmann::json& value) = 0;
-    virtual void inspect() = 0;
+    virtual void inspect(ImSettings& settings, ImResponse& response) = 0;
 };
 
 /* Compiled during game/exe compilation */
@@ -49,9 +52,9 @@ class GameComponent : public IGameComponent {
     std::string_view get_name() const final override { return Derived::name(); }
 
     /* [ Auto ] Implemented by default in-engine so user don't have to */
-    void inspect() override {
+    void inspect(ImSettings& settings, ImResponse& response) override {
 #ifdef THERMITE_EDITOR && !defined(THERMITE_ENGINE)
-        ImReflect::Input("", static_cast<Derived&>(*this));
+        ImReflect::Input("", static_cast<Derived&>(*this), settings, response);
 #else
         throw std::runtime_error("ImReflect is only available in Thermite Editor builds.");
 #endif
