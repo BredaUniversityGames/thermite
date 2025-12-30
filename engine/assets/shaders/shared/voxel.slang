@@ -33,40 +33,35 @@ public inline Hit intersect_voxel_object<let DEBUG : bool>(Ray ray, VoxelObject 
     const float t_far = min(min(min(t_max.x, t_max.y), t_max.z), t);
     if (t_near > t_far) return Hit::miss();
 
+    /* Calculate the ratio between the object size and its tree size */
+    const float3 width_ratio = float3(object.size_rcp_width.xyz) * asfloat(object.size_rcp_width.w);
+
+    /* Calculate the entry point for the tree traversal */
+    const float3 entry_point = ray.origin + ray.dir * t_near;
+    const float3 entry_uvw = (entry_point / half_extent) * 0.5f + 0.5f;
+    ray.origin = (entry_uvw * width_ratio) + 1.0f; /* [1.0, 2.0) */
+
+    /* Trace the SVT64 acceleration structure */
+    const StructuredBuffer<Svt64Node> nodes = bindless::storage_buffer<StructuredBuffer<Svt64Node>>(object.blas_handle);
+    const Svt64Hit local_hit = trace_svt64<DEBUG>(nodes, ray);
+
+    if (local_hit.miss()) return Hit::miss();
+
     Hit hit;
-    hit.t = t_near;
-    hit.voxel_index = object.blas_handle;
-    return hit;
-
-    // /* Calculate the ratio between the object size and its tree size */
-    // const float3 width_ratio = float3(object.size_rcp_width.xyz) * asfloat(object.size_rcp_width.w);
-
-    // /* Calculate the entry point for the tree traversal */
-    // const float3 entry_point = ray.origin + ray.dir * t_near;
-    // const float3 entry_uvw = (entry_point / half_extent) * 0.5f + 0.5f;
-    // ray.origin = (entry_uvw * width_ratio) + 1.0f; /* [1.0, 2.0) */
-
-    // /* Trace the SVT64 acceleration structure */
-    // const StructuredBuffer<Svt64Node> nodes = bindless::storage_buffer<StructuredBuffer<Svt64Node>>(object.blas_handle);
-    // const Svt64Hit local_hit = trace_svt64<DEBUG>(nodes, ray);
-
-    // if (local_hit.miss()) return Hit::miss();
-
-    // Hit hit;
-    // // hit.t = t_near;
-    // hit.voxel_index = 0;
-    // // return hit;
-
-    // /* Check if we missed */
-    // // Hit hit = Hit::miss();
-    // // if (DEBUG) hit.steps = local_hit.steps;
-    // // if (local_hit.miss()) return hit;
-    // // hit.voxel_index = local_hit.voxel_index;
-
-    // /* Calculate world-space hit point and distance */
-    // const float3 hit_uvw = (local_hit.point - 1.0f) / width_ratio;
-    // const float3 hit_ndc = hit_uvw * 2.0f - 1.0f;
-    // const float3 hit_point = mul(object.local_to_world, float4(hit_ndc * half_extent, 1.0f)).xyz;
-    // hit.t = distance(world_origin, hit_point);
+    // hit.t = t_near;
+    hit.voxel_index = 0;
     // return hit;
+
+    /* Check if we missed */
+    // Hit hit = Hit::miss();
+    // if (DEBUG) hit.steps = local_hit.steps;
+    // if (local_hit.miss()) return hit;
+    // hit.voxel_index = local_hit.voxel_index;
+
+    /* Calculate world-space hit point and distance */
+    const float3 hit_uvw = (local_hit.point - 1.0f) / width_ratio;
+    const float3 hit_ndc = hit_uvw * 2.0f - 1.0f;
+    const float3 hit_point = mul(object.local_to_world, float4(hit_ndc * half_extent, 1.0f)).xyz;
+    hit.t = distance(world_origin, hit_point);
+    return hit;
 }

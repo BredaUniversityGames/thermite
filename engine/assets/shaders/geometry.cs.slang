@@ -46,7 +46,7 @@ void main(int2 thread_id: SV_DispatchThreadID, int group_id: SV_GroupIndex) {
     const Ray ray = pinhole_ray(render_view, thread_id);
 
     /* Trace the scene BVH */
-    const Hit hit = trace_bvh2<true>(bvh_nodes, object_indices, object_data, ray);
+    const Hit hit = trace_bvh2<false>(bvh_nodes, object_indices, object_data, ray);
     // const float hit_t = trace_svt64(blas, voxels, ray, group_id);
     // render_target[thread_id] = float4((hit.t * 0.1f).xxx, 1.0f);
 
@@ -66,7 +66,7 @@ void main(int2 thread_id: SV_DispatchThreadID, int group_id: SV_GroupIndex) {
 
         // const uint palette_index = (voxels[hit.voxel_index >> 2u] >> ((4u - (hit.voxel_index % 4u)) << 3u)) & 0xFFu;
         // const float3 albedo = palette[palette_index].albedo;
-        render_target[thread_id] = float4(hit.voxel_index.xxx * 0.1f, 1.0f); // float4(albedo, 1.0f);
+        render_target[thread_id] = float4(hit.t.xxx * 0.01f, 1.0f); // float4(albedo, 1.0f);
     } else {
         render_target[thread_id] = float4(0.075f, 0.075f, 0.075f, 1.0f);
         // const float3 color = heat_color((float)hit.steps / 128.0f);
