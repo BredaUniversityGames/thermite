@@ -16,3 +16,4 @@ AlignTrailingComments: # Keep comments that are above eachother aligned
   OverEmptyLines: 2
 AllowShortFunctionsOnASingleLine: Inline # Makes normal function go to new lines while keeping inline functions in one line
 AllowShortLambdasOnASingleLine: Empty # Makes lambdas go to new lines
+BreakConstructorInitializers: AfterColon # Puts constructor initializers on new lines
