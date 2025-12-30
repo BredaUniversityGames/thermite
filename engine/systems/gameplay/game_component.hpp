@@ -3,9 +3,8 @@
 #include "engine/core/frame_data.hpp"
 #include "engine/tools/serializer.hpp"
 #include "engine/core/components/component_collection.hpp"
-#ifdef THERMITE_EDITOR
-// TODO
-// #include <ImReflect.hpp>
+#ifdef THERMITE_EDITOR && !defined(THERMITE_ENGINE)
+#include <ImReflect.hpp>
 #endif
 
 namespace tmt {
@@ -51,9 +50,8 @@ class GameComponent : public IGameComponent {
 
     /* [ Auto ] Implemented by default in-engine so user don't have to */
     void inspect() override {
-#ifdef THERMITE_EDITOR
-        // TODO
-        // ImReflect::Input("", static_cast<Derived&>(*this));
+#ifdef THERMITE_EDITOR && !defined(THERMITE_ENGINE)
+        ImReflect::Input("", static_cast<Derived&>(*this));
 #else
         throw std::runtime_error("ImReflect is only available in Thermite Editor builds.");
 #endif
