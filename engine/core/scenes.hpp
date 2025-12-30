@@ -32,7 +32,7 @@ class Scenes {
     void swap_scenes();
 
     template <typename T>
-        requires std::is_base_of_v<SceneBase, T>
+    requires std::is_base_of_v<SceneBase, T>
     void register_scene() {
         SceneInfo info;
         info.name = T::scene_name();
@@ -49,7 +49,7 @@ class Scenes {
 
     /* Enqueue a new scene to be loaded at the end of the frame */
     template <typename T>
-        requires std::is_base_of_v<SceneBase, T>
+    requires std::is_base_of_v<SceneBase, T>
     void enqueue_scene() {
         const std::type_index type_id = typeid(T);
         enqueue_scene(type_id);
@@ -66,7 +66,7 @@ class Scenes {
 
     /* Immediatly load a new scene */
     template <typename T>
-        requires std::is_base_of_v<SceneBase, T>
+    requires std::is_base_of_v<SceneBase, T>
     void load_scene() {
         enqueue_scene<T>();
         swap_scenes();
