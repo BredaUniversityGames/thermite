@@ -2,9 +2,9 @@
 #include <imgui.h>
 #include <ImReflect.hpp>
 
-#include "engine/core/game/game_component.hpp"
+#include "engine/systems/gameplay/game_component.hpp"
 
-#include "engine/core/game/game_component_registry.hpp"
+#include "engine/systems/gameplay/game_component_registry.hpp"
 #include "engine/core/components/component_collection.hpp"
 
 void tag_invoke(ImReflect::ImInput_t, const char*, tmt::IGameComponent& value, ImSettings& settings, ImResponse& response) {
@@ -18,13 +18,14 @@ void tag_invoke(ImReflect::ImInput_t, const char*, tmt::ComponentCollection& val
         ImReflect::Input(component_info.name.c_str(), component, settings, response);
     }
 
+    const tmt::Entity owner = tmt::engine.ecs.get_entity(value);
     const auto& registered_components = tmt::engine.component_registry.get_registered_components();
     for (const auto& [type_id, component_info] : registered_components) {
         if (value.has_component(type_id)) continue;
         // Todo: make this a dropdown or potentially move to inspector.cpp
         ImGui::PushID(component_info.name.c_str());
         if (ImGui::Button(("Add " + component_info.name).c_str())) {
-            value.add_component(type_id);
+            value.add_component(type_id, owner);
         }
         ImGui::PopID();
     }

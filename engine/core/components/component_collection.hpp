@@ -4,10 +4,10 @@
 #include <typeindex>
 
 #include "engine/core/ecs.hpp"
-#include "engine/core/game/types.hpp"
-#include "engine/core/game/game_component.hpp"
+#include "engine/systems/gameplay/types.hpp"
+#include "engine/systems/gameplay/game_component.hpp"
 #include "engine/engine.hpp"
-#include "engine/core/game/game_component_registry.hpp"
+#include "engine/systems/gameplay/game_component_registry.hpp"
 #include "engine/core/reflection.hpp"
 
 namespace tmt {
@@ -26,9 +26,9 @@ class ComponentCollection {
     /* Compile time */
     template <typename T>
         requires std::is_base_of_v<IGameComponent, T>
-    T& add_component() {
+    T& add_component(Entity entity) {
         const ComponentIndex type_id = typeid(T);
-        components[type_id] = std::make_unique<T>();
+        components[type_id] = std::make_unique<T>(entity);
         return static_cast<T&>(*components[type_id]);
     }
 
@@ -54,9 +54,9 @@ class ComponentCollection {
     }
 
     /* Runtime */
-    IGameComponent& add_component(const ComponentIndex& type_id) {
+    IGameComponent& add_component(const ComponentIndex& type_id, Entity entity) {
         auto info = engine.component_registry.get_component_info(type_id);
-        components[type_id] = info.factory.create();
+        components[type_id] = info.factory.create(entity);
         return *components[type_id];
     }
 
@@ -82,7 +82,7 @@ template <typename T>
 struct EcsComponentTraits<T, std::enable_if_t<std::is_base_of_v<IGameComponent, T>>> {
     static T& add(Registry& registry, Entity entity) {
         auto& collection = registry.emplace_or_replace<ComponentCollection>(entity);
-        return collection.add_component<T>();
+        return collection.add_component<T>(entity);
     }
     static void remove(Registry& registry, Entity entity) {
         auto& collection = registry.emplace_or_replace<ComponentCollection>(entity);
@@ -103,7 +103,7 @@ struct EcsComponentTraits<T, std::enable_if_t<std::is_base_of_v<IGameComponent, 
     static T& add_or_get(Registry& registry, Entity entity) {
         auto& collection = registry.emplace_or_replace<ComponentCollection>(entity);
         if (!collection.has_component<T>()) {
-            return collection.add_component<T>();
+            return collection.add_component<T>(entity);
         }
         return collection.get_component<T>();
     }

@@ -11,7 +11,6 @@
 #include "core/ecs.hpp"
 #include "core/scenes.hpp"
 #include "core/timer.hpp"
-#include "core/game/game_component_registry.hpp"
 
 #include "core/renderer/renderer.hpp"
 
@@ -19,6 +18,8 @@
 #include "systems/animation/animation_system.hpp"
 #include "systems/camera/camera_system.hpp"
 #include "systems/ai/goap/goap_system.hpp"
+#include "systems/gameplay/gameplay.hpp"
+#include "systems/gameplay/game_component_registry.hpp"
 
 #include "events/engine.hpp"
 #include "events/game.hpp"
@@ -73,6 +74,7 @@ void Engine::init(std::unique_ptr<Application> user_app) {
     audio.init();
     salvo.init();
 
+    ecs.systems.add<Gameplay>();
     ecs.systems.add<Physics>();
     ecs.systems.add<RigModelManager>();
     ecs.systems.add<Goap>();

@@ -12,7 +12,10 @@ namespace tmt {
 /* Used by engine to call events */
 class IGameComponent {
    public:
+    IGameComponent(Entity entity) : entity(std::move(entity)) {};
     virtual ~IGameComponent() = default;
+
+    const Entity entity = entt::null;
 
     /* [ Required ] defined by user */
     virtual std::string_view get_name() const = 0;
@@ -35,6 +38,7 @@ class IGameComponent {
 template <class Derived>
 class GameComponent : public IGameComponent {
    public:
+    using IGameComponent::IGameComponent;
     /* [ Auto ] Implemented by default in-engine so user don't have to */
     nlohmann::json serialize() const override { return Serializer::serialize(static_cast<const Derived&>(*this)); }
 

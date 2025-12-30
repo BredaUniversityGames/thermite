@@ -11,8 +11,8 @@
 #include "engine/systems/camera/camera_system.hpp"
 #include "engine/core/scene.hpp"
 #include "engine/core/scenes.hpp"
-#include "engine/core/game/game_component.hpp"
-#include "engine/core/game/game_component_registry.hpp"
+#include "engine/systems/gameplay/game_component.hpp"
+#include "engine/systems/gameplay/game_component_registry.hpp"
 
 class Game : public tmt::Application {
    public:
@@ -37,15 +37,17 @@ class DragonScene : public tmt::Scene<DragonScene> {
 
 class MoveComponent : public tmt::GameComponent<MoveComponent> {
    public:
+    using GameComponent::GameComponent;
+
     static constexpr std::string_view name() { return "MoveComponent"; }
 
     void start() override {};
-    void update(const tmt::FrameData& time) override {};
+    void update(const tmt::FrameData& time) override;
     void end() override {};
 
     float speed = 1.0f;
 };
-TMT_COMPONENT(MoveComponent, "MoveComponent", (speed));
+TMT_OBJECT(MoveComponent, (speed));
 
 std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs& args) {
     // clang-format off
@@ -84,3 +86,9 @@ void DragonScene::on_start() {
 void DragonScene::on_update(const tmt::FrameData& time) {}
 
 void DragonScene::on_end() {}
+
+void MoveComponent::update(const tmt::FrameData& time) {
+    const float elapsed_time = tmt::engine.get_elapsed_time();
+    auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
+    transform.set_local_position(glm::vec3(std::sin(elapsed_time) * speed, 0.0f, 0.0f));
+}
