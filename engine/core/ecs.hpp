@@ -35,7 +35,7 @@ struct EcsComponentTraits {
     static T& get(Registry& registry, Entity entity) { return registry.get<T>(entity); }
     static const T& get(const Registry& registry, Entity entity) { return registry.get<T>(entity); }
     static bool has(const Registry& registry, Entity entity) { return registry.all_of<T>(entity); }
-    static T& add_or_get(Registry& registry, Entity entity) { return registry.emplace_or_replace<T>(entity); }
+    static T& add_or_get(Registry& registry, Entity entity) { return registry.get_or_emplace<T>(entity); }
     static T* try_get(Registry& registry, Entity entity) { return registry.try_get<T>(entity); }
     static const T* try_get(const Registry& registry, Entity entity) { return registry.try_get<T>(entity); }
 };

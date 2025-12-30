@@ -45,7 +45,7 @@ void paste_component(const auto& name, const tmt::Inspector::MenuContext& menu_c
     }
 
     const auto name_in_clipboard = deserialized.value("component_type", "");
-    InspectComponents::for_each([&](auto type_tag_inner) {
+    SerializeComponents::for_each([&](auto type_tag_inner) {
         using T_inner = typename decltype(type_tag_inner)::type;  // Extract type from tag
         const auto name_of_type = tmt::Component<T_inner>::get_name();
         if (name_in_clipboard != name_of_type) return;
@@ -71,7 +71,7 @@ void paste_values(const auto& name, const tmt::Inspector::MenuContext& menu_cont
     }
 
     const auto name_in_clipboard = deserialized.value("component_type", "");
-    InspectComponents::for_each([&](auto type_tag_inner) {
+    SerializeComponents::for_each([&](auto type_tag_inner) {
         using T_inner = typename decltype(type_tag_inner)::type;  // Extract type from tag
         const auto name_of_type = tmt::Component<T_inner>::get_name();
         if (name_in_clipboard != name_of_type) return;
@@ -85,6 +85,19 @@ void paste_values(const auto& name, const tmt::Inspector::MenuContext& menu_cont
         }
     });
 }
+
+template <typename T>
+struct DisplayComponentTraits {
+    static constexpr bool display_header() { return true; }
+    static constexpr bool can_be_manully_added() { return true; }
+};
+
+template <>
+struct DisplayComponentTraits<ComponentCollection> {
+    static constexpr bool display_header() { return false; }
+    static constexpr bool can_be_manully_added() { return false; }
+    static void display_on_add(const tmt::Inspector::MenuContext& menu_context);
+};
 
 void Inspector::display() {
     const auto& hierarchy = editor.windows.get<Hierarchy>();
@@ -105,7 +118,7 @@ void Inspector::display() {
         const auto& name = tmt::Component<T>::get_name();
         ImReflect::Detail::scope_id scope_id {name};
 
-        const bool is_header_open = ImGui::CollapsingHeader(name, ImGuiTreeNodeFlags_DefaultOpen);
+        const bool is_header_open = DisplayComponentTraits<T>::display_header() ? ImGui::CollapsingHeader(name, ImGuiTreeNodeFlags_DefaultOpen) : true;
         const bool right_clicked = ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right);
 
         const std::string popup_id = "ComponentOptionsPopup_" + std::string(name);
@@ -178,8 +191,13 @@ void Inspector::add_component(const MenuContext& menu_context) {
     }
 
     if (ImGui::BeginPopup("AddComponentPopup")) {
+        ImGui::SeparatorText("Engine");
         InspectComponents::for_each([menu_context](auto type_tag) {
             using T = typename decltype(type_tag)::type;  // Extract type from tag
+            if constexpr (DisplayComponentTraits<T>::can_be_manully_added() == false) {
+                DisplayComponentTraits<T>::display_on_add(menu_context);
+                return;
+            }
 
             for (const Entity& entity : menu_context.selected_entities) {
                 const bool has_component = tmt::engine.ecs.has_component<T>(entity);
@@ -200,5 +218,27 @@ void Inspector::on_editor_start() {}
 void Inspector::on_editor_update(const tmt::FrameData& time) {}
 
 void Inspector::on_editor_end() {}
+
+void DisplayComponentTraits<ComponentCollection>::display_on_add(const tmt::Inspector::MenuContext& menu_context) {
+    ImGui::SeparatorText("Game");
+
+    const auto& registered_component = engine.component_registry.get_registered_components();
+    for (const auto& [componend_index, component_info] : registered_component) {
+        const bool has_collection = engine.ecs.has_component<ComponentCollection>(menu_context.primary_entity);
+        bool has_component = false;
+        if (has_collection) {
+            const auto& component_collection = engine.ecs.get_component<ComponentCollection>(menu_context.primary_entity);
+            has_component = component_collection.has_component(componend_index);
+        }
+        if (has_component) continue;
+        if (ImGui::MenuItem(component_info.name.c_str())) {
+            for (const Entity& entity : menu_context.selected_entities) {
+                auto& component_collection = engine.ecs.add_or_get_component<ComponentCollection>(entity);
+                component_collection.add_component(componend_index, entity);
+            }
+            ImGui::CloseCurrentPopup();
+        }
+    }
+}
 
 }  // namespace tmt

@@ -35,11 +35,11 @@ class DragonScene : public tmt::Scene<DragonScene> {
     float elapsed_time = 0.0f;
 };
 
-class MoveComponent : public tmt::GameComponent<MoveComponent> {
+class MoveUp : public tmt::GameComponent<MoveUp> {
    public:
     using GameComponent::GameComponent;
 
-    static constexpr std::string_view name() { return "MoveComponent"; }
+    static constexpr std::string_view name() { return "Move Up"; }
 
     void start() override {};
     void update(const tmt::FrameData& time) override;
@@ -47,7 +47,35 @@ class MoveComponent : public tmt::GameComponent<MoveComponent> {
 
     float speed = 1.0f;
 };
-TMT_OBJECT(MoveComponent, (speed));
+TMT_OBJECT(MoveUp, (speed));
+
+class MoveSide : public tmt::GameComponent<MoveSide> {
+   public:
+    using GameComponent::GameComponent;
+
+    static constexpr std::string_view name() { return "Move Side"; }
+
+    void start() override {};
+    void update(const tmt::FrameData& time) override;
+    void end() override {};
+
+    float speed = 1.0f;
+};
+TMT_OBJECT(MoveSide, (speed));
+
+class MoveForward : public tmt::GameComponent<MoveForward> {
+   public:
+    using GameComponent::GameComponent;
+
+    static constexpr std::string_view name() { return "Move Forward"; }
+
+    void start() override {};
+    void update(const tmt::FrameData& time) override;
+    void end() override {};
+
+    float speed = 1.0f;
+};
+TMT_OBJECT(MoveForward, (speed));
 
 std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs& args) {
     // clang-format off
@@ -65,7 +93,9 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     tmt::engine.scenes.register_scene<DragonScene>();
 
     /* Register Components */
-    tmt::engine.component_registry.register_component<MoveComponent>();
+    tmt::engine.component_registry.register_component<MoveUp>();
+    tmt::engine.component_registry.register_component<MoveSide>();
+    tmt::engine.component_registry.register_component<MoveForward>();
 
     return std::make_unique<Game>(specs);
 }
@@ -78,8 +108,6 @@ void DragonScene::on_start() {
 
         auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
         transform.set_world_position(glm::vec3(0.0f, 0.25f, -5.0f));
-
-        auto& move_comp = tmt::engine.ecs.add_component<MoveComponent>(entity);
     }
 }
 
@@ -87,8 +115,26 @@ void DragonScene::on_update(const tmt::FrameData& time) {}
 
 void DragonScene::on_end() {}
 
-void MoveComponent::update(const tmt::FrameData& time) {
+void MoveUp::update(const tmt::FrameData& time) {
     const float elapsed_time = tmt::engine.get_elapsed_time();
     auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
-    transform.set_local_position(glm::vec3(std::sin(elapsed_time) * speed, 0.0f, 0.0f));
+    auto position = transform.get_local_position();
+    position.y = std::sin(elapsed_time * speed);
+    transform.set_local_position(position);
+}
+
+void MoveSide::update(const tmt::FrameData& time) {
+    const float elapsed_time = tmt::engine.get_elapsed_time();
+    auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
+    auto position = transform.get_local_position();
+    position.x = std::sin(elapsed_time * speed);
+    transform.set_local_position(position);
+}
+
+void MoveForward::update(const tmt::FrameData& time) {
+    const float elapsed_time = tmt::engine.get_elapsed_time();
+    auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
+    auto position = transform.get_local_position();
+    position.z = std::cos(elapsed_time * speed);
+    transform.set_local_position(position);
 }

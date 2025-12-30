@@ -13,20 +13,18 @@ void tag_invoke(ImReflect::ImInput_t, const char*, tmt::IGameComponent& value, I
 }
 
 void tag_invoke(ImReflect::ImInput_t, const char*, tmt::ComponentCollection& value, ImSettings& settings, ImResponse& response) {
-    for (auto& [type_id, component] : value.get_all_components()) {
-        const auto& component_info = tmt::engine.component_registry.get_component_info(type_id);
-        ImReflect::Input(component_info.name.c_str(), component, settings, response);
-    }
-
-    const tmt::Entity owner = tmt::engine.ecs.get_entity(value);
     const auto& registered_components = tmt::engine.component_registry.get_registered_components();
-    for (const auto& [type_id, component_info] : registered_components) {
-        if (value.has_component(type_id)) continue;
-        // Todo: make this a dropdown or potentially move to inspector.cpp
-        ImGui::PushID(component_info.name.c_str());
-        if (ImGui::Button(("Add " + component_info.name).c_str())) {
-            value.add_component(type_id, owner);
+
+    for (auto& [component_index, info] : registered_components) {
+        if (value.has_component(component_index) == false) {
+            continue;
+        }
+        ImGui::PushID(info.name.c_str());
+        if (ImGui::CollapsingHeader(info.name.c_str())) {
+            tmt::IGameComponent& component = value.get_component(component_index);
+            ImReflect::Input("", component, settings);
         }
         ImGui::PopID();
     }
+
 }

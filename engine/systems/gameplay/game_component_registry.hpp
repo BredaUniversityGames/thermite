@@ -1,6 +1,8 @@
 #pragma once
 #include <map>
+#include <string>
 
+#include "engine/core/entity.hpp"
 #include "engine/systems/gameplay/types.hpp"
 
 namespace tmt {
@@ -44,8 +46,9 @@ class GameComponentRegistry {
         return get_component_info(type_id);
     }
 
-    const std::map<ComponentIndex, ComponentInfo>& get_registered_components() const {
-        return registered_components; }
+    const std::map<ComponentIndex, ComponentInfo>& get_registered_components() const { return registered_components; }
+
+    static void is_registered_or_throw(const ComponentIndex& type_id);
 
    private:
     /* Needs to be ordered for serialization */

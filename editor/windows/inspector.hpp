@@ -21,6 +21,9 @@ class Inspector : public IWindow {
     };
 
     void add_component(const MenuContext& menu_context);
+
+    template <typename T>
+    friend struct DisplayComponentTraits;
 };
 void paste_values(const auto& name, const tmt::Inspector::MenuContext& menu_context);
 }  // namespace tmt
