@@ -90,12 +90,13 @@ public inline Svt64Hit trace_svt64<let DEBUG : bool>(
     StructuredBuffer<Svt64Node> nodes,
     Ray ray
 ) {
-    const uint group_id = spirv_asm {
-        result:$$uint = OpLoad builtin(LocalInvocationIndex:uint);
-    };
+    // const uint group_id = spirv_asm {
+    //     result:$$uint = OpLoad builtin(LocalInvocationIndex:uint);
+    // };
 
     /* 16x8 thread group, 11 stack slots each. */
-    static groupshared uint gs_stack[16 * 8][11];
+    // static groupshared uint gs_stack[16 * 8][11];
+    uint stack[11];
 
     /* Mirror ray origin for more efficient ray-octant traversal */
     ray.origin = mirror_pos(ray.origin, ray.dir, true);
@@ -120,7 +121,7 @@ public inline Svt64Hit trace_svt64<let DEBUG : bool>(
         /* Descend down the tree until we find an empty node or leaf node */
         while (node.child_active(child_index) && !node.is_leaf()) {
             /* Push the current node on the stack (at `scale_exp / 2`) */
-            gs_stack[group_id][scale_exp >> 1] = node_index;
+            stack[scale_exp >> 1] = node_index;
 
             /* Fetch the child node */
             node_index = node.abs_ptr() + popcnt_var64(node.child_mask_lo, node.child_mask_hi, child_index);
@@ -155,7 +156,7 @@ public inline Svt64Hit trace_svt64<let DEBUG : bool>(
             if (diff_exp > 21) break;
 
             /* Read the first common ancestor node from the stack */
-            node_index = gs_stack[group_id][scale_exp >> 1];
+            node_index = stack[scale_exp >> 1];
             node = nodes[node_index];
         }
 
