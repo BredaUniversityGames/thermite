@@ -3,7 +3,7 @@
 #include "engine/engine.hpp"
 
 #if THERMITE_EDITOR
-#include "editor/editor.hpp"
+    #include "editor/editor.hpp"
 #endif
 
 extern std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs& args);
