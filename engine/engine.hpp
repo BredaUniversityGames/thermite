@@ -6,12 +6,15 @@
 
 namespace tmt {
 /* Forward declarations */
+class InputMap;
 class Input;
 class Window;
 class Renderer;
 class Ecs;
 class Resources;
+class Audio;
 class Salvo;
+class Scenes;
 
 class Engine {
    public:
@@ -41,11 +44,15 @@ class Engine {
     */
 
     Window& window;
+    Audio& audio;
+
+    InputMap& input_map;
     Input& input;
     Ecs& ecs;
     Renderer& renderer;
     Resources& resources;
     Salvo& salvo;
+    Scenes& scenes;
 
     GameController game_controller;
 

@@ -23,7 +23,12 @@
 #include "editor/windows/inspector.hpp"
 #include "editor/windows/goap_debugger.hpp"
 #include "editor/windows/font_control.hpp"
-#include "windows/profiler_tracy.hpp"
+#include "editor/windows/audio_mixer.hpp"
+#include "editor/windows/profiler_tracy.hpp"
+#include "editor/windows/scenes.hpp"
+#include "editor/windows/imgui_demo.hpp"
+#include "editor/windows/console.hpp"
+
 /* Singleton */
 tmt::Editor tmt::editor;
 
@@ -47,9 +52,13 @@ void Editor::on_engine_init(const ApplicationSpecs&) {
     windows.add<Profiler>();
     windows.add<GoapDebugger>();
     windows.add<FontControl>();
+    windows.add<AudioMixer>();
+    windows.add<ScenesWindow>();
+    windows.add<Console>();
+    windows.add<ImguiDemo>();
 
-    for (auto& system : windows) {
-        system->on_editor_start();
+    for (auto& window : windows) {
+        window->on_editor_start();
     }
 }
 
@@ -58,24 +67,25 @@ void Editor::on_engine_update(const FrameData& time) {
 
     main_menu_bar();
 
-    for (auto& system : windows) {
-        system->on_editor_update(time);
+    for (auto& window : windows) {
+        window->on_editor_update(time);
     }
 
-    for (auto& system : windows) {
-        const ImGuiWindowFlags_ flags = static_cast<ImGuiWindowFlags_>(system->get_window_flags());
-        const auto& name = system->get_title();
-        if (editor.save_data.open_windows.contains(name) == false) {
-            editor.save_data.open_windows[name] = true;
+    auto& open_windows = editor.save_data.open_windows;
+    for (auto& window : windows) {
+        const ImGuiWindowFlags_ flags = static_cast<ImGuiWindowFlags_>(window->get_window_flags());
+        const auto& name = window->get_title();
+        if (open_windows.contains(name) == false) {
+            open_windows[name] = window->default_open();
         }
-        bool& open = editor.save_data.open_windows[name];
+        bool& open = open_windows[name];
 
         if (open) {
-            system->before_begin();
-            ImGui::Begin(name.c_str(), system->is_closable() ? &open : nullptr, flags);
-            system->display();
+            window->before_begin();
+            ImGui::Begin(name.c_str(), window->is_closable() ? &open : nullptr, flags);
+            window->display();
             ImGui::End();
-            system->end_display();
+            window->end_display();
         }
     }
 
@@ -83,14 +93,14 @@ void Editor::on_engine_update(const FrameData& time) {
 }
 
 void Editor::on_engine_fixed_update(const FrameData& time) {
-    for (auto& system : windows) {
-        system->on_editor_fixed_update(time);
+    for (auto& window : windows) {
+        window->on_editor_fixed_update(time);
     }
 }
 
 void Editor::on_engine_end() {
-    for (auto& system : windows) {
-        system->on_editor_end();
+    for (auto& window : windows) {
+        window->on_editor_end();
     }
 
     tmt::Log::info("Shutting down Thermite Editor...");
@@ -101,8 +111,8 @@ void Editor::on_engine_end() {
 void Editor::main_menu_bar() {
     if (ImGui::BeginMainMenuBar()) {
         if (ImGui::BeginMenu("Windows")) {
-            for (const auto& system : windows) {
-                const auto& name = system->get_title();
+            for (const auto& window : windows) {
+                const auto& name = window->get_title();
                 bool& open = save_data.open_windows[name];
                 ImGui::MenuItem(name.c_str(), nullptr, &open);
             }

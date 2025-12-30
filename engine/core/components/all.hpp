@@ -7,15 +7,30 @@
 #include "engine/core/components/voxel_renderer.hpp"
 #include "engine/core/components/camera.hpp"
 
+#include "engine/systems/physics/components/voxel_body.hpp"
+
 namespace tmt {
 
 // clang-format off
-using AllComponents = ComponentRegistry<
-	/* Components */
+using SerializeComponents = ComponentRegistry<
+	/* Order in which components are serialized */
 	Name, 
 	Transform, 
 	VoxelRenderer, 
-	Camera
+	Camera,
+	VoxelBody
 >;
 // clang-format on
+
+// clang-format off
+using InspectComponents = ComponentRegistry<
+	/* Order in which components are displayed in the editor */
+	Name, 
+	Transform, 
+	VoxelRenderer, 
+	Camera,
+	VoxelBody
+>;
+// clang-format on
+
 }  // namespace tmt
