@@ -2,6 +2,7 @@ module bvh2;
 
 import view;
 import voxel;
+import math;
 
 public struct Bvh2Node {
     /* .xyz = Left minimum bounds ~ .w = Left child node index */
@@ -90,8 +91,8 @@ public inline Hit trace_bvh2<let DEBUG : bool>(
         const float tminb = max(max(max(mintb.x, mintb.y), mintb.z), 0.0f);
         const float tmaxa = min(min(min(maxta.x, maxta.y), maxta.z), hit.t);
         const float tmaxb = min(min(min(maxtb.x, maxtb.y), maxtb.z), hit.t);
-        float dist1 = tmina > tmaxa ? 1e30f : tmina;
-        float dist2 = tminb > tmaxb ? 1e30f : tminb;
+        float dist1 = tmina > tmaxa ? BIG_F32 : tmina;
+        float dist2 = tminb > tmaxb ? BIG_F32 : tminb;
         if (DEBUG) hit.steps++;
 
         /* Swap traversal order to traverse nearest node first */
@@ -101,7 +102,7 @@ public inline Hit trace_bvh2<let DEBUG : bool>(
         }
 
         /* If we missed both child nodes */
-        if (dist1 == 1e30f) {
+        if (dist1 == BIG_F32) {
             /* Pop the node stack */
             if (stack_ptr == 0u) break;
             node_index = stack[--stack_ptr];
@@ -109,7 +110,7 @@ public inline Hit trace_bvh2<let DEBUG : bool>(
             /* Continue with the closest child node */
             node_index = left;
             /* Push the 2nd child onto the node stack if we hit it */
-            if (dist2 != 1e30f) stack[stack_ptr++] = right;
+            if (dist2 != BIG_F32) stack[stack_ptr++] = right;
         }
     }
 
