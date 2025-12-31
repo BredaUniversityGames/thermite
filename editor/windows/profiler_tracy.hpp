@@ -5,6 +5,7 @@
 #include "engine/core/io.hpp"
 
 namespace tmt {
+
 struct ProfilerSettings {
     bool overwrite = true;
     bool use_timer = false;

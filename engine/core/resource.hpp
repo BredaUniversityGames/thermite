@@ -74,6 +74,7 @@ class ResourceRef {
     bool operator==(const ResourceRef<T>& other) const { return file_location == other.file_location && resource == other.resource; }
     bool operator==(std::nullptr_t) const { return resource == nullptr; }
 };
+
 }  // namespace tmt
 
 TMT_OBJECT(tmt::FileResource, (file_location));

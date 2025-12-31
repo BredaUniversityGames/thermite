@@ -19,3 +19,4 @@ AllowShortLambdasOnASingleLine: Empty # Makes lambdas go to new lines
 BreakConstructorInitializers: AfterColon # Puts constructor initializers on new lines
 IndentPPDirectives: BeforeHash # Indents preprocessor directives to the same level as the code
 IndentRequiresClause: false # Keeps requires clauses at the same indentation level as the function
+WrapNamespaceBodyWithEmptyLines: Always # Adds empty lines before and after namespace bodies

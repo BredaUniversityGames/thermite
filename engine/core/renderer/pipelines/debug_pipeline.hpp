@@ -70,4 +70,5 @@ class DebugPipeline : public OnEngineUpdate {
         const float time = 0.0f
     );
 };
+
 }  // namespace tmt

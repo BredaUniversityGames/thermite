@@ -5,7 +5,9 @@
 
 namespace FMOD {
 namespace Studio {
+
 class Bank;
+
 }
 }  // namespace FMOD
 

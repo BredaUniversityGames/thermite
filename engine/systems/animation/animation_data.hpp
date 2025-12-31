@@ -14,6 +14,7 @@ struct ufbx_scene;
 struct ufbx_node;
 
 namespace tmt {
+
 struct KeyframePos {
     float time = -1.0f;
 
@@ -72,4 +73,5 @@ struct RigData : public FileResource {
     void extract_bone_keyframes_fbx(const ufbx_scene* animation_fbx, const ufbx_scene* rig_fbx, const std::map<const ufbx_node*, const ufbx_node*>& mesh_connections);
     void init_bone_fbx(const ufbx_node* node, const std::map<const ufbx_node*, const ufbx_node*>& mesh_connections);
 };
+
 }  // namespace tmt

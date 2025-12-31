@@ -7,6 +7,7 @@
 #include "editor/core/window.hpp"
 
 namespace tmt {
+
 class AudioEvent;
 class AudioBank;
 
@@ -34,4 +35,5 @@ class AudioMixer : public IWindow {
     // Selection can be any of these 3 audio types, so an std::variant gives us a convenient way of checking what type is selected and letting us access that type.
     std::variant<std::weak_ptr<AudioBank>, AudioEvent, VolumeControl> selection = AudioEvent { nullptr };
 };
+
 }  // namespace tmt

@@ -9,6 +9,7 @@
 namespace tmt {
 
 namespace {
+
 // Logs the message as an error if the result is not FMOD_OK.
 bool TryLogError(const FMOD_RESULT result, const spdlog::string_view_t message) {
     if (result) {
@@ -24,6 +25,7 @@ bool TryLogError(const bool fail, const spdlog::string_view_t message) {
     if (fail) Log::error(Log::Scope::ENGINE, "FMOD, {}", message);
     return fail;
 }
+
 }  // namespace
 
 bool AudioInstance::is_valid() const {

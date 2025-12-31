@@ -25,4 +25,5 @@ class Timer {
 
     void reset() { start_time = last_time = Clock::now(); }
 };
+
 };  // namespace tmt

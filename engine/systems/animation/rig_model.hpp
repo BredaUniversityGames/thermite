@@ -9,6 +9,7 @@ struct BoneComp {
 };
 
 namespace tmt {
+
 class RigModel {
    public:
     RigModel() = default;

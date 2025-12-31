@@ -99,6 +99,7 @@ void VengiParser::compute_ref_world_transforms(vengi::Node& node, const glm::mat
 }
 
 namespace vengi {
+
 vengi::NodeType BinaryParser::parse_node_type(const std::string& type_str) {
     if (type_str == "Root") return NodeType::ROOT;
     if (type_str == "Model") return NodeType::MODEL;

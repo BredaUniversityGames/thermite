@@ -23,4 +23,5 @@ class Serializer {
         JsonReflect::from_json(j, value, std::forward<Args>(args)...);
     }
 };
+
 }  // namespace tmt

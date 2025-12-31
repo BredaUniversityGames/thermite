@@ -4,6 +4,7 @@
 #include "engine/core/io.hpp"
 
 namespace tmt {
+
 struct SaveData {
     struct Config {
         static inline const IO::FileLocation FILE_LOCATION { IO::Location::EDITOR, "save_data/editor_save.json" };
@@ -23,6 +24,7 @@ struct SaveData {
 
     std::unordered_map<std::string, bool> open_windows;
 };
+
 }  // namespace tmt
 
 TMT_OBJECT(tmt::SaveData, (open_windows));

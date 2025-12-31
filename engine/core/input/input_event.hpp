@@ -3,6 +3,7 @@
 #include "engine/core/input/keys.hpp"
 
 namespace tmt {
+
 class Input;
 
 class InputEvent {
@@ -118,4 +119,5 @@ class InputEventGamepadMotion : public InputEvent {
     bool negative = false;
     int32_t device_id = -1;
 };
+
 }  // namespace tmt

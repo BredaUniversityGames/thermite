@@ -3,6 +3,7 @@
 #include "editor/core/window.hpp"
 
 namespace tmt {
+
 class FontControl : public IWindow {
    public:
     // Inherited via IWindow
@@ -12,4 +13,5 @@ class FontControl : public IWindow {
     void display() override;
     constexpr std::string get_title() const override { return ICON_MS_FONT_DOWNLOAD " Font Control"; };
 };
+
 }  // namespace tmt

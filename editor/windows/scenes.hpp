@@ -2,6 +2,7 @@
 #include "editor/core/window.hpp"
 
 namespace tmt {
+
 class ScenesWindow : public IWindow {
     // Inherited via IWindow
     void display() override;
@@ -12,4 +13,5 @@ class ScenesWindow : public IWindow {
 
     std::string get_title() const override { return "Scenes"; };
 };
+
 }  // namespace tmt

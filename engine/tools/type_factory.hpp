@@ -39,4 +39,5 @@ class TypeFactory<std::unique_ptr<T>> {
    private:
     std::function<T*()> factory;
 };
+
 }  // namespace tmt

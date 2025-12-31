@@ -4,6 +4,7 @@
 #include <stdexcept>
 
 namespace tmt {
+
 template <typename CollectionType>
 class Collection {
    public:
@@ -51,4 +52,5 @@ class Collection {
    protected:
     std::vector<std::unique_ptr<CollectionType>> systems;
 };
+
 }  // namespace tmt

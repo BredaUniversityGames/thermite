@@ -5,6 +5,7 @@
 #include "engine/events/scene.hpp"
 
 namespace tmt {
+
 void Scenes::update() {
     // next_scene is type index
     if (next_scene == TYPE_INDEX_NULL) {
@@ -52,4 +53,5 @@ void Scenes::swap_scenes() {
         OnSceneStart::dispatch();
     }
 }
+
 }  // namespace tmt

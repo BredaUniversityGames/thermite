@@ -4,7 +4,9 @@
 #include <future>
 
 namespace std {
+
 class thread;
+
 }
 
 namespace tmt {

@@ -125,4 +125,5 @@ class Resources {
     /* File location -> file resource & runtime resources */
     std::unordered_map<IO::FileLocation, ResourceCollection, IO::FileLocationHash> resources;
 };
+
 }  // namespace tmt

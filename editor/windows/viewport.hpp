@@ -2,6 +2,7 @@
 #include "editor/core/window.hpp"
 
 namespace tmt {
+
 class Viewport : public IWindow {
    public:
     Viewport() = default;
@@ -58,4 +59,5 @@ class Viewport : public IWindow {
         constexpr static const char* DOWN = "Camera Move Down";
     };
 };
+
 }  // namespace tmt

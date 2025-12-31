@@ -4,6 +4,7 @@
 #include <unordered_set>
 
 namespace tmt {
+
 class Inspector : public IWindow {
     // Inherited via IWindow
     std::string get_title() const { return ICON_MS_FRAME_INSPECT "  Inspector"; }
@@ -23,4 +24,5 @@ class Inspector : public IWindow {
     void add_component(const MenuContext& menu_context);
 };
 void paste_values(const auto& name, const tmt::Inspector::MenuContext& menu_context);
+
 }  // namespace tmt

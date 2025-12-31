@@ -12,6 +12,7 @@
 #include "engine/events/scene.hpp"
 
 namespace tmt {
+
 class Hierarchy : public IWindow, public OnGameEnd, public OnPreUnloadScene {
    public:
     Hierarchy() = default;
@@ -126,4 +127,5 @@ class Hierarchy : public IWindow, public OnGameEnd, public OnPreUnloadScene {
     void before_begin() override;
     void end_display() override;
 };
+
 }  // namespace tmt

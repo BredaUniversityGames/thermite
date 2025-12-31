@@ -83,4 +83,5 @@ class Scenes {
 
     std::unordered_map<std::type_index, SceneInfo> registered_scenes;
 };
+
 }  // namespace tmt

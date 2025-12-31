@@ -13,6 +13,7 @@
 struct SDL_Gamepad;
 
 namespace tmt {
+
 struct FrameData;
 
 struct GamepadState {
@@ -103,4 +104,5 @@ class Input {
     std::vector<bool> prev_keys {};
     std::unordered_map<int32_t, GamepadState> gamepads {};
 };
+
 }  // namespace tmt

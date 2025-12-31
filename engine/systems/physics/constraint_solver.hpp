@@ -2,6 +2,7 @@
 #include "collision.hpp"
 
 namespace tmt {
+
 class ConstraintSolver {
    public:
     ConstraintSolver() { collisions.reserve(64); };
@@ -13,4 +14,5 @@ class ConstraintSolver {
     int velocity_iterations = 16;
     int position_iterations = 4;
 };
+
 }  // namespace tmt

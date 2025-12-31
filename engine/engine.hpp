@@ -5,6 +5,7 @@
 #include "engine/core/game_controller.hpp"
 
 namespace tmt {
+
 /* Forward declarations */
 class InputMap;
 class Input;

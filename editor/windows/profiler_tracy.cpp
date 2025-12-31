@@ -12,6 +12,7 @@
 #include "engine/core/logger.hpp"
 
 namespace tmt {
+
 // only this file uses these
 namespace {
 
@@ -204,4 +205,5 @@ void Profiler::display() {
         }
     }
 }
+
 }  // namespace tmt

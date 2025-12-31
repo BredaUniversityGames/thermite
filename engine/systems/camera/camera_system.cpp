@@ -10,6 +10,7 @@
 #include "engine/core/input/keys.hpp"
 
 namespace tmt {
+
 void CameraSystem::on_start() {
     // Setup Input Actions
     engine.input_map.add_action_keys(SPRINT, Key::LEFT_SHIFT);
@@ -95,4 +96,5 @@ void CameraSystem::on_update(const FrameData& time) {
 }
 
 void CameraSystem::on_end() {}
+
 }  // namespace tmt

@@ -2,6 +2,7 @@
 #include "editor/core/window.hpp"
 
 namespace tmt {
+
 class GameFlow : public IWindow {
    public:
     // Inherited via IWindow
@@ -14,4 +15,5 @@ class GameFlow : public IWindow {
     void on_editor_update(const tmt::FrameData& time) override;
     void on_editor_end() override;
 };
+
 }  // namespace tmt
