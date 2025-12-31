@@ -37,6 +37,7 @@ DirectoryWatcher::DirectoryWatcher(const std::filesystem::path& path, const bool
 DirectoryWatcher::DirectoryWatcher(DirectoryWatcher&& other) noexcept
     : watching_handle {other.watching_handle}, avoid_double_notify {other.avoid_double_notify}, last_update_time {other.last_update_time} {
     other.watching_handle = nullptr;
+    other.last_update_time = INVALID_TIME;
 }
 
 DirectoryWatcher& DirectoryWatcher::operator=(DirectoryWatcher&& other) noexcept {
@@ -46,7 +47,9 @@ DirectoryWatcher& DirectoryWatcher::operator=(DirectoryWatcher&& other) noexcept
     other.watching_handle = nullptr;
 
     avoid_double_notify = other.avoid_double_notify;
+
     last_update_time = other.last_update_time;
+    other.last_update_time = INVALID_TIME;
 
     return *this;
 }
@@ -113,10 +116,13 @@ FileWatcher::FileWatcher(const std::filesystem::path& path, bool avoid_double_no
 
     file_path = path;
     directory_watcher = DirectoryWatcher {path.parent_path(), false, avoid_double_notify, watch_reasons};
+    last_write_time_cache = std::filesystem::last_write_time(path);
 }
 
 FileWatcher::FileWatcher(FileWatcher&& other) noexcept
-    : file_path {std::move(other.file_path)}, directory_watcher {std::move(other.directory_watcher)}, last_write_time_cache {other.last_write_time_cache} {}
+    : file_path {std::move(other.file_path)}, directory_watcher {std::move(other.directory_watcher)}, last_write_time_cache {other.last_write_time_cache} {
+    other.last_write_time_cache = {};
+}
 
 FileWatcher& FileWatcher::operator=(FileWatcher&& other) noexcept {
     clear();
@@ -124,6 +130,7 @@ FileWatcher& FileWatcher::operator=(FileWatcher&& other) noexcept {
     file_path = std::move(other.file_path);
     directory_watcher = std::move(other.directory_watcher);
     last_write_time_cache = other.last_write_time_cache;
+    other.last_write_time_cache = {};
 
     return *this;
 }
@@ -155,6 +162,7 @@ bool FileWatcher::check_changes() {
 void FileWatcher::clear() {
     file_path.clear();
     directory_watcher.clear();
+    last_write_time_cache = {};
 }
 
 }  // namespace tmt
