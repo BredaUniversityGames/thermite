@@ -74,16 +74,17 @@ void Engine::init(std::unique_ptr<Application> user_app) {
     audio.init();
     salvo.init();
 
-    ecs.systems.add<Gameplay>();
     ecs.systems.add<Physics>();
     ecs.systems.add<RigModelManager>();
     ecs.systems.add<Goap>();
+    ecs.systems.add<Gameplay>(); /* Should be last */
 
     OnEngineInit::dispatch(app->specs);
 }
 
 // Example stuff
 void Engine::run() {
+    scenes.update(); /* Initial scene load if needed */
     timer.reset();
 
     float accumulator = 0.0f;
@@ -180,8 +181,9 @@ void Engine::start_game() {
     TMT_ZONE_SCOPED_N("Engine::start_game")
 
     app->on_start();
-    OnGameStart::dispatch();
     if (scenes.get_active_scene()) scenes.get_active_scene()->on_start();
+
+    OnGameStart::dispatch();
     OnSceneStart::dispatch();
 }
 
@@ -212,10 +214,12 @@ void Engine::resume_game() {
 
 void Engine::end_game() {
     TMT_ZONE_SCOPED_N("Engine::end_game")
-    app->on_end();
-    OnGameEnd::dispatch();
+
     if (scenes.get_active_scene()) scenes.get_active_scene()->on_end();
+    app->on_end();
+
     OnSceneEnd::dispatch();
+    OnGameEnd::dispatch();
 }
 
 }  // namespace tmt

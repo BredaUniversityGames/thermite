@@ -41,9 +41,9 @@ class MoveUp : public tmt::GameComponent<MoveUp> {
 
     static constexpr std::string_view name() { return "Move Up"; }
 
-    void start() override {};
+    void start() override;
     void update(const tmt::FrameData& time) override;
-    void end() override {};
+    void end() override;
 
     float speed = 1.0f;
 };
@@ -108,6 +108,8 @@ void DragonScene::on_start() {
 
         auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
         transform.set_world_position(glm::vec3(0.0f, 0.25f, -5.0f));
+
+        tmt::engine.ecs.add_component<MoveUp>(entity);
     }
 }
 
@@ -115,12 +117,20 @@ void DragonScene::on_update(const tmt::FrameData& time) {}
 
 void DragonScene::on_end() {}
 
+void MoveUp::start() {
+    printf("MoveUp component started on entity %u\n", entity);
+}
+
 void MoveUp::update(const tmt::FrameData& time) {
     const float elapsed_time = tmt::engine.get_elapsed_time();
     auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
     auto position = transform.get_local_position();
     position.y = std::sin(elapsed_time * speed);
     transform.set_local_position(position);
+}
+
+void MoveUp::end() {
+    printf("MoveUp component ended on entity %u\n", entity);
 }
 
 void MoveSide::update(const tmt::FrameData& time) {

@@ -6,16 +6,16 @@
 #include "engine/systems/gameplay/game_component_registry.hpp"
 #include "engine/core/components/component_collection.hpp"
 
-JsonReflect::json tag_invoke(JsonReflect::serialize_t, const tmt::IGameComponent& value) {
+static inline JsonReflect::json tag_invoke(JsonReflect::serialize_t, const tmt::IGameComponent& value) {
     //
     return value.serialize();
 }
-void tag_invoke(JsonReflect::deserialize_t, const JsonReflect::json& j, tmt::IGameComponent& value) {
+static inline void tag_invoke(JsonReflect::deserialize_t, const JsonReflect::json& j, tmt::IGameComponent& value) {
     //
     value.deserialize(j);
 }
 
-JsonReflect::json tag_invoke(JsonReflect::serialize_t, const tmt::ComponentCollection& collection) {
+static inline JsonReflect::json tag_invoke(JsonReflect::serialize_t, const tmt::ComponentCollection& collection) {
     JsonReflect::json result;
     for (const auto& [type_id, component] : collection.get_all_components()) {
         const auto& component_info = tmt::engine.component_registry.get_component_info(type_id);
@@ -24,7 +24,7 @@ JsonReflect::json tag_invoke(JsonReflect::serialize_t, const tmt::ComponentColle
     return result;
 }
 
-void tag_invoke(JsonReflect::deserialize_t, const JsonReflect::json& j, tmt::ComponentCollection& collection) {
+static inline void tag_invoke(JsonReflect::deserialize_t, const JsonReflect::json& j, tmt::ComponentCollection& collection) {
     const tmt::Entity owner = tmt::engine.ecs.get_entity(collection);
     for (const auto& [key, value] : j.items()) {
         const auto type_id = tmt::engine.component_registry.get_component_index(key);

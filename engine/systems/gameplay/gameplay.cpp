@@ -46,8 +46,8 @@ void Gameplay::on_update(const tmt::FrameData& time) {
 void Gameplay::on_end() {
     TMT_ZONE_SCOPED_NS("End Gameplay Components");
     for_each_component([](IGameComponent& component) {
-        /* start */
-        component.start();
+        /* end */
+        component.end();
     });
 }
 
