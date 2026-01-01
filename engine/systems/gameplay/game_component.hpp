@@ -3,7 +3,7 @@
 #include "engine/core/frame_data.hpp"
 #include "engine/tools/serializer.hpp"
 #include "engine/core/components/component_collection.hpp"
-#ifdef THERMITE_EDITOR && !defined(THERMITE_ENGINE)
+#if defined(THERMITE_EDITOR) && !defined(THERMITE_ENGINE)
 #include <ImReflect.hpp>
 #else
 class ImSettings;
@@ -53,7 +53,7 @@ class GameComponent : public IGameComponent {
 
     /* [ Auto ] Implemented by default in-engine so user don't have to */
     void inspect(ImSettings& settings, ImResponse& response) override {
-#ifdef THERMITE_EDITOR && !defined(THERMITE_ENGINE)
+#if defined(THERMITE_EDITOR) && !defined(THERMITE_ENGINE)
         ImReflect::Input("", static_cast<Derived&>(*this), settings, response);
 #else
         throw std::runtime_error("ImReflect is only available in Thermite Editor builds.");
