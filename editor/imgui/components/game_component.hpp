@@ -22,7 +22,7 @@ void tag_invoke(ImReflect::ImInput_t, const char*, tmt::ComponentCollection& val
         ImGui::PushID(info.name.c_str());
         if (ImGui::CollapsingHeader(info.name.c_str())) {
             tmt::IGameComponent& component = value.get_component(component_index);
-            ImReflect::Input("", component, settings);
+            ImReflect::Input("", component, settings, response);
         }
         ImGui::PopID();
     }

@@ -56,6 +56,8 @@ class GameComponent : public IGameComponent {
 #if defined(THERMITE_EDITOR) && !defined(THERMITE_ENGINE)
         ImReflect::Input("", static_cast<Derived&>(*this), settings, response);
 #else
+        (void)settings;
+        (void)response;
         throw std::runtime_error("ImReflect is only available in Thermite Editor builds.");
 #endif
     }

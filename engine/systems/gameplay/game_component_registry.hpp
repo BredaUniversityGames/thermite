@@ -23,8 +23,8 @@ class GameComponentRegistry {
             .type_id = typeid(T),
         };
         info.factory.register_type<T, Entity>();
-        registered_components.emplace(info.type_id, std::move(info));
         name_to_index.emplace(info.name, info.type_id);
+        registered_components.emplace(info.type_id, std::move(info));
     }
 
     ComponentInfo& get_component_info(const ComponentIndex& type_id) {
