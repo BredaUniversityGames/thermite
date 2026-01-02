@@ -119,14 +119,29 @@ public [ForceInline] void occlusion_voxel_object(Ray ray, VoxelObject object, ui
 }
 
 /* XXHash32 <https://jcgt.org/published/0009/03/02/> */
-public inline uint xxhash32(const uint p) {
-    const uint PRIME32_2 = 2246822519u, PRIME32_3 = 3266489917u;
-    const uint PRIME32_4 = 668265263u, PRIME32_5 = 374761393u;
-    uint h32 = p + PRIME32_5;
-    h32 = PRIME32_4 * ((h32 << 17u) | (h32 >> (32u - 17u)));
-    h32 = PRIME32_2 * (h32 ^ (h32 >> 15u));
-    h32 = PRIME32_3 * (h32 ^ (h32 >> 13u));
-    return h32 ^ (h32 >> 16u);
+// public inline uint xxhash32(const uint p) {
+//     const uint PRIME32_2 = 2246822519u, PRIME32_3 = 3266489917u;
+//     const uint PRIME32_4 = 668265263u, PRIME32_5 = 374761393u;
+//     uint h32 = p + PRIME32_5;
+//     h32 = PRIME32_4 * ((h32 << 17u) | (h32 >> (32u - 17u)));
+//     h32 = PRIME32_2 * (h32 ^ (h32 >> 15u));
+//     h32 = PRIME32_3 * (h32 ^ (h32 >> 13u));
+//     return h32 ^ (h32 >> 16u);
+// }
+
+uint jenkins32(uint a) {
+    a = (a + 0x7ed55d16u) + (a << 12);
+    a = (a ^ 0xc761c23cu) ^ (a >> 19);
+    a = (a + 0x165667b1u) + (a << 5);
+    a = (a + 0xd3a2646cu) ^ (a << 9);
+    a = (a + 0xfd7046c5u) + (a << 3);
+    a = (a ^ 0xb55a4f09u) ^ (a >> 16);
+    return a;
+}
+
+uint hash_combine(uint lhs, const uint rhs) {
+    lhs ^= rhs + 0x9e3779b9 + (lhs << 6) + (lhs >> 2);
+    return lhs;
 }
 
 public inline uint voxel_hash(const uint voxel_index, const uint object_index, const uint face_index) {
@@ -137,7 +152,8 @@ public inline uint voxel_hash(const uint voxel_index, const uint object_index, c
     const uint voxel21 = voxel_x | (voxel_y << 7) | (voxel_z << 14);
 
     /* 21 bit voxel index, 8 bit object index, 3 bit face index */
-    return xxhash32(voxel21
+    return jenkins32(voxel21
         | ((object_index & 0b11111111u) << 21u)
         | ((face_index & 0b111u) << 29u));
+    // return hash_combine(hash_combine(jenkins32(voxel_index), jenkins32(object_index)), jenkins32(face_index));
 }

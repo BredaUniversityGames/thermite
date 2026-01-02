@@ -62,14 +62,22 @@ void RenderView::init() {
     ibuffer.texture = bank.create_texture(TextureUsage::Storage, TextureFormat::RG11B10Ufloat, view_size).expect("failed to create ibuffer texture.");
     ibuffer.image = bank.create_image(vbuffer.texture).expect("failed to create ibuffer image.");
 
-    /* Create the illuminance cache */
-    const uint32_t cache_capacity = 20'000'000u;
-    cache = bank.create_buffer(BufferUsage::Storage, cache_capacity, 16u).expect("failed to create cache buffer.");
-    cache_info = bank.create_buffer(BufferUsage::Constant | BufferUsage::TransferDst, 4u).expect("failed to create cache info buffer.");
-    bank.upload_buffer(cache_info, &cache_capacity, 0u, sizeof(uint32_t));
-    macrofacets = bank.create_buffer(BufferUsage::Storage | BufferUsage::TransferDst | BufferUsage::Indirect, 10'000'000u, sizeof(uint32_t)).expect("failed to create cache buffer.");
-    const glm::uvec4 args = glm::uvec4(0u, 1u, 1u, 0u);
-    bank.upload_buffer(macrofacets, &args.x, 0u, sizeof(glm::uvec4));
+    /* Create the macrofacet buffers */
+    const uint64_t hashkey_size = sizeof(uint64_t);
+    const uint64_t hashset_size = (uint64_t)view_size.x * view_size.y;
+    macrofacet_hashset = bank.create_buffer(BufferUsage::Storage, hashset_size, hashkey_size).expect("failed to create macrofacet hashset buffer.");
+    macrofacet_shading_commands = bank.create_buffer(BufferUsage::Storage, hashset_size, hashkey_size).expect("failed to create macrofacet shading commands buffer.");
+    const uint64_t cache_element_size = hashkey_size + sizeof(uint32_t);
+    const uint64_t cache_size = 10'000'000u;
+    macrofacet_illuminance_cache = bank.create_buffer(BufferUsage::Storage, cache_size, cache_element_size).expect("failed to create macrofacet illuminance cache buffer.");
+
+    // const uint32_t cache_capacity = 20'000'000u;
+    // cache = bank.create_buffer(BufferUsage::Storage, cache_capacity, 16u).expect("failed to create cache buffer.");
+    // cache_info = bank.create_buffer(BufferUsage::Constant | BufferUsage::TransferDst, 4u).expect("failed to create cache info buffer.");
+    // bank.upload_buffer(cache_info, &cache_capacity, 0u, sizeof(uint32_t));
+    // macrofacets = bank.create_buffer(BufferUsage::Storage | BufferUsage::TransferDst | BufferUsage::Indirect, 10'000'000u, sizeof(uint32_t)).expect("failed to create cache buffer.");
+    // const glm::uvec4 args = glm::uvec4(0u, 1u, 1u, 0u);
+    // bank.upload_buffer(macrofacets, &args.x, 0u, sizeof(glm::uvec4));
 }
 
 void RenderView::update() {
@@ -109,9 +117,10 @@ void RenderView::update_gpu_view(RenderGraph& render_graph, const Camera& camera
 void RenderView::deinit() {
     VRAMBank& bank = engine.renderer.vram_bank();
     
-    bank.destroy(cache);
-    bank.destroy(cache_info);
-    bank.destroy(macrofacets);
+    /* Destroy macrofacet buffers */
+    bank.destroy(macrofacet_hashset);
+    bank.destroy(macrofacet_shading_commands);
+    bank.destroy(macrofacet_illuminance_cache);
 
     /* Destroy screen buffers */
     bank.destroy(vbuffer.image);
@@ -154,6 +163,12 @@ void RenderView::resize_textures() {
     bank.resize_texture(viewport.texture, view_size).expect("failed to resize viewport texture.");
     bank.resize_texture(vbuffer.texture, view_size).expect("failed to resize vbuffer texture.");
     bank.resize_texture(ibuffer.texture, view_size).expect("failed to resize ibuffer texture.");
+
+    /* Resize macrofacet buffers */
+    const uint64_t hashkey_size = sizeof(uint64_t);
+    const uint64_t hashset_size = (uint64_t)view_size.x * view_size.y;
+    bank.resize_buffer(macrofacet_hashset, hashset_size, hashkey_size).expect("failed to resize macrofacet hashset buffer");
+    bank.resize_buffer(macrofacet_shading_commands, hashset_size, hashkey_size).expect("failed to resize macrofacet shading commands buffer");
 }
 
 }  // namespace tmt

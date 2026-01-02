@@ -29,7 +29,7 @@ public bool inc_occupancy(
     /* Evaluate the voxel hash function */
     uint hash = voxel_hash(v.voxel_index, v.object_index, v.face_index) % info.capacity;
 
-    for (uint i = 0u; i < 8u; ++i) {
+    for (uint i = 0u; i < 16u; ++i) {
         // /* Check if the slot is free by comparing frame indices */
         // const bool is_free = (frame_index - entries[hash].last_used) > 10u;
 
@@ -62,17 +62,32 @@ public bool inc_occupancy(
         //     return occupancy == 0u;
         // }
 
-        if (entries[hash].key == uint64_t::maxValue) {
+        if (entries[hash].key == 0u) {
             /* Try to claim this slot */
             uint64_t prev_key = 0u;
-            InterlockedCompareExchange(entries[hash].key, uint64_t::maxValue, key, prev_key);
+            InterlockedCompareExchange(entries[hash].key, 0u, key, prev_key);
 
             /* If this thread or another thread succeeded in claiming the slot */
-            if (prev_key == uint64_t::maxValue || prev_key == key) {
+            if (prev_key == 0u || prev_key == key) {
                 uint occupancy;
                 InterlockedAdd(entries[hash].occupancy, 1u, occupancy);
                 return occupancy == 0u;
             }
+        }
+
+        const uint stale_threshold = frame_index - 30u;
+        uint original_frame;
+        InterlockedMax(entries[hash].last_used, frame_index, original_frame);
+        if (original_frame <= stale_threshold) {
+            entries[hash].key = key;
+            entries[hash].occupancy = 1u;
+            return true;
+        }
+
+        if (entries[hash].key == key) {
+            uint occupancy;
+            InterlockedAdd(entries[hash].occupancy, 1u, occupancy);
+            return occupancy == 0u;
         }
 
         /* Move to the next hash cache slot */
@@ -93,7 +108,7 @@ public CacheEntry read(
     /* Evaluate the voxel hash function */
     uint hash = voxel_hash(v.voxel_index, v.object_index, v.face_index) % info.capacity;
 
-    for (uint i = 0u; i < 8u; ++i) {
+    for (uint i = 0u; i < 16u; ++i) {
         const uint64_t entry_key = entries[hash].key;
 
         /* Check if the key in this entry matches */
@@ -120,7 +135,7 @@ public uint reset_occupancy(
     /* Evaluate the voxel hash function */
     uint hash = voxel_hash(v.voxel_index, v.object_index, v.face_index) % info.capacity;
 
-    for (uint i = 0u; i < 8u; ++i) {
+    for (uint i = 0u; i < 16u; ++i) {
         const uint64_t entry_key = entries[hash].key;
 
         /* Check if the key in this entry matches */
