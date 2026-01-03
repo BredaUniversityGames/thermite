@@ -77,6 +77,37 @@ void Physics::on_update(const FrameData&) {
 
     // if (bvh.nodes) draw_node(bvh, 0u);
     //  draw_node(bvh, bvh.nodes[0].left_first + 1u);
+
+    for (const auto& [entity, vb, transform] : engine.ecs.get_registry().view<VoxelBody, Transform>().each()) {
+        auto edges = vb.get_world_edges();
+        glm::vec3 color = vb.type == VoxelBody::DYNAMIC ? glm::vec3(0, 1, 0) : glm::vec3(1, 0, 0);
+        for (size_t i = 0; i < edges.size(); i++) {
+            tmt::engine.renderer.draw_line(edges[i].start, edges[i].end, color);
+        }
+
+        // Draw voxel normals
+        glm::uvec3 size = vb.resource->size;
+        auto* tree = vb.resource->blas.get();
+        for (size_t z = 0; z < size.z; z++) {
+            for (size_t y = 0; y < size.y; y++) {
+                for (size_t x = 0; x < size.x; x++) {
+                    const int index = x + y * size.x + z * size.x * size.y;
+                    if (index % 2 == 0) continue;
+
+                    const tmt::PhysicsVoxel* voxel = tree->get_physics_voxel(x, y, z);
+                    if (voxel == nullptr || voxel->normal_index == 0 || voxel->normal_index == 28) continue;
+
+                    glm::ivec3 local_normal = voxel->get_normal();
+                    glm::vec3 normal = vb.rotation * glm::vec3((float)local_normal.x, (float)local_normal.y, (float)local_normal.z);
+                    glm::vec3 local_pos = glm::vec3(
+                        ((float)x + 0.5f - (size.x * 0.5f)) * UNITS_PER_VOXEL, ((float)y + 0.5f - (size.y * 0.5f)) * UNITS_PER_VOXEL, ((float)z + 0.5f - (size.z * 0.5f)) * UNITS_PER_VOXEL
+                    );
+                    glm::vec3 world_pos = vb.position + (vb.rotation * local_pos);
+                    tmt::engine.renderer.draw_line(world_pos, normal, glm::vec3(0.0f, 0.6f, 0.0f));
+                }
+            }
+        }
+    }
 }
 
 void Physics::on_fixed_update(const FrameData&) {
