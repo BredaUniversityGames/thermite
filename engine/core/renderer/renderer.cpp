@@ -53,7 +53,7 @@ void Renderer::init() {
     gpu.set_max_samplers(32u);
 
     /* Initialize the GPU adapter */
-    if (const Result r = gpu.init(true); r.is_err()) {
+    if (const Result r = gpu.init(true, true); r.is_err()) {
         Log::error(Log::Scope::RENDERER, "failed to initialize gpu adapter.\nreason: {}", r.unwrap_err());
         return;
     }
