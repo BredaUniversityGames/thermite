@@ -49,8 +49,27 @@ function(find_and_add_targets)
 			# Set runtime output directory to its own folder inside /bin/
 			set_target_properties(${target_name} PROPERTIES
 				RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/${target_name}"
+				# Disables the windows console
+				# WIN32_EXECUTABLE TRUE
 			)
-			
+			# Disables the windows console
+			#if(MSVC)
+			#	target_link_options(${target_name} PRIVATE "/ENTRY:mainCRTStartup")
+			#endif()
+
+			# Copy over dll files for FMOD
+			set(FMOD_POSTFIX "$<$<CONFIG:Debug>:L>")
+			add_custom_command(
+		        TARGET ${target_name} POST_BUILD
+		        COMMAND ${CMAKE_COMMAND} -E copy
+		                "${CMAKE_SOURCE_DIR}/extern/fmod/lib/fmod${FMOD_POSTFIX}.dll"
+		                "${CMAKE_BINARY_DIR}/bin/${target_name}/fmod${FMOD_POSTFIX}.dll"
+		
+		        COMMAND ${CMAKE_COMMAND} -E copy
+		                "${CMAKE_SOURCE_DIR}/extern/fmod/lib/fmodstudio${FMOD_POSTFIX}.dll"
+		                "${CMAKE_BINARY_DIR}/bin/${target_name}/fmodstudio${FMOD_POSTFIX}.dll"
+			)
+
 			# Make sure target has assets folder
 			file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/bin/${target_name}/assets")
 
@@ -77,6 +96,9 @@ function(find_and_add_targets)
 			if(THERMITE_EDITOR_BUILD)
 				target_link_libraries(${target_name} PRIVATE thermite-editor)
 			endif()
+
+			# Add compile definitons
+			target_compile_definitions(${target_name} PRIVATE NOMINMAX) # Makes windows.h not define min and max
 
 			# Add some build state macros for code
 			if (THERMITE_EDITOR_BUILD)

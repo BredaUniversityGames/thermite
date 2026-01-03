@@ -7,7 +7,9 @@
 #include "core/input/input.hpp"
 
 #include "core/window.hpp"
+#include "core/audio.hpp"
 #include "core/ecs.hpp"
+#include "core/scenes.hpp"
 #include "core/timer.hpp"
 
 #include "core/renderer/renderer.hpp"
@@ -19,8 +21,10 @@
 
 #include "events/engine.hpp"
 #include "events/game.hpp"
+#include "events/scene.hpp"
 #include "core/resources.hpp"
 #include "core/salvo.hpp"
+#include "core/input/input_map.hpp"
 #include "tools/profiler.hpp"
 
 bool tmt::Engine::get_is_running() const { return is_running; }
@@ -30,15 +34,27 @@ tmt::Engine tmt::engine;
 
 namespace tmt {
 
-Engine::Engine() : input(*new Input()), window(*new Window()), ecs(*new Ecs()), renderer(*new Renderer()), resources(*new Resources()), salvo(*new Salvo()) {}
+Engine::Engine()
+    : window(*new Window()),
+      audio(*new Audio()),
+      input_map(*new InputMap()),
+      input(*new Input()),
+      ecs(*new Ecs()),
+      renderer(*new Renderer()),
+      resources(*new Resources()),
+      salvo(*new Salvo()),
+      scenes(*new Scenes()) {}
 
 Engine::~Engine() {
     /* Destruction should be in reverse order */
+    delete &scenes;
     delete &salvo;
     delete &resources;
     delete &renderer;
     delete &ecs;
     delete &input;
+    delete &input_map;
+    delete &audio;
     delete &window;
 }
 
@@ -51,6 +67,7 @@ void Engine::init(std::unique_ptr<Application> user_app) {
     window.init(app->specs);
     input.init();
     renderer.init();
+    audio.init();
     salvo.init();
 
     ecs.systems.add<Physics>();
@@ -89,9 +106,9 @@ void Engine::run() {
             game_controller.should_resume_game = false;
         }
 
-        input.update();
-
         const FrameData frame_data = {.delta_time = timer.tick()};
+
+        input.update(frame_data);
 
         const bool should_update = game_controller.is_playing() && !game_controller.is_paused();
         /* Update */
@@ -99,6 +116,8 @@ void Engine::run() {
             update_game(frame_data);
         }
         update_engine(frame_data);
+
+        audio.update();
 
         accumulator += frame_data.delta_time;
         while (accumulator >= Config::FIXED_TIME_STEP) {
@@ -116,6 +135,8 @@ void Engine::run() {
         OnEndFrame::dispatch();
 
         renderer.update();
+        scenes.update();
+        resources.unload_unused();
         frame_count++;
     }
 
@@ -155,18 +176,22 @@ void Engine::start_game() {
 
     app->on_start();
     OnGameStart::dispatch();
+    if (scenes.get_active_scene()) scenes.get_active_scene()->on_start();
+    OnSceneStart::dispatch();
 }
 
 void Engine::update_game(const FrameData& frame_data) {
     TMT_ZONE_SCOPED_N("Engine::update_game")
 
     app->on_update(frame_data);
+    if (scenes.get_active_scene()) scenes.get_active_scene()->on_update(frame_data);
     OnGameUpdate::dispatch(frame_data);
 }
 
 void Engine::fixed_update_game(const FrameData& frame_data) {
     TMT_ZONE_SCOPED_N("Engine::fixed_update_game")
     app->on_fixed_update(frame_data);
+    if (scenes.get_active_scene()) scenes.get_active_scene()->on_fixed_update(frame_data);
     OnGameFixedUpdate::dispatch(frame_data);
 }
 
@@ -184,6 +209,8 @@ void Engine::end_game() {
     TMT_ZONE_SCOPED_N("Engine::end_game")
     app->on_end();
     OnGameEnd::dispatch();
+    if (scenes.get_active_scene()) scenes.get_active_scene()->on_end();
+    OnSceneEnd::dispatch();
 }
 
 }  // namespace tmt
