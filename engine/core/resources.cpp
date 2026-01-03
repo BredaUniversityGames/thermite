@@ -55,6 +55,7 @@ bool Resources::reload_resource(const std::shared_ptr<FileResource>& resource) c
         return false;
     }
     resource->loaded = true;
+    resource->last_modified_time = IO::get_file_last_modified_time(resource->file_location);
     return true;
 }
 
