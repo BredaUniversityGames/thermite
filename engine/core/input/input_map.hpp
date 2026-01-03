@@ -109,49 +109,49 @@ class InputMap {
     /// </summary>
     /// <param name="name">The action identifier.</param>
     /// <returns>Pointer to the action, or nullptr if not found.</returns>
-    const InputAction* get_action(std::string_view name) const;
+    const InputAction* get_action(const std::string& name) const;
 
     /// <summary>
     /// Returns a mutable pointer to the action with the given name.
     /// </summary>
     /// <param name="name">The action identifier.</param>
     /// <returns>Pointer to the action, or nullptr if not found.</returns>
-    InputAction* get_action(std::string_view name);
+    InputAction* get_action(const std::string& name);
 
     /// <summary>
     /// Checks whether an action with the given name exists.
     /// </summary>
     /// <param name="name">The action identifier.</param>
     /// <returns>True if the action exists.</returns>
-    bool has_action(std::string_view name) const;
+    bool has_action(const std::string& name) const;
 
     /// <summary>
     /// Gets the deadzone value for an action.
     /// </summary>
     /// <param name="name">The action identifier.</param>
     /// <returns>The deadzone value, or 0.0 if action not found.</returns>
-    float get_action_deadzone(std::string_view name) const;
+    float get_action_deadzone(const std::string& name) const;
 
     /// <summary>
     /// Sets the deadzone value for an action.
     /// </summary>
     /// <param name="name">The action identifier.</param>
     /// <param name="deadzone">The deadzone threshold (0.0-1.0).</param>
-    void set_action_deadzone(std::string_view name, float deadzone);
+    void set_action_deadzone(const std::string& name, float deadzone);
 
     /// <summary>
     /// Gets the sensitivity value for an action.
     /// </summary>
     /// <param name="name">The action identifier.</param>
     /// <returns>The sensitivity multiplier, or 1.0 if action not found.</returns>
-    float get_action_sensitivity(std::string_view name) const;
+    float get_action_sensitivity(const std::string& name) const;
 
     /// <summary>
     /// Sets the sensitivity value for an action.
     /// </summary>
     /// <param name="name">The action identifier.</param>
     /// <param name="sensitivity">The sensitivity multiplier.</param>
-    void set_action_sensitivity(std::string_view name, float sensitivity);
+    void set_action_sensitivity(const std::string& name, float sensitivity);
 
    private:
     friend class Input;

@@ -40,14 +40,14 @@ class Input {
     /// </summary>
     /// <param name="name">The action identifier.</param>
     /// <returns>Value between 0.0 and sensitivity (typically 0.0-1.0). Returns 0.0 if action not found.</returns>
-    float get_action_strength(std::string_view name);
+    float get_action_strength(const std::string& name);
 
     /// <summary>
     /// Returns the raw strength of an action without deadzone or sensitivity applied.
     /// </summary>
     /// <param name="name">The action identifier.</param>
     /// <returns>Raw value between 0.0-1.0. Returns 0.0 if action not found.</returns>
-    float get_action_raw_strength(std::string_view name);
+    float get_action_raw_strength(const std::string& name);
 
     /// <summary>
     /// Returns a 1D axis value from two opposing actions.
@@ -55,7 +55,7 @@ class Input {
     /// <param name="negative_action">Action that contributes negative values.</param>
     /// <param name="positive_action">Action that contributes positive values.</param>
     /// <returns>Value between -1.0 and 1.0.</returns>
-    float get_axis(std::string_view negative_action, std::string_view positive_action);
+    float get_axis(const std::string& negative_action, const std::string& positive_action);
 
     /// <summary>
     /// Constructs a 2D vector from four directional actions with circular deadzone normalization.
@@ -67,7 +67,7 @@ class Input {
     /// <param name="deadzone">Custom deadzone. If negative, averages the deadzone from all four actions.</param>
     /// <returns>Normalized vector with magnitude between 0.0 and 1.0.</returns>
     glm::vec2 get_vector(
-        std::string_view negative_action_x, std::string_view positive_action_x, std::string_view negative_action_y, std::string_view positive_action_y, float deadzone = -1.0f
+        const std::string& negative_action_x, const std::string& positive_action_x, const std::string& negative_action_y, const std::string& positive_action_y, float deadzone = -1.0f
     );
 
     /// <summary>
@@ -257,28 +257,28 @@ class Input {
     /// </summary>
     /// <param name="name">The action identifier.</param>
     /// <returns>True if the action is pressed.</returns>
-    bool is_action_pressed(std::string_view name) const;
+    bool is_action_pressed(const std::string& name) const;
 
     /// <summary>
     /// Returns true only on the first frame any input bound to this action is pressed.
     /// </summary>
     /// <param name="name">The action identifier.</param>
     /// <returns>True if the action was just pressed this frame.</returns>
-    bool is_action_just_pressed(std::string_view name) const;
+    bool is_action_just_pressed(const std::string& name) const;
 
     /// <summary>
     /// Returns true only on the first frame all inputs bound to this action are released.
     /// </summary>
     /// <param name="name">The action identifier.</param>
     /// <returns>True if the action was just released this frame.</returns>
-    bool is_action_just_released(std::string_view name) const;
+    bool is_action_just_released(const std::string& name) const;
 
     /// <summary>
     /// Returns how long the action has been held.
     /// </summary>
     /// <param name="name">The action identifier.</param>
     /// <returns>Duration in seconds, or 0.0 if not pressed.</returns>
-    float get_action_duration(std::string_view name) const;
+    float get_action_duration(const std::string& name) const;
 
    private:
     // non-owning pointer from SDL, do not free manually
