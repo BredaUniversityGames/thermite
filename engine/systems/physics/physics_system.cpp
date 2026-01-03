@@ -91,8 +91,8 @@ void Physics::on_update(const FrameData&) {
         for (size_t z = 0; z < size.z; z++) {
             for (size_t y = 0; y < size.y; y++) {
                 for (size_t x = 0; x < size.x; x++) {
-                    const int index = x + y * size.x + z * size.x * size.y;
-                    if (index % 2 == 0) continue;
+                    //const int index = x + y * size.x + z * size.x * size.y;
+                    //if (index % 2 == 0) continue;
 
                     const tmt::PhysicsVoxel* voxel = tree->get_physics_voxel(x, y, z);
                     if (voxel == nullptr || voxel->normal_index == 0 || voxel->normal_index == 28) continue;
@@ -103,7 +103,7 @@ void Physics::on_update(const FrameData&) {
                         ((float)x + 0.5f - (size.x * 0.5f)) * UNITS_PER_VOXEL, ((float)y + 0.5f - (size.y * 0.5f)) * UNITS_PER_VOXEL, ((float)z + 0.5f - (size.z * 0.5f)) * UNITS_PER_VOXEL
                     );
                     glm::vec3 world_pos = vb.position + (vb.rotation * local_pos);
-                    tmt::engine.renderer.draw_line(world_pos, normal, glm::vec3(0.0f, 0.6f, 0.0f));
+                    tmt::engine.renderer.draw_line(world_pos, world_pos + normal * UNITS_PER_VOXEL, glm::vec3(0.0f, 0.6f, 0.0f));
                 }
             }
         }
