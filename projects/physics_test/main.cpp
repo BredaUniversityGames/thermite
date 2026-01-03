@@ -176,7 +176,7 @@ void Game::on_start() {
         transform.set_world_rotation(glm::vec3(random_rot_x, random_rot_y, random_rot_z));
     }
 
-        { /* Voxel Physics Entity, Asteroid 7 */
+    { /* Voxel Physics Entity, Asteroid 7 */
         auto entity = tmt::engine.ecs.create_entity();
         auto& transform = tmt::engine.ecs.add_component<tmt::Transform>(entity);
         auto& renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(entity);
@@ -192,7 +192,7 @@ void Game::on_start() {
         transform.set_world_rotation(glm::vec3(random_rot_x, random_rot_y, random_rot_z));
     }
 
-                { /* Voxel Physics Entity, Asteroid 7 */
+    { /* Voxel Physics Entity, Asteroid 7 */
         auto entity = tmt::engine.ecs.create_entity();
         auto& transform = tmt::engine.ecs.add_component<tmt::Transform>(entity);
         auto& renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(entity);
@@ -208,7 +208,7 @@ void Game::on_start() {
         transform.set_world_rotation(glm::vec3(random_rot_x, random_rot_y, random_rot_z));
     }
 
-                                { /* Voxel Physics Entity, Asteroid 7 */
+    { /* Voxel Physics Entity, Asteroid 7 */
         auto entity = tmt::engine.ecs.create_entity();
         auto& transform = tmt::engine.ecs.add_component<tmt::Transform>(entity);
         auto& renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(entity);
