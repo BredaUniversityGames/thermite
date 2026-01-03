@@ -81,6 +81,8 @@ void Renderer::update() {
     TMT_ZONE_SCOPED_N("Rendering")
     render_view.update();
 
+    draw_obb(glm::vec3(0.0f), 4.0f, 4.0f, 4.0f);
+
     render_graph.new_graph().unwrap();
 
     Entity cam_entity = Camera::get_active_camera();

@@ -41,31 +41,45 @@ void DebugPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
     const BindHandle render_image = render_view.get_render_image();
 
     /* Upload Point Buffer */
-    if (num_points > 0) {
-        std::vector<GpuPoint> packed {};
+    uint32_t segments = 0u;
+    if (num_points > 0u) {
+        std::vector<glm::vec3> packed {};
 
-        for (int i = 0; i < timed_points.size(); i++) {
-            packed.push_back(timed_points[i].point);
-        }
-        for (int j = 0; j < persistent_points.size(); j++) {
-            packed.push_back(persistent_points[j].point);
+        // for (int i = 0; i < timed_points.size(); i++) {
+        //     packed.push_back(timed_points[i].point);
+        // }
+        for (int j = 0; j < persistent_points.size(); j += 2) {
+            const glm::vec3 point_a = persistent_points[j + 0].point.pos;
+            const glm::vec3 point_b = persistent_points[j + 1].point.pos;
+
+            // packed.push_back(glm::vec3(NAN, NAN, NAN));
+            packed.push_back(point_a);
+            packed.push_back(point_b);
+            segments += 1u;
+            // packed.push_back(glm::vec3(NAN, NAN, NAN));
         }
 
-        render_graph.upload_buffer(point_buffer, packed.data(), 0, sizeof(GpuPoint) * num_points);
+        render_graph.upload_buffer(point_buffer, packed.data(), 0, sizeof(glm::vec3) * packed.size());
     }
+    
+    /* clang-format off */
 
     const glm::uvec2 render_res = render_view.gpu_view.resolution;
-    RasterNode& line_pass = render_graph.add_raster_pass("debug line pass", "debug_line.vx", "debug_line.px")
-                                .topology(Topology::LineList)
-                                .attribute(AttrFormat::XYZ32_SFloat)  // Position
-                                .attribute(AttrFormat::XYZ32_SFloat)  // Color
-                                .read(render_view.render_view_buffer, ShaderStages::Vertex)
-                                .attach(render_image)
-                                .raster_extent(render_res.x, render_res.y);
-    line_pass.draw(point_buffer, num_points);
+    RasterNode& line_pass = render_graph.add_raster_pass("debug line pass", "polyline.vx", "polyline.px")
+        .topology(Topology::TriangleList)
+        .attribute(AttrFormat::XYZ32_SFloat) /* Begin */
+        .attribute(AttrFormat::XYZ32_SFloat) /* End */
+        .input_rate(VertexInputRate::Instance)
+        .alpha_blending(true)
+        .read(render_view.render_view_buffer, ShaderStages::Vertex)
+        .attach(render_image)
+        .raster_extent(render_res.x, render_res.y);
+    line_pass.draw(point_buffer, 6u, 0u, segments, 0u);
+    
+    /* clang-format on */
 
     // Update Points
-    num_points -= persistent_points.size();
+    num_points = 0u; // -= persistent_points.size();
     persistent_points.clear();
 }
 
