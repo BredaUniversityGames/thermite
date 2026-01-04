@@ -43,6 +43,7 @@ void draw_node(tmt::Bvh2<VoxelObject>& bvh, uint32_t current_node) {
     glm::vec3 min = bvh.nodes[current_node].min_bounds;
     glm::vec3 max = bvh.nodes[current_node].max_bounds;
     tmt::polyline.use_color(0.3f, 0.3f, 1.0f);
+    tmt::polyline.use_line_width(0.025f);
 
     // Bottom face (4 edges)
     tmt::polyline.draw_line(glm::vec3(min.x, min.y, min.z), glm::vec3(max.x, min.y, min.z));
@@ -68,6 +69,7 @@ void draw_node(tmt::Bvh2<VoxelObject>& bvh, uint32_t current_node) {
 }
 
 void Physics::on_update(const FrameData&) {
+    tmt::polyline.use_line_width(0.025f);
     for (const auto& [entity, vb, transform] : engine.ecs.get_registry().view<VoxelBody, Transform>().each()) {
         auto edges = vb.get_world_edges();
         tmt::polyline.use_color(vb.type == VoxelBody::DYNAMIC ? glm::vec4(0, 1, 0, 1) : glm::vec4(1, 0, 0, 1));
