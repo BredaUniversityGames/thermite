@@ -21,8 +21,7 @@ struct PolylineSegment {
     glm::vec4 color {1.0f, 0.0f, 0.0f, 1.0f};
     float line_width = 0.1f;
     PolylineSegment() = default;
-    PolylineSegment(glm::vec3 point_a, glm::vec3 point_b, glm::vec4 color, float line_width) 
-        : point_a(point_a), point_b(point_b), color(color), line_width(line_width) {};
+    PolylineSegment(glm::vec3 point_a, glm::vec3 point_b, glm::vec4 color, float line_width) : point_a(point_a), point_b(point_b), color(color), line_width(line_width) {};
 };
 
 /* Polyline segment with a timer attached. */
@@ -30,8 +29,7 @@ struct TimedPolylineSegment {
     PolylineSegment line {};
     float timer = 0.0f; /* Seconds */
     TimedPolylineSegment() = default;
-    TimedPolylineSegment(glm::vec3 point_a, glm::vec3 point_b, glm::vec4 color, float line_width, float time) 
-        : line(point_a, point_b, color, line_width), timer(time) {};
+    TimedPolylineSegment(glm::vec3 point_a, glm::vec3 point_b, glm::vec4 color, float line_width, float time) : line(point_a, point_b, color, line_width), timer(time) {};
 };
 
 /* Maximum number of polylines that can be drawn per frame. */
@@ -126,7 +124,7 @@ class PolylinePipeline : public OnEngineUpdate {
      * @param time Optional timer for how long the polyline should stay alive. *(default is 1 frame)*
      */
     void draw_obb(glm::vec3 origin, glm::vec3 half_extent, glm::quat rot, float time = 0.0f);
-    
+
     /**
      * @brief Draw a polyline cone with side lines that always face the camera.
      * @param origin The origin point of the cone in world-space.

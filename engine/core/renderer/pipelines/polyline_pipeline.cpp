@@ -48,7 +48,7 @@ void PolylinePipeline::enqueue(RenderGraph& render_graph, RenderView render_view
         /* Upload all the segments */
         render_graph.upload_buffer(line_buffer, segments.data(), 0, sizeof(PolylineSegment) * segments.size());
     }
-    
+
     /* clang-format off */
 
     /* Polyline render pass */
@@ -65,7 +65,7 @@ void PolylinePipeline::enqueue(RenderGraph& render_graph, RenderView render_view
         .attach(render_image)
         .raster_extent(render_res.x, render_res.y);
     line_pass.draw(line_buffer, 6u, 0u, line_segment_count, 0u);
-    
+
     /* clang-format on */
 
     /* Subtract the number of immediate lines from the line segment count */
@@ -128,7 +128,7 @@ void PolylinePipeline::draw_sphere(glm::vec3 origin, float radius, uint32_t segm
     /* Less than 4 segments doesn't make sense */
     if (segments < 4u) segments = 4u;
     const float step = glm::two_pi<float>() / static_cast<float>(segments);
-    
+
     /* XY plane circle (Z axis) */
     for (uint32_t i = 0u; i < segments; ++i) {
         const float a0 = step * static_cast<float>(i);
@@ -137,7 +137,7 @@ void PolylinePipeline::draw_sphere(glm::vec3 origin, float radius, uint32_t segm
         const glm::vec3 p1 = origin + radius * glm::vec3(glm::cos(a1), glm::sin(a1), 0.0f);
         draw_line(p0, p1, time);
     }
-    
+
     /* XZ plane circle (Y axis) */
     for (uint32_t i = 0u; i < segments; ++i) {
         const float a0 = step * static_cast<float>(i);
@@ -146,7 +146,7 @@ void PolylinePipeline::draw_sphere(glm::vec3 origin, float radius, uint32_t segm
         const glm::vec3 p1 = origin + radius * glm::vec3(glm::cos(a1), 0.0f, glm::sin(a1));
         draw_line(p0, p1, time);
     }
-    
+
     /* YZ plane circle (X axis) */
     for (uint32_t i = 0u; i < segments; ++i) {
         const float a0 = step * static_cast<float>(i);
@@ -161,11 +161,11 @@ void PolylinePipeline::draw_arrow(glm::vec3 origin, glm::vec3 dir, float length,
     /* Draw the main line */
     const glm::vec3 tip = origin + dir * length;
     draw_line(origin, tip, time);
-    
+
     /* Find the direction from the origin of the arrow to the camera */
     const glm::vec3 camera_pos = engine.renderer.render_view.gpu_view.origin;
     const glm::vec3 camera_dir = glm::normalize(camera_pos - tip);
-    
+
     /* Find perpendicular axis that faces the camera */
     glm::vec3 perp = glm::cross(dir, camera_dir);
     if (glm::length2(perp) < 0.0001f) {
@@ -176,12 +176,12 @@ void PolylinePipeline::draw_arrow(glm::vec3 origin, glm::vec3 dir, float length,
         perp = glm::cross(dir, ref);
     }
     perp = glm::normalize(perp);
-    
+
     /* Arrow head constants */
     const float head_length = length * 0.30f;
     const float head_width = length * 0.12f;
     const glm::vec3 head_base = tip - dir * head_length;
-    
+
     /* Draw arrow fins */
     draw_line(tip, head_base + perp * head_width, time);
     draw_line(tip, head_base - perp * head_width, time);
@@ -189,24 +189,21 @@ void PolylinePipeline::draw_arrow(glm::vec3 origin, glm::vec3 dir, float length,
 
 void PolylinePipeline::draw_aabb(glm::vec3 min, glm::vec3 max, float time) {
     const glm::vec3 corners[8] = {
-        { min.x, min.y, min.z }, { max.x, min.y, min.z },
-        { max.x, max.y, min.z }, { min.x, max.y, min.z },
-        { min.x, min.y, max.z }, { max.x, min.y, max.z },
-        { max.x, max.y, max.z }, { min.x, max.y, max.z },
+        {min.x, min.y, min.z}, {max.x, min.y, min.z}, {max.x, max.y, min.z}, {min.x, max.y, min.z}, {min.x, min.y, max.z}, {max.x, min.y, max.z}, {max.x, max.y, max.z}, {min.x, max.y, max.z},
     };
-    
+
     /* Bottom face */
     draw_line(corners[0], corners[1], time);
     draw_line(corners[1], corners[2], time);
     draw_line(corners[2], corners[3], time);
     draw_line(corners[3], corners[0], time);
-    
+
     /* Top face */
     draw_line(corners[4], corners[5], time);
     draw_line(corners[5], corners[6], time);
     draw_line(corners[6], corners[7], time);
     draw_line(corners[7], corners[4], time);
-    
+
     /* Vertical edges */
     draw_line(corners[0], corners[4], time);
     draw_line(corners[1], corners[5], time);
@@ -220,24 +217,21 @@ void PolylinePipeline::draw_obb(glm::vec3 origin, glm::vec3 half_extent, glm::qu
     const glm::vec3 ay = rot * glm::vec3(0.0f, half_extent.y, 0.0f);
     const glm::vec3 az = rot * glm::vec3(0.0f, 0.0f, half_extent.z);
     const glm::vec3 corners[8] = {
-        origin - ax - ay - az, origin + ax - ay - az,
-        origin + ax + ay - az, origin - ax + ay - az,
-        origin - ax - ay + az, origin + ax - ay + az,
-        origin + ax + ay + az, origin - ax + ay + az,
+        origin - ax - ay - az, origin + ax - ay - az, origin + ax + ay - az, origin - ax + ay - az, origin - ax - ay + az, origin + ax - ay + az, origin + ax + ay + az, origin - ax + ay + az,
     };
-    
+
     /* Bottom face */
     draw_line(corners[0], corners[1], time);
     draw_line(corners[1], corners[2], time);
     draw_line(corners[2], corners[3], time);
     draw_line(corners[3], corners[0], time);
-    
+
     /* Top face */
     draw_line(corners[4], corners[5], time);
     draw_line(corners[5], corners[6], time);
     draw_line(corners[6], corners[7], time);
     draw_line(corners[7], corners[4], time);
-    
+
     /* Vertical edges */
     draw_line(corners[0], corners[4], time);
     draw_line(corners[1], corners[5], time);
@@ -248,7 +242,7 @@ void PolylinePipeline::draw_obb(glm::vec3 origin, glm::vec3 half_extent, glm::qu
 void PolylinePipeline::draw_cone(glm::vec3 origin, glm::vec3 dir, float angle, float length, uint32_t segments, float time) {
     const glm::vec3 base_center = origin + dir * length;
     const float radius = length * glm::tan(angle);
-    
+
     /* Find perpendicular axes for the base circle */
     glm::vec3 ref = glm::vec3(0.0f, 1.0f, 0.0f);
     if (glm::abs(glm::dot(dir, ref)) > 0.99f) {
@@ -256,7 +250,7 @@ void PolylinePipeline::draw_cone(glm::vec3 origin, glm::vec3 dir, float angle, f
     }
     const glm::vec3 axis_a = glm::normalize(glm::cross(dir, ref));
     const glm::vec3 axis_b = glm::cross(dir, axis_a);
-    
+
     /* Draw the base circle */
     if (segments < 4u) segments = 4u;
     const float step = glm::two_pi<float>() / static_cast<float>(segments);
@@ -267,25 +261,25 @@ void PolylinePipeline::draw_cone(glm::vec3 origin, glm::vec3 dir, float angle, f
         const glm::vec3 p1 = base_center + radius * (axis_a * glm::cos(a1) + axis_b * glm::sin(a1));
         draw_line(p0, p1, time);
     }
-    
+
     /* Camera facing lines from the tip to the base of the cone */
     const glm::vec3 camera_pos = engine.renderer.render_view.gpu_view.origin;
     const glm::vec3 to_camera = glm::normalize(camera_pos - base_center);
-    
+
     glm::vec3 perp = glm::cross(dir, to_camera);
     if (glm::length2(perp) < 0.0001f) {
         perp = axis_a;
     } else {
         perp = glm::normalize(perp);
     }
-    
+
     draw_line(origin, base_center + perp * radius, time);
     draw_line(origin, base_center - perp * radius, time);
 }
 
 void PolylinePipeline::draw_tube(glm::vec3 a, glm::vec3 b, float radius, uint32_t segments, float time) {
     const glm::vec3 direction = glm::normalize(b - a);
-    
+
     /* Find perpendicular axes for the end circles */
     glm::vec3 ref = glm::vec3(0.0f, 1.0f, 0.0f);
     if (glm::abs(glm::dot(direction, ref)) > 0.99f) {
@@ -293,7 +287,7 @@ void PolylinePipeline::draw_tube(glm::vec3 a, glm::vec3 b, float radius, uint32_
     }
     const glm::vec3 axis_a = glm::normalize(glm::cross(direction, ref));
     const glm::vec3 axis_b = glm::cross(direction, axis_a);
-    
+
     /* Draw the end circles */
     if (segments < 4u) segments = 4u;
     const float step = glm::two_pi<float>() / static_cast<float>(segments);
@@ -305,19 +299,19 @@ void PolylinePipeline::draw_tube(glm::vec3 a, glm::vec3 b, float radius, uint32_
         draw_line(a + offset0, a + offset1, time);
         draw_line(b + offset0, b + offset1, time);
     }
-    
+
     /* Camera facing side lines of the tube */
     const glm::vec3 center = (a + b) * 0.5f;
     const glm::vec3 camera_pos = engine.renderer.render_view.gpu_view.origin;
     const glm::vec3 to_camera = glm::normalize(camera_pos - center);
-    
+
     glm::vec3 perp = glm::cross(direction, to_camera);
     if (glm::length2(perp) < 0.0001f) {
         perp = axis_a;
     } else {
         perp = glm::normalize(perp);
     }
-    
+
     draw_line(a + perp * radius, b + perp * radius, time);
     draw_line(a - perp * radius, b - perp * radius, time);
 }

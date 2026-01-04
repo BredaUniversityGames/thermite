@@ -60,12 +60,12 @@ void DebugDrawing::on_update(const tmt::FrameData& time) {
     tmt::polyline.use_color(0.9f, 0.9f, 0.9f);
     tmt::polyline.use_line_width(0.05f);
     tmt::polyline.draw_circle({2.0f, 0.5f, 0.5f}, 0.5f, 64);
-    
+
     /* Arrow */
     tmt::polyline.use_color(0.9f, 0.9f, 0.9f);
     tmt::polyline.use_line_width(2.5f, true);
     tmt::polyline.draw_arrow({3.25f, 0.0f, 0.5f}, {0.0f, 1.0f, 0.0f}, 1.0f);
-    
+
     /* AABB */
     tmt::polyline.use_line_width(0.025f);
     tmt::polyline.use_color(1.0f, 0.3f, 0.3f);
@@ -82,7 +82,7 @@ void DebugDrawing::on_update(const tmt::FrameData& time) {
     /* Cone */
     tmt::polyline.use_color(0.9f, 0.9f, 0.9f);
     tmt::polyline.draw_cone({9.0f, 0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, 0.2f, 2.0f, 64);
-    
+
     /* Tube */
     tmt::polyline.use_color(0.9f, 0.9f, 0.9f);
     tmt::polyline.draw_tube({10.0f, 0.5f, 0.0f}, {10.0f, 0.5f, 1.0f}, 0.1f, 32);
