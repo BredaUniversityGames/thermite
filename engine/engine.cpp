@@ -11,6 +11,7 @@
 #include "core/ecs.hpp"
 #include "core/scenes.hpp"
 #include "core/timer.hpp"
+#include "core/polyline.hpp"
 
 #include "core/renderer/renderer.hpp"
 
@@ -33,9 +34,6 @@ void tmt::Engine::set_is_running(bool value) { is_running = value; }
 /* Singleton */
 tmt::Engine tmt::engine;
 
-/* Quick polyline reference. */
-tmt::PolylinePipeline& tmt::polyline = tmt::engine.renderer.polyline_pipeline;
-
 namespace tmt {
 
 Engine::Engine()
@@ -47,10 +45,12 @@ Engine::Engine()
       renderer(*new Renderer()),
       resources(*new Resources()),
       salvo(*new Salvo()),
-      scenes(*new Scenes()) {}
+      scenes(*new Scenes()),
+      polyline(*new Polyline()) {}
 
 Engine::~Engine() {
     /* Destruction should be in reverse order */
+    delete &polyline;
     delete &scenes;
     delete &salvo;
     delete &resources;

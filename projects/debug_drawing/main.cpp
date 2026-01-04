@@ -4,7 +4,7 @@
 #include "engine/core/components/transform.hpp"
 #include "engine/core/components/camera.hpp"
 #include "engine/core/renderer/renderer.hpp"
-#include "engine/core/renderer/pipelines/polyline_pipeline.hpp"
+#include "engine/core/polyline.hpp"
 #include "engine/systems/camera/camera_system.hpp"
 
 class DebugDrawing : public tmt::Application {
@@ -48,44 +48,44 @@ void DebugDrawing::on_update(const tmt::FrameData& time) {
     auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(voxel);
 
     /* Lines */
-    tmt::polyline.use_line_width(0.05f);
-    tmt::polyline.use_color(1.0f, 0.3f, 0.3f);
-    tmt::polyline.draw_line({0.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f});
-    tmt::polyline.use_color(0.3f, 1.0f, 0.3f);
-    tmt::polyline.draw_line({0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f});
-    tmt::polyline.use_color(0.3f, 0.3f, 1.0f);
-    tmt::polyline.draw_line({0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f});
+    tmt::engine.polyline.use_line_width(0.05f);
+    tmt::engine.polyline.use_color(1.0f, 0.3f, 0.3f);
+    tmt::engine.polyline.draw_line({0.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f});
+    tmt::engine.polyline.use_color(0.3f, 1.0f, 0.3f);
+    tmt::engine.polyline.draw_line({0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f});
+    tmt::engine.polyline.use_color(0.3f, 0.3f, 1.0f);
+    tmt::engine.polyline.draw_line({0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f});
 
     /* Circle */
-    tmt::polyline.use_color(0.9f, 0.9f, 0.9f);
-    tmt::polyline.use_line_width(0.05f);
-    tmt::polyline.draw_circle({2.0f, 0.5f, 0.5f}, 0.5f, 64);
+    tmt::engine.polyline.use_color(0.9f, 0.9f, 0.9f);
+    tmt::engine.polyline.use_line_width(0.05f);
+    tmt::engine.polyline.draw_circle({2.0f, 0.5f, 0.5f}, 0.5f, 64);
 
     /* Arrow */
-    tmt::polyline.use_color(0.9f, 0.9f, 0.9f);
-    tmt::polyline.use_line_width(2.5f, true);
-    tmt::polyline.draw_arrow({3.25f, 0.0f, 0.5f}, {0.0f, 1.0f, 0.0f}, 1.0f);
+    tmt::engine.polyline.use_color(0.9f, 0.9f, 0.9f);
+    tmt::engine.polyline.use_line_width(2.5f, true);
+    tmt::engine.polyline.draw_arrow({3.25f, 0.0f, 0.5f}, {0.0f, 1.0f, 0.0f}, 1.0f);
 
     /* AABB */
-    tmt::polyline.use_line_width(0.025f);
-    tmt::polyline.use_color(1.0f, 0.3f, 0.3f);
-    tmt::polyline.draw_aabb({4.0f, 0.0f, 0.0f}, {5.0f, 1.0f, 1.0f});
+    tmt::engine.polyline.use_line_width(0.025f);
+    tmt::engine.polyline.use_color(1.0f, 0.3f, 0.3f);
+    tmt::engine.polyline.draw_aabb({4.0f, 0.0f, 0.0f}, {5.0f, 1.0f, 1.0f});
 
     /* OBB */
-    tmt::polyline.use_color(0.3f, 1.0f, 0.3f);
-    tmt::polyline.draw_obb({6.5f, 0.5f, 0.5f}, {0.5f, 0.5f, 0.5f}, glm::angleAxis(0.4f, glm::vec3(1.0f, 0.0f, 0.0f)));
+    tmt::engine.polyline.use_color(0.3f, 1.0f, 0.3f);
+    tmt::engine.polyline.draw_obb({6.5f, 0.5f, 0.5f}, {0.5f, 0.5f, 0.5f}, glm::angleAxis(0.4f, glm::vec3(1.0f, 0.0f, 0.0f)));
 
     /* Sphere */
-    tmt::polyline.use_color(0.3f, 0.3f, 1.0f);
-    tmt::polyline.draw_sphere({8.0f, 0.5f, 0.5f}, 0.5f, 64);
+    tmt::engine.polyline.use_color(0.3f, 0.3f, 1.0f);
+    tmt::engine.polyline.draw_sphere({8.0f, 0.5f, 0.5f}, 0.5f, 64);
 
     /* Cone */
-    tmt::polyline.use_color(0.9f, 0.9f, 0.9f);
-    tmt::polyline.draw_cone({9.0f, 0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, 0.2f, 2.0f, 64);
+    tmt::engine.polyline.use_color(0.9f, 0.9f, 0.9f);
+    tmt::engine.polyline.draw_cone({9.0f, 0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, 0.2f, 2.0f, 64);
 
     /* Tube */
-    tmt::polyline.use_color(0.9f, 0.9f, 0.9f);
-    tmt::polyline.draw_tube({10.0f, 0.5f, 0.0f}, {10.0f, 0.5f, 1.0f}, 0.1f, 32);
+    tmt::engine.polyline.use_color(0.9f, 0.9f, 0.9f);
+    tmt::engine.polyline.draw_tube({10.0f, 0.5f, 0.0f}, {10.0f, 0.5f, 1.0f}, 0.1f, 32);
 }
 
 void DebugDrawing::on_end() {}
