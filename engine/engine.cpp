@@ -29,8 +29,12 @@
 
 bool tmt::Engine::get_is_running() const { return is_running; }
 void tmt::Engine::set_is_running(bool value) { is_running = value; }
+
 /* Singleton */
 tmt::Engine tmt::engine;
+
+/* Quick polyline reference. */
+tmt::PolylinePipeline& tmt::polyline = tmt::engine.renderer.polyline_pipeline;
 
 namespace tmt {
 

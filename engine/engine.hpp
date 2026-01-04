@@ -88,4 +88,7 @@ class Engine {
 /* Singleton */
 extern Engine engine;
 
+/* Quick polyline reference. */
+extern class PolylinePipeline& polyline;
+
 }  // namespace tmt

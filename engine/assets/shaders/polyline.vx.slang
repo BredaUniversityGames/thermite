@@ -6,6 +6,8 @@ ConstantBuffer<RenderView> render_view;
 struct VertexIn {
     float3 point_a : POSITION0;
     float3 point_b : POSITION1;
+    float4 color : COLOR;
+    float width : WIDTH;
 };
 
 /* Vertex shader output. */
@@ -24,11 +26,10 @@ static const float2 quad[6] = {
     float2( 0.5f, 0.0f)
 };
 
-static const float LINE_WIDTH = 0.1f;
+// static const float LINE_WIDTH = 0.1f;
 
 [shader("vertex")]
 VertexOut main(VertexIn input, uint vertex_id: SV_VertexID) {
-
     /* Get the quad corner for this thread */
     const float2 corner = quad[vertex_id];
 
@@ -44,12 +45,12 @@ VertexOut main(VertexIn input, uint vertex_id: SV_VertexID) {
         len = length(offset_dir);
     }
     offset_dir /= len;
-    world_pos += offset_dir * LINE_WIDTH * corner.x;
+    world_pos += offset_dir * input.width * corner.x;
 
     /* Calculate the line in screen-space for checking the width */
     const float4 clip_pos = mul(render_view.world_to_clip, float4(world_pos, 1.0f));
     const float3 world_a = lerp(input.point_a, input.point_b, corner.y);
-    const float3 world_b = world_a + offset_dir * LINE_WIDTH;
+    const float3 world_b = world_a + offset_dir * input.width;
     const float4 clip_a = mul(render_view.world_to_clip, float4(world_a, 1.0f));
     const float4 clip_b = mul(render_view.world_to_clip, float4(world_b, 1.0f));
     const float2 screen_a = clip_a.xy / clip_a.w;
@@ -61,6 +62,6 @@ VertexOut main(VertexIn input, uint vertex_id: SV_VertexID) {
 
     VertexOut output;
     output.clip_pos = clip_pos;
-    output.color = float4(1.0f, 0.3f, 0.3f, alpha);
+    output.color = float4(input.color.rgb, input.color.a * alpha);
     return output;
 }
