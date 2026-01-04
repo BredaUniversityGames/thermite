@@ -66,11 +66,7 @@ VertexOut main(VertexIn input, uint vertex_id: SV_VertexID) {
     float4 line_color = input.color;
 
     /* For positive line widths we use world-space units */
-    if (input.width > 0.0f) {
-        /* Convert from world-space width to screen-space width */
-        const float proj_scale = render_view.world_to_clip[1][1];
-        line_width = line_width * ((float)render_view.resolution.y * 0.5f) * proj_scale / -clip.w;
-    }
+    if (input.width > 0.0f) line_width /= clip.w * 0.01f;
 
     /* Fade out thin lines, based on <https://acegikmo.com/shapes/docs/#anti-aliasing> */
     if (line_width < 1.0f) {

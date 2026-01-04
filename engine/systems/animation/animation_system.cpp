@@ -79,7 +79,7 @@ void tmt::RigModelManager::on_end() {}
 void RigModelManager::inspect(float) {
     int lines_drawn = 0;
     engine.polyline.use_color(1.0f, 0.3f, 0.3f);
-    engine.polyline.use_line_width(0.025f);
+    engine.polyline.use_line_width(0.25f);
     for (const auto& [entity, transform, rig] : engine.ecs.get_registry().view<Transform, RigModel>().each()) {
         for (const Entity bone_entity : rig.bone_entities) {
             auto& bone_transform = engine.ecs.get_component<Transform>(bone_entity);
