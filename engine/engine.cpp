@@ -48,7 +48,7 @@ Engine::Engine()
       resources(*new Resources()),
       salvo(*new Salvo()),
       scenes(*new Scenes()),
-      polyline(*new Polyline()) {},
+      polyline(*new Polyline()),
       component_registry(*new GameComponentRegistry()) {}
 
 Engine::~Engine() {
