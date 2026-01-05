@@ -22,6 +22,7 @@
 #include "editor/windows/game_flow.hpp"
 #include "editor/windows/inspector.hpp"
 #include "editor/windows/goap_debugger.hpp"
+#include "editor/windows/goap_action_editor.hpp"
 #include "editor/windows/font_control.hpp"
 #include "windows/profiler_tracy.hpp"
 /* Singleton */
@@ -58,6 +59,7 @@ void Editor::on_engine_init(const ApplicationSpecs&) {
     windows.add<Viewport>();
     windows.add<Profiler>();
     windows.add<GoapDebugger>();
+    windows.add<GoapActionEditor>();
     windows.add<FontControl>();
 
     for (auto& system : windows) {

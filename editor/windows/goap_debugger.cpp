@@ -94,7 +94,7 @@ void GoapDebugger::draw_details_view(GoapAgent& agent, WorldState& ws) {
     if (ImGui::TreeNode("Plan")) {
         for (int i = 0; i < (int)agent.plan.size(); ++i) {
             bool current = (i == agent.current_index);
-            ImGui::Text("%s %s", current ? "->" : " ", agent.plan[i]->get_name());
+            ImGui::Text("%s %s", current ? "->" : " ", agent.plan[i]->get_id());
         }
         ImGui::TreePop();
     }
@@ -135,12 +135,11 @@ void GoapDebugger::draw_details_view(GoapAgent& agent, WorldState& ws) {
 
     // --- Available actions ---
     if (ImGui::TreeNode("Available Actions")) {
-        for (auto& action_ptr : agent.actions) {
-            GoapAction* action = action_ptr.get();  // get the raw pointer
+        for (const GoapAction* action : agent.available_actions) {
             if (!action) continue;
 
             bool can_run = action->check_preconditions(ws);
-            ImGui::Text("%s [cost: %.1f] %s", action->get_name(), action->cost, can_run ? "(can run)" : "(cannot run)");
+            ImGui::Text("%s [cost: %.1f] %s", action->get_id(), action->cost, can_run ? "(can run)" : "(cannot run)");
 
             // --- Preconditions ---
             if (ImGui::TreeNode((std::string("Preconditions##") + std::to_string((uintptr_t)action)).c_str())) {
@@ -167,126 +166,11 @@ void GoapDebugger::draw_details_view(GoapAgent& agent, WorldState& ws) {
     }
 }
 
-//void GoapDebugger::draw_goap_graph(GoapAgent& agent, WorldState& ws) {
-//    ignode::SetCurrentEditor(g_Context);
-//    ignode::Begin("GOAP Graph");
-//
-//    // IDs must be unique & stable
-//    int nodeId = 1000;
-//    int pinId = 2000;
-//    int linkId = 3000;
-//
-//    struct PlanNode {
-//        int node;
-//        int inPin;
-//        int outPin;
-//    };
-//
-//    std::vector<PlanNode> planNodes;
-//
-//    float x = 0.0f;
-//    float y = 0.0f;
-//    const float spacing = 220.0f;
-//
-//    // ---- PLAN ACTION NODES ----
-//    for (int i = 0; i < (int)agent.plan.size(); ++i) {
-//        PlanNode n {nodeId++, pinId++, pinId++};
-//        planNodes.push_back(n);
-//
-//        ignode::BeginNode(n.node);
-//
-//        if (i == agent.current_index) {
-//            ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 200, 50, 255));
-//            ImGui::Text("-> CURRENT");
-//            ImGui::PopStyleColor();
-//        }
-//
-//        ImGui::Text("Action");
-//        ImGui::Separator();
-//        ImGui::Text("%s", agent.plan[i]->get_name());
-//
-//        ignode::BeginPin(n.inPin, ignode::PinKind::Input);
-//        ImGui::Text("in");
-//        ignode::EndPin();
-//
-//        ignode::BeginPin(n.outPin, ignode::PinKind::Output);
-//        ImGui::Text("out");
-//        ignode::EndPin();
-//
-//        ignode::EndNode();
-//
-//        // Set position only once
-//        if (ignode::GetNodePosition(n.node).x == 0.0f) ignode::SetNodePosition(n.node, ImVec2(x, y));
-//
-//        x += spacing;
-//    }
-//
-//    // ---- GOAL NODE ----
-//    int goalNode = nodeId++;
-//    int goalPin = pinId++;
-//
-//    ignode::BeginNode(goalNode);
-//    ImGui::Text("Goal");
-//    ImGui::Separator();
-//    ImGui::Text("%s", agent.active_goal.name.c_str());
-//
-//    ignode::BeginPin(goalPin, ignode::PinKind::Input);
-//    ImGui::Text("in");
-//    ignode::EndPin();
-//
-//    ignode::EndNode();
-//    ignode::SetNodePosition(goalNode, ImVec2(x, y));
-//
-//    // ---- LINKS ----
-//    for (size_t i = 0; i + 1 < planNodes.size(); ++i) {
-//        ignode::Link(linkId++, planNodes[i].outPin, planNodes[i + 1].inPin);
-//    }
-//
-//    if (!planNodes.empty()) {
-//        ignode::Link(linkId++, planNodes.back().outPin, goalPin);
-//    }
-//
-//    // Center view once
-//    static bool firstFrame = true;
-//    if (firstFrame) {
-//        ignode::NavigateToContent();
-//        firstFrame = false;
-//    }
-//
-//     // --- Goals ---
-//    for (auto& goal : agent.available_goals) {
-//        ignode::BeginNode(nodeId++);
-//        ImGui::Text("Goal");
-//        ImGui::Separator();
-//        ImGui::Text("%s", goal.name.c_str());
-//        ImGui::Text("Priority: %d", goal.priority);
-//        ImGui::Text("Relevance: %s", goal.is_relevant(ws) ? "(relevant)" : "(satisfied)");
-//        ignode::EndNode();
-//    }
-//
-//    // --- Actions ---
-//    for (auto& action_ptr : agent.actions) {
-//        auto* action = action_ptr.get();
-//        if (!action) continue;
-//
-//        ignode::BeginNode(nodeId++);
-//        ImGui::Text("Action");
-//        ImGui::Separator();
-//        ImGui::Text("%s", action->get_name());
-//        ImGui::Text("Cost: %.1f", action->cost);
-//
-//        ImGui::Text("Preconditions:");
-//        for (auto& [k, v] : action->preconditions) ImGui::BulletText("%s", k.c_str());
-//
-//        ImGui::Text("Effects:");
-//        for (auto& [k, v] : action->effects) ImGui::BulletText("%s", k.c_str());
-//
-//        ignode::EndNode();
-//    }
-//
-//    ignode::End();
-//    ignode::SetCurrentEditor(nullptr);
-//}
+struct PlanNode {
+    int node;
+    int inPin;
+    int outPin;
+};
 
 void GoapDebugger::draw_goap_graph(GoapAgent& agent, WorldState& ws) {
     ignode::SetCurrentEditor(g_Context);
@@ -296,28 +180,24 @@ void GoapDebugger::draw_goap_graph(GoapAgent& agent, WorldState& ws) {
     int pinId = 2000;
     int linkId = 3000;
 
-    struct PlanNode {
-        int node;
-        int inPin;
-        int outPin;
-    };
+    const float planY = 0.0f;
+    const float columnsY = 260.0f;
 
-    std::vector<PlanNode> nodes;
+    const float colSpacing = 260.0f;
+    const float rowSpacing = 260.0f;
 
-    float x = 0.0f;
-    float y = 0.0f;
-    const float spacing = 240.0f;
+    float planX = 0.0f;
 
-    // --- PLAN ACTION NODES ---
+    std::vector<PlanNode> planNodes;
+
+    // ================= Plan =================
     for (int i = 0; i < (int)agent.plan.size(); ++i) {
-        PlanNode n {
-            nodeId++,
-            pinId++,  // input
-            pinId++   // output
-        };
-        nodes.push_back(n);
+        PlanNode n {nodeId++, pinId++, pinId++};
+        planNodes.push_back(n);
 
         ignode::BeginNode(n.node);
+
+        ImGui::Text("%s", agent.plan[i]->get_id());
 
         if (i == agent.current_index) {
             ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 200, 50, 255));
@@ -325,85 +205,89 @@ void GoapDebugger::draw_goap_graph(GoapAgent& agent, WorldState& ws) {
             ImGui::PopStyleColor();
         }
 
-        ImGui::Text("%s", agent.plan[i]->get_name());
-
         ignode::BeginPin(n.inPin, ignode::PinKind::Input);
         ignode::EndPin();
-
         ignode::BeginPin(n.outPin, ignode::PinKind::Output);
         ignode::EndPin();
 
         ignode::EndNode();
-
-        if (ignode::GetNodePosition(n.node).x == 0.0f) ignode::SetNodePosition(n.node, ImVec2(x, y));
-
-        x += spacing;
+        ignode::SetNodePosition(n.node, ImVec2(planX + i * colSpacing, planY));
     }
 
-    // --- GOAL NODE ---
+    // ================= Active goal =================
     int goalNode = nodeId++;
     int goalPin = pinId++;
 
     ignode::BeginNode(goalNode);
     ImGui::Text("%s", agent.active_goal.name.c_str());
-
     ignode::BeginPin(goalPin, ignode::PinKind::Input);
     ignode::EndPin();
-
     ignode::EndNode();
 
-    ignode::SetNodePosition(goalNode, ImVec2(x, y));
+    ignode::SetNodePosition(goalNode, ImVec2(planX + agent.plan.size() * colSpacing, planY));
 
-    // --- LINKS ---
-    for (size_t i = 0; i + 1 < nodes.size(); ++i) {
-        ignode::Link(linkId++, nodes[i].outPin, nodes[i + 1].inPin);
+    // ================= Plan links =================
+    for (size_t i = 0; i + 1 < planNodes.size(); ++i) ignode::Link(linkId++, planNodes[i].outPin, planNodes[i + 1].inPin);
+
+    if (!planNodes.empty()) ignode::Link(linkId++, planNodes.back().outPin, goalPin);
+
+    // ================= Actions + goals rows =================
+    float actionsX = 0.0f;
+    float goalsX = actionsX + colSpacing;
+
+    size_t rows = std::max(agent.available_actions.size(), agent.available_goals.size());
+
+    for (size_t i = 0; i < rows; ++i) {
+        float y = columnsY + i * rowSpacing;
+
+        // ----- actions -----
+        if (i < agent.available_actions.size()) {
+            GoapAction* a = agent.available_actions[i];
+            if (a) {
+                int n = nodeId++;
+                ignode::BeginNode(n);
+
+                ImGui::Text("Action");
+                ImGui::Separator();
+                ImGui::Text("%s", a->get_id());
+                ImGui::Text("Cost: %.1f", a->cost);
+
+                ImGui::Text("Preconditions:");
+                for (auto& [k, v] : a->preconditions) ImGui::BulletText("%s", k.c_str());
+
+                ImGui::Text("Effects:");
+                for (auto& [k, v] : a->effects) ImGui::BulletText("%s", k.c_str());
+                ignode::EndNode();
+                ignode::SetNodePosition(n, ImVec2(actionsX, y));
+            }
+        }
+
+        // ----- Goals -----
+        if (i < agent.available_goals.size()) {
+            auto& g = agent.available_goals[i];
+            int n = nodeId++;
+
+            ignode::BeginNode(n);
+            ImGui::Text("Goal");
+            ImGui::Separator();
+            ImGui::Text("%s", g.name.c_str());
+            ImGui::Text("Priority: %d", g.priority);
+            ImGui::Text("Relevance: %s", g.is_relevant(ws) ? "(relevant)" : "(satisfied)");
+            ignode::EndNode();
+
+            ignode::SetNodePosition(n, ImVec2(goalsX, y));
+        }
     }
 
-    if (!nodes.empty()) {
-        ignode::Link(linkId++, nodes.back().outPin, goalPin);
-    }
-
+    // ================= Camera =================
     static bool firstFrame = true;
     if (firstFrame) {
         ignode::NavigateToContent();
         firstFrame = false;
     }
 
-    // --- Goals ---
-    for (auto& goal : agent.available_goals) {
-        ignode::BeginNode(nodeId++);
-        ImGui::Text("Goal");
-        ImGui::Separator();
-        ImGui::Text("%s", goal.name.c_str());
-        ImGui::Text("Priority: %d", goal.priority);
-        ImGui::Text("Relevance: %s", goal.is_relevant(ws) ? "(relevant)" : "(satisfied)");
-        ignode::EndNode();
-    }
-
-    // --- Actions ---
-    for (auto& action_ptr : agent.actions) {
-        auto* action = action_ptr.get();
-        if (!action) continue;
-
-        ignode::BeginNode(nodeId++);
-        ImGui::Text("Action");
-        ImGui::Separator();
-        ImGui::Text("%s", action->get_name());
-        ImGui::Text("Cost: %.1f", action->cost);
-
-        ImGui::Text("Preconditions:");
-        for (auto& [k, v] : action->preconditions) ImGui::BulletText("%s", k.c_str());
-
-        ImGui::Text("Effects:");
-        for (auto& [k, v] : action->effects) ImGui::BulletText("%s", k.c_str());
-
-        ignode::EndNode();
-    }
-
     ignode::End();
     ignode::SetCurrentEditor(nullptr);
 }
-
-
 
 }  // namespace tmt
