@@ -118,7 +118,7 @@ void Game::on_start() {
     }
 
     { // voxel entity with navmesh
-        auto voxel_file = tmt::engine.resources.load_resource<tmt::VoxelScene>({tmt::IO::Location::PROJECT, "test_asteroid_7.vengi"});
+        auto voxel_file = tmt::engine.resources.load_resource<tmt::VoxelScene>({tmt::IO::Location::PROJECT, "test_asteroid_6.vengi"});
         auto voxel_volume = tmt::engine.resources.copy_resource<tmt::VoxelVolume>(voxel_file);
         voxel = tmt::engine.ecs.create_entity("Moving Voxel");
         auto& transform = tmt::engine.ecs.add_component<tmt::Transform>(voxel);
@@ -130,15 +130,15 @@ void Game::on_start() {
         auto& nav_mesh = tmt::engine.ecs.add_component<tmt::NavMesh>(voxel);
 
 
-        nav_mesh.generate_mesh(voxel_volume, 3);
+        nav_mesh.generate_mesh(voxel_volume, 1);
     }
 }
 
 void Game::on_update(const tmt::FrameData& time) {
      time_passed += time.delta_time * 0.1f;
      auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(voxel);
-     //transform.set_world_position(glm::vec3(1.0f, sinf(time_passed), 1.0f));
-     //transform.set_world_rotation(glm::vec3(0.0f, time_passed, 0.0f));
+     transform.set_world_position(glm::vec3(1.0f, sinf(time_passed), 1.0f));
+     transform.set_world_rotation(glm::vec3(0.0f, time_passed, 0.0f));
 }
 
 void Game::on_end() {}
