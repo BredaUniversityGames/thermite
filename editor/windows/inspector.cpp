@@ -385,7 +385,7 @@ void Inspector::paste_runtime_component(const tmt::json& deserialized, const tmt
         for (const Entity& entity : menu_context.selected_entities) {
             const bool has_collection = tmt::engine.ecs.has_component<ComponentCollection>(entity);
             auto& component_collection = tmt::engine.ecs.add_or_get_component<ComponentCollection>(entity);
-            IGameComponent& target_instance = component_collection.add_component(component_index, entity);
+            IGameComponent& target_instance = component_collection.add_or_get_component(component_index, entity);
             Serializer::deserialize(data, target_instance);
         }
     }
