@@ -60,6 +60,8 @@ struct RigData : public FileResource {
     void unload() override;
     bool reload() override;
 
+    inline static const std::set<std::string_view> supported_file_extensions {".fbx"};
+
     std::vector<Bone> bones;
     std::string name;
 

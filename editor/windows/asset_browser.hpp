@@ -57,6 +57,6 @@ class AssetBrowser : public IWindow {
 
     void display_directory_bar();
     void display_bookmarks();
-    void display_files();
+    void display_viewing_location();
 };
 }  // namespace tmt

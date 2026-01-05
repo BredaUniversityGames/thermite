@@ -10,6 +10,8 @@ class Json : public FileResource {
     bool load() override;
     void unload() override;
 
+    inline static const std::set<std::string_view> supported_file_extensions {".json"};
+
     const nlohmann::ordered_json& get_parsed_json() const { return parsed_json; }
 
    private:
