@@ -159,7 +159,7 @@ class MotionMathSystem : public ISystem {
                 const glm::vec3 tgt_rv = 2.0f * glm::vec3(lt.x, lt.y, lt.z);
 
                 // drive target, quats need transforming from rotation vector
-                SecondOrderSolver::Solve(motion.state, tgt_rv, motion.settings.frequency, motion.settings.damping, motion.settings.initial_response, dt);
+                SecondOrderSolver::solve(motion.state, tgt_rv, motion.settings.frequency, motion.settings.damping, motion.settings.initial_response, dt);
                 const glm::vec3 rv = motion.state.current_state;
                 const glm::quat out = glm::normalize(glm::exp(glm::quat(0.0f, 0.5f * rv.x, 0.5f * rv.y, 0.5f * rv.z)));
 
@@ -173,7 +173,7 @@ class MotionMathSystem : public ISystem {
                 }
 
                 // drive the target value
-                SecondOrderSolver::Solve(motion.state, motion.target, motion.settings.frequency, motion.settings.damping, motion.settings.initial_response, dt);
+                SecondOrderSolver::solve(motion.state, motion.target, motion.settings.frequency, motion.settings.damping, motion.settings.initial_response, dt);
                 *motion.value = motion.state.current_state;
             }
             ++it;

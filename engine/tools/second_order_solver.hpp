@@ -11,7 +11,7 @@ class SecondOrderSolver {
     };
 
     template <typename T>
-    static void Solve(State<T>& state, const T& target, float f, float z, float r, float delta_time) {
+    static void solve(State<T>& state, const T& target, float f, float z, float r, float delta_time) {
         const float k1 = z / (glm::pi<float>() * f);
         const float k2 = 1.f / ((2.f * glm::pi<float>() * f) * (2.f * glm::pi<float>() * f));
         const float k3 = (r * z) / (2.f * glm::pi<float>() * f);
