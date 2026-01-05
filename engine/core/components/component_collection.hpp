@@ -46,6 +46,15 @@ class ComponentCollection {
 
     template <typename T>
         requires std::is_base_of_v<IGameComponent, T>
+    const T& get_component() const {
+        const ComponentIndex type_id = typeid(T);
+        GameComponentRegistry::is_registered_or_throw(type_id);
+
+        return static_cast<const T&>(*components.at(type_id));
+    }
+
+    template <typename T>
+        requires std::is_base_of_v<IGameComponent, T>
     void remove_component() {
         const ComponentIndex type_id = typeid(T);
         GameComponentRegistry::is_registered_or_throw(type_id);
@@ -131,11 +140,20 @@ struct EcsComponentTraits<T, std::enable_if_t<std::is_base_of_v<IGameComponent, 
         return collection.get_component<T>();
     }
     static const T& get(const Registry& registry, Entity entity) {
-        const auto& collection = registry.get_or_emplace<ComponentCollection>(entity);
+        if (registry.all_of<ComponentCollection>(entity) == false) {
+            Log::error(Log::Scope::ENGINE, "[EcsComponentTraits] get: Entity does not have ComponentCollection.");
+            throw std::runtime_error("[EcsComponentTraits] get: Entity does not have ComponentCollection.");
+        }
+
+        const auto& collection = registry.get<ComponentCollection>(entity);
         return collection.get_component<T>();
     }
     static bool has(const Registry& registry, Entity entity) {
-        const auto& collection = registry.get_or_emplace<ComponentCollection>(entity);
+        if (registry.all_of<ComponentCollection>(entity) == false) {
+            return false;
+        }
+
+        const auto& collection = registry.get<ComponentCollection>(entity);
         return collection.has_component<T>();
     }
     static T& add_or_get(Registry& registry, Entity entity) {
@@ -143,17 +161,26 @@ struct EcsComponentTraits<T, std::enable_if_t<std::is_base_of_v<IGameComponent, 
         if (!collection.has_component<T>()) {
             return collection.add_component<T>(entity);
         }
+
         return collection.get_component<T>();
     }
     static T* try_get(Registry& registry, Entity entity) {
-        auto& collection = registry.get_or_emplace<ComponentCollection>(entity);
+        if (registry.all_of<ComponentCollection>(entity) == false) {
+            return nullptr;
+        }
+
+        auto& collection = registry.get<ComponentCollection>(entity);
         if (collection.has_component<T>()) {
             return &collection.get_component<T>();
         }
         return nullptr;
     }
     static const T* try_get(const Registry& registry, Entity entity) {
-        const auto& collection = registry.get_or_emplace<ComponentCollection>(entity);
+        if (!registry.all_of<ComponentCollection>(entity)) {
+            return nullptr;
+        }
+
+        const auto& collection = registry.get<ComponentCollection>(entity);
         if (collection.has_component<T>()) {
             return &collection.get_component<T>();
         }
