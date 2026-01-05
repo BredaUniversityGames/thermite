@@ -1,17 +1,24 @@
 #pragma once
+
 #include "core/application.hpp"
 #include "core/timer.hpp"
 
 #include "engine/core/game_controller.hpp"
 
 namespace tmt {
+
 /* Forward declarations */
+class InputMap;
 class Input;
 class Window;
 class Renderer;
 class Ecs;
 class Resources;
+class Audio;
 class Salvo;
+class Scenes;
+class GameComponentRegistry;
+class Polyline;
 
 class Engine {
    public:
@@ -41,11 +48,17 @@ class Engine {
     */
 
     Window& window;
+    Audio& audio;
+
+    InputMap& input_map;
     Input& input;
     Ecs& ecs;
     Renderer& renderer;
     Resources& resources;
     Salvo& salvo;
+    Scenes& scenes;
+    GameComponentRegistry& component_registry;
+    Polyline& polyline;
 
     GameController game_controller;
 
@@ -73,6 +86,8 @@ class Engine {
     void start_game();
     void update_game(const FrameData& frame_data);
     void fixed_update_game(const FrameData& frame_data);
+    void pause_game();
+    void resume_game();
     void end_game();
 };
 

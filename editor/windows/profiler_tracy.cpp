@@ -129,7 +129,7 @@ void SDLCALL on_file_selected(void* userdata, const char* const* filelist, int f
 }  // namespace
 
 void Profiler::on_editor_start() {
-    std::string text = tmt::IO::read_text_file(IO::FileLocation {.sub_location = IO::Location::EDITOR, .relative_path = "profiler_settings.json"});
+    std::string text = tmt::IO::read_text_file(Config::FILE_LOCATION);
 
     if (text.empty()) {
         tmt::Log::warn(Log::Scope::ENGINE, "Could not load profiler settings");
@@ -143,7 +143,7 @@ void Profiler::on_editor_update(const tmt::FrameData& time) { (void)time; }
 
 void Profiler::on_editor_end() {
     auto json = tmt::Serializer::serialize(settings);
-    tmt::IO::write_text_file(IO::FileLocation {.sub_location = IO::Location::EDITOR, .relative_path = "profiler_settings.json"}, json.dump());
+    tmt::IO::write_text_file(Config::FILE_LOCATION, json.dump());
 }
 
 void Profiler::display() {
@@ -187,7 +187,7 @@ void Profiler::display() {
             ImGui::SameLine();
             ImGui::SetNextItemWidth(100);
             ImGui::InputInt("seconds", &settings.duration);
-            settings.duration = max(1, settings.duration);
+            settings.duration = std::max<int32_t>(1, settings.duration);
         }
 
         bool running = is_capture_running();

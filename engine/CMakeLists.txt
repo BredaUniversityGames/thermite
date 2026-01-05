@@ -23,6 +23,10 @@ target_include_directories(thermite-engine
     PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
+# Add compile definitons
+target_compile_definitions(thermite-engine PRIVATE NOMINMAX) # Makes windows.h not define min and max
+target_compile_definitions(thermite-engine PRIVATE THERMITE_ENGINE) # Define that we're building the engine
+
 # Compile Shaders
 include(../scripts/cmake/shader_compilation.cmake)
 compile_shaders()

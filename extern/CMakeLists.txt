@@ -54,28 +54,6 @@ if (THERMITE_EDITOR_BUILD)
 endif()
 add_subdirectory(graphite)
 
-# IMGUI - Immediate Mode GUI
-# https://github.com/ocornut/imgui
-if (THERMITE_EDITOR_BUILD)
-    # Sources
-    target_sources(thermite-editor
-        PRIVATE "./imgui/imgui_demo.cpp"
-        PRIVATE "./imgui/imgui_draw.cpp"
-        PRIVATE "./imgui/imgui_tables.cpp"
-        PRIVATE "./imgui/imgui_widgets.cpp"
-        PRIVATE "./imgui/imgui.cpp"
-        PRIVATE "./imgui/backends/imgui_impl_sdl3.cpp"
-        PRIVATE "./imgui/backends/imgui_impl_vulkan.cpp"
-        PRIVATE "./imgui/backends/imgui_impl_win32.cpp"
-    )
-
-    # Includes
-    target_include_directories(thermite-editor
-        PRIVATE "./imgui"
-        PRIVATE "./imgui/backends"
-    )
-endif()
-
 # visit_struct - struct reflection
 # https://github.com/cbeck88/visit_struct
 add_library(visit_struct INTERFACE)
@@ -93,18 +71,18 @@ target_include_directories(JsonReflect
     ${CMAKE_CURRENT_SOURCE_DIR}/JsonReflect/extern
 )
 
+# nlohmann json - json parsing
+# https://github.com/nlohmann/json
+add_subdirectory(nlohmann_json)
+
 # ImReflect - ImGui reflection
 # https://github.com/Sven-vh/ImReflect
 add_library(ImReflect INTERFACE)
 target_include_directories(JsonReflect
     INTERFACE
     ${CMAKE_CURRENT_SOURCE_DIR}/ImReflect/
-    ${CMAKE_CURRENT_SOURCE_DIR}/ImReflect/extern
+    ${CMAKE_CURRENT_SOURCE_DIR}/ImReflect/imgui/imgui/misc/cpp
 )
-
-# nlohmann json - json parsing
-# https://github.com/nlohmann/json
-add_subdirectory(nlohmann_json)
 
 if (THERMITE_EDITOR_BUILD)
     # ImGUI - immediate mode gui
@@ -183,6 +161,32 @@ set(ZLIB_BUILD_SHARED OFF CACHE BOOL "" FORCE)
 set(ZLIB_BUILD_STATIC ON CACHE BOOL "" FORCE)
 add_subdirectory(zlib)
 
+# fmod - audio engine
+set(FMOD_POSTFIX "$<$<CONFIG:Debug>:L>")
+target_include_directories(thermite-engine
+    PUBLIC "./fmod/include"
+)
+# imgui-console - ImGui Console
+# https://github.com/rmxbalanque/imgui-console
+if (THERMITE_EDITOR_BUILD)
+    # csys (header-only, bundled with imgui-console)
+    add_library(csys INTERFACE)
+    target_include_directories(csys INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/imgui-console/include")
+    target_compile_features(csys INTERFACE cxx_std_17)
+
+    # imgui-console library
+    add_library(imgui-console STATIC 
+        "${CMAKE_CURRENT_SOURCE_DIR}/imgui-console/src/imgui_console.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/imgui-console/include/imgui_console/imgui_console.h"
+    )
+    target_include_directories(imgui-console 
+        PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/imgui-console/include/imgui_console"
+        PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/imgui"  
+    )
+    target_compile_features(imgui-console PUBLIC cxx_std_17)
+    target_link_libraries(imgui-console PUBLIC csys)
+endif()
+
 # Link engine libraries publicly
 target_link_libraries(thermite-engine
     PUBLIC 
@@ -192,6 +196,8 @@ target_link_libraries(thermite-engine
     JsonReflect
     graphite
     Tracy::TracyClient
+    "${CMAKE_CURRENT_SOURCE_DIR}/fmod/lib/fmod${FMOD_POSTFIX}_vc.lib"
+    "${CMAKE_CURRENT_SOURCE_DIR}/fmod/lib/fmodstudio${FMOD_POSTFIX}_vc.lib"
 )
 
 # Link engine libraries privately
@@ -210,5 +216,6 @@ if (THERMITE_EDITOR_BUILD)
 	    SDL3::SDL3-static
         visit_struct
         nlohmann_json::nlohmann_json
+        imgui-console
     )
 endif()
