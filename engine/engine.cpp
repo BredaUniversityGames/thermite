@@ -138,7 +138,7 @@ void Engine::run() {
 
             /* Fixed Update */
             if (should_update) {
-                fixed_update_game(FrameData{.delta_time = Config::FIXED_TIME_STEP});
+                fixed_update_game(FrameData {.delta_time = Config::FIXED_TIME_STEP});
             }
             fixed_update_engine(FrameData {.delta_time = Config::FIXED_TIME_STEP});
         }

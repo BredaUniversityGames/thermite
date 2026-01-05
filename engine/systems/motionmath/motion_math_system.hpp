@@ -33,10 +33,11 @@ class MotionMathSystem : public ISystem {
         auto& motions = std::any_cast<std::vector<Motion<T>>&>(bucket.motion_collection);
 
         auto it = std::find_if(motions.begin(), motions.end(), [&value](const Motion<T>& motion) { return motion.value == value; });
-        if(it != motions.end())
-        {
-            //duplicate pointer driven motion found
-            //Log::warn(Log::Scope::ENGINE, "[MotionMath] overlapping pointer target value found, cancelling old motion..");
+        if (it != motions.end()) {
+            // duplicate pointer driven motion found
+            // Log::warn(Log::Scope::ENGINE, "[MotionMath] overlapping pointer target value found, cancelling old motion..");
+
+            // we decide to just erase the previous motion
 
             motions.erase(it);
         }
@@ -117,7 +118,7 @@ class MotionMathSystem : public ISystem {
         }
     }
 
-    //angle error squared from a quaternion motion
+    // angle error squared from a quaternion motion
     static float angle_err2(const tmt::MotionMathSystem::Motion<glm::quat>& motion) {
         glm::quat cur = glm::normalize(*motion.value);
         glm::quat tgt = glm::normalize(motion.target);
@@ -157,7 +158,7 @@ class MotionMathSystem : public ISystem {
                 const glm::quat lt = glm::log(tgt);
                 const glm::vec3 tgt_rv = 2.0f * glm::vec3(lt.x, lt.y, lt.z);
 
-                //drive target, quats need transforming from rotation vector
+                // drive target, quats need transforming from rotation vector
                 SecondOrderSolver::Solve(motion.state, tgt_rv, motion.settings.frequency, motion.settings.damping, motion.settings.initial_response, dt);
                 const glm::vec3 rv = motion.state.current_state;
                 const glm::quat out = glm::normalize(glm::exp(glm::quat(0.0f, 0.5f * rv.x, 0.5f * rv.y, 0.5f * rv.z)));
@@ -179,7 +180,7 @@ class MotionMathSystem : public ISystem {
         }
     }
 
-    //get or create a bucket if bucket for type T doesn't exist
+    // get or create a bucket if bucket for type T doesn't exist
     template <typename T>
     Bucket& get_or_create_bucket() {
         using LogicalType = std::decay_t<T>;
