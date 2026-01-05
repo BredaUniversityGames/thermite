@@ -74,17 +74,17 @@ void InputMap::add_action_mouse_motion(const std::string& name) { add_action_eve
 void InputMap::remove_action(const std::string& name) { actions.erase(name); }
 
 const InputAction* InputMap::get_action(const std::string& name) const {
-    auto it = actions.find(std::string {name});
+    auto it = actions.find(name);
     if (it == actions.end()) return nullptr;
     return &it->second;
 }
 InputAction* InputMap::get_action(const std::string& name) {
-    auto it = actions.find(std::string {name});
+    auto it = actions.find(name);
     if (it == actions.end()) return nullptr;
     return &it->second;
 }
 
-bool InputMap::has_action(const std::string& name) const { return actions.contains(std::string {name}); }
+bool InputMap::has_action(const std::string& name) const { return actions.contains(name); }
 
 float InputMap::get_action_deadzone(const std::string& name) const {
     const auto* action = get_action(name);
