@@ -1,10 +1,12 @@
 #pragma once
+
 #include "core/application.hpp"
 #include "core/timer.hpp"
 
 #include "engine/core/game_controller.hpp"
 
 namespace tmt {
+
 /* Forward declarations */
 class InputMap;
 class Input;
@@ -16,6 +18,7 @@ class Audio;
 class Salvo;
 class Scenes;
 class GameComponentRegistry;
+class Polyline;
 
 class Engine {
    public:
@@ -55,6 +58,7 @@ class Engine {
     Salvo& salvo;
     Scenes& scenes;
     GameComponentRegistry& component_registry;
+    Polyline& polyline;
 
     GameController game_controller;
 
