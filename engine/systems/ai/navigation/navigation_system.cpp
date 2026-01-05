@@ -6,11 +6,9 @@
 
 std::string tmt::NavigationSystem::get_name() { return std::string(); }
 
-void tmt::NavigationSystem::on_start() { 
+void tmt::NavigationSystem::on_start() {}
 
-}
-
-void tmt::NavigationSystem::on_update(const FrameData& time) { 
+void tmt::NavigationSystem::on_update(const FrameData& time) {
     tmt::engine.polyline.use_color(1.0f, 0.0f, 0.0f);
     tmt::engine.polyline.use_line_width(1.0f);
     for (const auto& [entity, nav_mesh] : engine.ecs.get_registry().view<NavMesh>().each()) {

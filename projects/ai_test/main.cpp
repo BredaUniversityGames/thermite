@@ -4,6 +4,7 @@
 #include "engine/core/components/camera.hpp"
 #include "engine/core/components/voxel_renderer.hpp"
 #include "engine/core/input/input.hpp"
+#include "engine/systems/camera/camera_system.hpp"
 #include "engine/core/logger.hpp"
 
 #include "engine/systems/ai/goap/goap_system.hpp"
@@ -34,6 +35,8 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
         .log_file = "example_game_logs.txt"
     };
     // clang-format on
+
+    tmt::engine.ecs.systems.add<tmt::CameraSystem>();
 
     return std::make_unique<Game>(specs);
 }
@@ -125,28 +128,27 @@ void Game::on_start() {
         transform.set_world_position(glm::vec3(0.0f, 0.25f, -5.0f));
     }
 
-    { // voxel entity with navmesh
+    {  // voxel entity with navmesh
         auto voxel_file = tmt::engine.resources.load_resource<tmt::VoxelScene>({tmt::IO::Location::PROJECT, "test_asteroid_6.vengi"});
         auto voxel_volume = tmt::engine.resources.copy_resource<tmt::VoxelVolume>(voxel_file);
         voxel = tmt::engine.ecs.create_entity("Moving Voxel");
         auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(voxel);
         auto& renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(voxel);
         renderer.resource = voxel_volume;
-        //transform.set_world_rotation(glm::vec3(glm::radians(45.0f), glm::radians(45.0f), 0.0f));
+        // transform.set_world_rotation(glm::vec3(glm::radians(45.0f), glm::radians(45.0f), 0.0f));
         transform.set_world_scale(glm::vec3(1.0f, 1.0f, 1.0f));
 
         auto& nav_mesh = tmt::engine.ecs.add_component<tmt::NavMesh>(voxel);
 
-
-        nav_mesh.generate_mesh(voxel_volume, 2);
+        nav_mesh.generate_mesh(voxel_volume, 1);
     }
 }
 
 void Game::on_update(const tmt::FrameData& time) {
-     time_passed += time.delta_time * 0.1f;
-     auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(voxel);
-     transform.set_world_position(glm::vec3(1.0f, sinf(time_passed), 1.0f));
-     transform.set_world_rotation(glm::vec3(0.0f, time_passed, 0.0f));
+    time_passed += time.delta_time * 0.1f;
+    auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(voxel);
+    transform.set_world_position(glm::vec3(1.0f, sinf(time_passed), 1.0f));
+    transform.set_world_rotation(glm::vec3(0.0f, time_passed, 0.0f));
 }
 
 void Game::on_end() {}

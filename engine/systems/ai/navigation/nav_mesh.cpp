@@ -1,6 +1,5 @@
 #include "nav_mesh.hpp"
 
-
 #include "engine/engine.hpp"
 #include "engine/core/polyline.hpp"
 #include "engine/core/logger.hpp"
