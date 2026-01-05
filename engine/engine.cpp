@@ -51,7 +51,6 @@ Engine::Engine()
       polyline(*new Polyline()) {},
       component_registry(*new GameComponentRegistry()) {}
 
-
 Engine::~Engine() {
     /* Destruction should be in reverse order */
     delete &component_registry;
