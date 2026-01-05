@@ -2,6 +2,7 @@
 
 #include "engine/tools/serializer.hpp"
 #include "editor/core/window.hpp"
+#include "engine/core/io.hpp"
 
 namespace tmt {
 struct ProfilerSettings {
@@ -22,7 +23,12 @@ class Profiler : public IWindow {
     void on_editor_update(const tmt::FrameData& time) override;
     void on_editor_end() override;
     void display() override;
-    constexpr std::string get_title() const override { return "Profiler"; }
+    constexpr std::string get_title() const override { return ICON_MS_BAR_CHART_4_BARS " Profiler"; }
+
+    class Config {
+       public:
+        static inline const IO::FileLocation FILE_LOCATION {IO::Location::EDITOR, "profiler_settings.json"};
+    };
 };
 
 }  // namespace tmt

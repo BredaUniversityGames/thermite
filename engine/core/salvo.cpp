@@ -1,12 +1,10 @@
-#include "job_system.hpp"
+#include "salvo.hpp"
 
 #include <latch>
 #include <thread>
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-#undef min
-#undef max
 
 #include "logger.hpp"
 
@@ -26,7 +24,7 @@ void Salvo::init() {
     Log::info(Log::Scope::ENGINE, "Starting Salvo job system module: creating {} worker threads", thread_count);
     for (size_t i = 0; i < thread_count; i++) {
         std::thread& worker = worker_threads.emplace_back(&Salvo::run_worker, this);
-        SetThreadAffinityMask(worker.native_handle(), 0b1 << (i + 2));
+        SetThreadAffinityMask(worker.native_handle(), 0b1llu << (i + 2));
     }
 }
 
@@ -107,4 +105,5 @@ void Salvo::execute_work() {
         finished_working.notify_one();
     }
 }
+
 }  // namespace tmt

@@ -12,7 +12,7 @@
 
 #include "engine/core/components/name.hpp"
 #include "engine/core/components/transform.hpp"
-#include "engine/core/system_collection.hpp"
+#include "engine/core/collection.hpp"
 
 #include "engine/events/game.hpp"
 #include "engine/events/engine.hpp"
@@ -42,6 +42,7 @@ class Ecs : public OnGameStart, public OnGameUpdate, public OnGameFixedUpdate, p
         Entity entity = registry.create(hint);
         /* Enforce Name component */
         registry.emplace<Name>(entity, name.empty() ? "Entity_" + EntityHelper::to_string(entity) : name);
+        registry.emplace<Transform>(entity);
         return entity;
     }
 
@@ -81,9 +82,20 @@ class Ecs : public OnGameStart, public OnGameUpdate, public OnGameFixedUpdate, p
         (registry.remove<Component>(entity), ...);
     }
 
-    /* Single + Multiple get */
+    /* Single + Multiple get, mutable */
     template <typename... Component>
     decltype(auto) get_component(const Entity entity) {
+        constexpr size_t COUNT = sizeof...(Component);
+        if constexpr (COUNT == 1) {
+            return registry.get<Component...>(entity);
+        } else {
+            return std::make_tuple(registry.get<Component>(entity)...);
+        }
+    }
+
+    /* Single + Multiple get, const */
+    template <typename... Component>
+    decltype(auto) get_component(const Entity entity) const {
         constexpr size_t COUNT = sizeof...(Component);
         if constexpr (COUNT == 1) {
             return registry.get<Component...>(entity);
@@ -107,9 +119,20 @@ class Ecs : public OnGameStart, public OnGameUpdate, public OnGameFixedUpdate, p
         }
     }
 
-    /* Single + Multiple try_get */
+    /* Single + Multiple try_get, mutable */
     template <typename... Component>
     decltype(auto) try_get_component(const Entity entity) {
+        constexpr size_t COUNT = sizeof...(Component);
+        if constexpr (COUNT == 1) {
+            return registry.try_get<Component...>(entity);
+        } else {
+            return std::make_tuple(registry.try_get<Component>(entity)...);
+        }
+    }
+
+    /* Single + Multiple try_get, const */
+    template <typename... Component>
+    decltype(auto) try_get_component(const Entity entity) const {
         constexpr size_t COUNT = sizeof...(Component);
         if constexpr (COUNT == 1) {
             return registry.try_get<Component...>(entity);
@@ -125,16 +148,21 @@ class Ecs : public OnGameStart, public OnGameUpdate, public OnGameFixedUpdate, p
     }
 
     void destroy_entity(const Entity entity, bool force = false) {
+        auto children = get_component<Transform>(entity).get_all_children();
         if (force) {
             registry.destroy(entity);
         } else {
             registry.emplace<Delete>(entity);
         }
+
+        for (const auto child : children) {
+            destroy_entity(child, force);
+        }
     }
 
     void clear() { registry.clear(); }
 
-    SystemCollection<ISystem> systems;
+    Collection<ISystem> systems;
 
    private:
     Registry registry;

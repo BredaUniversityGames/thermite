@@ -1,4 +1,6 @@
 #pragma once
+#define JSON_REFLECT_ENABLE_CONST_CAST
+// #define JSON_REFLECT_INITIALIZE_SMART_POINTERS
 #include <JsonReflect.hpp>
 #include <nlohmann/json.hpp>
 
@@ -20,5 +22,9 @@ class Serializer {
     static void deserialize(const json& j, T& value, Args&&... args) {
         JsonReflect::from_json(j, value, std::forward<Args>(args)...);
     }
+
+    struct Config {
+        constexpr static uint64_t VERSION = 1;
+    };
 };
 }  // namespace tmt

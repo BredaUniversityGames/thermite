@@ -2,14 +2,14 @@
 #include "engine/events/engine.hpp"
 
 #include "editor/core/window.hpp"
-#include "engine/core/system_collection.hpp"
-
+#include "engine/core/collection.hpp"
 #include "editor/shared/save_data.hpp"
 
 namespace tmt {
 
 /* Forward declares */
 class ImGuiManager;
+class FontManager;
 
 class Editor : public OnEngineInit, public OnEngineUpdate, public OnEngineFixedUpdate, public OnEngineEnd {
    public:
@@ -18,10 +18,11 @@ class Editor : public OnEngineInit, public OnEngineUpdate, public OnEngineFixedU
 
     void init();
 
-    SystemCollection<IWindow> windows;
+    Collection<IWindow> windows;
+
+    ImGuiManager& imgui_manager;
 
    private:
-    ImGuiManager& imgui_manager;
     SaveData save_data;
 
     void on_engine_init(const ApplicationSpecs& specs) override;

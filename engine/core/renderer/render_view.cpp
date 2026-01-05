@@ -21,7 +21,7 @@ void RenderView::init() {
     VRAMBank& bank = engine.renderer.vram_bank();
 
     /* Initialize the Render Target */
-    const TargetDesc target {engine.window.get_window_handle()};
+    const TargetDesc target {static_cast<HWND>(engine.window.get_window_handle())};
     if (const Result r = bank.create_render_target(target); r.is_err()) {
         Log::error(Log::Scope::RENDERER, "failed to initialize render target.\nreason: {}", r.unwrap_err());
         return;
@@ -71,11 +71,8 @@ void RenderView::update() {
 #endif  // !THERMITE_EDITOR
 }
 
-void RenderView::update_gpu_view(RenderGraph& render_graph, Entity cam_entity) {
+void RenderView::update_gpu_view(RenderGraph& render_graph, const Camera& camera, const Transform& transform) {
     const float aspect_ratio = (float)gpu_view.resolution.x / (float)gpu_view.resolution.y;
-    /* Get active camera */
-    Camera& camera = engine.ecs.get_component<Camera>(cam_entity);
-    Transform& transform = engine.ecs.get_component<Transform>(cam_entity);
 
     /* Iterate over all cameras to find an active one to use as render view */
     glm::mat4 p = glm::perspective(glm::radians(camera.fov), aspect_ratio, 0.05f, 1000.0f);

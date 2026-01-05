@@ -9,16 +9,19 @@
 #include "engine/core/components/name.hpp"
 
 #include "editor/core/window.hpp"
+#include "engine/events/scene.hpp"
 
 namespace tmt {
-class Hierarchy : public IWindow, public IGameEvents {
+class Hierarchy : public IWindow, public OnGameEnd, public OnPreUnloadScene {
    public:
     Hierarchy() = default;
     ~Hierarchy() = default;
 
     void display() override;
 
-    constexpr std::string get_title() const override { return "Hierarchy"; };
+    virtual int get_window_flags() const override;
+    constexpr std::string get_title() const override { return ICON_MS_FLOWCHART " Hierarchy"; };
+    constexpr bool default_open() const override { return true; }
 
     void on_editor_start() override {};
     void on_editor_update(const FrameData&) override {};
@@ -75,6 +78,8 @@ class Hierarchy : public IWindow, public IGameEvents {
 
     Entity selection_parent = entt::null;
 
+    std::string filter = "";
+
     static inline bool is_between(const glm::uvec2& value, const glm::uvec2& begin, const glm::uvec2& end) {
         if (begin == NULL_INDEX || end == NULL_INDEX) return false;
         const bool between_begin_end = (value.y >= begin.y && value.y <= end.y);
@@ -96,9 +101,18 @@ class Hierarchy : public IWindow, public IGameEvents {
         uint32_t index() const { return position.y; }
     };
 
+    void top_bar();
+
     void start_section();
     bool display_entity(const HierarchyState& state);
     void end_section();
+
+    void context_menu();
+
+    void copy_selection();
+    void paste_entities();
+
+    void clear_selection();
 
     struct DragNDropPayload {
         bool multiple = false;
@@ -109,8 +123,16 @@ class Hierarchy : public IWindow, public IGameEvents {
     bool drag_drop_target(const Entity dropped_entity);
 
     // Inherited via IGameEvents
-    void on_start() override;
-    void on_update(const tmt::FrameData& time) override;
-    void on_end() override;
+    void on_game_end() override;
+
+    // Inherited via OnPreUnloadScene
+    void on_pre_unload_scene() override;
+
+    void before_begin() override;
+    void end_display() override;
+
+    struct Config {
+        constexpr static inline const char* RIGHT_CLICK_CONTEXT = "Hierarchy.RightClickContext";
+    };
 };
 }  // namespace tmt
