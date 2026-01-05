@@ -2,12 +2,12 @@
 
 
 #include "engine/engine.hpp"
-#include "engine/core/renderer/renderer.hpp"
+#include "engine/core/polyline.hpp"
 #include "engine/core/logger.hpp"
 
 using namespace tmt;
 
-void NavMesh::generate_mesh(std::shared_ptr<tmt::VoxelVolume> voxel_volume, int lod_level) {
+void NavMesh::generate_mesh(tmt::ResourceRef<tmt::VoxelVolume> voxel_volume, int lod_level) {
     nodes.clear();
 
     uint32_t full_depth = voxel_volume->blas->depth;
@@ -204,11 +204,12 @@ std::vector<int> NavMesh::find_path(const int startingNodeID, const int endingNo
 }
 
 void tmt::NavMesh::inspect() {
-    glm::vec3 color = glm::vec3(1.0f, 0.0f, 0.0f);
+    tmt::engine.polyline.use_color(1.0f, 0.0f, 0.0f);
+    tmt::engine.polyline.use_line_width(2, true);
     for (int i = 0; i < nodes.size(); i++) {
         for (int j = 0; j < nodes[i].connectingNodes.size(); j++) {
             int conn_idx = nodes[i].connectingNodes[j];
-            engine.renderer.draw_line(nodes[i].world_pos, nodes[conn_idx].world_pos, color);
+            engine.polyline.draw_line(nodes[i].world_pos, nodes[conn_idx].world_pos);
         }
     }
 }

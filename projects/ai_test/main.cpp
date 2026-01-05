@@ -117,11 +117,19 @@ void Game::on_start() {
         tmt::Log::info("GOAP Agent created!");
     }
 
+    { /* Camera entity */
+        tmt::Entity entity = tmt::engine.ecs.create_entity("Camera");
+        auto& camera = tmt::engine.ecs.add_component<tmt::Camera>(entity);
+
+        auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
+        transform.set_world_position(glm::vec3(0.0f, 0.25f, -5.0f));
+    }
+
     { // voxel entity with navmesh
         auto voxel_file = tmt::engine.resources.load_resource<tmt::VoxelScene>({tmt::IO::Location::PROJECT, "test_asteroid_6.vengi"});
         auto voxel_volume = tmt::engine.resources.copy_resource<tmt::VoxelVolume>(voxel_file);
         voxel = tmt::engine.ecs.create_entity("Moving Voxel");
-        auto& transform = tmt::engine.ecs.add_component<tmt::Transform>(voxel);
+        auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(voxel);
         auto& renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(voxel);
         renderer.resource = voxel_volume;
         //transform.set_world_rotation(glm::vec3(glm::radians(45.0f), glm::radians(45.0f), 0.0f));
@@ -130,7 +138,7 @@ void Game::on_start() {
         auto& nav_mesh = tmt::engine.ecs.add_component<tmt::NavMesh>(voxel);
 
 
-        nav_mesh.generate_mesh(voxel_volume, 1);
+        nav_mesh.generate_mesh(voxel_volume, 2);
     }
 }
 

@@ -36,7 +36,7 @@ class NavMesh {
     std::vector<Node> nodes;
     std::vector<int> path;
 
-    void generate_mesh(std::shared_ptr<tmt::VoxelVolume> voxel_volume, int lod_level = 0);
+    void generate_mesh(tmt::ResourceRef<tmt::VoxelVolume> voxel_volume, int lod_level = 0);
     std::vector<int> find_path(const int startingNodeID, const int endingNodeID);
     void inspect();
 };
