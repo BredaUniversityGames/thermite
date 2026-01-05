@@ -7,10 +7,10 @@ class VoxelVolume;
 
 namespace tmt {
 
-enum VoxelType : uint8_t { Empty, Outside, Inside };
+enum class VoxelType : uint8_t { EMPTY, OUTSIDE, INSIDE };
 
 struct NavVoxel {
-    VoxelType type = VoxelType::Empty;
+    VoxelType type = VoxelType::EMPTY;
 };
 
 class Node {
@@ -25,7 +25,7 @@ class Node {
     float h = 0.0f;
     int id = -1;
 
-    std::vector<int> connectingNodes;
+    std::vector<int> connecting_nodes;
 };
 
 class NavMesh {
@@ -37,7 +37,7 @@ class NavMesh {
     std::vector<int> path;
 
     void generate_mesh(tmt::ResourceRef<tmt::VoxelVolume> voxel_volume, int lod_level = 0);
-    std::vector<int> find_path(const int startingNodeID, const int endingNodeID);
+    std::vector<int> find_path(const int starting_node_id, const int ending_node_id);
     void inspect();
 };
 }  // namespace tmt

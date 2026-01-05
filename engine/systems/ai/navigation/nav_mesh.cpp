@@ -110,12 +110,12 @@ void NavMesh::generate_mesh(tmt::ResourceRef<tmt::VoxelVolume> voxel_volume, int
                                 nodes.push_back(node);
                             }
 
-                            auto& neighborsA = nodes[node_index].connectingNodes;
+                            auto& neighborsA = nodes[node_index].connecting_nodes;
                             if (std::find(neighborsA.begin(), neighborsA.end(), neighbor_node_index) == neighborsA.end()) {
                                 neighborsA.push_back(neighbor_node_index);
                             }
 
-                            auto& neighborsB = nodes[neighbor_node_index].connectingNodes;
+                            auto& neighborsB = nodes[neighbor_node_index].connecting_nodes;
                             if (std::find(neighborsB.begin(), neighborsB.end(), node_index) == neighborsB.end()) {
                                 neighborsB.push_back(node_index);
                             }
@@ -127,11 +127,11 @@ void NavMesh::generate_mesh(tmt::ResourceRef<tmt::VoxelVolume> voxel_volume, int
     }
 }
 
-std::vector<int> NavMesh::find_path(const int startingNodeID, const int endingNodeID) {
+std::vector<int> NavMesh::find_path(const int starting_node_id, const int ending_node_id) {
     std::vector<int> open = std::vector<int>();
-    open.push_back(startingNodeID);
-    nodes[startingNodeID].g = 0.0f;
-    nodes[startingNodeID].parent = NULL;
+    open.push_back(starting_node_id);
+    nodes[starting_node_id].g = 0.0f;
+    nodes[starting_node_id].parent = NULL;
     int current = -1;
 
     // A* search
@@ -139,38 +139,38 @@ std::vector<int> NavMesh::find_path(const int startingNodeID, const int endingNo
     // h is the heuristic cost from current node to end node
     while (!open.empty()) {
         current = -1;
-        int currentIndex = -1;
+        int current_index = -1;
 
         // find node in open list with lowest f = g + h
         for (int i = 0; i < (int)open.size(); i++) {
             // set first node as a valid node
             if (current < 0) {
-                currentIndex = i;
+                current_index = i;
                 current = open[i];
             }
             // get a better node if available
             else if (nodes[open[i]].g + nodes[open[i]].h < nodes[current].g + nodes[current].h) {
-                currentIndex = i;
+                current_index = i;
                 current = open[i];
             }
         }
 
-        if (current == endingNodeID) {
+        if (current == ending_node_id) {
             break;
         }
 
         // remove current from open list
-        open.erase(open.begin() + currentIndex);
+        open.erase(open.begin() + current_index);
 
         // add all connecting nodes with a better path to open list
-        for (int i = 0; i < (int)nodes[current].connectingNodes.size(); i++) {
-            int next = nodes[current].connectingNodes[i];
+        for (int i = 0; i < (int)nodes[current].connecting_nodes.size(); i++) {
+            int next = nodes[current].connecting_nodes[i];
             float edgeCost = glm::distance(nodes[next].local_pos, nodes[current].local_pos);
 
             // if g is not set or we found a better path to next node
             if (nodes[next].g < 0 || nodes[current].g + edgeCost < nodes[next].g) {
                 nodes[next].g = nodes[current].g + edgeCost;
-                nodes[next].h = glm::distance(nodes[next].local_pos, nodes[endingNodeID].local_pos);
+                nodes[next].h = glm::distance(nodes[next].local_pos, nodes[ending_node_id].local_pos);
                 nodes[next].parent = current;
 
                 open.push_back(next);
@@ -179,17 +179,17 @@ std::vector<int> NavMesh::find_path(const int startingNodeID, const int endingNo
     }
 
     // no path found
-    if (current != endingNodeID) {
+    if (current != ending_node_id) {
         std::vector<int> noResult;
         return noResult;
     }
 
     // reconstruct path and return it
     std::vector<int> path;
-    path.push_back(endingNodeID);
-    current = endingNodeID;
+    path.push_back(ending_node_id);
+    current = ending_node_id;
     while (1) {
-        if (current == startingNodeID) {
+        if (current == starting_node_id) {
             for (int i = 0; i < (int)nodes.size(); i++) {
                 nodes[i].g = -1.0f;
                 nodes[i].h = 0.0f;
@@ -206,9 +206,14 @@ void tmt::NavMesh::inspect() {
     tmt::engine.polyline.use_color(1.0f, 0.0f, 0.0f);
     tmt::engine.polyline.use_line_width(2, true);
     for (int i = 0; i < nodes.size(); i++) {
-        for (int j = 0; j < nodes[i].connectingNodes.size(); j++) {
-            int conn_idx = nodes[i].connectingNodes[j];
+        for (int j = 0; j < nodes[i].connecting_nodes.size(); j++) {
+            int conn_idx = nodes[i].connecting_nodes[j];
             engine.polyline.draw_line(nodes[i].world_pos, nodes[conn_idx].world_pos);
         }
+    }
+
+    tmt::engine.polyline.use_color(1.0f, 1.0f, 1.0f);
+    for (int i = 0; i < (int)path.size() - 1; i++) {
+        tmt::engine.polyline.draw_line(nodes[path[i]].world_pos, nodes[path[i + 1]].world_pos);
     }
 }

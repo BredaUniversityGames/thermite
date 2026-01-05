@@ -9,8 +9,6 @@ std::string tmt::NavigationSystem::get_name() { return std::string(); }
 void tmt::NavigationSystem::on_start() {}
 
 void tmt::NavigationSystem::on_update(const FrameData& time) {
-    tmt::engine.polyline.use_color(1.0f, 0.0f, 0.0f);
-    tmt::engine.polyline.use_line_width(1.0f);
     for (const auto& [entity, nav_mesh] : engine.ecs.get_registry().view<NavMesh>().each()) {
         glm::mat4 world_matrix = engine.ecs.get_component<Transform>(entity).get_world_matrix();
         for (auto& node : nav_mesh.nodes) {
@@ -19,9 +17,7 @@ void tmt::NavigationSystem::on_update(const FrameData& time) {
 
         nav_mesh.inspect();
 
-        for (int i = 0; i < (int)nav_mesh.path.size() - 1; i++) {
-            tmt::engine.polyline.draw_line(nav_mesh.nodes[nav_mesh.path[i]].world_pos, nav_mesh.nodes[nav_mesh.path[i + 1]].world_pos);
-        }
+
 
         Input& input = tmt::engine.input;
         if (input.is_keyboard_button_pressed(Key::P)) {
