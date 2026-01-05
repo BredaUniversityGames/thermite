@@ -313,9 +313,15 @@ void ImGuiConsole::LogWindow() {
         ImGui::PopTextWrapPos();
 
         // Handle Ctrl+C to copy selected text.
-        if (ImGui::IsWindowFocused() && ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_C)) {
-            if (!selectedText.empty()) {
+        if (ImGui::IsWindowFocused() && ImGui::GetIO().KeyCtrl) {
+            if (ImGui::IsKeyPressed(ImGuiKey_C) && !selectedText.empty()) {
                 ImGui::SetClipboardText(selectedText.c_str());
+            }
+            if (ImGui::IsKeyPressed(ImGuiKey_A)) {
+                m_SelectionStartIndex = 0;
+                m_SelectionEndIndex = m_ConsoleSystem.Items().size() - 1;
+                m_SelectionStart = ImVec2(ImGui::GetCursorScreenPos().x, contentStartY);
+                m_SelectionEnd = ImVec2(ImGui::GetCursorScreenPos().x + ImGui::GetColumnWidth(), contentEndY);
             }
         }
 
