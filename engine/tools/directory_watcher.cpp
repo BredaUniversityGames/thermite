@@ -154,7 +154,6 @@ bool FileWatcher::check_changes() {
     if (last_write_time <= last_write_time_cache) return false;
 
     last_write_time_cache = last_write_time;
-    Log::info("File changed size: {}", std::filesystem::file_size(file_path));
 
     return true;
 }
