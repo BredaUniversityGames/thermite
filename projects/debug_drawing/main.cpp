@@ -85,18 +85,6 @@ void DebugDrawing::on_update(const tmt::FrameData& time) {
     /* Tube */
     tmt::engine.polyline.use_color(0.9f, 0.9f, 0.9f);
     tmt::engine.polyline.draw_tube({10.0f, 0.5f, 0.0f}, {10.0f, 0.5f, 1.0f}, 0.1f, 32);
-
-    srand(0);
-    constexpr float PRIM_RANGE = 256.0f;
-    for (int i = 0; i < 100000; ++i) {
-        float x0 = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * PRIM_RANGE - (PRIM_RANGE / 2.0f);
-        float y0 = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * PRIM_RANGE - (PRIM_RANGE / 2.0f);
-        float z0 = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * PRIM_RANGE - (PRIM_RANGE / 2.0f);
-        float x1 = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * PRIM_RANGE - (PRIM_RANGE / 2.0f);
-        float y1 = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * PRIM_RANGE - (PRIM_RANGE / 2.0f);
-        float z1 = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * PRIM_RANGE - (PRIM_RANGE / 2.0f);
-        tmt::engine.polyline.draw_line({x0, y0, z0}, {x1, y1, z1});
-    }
 }
 
 void DebugDrawing::on_end() {}
