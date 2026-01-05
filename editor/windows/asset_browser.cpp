@@ -51,6 +51,19 @@ void recurse_parse_directory(tmt::AssetBrowser::Directory& directory) {
 
 [[nodiscard]] bool path_valid(const std::filesystem::path& path) { return !path.empty() && exists(path); }
 
+void update_bookmark_vector(std::vector<tmt::AssetBrowser::Bookmark>& bookmarks) {
+    for (auto& bookmark : bookmarks) {
+        if (!bookmark.location_watcher.is_valid()) {  // If the location watcher is invalid, make it valid.
+            bookmark.location_watcher = tmt::DirectoryWatcher {bookmark.directory.location};
+        } else if (!bookmark.location_watcher.check_changes()) {  // If the watcher is valid skip updating the bookmark view if there were no updates to the directory.
+            continue;
+        }
+
+        bookmark.directory.sub_directories.clear();
+        recurse_parse_directory(bookmark.directory);
+    }
+}
+
 }  // namespace
 
 namespace tmt {
@@ -58,8 +71,8 @@ namespace tmt {
 bool AssetBrowser::location_is_bookmarked(const IO::FileLocation& location) {
     if (location.relative_path.empty()) return true;
 
-    const auto& bookmark_iterator = std::ranges::find_if(bookmarked_dirs, [&location](const Directory& dir) { return dir.location == location; });
-    return bookmark_iterator != bookmarked_dirs.end();
+    const auto& bookmark_iterator = std::ranges::find_if(bookmarks, [&location](const Bookmark& bookmark) { return bookmark.directory.location == location; });
+    return bookmark_iterator != bookmarks.end();
 }
 
 void AssetBrowser::display() {
@@ -86,7 +99,7 @@ void AssetBrowser::display() {
         display_directory_bar();
 
         ImGui::BeginDisabled(location_is_bookmarked(viewing_location));
-        if (ImGui::Button(ICON_MS_BOOKMARK_ADD)) bookmarked_dirs.emplace_back(viewing_location);
+        if (ImGui::Button(ICON_MS_BOOKMARK_ADD)) bookmarks.emplace_back(Directory {viewing_location});
         ImGui::EndDisabled();
 
         ImGui::EndMenuBar();
@@ -119,19 +132,30 @@ void AssetBrowser::display() {
 void AssetBrowser::on_editor_start() {
     constexpr std::array bookmark_paths = magic_enum::enum_entries<IO::Location>();
     for (const auto& [location, name] : bookmark_paths) {
-        default_bookmarked_dirs.emplace_back(IO::FileLocation {location, ""});
+        const IO::FileLocation file_location {location, ""};
+        default_bookmarks.emplace_back(Directory {file_location});
     }
 }
 
 void AssetBrowser::on_editor_update(const FrameData&) {
+    // Check if there are changes in the viewing directory, if so we update the viewing directory by setting it to pending.
+    if (viewing_location_watcher.is_valid() && viewing_location_watcher.check_changes()) pending_viewing_location = viewing_location;
+
+    update_location_history();
+
+    // Update the default bookmarks (asset dirs for: engine, editor and project).
+    update_bookmark_vector(default_bookmarks);
+    // Update the user added bookmarks.
+    update_bookmark_vector(bookmarks);
+}
+
+void AssetBrowser::update_location_history() {
     if (pending_viewing_location.has_value()) {
-        // Clear the redo history.
+        // Clear the redo history if the user manually went to a new directory.
         redo_viewing_locations = {};
         if (*pending_viewing_location != viewing_location) undo_viewing_locations.push(viewing_location);
         update_viewing_locations();
     }
-
-    update_bookmark_directories();
 }
 
 void AssetBrowser::update_viewing_locations() {
@@ -165,20 +189,8 @@ void AssetBrowser::update_viewing_locations() {
         if (is_directory(a_path) == is_directory(b_path)) return a_path < b_path;
         return is_directory(a_path);
     });
-}
 
-void AssetBrowser::update_bookmark_directories() {
-    // Update the default bookmarks (asset dirs for: engine, editor and project).
-    for (auto& directory : default_bookmarked_dirs) {
-        directory.sub_directories.clear();
-        recurse_parse_directory(directory);
-    }
-
-    // Update the user added bookmarks.
-    for (auto& directory : bookmarked_dirs) {
-        directory.sub_directories.clear();
-        recurse_parse_directory(directory);
-    }
+    viewing_location_watcher = DirectoryWatcher {viewing_location, false};
 }
 
 void AssetBrowser::move_location_stacks(std::stack<IO::FileLocation>& from, std::stack<IO::FileLocation>& to) {
@@ -298,7 +310,7 @@ void AssetBrowser::location_context_menu(const IO::FileLocation& location, const
     }
 
     ImGui::BeginDisabled(location_is_bookmarked(location));
-    if (allow_bookmark && ImGui::MenuItem(ICON_MS_BOOKMARK_ADD " Add Bookmark")) bookmarked_dirs.emplace_back(location);
+    if (allow_bookmark && ImGui::MenuItem(ICON_MS_BOOKMARK_ADD " Add Bookmark")) bookmarks.emplace_back(Directory {location});
     ImGui::EndDisabled();
 
     ImGui::EndPopup();
@@ -332,24 +344,24 @@ void AssetBrowser::viewing_context_menu() const {
 }
 
 void AssetBrowser::display_bookmarks() {
-    for (const auto& directory : default_bookmarked_dirs) {
-        recurse_display_bookmark_dirs(directory);
+    for (const auto& bookmark : default_bookmarks) {
+        recurse_display_bookmark_dirs(bookmark.directory);
     }
 
     ImGui::SeparatorText(ICON_MS_BOOKMARKS " Bookmarks");
 
     int64_t i = 0;
-    for (const auto& directory : bookmarked_dirs) {
-        const std::string absolute_path_string = directory.location.get_absolute_path().generic_string();
+    for (const auto& bookmark : bookmarks) {
+        const std::string absolute_path_string = bookmark.directory.location.get_absolute_path().generic_string();
 
         ImGui::PushID(absolute_path_string.c_str());
-        const ImGuiID node_id = recurse_display_bookmark_dirs(directory);
+        const ImGuiID node_id = recurse_display_bookmark_dirs(bookmark.directory);
         ImGui::PopID();
 
         //
         if (ImGui::BeginPopupEx(node_id, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoSavedSettings)) {
             ImGui::SeparatorEx(ImGuiSeparatorFlags_Horizontal, 3.0f);
-            if (ImGui::MenuItem(ICON_MS_BOOKMARK_REMOVE " Remove Bookmark")) bookmarked_dirs.erase(bookmarked_dirs.begin() + i);
+            if (ImGui::MenuItem(ICON_MS_BOOKMARK_REMOVE " Remove Bookmark")) bookmarks.erase(bookmarks.begin() + i);
 
             ImGui::EndPopup();
         }

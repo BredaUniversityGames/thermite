@@ -2,6 +2,7 @@
 
 #include "editor/core/window.hpp"
 #include "engine/core/io.hpp"
+#include "engine/tools/directory_watcher.hpp"
 
 #include <stack>
 #include <imgui.h>
@@ -12,7 +13,13 @@ class AssetBrowser : public IWindow {
    public:
     struct Directory {
         IO::FileLocation location;
-        std::vector<Directory> sub_directories;
+        std::vector<Directory> sub_directories{};
+    };
+
+    struct Bookmark
+    {
+        Directory directory;
+        DirectoryWatcher location_watcher;
     };
 
     constexpr std::string get_title() const override { return ICON_MS_FOLDER " Asset Browser"; }
@@ -27,19 +34,20 @@ class AssetBrowser : public IWindow {
    private:
     std::optional<IO::FileLocation> pending_viewing_location {viewing_location};
     IO::FileLocation viewing_location {};
+    DirectoryWatcher viewing_location_watcher{};
     std::vector<IO::FileLocation> viewing_locations;
     std::vector<IO::FileLocation> selected_locations;
 
     std::stack<IO::FileLocation> undo_viewing_locations;
     std::stack<IO::FileLocation> redo_viewing_locations;
 
-    std::vector<Directory> default_bookmarked_dirs;
-    std::vector<Directory> bookmarked_dirs;
+    std::vector<Bookmark> default_bookmarks;
+    std::vector<Bookmark> bookmarks;
 
     [[nodiscard]] bool location_is_bookmarked(const IO::FileLocation& location);
 
+    void update_location_history();
     void update_viewing_locations();
-    void update_bookmark_directories();
 
     void move_location_stacks(std::stack<IO::FileLocation>& from, std::stack<IO::FileLocation>& to);
     ImGuiID recurse_display_bookmark_dirs(const Directory& directory);
