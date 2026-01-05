@@ -17,8 +17,6 @@ void tmt::NavigationSystem::on_update(const FrameData& time) {
 
         nav_mesh.inspect();
 
-
-
         Input& input = tmt::engine.input;
         if (input.is_keyboard_button_pressed(Key::P)) {
             int start = rand() % nav_mesh.nodes.size();
