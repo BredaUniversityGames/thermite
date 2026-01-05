@@ -33,7 +33,6 @@ class DragonScene : public tmt::Scene<DragonScene> {
 
     tmt::Entity voxel {};
     float elapsed_time = 0.0f;
-    void generate_random_entities(tmt::ResourceRef<tmt::VoxelVolume>& voxel_volume);
 };
 
 class TableScene : public tmt::Scene<TableScene> {
