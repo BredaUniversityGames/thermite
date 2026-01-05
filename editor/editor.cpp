@@ -16,6 +16,7 @@
 
 #include "editor/imgui/manager.hpp"
 #include "editor/core/systems/font_manager.hpp"
+#include "editor/core/systems/undo_redo/undo_redo_manager.hpp"
 
 /* Windows */
 #include "editor/windows/hierarchy.hpp"
@@ -57,6 +58,7 @@ void Editor::on_engine_init(const ApplicationSpecs&) {
     windows.add<ScenesWindow>();
     windows.add<Console>();
     windows.add<ImguiDemo>();
+    windows.add<UndoRedoManager>();
 
     for (auto& window : windows) {
         window->on_editor_start();

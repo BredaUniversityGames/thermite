@@ -22,6 +22,7 @@
 #include "editor/imgui/types/all.hpp"
 
 #include "editor/events/scene.hpp"
+#include "editor/core/systems/undo_redo/component_diff.hpp"
 
 namespace tmt {
 
@@ -159,11 +160,24 @@ void Inspector::display_compile_time_components(const tmt::Inspector::MenuContex
 
         const json before = tmt::Serializer::serialize(component_instance);
 
+        static bool activated = false;
+        static ComponentDiff<T> component_diff(menu_context.primary_entity);
+        if (activated == false) {
+            component_diff.take_snapshot();
+        }
+
         const ImResponse response = ImReflect::Input("", component_instance);
         const bool changed = response.get<T>().is_changed();
 
+        const bool deactivated_after_edit = response.get<T>().is_deactivated_after_edit();
+        if (deactivated_after_edit) {
+            component_diff.commit();
+            activated = false;
+        }
+
         if (changed == false) return;
 
+        activated = true;
         OnSceneModified::dispatch();
 
         if (menu_context.selected_entities.size() <= 1) return;
