@@ -11,6 +11,7 @@
 #include "core/ecs.hpp"
 #include "core/scenes.hpp"
 #include "core/timer.hpp"
+#include "core/polyline.hpp"
 
 #include "core/renderer/renderer.hpp"
 
@@ -24,10 +25,12 @@
 #include "events/scene.hpp"
 #include "core/resources.hpp"
 #include "core/salvo.hpp"
+#include "core/input/input_map.hpp"
 #include "tools/profiler.hpp"
 
 bool tmt::Engine::get_is_running() const { return is_running; }
 void tmt::Engine::set_is_running(bool value) { is_running = value; }
+
 /* Singleton */
 tmt::Engine tmt::engine;
 
@@ -42,10 +45,12 @@ Engine::Engine()
       renderer(*new Renderer()),
       resources(*new Resources()),
       salvo(*new Salvo()),
-      scenes(*new Scenes()) {}
+      scenes(*new Scenes()),
+      polyline(*new Polyline()) {}
 
 Engine::~Engine() {
     /* Destruction should be in reverse order */
+    delete &polyline;
     delete &scenes;
     delete &salvo;
     delete &resources;
@@ -105,9 +110,9 @@ void Engine::run() {
             game_controller.should_resume_game = false;
         }
 
-        input.update();
-
         const FrameData frame_data = {.delta_time = timer.tick()};
+
+        input.update(frame_data);
 
         const bool should_update = game_controller.is_playing() && !game_controller.is_paused();
         /* Update */

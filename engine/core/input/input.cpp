@@ -1,5 +1,7 @@
 #include "input.hpp"
 
+#include "input_map.hpp"
+
 #include <SDL3/SDL_events.h>
 #include <SDL3/SDL_keyboard.h>
 #include <SDL3/SDL_gamepad.h>
@@ -22,9 +24,17 @@ void Input::init() {
 
     engine.input_map.setup_default_actions();
 }
-void Input::update() {
+void Input::update(const FrameData& time) {
     TMT_ZONE_SCOPED_N("Input")
-    SDL_Event event {};
+
+    // reset hold timers
+    for (auto& [action_name, input_action] : engine.input_map.actions) {
+        for (auto& event : input_action.events) {
+            if (event->is_just_released() == true) {
+                input_action.time_since_being_pressed = 0.0f;
+            }
+        }
+    }
     std::copy_n(keys_sdl, prev_keys.size(), prev_keys.begin());
     prev_mouse_buttons = mouse_buttons;
 
@@ -49,15 +59,17 @@ void Input::update() {
     scroll_dy = 0;
     // Get current mouse state
     mouse_buttons = SDL_GetMouseState(&mouse_x, &mouse_y);
-    while (SDL_PollEvent(&event)) {
-        internal::OnSdlEvent::dispatch(event);
-        switch (event.type) {
+
+    SDL_Event sdl_event {};
+    while (SDL_PollEvent(&sdl_event)) {
+        internal::OnSdlEvent::dispatch(sdl_event);
+        switch (sdl_event.type) {
             case SDL_EVENT_QUIT: {
                 engine.set_is_running(false);
                 break;
             }
             case SDL_EVENT_GAMEPAD_ADDED: {
-                int32_t id = event.gdevice.which;
+                int32_t id = sdl_event.gdevice.which;
                 SDL_Gamepad* handle = SDL_OpenGamepad(id);
                 if (handle) {
                     GamepadState state;
@@ -69,7 +81,7 @@ void Input::update() {
                 break;
             }
             case SDL_EVENT_GAMEPAD_REMOVED: {
-                int32_t id = event.gdevice.which;
+                int32_t id = sdl_event.gdevice.which;
                 auto it = gamepads.find(id);
                 if (it != gamepads.end()) {
                     Log::info(Log::Scope::ENGINE, "Gamepad removed: {}", it->second.name);
@@ -79,13 +91,13 @@ void Input::update() {
                 break;
             }
             case SDL_EVENT_MOUSE_MOTION: {
-                mouse_dx += event.motion.xrel;
-                mouse_dy += event.motion.yrel;
+                mouse_dx += sdl_event.motion.xrel;
+                mouse_dy += sdl_event.motion.yrel;
                 break;
             }
             case SDL_EVENT_WINDOW_RESIZED: {
-                engine.window.width = event.window.data1;
-                engine.window.height = event.window.data2;
+                engine.window.width = sdl_event.window.data1;
+                engine.window.height = sdl_event.window.data2;
                 engine.window.resized = true;
                 break;
             }
@@ -94,12 +106,20 @@ void Input::update() {
                 break;
             }
             case SDL_EVENT_MOUSE_WHEEL: {
-                scroll_dx = event.wheel.x;
-                scroll_dy = event.wheel.y;
+                scroll_dx = sdl_event.wheel.x;
+                scroll_dy = sdl_event.wheel.y;
                 break;
             }
             default:
                 break;
+        }
+    }
+    // update hold timers
+    for (auto& [action_name, input_action] : engine.input_map.actions) {
+        for (auto& event : input_action.events) {
+            if (event->is_pressed() == true) {
+                input_action.time_since_being_pressed += time.delta_time;
+            }
         }
     }
 }
@@ -128,8 +148,8 @@ bool Input::is_mouse_button_just_released(MouseButton button) const {
     return is_pressed == false && was_pressed == true;
 }
 
-bool Input::is_action_pressed(std::string_view name) const {
-    auto it = engine.input_map.actions.find(std::string {name});
+bool Input::is_action_pressed(const std::string& name) const {
+    auto it = engine.input_map.actions.find(name);
     if (it == engine.input_map.actions.end()) {
         Log::warn(Log::Scope::ENGINE, "No input action found with this name {}", name);
         return false;
@@ -141,8 +161,8 @@ bool Input::is_action_pressed(std::string_view name) const {
     return false;
 }
 
-bool Input::is_action_just_pressed(std::string_view name) const {
-    auto it = engine.input_map.actions.find(std::string {name});
+bool Input::is_action_just_pressed(const std::string& name) const {
+    auto it = engine.input_map.actions.find(name);
     if (it == engine.input_map.actions.end()) {
         Log::warn(Log::Scope::ENGINE, "No input action found with this name {}", name);
         return false;
@@ -155,8 +175,8 @@ bool Input::is_action_just_pressed(std::string_view name) const {
     return false;
 }
 
-bool Input::is_action_just_released(std::string_view name) const {
-    auto it = engine.input_map.actions.find(std::string {name});
+bool Input::is_action_just_released(const std::string& name) const {
+    auto it = engine.input_map.actions.find(name);
     if (it == engine.input_map.actions.end()) {
         Log::warn(Log::Scope::ENGINE, "No input action found with this name {}", name);
 
@@ -169,27 +189,38 @@ bool Input::is_action_just_released(std::string_view name) const {
 
     return false;
 }
-float Input::get_action_strength(std::string_view name) {
-    auto it = engine.input_map.actions.find(std::string {name});
+float Input::get_action_duration(const std::string& name) const {
+    auto it = engine.input_map.actions.find(name);
+    if (it == engine.input_map.actions.end()) {
+        Log::warn(Log::Scope::ENGINE, "No input action found with this name {}", name);
+
+        return 0.0f;
+    }
+    return it->second.time_since_being_pressed;
+}
+float Input::get_action_strength(const std::string& name) {
+    auto it = engine.input_map.actions.find(name);
     if (it == engine.input_map.actions.end()) {
         Log::warn(Log::Scope::ENGINE, "No input action found with this name {}", name);
 
         return 0.0f;
     }
 
-    // TODO inneficient in principle, could cache it once
+    // TODO inneficient in principle, could cache it once, but first it should be a bottleneck through profiling
     float max_strength = 0.0f;
     for (const auto& event : it->second.events) {
         auto strength = event->get_action_strength();
         if (strength < it->second.deadzone) {
             continue;
         }
+
         max_strength = std::max(strength, max_strength);
     }
-    return max_strength;
+
+    return max_strength * it->second.sensitivity;
 }
-float Input::get_action_raw_strength(std::string_view name) {
-    auto it = engine.input_map.actions.find(std::string {name});
+float Input::get_action_raw_strength(const std::string& name) {
+    auto it = engine.input_map.actions.find(name);
     if (it == engine.input_map.actions.end()) {
         Log::warn(Log::Scope::ENGINE, "No input action found with this name {}", name);
 
@@ -203,9 +234,11 @@ float Input::get_action_raw_strength(std::string_view name) {
     }
     return max_strength;
 }
-float Input::get_axis(std::string_view negative_action, std::string_view positive_action) { return get_action_strength(positive_action) - get_action_strength(negative_action); }
+float Input::get_axis(const std::string& negative_action, const std::string& positive_action) { return get_action_strength(positive_action) - get_action_strength(negative_action); }
 // https://github.com/godotengine/godot/blob/79603b2f28fdd8b0dce14064e488a3783d51d1ff/core/input/input.cpp#L548C1-L572C2
-glm::vec2 Input::get_vector(std::string_view negative_action_x, std::string_view positive_action_x, std::string_view negative_action_y, std::string_view positive_action_y, float deadzone) {
+glm::vec2 Input::get_vector(
+    const std::string& negative_action_x, const std::string& positive_action_x, const std::string& negative_action_y, const std::string& positive_action_y, float deadzone
+) {
     glm::vec2 vector {
         get_action_raw_strength(positive_action_x) - get_action_raw_strength(negative_action_x), get_action_raw_strength(positive_action_y) - get_action_raw_strength(negative_action_y)
     };

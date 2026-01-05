@@ -21,7 +21,75 @@
 #include "editor/imgui/components/all.hpp"
 #include "editor/imgui/types/all.hpp"
 
+#include "editor/events/scene.hpp"
+
 namespace tmt {
+
+template <typename T>
+void remove_component(const tmt::Inspector::MenuContext& menu_context) {
+    for (const Entity& entity : menu_context.selected_entities) {
+        const bool has_comp = engine.ecs.has_component<T>(entity);
+        if (has_comp == false) continue;
+        tmt::engine.ecs.remove_component<T>(entity);
+    }
+    OnSceneModified::dispatch();
+}
+
+void paste_component(const auto& name, const tmt::Inspector::MenuContext& menu_context) {
+    const char* clipboard_text = ImGui::GetClipboardText();
+    if (clipboard_text == nullptr) {
+        Log::warn("Failed to paste component, clipboard is empty.");
+        return;
+    }
+    const json deserialized = json::parse(clipboard_text, nullptr, false);
+    if (deserialized.is_discarded()) {
+        Log::error("Failed to parse clipboard JSON for component '{}'. Clipboard is: \"{}\"", name, clipboard_text);
+        return;
+    }
+
+    const auto name_in_clipboard = deserialized.value("component_type", "");
+    InspectComponents::for_each([&](auto type_tag_inner) {
+        using T_inner = typename decltype(type_tag_inner)::type;  // Extract type from tag
+        const auto name_of_type = tmt::Component<T_inner>::get_name();
+        if (name_in_clipboard != name_of_type) return;
+
+        const json data = deserialized.value("data", json::object());
+        for (const Entity& entity : menu_context.selected_entities) {
+            T_inner& target_instance = tmt::engine.ecs.add_or_get_component<T_inner>(entity);
+            Serializer::deserialize(data, target_instance);
+        }
+    });
+    OnSceneModified::dispatch();
+}
+
+void paste_values(const auto& name, const tmt::Inspector::MenuContext& menu_context) {
+    const char* clipboard_text = ImGui::GetClipboardText();
+    if (clipboard_text == nullptr) {
+        Log::warn("Failed to paste values, clipboard is empty.");
+        return;
+    }
+    const json deserialized = json::parse(clipboard_text, nullptr, false);
+    if (deserialized.is_discarded()) {
+        Log::error("Failed to parse clipboard JSON for component '{}'. Clipboard is: \"{}\"", name, clipboard_text);
+        return;
+    }
+
+    const auto name_in_clipboard = deserialized.value("component_type", "");
+    InspectComponents::for_each([&](auto type_tag_inner) {
+        using T_inner = typename decltype(type_tag_inner)::type;  // Extract type from tag
+        const auto name_of_type = tmt::Component<T_inner>::get_name();
+        if (name_in_clipboard != name_of_type) return;
+
+        const json data = deserialized.value("data", json::object());
+        for (const Entity& entity : menu_context.selected_entities) {
+            const bool has_comp = tmt::engine.ecs.has_component<T_inner>(entity);
+            if (has_comp == false) continue;
+            T_inner& target_instance = tmt::engine.ecs.get_component<T_inner>(entity);
+            Serializer::deserialize(data, target_instance);
+        }
+    });
+    OnSceneModified::dispatch();
+}
 
 void Inspector::display() {
     const auto& hierarchy = editor.windows.get<Hierarchy>();
@@ -31,7 +99,7 @@ void Inspector::display() {
         .selected_entities = hierarchy.get_selected_entities(),
     };
 
-    AllComponents::for_each([menu_context](auto type_tag) {
+    InspectComponents::for_each([menu_context](auto type_tag) {
         using T = typename decltype(type_tag)::type;  // Extract type from tag
 
         const bool has_component = tmt::engine.ecs.has_component<T>(menu_context.primary_entity);
@@ -52,11 +120,7 @@ void Inspector::display() {
 
         if (ImGui::BeginPopup(popup_id.c_str())) {
             if (ImGui::MenuItem("Remove Component")) {
-                for (const Entity& entity : menu_context.selected_entities) {
-                    const bool has_comp = engine.ecs.has_component<T>(entity);
-                    if (has_comp == false) continue;
-                    tmt::engine.ecs.remove_component<T>(entity);
-                }
+                remove_component<T>(menu_context);
                 ImGui::CloseCurrentPopup();
                 ImGui::EndPopup();
                 return;
@@ -71,48 +135,10 @@ void Inspector::display() {
             }
             if (ImGui::BeginMenu("Paste")) {
                 if (ImGui::MenuItem("Paste Component")) {
-                    const char* clipboard_text = ImGui::GetClipboardText();
-                    if (clipboard_text != nullptr) {
-                        const json deserialized = json::parse(clipboard_text, nullptr, false);
-                        if (deserialized.is_discarded()) {
-                            Log::error("Failed to parse clipboard JSON for component '{}'", name);
-                        } else {
-                            const auto name_in_clipboard = deserialized.value("component_type", "");
-                            AllComponents::for_each([&](auto type_tag_inner) {
-                                using T_inner = typename decltype(type_tag_inner)::type;  // Extract type from tag
-                                const auto name_of_type = tmt::Component<T_inner>::get_name();
-                                if (name_in_clipboard != name_of_type) return;
-                                const json data = deserialized.value("data", json::object());
-                                for (const Entity& entity : menu_context.selected_entities) {
-                                    T_inner& target_instance = tmt::engine.ecs.add_or_get_component<T_inner>(entity);
-                                    Serializer::deserialize(data, target_instance);
-                                }
-                            });
-                        }
-                    }
+                    paste_component(name, menu_context);
                     ImGui::CloseCurrentPopup();
-                } else if (ImGui::MenuItem("Paste Values Only")) {
-                    const char* clipboard_text = ImGui::GetClipboardText();
-                    if (clipboard_text != nullptr) {
-                        const json deserialized = json::parse(clipboard_text, nullptr, false);
-                        if (deserialized.is_discarded()) {
-                            Log::error("Failed to parse clipboard JSON for component '{}'", name);
-                        } else {
-                            const auto name_in_clipboard = deserialized.value("component_type", "");
-                            AllComponents::for_each([&](auto type_tag_inner) {
-                                using T_inner = typename decltype(type_tag_inner)::type;  // Extract type from tag
-                                const auto name_of_type = tmt::Component<T_inner>::get_name();
-                                if (name_in_clipboard != name_of_type) return;
-                                const json data = deserialized.value("data", json::object());
-                                for (const Entity& entity : menu_context.selected_entities) {
-                                    const bool has_comp = tmt::engine.ecs.has_component<T_inner>(entity);
-                                    if (has_comp == false) continue;
-                                    T_inner& target_instance = tmt::engine.ecs.get_component<T_inner>(entity);
-                                    Serializer::deserialize(data, target_instance);
-                                }
-                            });
-                        }
-                    }
+                } else if (ImGui::MenuItem("Paste Values")) {
+                    paste_values(name, menu_context);
                     ImGui::CloseCurrentPopup();
                 }
                 ImGui::EndMenu();
@@ -128,6 +154,9 @@ void Inspector::display() {
         const bool changed = response.get<T>().is_changed();
 
         if (changed == false) return;
+
+        OnSceneModified::dispatch();
+
         if (menu_context.selected_entities.size() <= 1) return;
 
         auto after = tmt::Serializer::serialize(component_instance);
@@ -157,7 +186,7 @@ void Inspector::add_component(const MenuContext& menu_context) {
     }
 
     if (ImGui::BeginPopup("AddComponentPopup")) {
-        AllComponents::for_each([menu_context](auto type_tag) {
+        InspectComponents::for_each([menu_context](auto type_tag) {
             using T = typename decltype(type_tag)::type;  // Extract type from tag
 
             for (const Entity& entity : menu_context.selected_entities) {
@@ -167,6 +196,7 @@ void Inspector::add_component(const MenuContext& menu_context) {
                 if (ImGui::MenuItem(name)) {
                     tmt::engine.ecs.add_component<T>(entity);
                     ImGui::CloseCurrentPopup();
+                    OnSceneModified::dispatch();
                 }
             }
         });
