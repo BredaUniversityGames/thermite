@@ -54,14 +54,7 @@ void Game::on_start() {
         registry.register_action(std::make_unique<tmt::PatrolArea>());
         registry.register_action(std::make_unique<tmt::ChasePlayer>());
         registry.register_action(std::make_unique<tmt::KillPlayer>());
-        // Give it whatever normal game components it needs
-        auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(ai);
 
-        // Add GOAP agent
-        auto& agent = tmt::engine.ecs.add_component<tmt::GoapAgent>(ai);
-
-        // Add world state (facts relevant to planning)
-        auto& ws = tmt::engine.ecs.add_component<tmt::WorldState>(ai);
 
         // --- Agent 1 ---
         tmt::Entity ai = ecs.create_entity();
@@ -78,6 +71,14 @@ void Game::on_start() {
             }
         }
 
+        // Give it whatever normal game components it needs
+        //auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(ai);
+
+        // Add GOAP agent
+        //auto& agent = tmt::engine.ecs.add_component<tmt::GoapAgent>(ai);
+
+        // Add world state (facts relevant to planning)
+        //auto& ws = tmt::engine.ecs.add_component<tmt::WorldState>(ai);
 
         // Define goals
         tmt::GoapGoal patrol_goal;
