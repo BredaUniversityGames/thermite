@@ -145,7 +145,7 @@ class MotionMathSystem : public ISystem {
             }
 
             if constexpr (std::is_same_v<T, glm::quat>) {
-                const bool is_complete = angle_err2(motion) < (eps_pos_complete * eps_pos_complete) && norm2_type(motion.state.current_velocity) < (eps_vel_complete * eps_vel_complete);
+                const bool is_complete = angle_err2(motion) < (EPS_POS_COMPLETE * EPS_POS_COMPLETE) && norm2_type(motion.state.current_velocity) < (EPS_VEL_COMPLETE * EPS_VEL_COMPLETE);
 
                 if (is_complete) {
                     it = motions.erase(it);
@@ -165,8 +165,8 @@ class MotionMathSystem : public ISystem {
 
                 *motion.value = out;
             } else {
-                bool is_complete = norm2_type(motion.state.current_state - motion.target) < (eps_pos_complete * eps_pos_complete) &&
-                                   norm2_type(motion.state.current_velocity) < (eps_vel_complete * eps_vel_complete);
+                bool is_complete = norm2_type(motion.state.current_state - motion.target) < (EPS_POS_COMPLETE * EPS_POS_COMPLETE) &&
+                                   norm2_type(motion.state.current_velocity) < (EPS_VEL_COMPLETE * EPS_VEL_COMPLETE);
                 if (is_complete) {
                     it = motions.erase(it);
                     continue;
