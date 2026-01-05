@@ -11,6 +11,7 @@
 #include "core/ecs.hpp"
 #include "core/scenes.hpp"
 #include "core/timer.hpp"
+#include "core/polyline.hpp"
 
 #include "core/renderer/renderer.hpp"
 
@@ -18,6 +19,8 @@
 #include "systems/animation/animation_system.hpp"
 #include "systems/camera/camera_system.hpp"
 #include "systems/ai/goap/goap_system.hpp"
+#include "systems/gameplay/gameplay.hpp"
+#include "systems/gameplay/game_component_registry.hpp"
 
 #include "events/engine.hpp"
 #include "events/game.hpp"
@@ -29,6 +32,7 @@
 
 bool tmt::Engine::get_is_running() const { return is_running; }
 void tmt::Engine::set_is_running(bool value) { is_running = value; }
+
 /* Singleton */
 tmt::Engine tmt::engine;
 
@@ -43,10 +47,14 @@ Engine::Engine()
       renderer(*new Renderer()),
       resources(*new Resources()),
       salvo(*new Salvo()),
-      scenes(*new Scenes()) {}
+      scenes(*new Scenes()),
+      polyline(*new Polyline()),
+      component_registry(*new GameComponentRegistry()) {}
 
 Engine::~Engine() {
     /* Destruction should be in reverse order */
+    delete &component_registry;
+    delete &polyline;
     delete &scenes;
     delete &salvo;
     delete &resources;
@@ -73,12 +81,14 @@ void Engine::init(std::unique_ptr<Application> user_app) {
     ecs.systems.add<Physics>();
     ecs.systems.add<RigModelManager>();
     ecs.systems.add<Goap>();
+    ecs.systems.add<Gameplay>(); /* Should be last */
 
     OnEngineInit::dispatch(app->specs);
 }
 
 // Example stuff
 void Engine::run() {
+    scenes.update(); /* Initial scene load if needed */
     timer.reset();
 
     float accumulator = 0.0f;
@@ -175,8 +185,9 @@ void Engine::start_game() {
     TMT_ZONE_SCOPED_N("Engine::start_game")
 
     app->on_start();
-    OnGameStart::dispatch();
     if (scenes.get_active_scene()) scenes.get_active_scene()->on_start();
+
+    OnGameStart::dispatch();
     OnSceneStart::dispatch();
 }
 
@@ -207,10 +218,12 @@ void Engine::resume_game() {
 
 void Engine::end_game() {
     TMT_ZONE_SCOPED_N("Engine::end_game")
-    app->on_end();
-    OnGameEnd::dispatch();
+
     if (scenes.get_active_scene()) scenes.get_active_scene()->on_end();
+    app->on_end();
+
     OnSceneEnd::dispatch();
+    OnGameEnd::dispatch();
 }
 
 }  // namespace tmt
