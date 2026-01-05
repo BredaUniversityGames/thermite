@@ -14,19 +14,19 @@
 
 #include "engine/engine.hpp"
 
-#include "pipelines/debug_pipeline.hpp"
+#include "pipelines/polyline_pipeline.hpp"
 #include "pipelines/geometry_pipeline.hpp"
 #include "pipelines/di_pipeline.hpp"
 #include "tools/profiler.hpp"
 
 namespace tmt {
 
-Renderer::Renderer() : gpu(*new GPUAdapter()), render_graph(*new RenderGraph()), debug_pipeline(*new DebugPipeline()), geometry_pipeline(*new GeometryPipeline()), di_pipeline(*new DiPipeline()) {}
+Renderer::Renderer() : gpu(*new GPUAdapter()), render_graph(*new RenderGraph()), geometry_pipeline(*new GeometryPipeline()), di_pipeline(*new DiPipeline()), polyline_pipeline(*new PolylinePipeline()) {}
 
 Renderer::~Renderer() {
+    delete &polyline_pipeline;
     delete &di_pipeline;
     delete &geometry_pipeline;
-    delete &debug_pipeline;
     delete &render_graph;
     delete &gpu;
 }
@@ -55,7 +55,12 @@ void Renderer::init() {
     gpu.set_max_samplers(32u);
 
     /* Initialize the GPU adapter */
-    if (const Result r = gpu.init(true); r.is_err()) {
+    bool sync_validation = false; // Sync validation is enabled only in Debug
+#ifdef THERMITE_DEBUG
+    sync_validation = true;
+#endif  //
+
+    if (const Result r = gpu.init(true, sync_validation); r.is_err()) {
         Log::error(Log::Scope::RENDERER, "failed to initialize gpu adapter.\nreason: {}", r.unwrap_err());
         return;
     }
@@ -74,7 +79,7 @@ void Renderer::init() {
     scene_view.init();
 
     /* Initialize pipelines */
-    debug_pipeline.init(gpu);
+    polyline_pipeline.init(gpu);
 
     debug_transform.set_local_position({0.0f, 0.0f, -1.0f});
 }
@@ -102,7 +107,7 @@ void Renderer::update() {
     /* Enqueue pipelines */
     geometry_pipeline.enqueue(render_graph, render_view, scene_view);
     di_pipeline.enqueue(render_graph, render_view, scene_view);
-    debug_pipeline.enqueue(render_graph, render_view);
+    polyline_pipeline.enqueue(render_graph, render_view);
 
 #ifdef THERMITE_EDITOR
     /* Add the immediate mode GUI to the render graph */
@@ -130,7 +135,7 @@ void Renderer::end() {
     scene_view.deinit();
 
     /* Pipelines cleanup */
-    debug_pipeline.deinit(gpu);
+    polyline_pipeline.deinit(gpu);
 
     /* Cleanup the VRAM bank & GPU adapter */
     render_graph.deinit().expect("failed to destroy render graph.");
@@ -150,26 +155,6 @@ void Renderer::set_imgui(ImGUI* new_imgui) {
     render_view.imgui_viewport = imgui->add_image(render_view.viewport.image);
 }
 #endif
-
-void Renderer::draw_line(const glm::vec3 start, const glm::vec3 end, const glm::vec3 color, const float time) { debug_pipeline.draw_line(start, end, color, time); }
-
-void Renderer::draw_circle(const glm::vec3 center, const float radius, const glm::vec3 axis_a, const glm::vec3 axis_b, const glm::vec3 color, int segments, const float time) {
-    debug_pipeline.draw_circle(center, radius, axis_a, axis_b, color, segments, time);
-}
-
-void Renderer::draw_sphere(const glm::vec3 center, const float radius, const glm::vec3 color, int rings, int segments, const float time) {
-    debug_pipeline.draw_sphere(center, radius, color, rings, segments, time);
-}
-
-void Renderer::draw_arrow(const glm::vec3 start, glm::vec3 dir, const glm::vec3 color, float length, float head_length, float head_angle, const float time) {
-    debug_pipeline.draw_arrow(start, dir, color, length, head_length, head_angle, time);
-}
-
-void Renderer::draw_cross(const glm::vec3 center, const glm::vec3 color, const float size, const glm::quat rot, const float time) { debug_pipeline.draw_cross(center, color, size, rot, time); }
-
-void Renderer::draw_obb(const glm::vec3 center, const float width, const float height, const float depth, const glm::vec3 color, const glm::quat rot, const float time) {
-    debug_pipeline.draw_obb(center, width, height, depth, color, rot, time);
-}
 
 VRAMBank& Renderer::vram_bank() { return gpu.get_vram_bank(); }
 
