@@ -77,8 +77,8 @@ class MotionMathSystem : public ISystem {
 
     constexpr std::string get_name() { return "Motion Math System"; };
     // completion epsilons
-    static inline const float eps_pos_complete = 0.001f;
-    static inline const float eps_vel_complete = 0.001f;
+    static inline const float EPS_POS_COMPLETE = 0.001f;
+    static inline const float EPS_VEL_COMPLETE = 0.001f;
 
     // bucket of same T, type-erased
     struct Bucket {
