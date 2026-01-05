@@ -13,13 +13,13 @@ import math;
 static const uint FUSE_LENGTH = 32u;
 static const uint64_t EMPTY_KEY = 0ull;
 
-/* Active render view */
+/* Active render view. */
 ConstantBuffer<RenderView> render_view;
-/* Visibility buffer */
+/* Visibility buffer. */
 RWTexture2D<uint2> vbuffer;
-/* Macrofacet Hash Set */
+/* Macrofacet hash set. */
 RWStructuredBuffer<uint64_t> macrofacet_hashset;
-/* Macrofacet Shading Commands Buffer */
+/* Macrofacet shading commands buffer. */
 /* NOTE: First 4 uints are indirect dispatch args, after that uint64_t commands. */
 RWStructuredBuffer<uint> macrofacet_shading_commands;
 
@@ -43,7 +43,7 @@ void main(int2 thread_id: SV_DispatchThreadID) {
         /* Exit if we found a slot which already exists matching our key */
         if (macrofacet_hashset[slot] == facet_key) break;
 
-        /* If the current slot is emtpy */
+        /* If the current slot is empty */
         if (macrofacet_hashset[slot] == EMPTY_KEY) {
             uint64_t original_key = 0u; /* Try to claim this slot */
             InterlockedCompareExchange(macrofacet_hashset[slot], EMPTY_KEY, facet_key, original_key);
