@@ -15,7 +15,7 @@
 #include "engine/core/scenes.hpp"
 
 #include "editor/imgui/manager.hpp"
-#include "editor/core/font_manager.hpp"
+#include "editor/core/systems/font_manager.hpp"
 
 /* Windows */
 #include "editor/windows/hierarchy.hpp"
