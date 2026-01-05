@@ -45,7 +45,6 @@ class TableScene : public tmt::Scene<TableScene> {
     void on_start() override;
     void on_update(const tmt::FrameData& time) override;
     void on_end() override;
-
 };
 
 std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs& args) {
@@ -112,15 +111,15 @@ void DragonScene::on_update(const tmt::FrameData& time) {
             float rrx = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * 180.0f;
             float rry = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * 180.0f;
             glm::quat rand_quat = glm::quat(glm::vec3(glm::radians(rrx), glm::radians(rry), 0.0f));
-           // motion_math.do_motion(&mm_quats[i], mm_quats[i], rand_quat);
+            // motion_math.do_motion(&mm_quats[i], mm_quats[i], rand_quat);
             motion_math.do_motion(&mm_scalars[i], mm_scalars[i], rand() / static_cast<float>(RAND_MAX));
-        }        
+        }
     }
 
     unsigned int i = 0;
     for (auto [entity, transform, renderer] : tmt::engine.ecs.get_registry().view<tmt::Transform, tmt::VoxelRenderer>().each()) {
         transform.set_world_scale(glm::vec3(mm_scalars[i]));
-        //transform.set_world_rotation(mm_quats[i]);
+        // transform.set_world_rotation(mm_quats[i]);
         ++i;
     }
 }

@@ -42,7 +42,6 @@ class TableScene : public tmt::Scene<TableScene> {
     void on_start() override;
     void on_update(const tmt::FrameData& time) override;
     void on_end() override;
-
 };
 
 std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs& args) {
