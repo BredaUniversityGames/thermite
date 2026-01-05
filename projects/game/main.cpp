@@ -33,8 +33,6 @@ class DragonScene : public tmt::Scene<DragonScene> {
 
     tmt::Entity voxel {};
     float elapsed_time = 0.0f;
-    float mm_scalars[255];
-    glm::quat mm_quats[255];
     void generate_random_entities(tmt::ResourceRef<tmt::VoxelVolume>& voxel_volume);
 };
 
@@ -104,25 +102,6 @@ void DragonScene::on_update(const tmt::FrameData& time) {
     if (tmt::engine.input.is_keyboard_button_released(tmt::Key::SPACE)) {
         tmt::engine.scenes.enqueue_scene<TableScene>();
     }
-
-    if (tmt::engine.input.is_keyboard_button_released(tmt::Key::R)) {
-        auto& motion_math = tmt::engine.ecs.systems.get<tmt::MotionMathSystem>();
-
-        for (size_t i = 0; i < 255; i++) {
-            float rrx = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * 180.0f;
-            float rry = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * 180.0f;
-            glm::quat rand_quat = glm::quat(glm::vec3(glm::radians(rrx), glm::radians(rry), 0.0f));
-           // motion_math.do_motion(&mm_quats[i], mm_quats[i], rand_quat);
-            motion_math.do_motion(&mm_scalars[i], mm_scalars[i], rand() / static_cast<float>(RAND_MAX));
-        }        
-    }
-
-    unsigned int i = 0;
-    for (auto [entity, transform, renderer] : tmt::engine.ecs.get_registry().view<tmt::Transform, tmt::VoxelRenderer>().each()) {
-        transform.set_world_scale(glm::vec3(mm_scalars[i]));
-        //transform.set_world_rotation(mm_quats[i]);
-        ++i;
-    }
 }
 
 void DragonScene::on_end() {}
@@ -168,33 +147,5 @@ void generate_random_entities(tmt::ResourceRef<tmt::VoxelVolume>& voxel_volume) 
         transform.set_world_position(glm::vec3(rx, ry, rz));
         transform.set_world_rotation(glm::vec3(glm::radians(rrx), glm::radians(rry), 0.0f));
         transform.set_world_scale(1.0f + glm::vec3(s, s, s));
-    }
-}
-
-void DragonScene::generate_random_entities(tmt::ResourceRef<tmt::VoxelVolume>& voxel_volume) {
-    srand(0);  // Fixed seed for consistent results
-    constexpr float PRIM_RANGE = 256.0f;
-    auto& motion_math = tmt::engine.ecs.systems.get<tmt::MotionMathSystem>();
-    for (int i = 0; i < 255; ++i) {
-        auto entity = tmt::engine.ecs.create_entity();
-        auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
-        auto& renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(entity);
-        renderer.resource = voxel_volume;
-        float s = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * 3.0f;
-        float rx = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * PRIM_RANGE - (PRIM_RANGE / 2.0f);
-        float ry = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * PRIM_RANGE - (PRIM_RANGE / 2.0f);
-        float rz = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * PRIM_RANGE - (PRIM_RANGE / 2.0f);
-        float rrx = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * 180.0f;
-        float rry = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * 180.0f;
-        transform.set_world_position(glm::vec3(rx, ry, rz));
-        transform.set_world_scale(1.0f + glm::vec3(s, s, s));
-
-        glm::quat rand_quat = glm::quat(glm::vec3(glm::radians(rrx), glm::radians(rry), 0.0f));
-
-        mm_scalars[i] = 0.f;
-        mm_quats[i] = glm::quat(1, 0, 0, 0);
-
-        motion_math.do_motion(&mm_scalars[i], 0.f, 1.f);
-        motion_math.do_motion(&mm_quats[i], mm_quats[i], rand_quat);
     }
 }
