@@ -23,6 +23,7 @@ class AssetBrowser : public IWindow {
 
     constexpr std::string get_title() const override { return ICON_MS_FOLDER " Asset Browser"; }
     constexpr int get_window_flags() const override { return ImGuiWindowFlags_MenuBar; }
+    constexpr bool default_open() const override { return true; }
 
     void display() override;
 
