@@ -71,8 +71,19 @@ void GoapDebugger::display() {
             }
         }
 
-        if (ImGui::Combo("Select Agent", &current_index, agent_names.data(), (int)agent_names.size())) {
-            selected_agent = agents[current_index];
+        static const char* combo_preview_val = "Select Agent..";
+        if(ImGui::BeginCombo("Select Agent", combo_preview_val))
+        {
+            for(auto agent : agents)
+            {
+                const char*& name = agent_names[static_cast<uint32_t>(agent) - 1];
+                if(ImGui::Selectable(name))
+                {
+                    selected_agent = agents[current_index];
+                    combo_preview_val = name;
+                }
+            }
+            ImGui::EndCombo();
         }
     }
 
