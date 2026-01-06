@@ -22,9 +22,10 @@ enum class DisplayMode : uint32_t {
     Depth, /* Visualize geometric depth data. (0..100) */
     Normals, /* Visualize geometric normal data. */
     Albedo, /* Visualize material albedo. */
+    Illuminance, /* Visualize illuminance from the cache. */
 };
-static const DisplayMode DISPLAY_MODES[] { DisplayMode::Default, DisplayMode::Steps, DisplayMode::Visibility, DisplayMode::Depth, DisplayMode::Normals, DisplayMode::Albedo };
-static const char* DISPLAY_MODE_NAMES[] { "Default", "Steps (0..128)", "Visibility", "Depth (0..100)", "Normals", "Albedo" };
+static const DisplayMode DISPLAY_MODES[] { DisplayMode::Default, DisplayMode::Steps, DisplayMode::Visibility, DisplayMode::Depth, DisplayMode::Normals, DisplayMode::Albedo, DisplayMode::Illuminance };
+static const char* DISPLAY_MODE_NAMES[] { "Default", "Steps (0..128)", "Visibility", "Depth (0..100)", "Normals", "Albedo", "Illuminance" };
 
 class Renderer {
     GPUAdapter& gpu;

@@ -48,24 +48,17 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
         .write(render_view.macrofacet_illuminance_cache) /* Illuminance cache buffer */
         .group_size(128)
         .indirect_size(render_view.macrofacet_shading_commands);
-        
-    /* DEBUGGING */
-    render_graph.add_compute_pass("[debug] illuminance pass", "debug/illuminance.cs")
-        .read(render_view.render_view_buffer) /* Render view buffer */
-        .read(render_view.vbuffer.image) /* Visibility buffer */
-        .read(render_view.macrofacet_illuminance_cache) /* Illuminance cache buffer */
-        .write(render_image) /* Render target */
-        .group_size(16, 8)
-        .work_size(render_res.x, render_res.y);
-        
-    /* DEBUGGING */
-    // render_graph.add_compute_pass("[debug] occupancy pass", "debug/occupancy.cs")
-    //     .read(render_view.render_view_buffer) /* Render view buffer */
-    //     .read(render_view.vbuffer.image) /* Visibility buffer */
-    //     .read(render_view.macrofacet_hashset) /* Macrofacet hash set buffer */
-    //     .write(render_image) /* Render target */
-    //     .group_size(16, 8)
-    //     .work_size(render_res.x, render_res.y);
+
+    /* Debug visualizations */
+    if (engine.renderer.display_mode == DisplayMode::Illuminance) {
+        render_graph.add_compute_pass("[debug] illuminance pass", "debug/illuminance.cs")
+            .read(render_view.render_view_buffer) /* Render view buffer */
+            .read(render_view.vbuffer.image) /* Visibility buffer */
+            .read(render_view.macrofacet_illuminance_cache) /* Illuminance cache buffer */
+            .write(render_image) /* Render target */
+            .group_size(16, 8)
+            .work_size(render_res.x, render_res.y);
+    }
 }
 
 /* clang-format on */
