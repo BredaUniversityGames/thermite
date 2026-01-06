@@ -5,10 +5,10 @@
 
 // Unpack the trivially copyable buffer containing the IO::FileLocation data.
 inline tmt::IO::FileLocation buffer_to_file_location(const void* buffer, const size_t size) {
-    constexpr size_t sub_location_size = sizeof(tmt::IO::Location);
+    constexpr size_t SUB_LOCATION_SIZE = sizeof(tmt::IO::Location);
 
     const tmt::IO::Location sub_location = *static_cast<const tmt::IO::Location*>(buffer);
-    const std::string_view relative_path_view {static_cast<const char*>(buffer) + sub_location_size, size - sub_location_size};
+    const std::string_view relative_path_view {static_cast<const char*>(buffer) + SUB_LOCATION_SIZE, size - SUB_LOCATION_SIZE};
 
     return {sub_location, relative_path_view};
 }
