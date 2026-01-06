@@ -135,6 +135,7 @@ void NavMesh::generate_mesh(tmt::ResourceRef<tmt::VoxelVolume> voxel_volume, int
 
 std::vector<int> NavMesh::find_path(const int starting_node_id, const int ending_node_id) {
     std::vector<int> open = std::vector<int>();
+    std::unordered_set<int> closed;
     open.push_back(starting_node_id);
     nodes[starting_node_id].g = 0.0f;
     nodes[starting_node_id].parent = NULL;
@@ -167,10 +168,12 @@ std::vector<int> NavMesh::find_path(const int starting_node_id, const int ending
 
         // remove current from open list
         open.erase(open.begin() + current_index);
+        closed.insert(current_index);
 
         // add all connecting nodes with a better path to open list
         for (int i = 0; i < (int)nodes[current].connecting_nodes.size(); i++) {
             int next = nodes[current].connecting_nodes[i];
+            if (closed.count(next)) continue;
             float edgeCost = glm::distance(nodes[next].local_pos, nodes[current].local_pos);
 
             // if g is not set or we found a better path to next node
