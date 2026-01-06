@@ -4,6 +4,8 @@
 
 #include "engine/core/logger.hpp"
 #include "editor/editor.hpp"
+#include "engine/engine.hpp"
+#include "engine/core/input/input.hpp"
 
 namespace tmt {
 
@@ -28,6 +30,7 @@ void UndoRedoManager::display() {
         undo_stack.clear();
         redo_stack.clear();
     }
+
     ImGui::BeginChild("UndoRedoManager_UndoStack", ImVec2(0, 200), true);
     ImGui::Text("Undo Stack:");
     for (int i = static_cast<int>(undo_stack.size()) - 1; i >= 0; i--) {
@@ -35,6 +38,7 @@ void UndoRedoManager::display() {
         ImGui::BulletText("%s", entry.message.c_str());
     }
     ImGui::EndChild();
+
     ImGui::BeginChild("UndoRedoManager_RedoStack", ImVec2(0, 200), true);
     ImGui::Text("Redo Stack:");
     for (int i = static_cast<int>(redo_stack.size()) - 1; i >= 0; i--) {
@@ -46,7 +50,24 @@ void UndoRedoManager::display() {
 
 void UndoRedoManager::on_editor_start() {}
 
-void UndoRedoManager::on_editor_update(const FrameData& time) {}
+void UndoRedoManager::on_editor_update(const FrameData& time) {
+    if (engine.game_controller.is_running()) return;
+
+    const bool ctrl_down = engine.input.is_keyboard_button_pressed(Key::LEFT_CTRL);
+    const bool is_shift_down = engine.input.is_keyboard_button_pressed(Key::LEFT_SHIFT);
+    const bool is_z_just_pressed = engine.input.is_keyboard_button_just_pressed(Key::Z);
+    const bool is_y_just_pressed = engine.input.is_keyboard_button_just_pressed(Key::Y);
+
+    if (ctrl_down && is_z_just_pressed) {
+        if (is_shift_down) {
+            redo();
+        } else {
+            undo();
+        }
+    } else if (ctrl_down && is_y_just_pressed) {
+        redo();
+    }
+}
 
 void UndoRedoManager::on_editor_end() {}
 
