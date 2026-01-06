@@ -6,6 +6,8 @@
 
 #include "engine/systems/ai/goap/components/goap_agent.hpp"
 #include "engine/systems/ai/goap/components/world_state.hpp"
+#include "engine/systems/ai/goap/components/goap_action_overrides.hpp"
+#include "engine/systems/ai/goap/goap_system.hpp"
 
 #include <extern/imgui-node-editor/imgui_node_editor.h>
 namespace ignode = ax::NodeEditor;
@@ -28,6 +30,17 @@ void GoapDebugger::on_editor_end() {
     }
 }
 
+/**
+ * Main display function for the GOAP Debugger window.
+ *
+ *   - Allow selecting a GOAP agent from all entities in the ECS.
+ *   - Display detailed information about the selected agent:
+ *       - Active goal
+ *       - Current plan with steps, preconditions, and effects
+ *       - World state facts
+ *       - Available goals and actions
+ *   - Render a visual graph of the agent's plan and available actions/goals.
+ */
 void GoapDebugger::display() {
     auto& ecs = engine.ecs.get_registry();
     static Entity selected_agent = entt::null;
@@ -82,7 +95,21 @@ void GoapDebugger::display() {
     ImGui::End();
 }
 
+/**
+ * Draws the details view of a GOAP agent in the editor.
+ *
+ * Sections displayed:
+ *   - Active goal
+ *   - Plan steps with cost, preconditions, effects, and current action highlight
+ *   - World state facts with editable checkboxes for boolean values (for testing purposes)
+ *   - Available goals with priority and relevance
+ *   - Available actions with cost and precondition checks
+ *
+ * Allows forcing a manual replan if needed.
+ */
 void GoapDebugger::draw_details_view(GoapAgent& agent, WorldState& ws) {
+    auto& overrides = GoapActionOverrides::instance();
+
     // --- Active goal ---
     if (agent.has_goal()) {
         ImGui::Text("Active Goal: %s", agent.active_goal.name.c_str());
@@ -94,7 +121,27 @@ void GoapDebugger::draw_details_view(GoapAgent& agent, WorldState& ws) {
     if (ImGui::TreeNode("Plan")) {
         for (int i = 0; i < (int)agent.plan.size(); ++i) {
             bool current = (i == agent.current_index);
-            ImGui::Text("%s %s", current ? "->" : " ", agent.plan[i]->get_id());
+
+            // Merge overrides
+            auto* override = overrides.find(agent.plan[i]->get_id());
+            EffectiveGoapAction effective = build_effective_action(*agent.plan[i], override);
+
+            ImGui::Text("%s [cost: %.1f] %s", agent.plan[i]->get_id().c_str(), effective.cost, current ? "-> CURRENT" : "");
+
+            // Optional: show preconditions/effects per plan node
+            if (ImGui::TreeNode((std::string("Preconditions##") + std::to_string((uintptr_t)agent.plan[i])).c_str())) {
+                for (auto& [key, val] : effective.preconditions) {
+                    ImGui::Text("%s = %s", key.c_str(), val ? "true" : "false");
+                }
+                ImGui::TreePop();
+            }
+
+            if (ImGui::TreeNode((std::string("Effects##") + std::to_string((uintptr_t)agent.plan[i])).c_str())) {
+                for (auto& [key, val] : effective.effects) {
+                    ImGui::Text("%s = %s", key.c_str(), val ? "true" : "false");
+                }
+                ImGui::TreePop();
+            }
         }
         ImGui::TreePop();
     }
@@ -103,15 +150,14 @@ void GoapDebugger::draw_details_view(GoapAgent& agent, WorldState& ws) {
     if (ImGui::TreeNode("World State")) {
         for (auto& [id, val] : ws.facts) {
             const std::string& fact_name = FactRegistry::instance().get_name(id);
-            ImGui::PushID(id);  // ensure unique ImGui ID per fact
+            ImGui::PushID(id);  // unique ID for ImGui
 
             switch (val.value_type) {
-                case FactValue::Type::BOOL_TYPE: {
+                case FactValue::Type::BOOL_TYPE:
                     if (ImGui::Checkbox(fact_name.c_str(), &val.bool_val)) {
                         agent.needs_replan = true;
                     }
                     break;
-                }
                 case FactValue::Type::INT_TYPE:
                     ImGui::Text("%s = %d", fact_name.c_str(), val.int_val);
                     break;
@@ -138,12 +184,23 @@ void GoapDebugger::draw_details_view(GoapAgent& agent, WorldState& ws) {
         for (const GoapAction* action : agent.available_actions) {
             if (!action) continue;
 
-            bool can_run = action->check_preconditions(ws);
-            ImGui::Text("%s [cost: %.1f] %s", action->get_id(), action->cost, can_run ? "(can run)" : "(cannot run)");
+            auto* override = overrides.find(action->get_id());
+            EffectiveGoapAction effective = build_effective_action(*action, override);
+
+            bool can_run = true;
+            for (auto& [fact, val] : effective.preconditions) {
+                auto it = ws.facts.find(std::hash<std::string>()(fact));
+                if (it == ws.facts.end() || it->second.bool_val != val) {
+                    can_run = false;
+                    break;
+                }
+            }
+
+            ImGui::Text("%s [cost: %.1f] %s", action->get_id().c_str(), effective.cost, can_run ? "(can run)" : "(cannot run)");
 
             // --- Preconditions ---
             if (ImGui::TreeNode((std::string("Preconditions##") + std::to_string((uintptr_t)action)).c_str())) {
-                for (auto& [key, val] : action->preconditions) {
+                for (auto& [key, val] : effective.preconditions) {
                     ImGui::Text("%s = %s", key.c_str(), val ? "true" : "false");
                 }
                 ImGui::TreePop();
@@ -151,7 +208,7 @@ void GoapDebugger::draw_details_view(GoapAgent& agent, WorldState& ws) {
 
             // --- Effects ---
             if (ImGui::TreeNode((std::string("Effects##") + std::to_string((uintptr_t)action)).c_str())) {
-                for (auto& [key, val] : action->effects) {
+                for (auto& [key, val] : effective.effects) {
                     ImGui::Text("%s = %s", key.c_str(), val ? "true" : "false");
                 }
                 ImGui::TreePop();
@@ -172,6 +229,14 @@ struct PlanNode {
     int outPin;
 };
 
+/**
+ * Draws a visual graph of the agent's current plan, available actions, and goals.
+ *
+ * Display:
+ *   - Plan sequence as nodes connected from start to active goal
+ *   - Available actions with preconditions and effects
+ *   - Available goals with priority and relevance
+ */
 void GoapDebugger::draw_goap_graph(GoapAgent& agent, WorldState& ws) {
     ignode::SetCurrentEditor(g_Context);
     ignode::Begin("GOAP Graph");
@@ -190,14 +255,14 @@ void GoapDebugger::draw_goap_graph(GoapAgent& agent, WorldState& ws) {
 
     std::vector<PlanNode> planNodes;
 
-    // ================= Plan =================
+    // --- Plan ---
     for (int i = 0; i < (int)agent.plan.size(); ++i) {
         PlanNode n {nodeId++, pinId++, pinId++};
         planNodes.push_back(n);
 
         ignode::BeginNode(n.node);
 
-        ImGui::Text("%s", agent.plan[i]->get_id());
+        ImGui::Text("%s", agent.plan[i]->get_id().c_str());
 
         if (i == agent.current_index) {
             ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 200, 50, 255));
@@ -214,7 +279,7 @@ void GoapDebugger::draw_goap_graph(GoapAgent& agent, WorldState& ws) {
         ignode::SetNodePosition(n.node, ImVec2(planX + i * colSpacing, planY));
     }
 
-    // ================= Active goal =================
+    // --- Active goal ---
     int goalNode = nodeId++;
     int goalPin = pinId++;
 
@@ -226,12 +291,12 @@ void GoapDebugger::draw_goap_graph(GoapAgent& agent, WorldState& ws) {
 
     ignode::SetNodePosition(goalNode, ImVec2(planX + agent.plan.size() * colSpacing, planY));
 
-    // ================= Plan links =================
+    // --- Plan links ---
     for (size_t i = 0; i + 1 < planNodes.size(); ++i) ignode::Link(linkId++, planNodes[i].outPin, planNodes[i + 1].inPin);
 
     if (!planNodes.empty()) ignode::Link(linkId++, planNodes.back().outPin, goalPin);
 
-    // ================= Actions + goals rows =================
+    // --- Actions + goals rows ---
     float actionsX = 0.0f;
     float goalsX = actionsX + colSpacing;
 
@@ -249,7 +314,7 @@ void GoapDebugger::draw_goap_graph(GoapAgent& agent, WorldState& ws) {
 
                 ImGui::Text("Action");
                 ImGui::Separator();
-                ImGui::Text("%s", a->get_id());
+                ImGui::Text("%s", a->get_id().c_str());
                 ImGui::Text("Cost: %.1f", a->cost);
 
                 ImGui::Text("Preconditions:");
@@ -279,7 +344,7 @@ void GoapDebugger::draw_goap_graph(GoapAgent& agent, WorldState& ws) {
         }
     }
 
-    // ================= Camera =================
+    // --- Camera ---
     static bool firstFrame = true;
     if (firstFrame) {
         ignode::NavigateToContent();

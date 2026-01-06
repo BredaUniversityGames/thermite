@@ -16,14 +16,26 @@ void GoapActionEditor::on_editor_start() { GoapActionOverrides::instance().load(
 
 void GoapActionEditor::on_editor_end() { GoapActionOverrides::instance().save(); }
 
+/**
+ * Display the editor UI for editing action overrides.
+ *
+ * Features:
+ *   - Action selector combo
+ *   - Cost editor
+ *   - Preconditions editor
+ *   - Effects editor
+ * All of these can also be reset to their origional value
+ */
 void GoapActionEditor::display() {
-    const auto& actions_map = GoapActionRegistry::instance().get_all();
+    auto& registry = GoapActionRegistry::instance();
+    auto& overrides = GoapActionOverrides::instance();
+
+    const auto& actions_map = registry.get_all();
     if (actions_map.empty()) {
         ImGui::Text("No actions registered.");
         return;
     }
 
-    // --- Build selection list ---
     static int selected_index = 0;
     static std::vector<std::string> action_ids;
     static std::vector<const char*> action_labels;
@@ -31,70 +43,87 @@ void GoapActionEditor::display() {
     if (action_ids.empty()) {
         for (const auto& [id, action] : actions_map) {
             action_ids.push_back(id);
-            action_labels.push_back(action_ids.back().c_str());
+            action_labels.push_back(id.c_str());
         }
     }
 
-    ImGui::Combo("Select Action", &selected_index, action_labels.data(), static_cast<int>(action_labels.size()));
-
-    std::string sel_id = action_ids[selected_index];
-    GoapAction* action = GoapActionRegistry::instance().get(sel_id);
+    ImGui::Combo("Select Action", &selected_index, action_labels.data(), (int)action_labels.size());
+    const std::string& action_id = action_ids[selected_index];
+    GoapAction* action = registry.get(action_id);
     if (!action) return;
 
+    auto& data = overrides.get(action_id);
+
+    // --- Cost ---
     ImGui::SeparatorText("Cost");
-    ImGui::DragFloat("Cost", &action->cost, 0.1f, 0.0f, 100.0f);
+    float cost = (data.cost >= 0.f) ? data.cost : action->cost;
+    if (ImGui::DragFloat("Cost", &cost, 0.1f)) {
+        data.cost = cost;
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Reset Cost")) data.cost = -1.f;
 
     // --- Preconditions ---
     if (ImGui::TreeNode("Preconditions")) {
-        for (auto it = action->preconditions.begin(); it != action->preconditions.end();) {
+        if (ImGui::Button("Reset Preconditions")) data.preconditions.clear();
+
+        auto merged = action->preconditions;
+        for (auto& [k, v] : data.preconditions) merged[k] = v;
+
+        for (auto it = merged.begin(); it != merged.end();) {
+            bool val = it->second;
             ImGui::PushID(it->first.c_str());
-            ImGui::Checkbox(it->first.c_str(), &it->second);
+            if (ImGui::Checkbox(it->first.c_str(), &val)) data.preconditions[it->first] = val;
             ImGui::SameLine();
             if (ImGui::Button("X")) {
-                it = action->preconditions.erase(it);
-            } else {
+                data.preconditions.erase(it->first);
+                it = merged.erase(it);
+            } else
                 ++it;
-            }
             ImGui::PopID();
         }
 
-        static char newFact[64] = "";
+        static char newFact[64] {};
         ImGui::InputText("Add Fact", newFact, 64);
         ImGui::SameLine();
-        if (ImGui::Button("Add##Precondition")) {
-            if (strlen(newFact) > 0) {
-                action->preconditions[newFact] = true;
+        if (ImGui::Button("Add")) {
+            if (newFact[0]) {
+                data.preconditions[newFact] = true;
                 newFact[0] = '\0';
             }
         }
-
         ImGui::TreePop();
     }
 
     // --- Effects ---
     if (ImGui::TreeNode("Effects")) {
-        for (auto it = action->effects.begin(); it != action->effects.end();) {
+        if (ImGui::Button("Reset Effects")) data.effects.clear();
+
+        auto merged = action->effects;
+        for (auto& [k, v] : data.effects) merged[k] = v;
+
+        for (auto it = merged.begin(); it != merged.end();) {
+            bool val = it->second;
             ImGui::PushID(it->first.c_str());
-            ImGui::Checkbox(it->first.c_str(), &it->second);
+            if (ImGui::Checkbox(it->first.c_str(), &val)) data.effects[it->first] = val;
             ImGui::SameLine();
             if (ImGui::Button("X")) {
-                it = action->effects.erase(it);
-            } else {
+                data.effects.erase(it->first);
+                it = merged.erase(it);
+            } else
                 ++it;
-            }
             ImGui::PopID();
         }
 
-        static char newEffect[64] = "";
+        static char newEffect[64] {};
         ImGui::InputText("Add Effect", newEffect, 64);
         ImGui::SameLine();
-        if (ImGui::Button("Add##Effect")) {
-            if (strlen(newEffect) > 0) {
-                action->effects[newEffect] = true;
+        if (ImGui::Button("Add")) {
+            if (newEffect[0]) {
+                data.effects[newEffect] = true;
                 newEffect[0] = '\0';
             }
         }
-
         ImGui::TreePop();
     }
 }

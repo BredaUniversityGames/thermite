@@ -128,6 +128,31 @@ struct Node {
     float total_cost() const { return cost_so_far + heuristic; }
 };
 
+EffectiveGoapAction build_effective_action(const GoapAction& base, const GoapActionEditorData* override) {
+    EffectiveGoapAction out;
+
+    // Cost
+    out.cost = (override && override->cost >= 0.f) ? override->cost : base.cost;
+
+    // Preconditions
+    out.preconditions = base.preconditions;
+    if (override) {
+        for (auto& [k, v] : override->preconditions) {
+            out.preconditions[k] = v;
+        }
+    }
+
+    // Effects
+    out.effects = base.effects;
+    if (override) {
+        for (auto& [k, v] : override->effects) {
+            out.effects[k] = v;
+        }
+    }
+
+    return out;
+}
+
 /**
  * Builds a new plan to satisfy the current active goal.
  *
@@ -173,19 +198,30 @@ void Goap::update_plan(Entity entity, GoapAgent& agent, WorldState& ws) {
     }
 
     // Add all initial actions whose preconditions match the current worldstate
+    auto& overrides = GoapActionOverrides::instance();
+
     for (GoapAction* action : agent.available_actions) {
         if (!action) continue;
 
-        if (action->check_preconditions(ws)) {
-            nodes.emplace_back(action, action->cost, 0.f, nullptr);
+        const auto* override = overrides.find(action->get_id());
+        EffectiveGoapAction effective = build_effective_action(*action, override);
+
+        // Check preconditions against current worldstate
+        bool satisfied = true;
+        for (auto& [fact, val] : effective.preconditions) {
+            auto it = ws.facts.find(std::hash<std::string>()(fact));
+            if (it == ws.facts.end() || it->second.bool_val != val) {
+                satisfied = false;
+                break;
+            }
+        }
+
+        if (satisfied) {
+            nodes.emplace_back(action, effective.cost, 0.f, nullptr);
             open_list.push(&nodes.back());
-            if (show_logging) {
-                Log::info("GOAP: Starting action '{}' satisfies preconditions, added to open list", action->get_id());
-            }
+            if (show_logging) Log::info("GOAP: Starting action '{}' satisfies preconditions, added to open list", action->get_id());
         } else {
-            if (show_logging) {
-                Log::info("GOAP: Action '{}' does not satisfy preconditions", action->get_id());
-            }
+            if (show_logging) Log::info("GOAP: Action '{}' does not satisfy preconditions", action->get_id());
         }
     }
 
@@ -222,24 +258,27 @@ void Goap::update_plan(Entity entity, GoapAgent& agent, WorldState& ws) {
         // Expand children: all actions whose preconditions match temp state
         for (GoapAction* next : agent.available_actions) {
             if (!next) continue;
-
-            // skip if closed
             if (closed.count(next)) continue;
 
-            if (next->check_preconditions(temp)) {
-                float new_cost = current->cost_so_far + next->cost;
+            const auto* override = overrides.find(next->get_id());
+            EffectiveGoapAction effective = build_effective_action(*next, override);
 
+            bool satisfied = true;
+            for (auto& [fact, val] : effective.preconditions) {
+                auto it = temp.facts.find(std::hash<std::string>()(fact));
+                if (it == temp.facts.end() || it->second.bool_val != val) {
+                    satisfied = false;
+                    break;
+                }
+            }
+
+            if (satisfied) {
+                float new_cost = current->cost_so_far + effective.cost;
                 nodes.emplace_back(next, new_cost, 0.f, current);
-                Node* new_node = &nodes.back();
-                open_list.push(new_node);
-
-                if (show_logging) {
-                    Log::info("GOAP: Adding child action '{}' to open list (cost: {})", next->get_id(), new_cost);
-                }
+                open_list.push(&nodes.back());
+                if (show_logging) Log::info("GOAP: Adding child action '{}' to open list (cost: {})", next->get_id(), new_cost);
             } else {
-                if (show_logging) {
-                    Log::info("GOAP: Child action '{}' preconditions not satisfied at this node", next->get_id());
-                }
+                if (show_logging) Log::info("GOAP: Child action '{}' preconditions not satisfied at this node", next->get_id());
             }
         }
     }
