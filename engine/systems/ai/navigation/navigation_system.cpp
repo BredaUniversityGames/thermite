@@ -17,10 +17,6 @@ void tmt::NavigationSystem::on_update(const FrameData& time) {
 
         nav_mesh.inspect();
 
-        auto voxel_file = tmt::engine.resources.load_resource<tmt::VoxelScene>({tmt::IO::Location::PROJECT, "test_asteroid_7.vengi"});
-        auto voxel_volume = tmt::engine.resources.copy_resource<tmt::VoxelVolume>(voxel_file);
-        nav_mesh.generate_mesh(voxel_volume, 1);
-
         Input& input = tmt::engine.input;
         if (input.is_keyboard_button_pressed(Key::P)) {
             int start = rand() % nav_mesh.nodes.size();
