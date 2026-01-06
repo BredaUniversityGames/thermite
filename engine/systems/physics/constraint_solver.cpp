@@ -4,7 +4,7 @@
 #include <glm/gtx/norm.hpp>
 
 const float restitution = 0.1f;  // Global bounciness coefficient
-const float friction = 0.5f;     // Global friction coefficient
+const float friction = 0.3f;     // Global friction coefficient
 
 using namespace tmt;
 

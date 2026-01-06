@@ -25,7 +25,7 @@ void Physics::on_start() {
         if (vb.type == VoxelBody::DYNAMIC) {
             initialize_voxel_body(vb);
             if (vb.gravity <= 0.0f) {
-                vb.type = VoxelBody::SLEEPING;
+                //vb.type = VoxelBody::SLEEPING;
                 vb.accumulated_forces = 0.0f;
             }
         }
@@ -81,6 +81,7 @@ void Physics::on_update(const FrameData&) {
         engine.renderer.draw_cross(vb.position, glm::vec3(1.0f, 0.0f, 0.0f), 0.2f);
         engine.renderer.draw_cross(vb.position + vb.rotation * vb.com_local_offset, glm::vec3(0.0f, 0.0f, 1.0f), 0.2f);
 
+        // // Draw voxel normals
         // glm::uvec3 size = vb.resource.get()->size;
         // auto* tree = vb.resource.get()->blas.get();
         // for (size_t z = 0; z < size.z; z++) {
@@ -141,7 +142,7 @@ void Physics::on_fixed_update(const FrameData&) {
         }
 
         // practicly not moving
-        if (vb.accumulated_forces <= 150.0f && forces <= 150.0f) vb.type = VoxelBody::SLEEPING;
+        //if (vb.accumulated_forces <= 150.0f && forces <= 150.0f) vb.type = VoxelBody::SLEEPING;
     }
 
     // Detect Colllisions
@@ -217,20 +218,48 @@ void Physics::generate_voxel_constraints_range(const int index, const int size) 
                 Collision coll(entity, other_entity);
                 coll.contacts.reserve(64);
 
-                // Find overlapping area's
-                // A's local collision overlap
-                glm::ivec3 min_a = {};
-                glm::ivec3 max_a = {};
-                get_overlap(vb, other_vb, min_a, max_a);
+                auto* tree_a = vb.resource.get()->blas.get();
+                auto* tree_b = other_vb.resource.get()->blas.get();
 
-                for (size_t z = min_a.z; z < max_a.z; z++) {
-                    for (size_t y = min_a.y; y < max_a.y; y++) {
-                        for (size_t x = min_a.x; x < max_a.x; x++) {
-                            if (coll.contacts.size() >= max_contacts) continue;
-                            check_neighbors(vb, other_vb, x, y, z, coll);
-                        }
+                const glm::vec3 width_ratio = ((glm::vec3)vb.resource.get()->size / powf(4.0f, (float)vb.resource->blas->depth));
+                //const glm::vec3 half_extent = glm::vec3(vb.resource.get()->size) * 0.5f * UNITS_PER_VOXEL;
+                const float half_extent = powf(4.0f, (float)vb.resource->blas->depth) * 0.5f * UNITS_PER_VOXEL;
+
+                //for (uint32_t level = 1u; level <= tree_a->depth; ++level) {
+                    for (uint32_t i = 0; i < 64u; i++) {
+                        /* Fetch the voxel data */
+                        const uint32_t local_x = (i >> 0u) & 3u;
+                        const uint32_t local_y = (i >> 4u) & 3u;
+                        const uint32_t local_z = (i >> 2u) & 3u;
+
+                        // Check if node is empty
+                        if ((tree_a->nodes[0].child_mask & (1ull << i)) == 0u) continue;
+
+                        const glm::vec3 local_uvw = glm::vec3(((float)local_x + 0.5f) * 0.25f, ((float)local_y + 0.5f) * 0.25f, ((float)local_z + 0.5f) * 0.25f);
+                        const glm::vec3 local_pos = (local_uvw * 2.0f - 1.0f) * half_extent;
+
+                        const glm::vec3 world_pos = vb.position + (vb.rotation * local_pos);
+
+                        // Draw it
+                        engine.renderer.draw_sphere(world_pos, half_extent * 0.25f, glm::vec3(0.0f, 1.0f, 0.0f), 1, 16, Engine::Config::FIXED_TIME_STEP);
                     }
-                }
+                //}
+
+
+                //// Find overlapping area's
+                //// A's local collision overlap
+                //glm::ivec3 min_a = {};
+                //glm::ivec3 max_a = {};
+                //get_overlap(vb, other_vb, min_a, max_a);
+
+                //for (size_t z = min_a.z; z < max_a.z; z++) {
+                //    for (size_t y = min_a.y; y < max_a.y; y++) {
+                //        for (size_t x = min_a.x; x < max_a.x; x++) {
+                //            if (coll.contacts.size() >= max_contacts) continue;
+                //            check_neighbors(vb, other_vb, x, y, z, coll);
+                //        }
+                //    }
+                //}
 
                 if (coll.contacts.size() <= 0) continue;
 
