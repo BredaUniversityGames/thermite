@@ -6,6 +6,7 @@
 #include "engine/core/input/input.hpp"
 #include "engine/systems/camera/camera_system.hpp"
 #include "engine/core/logger.hpp"
+#include "engine/core/input/input.hpp"
 
 #include "engine/systems/ai/goap/goap_system.hpp"
 #include "engine/systems/ai/goap/components/goap_agent.hpp"
@@ -21,6 +22,7 @@ class Game : public tmt::Application {
 
     tmt::Entity voxel {};
     float time_passed = 0.0f;
+    tmt::NavMesh* nav_mesh;
 
     void on_start() override;
     void on_update(const tmt::FrameData& time) override;
@@ -138,9 +140,9 @@ void Game::on_start() {
         // transform.set_world_rotation(glm::vec3(glm::radians(45.0f), glm::radians(45.0f), 0.0f));
         transform.set_world_scale(glm::vec3(1.0f, 1.0f, 1.0f));
 
-        auto& nav_mesh = tmt::engine.ecs.add_component<tmt::NavMesh>(voxel);
+        nav_mesh = &tmt::engine.ecs.add_component<tmt::NavMesh>(voxel);
 
-        nav_mesh.generate_mesh(voxel_volume, 1);
+        nav_mesh->generate_mesh(voxel_volume, 1);
     }
 }
 

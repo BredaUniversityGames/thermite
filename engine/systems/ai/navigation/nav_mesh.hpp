@@ -3,8 +3,6 @@
 #include "engine/core/resources.hpp"
 #include "engine/core/resources/voxel_volume.hpp"
 
-class VoxelVolume;
-
 namespace tmt {
 
 enum class VoxelType : uint8_t { EMPTY, OUTSIDE, INSIDE };

@@ -65,7 +65,7 @@ void Renderer::init() {
 
     /* Initialize the Render Graph */
     render_graph.set_shader_path("assets/engine/shaders/bin");
-    render_graph.set_staging_limit(100000000u /* 100mb */);
+    render_graph.set_staging_limit(32000000u /* 32mb */);
     render_graph.set_max_graphs_in_flight(2u); /* Double buffering */
     if (const Result r = render_graph.init(gpu); r.is_err()) {
         Log::error(Log::Scope::RENDERER, "failed to initialize render graph.\nreason: {}", r.unwrap_err());
