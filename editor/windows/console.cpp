@@ -4,7 +4,6 @@
 #include "engine/core/logger.hpp"
 #include "engine/core/ecs.hpp"
 #include "engine/core/io.hpp"
-#include "engine/core/components/transform.hpp"
 #include "engine/core/components/camera.hpp"
 
 using namespace tmt;
