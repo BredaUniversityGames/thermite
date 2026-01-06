@@ -11,16 +11,6 @@ namespace tmt {
 
 class AssetBrowser : public IWindow {
    public:
-    struct Directory {
-        IO::FileLocation location;
-        std::vector<Directory> sub_directories {};
-    };
-
-    struct Bookmark {
-        Directory directory;
-        DirectoryWatcher location_watcher;
-    };
-
     constexpr std::string get_title() const override { return ICON_MS_FOLDER " Asset Browser"; }
     constexpr int get_window_flags() const override { return ImGuiWindowFlags_MenuBar; }
     constexpr bool default_open() const override { return true; }
@@ -32,6 +22,16 @@ class AssetBrowser : public IWindow {
     void on_editor_end() override {}
 
    private:
+    struct Directory {
+        IO::FileLocation location;
+        std::vector<Directory> sub_directories {};
+    };
+
+    struct Bookmark {
+        Directory directory;
+        DirectoryWatcher location_watcher;
+    };
+
     std::optional<IO::FileLocation> pending_viewing_location {viewing_location};
     IO::FileLocation viewing_location {};
     DirectoryWatcher viewing_location_watcher {};
@@ -43,6 +43,9 @@ class AssetBrowser : public IWindow {
 
     std::vector<Bookmark> default_bookmarks;
     std::vector<Bookmark> bookmarks;
+
+    static void update_bookmark_vector(std::vector<Bookmark>& bookmarks);
+    static void recurse_parse_directory(Directory& directory);
 
     [[nodiscard]] bool location_is_bookmarked(const IO::FileLocation& location);
 

@@ -38,32 +38,6 @@ void apply_requests(ImGuiMultiSelectIO* io, std::vector<ItemType>& selection, co
     }
 }
 
-void recurse_parse_directory(tmt::AssetBrowser::Directory& directory) {
-    std::filesystem::directory_iterator iterator {directory.location.get_relative_path()};
-    for (const auto& entry : iterator) {
-        if (!entry.is_directory()) continue;
-
-        tmt::AssetBrowser::Directory& sub_directory = directory.sub_directories.emplace_back();
-        sub_directory.location = {directory.location.sub_location, directory.location.relative_path / entry.path().filename()};
-        recurse_parse_directory(sub_directory);
-    }
-}
-
-[[nodiscard]] bool path_valid(const std::filesystem::path& path) { return !path.empty() && exists(path); }
-
-void update_bookmark_vector(std::vector<tmt::AssetBrowser::Bookmark>& bookmarks) {
-    for (auto& bookmark : bookmarks) {
-        if (!bookmark.location_watcher.is_valid()) {  // If the location watcher is invalid, make it valid.
-            bookmark.location_watcher = tmt::DirectoryWatcher {bookmark.directory.location};
-        } else if (!bookmark.location_watcher.check_changes()) {  // If the watcher is valid skip updating the bookmark view if there were no updates to the directory.
-            continue;
-        }
-
-        bookmark.directory.sub_directories.clear();
-        recurse_parse_directory(bookmark.directory);
-    }
-}
-
 // Returns a malloc-ed buffer of sequential IO::FileLocation data (caller needs to manually call std::free() on the buffer).
 void* file_location_to_buffer(const tmt::IO::FileLocation& location, size_t& size) {
     constexpr size_t sub_location_size = sizeof(location.sub_location);
@@ -98,6 +72,32 @@ void drag_drop_location(const tmt::IO::FileLocation& location) {
 }  // namespace
 
 namespace tmt {
+
+void AssetBrowser::recurse_parse_directory(Directory& directory) {
+    std::filesystem::directory_iterator iterator {directory.location.get_relative_path()};
+    for (const auto& entry : iterator) {
+        if (!entry.is_directory()) continue;
+
+        Directory& sub_directory = directory.sub_directories.emplace_back();
+        sub_directory.location = {directory.location.sub_location, directory.location.relative_path / entry.path().filename()};
+        recurse_parse_directory(sub_directory);
+    }
+}
+
+[[nodiscard]] bool path_valid(const std::filesystem::path& path) { return !path.empty() && exists(path); }
+
+void AssetBrowser::update_bookmark_vector(std::vector<Bookmark>& bookmarks) {
+    for (auto& bookmark : bookmarks) {
+        if (!bookmark.location_watcher.is_valid()) {  // If the location watcher is invalid, make it valid.
+            bookmark.location_watcher = tmt::DirectoryWatcher {bookmark.directory.location};
+        } else if (!bookmark.location_watcher.check_changes()) {  // If the watcher is valid skip updating the bookmark view if there were no updates to the directory.
+            continue;
+        }
+
+        bookmark.directory.sub_directories.clear();
+        recurse_parse_directory(bookmark.directory);
+    }
+}
 
 bool AssetBrowser::location_is_bookmarked(const IO::FileLocation& location) {
     if (location.relative_path.empty()) return true;
