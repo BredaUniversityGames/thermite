@@ -30,7 +30,7 @@ class ComponentDiff : public IUndoRedo {
     void redo() override { ((deserialize_component<T>(after_json)), ...); }
 
    private:
-    const Entity entity;
+    const Entity entity = entt::null;
 
     tmt::json before_json;
     tmt::json after_json;

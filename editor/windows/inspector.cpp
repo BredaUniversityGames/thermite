@@ -156,54 +156,54 @@ void Inspector::display_compile_time_components(const tmt::Inspector::MenuContex
 
         const json before = tmt::Serializer::serialize(component_instance);
 
-        static bool activated = false;
+        const ImResponse response = ImReflect::Input("", component_instance);
+        const bool changed = response.get<T>().is_changed();
+        const bool activated = response.get<T>().is_activated();
+        const bool deactivated_after_edit = response.get<T>().is_deactivated_after_edit();
+
+        if (changed) {
+            OnSceneModified::dispatch();
+        }
+
+        const bool multiple_selection = menu_context.selected_entities.size() > 1;
+        if (changed && multiple_selection) {
+            auto after = tmt::Serializer::serialize(component_instance);
+            const json diff = nlohmann::json::diff(before, after);
+
+            for (const Entity& entity : menu_context.selected_entities) {
+                if (entity == menu_context.primary_entity) continue;
+
+                const bool has_component = tmt::engine.ecs.has_component<T>(entity);
+                if (has_component == false) continue;
+
+                T& other_instance = tmt::engine.ecs.get_component<T>(entity);
+                json other_json = tmt::Serializer::serialize(other_instance);
+                other_json.patch_inplace(diff);
+                tmt::Serializer::deserialize(other_json, other_instance);
+            }
+        }
+
         static std::unordered_map<Entity, ComponentDiff<T>> component_diff;
-        if (activated == false) {
-            // component_diff.before();
+        if (deactivated_after_edit) {
+            printf("Deactivated component editor: %s\n", name);
+            UndoRedoCollection collection;
+            for (auto& [entity, diff] : component_diff) {
+                diff.after();
+                collection.add_action(std::move(diff));
+            }
+            collection.commit("Edit Component: " + std::string(name));
+            component_diff.clear();
+        }
+
+        if (activated) {
+            printf("Activated component editor: %s\n", name);
             for (const Entity& entity : menu_context.selected_entities) {
                 const bool has_comp = engine.ecs.has_component<T>(entity);
                 if (has_comp == false) continue;
+
                 component_diff.emplace(entity, ComponentDiff<T>(entity));
                 component_diff.at(entity).before();
             }
-        }
-
-        const ImResponse response = ImReflect::Input("", component_instance);
-        const bool changed = response.get<T>().is_changed();
-
-        const bool deactivated_after_edit = response.get<T>().is_deactivated_after_edit();
-        if (deactivated_after_edit) {
-            for (auto& [entity, diff] : component_diff) {
-                diff.after();
-            }
-            UndoRedoCollection collection;
-            for (auto& [entity, diff] : component_diff) {
-                collection.add_action(diff);
-            }
-            collection.commit("Edit Component: " + std::string(name));
-            activated = false;
-        }
-
-        if (changed == false) return;
-
-        activated = true;
-        OnSceneModified::dispatch();
-
-        if (menu_context.selected_entities.size() <= 1) return;
-
-        auto after = tmt::Serializer::serialize(component_instance);
-        const json diff = nlohmann::json::diff(before, after);
-
-        for (const Entity& entity : menu_context.selected_entities) {
-            if (entity == menu_context.primary_entity) continue;
-
-            const bool has_component = tmt::engine.ecs.has_component<T>(entity);
-            if (has_component == false) continue;
-
-            T& other_instance = tmt::engine.ecs.get_component<T>(entity);
-            json other_json = tmt::Serializer::serialize(other_instance);
-            other_json.patch_inplace(diff);
-            tmt::Serializer::deserialize(other_json, other_instance);
         }
     });
 }
@@ -397,11 +397,17 @@ void Inspector::paste_compile_time_component(const json& deserialized, const Men
         const auto name_of_type = tmt::Component<T_inner>::get_name();
         if (name_in_clipboard != name_of_type) return;
 
+        UndoRedoCollection collection;
         const json data = deserialized.value("data", json::object());
         for (const Entity& entity : menu_context.selected_entities) {
+            ComponentDiff<T_inner> component_diff(entity);
+            component_diff.before();
             T_inner& target_instance = tmt::engine.ecs.add_or_get_component<T_inner>(entity);
             Serializer::deserialize(data, target_instance);
+            component_diff.after();
+            collection.add_action(component_diff);
         }
+        collection.commit("Paste Component: " + std::string(name_of_type));
     });
 }
 
