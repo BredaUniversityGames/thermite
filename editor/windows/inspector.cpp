@@ -164,7 +164,7 @@ void Inspector::display_compile_time_components(const tmt::Inspector::MenuContex
                 const bool has_comp = engine.ecs.has_component<T>(entity);
                 if (has_comp == false) continue;
                 component_diff.emplace(entity, ComponentDiff<T>(entity));
-                component_diff[entity].before();
+                component_diff.at(entity).before();
             }
         }
 
