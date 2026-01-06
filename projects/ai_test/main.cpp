@@ -30,9 +30,7 @@ class Game : public tmt::Application {
         registry.register_action(std::make_unique<tmt::KillPlayer>());
     }
 
-    tmt::Entity voxel {};
     float time_passed = 0.0f;
-    tmt::NavMesh* nav_mesh;
 
     void on_start() override {};
     void on_update(const tmt::FrameData& time) override {};
@@ -43,9 +41,11 @@ class AIScene : public tmt::Scene<AIScene> {
    public:
     static constexpr std::string_view scene_name() { return "AIScene"; }
 
+    tmt::Entity voxel {};
+    tmt::NavMesh* nav_mesh;
     void on_start() override;
-    void on_update(const tmt::FrameData& time) override;
-    void on_end() override;
+    void on_update(const tmt::FrameData& time) override {};
+    void on_end() override {};
 };
 
 std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs& args) {
@@ -160,12 +160,3 @@ void AIScene::on_start() {
         nav_mesh->generate_mesh(voxel_volume, 1);
     }
 }
-
-void Game::on_update(const tmt::FrameData& time) {
-    time_passed += time.delta_time * 0.1f;
-    auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(voxel);
-    transform.set_world_position(glm::vec3(1.0f, sinf(time_passed), 1.0f));
-    transform.set_world_rotation(glm::vec3(0.0f, time_passed, 0.0f));
-}
-
-void AIScene::on_end() {}
