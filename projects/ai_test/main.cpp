@@ -12,6 +12,8 @@
 #include "goap_actions/chase_player.hpp"
 #include "goap_actions/kill_player.hpp"
 #include "goap_actions/patrol_area.hpp"
+#include "engine/core/scene.hpp"
+#include "engine/core/scenes.hpp"
 
 class Game : public tmt::Application {
    public:
@@ -19,6 +21,15 @@ class Game : public tmt::Application {
 
     tmt::Entity voxel {};
     float time_passed = 0.0f;
+
+    void on_start() override {};
+    void on_update(const tmt::FrameData& time) override {};
+    void on_end() override {};
+};
+
+class AIScene : public tmt::Scene<AIScene> {
+   public:
+    static constexpr std::string_view scene_name() { return "AIScene"; }
 
     void on_start() override;
     void on_update(const tmt::FrameData& time) override;
@@ -34,10 +45,12 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     };
     // clang-format on
 
+    tmt::engine.scenes.register_scene<AIScene>();
+
     return std::make_unique<Game>(specs);
 }
 
-void Game::on_start() {
+void AIScene::on_start() {
     { /* Camera entity */
         tmt::Entity entity = tmt::engine.ecs.create_entity();
         auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
@@ -126,7 +139,7 @@ void Game::on_start() {
     }
 }
 
-void Game::on_update(const tmt::FrameData& time) {
+void AIScene::on_update(const tmt::FrameData& time) {
     // time_passed += time.delta_time;
     // auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(voxel);
     // transform.set_world_position(glm::vec3(1.0f, sinf(time_passed), 1.0f));
@@ -134,4 +147,4 @@ void Game::on_update(const tmt::FrameData& time) {
     // transform.set_world_scale(glm::vec3(1.0f, 1.5f + sinf(time_passed), 1.0f));
 }
 
-void Game::on_end() {}
+void AIScene::on_end() {}
