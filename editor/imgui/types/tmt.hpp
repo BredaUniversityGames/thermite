@@ -18,6 +18,7 @@ void tag_invoke(ImReflect::ImInput_t, const char* label, tmt::ResourceRef<T>& va
     ImGui::BeginGroup();
     ImReflect::Input(label, value.file_location, settings, response);
     if (ImGui::Button("Load")) {
+        // TODO: Sven move this if-check to resources.hpp
         if constexpr (std::derived_from<T, tmt::FileResource>) {
             value.resource = tmt::engine.resources.load_resource<T>(value.file_location).resource;
         } else if constexpr (requires { typename T::is_runtime_resource; }) {
@@ -39,6 +40,15 @@ void tag_invoke(ImReflect::ImInput_t, const char* label, tmt::ResourceRef<T>& va
             if (T::SUPPORTED_FILE_EXTENSIONS.contains(extension) && ImGui::AcceptDragDropPayload("FileLocation") != nullptr) {
                 // If the file extension is valid start excepting the payload, this will return true once the user drops it.
                 value.file_location = file_location;
+
+                // TODO: Sven move this if-check to resources.hpp
+                if constexpr (std::derived_from<T, tmt::FileResource>) {
+                    value.resource = tmt::engine.resources.load_resource<T>(value.file_location).resource;
+                } else if constexpr (requires { typename T::is_runtime_resource; }) {
+                    value.resource = tmt::engine.resources.copy_resource<T>(value.file_location).resource;
+                } else {
+                    static_assert(svh::always_false<T>::value, "JsonSerializer Error: Cannot deserialize ResourceRef<T> where T is not a FileResource or RuntimeResource");
+                }
             }
         }
 
