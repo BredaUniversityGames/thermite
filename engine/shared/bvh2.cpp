@@ -268,7 +268,7 @@ template <typename T>
 Hit Bvh2<T>::trace(const Ray& ray) const {
     /* Traversal state */
     uint32_t stack[32] {}, stack_ptr = 0u, node_index = 0u;
-    float min_t = BIG_F32;
+    Hit chit {};
 
     for (;;) {
         const Bvh2Node& node = nodes[node_index];
@@ -278,8 +278,11 @@ Hit Bvh2<T>::trace(const Ray& ray) const {
             /* Intersect all primitives */
             for (uint32_t i = 0u; i < node.prim_count; ++i) {
                 const T& prim = prims[indices[node.left_first + i]];
-                const float dist = prim.intersect(ray);
-                min_t = fminf(min_t, dist);
+                const Hit hit = prim.intersect(ray, chit.distance);
+                if (hit.distance < chit.distance) {
+                    chit.distance = hit.distance;
+                    chit.index = indices[node.left_first + i];
+                }
             }
 
             /* Pop the node stack */
@@ -313,7 +316,7 @@ Hit Bvh2<T>::trace(const Ray& ray) const {
         }
     }
 
-    return Hit(min_t);
+    return chit;
 }
 
 template <typename T>

@@ -88,6 +88,10 @@ void DragonScene::on_start() {
     generate_random_entities(voxel_volume);
 }
 
+#include "engine/core/renderer/renderer.hpp"
+#include "engine/core/renderer/render_view.hpp"
+#include "engine/shared/ray.hpp"
+
 void DragonScene::on_update(const tmt::FrameData& time) {
     /* Animate the voxel */
     elapsed_time += time.delta_time;
@@ -95,6 +99,11 @@ void DragonScene::on_update(const tmt::FrameData& time) {
     transform.set_world_position(glm::vec3(1.0f, sinf(elapsed_time), 1.0f));
     transform.set_world_rotation(glm::vec3(sinf(elapsed_time), cosf(elapsed_time), 0.0f));
     transform.set_world_scale(glm::vec3(1.0f, 1.5f + sinf(elapsed_time), 1.0f));
+
+    const int mouse_x = tmt::engine.input.get_mouse_x();
+    const int mouse_y = tmt::engine.input.get_mouse_y();
+
+    const tmt::Ray mouse_ray = pinhole_ray(tmt::engine.renderer.render_view, glm::ivec2(mouse_x, mouse_y));
 
     if (tmt::engine.input.is_keyboard_button_released(tmt::Key::SPACE)) {
         tmt::engine.scenes.enqueue_scene<TableScene>();

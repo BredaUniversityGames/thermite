@@ -1,6 +1,7 @@
 #pragma once
 
 #include "shared/aabb.hpp"
+#include "shared/ray.hpp"
 
 namespace tmt {
 
@@ -35,9 +36,25 @@ struct alignas(16) VoxelObject {
     }
 
     /* Intersect the voxel object with a ray. */
-    float intersect(const Ray&) const {
+    Hit intersect(const Ray& ray, const float tmax) const {
         // TODO: Implement the ray intersection function!
-        return 0.0f;
+
+        /* Transform the ray into the local space of the object */
+        const glm::vec3 local_origin = glm::vec3(world_to_local * glm::vec4(ray.origin, 1.0f));
+        const glm::vec3 local_dir = glm::vec3(world_to_local * glm::vec4(ray.dir, 0.0f));
+        const glm::vec3 local_rcp_dir = 1.0f / local_dir;
+
+        /* Intersect the object AABB in local-space */
+        const glm::vec3 half_extent = glm::vec3(size) * UNITS_PER_VOXEL * 0.5f;
+        const glm::vec3 t_to_min = (-half_extent - local_origin) * local_rcp_dir;
+        const glm::vec3 t_to_max = (half_extent - local_origin) * local_rcp_dir;
+        const glm::vec3 t_min = glm::min(t_to_min, t_to_max);
+        const glm::vec3 t_max = glm::max(t_to_min, t_to_max);
+        const float t_near = glm::max(glm::max(glm::max(t_min.x, t_min.y), t_min.z), 0.0f);
+        const float t_far = glm::min(glm::min(glm::min(t_max.x, t_max.y), t_max.z), tmax);
+        if (t_near > t_far) return Hit(); /* miss */
+
+        return Hit(t_near, 0xFFFFFFFFu);
     }
 };
 
