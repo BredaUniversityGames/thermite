@@ -36,7 +36,7 @@ void tag_invoke(ImReflect::ImInput_t, const char* label, tmt::ResourceRef<T>& va
 
             // Now that we know the user is dragging a FileLocation type, we can check its file extension to see if its valid for the resource type.
             const std::string& extension = file_location.relative_path.extension().generic_string();
-            if (T::supported_file_extensions.contains(extension) && ImGui::AcceptDragDropPayload("FileLocation") != nullptr) {
+            if (T::SUPPORTED_FILE_EXTENSIONS.contains(extension) && ImGui::AcceptDragDropPayload("FileLocation") != nullptr) {
                 // If the file extension is valid start excepting the payload, this will return true once the user drops it.
                 value.file_location = file_location;
             }
