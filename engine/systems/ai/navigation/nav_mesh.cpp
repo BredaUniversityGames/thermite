@@ -211,6 +211,7 @@ std::vector<int> NavMesh::find_path(const int starting_node_id, const int ending
 void tmt::NavMesh::inspect() {
     tmt::engine.polyline.use_color(1.0f, 0.0f, 0.0f);
     tmt::engine.polyline.use_line_width(2, true);
+
     for (int i = 0; i < nodes.size(); i++) {
         for (int j = 0; j < nodes[i].connecting_nodes.size(); j++) {
             if (i > nodes[i].connecting_nodes[j]) continue;
