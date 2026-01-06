@@ -30,7 +30,7 @@ void GeometryPipeline::enqueue(RenderGraph& render_graph, RenderView& render_vie
 
     /* Enqueue the geometry compute pass */
     const glm::uvec2 render_res = render_view.gpu_view.resolution;
-    if (engine.renderer.display_mode != DisplayMode::Steps) {
+    if (engine.renderer.display_mode != DisplayMode::STEPS) {
         render_graph.add_compute_pass("geometry pass", "geometry.cs")
             /* Render view */
             .read(render_view.render_view_buffer)
@@ -60,11 +60,11 @@ void GeometryPipeline::enqueue(RenderGraph& render_graph, RenderView& render_vie
 
     /* Debug visualizations */
     switch (engine.renderer.display_mode) {
-        DISPLAY_MODE(Visibility, "[debug] visibility pass", "debug/visibility.cs")
-        DISPLAY_MODE(Depth, "[debug] depth pass", "debug/depth.cs")
-        DISPLAY_MODE(Normals, "[debug] normals pass", "debug/normals.cs")
-        case DisplayMode::Default: /* TEMP: Until we have a proper default render path! */
-        DISPLAY_MODE(Albedo, "[debug] albedo pass", "debug/albedo.cs")
+        DISPLAY_MODE(VISIBILITY, "[debug] visibility pass", "debug/visibility.cs")
+        DISPLAY_MODE(DEPTH, "[debug] depth pass", "debug/depth.cs")
+        DISPLAY_MODE(NORMALS, "[debug] normals pass", "debug/normals.cs")
+        case DisplayMode::DEFAULT: /* TEMP: Until we have a proper default render path! */
+        DISPLAY_MODE(ALBEDO, "[debug] albedo pass", "debug/albedo.cs")
         default: 
             break;
     }

@@ -50,7 +50,7 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
         .indirect_size(render_view.macrofacet_shading_commands);
 
     /* Debug visualizations */
-    if (engine.renderer.display_mode == DisplayMode::Illuminance) {
+    if (engine.renderer.display_mode == DisplayMode::ILLUMINANCE) {
         render_graph.add_compute_pass("[debug] illuminance pass", "debug/illuminance.cs")
             .read(render_view.render_view_buffer) /* Render view buffer */
             .read(render_view.vbuffer.image) /* Visibility buffer */

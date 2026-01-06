@@ -16,15 +16,15 @@ namespace tmt {
 
 /* Renderer display mode. */
 enum class DisplayMode : uint32_t {
-    Default = 0u,
-    Steps, /* Visualize visibility pass step count. (0..128) */
-    Visibility, /* Visualize visibility buffer data. */
-    Depth, /* Visualize geometric depth data. (0..100) */
-    Normals, /* Visualize geometric normal data. */
-    Albedo, /* Visualize material albedo. */
-    Illuminance, /* Visualize illuminance from the cache. */
+    DEFAULT = 0u,
+    STEPS, /* Visualize visibility pass step count. (0..128) */
+    VISIBILITY, /* Visualize visibility buffer data. */
+    DEPTH, /* Visualize geometric depth data. (0..100) */
+    NORMALS, /* Visualize geometric normal data. */
+    ALBEDO, /* Visualize material albedo. */
+    ILLUMINANCE, /* Visualize illuminance from the cache. */
 };
-static const DisplayMode DISPLAY_MODES[] { DisplayMode::Default, DisplayMode::Steps, DisplayMode::Visibility, DisplayMode::Depth, DisplayMode::Normals, DisplayMode::Albedo, DisplayMode::Illuminance };
+static const DisplayMode DISPLAY_MODES[] { DisplayMode::DEFAULT, DisplayMode::STEPS, DisplayMode::VISIBILITY, DisplayMode::DEPTH, DisplayMode::NORMALS, DisplayMode::ALBEDO, DisplayMode::ILLUMINANCE };
 static const char* DISPLAY_MODE_NAMES[] { "Default", "Steps (0..128)", "Visibility", "Depth (0..100)", "Normals", "Albedo", "Illuminance" };
 
 class Renderer {
@@ -41,7 +41,7 @@ class Renderer {
     SceneView scene_view {};
 
     /* Display mode for debugging */
-    DisplayMode display_mode = DisplayMode::Default;
+    DisplayMode display_mode = DisplayMode::DEFAULT;
 
     /* Pipelines */
     class GeometryPipeline& geometry_pipeline;
