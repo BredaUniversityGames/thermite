@@ -28,6 +28,7 @@
 #include "editor/windows/audio_mixer.hpp"
 #include "editor/windows/profiler_tracy.hpp"
 #include "editor/windows/scenes.hpp"
+#include "editor/windows/asset_browser.hpp"
 #include "editor/windows/imgui_demo.hpp"
 #include "editor/windows/console.hpp"
 
@@ -57,6 +58,7 @@ void Editor::on_engine_init(const ApplicationSpecs&) {
     windows.add<FontControl>();
     windows.add<AudioMixer>();
     windows.add<ScenesWindow>();
+    windows.add<AssetBrowser>();
     windows.add<Console>();
     windows.add<ImguiDemo>();
 
