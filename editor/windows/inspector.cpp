@@ -32,16 +32,6 @@ void Inspector::on_editor_update(const tmt::FrameData& time) {}
 
 void Inspector::on_editor_end() {}
 
-template <typename T>
-void remove_component(const tmt::Inspector::MenuContext& menu_context) {
-    for (const Entity& entity : menu_context.selected_entities) {
-        const bool has_comp = engine.ecs.has_component<T>(entity);
-        if (has_comp == false) continue;
-        tmt::engine.ecs.remove_component<T>(entity);
-    }
-    OnSceneModified::dispatch();
-}
-
 void paste_component(const auto& name, const tmt::Inspector::MenuContext& menu_context) {
     const char* clipboard_text = ImGui::GetClipboardText();
     if (clipboard_text == nullptr) {
@@ -130,12 +120,18 @@ void Inspector::display_compile_time_components(const tmt::Inspector::MenuContex
         const ContextMenuResponse context_response = context_menu(name, header_response.right_clicked);
 
         if (context_response.remove_component) {
+            UndoRedoCollection collection;
             for (const Entity& entity : menu_context.selected_entities) {
                 const bool has_comp = engine.ecs.has_component<T>(entity);
                 if (has_comp == false) continue;
 
+                ComponentDiff<T> component_diff(entity);
+                component_diff.before();
                 tmt::engine.ecs.remove_component<T>(entity);
+                component_diff.after();
+                collection.add_action(component_diff);
             }
+            collection.commit("Remove Component: " + std::string(name));
             return;
         }
 
@@ -161,9 +157,15 @@ void Inspector::display_compile_time_components(const tmt::Inspector::MenuContex
         const json before = tmt::Serializer::serialize(component_instance);
 
         static bool activated = false;
-        static ComponentDiff<T> component_diff(menu_context.primary_entity);
+        static std::unordered_map<Entity, ComponentDiff<T>> component_diff;
         if (activated == false) {
-            component_diff.take_snapshot();
+            // component_diff.before();
+            for (const Entity& entity : menu_context.selected_entities) {
+                const bool has_comp = engine.ecs.has_component<T>(entity);
+                if (has_comp == false) continue;
+                component_diff.emplace(entity, ComponentDiff<T>(entity));
+                component_diff[entity].before();
+            }
         }
 
         const ImResponse response = ImReflect::Input("", component_instance);
@@ -171,7 +173,14 @@ void Inspector::display_compile_time_components(const tmt::Inspector::MenuContex
 
         const bool deactivated_after_edit = response.get<T>().is_deactivated_after_edit();
         if (deactivated_after_edit) {
-            component_diff.commit();
+            for (auto& [entity, diff] : component_diff) {
+                diff.after();
+            }
+            UndoRedoCollection collection;
+            for (auto& [entity, diff] : component_diff) {
+                collection.add_action(diff);
+            }
+            collection.commit("Edit Component: " + std::string(name));
             activated = false;
         }
 
@@ -306,9 +315,15 @@ void Inspector::add_compile_time_component(const tmt::Inspector::MenuContext& me
 
         const auto name = tmt::Component<T>::get_name();
         if (ImGui::MenuItem(name)) {
+            UndoRedoCollection collection;
             for (const Entity& entity : menu_context.selected_entities) {
+                ComponentDiff<T> component_diff(entity);
+                component_diff.before();
                 tmt::engine.ecs.add_or_get_component<T>(entity);
+                component_diff.after();
+                collection.add_action(component_diff);
             }
+            collection.commit("Add Component: " + std::string(name));
             ImGui::CloseCurrentPopup();
         }
     });

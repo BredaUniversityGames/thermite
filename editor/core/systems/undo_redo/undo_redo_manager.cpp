@@ -1,4 +1,8 @@
 #include "undo_redo_manager.hpp"
+#include "undo_redo_manager.hpp"
+#include "undo_redo_manager.hpp"
+#include "undo_redo_manager.hpp"
+#include "undo_redo_manager.hpp"
 
 #include <imgui.h>
 
@@ -10,6 +14,22 @@
 namespace tmt {
 
 UndoRedoManager& IUndoRedo::get_manager() { return editor.windows.get<UndoRedoManager>(); }
+
+void UndoRedoCollection::commit(const std::string& message) { send_to_manager(std::move(*this), message); }
+
+void UndoRedoCollection::undo() {
+    for (auto& action : actions) {
+        action->undo();
+    }
+}
+
+void UndoRedoCollection::redo() {
+    for (auto& action : actions) {
+        action->redo();
+    }
+}
+
+void UndoRedoCollection::inspect() { ImGui::Text("UndoRedoCollection with %zu actions", actions.size()); }
 
 void UndoRedoManager::commit_action(const std::shared_ptr<IUndoRedo>& action, const std::string& message) {
     CommitAction entry {message, action};
