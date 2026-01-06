@@ -210,9 +210,7 @@ void tmt::NavMesh::inspect() {
         for (int j = 0; j < nodes[i].connecting_nodes.size(); j++) {
             if (i > nodes[i].connecting_nodes[j]) continue;
             int conn_idx = nodes[i].connecting_nodes[j];
-            if (conn_idx > i) {
-                engine.polyline.draw_line(nodes[i].world_pos, nodes[conn_idx].world_pos);
-            }
+            engine.polyline.draw_line(nodes[i].world_pos, nodes[conn_idx].world_pos);
         }
     }
 
