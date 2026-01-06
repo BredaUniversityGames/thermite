@@ -105,5 +105,5 @@ public [ForceInline] VoxelFacet unpack_geometry(const VisData vis, const Structu
     const float3 local_voxel = (float3(voxel_index) + 0.5f + local_normal * 0.5f) * UNITS_PER_VOXEL;
     const float3 half_extent = float3(object.size_rcp_width.xyz) * 0.5f * UNITS_PER_VOXEL;
     const float3 facet_center = mul(object.local_to_world, float4(local_voxel - half_extent, 1.0f)).xyz;
-    return VoxelFacet(facet_center + facet_normal * UNITS_PER_VOXEL * 0.5f, facet_normal);
+    return VoxelFacet(facet_center, facet_normal);
 }

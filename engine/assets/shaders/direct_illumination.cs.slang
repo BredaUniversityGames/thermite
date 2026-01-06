@@ -6,6 +6,7 @@ import view;
 import math;
 import visibility;
 import voxel;
+import bvh2;
 
 static const uint FUSE_LENGTH = 32u;
 static const uint64_t EMPTY_KEY = 0ull;
@@ -17,7 +18,9 @@ struct HashCell {
 
 /* Active render view. */
 ConstantBuffer<RenderView> render_view;
-/* Voxel objects buffer. */
+/* Voxel objects buffers. */
+StructuredBuffer<float4> tlas_nodes;
+StructuredBuffer<uint> object_indices;
 StructuredBuffer<VoxelObject> objects;
 /* Macrofacet shading commands buffer. */
 /* NOTE: First 4 uints are indirect dispatch args, after that uint64_t commands. */
@@ -26,9 +29,8 @@ StructuredBuffer<uint> macrofacet_shading_commands;
 RWStructuredBuffer<HashCell> macrofacet_illuminance_cache;
 
 /* TEMPORARY */
-static const float3 LIGHT_COLOR = float3(1.0f, 0.1f, 0.1f);
+static const float3 LIGHT_LUMINANCE = float3(1.0f, 0.1f, 0.1f) * 256.0f;
 static const float3 LIGHT_POS = float3(2.0f, 12.0f, 4.0f);
-static const float LIGHT_STRENGTH = 256.0f;
 /* TEMPORARY */
 
 [shader("compute")]
@@ -44,11 +46,21 @@ void main(int thread_id: SV_DispatchThreadID) {
     const VisData v = unpack_visibility(facet_key);
     const VoxelFacet facet = unpack_geometry(v, objects);
 
-    /* Evaluate direct illumination */
-    const float3 light_dir = normalize(LIGHT_POS - facet.center);
-    const float light_dist = distance(facet.center, LIGHT_POS);
-    const float3 illuminance = LIGHT_COLOR * max(0.0f, dot(facet.normal, light_dir)) * (1.0f / (light_dist * light_dist)) * LIGHT_STRENGTH;
-    const uint packed_illuminance = encode_rgb9e5(illuminance);
+    /* Calculate light direction and distance */
+    const float3 light_vec = LIGHT_POS - facet.center;
+    const float light_dist_sq = dot(light_vec, light_vec);
+    const float light_dist = sqrt(light_dist_sq);
+    const float3 light_dir = light_vec / light_dist;
+
+    /* Trace light occlusion */
+    const Ray occlusion_ray = custom_ray(facet.center + facet.normal * 0.01f, light_dir);
+    const float t = occlusion_bvh2(tlas_nodes, object_indices, objects, occlusion_ray, light_dist);
+    uint packed_illuminance = 0u;
+    if (t >= light_dist) {
+        /* Evaluate direct illumination */
+        const float3 illuminance = LIGHT_LUMINANCE * max(0.0f, dot(facet.normal, light_dir)) / light_dist_sq;
+        packed_illuminance = encode_rgb9e5(illuminance);
+    }
 
     /* Evaluate the voxel hash function */
     const uint capacity = 10000000u;
@@ -77,10 +89,4 @@ void main(int thread_id: SV_DispatchThreadID) {
         /* Move to the next hash cache slot */
         slot = (slot + 1u) % capacity;
     }
-
-    
-    // TODO: Reset indirect dispatch arguments for macrofacets. (for next frame)
-    // TODO: Unpack geometry info, get position and normal of voxel facet.
-    // TODO: Evaluate lighting for voxel facet.
-    // TODO: Write evaluated lighting to illuminance cache.
 }
