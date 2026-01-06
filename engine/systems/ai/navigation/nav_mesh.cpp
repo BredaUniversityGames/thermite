@@ -4,9 +4,12 @@
 #include "engine/core/polyline.hpp"
 #include "engine/core/logger.hpp"
 
+#include "engine/tools/profiler.hpp"
+
 using namespace tmt;
 
 void NavMesh::generate_mesh(tmt::ResourceRef<tmt::VoxelVolume> voxel_volume, int lod_level) {
+    TMT_ZONE_SCOPED_N("NavMesh::generate_mesh");
     nodes.clear();
 
     uint32_t full_depth = voxel_volume->blas->depth;
@@ -24,6 +27,7 @@ void NavMesh::generate_mesh(tmt::ResourceRef<tmt::VoxelVolume> voxel_volume, int
     };
 
     std::function<void(uint32_t, glm::uvec3, uint32_t, uint32_t)> traverse = [&](uint32_t node_idx, glm::uvec3 origin, uint32_t scale, uint32_t depth) {
+        TMT_ZONE_SCOPED_N("NavMesh::traverse");
         const auto& node = voxel_volume->blas->nodes[node_idx];
         uint64_t mask = node.child_mask;
         uint32_t base = node.abs_ptr();
@@ -49,6 +53,7 @@ void NavMesh::generate_mesh(tmt::ResourceRef<tmt::VoxelVolume> voxel_volume, int
     // Helper lambda
     auto voxel_empty = [&](uint32_t x, uint32_t y, uint32_t z) { return !occupied[x + size.x * y + size.x * size.y * z]; };
     auto is_surface = [&](uint32_t x, uint32_t y, uint32_t z) {
+        TMT_ZONE_SCOPED_N("NavMesh::is_surface");
         if (voxel_empty(x, y, z)) return false;
         for (size_t sign = 0; sign < 2; sign++) {
             for (size_t dir = 0; dir < 3; dir++) {
@@ -69,6 +74,7 @@ void NavMesh::generate_mesh(tmt::ResourceRef<tmt::VoxelVolume> voxel_volume, int
     for (uint32_t z = 0; z < size.z; z++) {
         for (uint32_t y = 0; y < size.y; y++) {
             for (uint32_t x = 0; x < size.x; x++) {
+                TMT_ZONE_SCOPED_N("NavMesh::Loops");
                 if (!is_surface(x, y, z)) continue;
 
                 const uint32_t pos_index = x + size.x * y + size.x * size.y * z;
