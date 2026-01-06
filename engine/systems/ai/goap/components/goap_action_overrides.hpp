@@ -6,7 +6,6 @@
 
 #include "goap_action_editor_data.hpp"
 #include "goap_action.hpp"
-//#include "engine/tools/serializer.hpp"  // JsonReflect
 
 #include "engine/core/reflection.hpp"
 
@@ -30,5 +29,3 @@ class GoapActionOverrides {
 }  // namespace tmt
 
 TMT_OBJECT(tmt::GoapActionOverrides, (data));
-
-//TMT_OBJECT(tmt::GoapActionEditorData, (cost, preconditions, effects));

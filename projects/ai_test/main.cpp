@@ -58,7 +58,7 @@ void Game::on_start() {
 
         // --- Agent 1 ---
         tmt::Entity ai = ecs.create_entity();
-        auto& transform = ecs.add_component<tmt::Transform>(ai);
+        auto& transform = ecs.get_component<tmt::Transform>(ai);
         auto& agent = ecs.add_component<tmt::GoapAgent>(ai);
         auto& ws = ecs.add_component<tmt::WorldState>(ai);
         transform.set_world_position({0.f, 0.f, 0.f});
@@ -104,7 +104,7 @@ void Game::on_start() {
 
         // --- Agent 2 ---
         tmt::Entity ai2 = ecs.create_entity();
-        auto& transform2 = ecs.add_component<tmt::Transform>(ai2);
+        auto& transform2 = ecs.get_component<tmt::Transform>(ai2);
         auto& agent2 = ecs.add_component<tmt::GoapAgent>(ai2);
         auto& ws2 = ecs.add_component<tmt::WorldState>(ai2);
         transform2.set_world_position({5.f, 0.f, 0.f});  // different position
