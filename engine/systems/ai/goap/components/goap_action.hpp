@@ -3,23 +3,6 @@
 #include "world_state.hpp"
 
 /**
- * Enum GoapActionId
- * Used for registering what actions belong to what agents.
- *
- * Whent creating an agent:
- * agent.action_set = {
- *  GoapActionId::PATROL_AREA,
- *  GoapActionId::CHASE_PLAYER
- * };
- *
- * This is used in the ImGui node editor.
- *
- * When you add an action, add it here as an enum value,
- * and use that for adding actions to the agent.
- */
-//enum class GoapActionId { PATROL_AREA, CHASE_PLAYER, KILL_PLAYER };
-
-/**
  * Class GoapAction
  * Base class for all GOAP actions. Inherit this to define behavior.
  *
@@ -40,7 +23,7 @@ class GoapAction {
     GoapAction() = default;
     virtual ~GoapAction() = default;
 
-    virtual std::string get_id() const = 0; 
+    virtual std::string get_id() const = 0;
 
     // These are used by the planner
     std::unordered_map<std::string, bool> preconditions;
@@ -51,7 +34,7 @@ class GoapAction {
     bool is_running = false;
 
     // readable name
-    //virtual const char* get_name() const = 0;
+    // virtual const char* get_name() const = 0;
 
     /**
      * Checks if world state satisfies the action's preconditions.
