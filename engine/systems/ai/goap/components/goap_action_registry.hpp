@@ -1,5 +1,10 @@
 #pragma once
-#include <vector>
+#include "goap_action.hpp"
+
+//#include <vector>
+#include <memory>
+#include <string>
+#include <unordered_map>
 
 namespace tmt {
 
