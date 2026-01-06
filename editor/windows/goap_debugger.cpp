@@ -72,13 +72,10 @@ void GoapDebugger::display() {
         }
 
         static const char* combo_preview_val = "Select Agent..";
-        if(ImGui::BeginCombo("Select Agent", combo_preview_val))
-        {
-            for(auto agent : agents)
-            {
+        if (ImGui::BeginCombo("Select Agent", combo_preview_val)) {
+            for (auto agent : agents) {
                 const char*& name = agent_names[static_cast<uint32_t>(agent) - 1];
-                if(ImGui::Selectable(name))
-                {
+                if (ImGui::Selectable(name)) {
                     selected_agent = agents[current_index];
                     combo_preview_val = name;
                 }
