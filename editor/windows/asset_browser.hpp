@@ -13,17 +13,16 @@ class AssetBrowser : public IWindow {
    public:
     struct Directory {
         IO::FileLocation location;
-        std::vector<Directory> sub_directories{};
+        std::vector<Directory> sub_directories {};
     };
 
-    struct Bookmark
-    {
+    struct Bookmark {
         Directory directory;
         DirectoryWatcher location_watcher;
     };
 
     constexpr std::string get_title() const override { return ICON_MS_FOLDER " Asset Browser"; }
-    constexpr int get_window_flags() const override {return ImGuiWindowFlags_MenuBar; }
+    constexpr int get_window_flags() const override { return ImGuiWindowFlags_MenuBar; }
 
     void display() override;
 
@@ -34,7 +33,7 @@ class AssetBrowser : public IWindow {
    private:
     std::optional<IO::FileLocation> pending_viewing_location {viewing_location};
     IO::FileLocation viewing_location {};
-    DirectoryWatcher viewing_location_watcher{};
+    DirectoryWatcher viewing_location_watcher {};
     std::vector<IO::FileLocation> viewing_locations;
     std::vector<IO::FileLocation> selected_locations;
 

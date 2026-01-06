@@ -72,7 +72,7 @@ void* file_location_to_buffer(const tmt::IO::FileLocation& location, size_t& siz
     const size_t relative_path_size = path_string.size();
 
     size = sub_location_size + relative_path_size;
-    void* data = std::malloc(size); // Allocate enough data to hold teh IO::Location and the relative path string.
+    void* data = std::malloc(size);  // Allocate enough data to hold teh IO::Location and the relative path string.
 
     *static_cast<tmt::IO::Location*>(data) = location.sub_location;
     std::memcpy(static_cast<char*>(data) + sub_location_size, path_string.data(), relative_path_size);

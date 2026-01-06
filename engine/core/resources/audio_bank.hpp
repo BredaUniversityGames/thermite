@@ -19,7 +19,7 @@ class AudioBank : public FileResource {
     bool load() override;
     void unload() override;
 
-    inline static const std::set<std::string_view> supported_file_extensions {".bank"};
+    inline static const std::set<std::string_view> SUPPORTED_FILE_EXTENSIONS {".bank"};
 
     // Get the path/name of the bank (returns empty string when not in debug mode and not using the editor).
     [[nodiscard]] std::string get_path() const;

@@ -51,7 +51,7 @@ class RuntimeResource : public Resource {
 
     virtual ~RuntimeResource() = default;
 
-    inline static const std::set<std::string_view>& supported_file_extensions{T::supported_file_extensions};
+    inline static const std::set<std::string_view>& SUPPORTED_FILE_EXTENSIONS{T::SUPPORTED_FILE_EXTENSIONS};
 
     const std::shared_ptr<T> file_resource;
 
