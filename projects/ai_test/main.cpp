@@ -17,7 +17,14 @@
 
 class Game : public tmt::Application {
    public:
-    Game(const tmt::ApplicationSpecs& specs) : Application(specs) {}
+    Game(const tmt::ApplicationSpecs& specs) : Application(specs) {
+        auto& registry = tmt::GoapActionRegistry::instance();
+
+        // --- Register actions ---
+        registry.register_action(std::make_unique<tmt::PatrolArea>());
+        registry.register_action(std::make_unique<tmt::ChasePlayer>());
+        registry.register_action(std::make_unique<tmt::KillPlayer>());
+    }
 
     tmt::Entity voxel {};
     float time_passed = 0.0f;
@@ -63,11 +70,6 @@ void AIScene::on_start() {
         auto& ecs = tmt::engine.ecs;
         auto& registry = tmt::GoapActionRegistry::instance();
 
-        // --- Register actions ---
-        registry.register_action(std::make_unique<tmt::PatrolArea>());
-        registry.register_action(std::make_unique<tmt::ChasePlayer>());
-        registry.register_action(std::make_unique<tmt::KillPlayer>());
-
         // --- Agent 1 ---
         tmt::Entity ai = ecs.create_entity();
         auto& transform = ecs.get_component<tmt::Transform>(ai);
@@ -82,15 +84,6 @@ void AIScene::on_start() {
                 agent.available_actions.push_back(action);
             }
         }
-
-        // Give it whatever normal game components it needs
-        // auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(ai);
-
-        // Add GOAP agent
-        // auto& agent = tmt::engine.ecs.add_component<tmt::GoapAgent>(ai);
-
-        // Add world state (facts relevant to planning)
-        // auto& ws = tmt::engine.ecs.add_component<tmt::WorldState>(ai);
 
         // Define goals
         tmt::GoapGoal patrol_goal;
@@ -139,12 +132,6 @@ void AIScene::on_start() {
     }
 }
 
-void AIScene::on_update(const tmt::FrameData& time) {
-    // time_passed += time.delta_time;
-    // auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(voxel);
-    // transform.set_world_position(glm::vec3(1.0f, sinf(time_passed), 1.0f));
-    // transform.set_world_rotation(glm::vec3(0.0f, cosf(time_passed), 0.0f));
-    // transform.set_world_scale(glm::vec3(1.0f, 1.5f + sinf(time_passed), 1.0f));
-}
+void AIScene::on_update(const tmt::FrameData& time) {}
 
 void AIScene::on_end() {}
