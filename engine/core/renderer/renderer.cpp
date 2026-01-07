@@ -14,17 +14,20 @@
 
 #include "engine/engine.hpp"
 
-#include "pipelines/debug_pipeline.hpp"
+#include "pipelines/polyline_pipeline.hpp"
 #include "pipelines/geometry_pipeline.hpp"
+#include "pipelines/di_pipeline.hpp"
 #include "tools/profiler.hpp"
 
 namespace tmt {
 
-Renderer::Renderer() : gpu(*new GPUAdapter()), render_graph(*new RenderGraph()), debug_pipeline(*new DebugPipeline()), geometry_pipeline(*new GeometryPipeline()) {}
+Renderer::Renderer()
+    : gpu(*new GPUAdapter()), render_graph(*new RenderGraph()), geometry_pipeline(*new GeometryPipeline()), di_pipeline(*new DiPipeline()), polyline_pipeline(*new PolylinePipeline()) {}
 
 Renderer::~Renderer() {
+    delete &polyline_pipeline;
+    delete &di_pipeline;
     delete &geometry_pipeline;
-    delete &debug_pipeline;
     delete &render_graph;
     delete &gpu;
 }
@@ -53,36 +56,48 @@ void Renderer::init() {
     gpu.set_max_samplers(32u);
 
     /* Initialize the GPU adapter */
-    if (const Result r = gpu.init(true); r.is_err()) {
+    bool sync_validation = false;  // Sync validation is enabled only in Debug
+    bool gpu_validation = false;   // GPU assisted validation is enabled only in Debug
+#ifdef THERMITE_DEBUG
+    sync_validation = true;
+    gpu_validation = true;
+#endif  //
+
+    if (const Result r = gpu.init(true, sync_validation, gpu_validation); r.is_err()) {
         Log::error(Log::Scope::RENDERER, "failed to initialize gpu adapter.\nreason: {}", r.unwrap_err());
         return;
     }
 
     /* Initialize the Render Graph */
     render_graph.set_shader_path("assets/engine/shaders/bin");
-    render_graph.set_staging_limit(10000000u /* 10mb */);
+    render_graph.set_staging_limit(32000000u /* 32mb */);
     render_graph.set_max_graphs_in_flight(2u); /* Double buffering */
     if (const Result r = render_graph.init(gpu); r.is_err()) {
         Log::error(Log::Scope::RENDERER, "failed to initialize render graph.\nreason: {}", r.unwrap_err());
         return;
     }
 
-    /* Initialize the Render View */
+    /* Initialize the rendering views */
     render_view.init();
+    scene_view.init();
 
     /* Initialize pipelines */
-    debug_pipeline.init(gpu);
-    geometry_pipeline.init(gpu);
+    polyline_pipeline.init(gpu);
 
     debug_transform.set_local_position({0.0f, 0.0f, -1.0f});
 }
 
 void Renderer::update() {
     TMT_ZONE_SCOPED_N("Rendering")
-    render_view.update();
 
+    /* Start a new render graph */
     render_graph.new_graph().unwrap();
 
+    /* Update the rendering views */
+    render_view.update();
+    scene_view.update(render_graph);
+
+    /* Update the camera view */
     Entity cam_entity = Camera::get_active_camera();
     if (engine.game_controller.is_running() && cam_entity != entt::null) {
         const Camera& camera = engine.ecs.get_component<Camera>(cam_entity);
@@ -91,9 +106,11 @@ void Renderer::update() {
     } else {
         render_view.update_gpu_view(render_graph, debug_camera, debug_transform);
     }
-    /* Pipelines enqueue */
-    geometry_pipeline.enqueue(render_graph, render_view);
-    debug_pipeline.enqueue(render_graph, render_view);
+
+    /* Enqueue pipelines */
+    geometry_pipeline.enqueue(render_graph, render_view, scene_view);
+    di_pipeline.enqueue(render_graph, render_view, scene_view);
+    polyline_pipeline.enqueue(render_graph, render_view);
 
 #ifdef THERMITE_EDITOR
     /* Add the immediate mode GUI to the render graph */
@@ -115,11 +132,13 @@ void Renderer::update() {
 
 void Renderer::end() {
     VRAMBank& bank = gpu.get_vram_bank();
+
+    /* De-initialize the rendering views */
     render_view.deinit();
+    scene_view.deinit();
 
     /* Pipelines cleanup */
-    debug_pipeline.deinit(gpu);
-    geometry_pipeline.deinit(gpu);
+    polyline_pipeline.deinit(gpu);
 
     /* Cleanup the VRAM bank & GPU adapter */
     render_graph.deinit().expect("failed to destroy render graph.");
@@ -136,29 +155,9 @@ void Renderer::set_imgui(ImGUI* new_imgui) {
         return;
     }
 
-    render_view.imgui_viewport = imgui->add_image(render_view.viewport_image);
+    render_view.imgui_viewport = imgui->add_image(render_view.viewport.image);
 }
 #endif
-
-void Renderer::draw_line(const glm::vec3 start, const glm::vec3 end, const glm::vec3 color, const float time) { debug_pipeline.draw_line(start, end, color, time); }
-
-void Renderer::draw_circle(const glm::vec3 center, const float radius, const glm::vec3 axis_a, const glm::vec3 axis_b, const glm::vec3 color, int segments, const float time) {
-    debug_pipeline.draw_circle(center, radius, axis_a, axis_b, color, segments, time);
-}
-
-void Renderer::draw_sphere(const glm::vec3 center, const float radius, const glm::vec3 color, int rings, int segments, const float time) {
-    debug_pipeline.draw_sphere(center, radius, color, rings, segments, time);
-}
-
-void Renderer::draw_arrow(const glm::vec3 start, glm::vec3 dir, const glm::vec3 color, float length, float head_length, float head_angle, const float time) {
-    debug_pipeline.draw_arrow(start, dir, color, length, head_length, head_angle, time);
-}
-
-void Renderer::draw_cross(const glm::vec3 center, const glm::vec3 color, const float size, const glm::quat rot, const float time) { debug_pipeline.draw_cross(center, color, size, rot, time); }
-
-void Renderer::draw_obb(const glm::vec3 center, const float width, const float height, const float depth, const glm::vec3 color, const glm::quat rot, const float time) {
-    debug_pipeline.draw_obb(center, width, height, depth, color, rot, time);
-}
 
 VRAMBank& Renderer::vram_bank() { return gpu.get_vram_bank(); }
 
