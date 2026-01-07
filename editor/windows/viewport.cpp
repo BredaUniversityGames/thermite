@@ -138,9 +138,11 @@ void tmt::Viewport::gizmo_manip() {
 
     bool changed = false;
 
+    Entity selected_entity = hierarchy.get_first_selected_entity();
+    if (engine.ecs.valid(selected_entity) == false) return;
+
     // relative to first
     if (gizmo_multiselect_mode == 0) {
-        Entity selected_entity = hierarchy.get_first_selected_entity();
         Transform& selected_transform = engine.ecs.get_component<Transform>(selected_entity);
         auto& selected_matrix = selected_transform.get_world_matrix();
         glm::mat4 imguizmo_input_matrix = selected_matrix;
@@ -150,15 +152,17 @@ void tmt::Viewport::gizmo_manip() {
             &view[0][0], &perspective[0][0], static_cast<ImGuizmo::OPERATION>(gizmo_operations[gizmo_operation]), static_cast<ImGuizmo::MODE>(gizmo_space), &imguizmo_input_matrix[0][0],
             &delta[0][0]
         );
-        selected_transform.set_world_matrix(imguizmo_input_matrix);
+        if (changed) {
+            selected_transform.set_world_matrix(imguizmo_input_matrix);
 
-        for (auto entity : selected_entities) {
-            if (entity == selected_entity) continue;
+            for (auto entity : selected_entities) {
+                if (entity == selected_entity) continue;
 
-            Transform& multi_select_transform = engine.ecs.get_component<Transform>(entity);
-            auto& multi_matrix = multi_select_transform.get_world_matrix();
+                Transform& multi_select_transform = engine.ecs.get_component<Transform>(entity);
+                auto& multi_matrix = multi_select_transform.get_world_matrix();
 
-            multi_select_transform.set_world_matrix(delta * multi_matrix);
+                multi_select_transform.set_world_matrix(delta * multi_matrix);
+            }
         }
     } else {  // relative to average
         uint32_t amount = static_cast<uint32_t>(selected_entities.size());
@@ -184,11 +188,13 @@ void tmt::Viewport::gizmo_manip() {
         changed = ImGuizmo::Manipulate(
             &view[0][0], &perspective[0][0], static_cast<ImGuizmo::OPERATION>(gizmo_operations[gizmo_operation]), static_cast<ImGuizmo::MODE>(gizmo_space), &avg[0][0], &delta[0][0]
         );
-        for (auto entity : selected_entities) {
-            Transform& multi_select_transform = engine.ecs.get_component<Transform>(entity);
-            auto& multi_matrix = multi_select_transform.get_world_matrix();
+        if (changed) {
+            for (auto entity : selected_entities) {
+                Transform& multi_select_transform = engine.ecs.get_component<Transform>(entity);
+                auto& multi_matrix = multi_select_transform.get_world_matrix();
 
-            multi_select_transform.set_world_matrix(delta * multi_matrix);
+                multi_select_transform.set_world_matrix(delta * multi_matrix);
+            }
         }
     }
 

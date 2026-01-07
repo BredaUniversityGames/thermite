@@ -24,7 +24,7 @@ class Hierarchy : public IWindow, public OnGameEnd, public OnPreUnloadScene {
     constexpr bool default_open() const override { return true; }
 
     void on_editor_start() override {};
-    void on_editor_update(const FrameData&) override {};
+    void on_editor_update(const FrameData&) override;
     void on_editor_end() override {};
 
     template <typename... Components>

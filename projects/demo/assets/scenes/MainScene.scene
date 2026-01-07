@@ -3,13 +3,7 @@
     "entities": [
         0,
         1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8
+        2
     ],
     "Name": {
         "0": {
@@ -20,24 +14,6 @@
         },
         "2": {
             "name": "Asteroids"
-        },
-        "3": {
-            "name": "Asteroid 0"
-        },
-        "4": {
-            "name": "Asteroid 1"
-        },
-        "5": {
-            "name": "Asteroid 2"
-        },
-        "6": {
-            "name": "Asteroid 3"
-        },
-        "7": {
-            "name": "Asteroid 4"
-        },
-        "8": {
-            "name": "Asteroid 5"
         }
     },
     "Transform": {
@@ -99,133 +75,6 @@
                 "z": 1.0
             },
             "parent": 4294967295,
-            "children": [
-                3,
-                4,
-                5,
-                6,
-                7,
-                8
-            ]
-        },
-        "3": {
-            "local_position": {
-                "x": -0.14054358005523682,
-                "y": 0.0,
-                "z": 18.346616744995117
-            },
-            "local_rotation": {
-                "w": 0.6581547260284424,
-                "x": 0.0011640575248748064,
-                "y": -0.34647655487060547,
-                "z": 0.6684197783470154
-            },
-            "local_scale": {
-                "x": 0.9999982118606567,
-                "y": 0.9999987483024597,
-                "z": 0.9999980926513672
-            },
-            "parent": 2,
-            "children": []
-        },
-        "4": {
-            "local_position": {
-                "x": 22.28660774230957,
-                "y": 0.0,
-                "z": -3.5727291107177734
-            },
-            "local_rotation": {
-                "w": 0.6581547260284424,
-                "x": 0.0011640575248748064,
-                "y": -0.34647655487060547,
-                "z": 0.6684197783470154
-            },
-            "local_scale": {
-                "x": 0.9999982118606567,
-                "y": 0.9999987483024597,
-                "z": 0.9999980926513672
-            },
-            "parent": 2,
-            "children": []
-        },
-        "5": {
-            "local_position": {
-                "x": -0.14054358005523682,
-                "y": 0.0,
-                "z": -19.99302864074707
-            },
-            "local_rotation": {
-                "w": 0.6581547260284424,
-                "x": 0.0011640575248748064,
-                "y": -0.34647655487060547,
-                "z": 0.6684197783470154
-            },
-            "local_scale": {
-                "x": 0.9999982118606567,
-                "y": 0.9999987483024597,
-                "z": 0.9999980926513672
-            },
-            "parent": 2,
-            "children": []
-        },
-        "6": {
-            "local_position": {
-                "x": -22.358028411865234,
-                "y": 0.0,
-                "z": -1.389533519744873
-            },
-            "local_rotation": {
-                "w": 0.6581547260284424,
-                "x": 0.0011640575248748064,
-                "y": -0.34647655487060547,
-                "z": 0.6684197783470154
-            },
-            "local_scale": {
-                "x": 0.9999982118606567,
-                "y": 0.9999987483024597,
-                "z": 0.9999980926513672
-            },
-            "parent": 2,
-            "children": []
-        },
-        "7": {
-            "local_position": {
-                "x": -9.948802947998047,
-                "y": 0.0,
-                "z": 10.831242561340332
-            },
-            "local_rotation": {
-                "w": 0.6581547260284424,
-                "x": 0.0011640575248748064,
-                "y": -0.34647655487060547,
-                "z": 0.6684197783470154
-            },
-            "local_scale": {
-                "x": 0.9999982118606567,
-                "y": 0.9999987483024597,
-                "z": 0.9999980926513672
-            },
-            "parent": 2,
-            "children": []
-        },
-        "8": {
-            "local_position": {
-                "x": 20.076438903808594,
-                "y": 1.1109739261883078e-06,
-                "z": 9.233161926269531
-            },
-            "local_rotation": {
-                "w": 0.6581547260284424,
-                "x": 0.0011640549637377262,
-                "y": -0.34647655487060547,
-                "z": 0.6684197783470154
-            },
-            "local_scale": {
-                "x": 0.9999982118606567,
-                "y": 0.9999987483024597,
-                "z": 0.9999980926513672
-            },
-            "parent": 2,
             "children": []
         }
     },
@@ -241,96 +90,6 @@
                         "x": 128,
                         "y": 90,
                         "z": 58
-                    }
-                }
-            }
-        },
-        "3": {
-            "resource": {
-                "file_location": {
-                    "sub_location": "PROJECT",
-                    "relative_path": "asteroids/test_asteroid_0.vengi"
-                },
-                "data": {
-                    "size": {
-                        "x": 85,
-                        "y": 77,
-                        "z": 67
-                    }
-                }
-            }
-        },
-        "4": {
-            "resource": {
-                "file_location": {
-                    "sub_location": "PROJECT",
-                    "relative_path": "asteroids/test_asteroid_1.vengi"
-                },
-                "data": {
-                    "size": {
-                        "x": 74,
-                        "y": 75,
-                        "z": 77
-                    }
-                }
-            }
-        },
-        "5": {
-            "resource": {
-                "file_location": {
-                    "sub_location": "PROJECT",
-                    "relative_path": "asteroids/test_asteroid_2.vengi"
-                },
-                "data": {
-                    "size": {
-                        "x": 149,
-                        "y": 151,
-                        "z": 137
-                    }
-                }
-            }
-        },
-        "6": {
-            "resource": {
-                "file_location": {
-                    "sub_location": "PROJECT",
-                    "relative_path": "asteroids/test_asteroid_3.vengi"
-                },
-                "data": {
-                    "size": {
-                        "x": 169,
-                        "y": 183,
-                        "z": 209
-                    }
-                }
-            }
-        },
-        "7": {
-            "resource": {
-                "file_location": {
-                    "sub_location": "PROJECT",
-                    "relative_path": "asteroids/test_asteroid_4.vengi"
-                },
-                "data": {
-                    "size": {
-                        "x": 65,
-                        "y": 68,
-                        "z": 65
-                    }
-                }
-            }
-        },
-        "8": {
-            "resource": {
-                "file_location": {
-                    "sub_location": "PROJECT",
-                    "relative_path": "asteroids/test_asteroid_5.vengi"
-                },
-                "data": {
-                    "size": {
-                        "x": 111,
-                        "y": 105,
-                        "z": 138
                     }
                 }
             }
@@ -481,8 +240,16 @@
                     }
                 ],
                 "asteroid_count": 100,
+                "enable_random_rotation": true,
+                "max_height_offset": 10.0,
+                "max_radius": 200.0,
+                "max_scale_factor": 2.0,
+                "min_height_offset": -10.0,
+                "min_radius": 50.0,
+                "min_scale_factor": 0.5,
+                "radial_bias": 0.0,
                 "seed": 42,
-                "spawn_radius": 500.0
+                "use_3d_distribution": false
             }
         }
     }

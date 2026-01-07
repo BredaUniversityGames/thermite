@@ -2,6 +2,7 @@
 #include "engine/systems/gameplay/game_component.hpp"
 #include "engine/core/resource.hpp"
 #include "engine/core/resources/voxel_volume.hpp"
+#include <glm/glm.hpp>
 
 class AsteroidSpawner : public tmt::GameComponent<AsteroidSpawner> {
    public:
@@ -12,19 +13,52 @@ class AsteroidSpawner : public tmt::GameComponent<AsteroidSpawner> {
     void update(const tmt::FrameData& time) override;
     void end() override;
 
-    void on_inspect() override;
-
     void spawn_asteroids();
 
+    void on_inspect(ImResponse& response) override;
 
-    uint32_t asteroid_count = 100;
-    float spawn_radius = 500.0f;
-
+    // Seed for reproducible randomness
+    bool randomize_seed = true;
     uint64_t seed = 42;
 
+    // Asteroid resources to randomly choose from
     std::vector<tmt::ResourceRef<tmt::VoxelVolume>> asteroid_bodies;
 
+    // === Ring Distribution Parameters ===
+    float min_radius = 50.0f;   // Inner circle radius (empty center)
+    float max_radius = 200.0f;  // Outer circle radius
+    int asteroid_count = 100;   // Total number of asteroids to spawn
+
+    // === Height Variation Parameters ===
+    float min_height_offset = -10.0f;  // Minimum Y offset from ring plane
+    float max_height_offset = 10.0f;   // Maximum Y offset from ring plane
+
+    // === Scale Variation Parameters ===
+    float min_scale_factor = 0.5f;  // Minimum scale multiplier
+    float max_scale_factor = 2.0f;  // Maximum scale multiplier
+
+    // === Rotation Parameters ===
+    bool enable_random_rotation = true;  // Toggle random rotation
+
+    // === Advanced Options ===
+    bool use_3d_distribution = false;  // If true, distributes in sphere annulus instead of ring
+    float radial_bias = 0.0f;          // -1.0 (inner bias) to 1.0 (outer bias), 0.0 = uniform
+
    private:
-    tmt::Transform& create_asteroid();
+    std::vector<tmt::Entity> spawned_asteroids;
+
+    tmt::Entity create_asteroid(const glm::vec3& position, const glm::vec3& rotation, float scale);
+
+    // Random number generation helpers
+    float random_float(float min, float max);
+    glm::vec3 random_rotation();
+
+    // Distribution calculation
+    glm::vec3 calculate_position(int index, int total);
 };
-TMT_OBJECT(AsteroidSpawner, (asteroid_count, spawn_radius, seed, asteroid_bodies));
+
+TMT_OBJECT(
+    AsteroidSpawner, (randomize_seed, seed, min_radius, max_radius, asteroid_count, min_height_offset, max_height_offset, min_scale_factor, max_scale_factor, enable_random_rotation,
+                      use_3d_distribution,
+                      radial_bias, asteroid_bodies)
+);

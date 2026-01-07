@@ -184,6 +184,8 @@ class Ecs : public OnGameStart, public OnGameUpdate, public OnGameFixedUpdate, p
 
     void clear() { registry.clear(); }
 
+    bool valid(const Entity entity) const { return registry.valid(entity); }
+
     Collection<ISystem> systems;
 
    private:
