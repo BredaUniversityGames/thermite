@@ -4,7 +4,10 @@
         0,
         1,
         2,
-        3
+        3,
+        4,
+        5,
+        6
     ],
     "Name": {
         "0": {
@@ -18,6 +21,15 @@
         },
         "3": {
             "name": "Asteroid 0"
+        },
+        "4": {
+            "name": "Asteroid 1"
+        },
+        "5": {
+            "name": "Asteroid 2"
+        },
+        "6": {
+            "name": "Asteroid 3"
         }
     },
     "Transform": {
@@ -25,7 +37,7 @@
             "local_position": {
                 "x": 0.0,
                 "y": 0.0,
-                "z": 0.0
+                "z": -9.915840148925781
             },
             "local_rotation": {
                 "w": 1.0,
@@ -45,7 +57,7 @@
             "local_position": {
                 "x": 0.0,
                 "y": 0.0,
-                "z": 14.48705768585205
+                "z": 0.0
             },
             "local_rotation": {
                 "w": 1.0,
@@ -80,14 +92,77 @@
             },
             "parent": 4294967295,
             "children": [
-                3
+                3,
+                4,
+                5,
+                6
             ]
         },
         "3": {
             "local_position": {
                 "x": -0.14054358005523682,
-                "y": 11.061845779418945,
-                "z": 13.880524635314941
+                "y": 0.0,
+                "z": 18.346616744995117
+            },
+            "local_rotation": {
+                "w": 0.6581547260284424,
+                "x": 0.0011640549637377262,
+                "y": -0.34647655487060547,
+                "z": 0.6684197783470154
+            },
+            "local_scale": {
+                "x": 0.9999982118606567,
+                "y": 0.9999987483024597,
+                "z": 0.9999980926513672
+            },
+            "parent": 2,
+            "children": []
+        },
+        "4": {
+            "local_position": {
+                "x": 22.28660774230957,
+                "y": 0.0,
+                "z": -3.5727291107177734
+            },
+            "local_rotation": {
+                "w": 0.6581547260284424,
+                "x": 0.0011640549637377262,
+                "y": -0.34647655487060547,
+                "z": 0.6684197783470154
+            },
+            "local_scale": {
+                "x": 0.9999982118606567,
+                "y": 0.9999987483024597,
+                "z": 0.9999980926513672
+            },
+            "parent": 2,
+            "children": []
+        },
+        "5": {
+            "local_position": {
+                "x": -0.14054358005523682,
+                "y": 0.0,
+                "z": -19.99302864074707
+            },
+            "local_rotation": {
+                "w": 0.6581547260284424,
+                "x": 0.0011640549637377262,
+                "y": -0.34647655487060547,
+                "z": 0.6684197783470154
+            },
+            "local_scale": {
+                "x": 0.9999982118606567,
+                "y": 0.9999987483024597,
+                "z": 0.9999980926513672
+            },
+            "parent": 2,
+            "children": []
+        },
+        "6": {
+            "local_position": {
+                "x": -18.463857650756836,
+                "y": 0.0,
+                "z": -0.6257038116455078
             },
             "local_rotation": {
                 "w": 0.6581547260284424,
@@ -134,6 +209,51 @@
                     }
                 }
             }
+        },
+        "4": {
+            "resource": {
+                "file_location": {
+                    "sub_location": "PROJECT",
+                    "relative_path": "asteroids/test_asteroid_0.vengi"
+                },
+                "data": {
+                    "size": {
+                        "x": 85,
+                        "y": 77,
+                        "z": 67
+                    }
+                }
+            }
+        },
+        "5": {
+            "resource": {
+                "file_location": {
+                    "sub_location": "PROJECT",
+                    "relative_path": "asteroids/test_asteroid_0.vengi"
+                },
+                "data": {
+                    "size": {
+                        "x": 85,
+                        "y": 77,
+                        "z": 67
+                    }
+                }
+            }
+        },
+        "6": {
+            "resource": {
+                "file_location": {
+                    "sub_location": "PROJECT",
+                    "relative_path": "asteroids/test_asteroid_0.vengi"
+                },
+                "data": {
+                    "size": {
+                        "x": 85,
+                        "y": 77,
+                        "z": 67
+                    }
+                }
+            }
         }
     },
     "Camera": {
@@ -161,32 +281,15 @@
             },
             "type": "STATIC",
             "gravity": 0.0
-        },
-        "3": {
-            "resource": {
-                "file_location": {
-                    "sub_location": "PROJECT",
-                    "relative_path": "asteroids/test_asteroid_0.vengi"
-                },
-                "data": {
-                    "size": {
-                        "x": 85,
-                        "y": 77,
-                        "z": 67
-                    }
-                }
-            },
-            "type": "DYNAMIC",
-            "gravity": 9.800000190734863
         }
     },
     "ComponentCollection": {
         "0": {
             "Player": {
-                "acceleration": 20.0,
+                "acceleration": 10.0,
                 "camera_sensitivity": 0.10000000149011612,
-                "drag": 5.0,
-                "max_speed": 10.0,
+                "drag": 2.5,
+                "max_speed": 5.0,
                 "velocity": {
                     "x": 0.0,
                     "y": 0.0,
