@@ -7,6 +7,7 @@
 #include "engine/engine.hpp"
 #include "engine/core/renderer/renderer.hpp"
 #include "engine/tools/profiler.hpp"
+#include "engine/tools/timer.hpp"
 
 #include <queue>
 #include <omp.h>
