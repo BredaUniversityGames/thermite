@@ -5,6 +5,9 @@
 #include "engine/core/scene.hpp"
 #include "engine/core/scenes.hpp"
 
+/* Components */
+#include "components/player.hpp"
+
 class Demo : public tmt::Application {
    public:
     Demo(const tmt::ApplicationSpecs& specs) : Application(specs) {}
@@ -24,6 +27,9 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
 
     /* Register Scenes */
     tmt::engine.scenes.register_scene<MainScene>();
+
+    /*Regsiter Components */
+    tmt::engine.component_registry.register_component<Player>();
 
     return std::make_unique<Demo>(specs);
 }

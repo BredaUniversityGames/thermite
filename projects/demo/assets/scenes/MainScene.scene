@@ -1,0 +1,89 @@
+{
+    "version": 1,
+    "entities": [
+        0,
+        1
+    ],
+    "Name": {
+        "0": {
+            "name": "Player"
+        },
+        "1": {
+            "name": "Dragon"
+        }
+    },
+    "Transform": {
+        "0": {
+            "local_position": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "local_rotation": {
+                "w": 1.0,
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "local_scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "parent": 4294967295,
+            "children": []
+        },
+        "1": {
+            "local_position": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 14.48705768585205
+            },
+            "local_rotation": {
+                "w": 1.0,
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "local_scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "parent": 4294967295,
+            "children": []
+        }
+    },
+    "Voxel Renderer": {
+        "1": {
+            "resource": {
+                "file_location": {
+                    "sub_location": "PROJECT",
+                    "relative_path": "assets/dragon128.vengi"
+                },
+                "data": {
+                    "size": {
+                        "x": 128,
+                        "y": 90,
+                        "z": 58
+                    }
+                }
+            }
+        }
+    },
+    "Camera": {
+        "0": {
+            "fov": 80.0,
+            "pitch": 0.0,
+            "yaw": 90.0,
+            "active": true
+        }
+    },
+    "ComponentCollection": {
+        "0": {
+            "Player": {
+                "speed": 1.0
+            }
+        }
+    }
+}
