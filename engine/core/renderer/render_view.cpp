@@ -71,14 +71,6 @@ void RenderView::init() {
     const uint64_t cache_element_size = hashkey_size + sizeof(uint32_t) * 2ull;
     const uint64_t cache_size = 10'000'000u;
     macrofacet_illuminance_cache = bank.create_buffer(BufferUsage::Storage, cache_size, cache_element_size).expect("failed to create macrofacet illuminance cache buffer.");
-
-    // const uint32_t cache_capacity = 20'000'000u;
-    // cache = bank.create_buffer(BufferUsage::Storage, cache_capacity, 16u).expect("failed to create cache buffer.");
-    // cache_info = bank.create_buffer(BufferUsage::Constant | BufferUsage::TransferDst, 4u).expect("failed to create cache info buffer.");
-    // bank.upload_buffer(cache_info, &cache_capacity, 0u, sizeof(uint32_t));
-    // macrofacets = bank.create_buffer(BufferUsage::Storage | BufferUsage::TransferDst | BufferUsage::Indirect, 10'000'000u, sizeof(uint32_t)).expect("failed to create cache buffer.");
-    // const glm::uvec4 args = glm::uvec4(0u, 1u, 1u, 0u);
-    // bank.upload_buffer(macrofacets, &args.x, 0u, sizeof(glm::uvec4));
 }
 
 void RenderView::update() {
