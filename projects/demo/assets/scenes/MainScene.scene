@@ -2,7 +2,9 @@
     "version": 1,
     "entities": [
         0,
-        1
+        1,
+        2,
+        3
     ],
     "Name": {
         "0": {
@@ -10,6 +12,12 @@
         },
         "1": {
             "name": "Dragon"
+        },
+        "2": {
+            "name": "Asteroids"
+        },
+        "3": {
+            "name": "Asteroid 0"
         }
     },
     "Transform": {
@@ -52,6 +60,48 @@
             },
             "parent": 4294967295,
             "children": []
+        },
+        "2": {
+            "local_position": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "local_rotation": {
+                "w": 1.0,
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "local_scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "parent": 4294967295,
+            "children": [
+                3
+            ]
+        },
+        "3": {
+            "local_position": {
+                "x": -0.14054358005523682,
+                "y": 11.061845779418945,
+                "z": 13.880524635314941
+            },
+            "local_rotation": {
+                "w": 0.6581547260284424,
+                "x": 0.0011640549637377262,
+                "y": -0.34647655487060547,
+                "z": 0.6684197783470154
+            },
+            "local_scale": {
+                "x": 0.9999982118606567,
+                "y": 0.9999987483024597,
+                "z": 0.9999980926513672
+            },
+            "parent": 2,
+            "children": []
         }
     },
     "Voxel Renderer": {
@@ -69,6 +119,21 @@
                     }
                 }
             }
+        },
+        "3": {
+            "resource": {
+                "file_location": {
+                    "sub_location": "PROJECT",
+                    "relative_path": "asteroids/test_asteroid_0.vengi"
+                },
+                "data": {
+                    "size": {
+                        "x": 85,
+                        "y": 77,
+                        "z": 67
+                    }
+                }
+            }
         }
     },
     "Camera": {
@@ -77,6 +142,42 @@
             "pitch": 0.0,
             "yaw": 90.0,
             "active": true
+        }
+    },
+    "Voxel Body": {
+        "1": {
+            "resource": {
+                "file_location": {
+                    "sub_location": "PROJECT",
+                    "relative_path": "asteroids/test_asteroid_0.vengi"
+                },
+                "data": {
+                    "size": {
+                        "x": 85,
+                        "y": 77,
+                        "z": 67
+                    }
+                }
+            },
+            "type": "STATIC",
+            "gravity": 0.0
+        },
+        "3": {
+            "resource": {
+                "file_location": {
+                    "sub_location": "PROJECT",
+                    "relative_path": "asteroids/test_asteroid_0.vengi"
+                },
+                "data": {
+                    "size": {
+                        "x": 85,
+                        "y": 77,
+                        "z": 67
+                    }
+                }
+            },
+            "type": "DYNAMIC",
+            "gravity": 9.800000190734863
         }
     },
     "ComponentCollection": {
