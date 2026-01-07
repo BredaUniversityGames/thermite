@@ -14,7 +14,8 @@ class AsteroidSpawner : public tmt::GameComponent<AsteroidSpawner> {
 
     void on_inspect() override;
 
-    void spawn_asteroid();
+    void spawn_asteroids();
+
 
     uint32_t asteroid_count = 100;
     float spawn_radius = 500.0f;
@@ -22,5 +23,8 @@ class AsteroidSpawner : public tmt::GameComponent<AsteroidSpawner> {
     uint64_t seed = 42;
 
     std::vector<tmt::ResourceRef<tmt::VoxelVolume>> asteroid_bodies;
+
+   private:
+    tmt::Transform& create_asteroid();
 };
 TMT_OBJECT(AsteroidSpawner, (asteroid_count, spawn_radius, seed, asteroid_bodies));
