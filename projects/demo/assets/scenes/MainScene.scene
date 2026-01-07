@@ -3,8 +3,7 @@
     "entities": [
         0,
         1,
-        2,
-        3
+        2
     ],
     "Name": {
         "0": {
@@ -15,9 +14,6 @@
         },
         "2": {
             "name": "Asteroids"
-        },
-        "3": {
-            "name": "Asteroid 0"
         }
     },
     "Transform": {
@@ -25,7 +21,7 @@
             "local_position": {
                 "x": 0.0,
                 "y": 0.0,
-                "z": 0.0
+                "z": -9.915840148925781
             },
             "local_rotation": {
                 "w": 1.0,
@@ -45,7 +41,7 @@
             "local_position": {
                 "x": 0.0,
                 "y": 0.0,
-                "z": 14.48705768585205
+                "z": 0.0
             },
             "local_rotation": {
                 "w": 1.0,
@@ -79,28 +75,6 @@
                 "z": 1.0
             },
             "parent": 4294967295,
-            "children": [
-                3
-            ]
-        },
-        "3": {
-            "local_position": {
-                "x": -0.14054358005523682,
-                "y": 11.061845779418945,
-                "z": 13.880524635314941
-            },
-            "local_rotation": {
-                "w": 0.6581547260284424,
-                "x": 0.0011640549637377262,
-                "y": -0.34647655487060547,
-                "z": 0.6684197783470154
-            },
-            "local_scale": {
-                "x": 0.9999982118606567,
-                "y": 0.9999987483024597,
-                "z": 0.9999980926513672
-            },
-            "parent": 2,
             "children": []
         }
     },
@@ -116,21 +90,6 @@
                         "x": 128,
                         "y": 90,
                         "z": 58
-                    }
-                }
-            }
-        },
-        "3": {
-            "resource": {
-                "file_location": {
-                    "sub_location": "PROJECT",
-                    "relative_path": "asteroids/test_asteroid_0.vengi"
-                },
-                "data": {
-                    "size": {
-                        "x": 85,
-                        "y": 77,
-                        "z": 67
                     }
                 }
             }
@@ -161,37 +120,136 @@
             },
             "type": "STATIC",
             "gravity": 0.0
-        },
-        "3": {
-            "resource": {
-                "file_location": {
-                    "sub_location": "PROJECT",
-                    "relative_path": "asteroids/test_asteroid_0.vengi"
-                },
-                "data": {
-                    "size": {
-                        "x": 85,
-                        "y": 77,
-                        "z": 67
-                    }
-                }
-            },
-            "type": "DYNAMIC",
-            "gravity": 9.800000190734863
         }
     },
     "ComponentCollection": {
         "0": {
             "Player": {
-                "acceleration": 20.0,
+                "acceleration": 10.0,
                 "camera_sensitivity": 0.10000000149011612,
-                "drag": 5.0,
-                "max_speed": 10.0,
-                "velocity": {
-                    "x": 0.0,
-                    "y": 0.0,
-                    "z": 0.0
-                }
+                "drag": 2.5,
+                "max_speed": 5.0
+            }
+        },
+        "2": {
+            "AsteroidSpawner": {
+                "asteroid_bodies": [
+                    {
+                        "data": {
+                            "size": {
+                                "x": 85,
+                                "y": 77,
+                                "z": 67
+                            }
+                        },
+                        "file_location": {
+                            "relative_path": "asteroids/test_asteroid_0.vengi",
+                            "sub_location": "PROJECT"
+                        }
+                    },
+                    {
+                        "data": {
+                            "size": {
+                                "x": 74,
+                                "y": 75,
+                                "z": 77
+                            }
+                        },
+                        "file_location": {
+                            "relative_path": "asteroids/test_asteroid_1.vengi",
+                            "sub_location": "PROJECT"
+                        }
+                    },
+                    {
+                        "data": {
+                            "size": {
+                                "x": 149,
+                                "y": 151,
+                                "z": 137
+                            }
+                        },
+                        "file_location": {
+                            "relative_path": "asteroids/test_asteroid_2.vengi",
+                            "sub_location": "PROJECT"
+                        }
+                    },
+                    {
+                        "data": {
+                            "size": {
+                                "x": 169,
+                                "y": 183,
+                                "z": 209
+                            }
+                        },
+                        "file_location": {
+                            "relative_path": "asteroids/test_asteroid_3.vengi",
+                            "sub_location": "PROJECT"
+                        }
+                    },
+                    {
+                        "data": {
+                            "size": {
+                                "x": 65,
+                                "y": 68,
+                                "z": 65
+                            }
+                        },
+                        "file_location": {
+                            "relative_path": "asteroids/test_asteroid_4.vengi",
+                            "sub_location": "PROJECT"
+                        }
+                    },
+                    {
+                        "data": {
+                            "size": {
+                                "x": 111,
+                                "y": 105,
+                                "z": 138
+                            }
+                        },
+                        "file_location": {
+                            "relative_path": "asteroids/test_asteroid_5.vengi",
+                            "sub_location": "PROJECT"
+                        }
+                    },
+                    {
+                        "data": {
+                            "size": {
+                                "x": 41,
+                                "y": 37,
+                                "z": 39
+                            }
+                        },
+                        "file_location": {
+                            "relative_path": "asteroids/test_asteroid_6.vengi",
+                            "sub_location": "PROJECT"
+                        }
+                    },
+                    {
+                        "data": {
+                            "size": {
+                                "x": 151,
+                                "y": 121,
+                                "z": 121
+                            }
+                        },
+                        "file_location": {
+                            "relative_path": "asteroids/test_asteroid_7.vengi",
+                            "sub_location": "PROJECT"
+                        }
+                    }
+                ],
+                "asteroid_count": 100,
+                "enable_random_rotation": true,
+                "max_height_offset": 10.0,
+                "max_radius": 200.0,
+                "max_scale_factor": 2.0,
+                "min_height_offset": -10.0,
+                "min_radius": 50.0,
+                "min_scale_factor": 0.5,
+                "radial_bias": 0.0,
+                "seed": 42,
+                "use_3d_distribution": false
             }
         }
     }
