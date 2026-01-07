@@ -85,6 +85,10 @@ void tmt::Viewport::display() {
     toolbar(image_pos);
 
     ImGui::EndChild();
+
+    if (ImGui::IsItemHovered() && ImGui::IsMouseDown(ImGuiMouseButton_Right)) {
+        ImGui::SetWindowFocus();
+    }
 }
 
 void tmt::Viewport::toolbar(const glm::vec2& image_pos) {
