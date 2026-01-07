@@ -4,7 +4,9 @@
 #include "engine/core/components/camera.hpp"
 #include "engine/core/components/voxel_renderer.hpp"
 #include "engine/core/input/input.hpp"
+#include "engine/systems/camera/camera_system.hpp"
 #include "engine/core/logger.hpp"
+#include "engine/core/input/input.hpp"
 
 #include "engine/systems/ai/goap/goap_system.hpp"
 #include "engine/systems/ai/goap/components/goap_agent.hpp"
@@ -17,6 +19,8 @@
 #include "goap_actions/patrol_area.hpp"
 #include "engine/core/scene.hpp"
 #include "engine/core/scenes.hpp"
+
+#include "engine/systems/ai/navigation/navigation_system.hpp"
 
 class Game : public tmt::Application {
    public:
@@ -81,7 +85,6 @@ class Game : public tmt::Application {
         type_reg.register_type(enemy2);
     }
 
-    tmt::Entity voxel {};
     float time_passed = 0.0f;
 
     void on_start() override {};
@@ -93,9 +96,11 @@ class AIScene : public tmt::Scene<AIScene> {
    public:
     static constexpr std::string_view scene_name() { return "AIScene"; }
 
+    tmt::Entity voxel {};
+    tmt::NavMesh* nav_mesh;
     void on_start() override;
-    void on_update(const tmt::FrameData& time) override;
-    void on_end() override;
+    void on_update(const tmt::FrameData& time) override {};
+    void on_end() override {};
 };
 
 std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs& args) {
@@ -107,6 +112,7 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     };
     // clang-format on
 
+    tmt::engine.ecs.systems.add<tmt::CameraSystem>();
     tmt::engine.scenes.register_scene<AIScene>();
 
     return std::make_unique<Game>(specs);
@@ -131,8 +137,27 @@ void AIScene::on_start() {
         ecs.get_component<tmt::Transform>(ai1).set_world_position({0.f, 0.f, 0.f});
         ecs.get_component<tmt::Transform>(ai2).set_world_position({5.f, 0.f, 0.f});
     }
+
+    { /* Camera entity */
+        tmt::Entity entity = tmt::engine.ecs.create_entity("Camera");
+        auto& camera = tmt::engine.ecs.add_component<tmt::Camera>(entity);
+
+        auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
+        transform.set_world_position(glm::vec3(0.0f, 0.25f, -5.0f));
+    }
+
+    {  // voxel entity with navmesh
+        auto voxel_file = tmt::engine.resources.load_resource<tmt::VoxelScene>({tmt::IO::Location::PROJECT, "test_asteroid_7.vengi"});
+        auto voxel_volume = tmt::engine.resources.copy_resource<tmt::VoxelVolume>(voxel_file);
+        voxel = tmt::engine.ecs.create_entity("Moving Voxel");
+        auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(voxel);
+        auto& renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(voxel);
+        renderer.resource = voxel_volume;
+        // transform.set_world_rotation(glm::vec3(glm::radians(45.0f), glm::radians(45.0f), 0.0f));
+        transform.set_world_scale(glm::vec3(1.0f, 1.0f, 1.0f));
+
+        nav_mesh = &tmt::engine.ecs.add_component<tmt::NavMesh>(voxel);
+
+        nav_mesh->generate_mesh(voxel_volume, 1);
+    }
 }
-
-void AIScene::on_update(const tmt::FrameData& time) {}
-
-void AIScene::on_end() {}
