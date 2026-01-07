@@ -93,8 +93,11 @@ void Engine::run() {
     while (is_running) {
         TMT_ZONE_SCOPED_N("Frame");
 
+        static std::vector<AudioInstance> paused_audio_cache;
         if (game_controller.should_game_end()) {
             end_game();
+            paused_audio_cache.clear();
+            audio.stop_all_audio_instances();
             game_controller.should_end_game = false;
             game_controller.is_game_playing = false;
         }
@@ -105,11 +108,21 @@ void Engine::run() {
         }
         if (game_controller.should_game_pause()) {
             pause_game();
+            for (AudioInstance instance : audio.active_instances) {
+                if (instance.get_paused()) continue;
+
+                paused_audio_cache.emplace_back(instance);
+                instance.set_paused(true);
+            }
             game_controller.is_game_paused = true;
             game_controller.should_pause_game = false;
         }
         if (game_controller.should_game_resume()) {
             resume_game();
+            for (auto instance : paused_audio_cache) {
+                instance.set_paused(false);
+            }
+            paused_audio_cache.clear();
             game_controller.is_game_paused = false;
             game_controller.should_resume_game = false;
         }
@@ -163,6 +176,7 @@ void Engine::end() {
     OnEngineEnd::dispatch();
 
     salvo.end();
+    audio.end();
     ecs.clear();
     resources.unload_unused();
     renderer.end();

@@ -8,6 +8,7 @@
 #include "engine/core/components/camera.hpp"
 #include "engine/core/components/component_collection.hpp"
 #include "engine/systems/physics/components/voxel_body.hpp"
+#include "engine/core/components/audio_listener.hpp"
 
 namespace tmt {
 
@@ -30,7 +31,8 @@ using InspectComponents = ComponentRegistry<
 	Transform,
 	VoxelRenderer, 
 	Camera,
-	VoxelBody
+	VoxelBody,
+	AudioListener
 >;
 // clang-format on
 

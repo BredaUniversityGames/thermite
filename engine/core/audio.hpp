@@ -2,8 +2,9 @@
 
 #include <set>
 #include <string>
+#include <entt/entity/fwd.hpp>
 
-#include "fmod_studio_common.h"
+#include <fmod_studio_common.h>
 
 struct FMOD_GUID;
 struct FMOD_STUDIO_PARAMETER_ID;
@@ -28,6 +29,8 @@ class EventDescription;
 
 namespace tmt {
 
+struct Transform;
+
 class AudioParameter {
    public:
     AudioParameter(const FMOD_STUDIO_PARAMETER_DESCRIPTION& description) : description {description} {}
@@ -42,17 +45,33 @@ class AudioParameter {
     FMOD_STUDIO_PARAMETER_DESCRIPTION description;
 };
 
+class AudioEvent;
+
 class AudioInstance {
    public:
     AudioInstance(FMOD::Studio::EventInstance* instance) : instance {instance} {}
 
     [[nodiscard]] bool is_valid() const;
+
     void stop(FMOD_STUDIO_STOP_MODE stop_mode = FMOD_STUDIO_STOP_IMMEDIATE) const;
+    void set_paused(bool pause = true) const;
+    [[nodiscard]] bool get_paused() const;
+    void toggle_paused() const { set_paused(!get_paused()); }
+
     void set_parameter(const AudioParameter& event_parameter, float value) const;
     void set_parameter(const AudioParameter& event_parameter, int value) const;
     void set_label_parameter(const AudioParameter& event_parameter, const std::string& value) const;
 
+    void set_3d_position(const glm::vec3& position) const;
+    void set_3d_velocity(const glm::vec3& velocity) const;
+    void set_3d_forward(const glm::vec3& forward) const;
+    void set_3d_up(const glm::vec3& up) const;
+    void auto_set_3d_attributes(const Transform& transform) const;
+
    private:
+    [[nodiscard]] AudioEvent get_audio_event() const;
+    [[nodiscard]] FMOD_3D_ATTRIBUTES get_3d_attributes() const;
+
     FMOD::Studio::EventInstance* instance {nullptr};
 };
 
@@ -61,6 +80,7 @@ class AudioEvent {
     AudioEvent(FMOD::Studio::EventDescription* description) : description {description} {}
 
     [[nodiscard]] bool is_valid() const;
+    [[nodiscard]] bool is_3d() const;
     // Get the path/name of the AudioEvent (returns empty string when not in debug mode and not using the editor).
     [[nodiscard]] std::string get_path() const;
 
@@ -92,12 +112,23 @@ class VolumeControl {
     FMOD::Studio::VCA* vca {nullptr};
 };
 
+class AudioListener;
+using Entity = entt::entity;
+
 class Audio {
     friend class AudioParameter;
     friend class AudioInstance;
     friend class AudioEvent;
+    friend class Engine;
+    friend class AudioListener;
 
    public:
+    struct DopplerSettings {
+        float doppler_scale{1.0f};
+        float distance_factor{1.0f};
+        float rolloff_scale{1.0f};
+    };
+
     Audio() = default;
     ~Audio() = default;
 
@@ -116,7 +147,13 @@ class Audio {
     void set_global_parameter(const AudioParameter& parameter, int value) const;
     void set_global_label_parameter(const AudioParameter& parameter, const std::string& value) const;
 
+    void set_3d_settings(const DopplerSettings& settings) const;
+    [[nodiscard]] DopplerSettings get_3d_settings() const;
+
    private:
+    void add_listener(entt::registry& registry, Entity entity) const;
+    void remove_listener() const;
+
     FMOD::Studio::System* system;
     FMOD::System* core_system;
 
