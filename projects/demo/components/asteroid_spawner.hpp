@@ -17,30 +17,23 @@ class AsteroidSpawner : public tmt::GameComponent<AsteroidSpawner> {
 
     void on_inspect(ImResponse& response) override;
 
-    // Seed for reproducible randomness
     bool randomize_seed = true;
     uint64_t seed = 42;
 
-    // Asteroid resources to randomly choose from
     std::vector<tmt::ResourceRef<tmt::VoxelVolume>> asteroid_bodies;
 
-    // === Ring Distribution Parameters ===
     float min_radius = 50.0f;   // Inner circle radius (empty center)
     float max_radius = 200.0f;  // Outer circle radius
     int asteroid_count = 100;   // Total number of asteroids to spawn
 
-    // === Height Variation Parameters ===
     float min_height_offset = -10.0f;  // Minimum Y offset from ring plane
     float max_height_offset = 10.0f;   // Maximum Y offset from ring plane
 
-    // === Scale Variation Parameters ===
     float min_scale_factor = 0.5f;  // Minimum scale multiplier
     float max_scale_factor = 2.0f;  // Maximum scale multiplier
 
-    // === Rotation Parameters ===
     bool enable_random_rotation = true;  // Toggle random rotation
 
-    // === Advanced Options ===
     bool use_3d_distribution = false;  // If true, distributes in sphere annulus instead of ring
     float radial_bias = 0.0f;          // -1.0 (inner bias) to 1.0 (outer bias), 0.0 = uniform
 
@@ -49,11 +42,9 @@ class AsteroidSpawner : public tmt::GameComponent<AsteroidSpawner> {
 
     tmt::Entity create_asteroid(const glm::vec3& position, const glm::vec3& rotation, float scale);
 
-    // Random number generation helpers
     float random_float(float min, float max);
     glm::vec3 random_rotation();
 
-    // Distribution calculation
     glm::vec3 calculate_position(int index, int total);
 };
 
