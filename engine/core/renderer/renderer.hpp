@@ -17,15 +17,16 @@ namespace tmt {
 /* Renderer display mode. */
 enum class DisplayMode : uint32_t {
     DEFAULT = 0u,
-    STEPS, /* Visualize visibility pass step count. (0..128) */
-    VISIBILITY, /* Visualize visibility buffer data. */
-    DEPTH, /* Visualize geometric depth data. (0..100) */
-    NORMALS, /* Visualize geometric normal data. */
-    ALBEDO, /* Visualize material albedo. */
+    STEPS,       /* Visualize visibility pass step count. (0..128) */
+    VISIBILITY,  /* Visualize visibility buffer data. */
+    DEPTH,       /* Visualize geometric depth data. (0..100) */
+    NORMALS,     /* Visualize geometric normal data. */
+    ALBEDO,      /* Visualize material albedo. */
     ILLUMINANCE, /* Visualize illuminance from the cache. */
 };
-static const DisplayMode DISPLAY_MODES[] { DisplayMode::DEFAULT, DisplayMode::STEPS, DisplayMode::VISIBILITY, DisplayMode::DEPTH, DisplayMode::NORMALS, DisplayMode::ALBEDO, DisplayMode::ILLUMINANCE };
-static const char* DISPLAY_MODE_NAMES[] { "Default", "Steps (0..128)", "Visibility", "Depth (0..100)", "Normals", "Albedo", "Illuminance" };
+static const DisplayMode DISPLAY_MODES[] {DisplayMode::DEFAULT, DisplayMode::STEPS,  DisplayMode::VISIBILITY, DisplayMode::DEPTH,
+                                          DisplayMode::NORMALS, DisplayMode::ALBEDO, DisplayMode::ILLUMINANCE};
+static const char* DISPLAY_MODE_NAMES[] {"Default", "Steps (0..128)", "Visibility", "Depth (0..100)", "Normals", "Albedo", "Illuminance"};
 
 class Renderer {
     GPUAdapter& gpu;

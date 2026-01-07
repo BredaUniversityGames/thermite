@@ -10,7 +10,6 @@ struct SceneView;
 /* Direct Illumination (DI) pipeline. */
 class DiPipeline {
    private:
-
    public:
     DiPipeline() {}
     ~DiPipeline() {}

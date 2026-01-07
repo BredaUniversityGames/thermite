@@ -13,7 +13,9 @@ namespace tmt {
 
 /* Divide two numbers, rounding up. */
 template <typename T>
-T div_up(const T x, const T y) { return (x + y - 1) / y; }
+T div_up(const T x, const T y) {
+    return (x + y - 1) / y;
+}
 
 /* clang-format off */
 

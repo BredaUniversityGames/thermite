@@ -53,8 +53,8 @@ struct RenderView {
     ScreenBuffer ibuffer {}; /* Illuminance buffer (WxH, 4 bytes) */
 
     /* Macrofacet buffers */
-    Buffer macrofacet_hashset {}; /* Macrofacet hash set buffer (WxH, 8 bytes) */
-    Buffer macrofacet_shading_commands {}; /* List of (unique) shading commands (WxH, 8 bytes) */
+    Buffer macrofacet_hashset {};           /* Macrofacet hash set buffer (WxH, 8 bytes) */
+    Buffer macrofacet_shading_commands {};  /* List of (unique) shading commands (WxH, 8 bytes) */
     Buffer macrofacet_illuminance_cache {}; /* Macrofacet illuminance hash cache (10.000.000, 16 bytes) */
 
     /* Renderer output */
@@ -64,7 +64,7 @@ struct RenderView {
     /* Render view constant buffer */
     Buffer render_view_buffer {};
     GpuView gpu_view {};
-    
+
     /* (Final) Render target */
     RenderTarget render_target {};
     glm::uint frame_counter = 0u;

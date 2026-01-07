@@ -10,7 +10,7 @@
 #include "engine/core/renderer/renderer.hpp"
 
 namespace tmt {
-    
+
 /* clang-format off */
 
 /* Geometry display mode switch case macro. */

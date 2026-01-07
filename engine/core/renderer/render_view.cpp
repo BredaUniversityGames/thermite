@@ -55,7 +55,7 @@ void RenderView::init() {
     }
 
     /* Create the visibility buffer */
-    const Size3D view_size { gpu_view.resolution.x, gpu_view.resolution.y };
+    const Size3D view_size {gpu_view.resolution.x, gpu_view.resolution.y};
     vbuffer.texture = bank.create_texture(TextureUsage::Storage, TextureFormat::RG32Uint, view_size).expect("failed to create vbuffer texture.");
     vbuffer.image = bank.create_image(vbuffer.texture).expect("failed to create vbuffer image.");
 
@@ -117,7 +117,7 @@ void RenderView::update_gpu_view(RenderGraph& render_graph, const Camera& camera
 
 void RenderView::deinit() {
     VRAMBank& bank = engine.renderer.vram_bank();
-    
+
     /* Destroy macrofacet buffers */
     bank.destroy(macrofacet_hashset);
     bank.destroy(macrofacet_shading_commands);
@@ -157,7 +157,7 @@ void RenderView::set_viewport_size(uint32_t width, uint32_t height) {
 }
 
 void RenderView::resize_textures() {
-    const Size3D view_size { gpu_view.resolution.x, gpu_view.resolution.y };
+    const Size3D view_size {gpu_view.resolution.x, gpu_view.resolution.y};
     VRAMBank& bank = engine.renderer.vram_bank();
 
     /* Resize the screen buffers */
