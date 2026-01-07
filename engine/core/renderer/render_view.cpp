@@ -28,7 +28,7 @@ void RenderView::init() {
     } else {
         render_target = r.unwrap();
     }
-    
+
     /* Viewport Texture */
     viewport.texture = bank.create_texture(
                                "Viewport Texture", TextureUsage::ColorAttachment | TextureUsage::Sampled | TextureUsage::Storage, TextureFormat::RGBA8Unorm,
