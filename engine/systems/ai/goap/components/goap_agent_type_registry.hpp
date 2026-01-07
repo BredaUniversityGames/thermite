@@ -3,6 +3,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include "world_state.hpp"
+
 namespace tmt {
 
 /**
