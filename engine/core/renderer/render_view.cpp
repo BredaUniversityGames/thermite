@@ -28,13 +28,7 @@ void RenderView::init() {
     } else {
         render_target = r.unwrap();
     }
-
-    ///* Initialize the polyline vertex buffer */
-    // VRAMBank& bank = gpu.get_vram_bank();
-    // line_buffer =
-    //     bank.create_buffer(BufferUsage::Vertex | BufferUsage::TransferDst, MAX_POLYLINES, sizeof(PolylineSegment), "Polyline Vertex Buffer").expect("failed to create polyline vertex
-    //     buffer.");
-
+    
     /* Viewport Texture */
     viewport.texture = bank.create_texture(
                                "Viewport Texture", TextureUsage::ColorAttachment | TextureUsage::Sampled | TextureUsage::Storage, TextureFormat::RGBA8Unorm,
