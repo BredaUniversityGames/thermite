@@ -53,7 +53,7 @@ void Renderer::init() {
     gpu.set_max_samplers(32u);
 
     /* Initialize the GPU adapter */
-    bool sync_validation = false; // Sync validation is enabled only in Debug
+    bool sync_validation = false;  // Sync validation is enabled only in Debug
 #ifdef THERMITE_DEBUG
     sync_validation = true;
 #endif  //

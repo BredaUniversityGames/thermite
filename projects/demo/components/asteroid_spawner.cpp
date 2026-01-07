@@ -68,48 +68,24 @@ void AsteroidSpawner::on_inspect() {}
 #endif
 
 glm::vec3 AsteroidSpawner::calculate_position(int index, int total) {
-    // === GOLDEN RATIO DISTRIBUTION ===
-    // Uses Vogel's method (Fibonacci spiral) for optimal point distribution
-    // This ensures asteroids are evenly spaced without clustering or gaps
-
-    // 1. Calculate angular position using golden angle
-    //    Each asteroid is rotated by the golden angle from the previous one
-    //    This prevents alignment patterns and creates uniform distribution
-    float theta = index * GOLDEN_ANGLE;
-
-    // 2. Calculate radial distance from center
-    //    For a ring (annulus), we need uniform distribution between min and max radius
-    //    Using sqrt gives area-proportional distribution (more asteroids where there's more area)
-    float normalized_index = static_cast<float>(index) / static_cast<float>(total);
-
-    // Apply radial bias if specified
-    // radial_bias = 0: uniform distribution
-    // radial_bias > 0: pushes toward outer edge
-    // radial_bias < 0: pushes toward inner edge
+    const float theta = index * GOLDEN_ANGLE;
+    const float normalized_index = static_cast<float>(index) / static_cast<float>(total);
     float bias_factor = normalized_index;
     if (radial_bias != 0.0f) {
         bias_factor = std::pow(normalized_index, 1.0f - radial_bias);
     }
 
-    // Interpolate between min and max radius
-    // Using sqrt for area-proportional distribution within the annulus
-    float radius = std::sqrt(bias_factor * (max_radius * max_radius - min_radius * min_radius) + min_radius * min_radius);
+    const float radius = std::sqrt(bias_factor * (max_radius * max_radius - min_radius * min_radius) + min_radius * min_radius);
 
-    // 3. Convert polar coordinates to Cartesian (X, Z plane)
     float x = radius * std::cos(theta);
     float z = radius * std::sin(theta);
 
-    // 4. Add height variation
     float y;
     if (use_3d_distribution) {
-        // For 3D sphere annulus distribution, use spherical coordinates
-        // Map index to elevation angle
-        float phi = std::acos(1.0f - 2.0f * normalized_index);
-        y = radius * std::cos(phi);
-        x = radius * std::sin(phi) * std::cos(theta);
-        z = radius * std::sin(phi) * std::sin(theta);
+        y = radius * std::cos(PHI);
+        x = radius * std::sin(PHI) * std::cos(theta);
+        z = radius * std::sin(PHI) * std::sin(theta);
     } else {
-        // For ring (2D + height variation), add random height offset
         y = random_float(min_height_offset, max_height_offset);
     }
 
@@ -135,15 +111,9 @@ tmt::Entity AsteroidSpawner::create_asteroid(const glm::vec3& position, const gl
     return new_entity;
 }
 
-// === HELPER FUNCTIONS ===
-
 float AsteroidSpawner::random_float(float min, float max) {
-    // Using rand() for consistency with seed initialization
     float random = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
     return min + random * (max - min);
 }
 
-glm::vec3 AsteroidSpawner::random_rotation() {
-    // Generate random rotation in degrees (0-360 for each axis)
-    return glm::vec3(random_float(0.0f, 360.0f), random_float(0.0f, 360.0f), random_float(0.0f, 360.0f));
-}
+glm::vec3 AsteroidSpawner::random_rotation() { return glm::vec3(random_float(0.0f, 360.0f), random_float(0.0f, 360.0f), random_float(0.0f, 360.0f)); }

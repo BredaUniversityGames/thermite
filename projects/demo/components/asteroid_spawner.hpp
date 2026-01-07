@@ -59,6 +59,5 @@ class AsteroidSpawner : public tmt::GameComponent<AsteroidSpawner> {
 
 TMT_OBJECT(
     AsteroidSpawner, (randomize_seed, seed, min_radius, max_radius, asteroid_count, min_height_offset, max_height_offset, min_scale_factor, max_scale_factor, enable_random_rotation,
-                      use_3d_distribution,
-                      radial_bias, asteroid_bodies)
+                      use_3d_distribution, radial_bias, asteroid_bodies)
 );

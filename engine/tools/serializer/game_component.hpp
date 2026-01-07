@@ -5,7 +5,7 @@ namespace tmt {
 /* Forward declare */
 class IGameComponent;
 class ComponentCollection;
-}
+}  // namespace tmt
 
 JsonReflect::json tag_invoke(JsonReflect::serialize_lib_t, const tmt::IGameComponent& value);
 

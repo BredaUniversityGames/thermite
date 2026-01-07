@@ -6,7 +6,6 @@
 #include "engine/systems/gameplay/game_component_registry.hpp"
 #include "engine/core/components/component_collection.hpp"
 
-
 JsonReflect::json tag_invoke(JsonReflect::serialize_lib_t, const tmt::IGameComponent& value) {
     //
     return value.serialize();
