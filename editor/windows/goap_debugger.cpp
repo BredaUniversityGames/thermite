@@ -7,6 +7,9 @@
 #include "engine/systems/ai/goap/components/goap_agent.hpp"
 #include "engine/systems/ai/goap/components/world_state.hpp"
 #include "engine/systems/ai/goap/components/goap_action_overrides.hpp"
+#include "engine/systems/ai/goap/components/goap_goal_registry.hpp"
+#include "engine/systems/ai/goap/components/goap_agent_type_registry.hpp"
+#include "engine/systems/ai/goap/components/goap_action_registry.hpp"
 #include "engine/systems/ai/goap/goap_system.hpp"
 
 #include <extern/imgui-node-editor/imgui_node_editor.h>
