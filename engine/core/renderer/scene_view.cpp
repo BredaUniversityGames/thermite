@@ -32,6 +32,8 @@ void SceneView::update(RenderGraph& render_graph) {
     /* Allocate space for all voxel objects */
     std::vector<VoxelObject> objects {};
     objects.reserve(std::min(group.size(), (size_t)MAX_VOXEL_OBJECTS));
+    entities.clear();
+    entities.reserve(std::min(group.size(), (size_t)MAX_VOXEL_OBJECTS));
 
     /* Iterate over all voxel renderers */
     for (auto&& [entity, renderer, transform] : group.each()) {
@@ -52,6 +54,7 @@ void SceneView::update(RenderGraph& render_graph) {
         object.voxels_handle = renderer.resource->blas_voxels.get_index();
         object.palette_handle = renderer.resource->blas_palette.get_index();
         objects.push_back(std::move(object));
+        entities.push_back(entity);
     }
 
     /* Build a BVH over the scene */

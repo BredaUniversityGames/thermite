@@ -1,7 +1,7 @@
 #pragma once
 
-#include "shared/aabb.hpp"
-#include "shared/ray.hpp"
+#include "engine/shared/aabb.hpp"
+#include "engine/shared/ray.hpp"
 
 namespace tmt {
 

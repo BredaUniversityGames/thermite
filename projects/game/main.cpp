@@ -11,6 +11,7 @@
 #include "engine/systems/camera/camera_system.hpp"
 #include "engine/core/scene.hpp"
 #include "engine/core/scenes.hpp"
+#include "engine/core/renderer/voxel_object.hpp"
 
 class Game : public tmt::Application {
    public:
@@ -100,10 +101,18 @@ void DragonScene::on_update(const tmt::FrameData& time) {
     transform.set_world_rotation(glm::vec3(sinf(elapsed_time), cosf(elapsed_time), 0.0f));
     transform.set_world_scale(glm::vec3(1.0f, 1.5f + sinf(elapsed_time), 1.0f));
 
-    const int mouse_x = tmt::engine.input.get_mouse_x();
-    const int mouse_y = tmt::engine.input.get_mouse_y();
+    if (tmt::engine.input.is_mouse_button_just_pressed(tmt::MouseButton::LEFT)) {
+        const int mouse_x = tmt::engine.input.get_mouse_x();
+        const int mouse_y = tmt::engine.input.get_mouse_y();
 
-    const tmt::Ray mouse_ray = pinhole_ray(tmt::engine.renderer.render_view, glm::ivec2(mouse_x, mouse_y));
+        const tmt::Ray mouse_ray = pinhole_ray(tmt::engine.renderer.render_view, glm::ivec2(mouse_x, mouse_y));
+        const tmt::Hit hit = tmt::engine.renderer.scene_view.bvh.trace(mouse_ray);
+        tmt::Log::info("pixel: {}, {} | hit: {} | id: {}", mouse_x, mouse_y, hit.distance, hit.index);
+        if (hit.distance < 1e30f) {
+            const tmt::Entity entity = tmt::engine.renderer.scene_view.entities[hit.index];
+            tmt::engine.ecs.destroy_entity(entity);
+        }
+    }
 
     if (tmt::engine.input.is_keyboard_button_released(tmt::Key::SPACE)) {
         tmt::engine.scenes.enqueue_scene<TableScene>();

@@ -20,12 +20,12 @@ struct Hit {
 };
 
 /* Convert a pixel coordinate to a normalized device coordinate. */
-glm::vec2 pixel_to_ndc(glm::ivec2 pixel, glm::uvec2 resolution) {
+inline glm::vec2 pixel_to_ndc(glm::ivec2 pixel, glm::uvec2 resolution) {
     return ((glm::vec2(pixel) + 0.5f) / glm::vec2(resolution)) * 2.0f - 1.0f;
 }
 
 /* Generate a ray for a pin hole camera. */
-Ray pinhole_ray(const RenderView& view, glm::ivec2 pixel) {
+inline Ray pinhole_ray(const RenderView& view, glm::ivec2 pixel) {
     const glm::vec2 ndc = pixel_to_ndc(pixel, view.gpu_view.resolution);
 
     glm::vec4 world_pos = view.gpu_view.clip_to_world * glm::vec4(ndc, 1.0f, 1.0f);
