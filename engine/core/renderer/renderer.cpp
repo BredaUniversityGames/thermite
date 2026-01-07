@@ -57,7 +57,7 @@ void Renderer::init() {
     bool gpu_validation = false;   // GPU assisted validation is enabled only in Debug
 #ifdef THERMITE_DEBUG
     sync_validation = true;
-    bool gpu_validation = true;
+    gpu_validation = true;
 #endif  //
 
     if (const Result r = gpu.init(true, sync_validation, gpu_validation); r.is_err()) {
