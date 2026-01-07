@@ -5,10 +5,12 @@
 #include "engine/core/ecs.hpp"
 #include "engine/tools/serializer.hpp"
 #include "engine/core/reflection.hpp"
+#include "engine/systems/gameplay/types.hpp"
 
 namespace tmt {
 
 template <typename... T>
+    requires(sizeof...(T) > 0)
 class ComponentDiff : public IUndoRedo {
    public:
     ComponentDiff(const Entity entity) : entity(entity) {}
@@ -67,6 +69,26 @@ class ComponentDiff : public IUndoRedo {
 
    protected:
     void inspect() override {}
+};
+
+class GameComponentDiff : public IUndoRedo {
+   public:
+    GameComponentDiff(const Entity entity, const ComponentIndex component_index) : entity(entity), component_index(component_index) {}
+
+    void before();
+    void after();
+
+    // Inherited via IUndoRedo
+    void undo() override;
+    void redo() override;
+    void inspect() override;
+
+   private:
+    const Entity entity = entt::null;
+    const ComponentIndex component_index = NULL_COMPONENT;
+
+    tmt::json before_json;
+    tmt::json after_json;
 };
 
 }  // namespace tmt

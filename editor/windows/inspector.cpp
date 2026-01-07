@@ -340,10 +340,16 @@ void Inspector::add_runtime_component(const tmt::Inspector::MenuContext& menu_co
         }
         if (has_component) continue;
         if (ImGui::MenuItem(component_info.name.c_str())) {
+            UndoRedoCollection collection;
             for (const Entity& entity : menu_context.selected_entities) {
+                ComponentDiff<ComponentCollection> diff(entity);
+                diff.before();
                 auto& component_collection = engine.ecs.add_or_get_component<ComponentCollection>(entity);
                 component_collection.add_component(componend_index, entity);
+                diff.after();
+                collection.add_action(diff);
             }
+            collection.commit("Add Component: " + std::string(component_info.name));
             ImGui::CloseCurrentPopup();
         }
     }
