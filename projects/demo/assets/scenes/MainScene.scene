@@ -59,7 +59,7 @@
             "resource": {
                 "file_location": {
                     "sub_location": "PROJECT",
-                    "relative_path": "assets/dragon128.vengi"
+                    "relative_path": "dragon128.vengi"
                 },
                 "data": {
                     "size": {
@@ -82,7 +82,15 @@
     "ComponentCollection": {
         "0": {
             "Player": {
-                "speed": 3.0
+                "acceleration": 20.0,
+                "camera_sensitivity": 0.10000000149011612,
+                "drag": 5.0,
+                "max_speed": 10.0,
+                "velocity": {
+                    "x": 0.0,
+                    "y": 0.0,
+                    "z": 0.0
+                }
             }
         }
     }
