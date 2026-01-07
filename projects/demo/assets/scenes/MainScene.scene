@@ -82,7 +82,7 @@
     "ComponentCollection": {
         "0": {
             "Player": {
-                "speed": 1.0
+                "speed": 3.0
             }
         }
     }
