@@ -7,6 +7,7 @@
 
 /* Components */
 #include "components/player.hpp"
+#include "components/asteroid_spawner.hpp"
 
 class Demo : public tmt::Application {
    public:
@@ -30,6 +31,7 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
 
     /*Regsiter Components */
     tmt::engine.component_registry.register_component<Player>();
+    tmt::engine.component_registry.register_component<AsteroidSpawner>();
 
     return std::make_unique<Demo>(specs);
 }
