@@ -1,8 +1,6 @@
 #include "navigation_system.hpp"
 
 #include "engine/engine.hpp"
-#include "engine/core/polyline.hpp"
-#include "engine/core/input/input.hpp"
 
 std::string tmt::NavigationSystem::get_name() { return std::string(); }
 
@@ -16,13 +14,6 @@ void tmt::NavigationSystem::on_update(const FrameData& time) {
         }
 
         nav_mesh.inspect();
-
-        Input& input = tmt::engine.input;
-        if (input.is_keyboard_button_pressed(Key::P)) {
-            int start = rand() % nav_mesh.nodes.size();
-            int end = rand() % nav_mesh.nodes.size();
-            nav_mesh.path = nav_mesh.find_path(start, end);
-        }
     }
 }
 
