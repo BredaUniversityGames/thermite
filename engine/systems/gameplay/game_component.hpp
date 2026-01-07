@@ -5,6 +5,8 @@
 #include "engine/core/components/component_collection.hpp"
 #if defined(THERMITE_EDITOR) && !defined(THERMITE_ENGINE)
 #include <ImReflect.hpp>
+#include "editor/imgui/types/all.hpp"
+#include "editor/imgui/components/all.hpp"
 #else
 class ImSettings;
 class ImResponse;
