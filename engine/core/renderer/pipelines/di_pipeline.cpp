@@ -24,6 +24,7 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
     
     /* Macrofacet reset pass (1 thread per 16 hash cells) */
     render_graph.add_compute_pass("macrofacet reset pass", "macrofacet_reset.cs")
+        .read(render_view.render_view_buffer) /* Render view buffer */
         .write(render_view.macrofacet_hashset) /* Macrofacet hash set buffer */
         .write(render_view.macrofacet_shading_commands) /* Shading commands buffer */
         .group_size(128)

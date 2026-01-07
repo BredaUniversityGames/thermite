@@ -26,6 +26,9 @@ RWStructuredBuffer<uint> macrofacet_shading_commands;
 [shader("compute")]
 [numthreads(16, 8, 1)]
 void main(int2 thread_id: SV_DispatchThreadID) {
+    /* Bounds check */
+    if (any(thread_id >= render_view.resolution)) return;
+
     /* Load visibility buffer data */
     const uint64_t facet_key = asuint64(vbuffer[thread_id]);
 

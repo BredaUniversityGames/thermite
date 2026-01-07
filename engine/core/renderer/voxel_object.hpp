@@ -21,9 +21,9 @@ struct alignas(16) VoxelObject {
     uint32_t tree_depth = 0u;
 
     /* Bindless resource handles. */
-    uint32_t blas_handle = 0u;
-    uint32_t voxels_handle = 0u;
-    uint32_t palette_handle = 0u;
+    uint32_t blas_handle = 0xFFFFFFFFu;
+    uint32_t voxels_handle = 0xFFFFFFFFu;
+    uint32_t palette_handle = 0xFFFFFFFFu;
 
     /* Get the axis-aligned bounding box of this voxel object. */
     inline Aabb aabb() const {

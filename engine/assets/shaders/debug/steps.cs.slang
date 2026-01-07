@@ -15,6 +15,9 @@ RWTexture2D<float4> render_target;
 [shader("compute")]
 [numthreads(16, 8, 1)]
 void main(int2 thread_id: SV_DispatchThreadID) {
+    /* Bounds check */
+    if (any(thread_id >= render_view.resolution)) return;
+
     /* Generate a ray for our render view */
     const Ray ray = pinhole_ray(render_view, thread_id);
 
