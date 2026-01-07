@@ -5,9 +5,9 @@
 #include "engine/core/scene.hpp"
 #include "engine/core/scenes.hpp"
 
-class Game : public tmt::Application {
+class Demo : public tmt::Application {
    public:
-    Game(const tmt::ApplicationSpecs& specs) : Application(specs) {}
+    Demo(const tmt::ApplicationSpecs& specs) : Application(specs) {}
 };
 
 class MainScene : public tmt::Scene<MainScene> {
@@ -17,13 +17,13 @@ class MainScene : public tmt::Scene<MainScene> {
 
 std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs& args) {
     tmt::ApplicationSpecs specs {
-        .name = "Example Game",
+        .name = "Demo",
         .command_args = args,
-        .log_file = "example_game_logs.txt",
+        .log_file = "demo_logs.txt",
     };
 
     /* Register Scenes */
     tmt::engine.scenes.register_scene<MainScene>();
 
-    return std::make_unique<Game>(specs);
+    return std::make_unique<Demo>(specs);
 }
