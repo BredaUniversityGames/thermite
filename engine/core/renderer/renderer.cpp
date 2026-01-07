@@ -58,7 +58,7 @@ void Renderer::init() {
     sync_validation = true;
 #endif  //
 
-    if (const Result r = gpu.init(true, sync_validation); r.is_err()) {
+    if (const Result r = gpu.init(true, sync_validation, true); r.is_err()) {
         Log::error(Log::Scope::RENDERER, "failed to initialize gpu adapter.\nreason: {}", r.unwrap_err());
         return;
     }
