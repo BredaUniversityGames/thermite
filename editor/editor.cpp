@@ -132,21 +132,24 @@ void Editor::main_menu_bar() {
         }
 
         if (ImGui::BeginMenu("Renderer")) {
+            /* List of display mode labels */
+            const char* DISPLAY_MODE_LABELS[] {"Default", "Steps (0..128)", "Visibility", "Depth (0..100)", "Normals", "Albedo", "Illuminance"};
+
             static uint32_t display_mode_index = 0u;
-            const std::string display_mode = DISPLAY_MODE_NAMES[display_mode_index];
+            const std::string display_mode = DISPLAY_MODE_LABELS[display_mode_index];
 
             if (ImGui::BeginMenu(("Display Mode (" + display_mode + ")").c_str())) {
                 /* Render all display mode options */
-                constexpr uint32_t COUNT = sizeof(DISPLAY_MODES) / sizeof(DisplayMode);
+                constexpr uint32_t COUNT = sizeof(DISPLAY_MODE_LABELS) / sizeof(char*);
                 const char* SELECTED_PREFIX = "* ";
                 const char* DEFAULT_PREFIX = "";
                 for (uint32_t i = 0u; i < COUNT; ++i) {
-                    const bool selected = engine.renderer.display_mode == DISPLAY_MODES[i];
+                    const bool selected = engine.renderer.display_mode == magic_enum::enum_cast<DisplayMode>(i).value_or(DisplayMode::DEFAULT);
                     const std::string prefix = selected ? SELECTED_PREFIX : DEFAULT_PREFIX;
 
-                    if (ImGui::MenuItem((prefix + DISPLAY_MODE_NAMES[i]).c_str())) {
+                    if (ImGui::MenuItem((prefix + DISPLAY_MODE_LABELS[i]).c_str())) {
                         display_mode_index = i;
-                        engine.renderer.display_mode = DISPLAY_MODES[i];
+                        engine.renderer.display_mode = magic_enum::enum_cast<DisplayMode>(i).value_or(DisplayMode::DEFAULT);
                     }
                 }
                 ImGui::EndMenu();

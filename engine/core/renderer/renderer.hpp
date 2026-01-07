@@ -24,9 +24,6 @@ enum class DisplayMode : uint32_t {
     ALBEDO,      /* Visualize material albedo. */
     ILLUMINANCE, /* Visualize illuminance from the cache. */
 };
-static const DisplayMode DISPLAY_MODES[] {DisplayMode::DEFAULT, DisplayMode::STEPS,  DisplayMode::VISIBILITY, DisplayMode::DEPTH,
-                                          DisplayMode::NORMALS, DisplayMode::ALBEDO, DisplayMode::ILLUMINANCE};
-static const char* DISPLAY_MODE_NAMES[] {"Default", "Steps (0..128)", "Visibility", "Depth (0..100)", "Normals", "Albedo", "Illuminance"};
 
 class Renderer {
     GPUAdapter& gpu;
