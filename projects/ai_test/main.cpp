@@ -21,13 +21,13 @@
 class Game : public tmt::Application {
    public:
     Game(const tmt::ApplicationSpecs& specs) : Application(specs) {
-        auto& actionReg = tmt::GoapActionRegistry::instance();
-        auto& goalReg = tmt::GoapGoalRegistry::instance();
+        auto& action_reg = tmt::GoapActionRegistry::instance();
+        auto& goal_reg = tmt::GoapGoalRegistry::instance();
 
         // --- Register Actions ---
-        actionReg.register_action(std::make_unique<tmt::PatrolArea>());
-        actionReg.register_action(std::make_unique<tmt::ChasePlayer>());
-        actionReg.register_action(std::make_unique<tmt::KillPlayer>());
+        action_reg.register_action(std::make_unique<tmt::PatrolArea>());
+        action_reg.register_action(std::make_unique<tmt::ChasePlayer>());
+        action_reg.register_action(std::make_unique<tmt::KillPlayer>());
 
         // --- Register Goals ---
         {
@@ -37,7 +37,7 @@ class Game : public tmt::Application {
             patrol.priority = 1;
             patrol.valid = true;
 
-            goalReg.register_goal("PatrolArea", patrol);
+            goal_reg.register_goal("PatrolArea", patrol);
         }
 
         {
@@ -47,11 +47,11 @@ class Game : public tmt::Application {
             kill.priority = 10;
             kill.valid = true;
 
-            goalReg.register_goal("KillPlayer", kill);
+            goal_reg.register_goal("KillPlayer", kill);
         }
 
         // --- Register Agent Types ---
-        auto& typeReg = tmt::GoapAgentTypeRegistry::instance();
+        auto& type_reg = tmt::GoapAgentTypeRegistry::instance();
 
         tmt::GoapAgentType enemy1;
         enemy1.id = "Enemy 1";
@@ -67,7 +67,7 @@ class Game : public tmt::Application {
             {std::hash<std::string>()("area_secure"), false}
         };
 
-        typeReg.register_type(enemy1);
+        type_reg.register_type(enemy1);
 
         tmt::GoapAgentType enemy2;
         enemy2.id = "Enemy 2";
@@ -78,7 +78,7 @@ class Game : public tmt::Application {
 
         enemy2.default_world_state = {{std::hash<std::string>()("area_secure"), false}};
 
-        typeReg.register_type(enemy2);
+        type_reg.register_type(enemy2);
     }
 
     tmt::Entity voxel {};

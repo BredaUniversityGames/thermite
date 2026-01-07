@@ -12,7 +12,6 @@
 #include "goap_agent_factory.hpp"
 #include "goap_agent_type_registry.hpp"
 
-
 namespace tmt {
 
 Entity GoapAgentFactory::spawn_agent_from_type(const std::string& type_id) {
