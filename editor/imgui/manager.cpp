@@ -76,7 +76,6 @@ void ImGuiManager::on_sdl_event(internal::SdlEvent& event) {
         event.imgui_capture_mouse = ImGui::GetIO().WantCaptureMouse;
         event.imgui_capture_keyboard = ImGui::GetIO().WantCaptureKeyboard;
     }
-
 }
 
 void ImGuiManager::on_engine_update(const FrameData&) {}
