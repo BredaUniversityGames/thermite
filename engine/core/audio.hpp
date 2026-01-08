@@ -2,9 +2,11 @@
 
 #include <set>
 #include <string>
-#include <entt/entity/fwd.hpp>
 
+#include <entt/entity/fwd.hpp>
 #include <fmod_studio_common.h>
+
+#include "engine/events/game.hpp"
 
 struct FMOD_GUID;
 struct FMOD_STUDIO_PARAMETER_ID;
@@ -130,7 +132,7 @@ class VolumeControl {
 class AudioListener;
 using Entity = entt::entity;
 
-class Audio {
+class Audio : public OnGamePause, public OnGameResume, public OnGameEnd {
     friend class AudioParameter;
     friend class AudioInstance;
     friend class AudioEvent;
@@ -150,6 +152,11 @@ class Audio {
     void init();
     void update();
     void end() const;
+
+    // Used to make sure pausing/ending the game doesn't keep playing the game's audio.
+    void on_game_pause() override;
+    void on_game_resume() override;
+    void on_game_end() override;
 
     // Initialize an FMOD bank with all its assets from a .bank file in memory.
     [[nodiscard]] FMOD::Studio::Bank* init_bank(const std::vector<char>& bank_data) const;

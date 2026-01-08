@@ -28,6 +28,10 @@ bool TryLogError(const bool fail, const spdlog::string_view_t message) {
     if (fail) Log::error(Log::Scope::ENGINE, "Audio, {}", message);
     return fail;
 }
+
+// Vector of audio instances that are/were paused due to pausing the game.
+std::vector<AudioInstance> paused_game_audio;
+
 }  // namespace
 
 bool AudioInstance::is_valid() const { return engine.audio.active_instances.contains(instance); }
@@ -310,6 +314,28 @@ void Audio::end() const {
     system->release();
     core_system->release();
 }
+
+void Audio::on_game_pause() {
+    paused_game_audio.reserve(active_instances.size());
+
+    for (AudioInstance instance : active_instances) {
+        if (instance.get_paused()) continue;
+
+        // If the audio instance is not paused yet, we pause it to resume once the game resumes.
+        paused_game_audio.emplace_back(instance);
+        instance.set_paused(true);
+    }
+}
+
+void Audio::on_game_resume() {
+    // Resume the stored audio instances then clear the vector.
+    for (AudioInstance instance : paused_game_audio) {
+        instance.set_paused(false);
+    }
+    paused_game_audio.clear();
+}
+
+void Audio::on_game_end() { paused_game_audio.clear(); }
 
 FMOD::Studio::Bank* Audio::init_bank(const std::vector<char>& bank_data) const {
     FMOD::Studio::Bank* bank = nullptr;
