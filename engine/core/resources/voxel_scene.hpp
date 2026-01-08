@@ -2,6 +2,7 @@
 
 #include "engine/core/resource.hpp"
 #include "engine/shared/svt64.hpp"
+#include "engine/core/reflection.hpp"
 
 namespace tmt {
 
@@ -28,6 +29,8 @@ class VoxelScene : public tmt::FileResource {
 
     bool load() override;
     void unload() override;
+
+    inline static const std::set<std::string_view> SUPPORTED_FILE_EXTENSIONS {".vengi"};
 
     /* Voxel scene hierarchy. */
     VoxelSceneNode hierarchy {};

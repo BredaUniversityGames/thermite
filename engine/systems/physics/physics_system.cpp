@@ -1,21 +1,17 @@
 #include "physics_system.hpp"
-#include "core/logger.hpp"
 
-#include "engine.hpp"
-#include "core/ecs.hpp"
-#include "core/components/transform.hpp"
-#include "components/voxel_body.hpp"
-
-#include "glm/gtx/norm.hpp"
+#include <glm/gtx/norm.hpp>
 #include <glm/gtx/quaternion.hpp>
-
-#include "core/renderer/renderer.hpp"
 #include <queue>
 
-#include "tools/profiler.hpp"
+#include "engine.hpp"
+#include "engine/core/ecs.hpp"
+#include "engine/core/components/transform.hpp"
+#include "engine/core/logger.hpp"
+#include "engine/core/polyline.hpp"
+#include "engine/tools/profiler.hpp"
 
-#undef min
-#undef max
+#include "components/voxel_body.hpp"
 
 namespace tmt {
 
@@ -44,25 +40,26 @@ void draw_node(tmt::Bvh2<VoxelObject>& bvh, uint32_t current_node) {
     // Draw AABB of the node
     glm::vec3 min = bvh.nodes[current_node].min_bounds;
     glm::vec3 max = bvh.nodes[current_node].max_bounds;
-    glm::vec3 color(0, 0, 1);
+    engine.polyline.use_color(0.3f, 0.3f, 1.0f);
+    engine.polyline.use_line_width(0.25f);
 
     // Bottom face (4 edges)
-    tmt::engine.renderer.draw_line(glm::vec3(min.x, min.y, min.z), glm::vec3(max.x, min.y, min.z), color);
-    tmt::engine.renderer.draw_line(glm::vec3(max.x, min.y, min.z), glm::vec3(max.x, min.y, max.z), color);
-    tmt::engine.renderer.draw_line(glm::vec3(max.x, min.y, max.z), glm::vec3(min.x, min.y, max.z), color);
-    tmt::engine.renderer.draw_line(glm::vec3(min.x, min.y, max.z), glm::vec3(min.x, min.y, min.z), color);
+    engine.polyline.draw_line(glm::vec3(min.x, min.y, min.z), glm::vec3(max.x, min.y, min.z));
+    engine.polyline.draw_line(glm::vec3(max.x, min.y, min.z), glm::vec3(max.x, min.y, max.z));
+    engine.polyline.draw_line(glm::vec3(max.x, min.y, max.z), glm::vec3(min.x, min.y, max.z));
+    engine.polyline.draw_line(glm::vec3(min.x, min.y, max.z), glm::vec3(min.x, min.y, min.z));
 
     // Top face (4 edges)
-    tmt::engine.renderer.draw_line(glm::vec3(min.x, max.y, min.z), glm::vec3(max.x, max.y, min.z), color);
-    tmt::engine.renderer.draw_line(glm::vec3(max.x, max.y, min.z), glm::vec3(max.x, max.y, max.z), color);
-    tmt::engine.renderer.draw_line(glm::vec3(max.x, max.y, max.z), glm::vec3(min.x, max.y, max.z), color);
-    tmt::engine.renderer.draw_line(glm::vec3(min.x, max.y, max.z), glm::vec3(min.x, max.y, min.z), color);
+    engine.polyline.draw_line(glm::vec3(min.x, max.y, min.z), glm::vec3(max.x, max.y, min.z));
+    engine.polyline.draw_line(glm::vec3(max.x, max.y, min.z), glm::vec3(max.x, max.y, max.z));
+    engine.polyline.draw_line(glm::vec3(max.x, max.y, max.z), glm::vec3(min.x, max.y, max.z));
+    engine.polyline.draw_line(glm::vec3(min.x, max.y, max.z), glm::vec3(min.x, max.y, min.z));
 
     // Vertical edges (4 edges connecting bottom to top)
-    tmt::engine.renderer.draw_line(glm::vec3(min.x, min.y, min.z), glm::vec3(min.x, max.y, min.z), color);
-    tmt::engine.renderer.draw_line(glm::vec3(max.x, min.y, min.z), glm::vec3(max.x, max.y, min.z), color);
-    tmt::engine.renderer.draw_line(glm::vec3(max.x, min.y, max.z), glm::vec3(max.x, max.y, max.z), color);
-    tmt::engine.renderer.draw_line(glm::vec3(min.x, min.y, max.z), glm::vec3(min.x, max.y, max.z), color);
+    engine.polyline.draw_line(glm::vec3(min.x, min.y, min.z), glm::vec3(min.x, max.y, min.z));
+    engine.polyline.draw_line(glm::vec3(max.x, min.y, min.z), glm::vec3(max.x, max.y, min.z));
+    engine.polyline.draw_line(glm::vec3(max.x, min.y, max.z), glm::vec3(max.x, max.y, max.z));
+    engine.polyline.draw_line(glm::vec3(min.x, min.y, max.z), glm::vec3(min.x, max.y, max.z));
 
     if (bvh.nodes[current_node].is_leaf()) return;
     draw_node(bvh, bvh.nodes[current_node].left_first);
@@ -70,11 +67,12 @@ void draw_node(tmt::Bvh2<VoxelObject>& bvh, uint32_t current_node) {
 }
 
 void Physics::on_update(const FrameData&) {
+    engine.polyline.use_line_width(0.25f);
     for (const auto& [entity, vb, transform] : engine.ecs.get_registry().view<VoxelBody, Transform>().each()) {
         auto edges = vb.get_world_edges();
-        glm::vec3 color = vb.type == VoxelBody::DYNAMIC ? glm::vec3(0, 1, 0) : glm::vec3(1, 0, 0);
+        engine.polyline.use_color(vb.type == VoxelBody::DYNAMIC ? glm::vec4(0, 1, 0, 1) : glm::vec4(1, 0, 0, 1));
         for (size_t i = 0; i < edges.size(); i++) {
-            tmt::engine.renderer.draw_line(edges[i].start, edges[i].end, color);
+            engine.polyline.draw_line(edges[i].start, edges[i].end);
         }
 
         engine.renderer.draw_cross(vb.center_of_mass, glm::vec3(1.0f, 0.0f, 1.0f), 0.2f);
@@ -174,11 +172,12 @@ void Physics::generate_voxel_constraints_range(const int index, const int size) 
     {
         TMT_ZONE_SCOPED_N("Physics BVH Build")
         for (auto&& [entity, vb, transform] : group.each()) {
+            if (vb.resource == nullptr) continue;
             /* Convert the entity to a voxel object */
             VoxelObject object {};
             object.local_to_world = transform.get_world_matrix();
             object.world_to_local = glm::inverse(object.local_to_world);
-            object.size = vb.resource.get()->size;  // glm::uvec3(vb.width * VOXELS_PER_UNIT, vb.height * VOXELS_PER_UNIT, vb.depth * VOXELS_PER_UNIT)  // vb.voxels.size;
+            object.size = vb.resource->size;  // glm::uvec3(vb.width * VOXELS_PER_UNIT, vb.height * VOXELS_PER_UNIT, vb.depth * VOXELS_PER_UNIT)  // vb.voxels.size;
             objects.push_back(std::move(object));
             entities.push_back(entity);
         }
@@ -199,6 +198,7 @@ void Physics::generate_voxel_constraints_range(const int index, const int size) 
             curr++;
             if (curr < min || curr >= max) continue;
             if (vb.type == VoxelBody::STATIC || vb.type == VoxelBody::SLEEPING) continue;
+            if (vb.resource == nullptr) continue;
 
             // Get current AABB
             Aabb current_aabb = vb.aabb();
@@ -470,8 +470,8 @@ bool Physics::is_separated(const glm::vec3& axis, const VoxelBody::Box& box_a, c
 }
 
 void Physics::check_neighbors(const VoxelBody& vb_a, const VoxelBody& vb_b, const size_t x, const size_t y, const size_t z, Collision& coll) const {
-    auto voxels_a = vb_a.resource.get();
-    auto voxels_b = vb_b.resource.get();
+    const auto& voxels_a = vb_a.resource.resource;
+    const auto& voxels_b = vb_b.resource.resource;
 
     const PhysicsVoxel* voxel_a = voxels_a->blas.get()->get_physics_voxel(x, y, z);  //.voxels.get_voxel(x, y, z);
     if (voxel_a == nullptr) return;
@@ -579,9 +579,9 @@ void Physics::initialize_voxel_body(VoxelBody& vb) {
     // Calculate mass and inertia
     size_t filled_counter = 0;
     glm::vec3 sum = {};
-    auto voxels = vb.resource.get();
-    const glm::uvec3 size = voxels->size;
-    const glm::vec3 half_scale = glm::vec3(size.x, size.y, size.z) * 0.5f;
+    const glm::vec3 half_scale = glm::vec3(vb.width, vb.height, vb.depth) * 0.5f;
+
+    const auto& voxels = vb.resource;
 
     for (size_t z = 0; z < size.z; z++) {
         for (size_t y = 0; y < size.y; y++) {
