@@ -38,28 +38,9 @@ void Physics::on_start() {
 
 void draw_node(tmt::Bvh2<VoxelObject>& bvh, uint32_t current_node) {
     // Draw AABB of the node
-    glm::vec3 min = bvh.nodes[current_node].min_bounds;
-    glm::vec3 max = bvh.nodes[current_node].max_bounds;
     engine.polyline.use_color(0.3f, 0.3f, 1.0f);
     engine.polyline.use_line_width(0.25f);
-
-    // Bottom face (4 edges)
-    engine.polyline.draw_line(glm::vec3(min.x, min.y, min.z), glm::vec3(max.x, min.y, min.z));
-    engine.polyline.draw_line(glm::vec3(max.x, min.y, min.z), glm::vec3(max.x, min.y, max.z));
-    engine.polyline.draw_line(glm::vec3(max.x, min.y, max.z), glm::vec3(min.x, min.y, max.z));
-    engine.polyline.draw_line(glm::vec3(min.x, min.y, max.z), glm::vec3(min.x, min.y, min.z));
-
-    // Top face (4 edges)
-    engine.polyline.draw_line(glm::vec3(min.x, max.y, min.z), glm::vec3(max.x, max.y, min.z));
-    engine.polyline.draw_line(glm::vec3(max.x, max.y, min.z), glm::vec3(max.x, max.y, max.z));
-    engine.polyline.draw_line(glm::vec3(max.x, max.y, max.z), glm::vec3(min.x, max.y, max.z));
-    engine.polyline.draw_line(glm::vec3(min.x, max.y, max.z), glm::vec3(min.x, max.y, min.z));
-
-    // Vertical edges (4 edges connecting bottom to top)
-    engine.polyline.draw_line(glm::vec3(min.x, min.y, min.z), glm::vec3(min.x, max.y, min.z));
-    engine.polyline.draw_line(glm::vec3(max.x, min.y, min.z), glm::vec3(max.x, max.y, min.z));
-    engine.polyline.draw_line(glm::vec3(max.x, min.y, max.z), glm::vec3(max.x, max.y, max.z));
-    engine.polyline.draw_line(glm::vec3(min.x, min.y, max.z), glm::vec3(min.x, max.y, max.z));
+    engine.polyline.draw_aabb(bvh.nodes[current_node].min_bounds, bvh.nodes[current_node].max_bounds);
 
     if (bvh.nodes[current_node].is_leaf()) return;
     draw_node(bvh, bvh.nodes[current_node].left_first);
@@ -235,10 +216,14 @@ void Physics::generate_voxel_constraints_range(const int index, const int size) 
                         // Check if node is empty
                         if ((tree_a->nodes[0].child_mask & (1ull << i)) == 0u) continue;
 
-                        const glm::vec3 local_uvw = glm::vec3(((float)local_x + 0.5f) * 0.25f, ((float)local_y + 0.5f) * 0.25f, ((float)local_z + 0.5f) * 0.25f);
+                        const glm::vec3 local_uvw = glm::vec3(((float)local_x) * 0.25f, ((float)local_y) * 0.25f, ((float)local_z) * 0.25f);
                         const glm::vec3 local_pos = (local_uvw * 2.0f - 1.0f) * half_extent;
 
                         const glm::vec3 world_pos = vb.position + (vb.rotation * local_pos);
+
+                        engine.polyline.use_color(0.9f, 0.9f, 0.9f);
+                        engine.polyline.use_line_width(0.1f);
+                        engine.polyline.draw_circle(world_pos, half_extent * 0.25f, 32u, Engine::Config::FIXED_TIME_STEP);
 
                         // Draw it
                         //engine.renderer.draw_sphere(world_pos, half_extent * 0.25f, glm::vec3(0.0f, 1.0f, 0.0f), 1, 16, Engine::Config::FIXED_TIME_STEP);
