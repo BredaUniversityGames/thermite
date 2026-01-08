@@ -219,6 +219,7 @@ void ImGuiConsole::LogWindow() {
         float contentEndY = contentStartY;
 
         // Wrap items.
+        float wrapWidth = ImGui::GetContentRegionAvail().x;
         ImGui::PushTextWrapPos();
 
         std::string selectedText;
@@ -238,7 +239,11 @@ void ImGuiConsole::LogWindow() {
         // First pass: calculate content bounds.
         for (const auto& item : m_ConsoleSystem.Items()) {
             if (!PassesTypeFilter(item.m_Type) || !m_TextFilter.PassFilter(item.Get().c_str())) continue;
-            ImVec2 textSize = ImGui::CalcTextSize(item.Get().data());
+            float itemWrapWidth = wrapWidth;
+            if (item.m_Type == csys::COMMAND && m_TimeStamps) {
+                itemWrapWidth = wrapWidth - timestamp_width - ImGui::GetStyle().ItemSpacing.x;
+            }
+            ImVec2 textSize = ImGui::CalcTextSize(item.Get().data(), nullptr, false, itemWrapWidth);
             contentEndY += textSize.y + ImGui::GetStyle().ItemSpacing.y;
             if (item.m_Type == csys::COMMAND && count++ != 0) {
                 contentEndY += ImGui::GetFontSize();  // Account for spacing between commands.
@@ -291,11 +296,15 @@ void ImGuiConsole::LogWindow() {
                 if (m_TimeStamps) ImGui::PushTextWrapPos(ImGui::GetColumnWidth() - timestamp_width);  // Wrap before timestamps start.
                 if (count++ != 0) ImGui::Dummy(ImVec2(-1, ImGui::GetFontSize()));                     // No space for the first command.
             }
+            float itemWrapWidth = wrapWidth;
+            if (item.m_Type == csys::COMMAND && m_TimeStamps) {
+                itemWrapWidth = ImGui::GetColumnWidth() - timestamp_width - ImGui::GetStyle().ItemSpacing.x;
+            }
 
             // Get item position before rendering.
             ImVec2 textPos = ImGui::GetCursorScreenPos();
-            ImVec2 textSize = ImGui::CalcTextSize(item.Get().data());
-            ImVec2 textEnd(textPos.x + textSize.x, textPos.y + textSize.y);
+            ImVec2 textSize = ImGui::CalcTextSize(item.Get().data(), nullptr, false, itemWrapWidth);
+            ImVec2 textEnd(textPos.x + itemWrapWidth, textPos.y + textSize.y);
 
             // Check if this line intersects with selection.
             bool lineSelected =
