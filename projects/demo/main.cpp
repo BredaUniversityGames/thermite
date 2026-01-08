@@ -64,8 +64,10 @@ class
     dragon.id = "dragon";
     dragon.action_ids = {"ChasePlayer"};
 
-    dragon.default_world_state = {{std::hash<std::string>()("player_visible"), true}};
-    dragon.default_world_state = {{std::hash<std::string>()("player_in_range"), false}};
+    dragon.default_world_state = {
+        {std::hash<std::string>()("player_visible"), true},
+        {std::hash<std::string>()("player_in_range"), false},
+    };
 
     {
         tmt::GoapGoal patrol;

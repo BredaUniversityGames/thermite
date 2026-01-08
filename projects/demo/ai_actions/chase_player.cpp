@@ -19,7 +19,7 @@ void ChasePlayer::on_tick(tmt::Entity walking_entity, tmt::Registry& registry, f
 
     auto& nav_mesh = tmt::engine.ecs.get_component<tmt::NavMesh>(walking.walkable_asteroid);
 
-    const auto& walking_entity_pos = tmt::engine.ecs.get_component<tmt::Transform>(player).get_world_position();
+    const auto& walking_entity_pos = tmt::engine.ecs.get_component<tmt::Transform>(walking_entity).get_world_position();
     const auto& player_pos = tmt::engine.ecs.get_component<tmt::Transform>(player).get_world_position();
 
     int start_pos = nav_mesh.find_closest_node(walking_entity_pos);
