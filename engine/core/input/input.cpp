@@ -70,9 +70,14 @@ void Input::update(const FrameData& time) {
     // Get current mouse state
     mouse_buttons = SDL_GetMouseState(&mouse_x, &mouse_y);
 
+    bool keyboard_captured = false;
     SDL_Event sdl_event {};
     while (SDL_PollEvent(&sdl_event)) {
-        internal::OnSdlEvent::dispatch(sdl_event);
+        internal::SdlEvent sdl_event_wrapper(sdl_event);
+        internal::OnSdlEvent::dispatch(sdl_event_wrapper);
+
+        keyboard_captured |= sdl_event_wrapper.imgui_capture_keyboard;
+
         switch (sdl_event.type) {
             case SDL_EVENT_QUIT: {
                 engine.set_is_running(false);
@@ -101,6 +106,7 @@ void Input::update(const FrameData& time) {
                 break;
             }
             case SDL_EVENT_MOUSE_MOTION: {
+                if (sdl_event_wrapper.imgui_capture_mouse) break;
                 mouse_dx += sdl_event.motion.xrel;
                 mouse_dy += sdl_event.motion.yrel;
                 break;
@@ -125,6 +131,9 @@ void Input::update(const FrameData& time) {
         }
     }
     // update hold timers
+
+    if (keyboard_captured) return;
+
     for (auto& [action_name, input_action] : engine.input_map.actions) {
         for (auto& event : input_action.events) {
             if (event->is_pressed() == true) {
