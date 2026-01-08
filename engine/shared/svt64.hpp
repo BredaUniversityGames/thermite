@@ -5,6 +5,7 @@
 
 #include "engine/core/renderer/material.hpp"
 #include "engine/systems/physics/physics_voxel_data.hpp"
+#include "engine/shared/ray.hpp"
 
 namespace tmt {
 
@@ -46,6 +47,14 @@ struct Svt64Node {
     inline uint32_t abs_ptr() const { return child_ptr & 0x7FFFFFFFu; };
 };
 #pragma pack(pop)
+
+/* Ray hit data. */
+struct Svt64Hit {
+    glm::vec3 pos = glm::vec3(1e30f);
+    uint32_t index = 0xFFFFFFFFu;
+    Svt64Hit() = default;
+    Svt64Hit(glm::vec3 p, uint32_t i) : pos(p), index(i) {};
+};
 
 /* 64-wide Sparse Voxel Tree. */
 class Svt64 {
@@ -101,6 +110,9 @@ class Svt64 {
 
     /* Build the Sparse Voxel Tree. */
     void build(const RawVoxels& raw_data);
+
+    /* Trace the Sparse Voxel Tree. */
+    Svt64Hit trace(const Ray& ray) const;
 };
 
 }  // namespace tmt
