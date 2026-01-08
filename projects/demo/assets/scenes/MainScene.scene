@@ -3,7 +3,8 @@
     "entities": [
         0,
         1,
-        2
+        2,
+        3
     ],
     "Name": {
         "0": {
@@ -14,6 +15,9 @@
         },
         "2": {
             "name": "Asteroids"
+        },
+        "3": {
+            "name": "animation"
         }
     },
     "Transform": {
@@ -58,6 +62,26 @@
             "children": []
         },
         "2": {
+            "local_position": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "local_rotation": {
+                "w": 1.0,
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "local_scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "parent": 4294967295,
+            "children": []
+        },
+        "3": {
             "local_position": {
                 "x": 0.0,
                 "y": 0.0,
@@ -248,8 +272,24 @@
                 "min_radius": 50.0,
                 "min_scale_factor": 0.5,
                 "radial_bias": 0.0,
+                "randomize_seed": true,
                 "seed": 42,
                 "use_3d_distribution": false
+            }
+        },
+        "3": {
+            "AnimationPlayer": {
+                "animation_location": [
+                    {
+                        "relative_path": "animations/Victory_animation.fbx",
+                        "sub_location": "PROJECT"
+                    }
+                ],
+                "animation_name": "Victory_animation",
+                "rig_location": {
+                    "relative_path": "animations/Victory_animation.fbx",
+                    "sub_location": "PROJECT"
+                }
             }
         }
     }
