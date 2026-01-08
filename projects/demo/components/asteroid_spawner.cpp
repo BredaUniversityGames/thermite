@@ -64,7 +64,7 @@ void AsteroidSpawner::on_inspect(ImResponse& response) {
     }
 }
 #else
-void AsteroidSpawner::on_inspect() {}
+void AsteroidSpawner::on_inspect(ImResponse& response) {}
 #endif
 
 glm::vec3 AsteroidSpawner::calculate_position(int index, int total) {
