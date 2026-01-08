@@ -48,38 +48,38 @@ void draw_node(tmt::Bvh2<VoxelObject>& bvh, uint32_t current_node) {
 }
 
 void Physics::on_update(const FrameData&) {
-    engine.polyline.use_line_width(0.25f);
-    for (const auto& [entity, vb, transform] : engine.ecs.get_registry().view<VoxelBody, Transform>().each()) {
-        auto edges = vb.get_world_edges();
-        engine.polyline.use_color(vb.type == VoxelBody::DYNAMIC ? glm::vec4(0, 1, 0, 1) : glm::vec4(1, 0, 0, 1));
-        for (size_t i = 0; i < edges.size(); i++) {
-            engine.polyline.draw_line(edges[i].start, edges[i].end);
-        }
+    //engine.polyline.use_line_width(0.25f);
+    //for (const auto& [entity, vb, transform] : engine.ecs.get_registry().view<VoxelBody, Transform>().each()) {
+    //    auto edges = vb.get_world_edges();
+    //    engine.polyline.use_color(vb.type == VoxelBody::DYNAMIC ? glm::vec4(0, 1, 0, 1) : glm::vec4(1, 0, 0, 1));
+    //    for (size_t i = 0; i < edges.size(); i++) {
+    //        engine.polyline.draw_line(edges[i].start, edges[i].end);
+    //    }
 
-        //engine.renderer.draw_cross(vb.center_of_mass, glm::vec3(1.0f, 0.0f, 1.0f), 0.2f);
-        //engine.renderer.draw_cross(vb.position, glm::vec3(1.0f, 0.0f, 0.0f), 0.2f);
-        //engine.renderer.draw_cross(vb.position + vb.rotation * vb.com_local_offset, glm::vec3(0.0f, 0.0f, 1.0f), 0.2f);
+    //    //engine.renderer.draw_cross(vb.center_of_mass, glm::vec3(1.0f, 0.0f, 1.0f), 0.2f);
+    //    //engine.renderer.draw_cross(vb.position, glm::vec3(1.0f, 0.0f, 0.0f), 0.2f);
+    //    //engine.renderer.draw_cross(vb.position + vb.rotation * vb.com_local_offset, glm::vec3(0.0f, 0.0f, 1.0f), 0.2f);
 
-        // // Draw voxel normals
-        // glm::uvec3 size = vb.resource.get()->size;
-        // auto* tree = vb.resource.get()->blas.get();
-        // for (size_t z = 0; z < size.z; z++) {
-        //     for (size_t y = 0; y < size.y; y++) {
-        //         for (size_t x = 0; x < size.x; x++) {
-        //             const tmt::PhysicsVoxel* voxel = tree->get_physics_voxel(x, y, z);
-        //             if (voxel == nullptr || voxel->normal_index == 0 || voxel->normal_index == 28) continue;
+    //    // // Draw voxel normals
+    //    // glm::uvec3 size = vb.resource.get()->size;
+    //    // auto* tree = vb.resource.get()->blas.get();
+    //    // for (size_t z = 0; z < size.z; z++) {
+    //    //     for (size_t y = 0; y < size.y; y++) {
+    //    //         for (size_t x = 0; x < size.x; x++) {
+    //    //             const tmt::PhysicsVoxel* voxel = tree->get_physics_voxel(x, y, z);
+    //    //             if (voxel == nullptr || voxel->normal_index == 0 || voxel->normal_index == 28) continue;
 
-        //            glm::ivec3 local_normal = voxel->get_normal();
-        //            glm::vec3 normal = vb.rotation * glm::vec3((float)local_normal.x, (float)local_normal.y, (float)local_normal.z);
-        //            glm::vec3 local_pos = glm::vec3(
-        //                ((float)x + 0.5f - (size.x * 0.5f)) * UNITS_PER_VOXEL, ((float)y + 0.5f - (size.y * 0.5f)) * UNITS_PER_VOXEL, ((float)z + 0.5f - (size.z * 0.5f)) * UNITS_PER_VOXEL
-        //            );
-        //            glm::vec3 world_pos = vb.position + (vb.rotation * local_pos);
-        //            tmt::engine.renderer.draw_arrow(world_pos, normal, glm::vec3(0.0f, 0.6f, 0.0f), 0.15f, 0.05f);
-        //        }
-        //    }
-        //}
-    }
+    //    //            glm::ivec3 local_normal = voxel->get_normal();
+    //    //            glm::vec3 normal = vb.rotation * glm::vec3((float)local_normal.x, (float)local_normal.y, (float)local_normal.z);
+    //    //            glm::vec3 local_pos = glm::vec3(
+    //    //                ((float)x + 0.5f - (size.x * 0.5f)) * UNITS_PER_VOXEL, ((float)y + 0.5f - (size.y * 0.5f)) * UNITS_PER_VOXEL, ((float)z + 0.5f - (size.z * 0.5f)) * UNITS_PER_VOXEL
+    //    //            );
+    //    //            glm::vec3 world_pos = vb.position + (vb.rotation * local_pos);
+    //    //            tmt::engine.renderer.draw_arrow(world_pos, normal, glm::vec3(0.0f, 0.6f, 0.0f), 0.15f, 0.05f);
+    //    //        }
+    //    //    }
+    //    //}
+    //}
 
     // if (bvh.nodes) draw_node(bvh, 0u);
     //  draw_node(bvh, bvh.nodes[0].left_first + 1u);
@@ -142,6 +142,24 @@ void Physics::on_fixed_update(const FrameData&) {
 
 void Physics::on_end() { Log::info("Physics on_end"); }
 
+void find_solids(tmt::Svt64* tree, uint32_t parent_index, int depth) {
+    if (depth >= tree->depth) return;
+
+    uint64_t mask = tree->nodes[parent_index].child_mask;
+
+    // Loop over mask until all bits are cleared
+    for (;;) {
+        const int i = std::countl_zero(mask);  // Count leading zeros to find first set bit
+
+        // Get child node
+        // !!! Doesn't work !!!
+        find_solids(tree,  parent_index + i, depth + 1);
+
+        mask &= ~(1ull << i);  // Clear the bit
+        if (mask == 0u) break;
+    }
+}
+
 void Physics::generate_voxel_constraints_range(const int index, const int size) {
     // Build BVH
     // NOTE: BVH needs to move to another function when multithreading is implemented
@@ -202,28 +220,30 @@ void Physics::generate_voxel_constraints_range(const int index, const int size) 
                 auto* tree_a = vb.resource->blas.get();
                 auto* tree_b = other_vb.resource->blas.get();
 
-                const glm::vec3 width_ratio = ((glm::vec3)vb.resource->size / powf(4.0f, (float)vb.resource->blas->depth));
-                //const glm::vec3 half_extent = glm::vec3(vb.resource.get()->size) * 0.5f * UNITS_PER_VOXEL;
                 const float half_extent = powf(4.0f, (float)vb.resource->blas->depth) * 0.5f * UNITS_PER_VOXEL;
+                const glm::vec3 extents_diff = half_extent - ((glm::vec3)vb.resource->size * 0.5f * UNITS_PER_VOXEL);
+
+                find_solids(tree_a, 0u, 0);
 
                 //for (uint32_t level = 1u; level <= tree_a->depth; ++level) {
                     for (uint32_t i = 0; i < 64u; i++) {
+                        // Check if node is empty
+                        if ((tree_a->nodes[0].child_mask & (1ull << i)) == 0u) continue;
+
                         /* Fetch the voxel data */
                         const uint32_t local_x = (i >> 0u) & 3u;
                         const uint32_t local_y = (i >> 4u) & 3u;
                         const uint32_t local_z = (i >> 2u) & 3u;
 
-                        // Check if node is empty
-                        if ((tree_a->nodes[0].child_mask & (1ull << i)) == 0u) continue;
-
-                        const glm::vec3 local_uvw = glm::vec3(((float)local_x) * 0.25f, ((float)local_y) * 0.25f, ((float)local_z) * 0.25f);
+                        const glm::vec3 local_uvw = glm::vec3(((float)local_x + 0.5f) * 0.25f, ((float)local_y + 0.5f) * 0.25f, ((float)local_z + 0.5f) * 0.25f);
                         const glm::vec3 local_pos = (local_uvw * 2.0f - 1.0f) * half_extent;
 
-                        const glm::vec3 world_pos = vb.position + (vb.rotation * local_pos);
+                        const glm::vec3 world_pos = vb.position + (vb.rotation * (local_pos + extents_diff));
 
                         engine.polyline.use_color(0.9f, 0.9f, 0.9f);
                         engine.polyline.use_line_width(0.1f);
-                        engine.polyline.draw_circle(world_pos, half_extent * 0.25f, 32u, Engine::Config::FIXED_TIME_STEP);
+                        engine.polyline.draw_obb(world_pos, glm::vec3(half_extent * 0.25f), vb.rotation, Engine::Config::FIXED_TIME_STEP + 0.1f);
+                        //engine.polyline.draw_circle(world_pos, half_extent * 0.25f, 32u, Engine::Config::FIXED_TIME_STEP);
 
                         // Draw it
                         //engine.renderer.draw_sphere(world_pos, half_extent * 0.25f, glm::vec3(0.0f, 1.0f, 0.0f), 1, 16, Engine::Config::FIXED_TIME_STEP);
