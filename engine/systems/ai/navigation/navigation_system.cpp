@@ -4,7 +4,11 @@
 
 std::string tmt::NavigationSystem::get_name() { return std::string(); }
 
-void tmt::NavigationSystem::on_start() {}
+void tmt::NavigationSystem::on_start() {
+    for (const auto& [entity, nav_mesh] : engine.ecs.get_registry().view<NavMesh>().each()) {
+        nav_mesh.generate_mesh();
+    }
+}
 
 void tmt::NavigationSystem::on_update(const FrameData& time) {
     for (const auto& [entity, nav_mesh] : engine.ecs.get_registry().view<NavMesh>().each()) {

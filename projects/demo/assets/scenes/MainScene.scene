@@ -4,7 +4,10 @@
         0,
         1,
         2,
-        3
+        3,
+        4,
+        1048581,
+        3145734
     ],
     "Name": {
         "0": {
@@ -17,7 +20,16 @@
             "name": "Asteroids"
         },
         "3": {
-            "name": "animation"
+            "name": "animation guy"
+        },
+        "4": {
+            "name": "Walkable_asteroid"
+        },
+        "1048581": {
+            "name": "Entity_1048581"
+        },
+        "3145734": {
+            "name": "Walking Dragon"
         }
     },
     "Transform": {
@@ -100,10 +112,100 @@
             },
             "parent": 4294967295,
             "children": []
+        },
+        "4": {
+            "local_position": {
+                "x": -22.24384307861328,
+                "y": 0.0,
+                "z": 0.5516737699508667
+            },
+            "local_rotation": {
+                "w": -0.4213019609451294,
+                "x": 0.0,
+                "y": 0.9069204330444336,
+                "z": 0.0
+            },
+            "local_scale": {
+                "x": 1.0000001192092896,
+                "y": 1.0,
+                "z": 1.0000001192092896
+            },
+            "parent": 4294967295,
+            "children": []
+        },
+        "1048581": {
+            "local_position": {
+                "x": -19.587434768676758,
+                "y": 8.067468643188477,
+                "z": -0.09805572032928467
+            },
+            "local_rotation": {
+                "w": 1.0,
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "local_scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "parent": 4294967295,
+            "children": []
+        },
+        "3145734": {
+            "local_position": {
+                "x": -16.74327850341797,
+                "y": 5.419820308685303,
+                "z": -4.522403240203857
+            },
+            "local_rotation": {
+                "w": 1.0,
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "local_scale": {
+                "x": 0.19580404460430145,
+                "y": 0.19580404460430145,
+                "z": 0.19580404460430145
+            },
+            "parent": 4294967295,
+            "children": []
         }
     },
     "Voxel Renderer": {
         "1": {
+            "resource": {
+                "file_location": {
+                    "sub_location": "PROJECT",
+                    "relative_path": "dragon128.vengi"
+                },
+                "data": {
+                    "size": {
+                        "x": 128,
+                        "y": 90,
+                        "z": 58
+                    }
+                }
+            }
+        },
+        "4": {
+            "resource": {
+                "file_location": {
+                    "sub_location": "PROJECT",
+                    "relative_path": "asteroids/test_asteroid_3.vengi"
+                },
+                "data": {
+                    "size": {
+                        "x": 169,
+                        "y": 183,
+                        "z": 209
+                    }
+                }
+            }
+        },
+        "3145734": {
             "resource": {
                 "file_location": {
                     "sub_location": "PROJECT",
@@ -291,6 +393,24 @@
                     "sub_location": "PROJECT"
                 }
             }
+        }
+    },
+    "Navigation Mesh": {
+        "4": {
+            "voxel_volume": {
+                "file_location": {
+                    "sub_location": "PROJECT",
+                    "relative_path": "asteroids/test_asteroid_3.vengi"
+                },
+                "data": {
+                    "size": {
+                        "x": 169,
+                        "y": 183,
+                        "z": 209
+                    }
+                }
+            },
+            "lod_level": 2
         }
     }
 }

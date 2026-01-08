@@ -8,7 +8,7 @@
 
 using namespace tmt;
 
-void NavMesh::generate_mesh(tmt::ResourceRef<tmt::VoxelVolume> voxel_volume, int lod_level) {
+void NavMesh::generate_mesh() {
     TMT_ZONE_SCOPED_N("NavMesh::generate_mesh");
     nodes.clear();
 
@@ -209,6 +209,19 @@ std::vector<int> NavMesh::find_path(const int starting_node_id, const int ending
         path.push_back(nodes[current].parent);
         current = nodes[current].parent;
     }
+}
+
+int tmt::NavMesh::find_closest_node(const glm::vec3& position) {
+    int closest_node = -1;
+    float closest_distance = std::numeric_limits<float>::max();
+    for (int i = 0; i < (int)nodes.size(); i++) {
+        float distance = glm::distance(position, nodes[i].world_pos);
+        if (distance < closest_distance) {
+            closest_distance = distance;
+            closest_node = i;
+        }
+    }
+    return closest_node;
 }
 
 void tmt::NavMesh::inspect() {

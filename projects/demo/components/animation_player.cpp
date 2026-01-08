@@ -15,12 +15,8 @@ void AnimationPlayer::start() {
     rigmodel.play_animation(animation_name, 0.0f, true);
 }
 
-void AnimationPlayer::update(const tmt::FrameData& time) {
-    //
-    //
-}
+void AnimationPlayer::update(const tmt::FrameData& time) {}
 
 void AnimationPlayer::end() {
-    //
     //
 }
