@@ -1,7 +1,7 @@
 #include "motion_math.hpp"
 #include "engine/engine.hpp"
 #include "engine/core/ecs.hpp"
-#include "engine/systems/motionmath/motion_math_system.hpp"
+#include "engine/systems/motion_math/motion_math_system.hpp"
 #include <imgui.h>
 
 void tmt::MotionMathPreview::display() {

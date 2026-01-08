@@ -2,10 +2,18 @@
 #include "glm/gtc/constants.hpp"
 
 namespace tmt {
+
+template <typename T>
+concept ValidTarget = requires(T a) {
+    { a - a };
+    { a + a };
+    { a * a };
+};
+
 class SecondOrderSolver {
    public:
     // requires the operators -, +, * with float
-    template <typename T>
+    template <typename T> requires ValidTarget<T>
     struct State {
         T current_target, current_state, current_velocity;
     };

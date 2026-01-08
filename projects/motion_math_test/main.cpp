@@ -9,7 +9,7 @@
 #include "engine/core/logger.hpp"
 #include "engine/systems/physics/components/voxel_body.hpp"
 #include "engine/systems/camera/camera_system.hpp"
-#include "engine/systems/motionmath/motion_math_system.hpp"
+#include "engine/systems/motion_math/motion_math_system.hpp"
 
 #include "engine/core/scene.hpp"
 #include "engine/core/scenes.hpp"

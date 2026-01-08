@@ -21,7 +21,7 @@
 #include "systems/ai/navigation/navigation_system.hpp"
 #include "systems/gameplay/gameplay.hpp"
 #include "systems/gameplay/game_component_registry.hpp"
-#include "systems/motionmath/motion_math_system.hpp"
+#include "systems/motion_math/motion_math_system.hpp"
 #include "events/engine.hpp"
 #include "events/game.hpp"
 #include "events/scene.hpp"
