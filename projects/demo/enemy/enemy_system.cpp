@@ -9,13 +9,13 @@ std::string tmt::EnemySystem::get_name() { return std::string(); }
 
 void tmt::EnemySystem::on_start() {}
 
-void tmt::EnemySystem::on_update(const FrameData& time) { 
-	for (const auto& [entity, enemy] : engine.ecs.get_registry().view<Enemy>().each()) {
+void tmt::EnemySystem::on_update(const FrameData& time) {
+    for (const auto& [entity, enemy] : engine.ecs.get_registry().view<Enemy>().each()) {
         Input& input = tmt::engine.input;
         if (input.is_keyboard_button_pressed(Key::P)) {
-            //int start = rand() % nav_mesh.nodes.size();
-            //int end = rand() % nav_mesh.nodes.size();
-            //nav_mesh.path = nav_mesh.find_path(start, end);
+            // int start = rand() % nav_mesh.nodes.size();
+            // int end = rand() % nav_mesh.nodes.size();
+            // nav_mesh.path = nav_mesh.find_path(start, end);
         }
     }
 }
