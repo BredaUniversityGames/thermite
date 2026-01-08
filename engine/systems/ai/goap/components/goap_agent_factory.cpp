@@ -17,14 +17,14 @@ namespace tmt {
 Entity GoapAgentFactory::spawn_agent_from_type(const std::string& type_id) {
     auto& ecs = engine.ecs;
 
-    // Look up the agent type
+    // --- Look up the agent type ---
     auto* type = GoapAgentTypeRegistry::instance().get(type_id);
     if (!type) {
         Log::warn("Unknown agent type: {}", type_id);
         return entt::null;
     }
 
-    // Create the entity
+    // --- Create the entity ---
     Entity e = ecs.create_entity();
     auto& transform = ecs.get_component<Transform>(e);
     auto& agent = ecs.add_component<GoapAgent>(e);
@@ -44,7 +44,7 @@ Entity GoapAgentFactory::spawn_agent_from_type(const std::string& type_id) {
         }
     }
 
-    // --- Initialize world-state ---
+    // --- Initialize world state ---
     ws.facts = type->default_world_state;
 
     return e;
