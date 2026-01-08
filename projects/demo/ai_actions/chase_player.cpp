@@ -27,8 +27,8 @@ void ChasePlayer::on_tick(tmt::Entity walking_entity, tmt::Registry&, float dt) 
 
     std::vector<int> path = nav_mesh.find_path(start_pos, closest_node_id);
 
-    if (path.size() > 1) {
-        glm::vec3 target_pos = nav_mesh.nodes[path[1]].world_pos;
+    if (path.size() > 0) {
+        glm::vec3 target_pos = nav_mesh.nodes[path[0]].world_pos;
         tmt::Transform& walking_transform = tmt::engine.ecs.get_component<tmt::Transform>(walking_entity);
         if (glm::distance(target_pos, walking_transform.get_world_position()) > 0.01f) {
             glm::vec3 direction = glm::normalize(target_pos - walking_transform.get_world_position());
