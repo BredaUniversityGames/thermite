@@ -30,8 +30,10 @@ void ChasePlayer::on_tick(tmt::Entity walking_entity, tmt::Registry& registry, f
     if (path.size() > 1) {
         glm::vec3 target_pos = nav_mesh.nodes[path[1]].world_pos;
         tmt::Transform& walking_transform = tmt::engine.ecs.get_component<tmt::Transform>(walking_entity);
-        glm::vec3 direction = glm::normalize(target_pos - walking_transform.get_world_position());
-        walking_transform.set_world_position(walking_transform.get_world_position() + direction * walking.walk_speed * dt);
+        if (glm::distance(target_pos, walking_transform.get_world_position()) > 0.01f) {
+            glm::vec3 direction = glm::normalize(target_pos - walking_transform.get_world_position());
+            walking_transform.set_world_position(walking_transform.get_world_position() + direction * walking.walk_speed * dt);
+        }
     } else {
         // Reached the player or no path found
         done_walking = true;

@@ -6,9 +6,13 @@
 #include "engine/core/input/input.hpp"
 #include "engine/core/components/camera.hpp"
 
+#include "engine/core/window.hpp"
+
 void Player::start() {
     tmt::engine.input.lock_mouse(true);
     tmt::engine.input.set_mouse_relative_to_window(true);
+    glm::vec2 screen_size = {tmt::engine.window.width, tmt::engine.window.height};
+    tmt::engine.input.warp_mouse({screen_size.x / 2.0f, screen_size.y / 2.0f}, true);
 }
 
 void Player::update(const tmt::FrameData& time) {
