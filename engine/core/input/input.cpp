@@ -17,8 +17,8 @@
 
 using namespace tmt;
 
-bool Input::can_use_input_mouse() const { return !can_capture_mouse || engine.input.viewport_hovered; }
-bool Input::can_use_input_keyboard() const { return !can_capture_keyboard || engine.input.viewport_hovered; }
+bool Input::can_use_input_mouse() const { return !can_capture_mouse; }
+bool Input::can_use_input_keyboard() const { return !can_capture_keyboard; }
 
 void Input::init() {
     int32_t number_keys;

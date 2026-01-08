@@ -77,7 +77,6 @@ void tmt::Viewport::display() {
     ImGui::BeginChild("viewport_render", ImVec2(0, 0), 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove);
     ImGui::Image((ImTextureRef)engine.renderer.render_view.imgui_viewport, size);
     is_hovered = ImGui::IsItemHovered();
-    engine.input.viewport_hovered = is_hovered;
     ImGuizmo::SetDrawlist();
 
     gizmo_manip();
