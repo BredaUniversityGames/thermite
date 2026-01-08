@@ -41,7 +41,7 @@ void Game::on_start() {
 
     { /* Camera entity */
         tmt::Entity entity = tmt::engine.ecs.create_entity("Camera");
-        auto& transform = tmt::engine.ecs.add_component<tmt::Transform>(entity);
+        auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
         auto& camera = tmt::engine.ecs.add_component<tmt::Camera>(entity);
         transform.set_world_position(glm::vec3(0.0f, 0.25f, -5.0f));
     }
@@ -81,7 +81,7 @@ void Game::on_start() {
 
     { /* Voxel Physics Entity, Asteroid 3 */
         auto entity = tmt::engine.ecs.create_entity();
-        auto& transform = tmt::engine.ecs.add_component<tmt::Transform>(entity);
+        auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
         auto& renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(entity);
         renderer.resource = voxel_volume_ass3;
         auto& vb = tmt::engine.ecs.add_component<tmt::VoxelBody>(entity);
@@ -98,7 +98,7 @@ void Game::on_start() {
 
     { /* Voxel Physics Entity, Asteroid 3 */
         auto entity = tmt::engine.ecs.create_entity();
-        auto& transform = tmt::engine.ecs.add_component<tmt::Transform>(entity);
+        auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
         auto& renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(entity);
         renderer.resource = voxel_volume_ass3;
         auto& vb = tmt::engine.ecs.add_component<tmt::VoxelBody>(entity);
@@ -113,7 +113,7 @@ void Game::on_start() {
 
         {
             auto e = tmt::engine.ecs.create_entity();
-            auto& transform_e = tmt::engine.ecs.add_component<tmt::Transform>(e);
+            auto& transform_e = tmt::engine.ecs.get_component<tmt::Transform>(e);
             auto& renderer_e = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(e);
             renderer_e.resource = voxel_volume_piece;
             auto& vb_e = tmt::engine.ecs.add_component<tmt::VoxelBody>(e);
@@ -128,7 +128,7 @@ void Game::on_start() {
 
     { /* Voxel Physics Entity, Asteroid 3 */
         auto entity = tmt::engine.ecs.create_entity();
-        auto& transform = tmt::engine.ecs.add_component<tmt::Transform>(entity);
+        auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
         auto& renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(entity);
         renderer.resource = voxel_volume_ass3;
         auto& vb = tmt::engine.ecs.add_component<tmt::VoxelBody>(entity);
@@ -144,7 +144,7 @@ void Game::on_start() {
 
     { /* Voxel Physics Entity, Asteroid 7 */
         auto entity = tmt::engine.ecs.create_entity();
-        auto& transform = tmt::engine.ecs.add_component<tmt::Transform>(entity);
+        auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
         auto& renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(entity);
         renderer.resource = voxel_volume_ass7;
         auto& vb = tmt::engine.ecs.add_component<tmt::VoxelBody>(entity);
@@ -160,7 +160,7 @@ void Game::on_start() {
 
     { /* Voxel Physics Entity, Asteroid 7 */
         auto entity = tmt::engine.ecs.create_entity();
-        auto& transform = tmt::engine.ecs.add_component<tmt::Transform>(entity);
+        auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
         auto& renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(entity);
         renderer.resource = voxel_volume_ass7;
         auto& vb = tmt::engine.ecs.add_component<tmt::VoxelBody>(entity);
@@ -176,7 +176,7 @@ void Game::on_start() {
 
     { /* Voxel Physics Entity, Asteroid 7 */
         auto entity = tmt::engine.ecs.create_entity();
-        auto& transform = tmt::engine.ecs.add_component<tmt::Transform>(entity);
+        auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
         auto& renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(entity);
         renderer.resource = voxel_volume_ass7;
         auto& vb = tmt::engine.ecs.add_component<tmt::VoxelBody>(entity);
@@ -192,7 +192,7 @@ void Game::on_start() {
 
     { /* Voxel Physics Entity, Asteroid 7 */
         auto entity = tmt::engine.ecs.create_entity();
-        auto& transform = tmt::engine.ecs.add_component<tmt::Transform>(entity);
+        auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
         auto& renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(entity);
         renderer.resource = voxel_volume_ass7;
         auto& vb = tmt::engine.ecs.add_component<tmt::VoxelBody>(entity);
@@ -208,7 +208,7 @@ void Game::on_start() {
 
     { /* Voxel Physics Entity, Asteroid 7 */
         auto entity = tmt::engine.ecs.create_entity();
-        auto& transform = tmt::engine.ecs.add_component<tmt::Transform>(entity);
+        auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
         auto& renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(entity);
         renderer.resource = voxel_volume_ass7;
         auto& vb = tmt::engine.ecs.add_component<tmt::VoxelBody>(entity);
@@ -224,7 +224,7 @@ void Game::on_start() {
 
     { /* Voxel Physics Entity, Asteroid 7 */
         auto entity = tmt::engine.ecs.create_entity();
-        auto& transform = tmt::engine.ecs.add_component<tmt::Transform>(entity);
+        auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
         auto& renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(entity);
         renderer.resource = voxel_volume_ass7;
         auto& vb = tmt::engine.ecs.add_component<tmt::VoxelBody>(entity);

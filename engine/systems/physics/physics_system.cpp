@@ -75,9 +75,9 @@ void Physics::on_update(const FrameData&) {
             engine.polyline.draw_line(edges[i].start, edges[i].end);
         }
 
-        engine.renderer.draw_cross(vb.center_of_mass, glm::vec3(1.0f, 0.0f, 1.0f), 0.2f);
-        engine.renderer.draw_cross(vb.position, glm::vec3(1.0f, 0.0f, 0.0f), 0.2f);
-        engine.renderer.draw_cross(vb.position + vb.rotation * vb.com_local_offset, glm::vec3(0.0f, 0.0f, 1.0f), 0.2f);
+        //engine.renderer.draw_cross(vb.center_of_mass, glm::vec3(1.0f, 0.0f, 1.0f), 0.2f);
+        //engine.renderer.draw_cross(vb.position, glm::vec3(1.0f, 0.0f, 0.0f), 0.2f);
+        //engine.renderer.draw_cross(vb.position + vb.rotation * vb.com_local_offset, glm::vec3(0.0f, 0.0f, 1.0f), 0.2f);
 
         // // Draw voxel normals
         // glm::uvec3 size = vb.resource.get()->size;
@@ -218,10 +218,10 @@ void Physics::generate_voxel_constraints_range(const int index, const int size) 
                 Collision coll(entity, other_entity);
                 coll.contacts.reserve(64);
 
-                auto* tree_a = vb.resource.get()->blas.get();
-                auto* tree_b = other_vb.resource.get()->blas.get();
+                auto* tree_a = vb.resource->blas.get();
+                auto* tree_b = other_vb.resource->blas.get();
 
-                const glm::vec3 width_ratio = ((glm::vec3)vb.resource.get()->size / powf(4.0f, (float)vb.resource->blas->depth));
+                const glm::vec3 width_ratio = ((glm::vec3)vb.resource->size / powf(4.0f, (float)vb.resource->blas->depth));
                 //const glm::vec3 half_extent = glm::vec3(vb.resource.get()->size) * 0.5f * UNITS_PER_VOXEL;
                 const float half_extent = powf(4.0f, (float)vb.resource->blas->depth) * 0.5f * UNITS_PER_VOXEL;
 
@@ -241,7 +241,7 @@ void Physics::generate_voxel_constraints_range(const int index, const int size) 
                         const glm::vec3 world_pos = vb.position + (vb.rotation * local_pos);
 
                         // Draw it
-                        engine.renderer.draw_sphere(world_pos, half_extent * 0.25f, glm::vec3(0.0f, 1.0f, 0.0f), 1, 16, Engine::Config::FIXED_TIME_STEP);
+                        //engine.renderer.draw_sphere(world_pos, half_extent * 0.25f, glm::vec3(0.0f, 1.0f, 0.0f), 1, 16, Engine::Config::FIXED_TIME_STEP);
                     }
                 //}
 
@@ -583,9 +583,9 @@ void Physics::initialize_voxel_body(VoxelBody& vb) {
 
     const auto& voxels = vb.resource;
 
-    for (size_t z = 0; z < size.z; z++) {
-        for (size_t y = 0; y < size.y; y++) {
-            for (size_t x = 0; x < size.x; x++) {
+    for (size_t z = 0; z < voxels->size.z; z++) {
+        for (size_t y = 0; y < voxels->size.y; y++) {
+            for (size_t x = 0; x < voxels->size.x; x++) {
                 if (voxels->blas.get()->get_voxel(x, y, z) == nullptr) continue;
                 // if (vb.voxels.get_voxel(x, y, z).type == PhysicsVoxelType::EMPTY) continue;
 
