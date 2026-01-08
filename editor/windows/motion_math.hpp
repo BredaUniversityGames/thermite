@@ -15,8 +15,14 @@ class MotionMathPreview : public IWindow {
     void on_editor_end() override {}
 
    private:
+    bool recompute = true;
     float frequency = 1.f;
     float damping = 1.f;
     float initial_response = 0.f;
+    float target = 1.f;
+
+    static const inline int NUM_SAMPLES = 100;
+    float x_data[NUM_SAMPLES];
+    float y_data[NUM_SAMPLES];
 };
 }  // namespace tmt
