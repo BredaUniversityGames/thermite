@@ -120,10 +120,10 @@ void Hierarchy::paste_entities(const Entity hovered_entity) {
     std::set<Entity> new_entities;
     Serializer::deserialize(deserialized, new_entities, tmt::engine.ecs);
 
-    auto parent = EntityHelper::upper_parent(new_entities);
-    if (hovered_entity != entt::null) {
-        auto& hovered_transform = tmt::engine.ecs.get_component<Transform>(hovered_entity);
-        hovered_transform.add_child(parent);
+    const std::set<Entity> parents = EntityHelper::upper_parents(new_entities);
+    for (const Entity parent : parents) {
+        Transform& parent_transform = tmt::engine.ecs.get_component<Transform>(parent);
+        parent_transform.set_parent(hovered_entity);
     }
 
     clear_selection();

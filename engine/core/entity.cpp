@@ -7,37 +7,41 @@ namespace tmt {
 
 template <typename R>
     requires TypeRange<R, Entity>
-Entity EntityHelper::upper_parent(const R& container) {
-    Entity current_parent = entt::null;
+std::set<Entity> EntityHelper::upper_parents(const R& container) {
+    std::set<Entity> root_parents;
+    
     for (const auto& entity : container) {
         if (!EntityHelper::is_valid(entity)) continue;
-        const auto& transform = engine.ecs.get_component<Transform>(entity);
-        const bool has_parent = transform.has_parent();
-        if (!has_parent) {
-            current_parent = entity;
-            break;
-        }
-        Entity parent = transform.get_parent();
-        if (!EntityHelper::is_valid(parent)) continue;
-        if (!EntityHelper::is_valid(current_parent)) {
-            current_parent = parent;
-        } else {
-            /* Find common ancestor */
-            Entity temp_parent = parent;
-            while (temp_parent != entt::null) {
-                if (temp_parent == current_parent) break;
-                const auto& temp_transform = engine.ecs.get_component<Transform>(temp_parent);
-                temp_parent = temp_transform.get_parent();
+        
+        Entity current = entity;
+        
+        // Traverse up the parent chain to find the root
+        while (EntityHelper::is_valid(current)) {
+            const auto& transform = engine.ecs.get_component<Transform>(current);
+            
+            if (!transform.has_parent()) {
+                // Found a root parent (no parent)
+                root_parents.insert(current);
+                break;
             }
-            current_parent = temp_parent;
-            if (current_parent == entt::null) break;
+            
+            Entity parent = transform.get_parent();
+            if (!EntityHelper::is_valid(parent)) {
+                // Parent is invalid, treat current as root
+                root_parents.insert(current);
+                break;
+            }
+            
+            current = parent;
         }
     }
-    return current_parent;
+    
+    return root_parents;
 }
 
-template Entity EntityHelper::upper_parent(const std::vector<Entity>&);
-template Entity EntityHelper::upper_parent(const std::set<Entity>&);
-template Entity EntityHelper::upper_parent(const std::unordered_set<Entity>&);
+
+template std::set<Entity> EntityHelper::upper_parents(const std::vector<Entity>&);
+template std::set<Entity> EntityHelper::upper_parents(const std::set<Entity>&);
+template std::set<Entity> EntityHelper::upper_parents(const std::unordered_set<Entity>&);
 
 }  // namespace tmt
