@@ -62,7 +62,7 @@ void ImGuiManager::deinit() {
     delete imgui;
 }
 
-void ImGuiManager::on_sdl_event(internal::SdlEvent& event) { 
+void ImGuiManager::on_sdl_event(internal::SdlEvent& event) {
     ImGui_ImplSDL3_ProcessEvent(&event.event);
     // todo: don't do this when using viewport
     event.imgui_capture_mouse = ImGui::GetIO().WantCaptureMouse;

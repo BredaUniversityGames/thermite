@@ -294,6 +294,10 @@ class Input {
     bool viewport_hovered = false;
 
    private:
+    bool can_use_input_mouse() const;
+    bool can_use_input_keyboard() const;
+    bool can_capture_keyboard = false;
+    bool can_capture_mouse = false;
     // non-owning pointer from SDL, do not free manually
     const bool* keys_sdl = nullptr;
     uint32_t mouse_buttons = 0u;
