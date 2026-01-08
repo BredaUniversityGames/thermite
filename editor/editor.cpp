@@ -12,10 +12,12 @@
 #include "engine/core/ecs.hpp"
 #include "engine/core/logger.hpp"
 #include "engine/core/window.hpp"
+#include "engine/core/renderer/renderer.hpp"
 #include "engine/core/scenes.hpp"
 
 #include "editor/imgui/manager.hpp"
 #include "editor/core/font_manager.hpp"
+#include "engine/tools/profiler.hpp"
 
 /* Windows */
 #include "editor/windows/hierarchy.hpp"
@@ -25,8 +27,8 @@
 #include "editor/windows/goap_debugger.hpp"
 #include "editor/windows/goap_action_editor.hpp"
 #include "editor/windows/font_control.hpp"
-#include "editor/windows/audio_mixer.hpp"
 #include "editor/windows/profiler_tracy.hpp"
+#include "editor/windows/audio_mixer.hpp"
 #include "editor/windows/scenes.hpp"
 #include "editor/windows/asset_browser.hpp"
 #include "editor/windows/imgui_demo.hpp"
@@ -70,7 +72,11 @@ void Editor::on_engine_init(const ApplicationSpecs&) {
 }
 
 void Editor::on_engine_update(const FrameData& time) {
-    imgui_manager.new_frame();
+    TMT_ZONE_SCOPED_N("Editor Update");
+    {
+        TMT_ZONE_SCOPED_N("ImGui New Frame");
+        imgui_manager.new_frame();
+    }
 
     main_menu_bar();
 
@@ -80,8 +86,10 @@ void Editor::on_engine_update(const FrameData& time) {
 
     auto& open_windows = editor.save_data.open_windows;
     for (auto& window : windows) {
-        const ImGuiWindowFlags_ flags = static_cast<ImGuiWindowFlags_>(window->get_window_flags());
         const auto& name = window->get_title();
+        TMT_ZONE_SCOPED_STRING(name);
+
+        const ImGuiWindowFlags_ flags = static_cast<ImGuiWindowFlags_>(window->get_window_flags());
         if (open_windows.contains(name) == false) {
             open_windows[name] = window->default_open();
         }
@@ -96,7 +104,10 @@ void Editor::on_engine_update(const FrameData& time) {
         }
     }
 
-    imgui_manager.end_frame();
+    {
+        TMT_ZONE_SCOPED_N("ImGui End Frame");
+        imgui_manager.end_frame();
+    }
 }
 
 void Editor::on_engine_fixed_update(const FrameData& time) {
@@ -131,6 +142,34 @@ void Editor::main_menu_bar() {
             }
             ImGui::EndMenu();
         }
+
+        if (ImGui::BeginMenu("Renderer")) {
+            /* List of display mode labels */
+            const char* DISPLAY_MODE_LABELS[] {"Default", "Steps (0..128)", "Visibility", "Depth (0..100)", "Normals", "Albedo", "Illuminance"};
+
+            static uint32_t display_mode_index = 0u;
+            const std::string display_mode = DISPLAY_MODE_LABELS[display_mode_index];
+
+            if (ImGui::BeginMenu(("Display Mode (" + display_mode + ")").c_str())) {
+                /* Render all display mode options */
+                constexpr uint32_t COUNT = sizeof(DISPLAY_MODE_LABELS) / sizeof(char*);
+                const char* SELECTED_PREFIX = "* ";
+                const char* DEFAULT_PREFIX = "";
+                for (uint32_t i = 0u; i < COUNT; ++i) {
+                    const bool selected = engine.renderer.display_mode == magic_enum::enum_cast<DisplayMode>(i).value_or(DisplayMode::DEFAULT);
+                    const std::string prefix = selected ? SELECTED_PREFIX : DEFAULT_PREFIX;
+
+                    if (ImGui::MenuItem((prefix + DISPLAY_MODE_LABELS[i]).c_str())) {
+                        display_mode_index = i;
+                        engine.renderer.display_mode = magic_enum::enum_cast<DisplayMode>(i).value_or(DisplayMode::DEFAULT);
+                    }
+                }
+                ImGui::EndMenu();
+            }
+
+            ImGui::EndMenu();
+        }
+
         ImGui::EndMainMenuBar();
     }
 }
