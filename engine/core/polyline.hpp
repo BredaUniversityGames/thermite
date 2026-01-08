@@ -11,6 +11,7 @@ class Polyline {
     /* Polyline material state */
     glm::vec4 color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
     float line_width = 0.1f;
+    bool logged_once = false;
 
    public:
     Polyline() = default;
@@ -93,6 +94,15 @@ class Polyline {
      * @param time Optional timer for how long the polyline should stay alive. *(default is 1 frame)*
      */
     void draw_tube(glm::vec3 a, glm::vec3 b, float radius, uint32_t segments = 32u, float time = 0.0f);
+
+    /**
+     * @brief Draw a polyline animation bone which only shows the lines facing the camera.
+     * @param origin The origin (bottom) of the bone in world-space.
+     * @param rot The rotation of the bone in world-space.
+     * @param length The length of the bone in world-space.
+     * @param time Optional timer for how long the polyline should stay alive. *(default is 1 frame)*
+     */
+    void draw_bone(glm::vec3 origin, glm::quat rot, float length, float time = 0.0f);
 };
 
 }  // namespace tmt

@@ -8,51 +8,11 @@
 #include "imgui_internal.h"
 #include <cstring>
 #include <misc/cpp/imgui_stdlib.h>
-//
-//// The following three functions (InputTextCallback_UserData, InputTextCallback, InputText) are obtained from misc/cpp/imgui_stdlib.h
-//// Which are licensed under MIT License (https://github.com/ocornut/imgui/blob/master/LICENSE.txt)
-// namespace ImGui
-//{
-//     struct InputTextCallback_UserData
-//     {
-//         std::string *Str;
-//         ImGuiInputTextCallback ChainCallback;
-//         void *ChainCallbackUserData;
-//     };
-//
-//     static int InputTextCallback(ImGuiInputTextCallbackData *data)
-//     {
-//         auto *user_data = (InputTextCallback_UserData *) data->UserData;
-//         if (data->EventFlag == ImGuiInputTextFlags_CallbackResize)
-//         {
-//             // Resize string callback
-//             // If for some reason we refuse the new length (BufTextLen) and/or capacity (BufSize) we need to set them back to what we want.
-//             std::string *str = user_data->Str;
-//             IM_ASSERT(data->Buf == str->c_str());
-//             str->resize(data->BufTextLen);
-//             data->Buf = (char *) str->c_str();
-//         }
-//         else if (user_data->ChainCallback)
-//         {
-//             // Forward to user callback, if any
-//             data->UserData = user_data->ChainCallbackUserData;
-//             return user_data->ChainCallback(data);
-//         }
-//         return 0;
-//     }
-//
-//     bool InputText(const char *label, std::string *str, ImGuiInputTextFlags flags, ImGuiInputTextCallback callback, void *user_data)
-//     {
-//         IM_ASSERT((flags & ImGuiInputTextFlags_CallbackResize) == 0);
-//         flags |= ImGuiInputTextFlags_CallbackResize;
-//
-//         InputTextCallback_UserData cb_user_data;
-//         cb_user_data.Str = str;
-//         cb_user_data.ChainCallback = callback;
-//         cb_user_data.ChainCallbackUserData = user_data;
-//         return InputText(label, (char *) str->c_str(), str->capacity() + 1, flags, InputTextCallback, &cb_user_data);
-//     }
-// }
+// fonts icons
+
+#define ICON_FA_TRIANGLE_EXCLAMATION "\xef\x81\xb1"
+#define ICON_FA_CIRCLE_XMARK "\xef\x81\x97"
+#define ICON_FA_CIRCLE_INFO "\xef\x81\x9a"
 
 ImGuiConsole::ImGuiConsole(std::string c_name, size_t inputBufferSize) : m_ConsoleName(std::move(c_name)) {
     // Set input buffer size.
@@ -127,6 +87,12 @@ void ImGuiConsole::DefaultSettings() {
     m_FilterBar = true;
     m_TimeStamps = true;
 
+    m_ShowCommand = true;
+    m_ShowLog = true;
+    m_ShowWarning = true;
+    m_ShowError = true;
+    m_ShowInfo = true;
+
     // Style
     m_WindowAlpha = 1;
     m_ColorPalette[COL_COMMAND] = ImVec4(1.f, 1.f, 1.f, 1.f);
@@ -166,29 +132,201 @@ void ImGuiConsole::RegisterConsoleCommands() {
 }
 
 void ImGuiConsole::FilterBar() {
+    DrawLogTypeButtons();
+
+    ImGui::SameLine();
+    ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
+    ImGui::SameLine();
+
     m_TextFilter.Draw("Filter", ImGui::GetWindowWidth() * 0.25f);
     ImGui::Separator();
 }
 
+void ImGuiConsole::DrawLogTypeButtons() {
+    auto ToggleButton = [this](const char* icon, const char* tooltip, bool* enabled, ImVec4 color, int count) {
+        ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 3.0f);
+
+        if (*enabled) {
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(color.x, color.y, color.z, 0.6f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(color.x, color.y, color.z, 0.8f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(color.x, color.y, color.z, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
+        } else {
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.3f, 0.3f, 0.4f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.4f, 0.4f, 0.4f, 0.5f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.5f, 0.5f, 0.5f, 0.6f));
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
+        }
+
+        char buf[64];
+        snprintf(buf, sizeof(buf), "%s %d", icon, count);
+        if (ImGui::Button(buf)) {
+            *enabled = !*enabled;
+        }
+
+        // Tooltip on hover
+        if (ImGui::IsItemHovered()) {
+            ImGui::BeginTooltip();
+            ImGui::Text("%s (%d)", tooltip, count);
+            ImGui::EndTooltip();
+        }
+
+        ImGui::PopStyleColor(4);
+        ImGui::PopStyleVar();
+    };
+
+    // Count each type
+    int cmdCount = 0, logCount = 0, warnCount = 0, errCount = 0, infoCount = 0;
+    for (const auto& item : m_ConsoleSystem.Items()) {
+        switch (item.m_Type) {
+            case csys::COMMAND:
+                cmdCount++;
+                break;
+            case csys::LOG:
+                logCount++;
+                break;
+            case csys::WARNING:
+                warnCount++;
+                break;
+            case csys::ERROR:
+                errCount++;
+                break;
+            case csys::INFO:
+                infoCount++;
+                break;
+        }
+    }
+
+    ToggleButton(ICON_FA_CIRCLE_INFO, "Info", &m_ShowInfo, m_ColorPalette[COL_INFO], infoCount);
+    ImGui::SameLine();
+    ToggleButton(ICON_FA_TRIANGLE_EXCLAMATION, "Warnings", &m_ShowWarning, m_ColorPalette[COL_WARNING], warnCount);
+    ImGui::SameLine();
+    ToggleButton(ICON_FA_CIRCLE_XMARK, "Errors", &m_ShowError, m_ColorPalette[COL_ERROR], errCount);
+}
 void ImGuiConsole::LogWindow() {
     const float footerHeightToReserve = ImGui::GetStyle().ItemSpacing.y + ImGui::GetFrameHeightWithSpacing();
     if (ImGui::BeginChild("ScrollRegion##", ImVec2(0, -footerHeightToReserve), false, 0)) {
         // Display colored command output.
         static const float timestamp_width = ImGui::CalcTextSize("00:00:00:0000").x;  // Timestamp.
         int count = 0;                                                                // Item count.
+        int itemIndex = 0;                                                            // Selection index.
+
+        ImVec2 mousePos = ImGui::GetMousePos();
+        ImDrawList* drawList = ImGui::GetWindowDrawList();
+
+        // Track content bounds.
+        float contentStartY = ImGui::GetCursorScreenPos().y;
+        float contentEndY = contentStartY;
 
         // Wrap items.
         ImGui::PushTextWrapPos();
 
+        std::string selectedText;
+
+        auto PassesTypeFilter = [this](csys::ItemType type) {
+            switch (type) {
+                case csys::INFO:
+                    return m_ShowInfo;
+                case csys::WARNING:
+                    return m_ShowWarning;
+                case csys::ERROR:
+                    return m_ShowError;
+                default:
+                    return true;
+            }
+        };
+        // First pass: calculate content bounds.
+        for (const auto& item : m_ConsoleSystem.Items()) {
+            if (!PassesTypeFilter(item.m_Type) || !m_TextFilter.PassFilter(item.Get().c_str())) continue;
+            ImVec2 textSize = ImGui::CalcTextSize(item.Get().data());
+            contentEndY += textSize.y + ImGui::GetStyle().ItemSpacing.y;
+            if (item.m_Type == csys::COMMAND && count++ != 0) {
+                contentEndY += ImGui::GetFontSize();  // Account for spacing between commands.
+            }
+        }
+        count = 0;  // Reset count for actual rendering.
+
+        // Handle selection input.
+        if (ImGui::IsWindowHovered()) {
+            if (ImGui::IsMouseClicked(0)) {
+                // Only start selection if clicking within content bounds.
+                if (mousePos.y >= contentStartY && mousePos.y <= contentEndY) {
+                    m_IsSelecting = true;
+                    m_SelectionStart = mousePos;
+                    m_SelectionEnd = mousePos;
+                    m_SelectionStartIndex = -1;
+                    m_SelectionEndIndex = -1;
+                } else {
+                    // Clear selection if clicking outside content.
+                    m_SelectionStartIndex = -1;
+                    m_SelectionEndIndex = -1;
+                }
+            }
+        }
+
+        if (m_IsSelecting) {
+            if (ImGui::IsMouseDown(0)) {
+                m_SelectionEnd = mousePos;
+                // Clamp selection end to content bounds.
+                m_SelectionEnd.y = std::max(contentStartY, std::min(m_SelectionEnd.y, contentEndY));
+            } else {
+                m_IsSelecting = false;
+            }
+        }
+
+        // Calculate selection bounds (ensure start < end).
+        ImVec2 selMin(std::min(m_SelectionStart.x, m_SelectionEnd.x), std::min(m_SelectionStart.y, m_SelectionEnd.y));
+        ImVec2 selMax(std::max(m_SelectionStart.x, m_SelectionEnd.x), std::max(m_SelectionStart.y, m_SelectionEnd.y));
+
         // Display items.
         for (const auto& item : m_ConsoleSystem.Items()) {
             // Exit if word is filtered.
-            if (!m_TextFilter.PassFilter(item.Get().c_str())) continue;
+            if (!PassesTypeFilter(item.m_Type) || !m_TextFilter.PassFilter(item.Get().c_str())) {
+                itemIndex++;
+                continue;
+            }
 
             // Spacing between commands.
             if (item.m_Type == csys::COMMAND) {
                 if (m_TimeStamps) ImGui::PushTextWrapPos(ImGui::GetColumnWidth() - timestamp_width);  // Wrap before timestamps start.
                 if (count++ != 0) ImGui::Dummy(ImVec2(-1, ImGui::GetFontSize()));                     // No space for the first command.
+            }
+
+            // Get item position before rendering.
+            ImVec2 textPos = ImGui::GetCursorScreenPos();
+            ImVec2 textSize = ImGui::CalcTextSize(item.Get().data());
+            ImVec2 textEnd(textPos.x + textSize.x, textPos.y + textSize.y);
+
+            // Check if this line intersects with selection.
+            bool lineSelected =
+                (textPos.y <= selMax.y && textEnd.y >= selMin.y) && (m_SelectionStartIndex != -1 || m_SelectionStart.x != m_SelectionEnd.x || m_SelectionStart.y != m_SelectionEnd.y);
+
+            // Track selection indices.
+            if (mousePos.y >= textPos.y && mousePos.y <= textEnd.y) {
+                if (ImGui::IsMouseClicked(0)) {
+                    m_SelectionStartIndex = itemIndex;
+                }
+                if (m_IsSelecting) {
+                    m_SelectionEndIndex = itemIndex;
+                }
+            }
+
+            // Draw selection highlight.
+            if (lineSelected) {
+                float highlightStartX = textPos.x;
+                float highlightEndX = textEnd.x;
+
+                // Clamp to selection bounds for first/last lines.
+                if (textPos.y <= selMin.y && textEnd.y >= selMin.y) {
+                    highlightStartX = std::max(textPos.x, selMin.x);
+                }
+                if (textPos.y <= selMax.y && textEnd.y >= selMax.y) {
+                    highlightEndX = std::min(textEnd.x, selMax.x);
+                }
+
+                drawList->AddRectFilled(ImVec2(highlightStartX, textPos.y), ImVec2(highlightEndX, textEnd.y), IM_COL32(80, 120, 200, 100));
+
+                selectedText += item.Get() + "\n";
             }
 
             // Items.
@@ -213,10 +351,25 @@ void ImGuiConsole::LogWindow() {
                 ImGui::Text("%02d:%02d:%02d:%04d", ((item.m_TimeStamp / 1000 / 3600) % 24), ((item.m_TimeStamp / 1000 / 60) % 60), ((item.m_TimeStamp / 1000) % 60), item.m_TimeStamp % 1000);
                 ImGui::PopStyleColor();
             }
+
+            itemIndex++;
         }
 
         // Stop wrapping since we are done displaying console items.
         ImGui::PopTextWrapPos();
+
+        // Handle Ctrl+C to copy selected text.
+        if (ImGui::IsWindowFocused() && ImGui::GetIO().KeyCtrl) {
+            if (ImGui::IsKeyPressed(ImGuiKey_C) && !selectedText.empty()) {
+                ImGui::SetClipboardText(selectedText.c_str());
+            }
+            if (ImGui::IsKeyPressed(ImGuiKey_A)) {
+                m_SelectionStartIndex = 0;
+                m_SelectionEndIndex = m_ConsoleSystem.Items().size() - 1;
+                m_SelectionStart = ImVec2(ImGui::GetCursorScreenPos().x, contentStartY);
+                m_SelectionEnd = ImVec2(ImGui::GetCursorScreenPos().x + ImGui::GetColumnWidth(), contentEndY);
+            }
+        }
 
         // Auto-scroll logs.
         if (m_ScrollToBottom || (m_AutoScroll && ImGui::GetScrollY() >= ImGui::GetScrollMaxY())) ImGui::SetScrollHereY(1.0f);
@@ -513,6 +666,8 @@ void ImGuiConsole::SettingsHandler_ReadLine(ImGuiContext* ctx, ImGuiSettingsHand
             // Window settings
             else if INI_CONSOLE_LOAD_BOOL (m_AutoScroll) else if INI_CONSOLE_LOAD_BOOL (m_ScrollToBottom) else if INI_CONSOLE_LOAD_BOOL (m_ColoredOutput) else if INI_CONSOLE_LOAD_BOOL (m_FilterBar) else if INI_CONSOLE_LOAD_BOOL (m_TimeStamps)
 
+            // Log type filters
+            else if INI_CONSOLE_LOAD_BOOL (m_ShowCommand) else if INI_CONSOLE_LOAD_BOOL (m_ShowLog) else if INI_CONSOLE_LOAD_BOOL (m_ShowWarning) else if INI_CONSOLE_LOAD_BOOL (m_ShowError) else if INI_CONSOLE_LOAD_BOOL (m_ShowInfo)
 #pragma warning(pop)
 }
 
@@ -544,7 +699,12 @@ void ImGuiConsole::SettingsHandler_WriteAll(ImGuiContext* ctx, ImGuiSettingsHand
     INI_CONSOLE_SAVE_BOOL(m_ColoredOutput);
     INI_CONSOLE_SAVE_BOOL(m_FilterBar);
     INI_CONSOLE_SAVE_BOOL(m_TimeStamps);
-
+    // Log type filters.
+    INI_CONSOLE_SAVE_BOOL(m_ShowCommand);
+    INI_CONSOLE_SAVE_BOOL(m_ShowLog);
+    INI_CONSOLE_SAVE_BOOL(m_ShowWarning);
+    INI_CONSOLE_SAVE_BOOL(m_ShowError);
+    INI_CONSOLE_SAVE_BOOL(m_ShowInfo);
     // Window style/visuals
     INI_CONSOLE_SAVE_FLOAT(m_WindowAlpha);
     INI_CONSOLE_SAVE_COLOR(COL_COMMAND);
