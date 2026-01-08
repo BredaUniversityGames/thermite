@@ -1,13 +1,14 @@
 #pragma once
 #include "glm/gtc/constants.hpp"
+#include <concepts>
 
 namespace tmt {
 
 template <typename T>
-concept ValidTarget = requires(T a) {
-    { a - a };
-    { a + a };
-    { a * a };
+concept ValidTarget = requires(T a, T b, float f) {
+    { a + b } -> std::convertible_to<T>;
+    { a - b } -> std::convertible_to<T>;
+    { a * f } -> std::convertible_to<T>;
 };
 
 class SecondOrderSolver {
