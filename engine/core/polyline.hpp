@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string>
 #include <glm/gtc/quaternion.hpp>
 
 namespace tmt {
@@ -103,6 +104,11 @@ class Polyline {
      * @param time Optional timer for how long the polyline should stay alive. *(default is 1 frame)*
      */
     void draw_bone(glm::vec3 origin, glm::quat rot, float length, float time = 0.0f);
+
+    void draw_text(glm::vec3 origin, const std::string& text, float size, float time);
+
+   private:
+    void draw_char(glm::vec3 origin, char c, float size, const glm::vec3& right, const glm::vec3& up, float time);
 };
 
 }  // namespace tmt

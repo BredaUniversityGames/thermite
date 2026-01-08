@@ -7,6 +7,73 @@
 #include "engine/core/renderer/renderer.hpp"
 #include "engine/core/renderer/pipelines/polyline_pipeline.hpp"
 #include "engine/core/logger.hpp"
+namespace {
+
+struct Segment {
+    float x0, y0, x1, y1;
+};
+
+const std::unordered_map<char, std::vector<Segment>> char_segments = {
+    {'0', {{0, 0, 1, 0}, {1, 0, 1, 1}, {1, 1, 0, 1}, {0, 1, 0, 0}, {0, 0, 1, 1}}},
+    {'1', {{0.5f, 0, 0.5f, 1}, {0.5f, 1, 0.2f, 0.8f}, {0, 0, 1, 0}}},
+    {'2', {{0, 1, 1, 1}, {1, 1, 1, 0.5f}, {1, 0.5f, 0, 0.5f}, {0, 0.5f, 0, 0}, {0, 0, 1, 0}}},
+    {'3', {{0, 1, 1, 1}, {1, 1, 1, 0}, {1, 0, 0, 0}, {0, 0.5f, 1, 0.5f}}},
+    {'4', {{0, 1, 0, 0.5f}, {0, 0.5f, 1, 0.5f}, {1, 1, 1, 0}}},
+    {'5', {{1, 1, 0, 1}, {0, 1, 0, 0.5f}, {0, 0.5f, 1, 0.5f}, {1, 0.5f, 1, 0}, {1, 0, 0, 0}}},
+    {'6', {{1, 1, 0, 1}, {0, 1, 0, 0}, {0, 0, 1, 0}, {1, 0, 1, 0.5f}, {1, 0.5f, 0, 0.5f}}},
+    {'7', {{0, 1, 1, 1}, {1, 1, 0, 0}}},
+    {'8', {{0, 0, 1, 0}, {1, 0, 1, 1}, {1, 1, 0, 1}, {0, 1, 0, 0}, {0, 0.5f, 1, 0.5f}}},
+    {'9', {{1, 0, 1, 1}, {1, 1, 0, 1}, {0, 1, 0, 0.5f}, {0, 0.5f, 1, 0.5f}}},
+    {'A', {{0, 0, 0, 1}, {0, 1, 0.5f, 1}, {0.5f, 1, 1, 1}, {1, 1, 1, 0}, {0, 0.5f, 1, 0.5f}}},
+    {'B',
+     {{0, 0, 0, 1},
+      {0, 1, 0.8f, 1},
+      {0.8f, 1, 1, 0.85f},
+      {1, 0.85f, 1, 0.65f},
+      {1, 0.65f, 0.8f, 0.5f},
+      {0.8f, 0.5f, 0, 0.5f},
+      {0.8f, 0.5f, 1, 0.35f},
+      {1, 0.35f, 1, 0.15f},
+      {1, 0.15f, 0.8f, 0},
+      {0.8f, 0, 0, 0}}},
+    {'C', {{1, 1, 0, 1}, {0, 1, 0, 0}, {0, 0, 1, 0}}},
+    {'D', {{0, 0, 0, 1}, {0, 1, 0.7f, 1}, {0.7f, 1, 1, 0.7f}, {1, 0.7f, 1, 0.3f}, {1, 0.3f, 0.7f, 0}, {0.7f, 0, 0, 0}}},
+    {'E', {{1, 1, 0, 1}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0.5f, 0.7f, 0.5f}}},
+    {'F', {{1, 1, 0, 1}, {0, 1, 0, 0}, {0, 0.5f, 0.7f, 0.5f}}},
+    {'G', {{1, 1, 0, 1}, {0, 1, 0, 0}, {0, 0, 1, 0}, {1, 0, 1, 0.5f}, {1, 0.5f, 0.5f, 0.5f}}},
+    {'H', {{0, 0, 0, 1}, {1, 0, 1, 1}, {0, 0.5f, 1, 0.5f}}},
+    {'I', {{0, 1, 1, 1}, {0.5f, 1, 0.5f, 0}, {0, 0, 1, 0}}},
+    {'J', {{0, 1, 1, 1}, {0.7f, 1, 0.7f, 0}, {0.7f, 0, 0, 0}, {0, 0, 0, 0.3f}}},
+    {'K', {{0, 0, 0, 1}, {0, 0.5f, 1, 1}, {0, 0.5f, 1, 0}}},
+    {'L', {{0, 1, 0, 0}, {0, 0, 1, 0}}},
+    {'M', {{0, 0, 0, 1}, {0, 1, 0.5f, 0.5f}, {0.5f, 0.5f, 1, 1}, {1, 1, 1, 0}}},
+    {'N', {{0, 0, 0, 1}, {0, 1, 1, 0}, {1, 0, 1, 1}}},
+    {'O', {{0, 0, 1, 0}, {1, 0, 1, 1}, {1, 1, 0, 1}, {0, 1, 0, 0}}},
+    {'P', {{0, 0, 0, 1}, {0, 1, 1, 1}, {1, 1, 1, 0.5f}, {1, 0.5f, 0, 0.5f}}},
+    {'Q', {{0, 0, 1, 0}, {1, 0, 1, 1}, {1, 1, 0, 1}, {0, 1, 0, 0}, {0.5f, 0.3f, 1, -0.1f}}},
+    {'R', {{0, 0, 0, 1}, {0, 1, 1, 1}, {1, 1, 1, 0.5f}, {1, 0.5f, 0, 0.5f}, {0.3f, 0.5f, 1, 0}}},
+    {'S', {{1, 1, 0, 1}, {0, 1, 0, 0.5f}, {0, 0.5f, 1, 0.5f}, {1, 0.5f, 1, 0}, {1, 0, 0, 0}}},
+    {'T', {{0, 1, 1, 1}, {0.5f, 1, 0.5f, 0}}},
+    {'U', {{0, 1, 0, 0}, {0, 0, 1, 0}, {1, 0, 1, 1}}},
+    {'V', {{0, 1, 0.5f, 0}, {0.5f, 0, 1, 1}}},
+    {'W', {{0, 1, 0, 0}, {0, 0, 0.5f, 0.5f}, {0.5f, 0.5f, 1, 0}, {1, 0, 1, 1}}},
+    {'X', {{0, 0, 1, 1}, {0, 1, 1, 0}}},
+    {'Y', {{0, 1, 0.5f, 0.5f}, {1, 1, 0.5f, 0.5f}, {0.5f, 0.5f, 0.5f, 0}}},
+    {'Z', {{0, 1, 1, 1}, {1, 1, 0, 0}, {0, 0, 1, 0}}},
+    {'.', {{0.4f, 0, 0.6f, 0}, {0.6f, 0, 0.6f, 0.1f}, {0.6f, 0.1f, 0.4f, 0.1f}, {0.4f, 0.1f, 0.4f, 0}}},
+    {',', {{0.5f, 0.1f, 0.3f, -0.15f}}},
+    {':', {{0.4f, 0.65f, 0.6f, 0.65f}, {0.4f, 0.25f, 0.6f, 0.25f}}},
+    {'-', {{0.1f, 0.5f, 0.9f, 0.5f}}},
+    {'+', {{0.1f, 0.5f, 0.9f, 0.5f}, {0.5f, 0.2f, 0.5f, 0.8f}}},
+    {'=', {{0.1f, 0.6f, 0.9f, 0.6f}, {0.1f, 0.4f, 0.9f, 0.4f}}},
+    {'(', {{0.6f, 1, 0.3f, 0.5f}, {0.3f, 0.5f, 0.6f, 0}}},
+    {')', {{0.4f, 1, 0.7f, 0.5f}, {0.7f, 0.5f, 0.4f, 0}}},
+    {'/', {{0, 0, 1, 1}}},
+    {'_', {{0, 0, 1, 0}}},
+    {' ', {}},
+};
+
+}  // namespace
 
 namespace tmt {
 
@@ -284,5 +351,39 @@ void Polyline::draw_bone(glm::vec3 origin, glm::quat rot, float length, float ti
         if (front_i || back_i) draw_line(points[i], points[n], time);
     }
 }
+void Polyline::draw_char(glm::vec3 origin, char c, float size, const glm::vec3& right, const glm::vec3& up, float time) {
+    auto it = char_segments.find(c);
+    if (it == char_segments.end()) {
+        Log::warn(Log::Scope::RENDERER, "Character {} was not found", c);
+        return;
+    }
+    for (const auto& seg : it->second) {
+        const glm::vec3 p0 = origin + right * seg.x0 * size + up * seg.y0 * size;
+        const glm::vec3 p1 = origin + right * seg.x1 * size + up * seg.y1 * size;
+        draw_line(p0, p1, time);
+    }
+}
 
+void Polyline::draw_text(glm::vec3 origin, const std::string& text, float size, float time) {
+    /* Billboard toward camera */
+    const glm::vec3 cam_pos = engine.renderer.render_view.gpu_view.origin;
+    const glm::vec3 forward = glm::normalize(cam_pos - origin);
+
+    glm::vec3 world_up = glm::vec3(0.0f, 1.0f, 0.0f);
+    if (glm::abs(glm::dot(forward, world_up)) > 0.99f) {
+        world_up = glm::vec3(0.0f, 0.0f, 1.0f);
+    }
+
+    const glm::vec3 right = glm::normalize(glm::cross(forward, world_up));
+    const glm::vec3 up = glm::cross(right, forward);
+
+    glm::vec3 cursor = origin;
+    const float spacing = size * 1.2f;  // todo remove magic number for spacing?
+
+    for (char c : text) {
+        char upper_case_character = std::toupper(static_cast<unsigned char>(c));
+        draw_char(cursor, upper_case_character, size, right, up, time);
+        cursor += right * spacing;
+    }
+}
 }  // namespace tmt
