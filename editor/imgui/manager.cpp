@@ -65,7 +65,7 @@ void ImGuiManager::deinit() {
     delete imgui;
 }
 
-void ImGuiManager::on_sdl_event(internal::SdlEvent& event) { 
+void ImGuiManager::on_sdl_event(internal::SdlEvent& event) {
     ImGui_ImplSDL3_ProcessEvent(&event.event);
     const auto& viewport = editor.windows.get<Viewport>();
     if (viewport.get_is_hovered()) {
