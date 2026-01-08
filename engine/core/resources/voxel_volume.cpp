@@ -31,9 +31,9 @@ bool VoxelVolume::load() {
     /* TODO: These buffers need to scale when the voxel data is modified at run-time! */
     VRAMBank& bank = engine.renderer.vram_bank();
     const BufferUsage storage = BufferUsage::Storage | BufferUsage::TransferDst;
-    blas_nodes = bank.create_buffer(storage, blas->node_count, sizeof(Svt64Node)).expect("failed to create tree nodes buffer.");
-    blas_voxels = bank.create_buffer(storage, blas->voxel_count, sizeof(MaterialIndex)).expect("failed to create voxel data buffer.");
-    blas_palette = bank.create_buffer(storage, 255u, sizeof(Material)).expect("failed to create material palette buffer.");
+    blas_nodes = bank.create_buffer("BLAS Nodes Buffer", storage, blas->node_count, sizeof(Svt64Node)).expect("failed to create tree nodes buffer.");
+    blas_voxels = bank.create_buffer("BLAS Voxels Buffer", storage, blas->voxel_count, sizeof(MaterialIndex)).expect("failed to create voxel data buffer.");
+    blas_palette = bank.create_buffer("BLAS Palette Buffer", storage, 255u, sizeof(Material)).expect("failed to create material palette buffer.");
 
     /* Upload the voxel data into the GPU buffers */
     /* TODO: These buffers need to be updated when voxel data is modified at run-time! */
@@ -45,11 +45,10 @@ bool VoxelVolume::load() {
 }
 
 void VoxelVolume::unload() {
-    /* Destroy the GPU buffers */
-    VRAMBank& bank = engine.renderer.vram_bank();
-    bank.destroy(blas_nodes);
-    bank.destroy(blas_voxels);
-    bank.destroy(blas_palette);
+    /* Destroy the (bindless) GPU buffers */
+    engine.renderer.destroy(blas_nodes);
+    engine.renderer.destroy(blas_voxels);
+    engine.renderer.destroy(blas_palette);
 
     /* Set the BLAS to null */
     blas = nullptr;
