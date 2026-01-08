@@ -80,7 +80,7 @@ glm::vec3 AsteroidSpawner::calculate_position(int index, int total) {
     float x = radius * std::cos(theta);
     float z = radius * std::sin(theta);
 
-    float y;
+    float y = 0.0f;
     if (use_3d_distribution) {
         y = radius * std::cos(PHI);
         x = radius * std::sin(PHI) * std::cos(theta);

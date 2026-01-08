@@ -14,7 +14,7 @@ void ChasePlayer::on_start(tmt::Entity entity, tmt::Registry& registry) {
     }
 }
 
-void ChasePlayer::on_tick(tmt::Entity walking_entity, tmt::Registry& registry, float dt) {
+void ChasePlayer::on_tick(tmt::Entity walking_entity, tmt::Registry&, float dt) {
     const auto& walking = tmt::engine.ecs.get_component<Walking>(walking_entity);
 
     auto& nav_mesh = tmt::engine.ecs.get_component<tmt::NavMesh>(walking.walkable_asteroid);
