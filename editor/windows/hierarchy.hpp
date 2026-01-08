@@ -108,10 +108,10 @@ class Hierarchy : public IWindow, public OnGameEnd, public OnPreUnloadScene {
     bool display_entity(const HierarchyState& state);
     void end_section();
 
-    void context_menu();
+    void context_menu(const Entity hovered_entity);
 
     void copy_selection();
-    void paste_entities();
+    void paste_entities(const Entity hovered_entity);
 
     void clear_selection();
 

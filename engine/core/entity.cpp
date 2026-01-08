@@ -12,6 +12,11 @@ Entity EntityHelper::upper_parent(const R& container) {
     for (const auto& entity : container) {
         if (!EntityHelper::is_valid(entity)) continue;
         const auto& transform = engine.ecs.get_component<Transform>(entity);
+        const bool has_parent = transform.has_parent();
+        if (!has_parent) {
+            current_parent = entity;
+            break;
+        }
         Entity parent = transform.get_parent();
         if (!EntityHelper::is_valid(parent)) continue;
         if (!EntityHelper::is_valid(current_parent)) {

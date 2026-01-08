@@ -29,7 +29,7 @@ void Hierarchy::display() {
 
     top_bar();
     render_hierarchy();
-    context_menu();
+    context_menu(entt::null);
 
     ImGui::PopStyleVar();
 }
@@ -70,7 +70,7 @@ void Hierarchy::end_section() {
     }
 }
 
-void Hierarchy::context_menu() {
+void Hierarchy::context_menu(const Entity hovered_entity) {
     if (ImGui::BeginPopup(Config::RIGHT_CLICK_CONTEXT)) {
         if (selected_entities.empty() == false) { /* Delete selection */
             const auto text = selected_entities.size() > 1 ? "Delete Entities" : "Delete Entity";
@@ -92,7 +92,7 @@ void Hierarchy::context_menu() {
         { /* Paste selection */
             const auto text = "Paste Entities";
             if (ImGui::MenuItem(text)) {
-                paste_entities();
+                paste_entities(hovered_entity);
                 ImGui::CloseCurrentPopup();
             }
         }
@@ -105,7 +105,7 @@ void Hierarchy::copy_selection() {
     ImGui::SetClipboardText(json.dump().c_str());
 }
 
-void Hierarchy::paste_entities() {
+void Hierarchy::paste_entities(const Entity hovered_entity) {
     const char* clipboard_text = ImGui::GetClipboardText();
     if (clipboard_text == nullptr) {
         Log::warn("Failed to paste entities, clipboard is empty.");
@@ -121,6 +121,10 @@ void Hierarchy::paste_entities() {
     Serializer::deserialize(deserialized, new_entities, tmt::engine.ecs);
 
     auto parent = EntityHelper::upper_parent(new_entities);
+    if (hovered_entity != entt::null) {
+        auto& hovered_transform = tmt::engine.ecs.get_component<Transform>(hovered_entity);
+        hovered_transform.add_child(parent);
+    }
 
     clear_selection();
     for (const auto entity : new_entities) {
@@ -283,7 +287,7 @@ bool Hierarchy::display_entity(const HierarchyState& state) {
     if (is_right_clicked) {
         ImGui::OpenPopup(Config::RIGHT_CLICK_CONTEXT);
     }
-    context_menu();
+    context_menu(state.entity);
 
     /* If the node is closed, don't display children */
     if (open_node == false) return true;
