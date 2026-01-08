@@ -8,6 +8,7 @@
 #include <fmod_errors.h>
 
 #include "ecs.hpp"
+#include "systems/physics/components/voxel_body.hpp"
 
 namespace tmt {
 
@@ -22,9 +23,9 @@ bool TryLogError(const FMOD_RESULT result, const spdlog::string_view_t message) 
     return false;
 }
 
-// Logs the message as an error if fail is false (used with error check e.g. "pointer == nullptr").
+// Logs the message as an error if fail is true (used with error checks e.g. "!vca->is_valid()").
 bool TryLogError(const bool fail, const spdlog::string_view_t message) {
-    if (fail) Log::error(Log::Scope::ENGINE, "FMOD, {}", message);
+    if (fail) Log::error(Log::Scope::ENGINE, "Audio, {}", message);
     return fail;
 }
 }  // namespace
@@ -71,59 +72,6 @@ void AudioInstance::set_label_parameter(const AudioParameter& event_parameter, c
     TryLogError(result, "Failed to set parameter with label");
 }
 
-void AudioInstance::set_3d_position(const glm::vec3& position) const {
-    if (TryLogError(!get_audio_event().is_3d(), "Failed to set 3D position: instance is not 3D.")) return;
-
-    FMOD_3D_ATTRIBUTES attributes = get_3d_attributes();
-    attributes.position = std::bit_cast<FMOD_VECTOR>(position);
-
-    const FMOD_RESULT result = instance->set3DAttributes(&attributes);
-    TryLogError(result, "Failed to set 3D position attribute");
-}
-
-void AudioInstance::set_3d_velocity(const glm::vec3& velocity) const {
-    if (TryLogError(!get_audio_event().is_3d(), "Failed to set 3D velocity: instance is not 3D.")) return;
-
-    FMOD_3D_ATTRIBUTES attributes = get_3d_attributes();
-    attributes.velocity = std::bit_cast<FMOD_VECTOR>(velocity);
-
-    const FMOD_RESULT result = instance->set3DAttributes(&attributes);
-    TryLogError(result, "Failed to set 3D velocity attribute");
-}
-
-void AudioInstance::set_3d_forward(const glm::vec3& forward) const {
-    if (TryLogError(!get_audio_event().is_3d(), "Failed to set 3D forward: instance is not 3D.")) return;
-
-    FMOD_3D_ATTRIBUTES attributes = get_3d_attributes();
-    attributes.forward = std::bit_cast<FMOD_VECTOR>(forward);
-
-    const FMOD_RESULT result = instance->set3DAttributes(&attributes);
-    TryLogError(result, "Failed to set 3D forward attribute");
-}
-
-void AudioInstance::set_3d_up(const glm::vec3& up) const {
-    if (TryLogError(!get_audio_event().is_3d(), "Failed to set 3D up: instance is not 3D.")) return;
-
-    FMOD_3D_ATTRIBUTES attributes = get_3d_attributes();
-    attributes.up = std::bit_cast<FMOD_VECTOR>(up);
-
-    const FMOD_RESULT result = instance->set3DAttributes(&attributes);
-    TryLogError(result, "Failed to set 3D up attribute");
-}
-
-void AudioInstance::auto_set_3d_attributes(const Transform& transform) const {
-    if (TryLogError(!get_audio_event().is_3d(), "Failed to auto set 3D attributes: instance is not 3D.")) return;
-
-    const FMOD_3D_ATTRIBUTES attributes {
-        .position = std::bit_cast<FMOD_VECTOR>(transform.get_world_position()),
-        .forward = std::bit_cast<FMOD_VECTOR>(transform.get_forward()),
-        .up = std::bit_cast<FMOD_VECTOR>(transform.get_up()),
-    };
-
-    const FMOD_RESULT result = instance->set3DAttributes(&attributes);
-    TryLogError(result, "Failed to auto set 3D attributes");
-}
-
 AudioEvent AudioInstance::get_audio_event() const {
     FMOD::Studio::EventDescription* description = nullptr;
     const FMOD_RESULT result = instance->getDescription(&description);
@@ -132,7 +80,54 @@ AudioEvent AudioInstance::get_audio_event() const {
     return {description};
 }
 
-FMOD_3D_ATTRIBUTES AudioInstance::get_3d_attributes() const {
+void AudioInstance3D::set_3d_position(const glm::vec3& position) const {
+    FMOD_3D_ATTRIBUTES attributes = get_3d_attributes();
+    attributes.position = std::bit_cast<FMOD_VECTOR>(position);
+
+    const FMOD_RESULT result = instance->set3DAttributes(&attributes);
+    TryLogError(result, "Failed to set 3D position attribute");
+}
+
+void AudioInstance3D::set_3d_velocity(const glm::vec3& velocity) const {
+    FMOD_3D_ATTRIBUTES attributes = get_3d_attributes();
+    attributes.velocity = std::bit_cast<FMOD_VECTOR>(velocity);
+
+    const FMOD_RESULT result = instance->set3DAttributes(&attributes);
+    TryLogError(result, "Failed to set 3D velocity attribute");
+}
+
+void AudioInstance3D::set_3d_forward(const glm::vec3& forward) const {
+    FMOD_3D_ATTRIBUTES attributes = get_3d_attributes();
+    attributes.forward = std::bit_cast<FMOD_VECTOR>(forward);
+
+    const FMOD_RESULT result = instance->set3DAttributes(&attributes);
+    TryLogError(result, "Failed to set 3D forward attribute");
+}
+
+void AudioInstance3D::set_3d_up(const glm::vec3& up) const {
+    FMOD_3D_ATTRIBUTES attributes = get_3d_attributes();
+    attributes.up = std::bit_cast<FMOD_VECTOR>(up);
+
+    const FMOD_RESULT result = instance->set3DAttributes(&attributes);
+    TryLogError(result, "Failed to set 3D up attribute");
+}
+
+void AudioInstance3D::auto_set_3d_attributes(const Transform& transform, const VoxelBody* voxel_body) const {
+    FMOD_VECTOR velocity {};
+    if (voxel_body != nullptr) velocity = std::bit_cast<FMOD_VECTOR>(voxel_body->velocity);  // Set the velocity if the entity also has a voxel_body component.
+
+    const FMOD_3D_ATTRIBUTES attributes {
+        .position = std::bit_cast<FMOD_VECTOR>(transform.get_world_position()),
+        .velocity = velocity,
+        .forward = std::bit_cast<FMOD_VECTOR>(transform.get_forward()),
+        .up = std::bit_cast<FMOD_VECTOR>(transform.get_up()),
+    };
+
+    const FMOD_RESULT result = instance->set3DAttributes(&attributes);
+    TryLogError(result, "Failed to auto set 3D attributes");
+}
+
+FMOD_3D_ATTRIBUTES AudioInstance3D::get_3d_attributes() const {
     FMOD_3D_ATTRIBUTES attributes;
     const FMOD_RESULT result = instance->get3DAttributes(&attributes);
     if (TryLogError(result, "Failed to get instance 3D attributes")) return {};
@@ -140,7 +135,7 @@ FMOD_3D_ATTRIBUTES AudioInstance::get_3d_attributes() const {
     return attributes;
 }
 
-bool AudioEvent::is_valid() const { return description != nullptr && description->isValid(); }
+bool AudioEvent::is_valid() const { return description->isValid(); }
 
 bool AudioEvent::is_3d() const {
     bool is_3d = false;
@@ -152,7 +147,7 @@ bool AudioEvent::is_3d() const {
 
 std::string AudioEvent::get_path() const {
 #if defined(THERMITE_EDITOR) || defined(THERMITE_DEBUG)
-    if (TryLogError(description == nullptr, "Invalid AudioEvent for get_path")) return "";
+    if (TryLogError(!is_valid(), "Invalid AudioEvent for get_path")) return "";
 
     // This function only returns useful paths in the editor or in debug mode, since these aren't necessary for audio to function, and it allows us to skip loading string banks in release
     // game.
@@ -192,7 +187,7 @@ std::vector<AudioParameter> AudioEvent::get_parameters() const {
 }
 
 AudioInstance AudioEvent::play() const {
-    if (TryLogError(description == nullptr, "Invalid AudioEvent for play")) return {nullptr};
+    if (TryLogError(!is_valid(), "Invalid AudioEvent for play.")) return {nullptr};
 
     // Play the event, creating an instance.
     FMOD::Studio::EventInstance* event_instance = nullptr;
@@ -211,11 +206,20 @@ AudioInstance AudioEvent::play() const {
     return {event_instance};
 }
 
-bool VolumeControl::is_valid() const { return vca != nullptr && vca->isValid(); }
+AudioInstance3D AudioEvent::play_3d() const {
+    if (TryLogError(!is_valid(), "Invalid AudioEvent for play_3d.")) return {nullptr};
+
+    if (TryLogError(!is_3d(), "AudioEvent isn't 3d, invalid call to play_3d.")) return {nullptr};
+
+    AudioInstance instance = play();
+    return {instance.instance};
+}
+
+bool VolumeControl::is_valid() const { return vca->isValid(); }
 
 std::string VolumeControl::get_path() const {
 #if defined(THERMITE_EDITOR) || defined(THERMITE_DEBUG)
-    if (TryLogError(vca == nullptr, "Invalid VolumeControl for get_path")) return "";
+    if (TryLogError(!is_valid(), "Invalid VolumeControl for get_path")) return "";
 
     // This function only returns useful paths in the editor or in debug mode, since these aren't necessary for audio to function, and it allows us to skip loading string banks in release
     // game.
@@ -235,7 +239,7 @@ std::string VolumeControl::get_path() const {
 }
 
 float VolumeControl::get_volume() const {
-    if (TryLogError(vca == nullptr, "Invalid VolumeControl for get_volume")) return 0.0f;
+    if (TryLogError(!is_valid(), "Invalid VolumeControl for get_volume")) return 0.0f;
 
     float volume = 0.0f;
     const FMOD_RESULT result = vca->getVolume(&volume);
@@ -245,7 +249,7 @@ float VolumeControl::get_volume() const {
 }
 
 void VolumeControl::set_volume(const float volume) const {
-    if (TryLogError(vca == nullptr, "Invalid VolumeControl for set_volume")) return;
+    if (TryLogError(!is_valid(), "Invalid VolumeControl for set_volume")) return;
 
     const FMOD_RESULT result = vca->setVolume(volume);
     TryLogError(result, "Failed to set VCA volume");
@@ -271,10 +275,17 @@ void Audio::init() {
 }
 
 void Audio::update() {
+    // Loop over the all listeners to update their positions/velocities.
     const entt::basic_group listener_group = engine.ecs.get_registry().group<AudioListener>(entt::get<Transform>);
     for (const auto&& [entity, audio_listener, transform] : listener_group.each()) {
+        const VoxelBody* voxel_body = engine.ecs.try_get_component<VoxelBody>(entity);
+
+        FMOD_VECTOR velocity {};
+        if (voxel_body != nullptr) velocity = std::bit_cast<FMOD_VECTOR>(voxel_body->velocity);  // Set the velocity if the entity also has a voxel_body component.
+
         const FMOD_3D_ATTRIBUTES attributes {
             .position = std::bit_cast<FMOD_VECTOR>(transform.get_world_position()),
+            .velocity = velocity,
             .forward = std::bit_cast<FMOD_VECTOR>(transform.get_forward()),
             .up = std::bit_cast<FMOD_VECTOR>(transform.get_up()),
         };

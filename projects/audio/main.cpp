@@ -16,7 +16,7 @@ namespace {
 std::vector<tmt::ResourceRef<tmt::AudioBank>> audio_banks;
 tmt::Entity entity;
 tmt::Entity entity2;
-tmt::AudioInstance song_instance {nullptr};
+tmt::AudioInstance3D song_instance {nullptr};
 
 }  // namespace
 
@@ -60,13 +60,13 @@ void TestScene::on_start() {
 
     audio_banks.push_back(tmt::engine.resources.load_resource<tmt::AudioBank>({tmt::IO::Location::PROJECT, "Master.bank"}, true));
     audio_banks.push_back(tmt::engine.resources.load_resource<tmt::AudioBank>({tmt::IO::Location::PROJECT, "Music.bank"}));
+    song_instance = audio_banks.back()->get_audio_events()[2].play_3d(); // Start playing a song instance in 3D.
+
     audio_banks.push_back(tmt::engine.resources.load_resource<tmt::AudioBank>({tmt::IO::Location::PROJECT, "SFX.bank"}));
     audio_banks.push_back(tmt::engine.resources.load_resource<tmt::AudioBank>({tmt::IO::Location::PROJECT, "Vehicles.bank"}));
     audio_banks.push_back(tmt::engine.resources.load_resource<tmt::AudioBank>({tmt::IO::Location::PROJECT, "VO.bank"}));
-    audio_banks.push_back(tmt::engine.resources.load_resource<tmt::AudioBank>({tmt::IO::Location::PROJECT, "Test.bank"}));
-
-    song_instance = audio_banks.back()->get_audio_events().front().play();
 }
+
 void TestScene::on_update(const tmt::FrameData& time) {
     const float n = time.elapsed_time;
     const glm::vec3 position = glm::vec3 {glm::cos(n), 0.0f, glm::sin(n)} * 3.0f;

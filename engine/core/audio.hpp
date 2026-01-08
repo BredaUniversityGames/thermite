@@ -30,6 +30,7 @@ class EventDescription;
 namespace tmt {
 
 struct Transform;
+struct VoxelBody;
 
 class AudioParameter {
    public:
@@ -48,6 +49,8 @@ class AudioParameter {
 class AudioEvent;
 
 class AudioInstance {
+    friend class AudioEvent;
+
    public:
     AudioInstance(FMOD::Studio::EventInstance* instance) : instance {instance} {}
 
@@ -62,17 +65,28 @@ class AudioInstance {
     void set_parameter(const AudioParameter& event_parameter, int value) const;
     void set_label_parameter(const AudioParameter& event_parameter, const std::string& value) const;
 
+   protected:
+    [[nodiscard]] AudioEvent get_audio_event() const;
+
+    FMOD::Studio::EventInstance* instance {nullptr};
+};
+
+class AudioInstance3D : public AudioInstance {
+    using AudioInstance::AudioInstance;
+
+   public:
     void set_3d_position(const glm::vec3& position) const;
+    // Set the velocity of the sound, used to calculate the sound's doppler effect.
     void set_3d_velocity(const glm::vec3& velocity) const;
     void set_3d_forward(const glm::vec3& forward) const;
     void set_3d_up(const glm::vec3& up) const;
-    void auto_set_3d_attributes(const Transform& transform) const;
+    /// Automatically set the attributes of the instance based on the transform and the voxel_body_velocity.
+    /// @param transform: The transform used for the instance's 3D position, up, and forward vector in the world.
+    /// @param voxel_body: Optional VoxelBody pointer used for the velocity (used to calculate the doppler effect), default value nullptr will set velocity to {0, 0, 0}.
+    void auto_set_3d_attributes(const Transform& transform, const VoxelBody* voxel_body = nullptr) const;
 
    private:
-    [[nodiscard]] AudioEvent get_audio_event() const;
     [[nodiscard]] FMOD_3D_ATTRIBUTES get_3d_attributes() const;
-
-    FMOD::Studio::EventInstance* instance {nullptr};
 };
 
 class AudioEvent {
@@ -86,6 +100,7 @@ class AudioEvent {
 
     [[nodiscard]] std::vector<AudioParameter> get_parameters() const;
     AudioInstance play() const;
+    AudioInstance3D play_3d() const;
 
     [[nodiscard]] bool operator==(const AudioEvent& other) const { return description == other.description; }
     [[nodiscard]] bool operator!=(const AudioEvent& other) const { return description != other.description; }
@@ -124,9 +139,9 @@ class Audio {
 
    public:
     struct DopplerSettings {
-        float doppler_scale{1.0f};
-        float distance_factor{1.0f};
-        float rolloff_scale{1.0f};
+        float doppler_scale {1.0f};
+        float distance_factor {1.0f};
+        float rolloff_scale {1.0f};
     };
 
     Audio() = default;

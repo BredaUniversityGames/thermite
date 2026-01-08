@@ -178,8 +178,8 @@ void Engine::end() {
     OnEngineEnd::dispatch();
 
     salvo.end();
-    audio.end();
     ecs.clear();
+    audio.end();  // Needs to be ended after the ecs.
     resources.unload_unused();
     renderer.end();
 }
