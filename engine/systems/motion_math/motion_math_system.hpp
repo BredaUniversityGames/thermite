@@ -19,7 +19,6 @@ class MotionMathSystem : public ISystem {
         float damping = 1.f;
         float initial_response = 0.f;
     };
-    MotionSettings temp_motion_settings {};  // used for showcase
 
     // dispatch single-time motion that drives a value towards a target
     template <typename T>
@@ -55,16 +54,16 @@ class MotionMathSystem : public ISystem {
             end_q = hemi(end_q, start_q);  // shortest path relative to start
 
             SecondOrderSolver::State<glm::vec3> state {};
-            state.current_state = rotvec(start_q);     // start "position" in rotvec space
-            state.current_velocity = glm::vec3(0.0f);  // start at rest
-            state.current_target = rotvec(end_q);      // previous target = target (no spike)
+            state.current_state = rotvec(start_q);     
+            state.current_velocity = glm::vec3(0.0f); 
+            state.current_target = rotvec(end_q);     
 
-            motions.emplace_back(state, temp_motion_settings, end_q, value, start_q);
+            motions.emplace_back(state, settings, end_q, value, start_q);
         } else {
             SecondOrderSolver::State<T> state {};
             state.current_state = start;
 
-            motions.emplace_back(state, end, value, temp_motion_settings);
+            motions.emplace_back(state, end, value, settings);
         }
     }
 

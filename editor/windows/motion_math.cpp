@@ -7,7 +7,7 @@
 void tmt::MotionMathPreview::display() {
     auto& motion_math_sys = tmt::engine.ecs.systems.get<tmt::MotionMathSystem>();
 
-    ImGui::InputFloat("Frequency", &motion_math_sys.temp_motion_settings.frequency);
-    ImGui::InputFloat("Damping", &motion_math_sys.temp_motion_settings.damping);
-    ImGui::InputFloat("Initial response", &motion_math_sys.temp_motion_settings.initial_response);
+    ImGui::InputFloat("Frequency", &frequency);
+    ImGui::InputFloat("Damping", &damping);
+    ImGui::InputFloat("Initial response", &initial_response);
 }
