@@ -413,7 +413,8 @@ void Audio::add_listener(entt::registry& registry, const Entity entity) const {
     result = system->setNumListeners(listener_count + 1);
     if (TryLogError(result, "Failed to increase listener count")) return;
 
-    registry.get<AudioListener>(entity).listener_index = listener_count;  // Set to the old listener count aka, the *new* last index.
+    AudioListener& audio_listener = registry.get<AudioListener>(entity);
+    audio_listener.listener_index = listener_count;  // Set to the old listener count aka, the *new* last index.
 }
 
 void Audio::remove_listener() const {

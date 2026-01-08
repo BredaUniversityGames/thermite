@@ -15,7 +15,6 @@ namespace {
 
 std::vector<tmt::ResourceRef<tmt::AudioBank>> audio_banks;
 tmt::Entity entity;
-tmt::Entity entity2;
 tmt::AudioInstance3D song_instance {nullptr};
 
 }  // namespace
@@ -48,12 +47,8 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
 
 void TestScene::on_start() {
     entity = tmt::engine.ecs.create_entity();
-    tmt::engine.ecs.get_component<tmt::Transform>(entity).set_world_position({0.0f, 0.0f, 0.0f});
-    tmt::engine.ecs.add_component<tmt::AudioListener>(entity);
-
-    entity2 = tmt::engine.ecs.create_entity();
-    tmt::engine.ecs.get_component<tmt::Transform>(entity2).set_world_scale(glm::vec3 {0.1f});
-    tmt::VoxelRenderer& renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(entity2);
+    tmt::engine.ecs.get_component<tmt::Transform>(entity).set_world_scale(glm::vec3 {0.1f});
+    tmt::VoxelRenderer& renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(entity);
     const tmt::ResourceRef<tmt::VoxelScene> voxel_scene = tmt::engine.resources.load_resource<tmt::VoxelScene>({tmt::IO::Location::PROJECT, "dragon128.vengi"});
     const tmt::ResourceRef<tmt::VoxelVolume> voxel_volume = tmt::engine.resources.copy_resource<tmt::VoxelVolume>(voxel_scene);
     renderer.resource = voxel_volume;
@@ -71,7 +66,7 @@ void TestScene::on_update(const tmt::FrameData& time) {
     const float n = time.elapsed_time;
     const glm::vec3 position = glm::vec3 {glm::cos(n), 0.0f, glm::sin(n)} * 3.0f;
 
-    tmt::Transform& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity2);
+    tmt::Transform& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
     transform.set_world_position(position);
     song_instance.auto_set_3d_attributes(transform);
 }

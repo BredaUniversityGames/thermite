@@ -20,7 +20,8 @@ using SerializeComponents = ComponentRegistry<
 	VoxelRenderer, 
 	Camera,
 	VoxelBody,
-	ComponentCollection
+	ComponentCollection,
+	AudioListener
 >;
 // clang-format on
 
