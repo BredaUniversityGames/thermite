@@ -161,4 +161,8 @@ void Renderer::set_imgui(ImGUI* new_imgui) {
 
 VRAMBank& Renderer::vram_bank() { return gpu.get_vram_bank(); }
 
+void Renderer::destroy(OpaqueHandle& handle) {
+    render_graph.destroy_bindless(handle);
+}
+
 }  // namespace tmt
