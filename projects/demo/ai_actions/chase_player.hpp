@@ -15,7 +15,7 @@ class ChasePlayer : public tmt::GoapAction {
 
     bool done_walking = false;
 
-    void on_start(tmt::Entity, tmt::Registry&) override {}
+    void on_start(tmt::Entity, tmt::Registry&) override;
 
     void on_tick(tmt::Entity /* agent */, tmt::Registry& /* ecs */, float dt) override;
 

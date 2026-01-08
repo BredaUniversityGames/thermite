@@ -393,6 +393,13 @@
                     "sub_location": "PROJECT"
                 }
             }
+        },
+        "3145734": {
+            "Walking": {
+                "attack_range": 20.0,
+                "walk_speed": 5.0,
+                "walkable_asteroid": 3145734
+            }
         }
     },
     "Navigation Mesh": {
