@@ -22,4 +22,3 @@ struct EntityHelper {
 }  // namespace tmt
 
 FMT_LOGGING(tmt::Entity, "{}", tmt::EntityHelper::to_string(obj));
-
