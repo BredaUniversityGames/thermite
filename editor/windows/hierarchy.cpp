@@ -4,6 +4,8 @@
 #include <imgui_stdlib.h>
 #include <imgui_internal.h>
 
+#include <ImReflect.hpp>
+
 #include "engine/engine.hpp"
 #include "engine/core/ecs.hpp"
 #include "engine/core/logger.hpp"
@@ -118,14 +120,17 @@ void Hierarchy::paste_entities() {
     std::set<Entity> new_entities;
     Serializer::deserialize(deserialized, new_entities, tmt::engine.ecs);
 
+    auto parent = EntityHelper::upper_parent(new_entities);
+
     clear_selection();
-    selected_entities = std::unordered_set(new_entities.begin(), new_entities.end());
+    for (const auto entity : new_entities) {
+        selected_entities.insert(entity);
+    }
     OnSceneModified::dispatch();
 }
 
 void Hierarchy::clear_selection() {
     selected_entities.clear();
-    first_selected_entity = entt::null;
     selection_parent = entt::null;
 
     selected_index_begin = NULL_INDEX;
@@ -147,7 +152,6 @@ void Hierarchy::top_bar() {
                 auto entity = engine.ecs.create_entity();
                 engine.ecs.add_or_get_component<Transform>(entity);
                 clear_selection();
-                first_selected_entity = entity;
                 selected_entities.insert(entity);
             }
             ImGui::EndMenu();
@@ -161,6 +165,8 @@ void Hierarchy::top_bar() {
 }
 
 bool Hierarchy::display_entity(const HierarchyState& state) {
+    const auto scope = ImReflect::Detail::scope_id((int)state.entity);
+
     const bool filtering = filter.empty() == false;
     if (filtering) {
         if (state.name.name.find(filter) == std::string::npos) {
@@ -224,7 +230,6 @@ bool Hierarchy::display_entity(const HierarchyState& state) {
             if (is_first_selected) {
                 selected_index_begin = state.position;
                 selection_parent = parent;
-                first_selected_entity = state.entity;
                 selected_index_end_above = state.position;
                 selected_index_end_below = state.position;
             } else {
@@ -249,7 +254,6 @@ bool Hierarchy::display_entity(const HierarchyState& state) {
                 selection_parent = state.transform.get_parent();
                 selected_index_end_above = state.position;
                 selected_index_end_below = state.position;
-                first_selected_entity = state.entity;
             }
         } else {
             selected_entities.clear();
@@ -258,7 +262,6 @@ bool Hierarchy::display_entity(const HierarchyState& state) {
             selection_parent = state.transform.get_parent();
             selected_index_end_above = state.position;
             selected_index_end_below = state.position;
-            first_selected_entity = state.entity;
         }
     }
 
