@@ -9,6 +9,8 @@
 #include "csys/string.h"
 #include "csys/exceptions.h"
 #include "csys/argument_parser.h"
+
+#include <optional>
 #include <vector>
 
 namespace csys {
@@ -138,7 +140,9 @@ struct CSYS_API Arg {
      * \param name
      *      Name of the argument
      */
-    explicit Arg(const String& name) : m_Arg(name) { static_assert(is_supported_type_v<ValueType>, "ValueType 'T' is not supported, see 'Supported types' for more help"); }
+    explicit Arg(const String& name, std::optional<ValueType> defaultVal = std::nullopt) : m_Arg(name), m_Default(defaultVal) {
+        static_assert(is_supported_type_v<ValueType>, "ValueType 'T' is not supported, see 'Supported types' for more help");
+    }
 
     /*!
      * \brief
@@ -154,9 +158,16 @@ struct CSYS_API Arg {
         size_t index = start;
 
         // Check if there are more arguments to be read in
-        if (input.NextPoi(index).first == input.End()) throw Exception("Not enough arguments were given", input.m_String);
-        // Set value grabbed from input aka command line argument
-        m_Arg.m_Value = ArgumentParser<ValueType>(input, start).m_Value;
+        if (input.NextPoi(index).first == input.End()) {
+            if (m_Default) {
+                m_Arg.m_Value = *m_Default;
+            } else {
+                throw Exception("Not enough arguments were given", input.m_String);
+            }
+        } else {
+            // Set value grabbed from input aka command line argument
+            m_Arg.m_Value = ArgumentParser<ValueType>(input, start).m_Value;
+        }
         return *this;
     }
 
@@ -169,6 +180,7 @@ struct CSYS_API Arg {
     std::string Info() { return std::string(" [") + m_Arg.m_Name.m_String + ":" + m_Arg.m_TypeName.m_String + "]"; }
 
     ArgData<ValueType> m_Arg;  //!< Data relating to this argument
+    std::optional<ValueType> m_Default;
 };
 
 /*!
