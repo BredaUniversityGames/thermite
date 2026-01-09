@@ -1,6 +1,6 @@
 #pragma once
 
-#include <string>
+#include <string_view>
 #include <glm/gtc/quaternion.hpp>
 
 namespace tmt {
@@ -105,10 +105,14 @@ class Polyline {
      */
     void draw_bone(glm::vec3 origin, glm::quat rot, float length, float time = 0.0f);
 
-    void draw_text(glm::vec3 origin, const std::string& text, float size, float time);
-
-   private:
-    void draw_char(glm::vec3 origin, char c, float size, const glm::vec3& right, const glm::vec3& up, float time);
+    /**
+     * @brief Draw a polyline string of text always facing the camera.
+     * @param origin The origin of the text in world-space.
+     * @param text The string to display.
+     * @param scale The scale of the text in world-space.
+     * @param time Optional timer for how long the polyline should stay alive. *(default is 1 frame)*
+     */
+    void draw_text(glm::vec3 origin, std::string_view text, float scale, float time = 0.0f);
 };
 
 }  // namespace tmt
