@@ -43,9 +43,9 @@ class FactRegistry {
      * Returns "<unknown>" if the ID was never registered.
      */
     const std::string& get_name(uint32_t id) const {
-        static const std::string unknown = "<unknown>";
+        static const std::string UNKNOWN = "<unknown>";
         auto it = id_to_name.find(id);
-        return it != id_to_name.end() ? it->second : unknown;
+        return it != id_to_name.end() ? it->second : UNKNOWN;
     }
 
    private:
