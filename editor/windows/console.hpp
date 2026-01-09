@@ -79,6 +79,7 @@ class Console : public IWindow {
    private:
     void register_commands();
     void register_variables();
+    void register_scripts();
 
     ImGuiConsole console;
     std::shared_ptr<ConsoleSink_st> sink;
