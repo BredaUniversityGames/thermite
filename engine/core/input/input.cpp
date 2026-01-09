@@ -70,7 +70,6 @@ void Input::update(const FrameData& time) {
 
         can_capture_mouse = sdl_event_wrapper.imgui_capture_mouse;
         can_capture_keyboard = sdl_event_wrapper.imgui_capture_keyboard;
-        printf("Mouse Capture: %d, Keyboard Capture: %d\n", can_capture_mouse, can_capture_keyboard);
         switch (sdl_event.type) {
             case SDL_EVENT_QUIT: {
                 engine.set_is_running(false);
@@ -297,7 +296,6 @@ float Input::get_mouse_wheel_y() const {
 }
 float Input::get_mouse_delta_x() const {
     if (!can_use_input_mouse()) return 0.0f;
-    printf("mouse dx: %f\n", mouse_dx);
     return mouse_dx;
 }
 float Input::get_mouse_delta_y() const {

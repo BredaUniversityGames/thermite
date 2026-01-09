@@ -204,6 +204,7 @@ std::vector<int> NavMesh::find_path(const int starting_node_id, const int ending
                 nodes[i].h = 0.0f;
                 nodes[i].parent = 0;
             }
+            std::reverse(path.begin(), path.end());
             return path;
         }
         path.push_back(nodes[current].parent);
@@ -225,6 +226,7 @@ int tmt::NavMesh::find_closest_node(const glm::vec3& position) {
 }
 
 void tmt::NavMesh::inspect() {
+    return;
     tmt::engine.polyline.use_color(1.0f, 0.0f, 0.0f);
     tmt::engine.polyline.use_line_width(2, true);
 
