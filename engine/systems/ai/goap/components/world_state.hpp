@@ -33,7 +33,7 @@ class FactRegistry {
      * If the fact already exists, the existing mapping is reused.
      */
     uint32_t register_fact(const std::string& name) {
-        uint32_t id = std::hash<std::string> {}(name);
+        uint32_t id = (uint32_t)std::hash<std::string> {}(name);
         id_to_name[id] = name;
         return id;
     }
