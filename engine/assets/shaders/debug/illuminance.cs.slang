@@ -2,6 +2,7 @@ import view;
 import visibility;
 import math;
 import voxel;
+import color;
 import debug;
 
 static const uint FUSE_LENGTH = 32u;
@@ -10,6 +11,7 @@ static const uint64_t EMPTY_KEY = 0ull;
 struct HashCell {
     uint64_t key;
     uint value;
+    uint state;
 };
 
 /* Active render view */
@@ -32,7 +34,8 @@ void main(int2 thread_id: SV_DispatchThreadID) {
 
     /* Exit early if the visibility for this pixel is null */
     if (null_visibility(facet_key)) {
-        render_target[thread_id] = float4(0.075f, 0.075f, 0.075f, 1.0f);
+        const float3 illuminance = srgb_to_acescg(float3(0.2f, 0.5f, 1.0f));
+        render_target[thread_id] = float4(delinearize_srgb(acescg_to_linear_srgb(illuminance)), 1.0f);
         return;
     }
     /* Unpack the key into its voxel components */
@@ -46,7 +49,11 @@ void main(int2 thread_id: SV_DispatchThreadID) {
     for (uint fuse = 0u; fuse < FUSE_LENGTH; ++fuse) {
         /* Exit if we found a slot which matches our key */
         if (macrofacet_illuminance_cache[slot].key == facet_key) {
-            render_target[thread_id] = float4(decode_rgb9e5(macrofacet_illuminance_cache[slot].value), 1.0f);
+            // const Reservoir r = decode_reservoir(macrofacet_illuminance_cache[slot].state, macrofacet_illuminance_cache[slot].value);
+            // render_target[thread_id] = float4(decode_rgb9e5(r.y) * r.w_sum / max(r.m, 0.0001f), 1.0f);
+            const float3 illuminance = decode_rgb16(uint2(macrofacet_illuminance_cache[slot].value, macrofacet_illuminance_cache[slot].state));
+            // render_target[thread_id] = float4(1.0f - 1.0f / pow(1.0f + illuminance, float3(2.5f)), 1.0f);  // float4(decode_rgb9e5(macrofacet_illuminance_cache[slot].value), 1.0f);
+            render_target[thread_id] = float4(delinearize_srgb(acescg_to_linear_srgb(illuminance)), 1.0f);
             return;
         }
 
