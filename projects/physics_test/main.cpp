@@ -119,7 +119,7 @@ void Game::on_start() {
             auto& vb_e = tmt::engine.ecs.add_component<tmt::VoxelBody>(e);
             vb_e.resource = voxel_volume_piece;
             vb_e.gravity = 0.0f;
-            vb_e.type = tmt::VoxelBody::DYNAMIC;
+            vb_e.type = tmt::VoxelBody::STATIC;
             transform_e.set_world_position(glm::vec3(45.0f, 30.0f, 100.0f));
             transform_e.set_world_rotation(glm::vec3(random_rot_x, random_rot_y, random_rot_z));
             vb_e.gravity = 0.0f;
