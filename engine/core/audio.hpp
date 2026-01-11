@@ -87,6 +87,11 @@ class AudioInstance3D : public AudioInstance {
     /// @param voxel_body: Optional VoxelBody pointer used for the velocity (used to calculate the doppler effect), default value nullptr will set velocity to {0, 0, 0}.
     void auto_set_3d_attributes(const Transform& transform, const VoxelBody* voxel_body = nullptr) const;
 
+    // Set the bitmask of which listeners should listen to this sound instance (default is all on).
+    void set_listener_mask(unsigned int mask) const;
+    // Get the bitmask of which listeners should listen to this sound instance (default is all on).
+    unsigned int get_listener_mask() const;
+
    private:
     [[nodiscard]] FMOD_3D_ATTRIBUTES get_3d_attributes() const;
 };
@@ -103,6 +108,8 @@ class AudioEvent {
     [[nodiscard]] std::vector<AudioParameter> get_parameters() const;
     AudioInstance play() const;
     AudioInstance3D play_3d() const;
+
+    [[nodiscard]] glm::vec2 get_min_max_distance() const;
 
     [[nodiscard]] bool operator==(const AudioEvent& other) const { return description == other.description; }
     [[nodiscard]] bool operator!=(const AudioEvent& other) const { return description != other.description; }
@@ -147,7 +154,7 @@ class Audio : public OnGamePause, public OnGameResume, public OnGameEnd {
     };
 
     Audio() = default;
-    ~Audio() = default;
+    ~Audio() override = default;
 
     void init();
     void update();

@@ -131,6 +131,20 @@ void AudioInstance3D::auto_set_3d_attributes(const Transform& transform, const V
     TryLogError(result, "Failed to auto set 3D attributes");
 }
 
+void AudioInstance3D::set_listener_mask(const unsigned int mask) const {
+    const FMOD_RESULT result = instance->setListenerMask(mask);
+    TryLogError(result, "Failed to set instance listener mask");
+}
+
+unsigned int AudioInstance3D::get_listener_mask() const {
+    unsigned int mask = 0xFFFFFFFF;
+
+    const FMOD_RESULT result = instance->getListenerMask(&mask);
+    TryLogError(result, "Failed to get instance listener mask");
+
+    return mask;
+}
+
 FMOD_3D_ATTRIBUTES AudioInstance3D::get_3d_attributes() const {
     FMOD_3D_ATTRIBUTES attributes;
     const FMOD_RESULT result = instance->get3DAttributes(&attributes);
@@ -219,6 +233,17 @@ AudioInstance3D AudioEvent::play_3d() const {
     return {instance.instance};
 }
 
+glm::vec2 AudioEvent::get_min_max_distance() const {
+    if (TryLogError(!is_valid(), "Invalid VolumeControl for get_min_max")) return {};
+
+    float min = 0;
+    float max = 0;
+    const FMOD_RESULT result = description->getMinMaxDistance(&min, &max);
+    if (TryLogError(result, "Failed to get VCA volume")) return {};
+
+    return {min, max};
+}
+
 bool VolumeControl::is_valid() const { return vca->isValid(); }
 
 std::string VolumeControl::get_path() const {
@@ -294,7 +319,8 @@ void Audio::update() {
             .up = std::bit_cast<FMOD_VECTOR>(transform.get_up()),
         };
 
-        system->setListenerAttributes(audio_listener.get_listener_index(), &attributes);
+        const FMOD_RESULT result = system->setListenerAttributes(audio_listener.get_listener_index(), &attributes);
+        TryLogError(result, "Failed to set listener attributes");
     }
 
     system->update();
@@ -383,7 +409,7 @@ void Audio::set_global_parameter(const AudioParameter& parameter, const float va
     TryLogError(result, "Failed to set parameter");
 }
 
-void Audio::set_global_parameter(const AudioParameter& parameter, int value) const { set_global_parameter(parameter, static_cast<float>(value)); }
+void Audio::set_global_parameter(const AudioParameter& parameter, const int value) const { set_global_parameter(parameter, static_cast<float>(value)); }
 
 void Audio::set_global_label_parameter(const AudioParameter& parameter, const std::string& value) const {
     const FMOD_RESULT result = system->setParameterByIDWithLabel(parameter.get_id(), value.c_str());

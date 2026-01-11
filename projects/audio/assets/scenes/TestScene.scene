@@ -30,6 +30,14 @@
             "children": []
         }
     },
+    "Camera": {
+        "0": {
+            "fov": 80.0,
+            "pitch": 0.0,
+            "yaw": 90.0,
+            "active": true
+        }
+    },
     "Audio Listener": {
         "0": {
             "cached_weight": 1.0
