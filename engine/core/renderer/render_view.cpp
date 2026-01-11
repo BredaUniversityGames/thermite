@@ -46,7 +46,7 @@ void RenderView::init() {
     const Size3D view_size {gpu_view.resolution.x, gpu_view.resolution.y};
     vbuffer.texture = bank.create_texture("Visibility Buffer Texture", TextureUsage::Storage, TextureFormat::RG32Uint, view_size).expect("failed to create vbuffer texture.");
     vbuffer.image = bank.create_image("Visibility Buffer Image", vbuffer.texture).expect("failed to create vbuffer image.");
-    dbuffer.texture = bank.create_texture("Depth Buffer Texture", TextureUsage::Storage | TextureUsage::DepthStencil, TextureFormat::D32Sfloat, view_size).expect("failed to create depth buffer texture.");
+    dbuffer.texture = bank.create_texture("Depth Buffer Texture", TextureUsage::DepthStencil, TextureFormat::D32Sfloat, view_size).expect("failed to create depth buffer texture.");
     dbuffer.image = bank.create_image("Depth Buffer Image", dbuffer.texture).expect("failed to create depth buffer image.");
 
     /* Create the illuminance buffer */

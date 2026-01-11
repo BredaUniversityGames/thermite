@@ -12,8 +12,6 @@ StructuredBuffer<uint> object_indices;
 StructuredBuffer<VoxelObject> object_data;
 /* Visibility buffer. */
 RWTexture2D<uint2> vbuffer;
-/* Depth buffer. */ 
-RWTexture2D<float> dbuffer;
 
 [shader("compute")]
 [numthreads(16, 8, 1)]
@@ -29,8 +27,4 @@ void main(int2 thread_id: SV_DispatchThreadID) {
 
     /* Write packed visibility info into the visibility buffer */
     vbuffer[thread_id] = asuint2(pack_visibility(hit));
-
-    /* Write the depth buffer */
-    float4 clip = mul(render_view.world_to_clip, float4(ray.origin + ray.dir * 2.0f, 1.0f));
-    dbuffer[thread_id] = hit.t < BIG_F32 ? (clip.z / clip.w) : 1e30f;
 }
