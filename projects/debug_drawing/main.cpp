@@ -101,10 +101,15 @@ void DebugScene::on_update(const tmt::FrameData& time) {
     tmt::engine.polyline.draw_bone({11.0f, 1.5f, 0.5f}, glm::angleAxis(1.1f, glm::vec3(0.0f, 0.0f, 1.0f)), 1.5f);
     tmt::engine.polyline.use_color(0.3f, 0.3f, 1.0f);
     tmt::engine.polyline.draw_bone({11.0f, 1.5f, 0.5f}, glm::angleAxis(-0.8f, glm::vec3(0.0f, 0.0f, 1.0f)), 1.0f);
+    
     /* Text */
     tmt::engine.polyline.use_line_width(0.15f);
     tmt::engine.polyline.use_color(0.9f, 0.9f, 0.9f);
     tmt::engine.polyline.draw_text({12.0f, 0.5f, 0.5f}, "HP: 100", 0.15f, 0.0f);
+
+    tmt::engine.polyline.use_color(0.9f, 0.9f, 0.9f);
+    tmt::engine.polyline.use_line_width(2.5f, true);
+    tmt::engine.polyline.draw_grid(1.0f, 10, 100);
 }
 
 void DebugScene::on_end() {}

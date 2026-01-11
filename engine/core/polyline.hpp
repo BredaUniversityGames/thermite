@@ -113,6 +113,8 @@ class Polyline {
      * @param time Optional timer for how long the polyline should stay alive. *(default is 1 frame)*
      */
     void draw_text(glm::vec3 origin, std::string_view text, float scale, float time = 0.0f);
+
+    void draw_grid(float scale, int subdivisions, int extent, float time = 0.0f);
 };
 
 }  // namespace tmt
