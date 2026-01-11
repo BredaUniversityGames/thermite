@@ -7,15 +7,13 @@
 #include "engine/core/renderer/renderer.hpp"
 #include "engine/core/renderer/pipelines/polyline_pipeline.hpp"
 #include "engine/core/logger.hpp"
+#include "utilities/constants.hpp"
 
 namespace tmt {
 
-/* Internal polyline pipeline quick access. */
-PolylinePipeline& polyline = engine.renderer.polyline_pipeline;
-
 void Polyline::draw_line(glm::vec3 a, glm::vec3 b, float time) {
     /* Check if we reached the maximum number of polylines */
-    if (polyline.line_segment_count >= MAX_POLYLINES - 1u) {
+    if (engine.renderer.polyline_pipeline.line_segment_count >= MAX_POLYLINES - 1u) {
         if (logged_once == false) {
             Log::warn(Log::Scope::RENDERER, "Max amount of polylines reached. Consider increasing MAX_POLYLINES, or draw less lines.");
             logged_once = true;
@@ -24,16 +22,16 @@ void Polyline::draw_line(glm::vec3 a, glm::vec3 b, float time) {
     }
 
     /* Increment the line segment count */
-    polyline.line_segment_count += 1u;
+    engine.renderer.polyline_pipeline.line_segment_count += 1u;
 
     /* If the time is 0 that means this is an immediate line */
     if (time == 0.0f) {
-        polyline.immediate_lines.emplace_back(a, b, color, line_width);
+        engine.renderer.polyline_pipeline.immediate_lines.emplace_back(a, b, color, line_width);
         return;
     }
 
     /* If the time *is* set, create a timed line */
-    polyline.timed_lines.emplace_back(a, b, color, line_width, time);
+    engine.renderer.polyline_pipeline.timed_lines.emplace_back(a, b, color, line_width, time);
 }
 
 void Polyline::draw_circle(glm::vec3 origin, float radius, uint32_t segments, float time) {
@@ -285,4 +283,37 @@ void Polyline::draw_bone(glm::vec3 origin, glm::quat rot, float length, float ti
     }
 }
 
+void Polyline::draw_text(glm::vec3 origin, std::string_view text, float size, float time) {
+    /* Billboard toward camera */
+    const glm::vec3 cam_pos = engine.renderer.render_view.gpu_view.origin;
+    const glm::vec3 forward = glm::normalize(cam_pos - origin);
+
+    glm::vec3 world_up = glm::vec3(0.0f, 1.0f, 0.0f);
+    if (glm::abs(glm::dot(forward, world_up)) > 0.99f) {
+        world_up = glm::vec3(0.0f, 0.0f, 1.0f);
+    }
+
+    const glm::vec3 right = glm::normalize(glm::cross(forward, world_up));
+    const glm::vec3 up = glm::cross(right, forward);
+
+    glm::vec3 cursor = origin;
+    const float spacing = size * 1.2f;  // todo remove magic number for spacing?
+
+    for (char c : text) {
+        const char upper_case_character = (char)std::toupper(static_cast<unsigned char>(c));
+
+        auto it = char_text_constants::CHAR_SEGMENTS.find(upper_case_character);
+        if (it == char_text_constants::CHAR_SEGMENTS.end()) {
+            // assign invalid character
+            it = char_text_constants::CHAR_SEGMENTS.find('\0');
+        }
+        for (const auto& seg : it->second) {
+            const glm::vec3 p0 = cursor + right * seg.x0 * size + up * seg.y0 * size;
+            const glm::vec3 p1 = cursor + right * seg.x1 * size + up * seg.y1 * size;
+            draw_line(p0, p1, time);
+        }
+
+        cursor += right * spacing;
+    }
+}
 }  // namespace tmt
