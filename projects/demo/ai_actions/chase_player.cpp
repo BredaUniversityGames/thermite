@@ -31,20 +31,12 @@ void ChasePlayer::on_tick(tmt::Entity walking_entity, tmt::Registry&, float dt) 
         return;
     }
 
-    // Calculate path
-    int start_pos = nav_mesh.find_closest_node(walking_entity_pos);
-    int closest_node_id = nav_mesh.find_closest_node(player_pos);
-    std::vector<int> path = nav_mesh.find_path(start_pos, closest_node_id);
+    glm::vec3 direction = nav_mesh.follow_path(walking_entity_pos, player_pos);
 
     // If path has more waypoints, move to next one
-    if (path.size() > 1) {
-        glm::vec3 target_pos = nav_mesh.nodes[path[1]].world_pos;
-
-        glm::vec3 current_pos = walking_transform.get_world_position();
-        if (glm::distance(target_pos, current_pos) > 0.01f) {
-            glm::vec3 direction = glm::normalize(target_pos - current_pos);
-            walking_transform.set_world_position(current_pos + direction * walking.walk_speed * dt);
-        }
+    if (direction.x != 0 && direction.y != 0 && direction.z != 0) {
+        walking_transform.set_world_position(walking_entity_pos + direction * walking.walk_speed * 0.1f * dt);
+        
     } else {
         // At the last node or no path - stop moving
         done_walking = true;
@@ -52,9 +44,10 @@ void ChasePlayer::on_tick(tmt::Entity walking_entity, tmt::Registry&, float dt) 
     }
 
     // Debug visualization
-    for (size_t i = 0; i < path.size() - 1; ++i) {
-        glm::vec3 from = nav_mesh.nodes[path[i]].world_pos;
-        glm::vec3 to = nav_mesh.nodes[path[i + 1]].world_pos;
+    if (nav_mesh.path.size() > 1)
+    for (size_t i = 0; i < nav_mesh.path.size() - 1; ++i) {
+        glm::vec3 from = nav_mesh.nodes[nav_mesh.path[i]].world_pos;
+        glm::vec3 to = nav_mesh.nodes[nav_mesh.path[i + 1]].world_pos;
         tmt::engine.polyline.draw_line(from, to);
     }
 }

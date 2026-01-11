@@ -13,7 +13,7 @@ class Walking : public tmt::GameComponent<Walking> {
     void end() override;
 
     tmt::Entity walkable_asteroid = entt::null;
-    float walk_speed = 5.0f;
+    float walk_speed = 1.0f;
     float attack_range = 20.0f;
 };
 
