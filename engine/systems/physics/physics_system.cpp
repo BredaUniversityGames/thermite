@@ -179,7 +179,6 @@ void draw_solids(
             engine.polyline.use_line_width(0.1f);
         }
         
-        //engine.polyline.draw_line(child_center + child_half_extent, child_center - child_half_extent);
         engine.polyline.draw_obb(child_center, glm::vec3(child_half_extent), rotation, Engine::Config::FIXED_TIME_STEP + 0.1f);
 
         // Get child node index
@@ -193,6 +192,134 @@ void draw_solids(
 
         // Clear bit
         mask &= ~(1ull << i);
+    }
+}
+
+void compare_trees(
+    tmt::Svt64* tree_a, const glm::vec3& center_a, const glm::quat& rotation_a, float half_extent_a, tmt::Svt64* tree_b, const glm::vec3& center_b, const glm::quat& rotation_b,
+    float half_extent_b
+) {
+    struct StackEntry {
+        uint32_t node_index_a;
+        uint32_t node_index_b;
+        float half_extent_a;
+        float half_extent_b;
+        glm::vec3 center_a;
+        glm::vec3 center_b;
+    };
+
+    std::vector<StackEntry> stack;
+    stack.reserve((tree_a->depth + tree_b->depth) * 64);
+
+    // Add root pair
+    stack.push_back({0, 0, half_extent_a, half_extent_b, center_a, center_b});
+
+    while (!stack.empty()) {
+        const StackEntry entry = stack.back();
+        stack.pop_back();
+
+        const tmt::Svt64Node& node_a = tree_a->nodes[entry.node_index_a];
+        const tmt::Svt64Node& node_b = tree_b->nodes[entry.node_index_b];
+
+        const bool is_leaf_a = node_a.is_leaf();
+        const bool is_leaf_b = node_b.is_leaf();
+
+        if (is_leaf_a && is_leaf_b) {
+            // Loop over all voxels in leaf A
+
+            // If voxel is overlapping with b leaf and is CORNER or EDGE, Do collision check with all voxels in leaf B
+
+            // Debug draw leaf node
+            //engine.polyline.use_color(0.0f, 1.0f, 0.0f);
+            //engine.polyline.use_line_width(0.1f);
+            //engine.polyline.draw_obb(entry.center_a, glm::vec3(entry.half_extent_a), rotation_a, Engine::Config::FIXED_TIME_STEP + 0.1f);
+            continue;
+        }
+
+        // Go deeper in the tree with larger half-extent
+        const bool descend_a = !is_leaf_a && (is_leaf_b || entry.half_extent_a >= entry.half_extent_b);
+
+        if (descend_a) {
+            // Precompute overlap values
+            const float child_half_extent = entry.half_extent_a * 0.25f;
+            const float child_radius_a = child_half_extent * SQRT3;
+            const float radius_b = entry.half_extent_b * SQRT3;
+            const float combined_radius = child_radius_a + radius_b;
+            const float combined_radius_sq = combined_radius * combined_radius;
+
+            uint64_t mask = node_a.child_mask;
+            while (mask != 0u) {
+                // Find index of first set bit and clear it
+                const uint32_t i = std::countr_zero(mask);
+                mask &= mask - 1u;
+
+                // Get local coordinates
+                const uint32_t local_x = (i >> 0u) & 3u;
+                const uint32_t local_y = (i >> 4u) & 3u;
+                const uint32_t local_z = (i >> 2u) & 3u;
+
+                // Calculate local child center
+                const glm::vec3 local_offset = glm::vec3(
+                    (((float)local_x + 0.5f) * 0.25f - 0.5f) * entry.half_extent_a * 2.0f, (((float)local_y + 0.5f) * 0.25f - 0.5f) * entry.half_extent_a * 2.0f,
+                    (((float)local_z + 0.5f) * 0.25f - 0.5f) * entry.half_extent_a * 2.0f
+                );
+                // Calculate world position of child
+                const glm::vec3 child_center = entry.center_a + (rotation_a * local_offset);
+
+                // Check overlap before adding
+                const glm::vec3 diff = child_center - entry.center_b;
+                if (glm::dot(diff, diff) > combined_radius_sq) continue;
+
+                // Debug draw OBB
+                engine.polyline.use_color(0.1f, 0.1f, 0.9f);
+                engine.polyline.use_line_width(0.1f);
+                //engine.polyline.draw_sphere(child_center, child_radius_a, 12u, Engine::Config::FIXED_TIME_STEP + 0.1f);
+                engine.polyline.draw_obb(child_center, glm::vec3(child_half_extent), rotation_a, Engine::Config::FIXED_TIME_STEP + 0.1f);
+
+                // Get child node index
+                const uint32_t child_offset = __popcnt64(node_a.child_mask & ((1ull << i) - 1u));
+                const uint32_t child_index = node_a.abs_ptr() + child_offset;
+
+                // Add pair to stack
+                stack.push_back({child_index, entry.node_index_b, child_half_extent, entry.half_extent_b, child_center, entry.center_b});
+            }
+        } else {
+            // Precompute overlap values
+            const float child_half_extent = entry.half_extent_b * 0.25f;
+            const float radius_a = entry.half_extent_a * SQRT3;
+            const float child_radius = child_half_extent * SQRT3;
+            const float combined_radius = radius_a + child_radius;
+            const float combined_radius_sq = combined_radius * combined_radius;
+
+            uint64_t mask = node_b.child_mask;
+            while (mask != 0u) {
+                const uint32_t i = std::countr_zero(mask);
+                mask &= mask - 1u;
+
+                const uint32_t local_x = (i >> 0u) & 3u;
+                const uint32_t local_y = (i >> 4u) & 3u;
+                const uint32_t local_z = (i >> 2u) & 3u;
+
+                const glm::vec3 local_offset = glm::vec3(
+                    (((float)local_x + 0.5f) * 0.25f - 0.5f) * entry.half_extent_b * 2.0f, (((float)local_y + 0.5f) * 0.25f - 0.5f) * entry.half_extent_b * 2.0f,
+                    (((float)local_z + 0.5f) * 0.25f - 0.5f) * entry.half_extent_b * 2.0f
+                );
+                const glm::vec3 child_center = entry.center_b + (rotation_b * local_offset);
+
+                const glm::vec3 diff = entry.center_a - child_center;
+                if (glm::dot(diff, diff) > combined_radius_sq) continue;
+
+                // Debug draw OBB
+                engine.polyline.use_color(0.9f, 0.1f, 0.1f);
+                engine.polyline.use_line_width(0.1f);
+                engine.polyline.draw_obb(child_center, glm::vec3(child_half_extent), rotation_b, Engine::Config::FIXED_TIME_STEP + 0.1f);
+
+                const uint32_t child_offset = __popcnt64(node_b.child_mask & ((1ull << i) - 1u));
+                const uint32_t child_index = node_b.abs_ptr() + child_offset;
+
+                stack.push_back({entry.node_index_a, child_index, entry.half_extent_a, child_half_extent, entry.center_a, child_center});
+            }
+        }
     }
 }
 
@@ -254,13 +381,26 @@ void Physics::generate_voxel_constraints_range(const int index, const int size) 
                 coll.contacts.reserve(64);
 
                 auto* tree_a = vb.resource->blas.get();
+                const float half_extent_a = powf(4.0f, (float)tree_a->depth) * 0.5f * UNITS_PER_VOXEL;
+                const glm::vec3 extents_diff_a = half_extent_a - ((glm::vec3)vb.resource->size * 0.5f * UNITS_PER_VOXEL);
+                const glm::vec3 root_center_a = vb.position + (vb.rotation * extents_diff_a);
+
                 auto* tree_b = other_vb.resource->blas.get();
+                const float half_extent_b = powf(4.0f, (float)tree_b->depth) * 0.5f * UNITS_PER_VOXEL;
+                const glm::vec3 extents_diff_b = half_extent_b - ((glm::vec3)other_vb.resource->size * 0.5f * UNITS_PER_VOXEL);
+                const glm::vec3 root_center_b = other_vb.position + (other_vb.rotation * extents_diff_b);
 
-                const float half_extent = powf(4.0f, (float)tree_a->depth) * 0.5f * UNITS_PER_VOXEL;
-                const glm::vec3 extents_diff = half_extent - ((glm::vec3)vb.resource->size * 0.5f * UNITS_PER_VOXEL);
-                const glm::vec3 root_center = vb.position + (vb.rotation * extents_diff);
+                engine.polyline.use_color(0.1f, 0.1f, 0.9f);
+                engine.polyline.use_line_width(0.25f);
+                engine.polyline.draw_sphere(root_center_a, half_extent_a * SQRT3, 64u, Engine::Config::FIXED_TIME_STEP + 0.1f);
 
-                draw_solids(tree_a, 0u, 0u, half_extent, root_center, extents_diff, vb.rotation);
+                engine.polyline.use_color(0.9f, 0.1f, 0.1f);
+                engine.polyline.draw_sphere(root_center_b, half_extent_b * SQRT3, 64u, Engine::Config::FIXED_TIME_STEP + 0.1f);
+
+
+                compare_trees(tree_a, root_center_a, vb.rotation, half_extent_a, tree_b, root_center_b, other_vb.rotation, half_extent_b);
+
+                //draw_solids(tree_a, 0u, 0u, half_extent_a, root_center_a, extents_diff_a, vb.rotation);
 
                 // find_solids(tree_a, 0u, 0);
                 // find_solids(tree_a, 0u, 0u, vb.position, half_extent, vb);
