@@ -23,9 +23,9 @@ using SerializeComponents = ComponentRegistry<
 	Camera,
 	VoxelBody,
 	ComponentCollection,
+	NavMesh,
 	AnimConstraints::DampedTransformConstraint,
 	BoneHierarchyRenderer
-	NavMesh
 >;
 // clang-format on
 
@@ -37,9 +37,9 @@ using InspectComponents = ComponentRegistry<
 	VoxelRenderer, 
 	Camera,
 	VoxelBody,
+	NavMesh,
 	AnimConstraints::DampedTransformConstraint,
 	BoneHierarchyRenderer
-	NavMesh
 >;
 // clang-format on
 
