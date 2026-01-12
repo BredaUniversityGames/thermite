@@ -6,6 +6,13 @@
 #include "engine/core/input/input.hpp"
 #include "engine/core/logger.hpp"
 #include "engine/systems/animation/animation_system.hpp"
+#include "engine/systems/camera/camera_system.hpp"
+#include "engine/core/scene.hpp"
+#include "engine/core/scenes.hpp"
+#include "engine/systems/animation/rig_renderer.hpp"
+#include "engine/systems/animation/constraints.hpp"
+#include "engine/tools/test_motion.hpp"
+#include "engine/core/polyline.hpp"
 
 class Game : public tmt::Application {
    public:
@@ -14,9 +21,23 @@ class Game : public tmt::Application {
     tmt::Entity voxel {};
     float time_passed = 0.0f;
 
+    void on_start() override {};
+    void on_update(const tmt::FrameData& time) override {};
+    void on_end() override {};
+};
+
+class AnimationScene : public tmt::Scene<AnimationScene> {
+   public:
+    static constexpr std::string_view scene_name() { return "AnimationScene"; }
+
     void on_start() override;
     void on_update(const tmt::FrameData& time) override;
     void on_end() override;
+
+    tmt::Entity parent_entity;
+    tmt::Entity snake_entity;
+    tmt::AnimConstraints::DampedTransformConstraint damped_constraint;
+    tmt::AnimConstraints::DampedTransformConstraint damped_constraint_snake;
 };
 
 std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs& args) {
@@ -27,11 +48,15 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
         .log_file = "example_game_logs.txt"
     };
     // clang-format on
+    tmt::engine.ecs.systems.add<tmt::CameraSystem>();
+    tmt::engine.scenes.register_scene<AnimationScene>();
 
     return std::make_unique<Game>(specs);
 }
 
-void Game::on_start() {
+
+
+void AnimationScene::on_start() {
     using namespace tmt;
     { /* Camera entity */
         Entity entity = engine.ecs.create_entity("Camera");
@@ -54,17 +79,90 @@ void Game::on_start() {
         rig_ent_rig_model_comp.time = 0.0f;
     }
 
-    { /* Voxel entity */
-        voxel = tmt::engine.ecs.create_entity("Moving Voxel");
-        auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(voxel);
-        auto& renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(voxel);
-        // renderer.size = glm::uvec3(64u, 64u, 64u);
-        transform.set_world_position(glm::vec3(2.0f, 2.0f, 0.0f));
-        transform.set_world_rotation(glm::vec3(glm::radians(45.0f), glm::radians(45.0f), 0.0f));
-        transform.set_world_scale(glm::vec3(1.0f, 1.0f, 1.0f));
+
+    { /* Test rig */
+        parent_entity = engine.ecs.create_entity();
+        auto& parent_transform = engine.ecs.get_component<Transform>(parent_entity);
+        parent_transform.set_local_position(glm::vec3(5.f, 0.f, 0.f));
+
+        auto child_0 = engine.ecs.create_entity();
+        auto& child_0_transform = engine.ecs.get_component<Transform>(child_0);
+        child_0_transform.set_local_position(glm::vec3(5.f, 2.f, -1.f));
+
+        auto child_1 = engine.ecs.create_entity();
+        auto& child_1_transform = engine.ecs.get_component<Transform>(child_1);
+        child_1_transform.set_local_position(glm::vec3(5.f, 4.f, -4.f));
+
+         auto child_2 = engine.ecs.create_entity();
+        auto& child_2_transform = engine.ecs.get_component<Transform>(child_2);
+        child_2_transform.set_local_position(glm::vec3(5.f, 5.f, -7.f));
+
+         auto child_3 = engine.ecs.create_entity();
+        auto& child_3_transform = engine.ecs.get_component<Transform>(child_3);
+        child_3_transform.set_local_position(glm::vec3(5.f, 6.f, -10.0f));
+
+         auto child_4 = engine.ecs.create_entity();
+        auto& child_4_transform = engine.ecs.get_component<Transform>(child_4);
+        child_4_transform.set_local_position(glm::vec3(5.f, 6.5f, -12.f));
+
+        parent_transform.add_child(child_0);
+        child_0_transform.add_child(child_1);
+        child_1_transform.add_child(child_2);
+        child_2_transform.add_child(child_3);
+        child_3_transform.add_child(child_4);
     }
+    { /* snake rig */
+        snake_entity = engine.ecs.create_entity();
+        auto& parent_transform = engine.ecs.get_component<Transform>(snake_entity);
+        parent_transform.set_local_position(glm::vec3(0.f, -3.f, -10.f));
+
+        auto child_0 = engine.ecs.create_entity();
+        auto& child_0_transform = engine.ecs.get_component<Transform>(child_0);
+        child_0_transform.set_local_position(glm::vec3(-2.f, -3.f, -10.f));
+
+        auto child_1 = engine.ecs.create_entity();
+        auto& child_1_transform = engine.ecs.get_component<Transform>(child_1);
+        child_1_transform.set_local_position(glm::vec3(-4.f, -3.f, -10.f));
+
+        auto child_2 = engine.ecs.create_entity();
+        auto& child_2_transform = engine.ecs.get_component<Transform>(child_2);
+        child_2_transform.set_local_position(glm::vec3(-6.f, -3.f, -10.f));
+
+        auto child_3 = engine.ecs.create_entity();
+        auto& child_3_transform = engine.ecs.get_component<Transform>(child_3);
+        child_3_transform.set_local_position(glm::vec3(-8.f, -3.f, -10.0f));
+
+        auto child_4 = engine.ecs.create_entity();
+        auto& child_4_transform = engine.ecs.get_component<Transform>(child_4);
+        child_4_transform.set_local_position(glm::vec3(-10.f, -3.f, -10.f));
+
+        parent_transform.add_child(child_0);
+        child_0_transform.add_child(child_1);
+        child_1_transform.add_child(child_2);
+        child_2_transform.add_child(child_3);
+        child_3_transform.add_child(child_4);
+    }
+
+    damped_constraint.start_entity = parent_entity;
+    damped_constraint.damp = 0.9f;
+    damped_constraint_snake.start_entity = snake_entity;
+    damped_constraint_snake.damp = 0.99f;
 }
 
-void Game::on_update(const tmt::FrameData& time) {}
+void AnimationScene::on_update(const tmt::FrameData& time) 
+{
+    using namespace tmt;
 
-void Game::on_end() {}
+    engine.polyline.use_color(glm::vec4(0.2f, 0.2f, 0.8f, 1.f));
+    auto& parent_transform = engine.ecs.get_component<Transform>(parent_entity);
+    RenderBoneHierarchy(parent_transform);
+
+    engine.polyline.use_color(glm::vec4(0.8f, 0.2f, 0.2f, 1.f));
+    auto& snake_transform = engine.ecs.get_component<Transform>(snake_entity);
+    RenderBoneHierarchy(snake_transform);
+
+    snake_transform.set_local_position(TestMotion::sample_position(time.elapsed_time));
+    snake_transform.set_local_rotation(TestMotion::sample_rotation(time.elapsed_time, time.delta_time));
+}
+
+void AnimationScene::on_end() {}
