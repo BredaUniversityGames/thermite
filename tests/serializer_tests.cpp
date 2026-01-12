@@ -3,9 +3,12 @@
 #include "engine/tools/serializer.hpp"
 #include "engine/tools/serializer/all.hpp"
 #include "engine/core/components/transform.hpp"
+#include "engine/engine.hpp"
+#include "engine/core/ecs.hpp"
 
 TEST(SerializerTest, BasicSerialization) {
-    tmt::Transform transform;
+    tmt::Transform transform = tmt::engine.ecs.create_entity<tmt::Transform>();
+
     transform.set_local_position(glm::vec3(1.0f, 2.0f, 3.0f));
     transform.set_local_rotation(glm::vec3(glm::radians(45.0f), glm::radians(90.0f), glm::radians(180.0f)));
     transform.set_local_scale(glm::vec3(2.0f, 2.0f, 2.0f));
