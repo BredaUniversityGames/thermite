@@ -10,7 +10,7 @@
 #include "engine/core/scene.hpp"
 #include "engine/core/scenes.hpp"
 #include "engine/systems/animation/rig_renderer.hpp"
-#include "engine/systems/animation/constraints.hpp"
+#include "engine/systems/animation/components/constraints.hpp"
 #include "engine/tools/test_motion.hpp"
 #include "engine/core/polyline.hpp"
 
@@ -36,8 +36,6 @@ class AnimationScene : public tmt::Scene<AnimationScene> {
 
     tmt::Entity parent_entity;
     tmt::Entity snake_entity;
-    tmt::AnimConstraints::DampedTransformConstraint damped_constraint;
-    tmt::AnimConstraints::DampedTransformConstraint damped_constraint_snake;
 };
 
 std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs& args) {
@@ -71,12 +69,12 @@ void AnimationScene::on_start() {
 
         IO::FileLocation location {IO::Location::PROJECT, "Victory_animation.fbx"};
         rig_ent_rig_model_comp.init(location, rig_ent);
-        rig_ent_rig_model_comp.data->animation_files.push_back(location);
-        rig_ent_rig_model_comp.data->reload();
+        //rig_ent_rig_model_comp.data->animation_files.push_back(location);
+      //  rig_ent_rig_model_comp.data->reload();
 
-        rig_ent_rig_model_comp.set_current_animation("Victory_animation");
-        rig_ent_rig_model_comp.state = RigModel::State::ANIMATE_LOOP;
-        rig_ent_rig_model_comp.time = 0.0f;
+       // rig_ent_rig_model_comp.set_current_animation("Victory_animation");
+        //rig_ent_rig_model_comp.state = RigModel::State::ANIMATE_LOOP;
+       // rig_ent_rig_model_comp.time = 0.0f;
     }
 
 
@@ -142,11 +140,6 @@ void AnimationScene::on_start() {
         child_2_transform.add_child(child_3);
         child_3_transform.add_child(child_4);
     }
-
-    damped_constraint.start_entity = parent_entity;
-    damped_constraint.damp = 0.9f;
-    damped_constraint_snake.start_entity = snake_entity;
-    damped_constraint_snake.damp = 0.99f;
 }
 
 void AnimationScene::on_update(const tmt::FrameData& time) 

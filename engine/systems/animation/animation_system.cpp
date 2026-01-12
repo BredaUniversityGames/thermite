@@ -6,7 +6,6 @@
 #include "rig_model.hpp"
 #include "rig_renderer.hpp"
 #include "engine/core/polyline.hpp"
-
 #define CONDITION(comparison) [](const Variant& parameter, const Variant& value) -> bool { return parameter comparison value; }
 
 using namespace tmt;
@@ -48,7 +47,7 @@ void RigModelManager::on_update(const FrameData& time) {
         const Bone& last_bone = rig.data->bones.back();
         const std::string& current_animation = rig.get_current_animation();
         if (last_bone.animations.find(current_animation) == last_bone.animations.end()) {
-            Log::warn(R"(Animation "{}" isn't a valid animation!)", current_animation);
+            //Log::warn(R"(Animation "{}" isn't a valid animation!)", current_animation);
             continue;
         }
 
@@ -98,3 +97,71 @@ void RigModelManager::inspect(float) {
         RenderBoneHierarchy(transform);
     }
 }
+
+void tmt::ConstraintSystem::on_start() 
+{
+    for (const auto& [entity, transform, damped_constraint] : engine.ecs.get_registry().view<Transform, AnimConstraints::DampedTransformConstraint>().each()) {
+        damped_constraint.local_rest_pose.bone_entity = entity;
+        auto& start_transform = tmt::engine.ecs.get_component<Transform>(entity);
+
+        set_local_rest_pose(start_transform, damped_constraint.local_rest_pose);
+    }
+}
+void tmt::ConstraintSystem::on_update(const tmt::FrameData& time) 
+{
+    for (const auto& [entity, transform, damped_constraint] : engine.ecs.get_registry().view<Transform, AnimConstraints::DampedTransformConstraint>().each()) {
+        auto& start_transform = tmt::engine.ecs.get_component<Transform>(entity);
+
+        damped_constraint.local_rest_pose.local_pos = start_transform.get_local_position();
+        damped_constraint.local_rest_pose.local_rot = start_transform.get_local_rotation();
+
+        update_damped_pose(damped_constraint.local_rest_pose, damped_constraint.local_rest_pose.local_pos, damped_constraint.local_rest_pose.local_rot, damped_constraint.damp);
+    }
+    
+}
+void tmt::ConstraintSystem::set_local_rest_pose(const tmt::Transform& transform, AnimConstraints::LocalRestPose& rest_pose) {
+    rest_pose.local_rot = transform.get_local_rotation();
+    rest_pose.local_pos = transform.get_local_position();
+    rest_pose.prev_world_rot = transform.get_world_rotation();
+    rest_pose.prev_world_pos = transform.get_world_position();
+
+    const auto& children = transform.get_children();
+
+    for (auto child : children) {
+        const auto& child_transform = engine.ecs.get_component<Transform>(child);
+
+        AnimConstraints::LocalRestPose child_rest_pose;
+        child_rest_pose.bone_entity = child;
+        rest_pose.children_rest_poses.push_back(child_rest_pose);
+
+        set_local_rest_pose(child_transform, rest_pose.children_rest_poses.back());
+    }
+}
+
+void tmt::ConstraintSystem::update_damped_pose(AnimConstraints::LocalRestPose& local_rest_pose, const glm::vec3& parent_world_pos, const glm::quat& parent_world_rot, float damp) {
+    for (auto& child_pose : local_rest_pose.children_rest_poses) {
+        glm::quat ws_target_rot = parent_world_rot * child_pose.local_rot;
+        glm::vec3 ws_target_pos = parent_world_pos + (ws_target_rot * child_pose.local_pos);
+
+        glm::vec3 new_world_pos = glm::mix(ws_target_pos, child_pose.prev_world_pos, damp);
+        glm::quat new_world_rot = glm::slerp(ws_target_rot, child_pose.prev_world_rot, damp);
+
+        glm::quat new_local_rot = glm::inverse(parent_world_rot) * new_world_rot;
+        glm::vec3 new_local_pos = glm::inverse(parent_world_rot) * (new_world_pos - parent_world_pos);
+
+        auto& child_transform = tmt::engine.ecs.get_component<Transform>(child_pose.bone_entity);
+
+        child_transform.set_local_rotation(new_local_rot);
+        child_transform.set_local_position(new_local_pos);
+
+        child_pose.prev_world_pos = new_world_pos;
+        child_pose.prev_world_rot = new_world_rot;
+
+        update_damped_pose(child_pose, new_world_pos, new_world_rot, damp);
+    }
+}
+
+
+void tmt::ConstraintSystem::on_end() {}
+
+std::string tmt::ConstraintSystem::get_name() { return std::string(); }
