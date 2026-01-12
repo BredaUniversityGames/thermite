@@ -50,7 +50,7 @@ void Game::on_start() {
         transform.set_world_position(glm::vec3(0.0f, 0.25f, -5.0f));
     }
 
-    auto voxel_file_cube = tmt::engine.resources.load_resource<tmt::VoxelScene>({tmt::IO::Location::PROJECT, "cube16.vengi"});
+    auto voxel_file_cube = tmt::engine.resources.load_resource<tmt::VoxelScene>({tmt::IO::Location::PROJECT, "box-10.vengi"});
     voxel_volume_cube = tmt::engine.resources.copy_resource<tmt::VoxelVolume>(voxel_file_cube);
 
     auto voxel_file_piece = tmt::engine.resources.load_resource<tmt::VoxelScene>({tmt::IO::Location::PROJECT, "piece_1.vengi"});
@@ -111,7 +111,7 @@ void Game::on_start() {
         auto& vb = tmt::engine.ecs.add_component<tmt::VoxelBody>(entity);
         vb.resource = voxel_volume_ass3;
         vb.gravity = 0.0f;
-        vb.type = tmt::VoxelBody::STATIC;
+        vb.type = tmt::VoxelBody::DYNAMIC;
         transform.set_world_position(glm::vec3(40.0f, 20.0f, 100.0f));
         float random_rot_x = ((float)(rand() % 1000) / 1000.0f) * 3.1415f * 2.0f;
         float random_rot_y = ((float)(rand() % 1000) / 1000.0f) * 3.1415f * 2.0f;
@@ -157,7 +157,7 @@ void Game::on_start() {
         vb.resource = voxel_volume_ass7;
         vb.gravity = 0.0f;
         vb.type = tmt::VoxelBody::STATIC;
-        transform.set_world_position(glm::vec3(50.0f, 38.5f, 100.0f));
+        transform.set_world_position(glm::vec3(50.0f, 31.6f, 100.0f));
         float random_rot_x = ((float)(rand() % 1000) / 1000.0f) * 3.1415f * 2.0f;
         float random_rot_y = ((float)(rand() % 1000) / 1000.0f) * 3.1415f * 2.0f;
         float random_rot_z = ((float)(rand() % 1000) / 1000.0f) * 3.1415f * 2.0f;
@@ -255,8 +255,8 @@ void Game::on_update(const tmt::FrameData& time) {
         const glm::vec3 cam_pos = cam_transform.get_world_position();
         const glm::vec3 cam_forward = cam_transform.get_forward();
         
-        for (int x = -1; x <= 1; x++) {
-            for (int y = -1; y <= 1; y++) {
+        for (int x = -2; x <= 2; x++) {
+            for (int y = -2; y <= 2; y++) {
                 auto entity = tmt::engine.ecs.create_entity();
                 auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
                 auto& renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(entity);
@@ -267,8 +267,8 @@ void Game::on_update(const tmt::FrameData& time) {
                 vb.type = tmt::VoxelBody::DYNAMIC;
                 tmt::Physics::initialize_voxel_body(vb);
 
-                const glm::vec3 x_offset = cam_transform.get_right() * ((float)x * 2.5f);
-                const glm::vec3 y_offset = cam_transform.get_up() * ((float)y * 2.5f);
+                const glm::vec3 x_offset = cam_transform.get_right() * ((float)x * 1.5f);
+                const glm::vec3 y_offset = cam_transform.get_up() * ((float)y * 1.5f);
 
                 tmt::Physics::set_position(vb, cam_pos + cam_forward * 2.0f + x_offset + y_offset);
 
