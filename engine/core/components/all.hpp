@@ -9,6 +9,7 @@
 #include "engine/core/components/component_collection.hpp"
 #include "engine/systems/physics/components/voxel_body.hpp"
 #include "engine/systems/animation/components/constraints.hpp"
+#include "engine/systems/animation/components/bone_hierarchy_renderer.hpp"
 
 namespace tmt {
 
@@ -21,7 +22,8 @@ using SerializeComponents = ComponentRegistry<
 	Camera,
 	VoxelBody,
 	ComponentCollection,
-	AnimConstraints::DampedTransformConstraint
+	AnimConstraints::DampedTransformConstraint,
+	BoneHierarchyRenderer
 >;
 // clang-format on
 
@@ -33,7 +35,8 @@ using InspectComponents = ComponentRegistry<
 	VoxelRenderer, 
 	Camera,
 	VoxelBody,
-	AnimConstraints::DampedTransformConstraint
+	AnimConstraints::DampedTransformConstraint,
+	BoneHierarchyRenderer
 >;
 // clang-format on
 

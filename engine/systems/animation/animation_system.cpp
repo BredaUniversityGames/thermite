@@ -6,6 +6,8 @@
 #include "rig_model.hpp"
 #include "rig_renderer.hpp"
 #include "engine/core/polyline.hpp"
+#include "engine/systems/animation/components/bone_hierarchy_renderer.hpp"
+
 #define CONDITION(comparison) [](const Variant& parameter, const Variant& value) -> bool { return parameter comparison value; }
 
 using namespace tmt;
@@ -94,10 +96,16 @@ void RigModelManager::inspect(float) {
         //    }
         //}
 
-        RenderBoneHierarchy(transform);
+        
+    }
+
+    for (const auto& [entity, transform, bone_renderer] : engine.ecs.get_registry().view<Transform, BoneHierarchyRenderer>().each()) 
+    {
+        tmt::engine.polyline.use_color(bone_renderer.color);
+        tmt::engine.polyline.use_line_width(bone_renderer.line_width);
+        tmt::RenderBoneHierarchy(transform);
     }
 }
-
 void tmt::ConstraintSystem::on_start() 
 {
     for (const auto& [entity, transform, damped_constraint] : engine.ecs.get_registry().view<Transform, AnimConstraints::DampedTransformConstraint>().each()) {

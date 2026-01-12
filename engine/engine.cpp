@@ -78,6 +78,7 @@ void Engine::init(std::unique_ptr<Application> user_app) {
 
     ecs.systems.add<Physics>();
     ecs.systems.add<RigModelManager>();
+    ecs.systems.add<ConstraintSystem>();
     ecs.systems.add<Goap>();
     ecs.systems.add<NavigationSystem>();
     ecs.systems.add<Gameplay>(); /* Should be last */

@@ -13,6 +13,7 @@
 #include "engine/systems/animation/components/constraints.hpp"
 #include "engine/tools/test_motion.hpp"
 #include "engine/core/polyline.hpp"
+#include "engine/systems/animation/components/bone_hierarchy_renderer.hpp"
 
 class Game : public tmt::Application {
    public:
@@ -80,6 +81,7 @@ void AnimationScene::on_start() {
 
     { /* Test rig */
         parent_entity = engine.ecs.create_entity();
+        engine.ecs.add_component<BoneHierarchyRenderer>(parent_entity);
         auto& parent_transform = engine.ecs.get_component<Transform>(parent_entity);
         parent_transform.set_local_position(glm::vec3(5.f, 0.f, 0.f));
 
@@ -111,6 +113,7 @@ void AnimationScene::on_start() {
     }
     { /* snake rig */
         snake_entity = engine.ecs.create_entity();
+        engine.ecs.add_component<BoneHierarchyRenderer>(snake_entity);
         auto& parent_transform = engine.ecs.get_component<Transform>(snake_entity);
         parent_transform.set_local_position(glm::vec3(0.f, -3.f, -10.f));
 
@@ -146,13 +149,7 @@ void AnimationScene::on_update(const tmt::FrameData& time)
 {
     using namespace tmt;
 
-    engine.polyline.use_color(glm::vec4(0.2f, 0.2f, 0.8f, 1.f));
-    auto& parent_transform = engine.ecs.get_component<Transform>(parent_entity);
-    RenderBoneHierarchy(parent_transform);
-
-    engine.polyline.use_color(glm::vec4(0.8f, 0.2f, 0.2f, 1.f));
     auto& snake_transform = engine.ecs.get_component<Transform>(snake_entity);
-    RenderBoneHierarchy(snake_transform);
 
     snake_transform.set_local_position(TestMotion::sample_position(time.elapsed_time));
     snake_transform.set_local_rotation(TestMotion::sample_rotation(time.elapsed_time, time.delta_time));
