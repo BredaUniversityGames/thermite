@@ -3,8 +3,9 @@
 #include "engine/tools/second_order_solver.hpp"
 #include <any>
 #include <typeindex>
-
 #include "engine/core/logger.hpp"
+#include "engine/core/ecs.hpp"
+#include "engine/engine.hpp"
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include "glm/gtx/norm.hpp"
@@ -22,7 +23,7 @@ class MotionMathSystem : public ISystem {
 
     // dispatch single-time motion that drives a value towards a target
     template <typename T>
-    void do_motion(T* value, const T& start, const T& end, const MotionSettings& settings = {}) {
+    void do_motion(T* value, const T& start, const T& end, const MotionSettings& settings = {}, std::optional<tmt::Entity> safeguard = std::nullopt) {
         if (!value) {
             Log::warn(Log::Scope::ENGINE, "[MotionMath] nullptr passed, won't do motion");
             return;
@@ -58,12 +59,12 @@ class MotionMathSystem : public ISystem {
             state.current_velocity = glm::vec3(0.0f); 
             state.current_target = rotvec(end_q);     
 
-            motions.emplace_back(state, settings, end_q, value, start_q);
+            motions.emplace_back(state, settings, end_q, value, start_q, safeguard);
         } else {
             SecondOrderSolver::State<T> state {};
             state.current_state = start;
 
-            motions.emplace_back(state, end, value, settings);
+            motions.emplace_back(state, end, value, settings, safeguard);
         }
     }
 
@@ -93,6 +94,7 @@ class MotionMathSystem : public ISystem {
         T target;
         T* value;
         MotionSettings settings;
+        std::optional<tmt::Entity> safeguard;
     };
 
     // Motion quaternion template specialization
@@ -103,6 +105,7 @@ class MotionMathSystem : public ISystem {
         glm::quat target;
         glm::quat* value = nullptr;
         glm::quat prev_target;  // for hemisphere continuity
+        std::optional<tmt::Entity> safeguard;
     };
 
     // squared length of vector and arithmetic
@@ -138,7 +141,7 @@ class MotionMathSystem : public ISystem {
         for (auto it = motions.begin(); it != motions.end();) {
             auto& motion = *it;
 
-            if (!motion.value) {
+            if (!motion.value || motion.safeguard && !tmt::engine.ecs.get_registry().valid(*motion.safeguard)) {
                 it = motions.erase(it);
                 continue;
             }
