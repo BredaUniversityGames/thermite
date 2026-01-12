@@ -8,13 +8,14 @@ template <typename T>
 concept ValidTarget = requires(T a, T b, float f) {
     { a + b } -> std::convertible_to<T>;
     { a - b } -> std::convertible_to<T>;
-    { a * f } -> std::convertible_to<T>;
+    { a* f } -> std::convertible_to<T>;
 };
 
 class SecondOrderSolver {
    public:
     // requires the operators -, +, * with float
-    template <typename T> requires ValidTarget<T>
+    template <typename T>
+        requires ValidTarget<T>
     struct State {
         T current_target, current_state, current_velocity;
     };

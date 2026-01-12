@@ -55,9 +55,9 @@ class MotionMathSystem : public ISystem {
             end_q = hemi(end_q, start_q);  // shortest path relative to start
 
             SecondOrderSolver::State<glm::vec3> state {};
-            state.current_state = rotvec(start_q);     
-            state.current_velocity = glm::vec3(0.0f); 
-            state.current_target = rotvec(end_q);     
+            state.current_state = rotvec(start_q);
+            state.current_velocity = glm::vec3(0.0f);
+            state.current_target = rotvec(end_q);
 
             motions.emplace_back(state, settings, end_q, value, start_q, safeguard);
         } else {

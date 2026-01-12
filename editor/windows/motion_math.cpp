@@ -14,13 +14,12 @@ void tmt::MotionMathPreview::display() {
     recompute |= ImGui::SliderFloat("Initial response", &initial_response, -10.f, 10.f);
     recompute |= ImGui::InputFloat("Target", &target);
 
-    if(recompute)
-    {
+    if (recompute) {
         recompute = false;
-        
+
         float incr = 1.f / static_cast<float>(NUM_SAMPLES);
 
-        SecondOrderSolver::State<float> state{};
+        SecondOrderSolver::State<float> state {};
         state.current_state = 0.f;
 
         for (uint32_t i = 0; i < NUM_SAMPLES; i++) {
@@ -30,8 +29,7 @@ void tmt::MotionMathPreview::display() {
         }
     }
 
-    if(ImPlot::BeginPlot("Preview"))
-    {
+    if (ImPlot::BeginPlot("Preview")) {
         ImPlot::SetupAxisLimits(ImAxis_X1, 0.f, 1.f, ImPlotCond_Once);
         ImPlot::SetupAxisLimits(ImAxis_Y1, -1.2f, 1.2f, ImPlotCond_Once);
 
