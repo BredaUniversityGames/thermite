@@ -38,6 +38,7 @@ class NavMesh {
 
     tmt::ResourceRef<tmt::VoxelVolume> voxel_volume;
     int lod_level = 0;
+    glm::vec3 inflation = glm::vec3(1.0f);
 
     void generate_mesh();
     std::vector<int> find_path(const int starting_node_id, const int ending_node_id);
@@ -47,4 +48,4 @@ class NavMesh {
 };
 }  // namespace tmt
 
-TMT_COMPONENT(tmt::NavMesh, "Navigation Mesh", (voxel_volume, lod_level));
+TMT_COMPONENT(tmt::NavMesh, "Navigation Mesh", (voxel_volume, lod_level, inflation));

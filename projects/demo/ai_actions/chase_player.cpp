@@ -45,11 +45,14 @@ void ChasePlayer::on_tick(tmt::Entity walking_entity, tmt::Registry& ecs, float 
     // If path has more waypoints, move to next one
     if (direction) {
         walking_transform.set_world_position(walking_entity_pos + *direction * walking.walk_speed * dt);
+        walking_transform.look_at(player_pos + *direction, glm::vec3(0.0f, 1.0f, 0.0f));
     } else {
         // Close enough to consider node reached, force path recompute
         nav_mesh.path.clear();
     }
 
+
+    tmt::engine.polyline.use_color(0.8f, 0.2f, 0.2f);
     // Debug drawing
     if (nav_mesh.path.size() > 1) {
         for (size_t i = 0; i < nav_mesh.path.size() - 1; ++i) {
