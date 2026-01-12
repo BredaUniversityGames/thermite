@@ -8,6 +8,7 @@
 #include <fmod_errors.h>
 
 #include "ecs.hpp"
+#include "components/audio_emitter.hpp"
 #include "systems/physics/components/voxel_body.hpp"
 
 namespace tmt {
@@ -74,14 +75,6 @@ void AudioInstance::set_label_parameter(const AudioParameter& event_parameter, c
     const FMOD_RESULT result = instance->setParameterByIDWithLabel(event_parameter.get_id(), value.c_str());
 
     TryLogError(result, "Failed to set parameter with label");
-}
-
-AudioEvent AudioInstance::get_audio_event() const {
-    FMOD::Studio::EventDescription* description = nullptr;
-    const FMOD_RESULT result = instance->getDescription(&description);
-    TryLogError(result, "Failed to get event form audio instance");
-
-    return {description};
 }
 
 void AudioInstance3D::set_3d_position(const glm::vec3& position) const {
@@ -153,7 +146,7 @@ FMOD_3D_ATTRIBUTES AudioInstance3D::get_3d_attributes() const {
     return attributes;
 }
 
-bool AudioEvent::is_valid() const { return description->isValid(); }
+bool AudioEvent::is_valid() const { return source_bank && description->isValid(); }
 
 bool AudioEvent::is_3d() const {
     bool is_3d = false;
@@ -182,6 +175,16 @@ std::string AudioEvent::get_path() const {
 #else
     return "";
 #endif
+}
+
+FMOD_GUID AudioEvent::get_guid() const {
+    if (TryLogError(!is_valid(), "Invalid AudioEvent for get_guid")) return {};
+
+    FMOD_GUID guid {};
+    const FMOD_RESULT result = description->getID(&guid);
+    TryLogError(result, "Failed to get the path of the audio event");
+
+    return guid;
 }
 
 std::vector<AudioParameter> AudioEvent::get_parameters() const {
@@ -244,7 +247,7 @@ glm::vec2 AudioEvent::get_min_max_distance() const {
     return {min, max};
 }
 
-bool VolumeControl::is_valid() const { return vca->isValid(); }
+bool VolumeControl::is_valid() const { return source_bank && vca->isValid(); }
 
 std::string VolumeControl::get_path() const {
 #if defined(THERMITE_EDITOR) || defined(THERMITE_DEBUG)
@@ -265,6 +268,16 @@ std::string VolumeControl::get_path() const {
 #else
     return "";
 #endif
+}
+
+FMOD_GUID VolumeControl::get_guid() const {
+    if (TryLogError(!is_valid(), "Invalid VolumeControl for get_guid")) return {};
+
+    FMOD_GUID guid {};
+    const FMOD_RESULT result = vca->getID(&guid);
+    TryLogError(result, "Failed to get the path of the volume control");
+
+    return guid;
 }
 
 float VolumeControl::get_volume() const {
@@ -304,24 +317,8 @@ void Audio::init() {
 }
 
 void Audio::update() {
-    // Loop over the all listeners to update their positions/velocities.
-    const entt::basic_group listener_group = engine.ecs.get_registry().group<AudioListener>(entt::get<Transform>);
-    for (const auto&& [entity, audio_listener, transform] : listener_group.each()) {
-        const VoxelBody* voxel_body = engine.ecs.try_get_component<VoxelBody>(entity);
-
-        FMOD_VECTOR velocity {};
-        if (voxel_body != nullptr) velocity = std::bit_cast<FMOD_VECTOR>(voxel_body->velocity);  // Set the velocity if the entity also has a voxel_body component.
-
-        const FMOD_3D_ATTRIBUTES attributes {
-            .position = std::bit_cast<FMOD_VECTOR>(transform.get_world_position()),
-            .velocity = velocity,
-            .forward = std::bit_cast<FMOD_VECTOR>(transform.get_forward()),
-            .up = std::bit_cast<FMOD_VECTOR>(transform.get_up()),
-        };
-
-        const FMOD_RESULT result = system->setListenerAttributes(audio_listener.get_listener_index(), &attributes);
-        TryLogError(result, "Failed to set listener attributes");
-    }
+    update_listeners();
+    update_emitters();
 
     system->update();
 
@@ -361,7 +358,10 @@ void Audio::on_game_resume() {
     paused_game_audio.clear();
 }
 
-void Audio::on_game_end() { paused_game_audio.clear(); }
+void Audio::on_game_end() {
+    paused_game_audio.clear();
+    stop_all_audio_instances();
+}
 
 FMOD::Studio::Bank* Audio::init_bank(const std::vector<char>& bank_data) const {
     FMOD::Studio::Bank* bank = nullptr;
@@ -379,20 +379,22 @@ FMOD::Studio::Bank* Audio::init_bank(const std::vector<char>& bank_data) const {
     return bank;
 }
 
-AudioEvent Audio::get_event(const FMOD_GUID& guid) const {
-    FMOD::Studio::EventDescription* description;
-    system->getEventByID(&guid, &description);
+FMOD::Studio::EventDescription* Audio::get_event_description(const FMOD_GUID& guid) const {
+    FMOD::Studio::EventDescription* description = nullptr;
 
-    return {description};
+    const FMOD_RESULT result = system->getEventByID(&guid, &description);
+    TryLogError(result, "Failed to get EventDescription");
+
+    return description;
 }
 
-VolumeControl Audio::get_volume_control(const FMOD_GUID& guid) const {
-    FMOD::Studio::VCA* vca;
+FMOD::Studio::VCA* Audio::get_vca(const FMOD_GUID& guid) const {
+    FMOD::Studio::VCA* vca = nullptr;
+
     const FMOD_RESULT result = system->getVCAByID(&guid, &vca);
+    TryLogError(result, "Failed to get VCA");
 
-    if (TryLogError(result, "Failed to get VolumeControl")) return nullptr;
-
-    return {vca};
+    return vca;
 }
 
 void Audio::stop_all_audio_instances() {
@@ -429,6 +431,52 @@ Audio::DopplerSettings Audio::get_3d_settings() const {
 
     TryLogError(result, "Failed to get doppler settings");
     return settings;
+}
+
+void Audio::update_listeners() const {
+    // Loop over the all listeners to update their positions/velocities.
+    const entt::basic_group listener_group = engine.ecs.get_registry().group<AudioListener>(entt::get<Transform>);
+    for (const auto&& [entity, audio_listener, transform] : listener_group.each()) {
+        const VoxelBody* voxel_body = engine.ecs.try_get_component<VoxelBody>(entity);
+
+        FMOD_VECTOR velocity {};
+        if (voxel_body != nullptr) velocity = std::bit_cast<FMOD_VECTOR>(voxel_body->velocity);  // Set the velocity if the entity also has a VoxelBody component.
+
+        const FMOD_3D_ATTRIBUTES attributes {
+            .position = std::bit_cast<FMOD_VECTOR>(transform.get_world_position()),
+            .velocity = velocity,
+            .forward = std::bit_cast<FMOD_VECTOR>(transform.get_forward()),
+            .up = std::bit_cast<FMOD_VECTOR>(transform.get_up()),
+        };
+
+        const FMOD_RESULT result = system->setListenerAttributes(audio_listener.get_listener_index(), &attributes);
+        TryLogError(result, "Failed to set listener attributes");
+    }
+}
+
+void Audio::update_emitters() {
+    // Loop over the all emitters to update their positions/velocities.
+    const entt::basic_group emitter_group = engine.ecs.get_registry().group<AudioEmitter>(entt::get<Transform>);
+    for (const auto&& [entity, audio_emitter, transform] : emitter_group.each()) {
+        audio_emitter.cleanup_playing_instances();
+
+        const VoxelBody* voxel_body = engine.ecs.try_get_component<VoxelBody>(entity);
+
+        FMOD_VECTOR velocity {};
+        if (voxel_body != nullptr) velocity = std::bit_cast<FMOD_VECTOR>(voxel_body->velocity);  // Set the velocity if the entity also has a VoxelBody component.
+
+        const FMOD_3D_ATTRIBUTES attributes {
+            .position = std::bit_cast<FMOD_VECTOR>(transform.get_world_position()),
+            .velocity = velocity,
+            .forward = std::bit_cast<FMOD_VECTOR>(transform.get_forward()),
+            .up = std::bit_cast<FMOD_VECTOR>(transform.get_up()),
+        };
+
+        for (const AudioInstance3D& instance : audio_emitter.playing_instances) {
+            const FMOD_RESULT result = instance.instance->set3DAttributes(&attributes);
+            TryLogError(result, "Failed to set emitter attributes");
+        }
+    }
 }
 
 void Audio::add_listener(entt::registry& registry, const Entity entity) const {

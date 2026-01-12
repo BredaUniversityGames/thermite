@@ -9,6 +9,7 @@
 #include "engine/core/components/component_collection.hpp"
 #include "engine/systems/physics/components/voxel_body.hpp"
 #include "engine/core/components/audio_listener.hpp"
+#include "engine/core/components/audio_emitter.hpp"
 
 namespace tmt {
 
@@ -21,7 +22,8 @@ using SerializeComponents = ComponentRegistry<
 	Camera,
 	VoxelBody,
 	ComponentCollection,
-	AudioListener
+	AudioListener,
+	AudioEmitter
 >;
 // clang-format on
 
@@ -33,7 +35,8 @@ using InspectComponents = ComponentRegistry<
 	VoxelRenderer, 
 	Camera,
 	VoxelBody,
-	AudioListener
+	AudioListener,
+	AudioEmitter
 >;
 // clang-format on
 

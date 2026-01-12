@@ -7,6 +7,7 @@
 #include <fmod_studio_common.h>
 
 #include "engine/events/game.hpp"
+#include "engine/core/resource.hpp"
 
 struct FMOD_GUID;
 struct FMOD_STUDIO_PARAMETER_ID;
@@ -31,6 +32,7 @@ class EventDescription;
 
 namespace tmt {
 
+class AudioBank;
 struct Transform;
 struct VoxelBody;
 
@@ -68,12 +70,12 @@ class AudioInstance {
     void set_label_parameter(const AudioParameter& event_parameter, const std::string& value) const;
 
    protected:
-    [[nodiscard]] AudioEvent get_audio_event() const;
-
     FMOD::Studio::EventInstance* instance {nullptr};
 };
 
 class AudioInstance3D : public AudioInstance {
+    friend class Audio;
+
     using AudioInstance::AudioInstance;
 
    public:
@@ -98,14 +100,17 @@ class AudioInstance3D : public AudioInstance {
 
 class AudioEvent {
    public:
-    AudioEvent(FMOD::Studio::EventDescription* description) : description {description} {}
+    AudioEvent() = default;
+    AudioEvent(const ResourceRef<AudioBank>& source_bank, FMOD::Studio::EventDescription* description) : source_bank {source_bank}, description {description} {}
 
     [[nodiscard]] bool is_valid() const;
     [[nodiscard]] bool is_3d() const;
     // Get the path/name of the AudioEvent (returns empty string when not in debug mode and not using the editor).
     [[nodiscard]] std::string get_path() const;
-
+    [[nodiscard]] FMOD_GUID get_guid() const;
+    [[nodiscard]] const ResourceRef<AudioBank>& get_source_bank() const { return source_bank; }
     [[nodiscard]] std::vector<AudioParameter> get_parameters() const;
+
     AudioInstance play() const;
     AudioInstance3D play_3d() const;
 
@@ -115,16 +120,20 @@ class AudioEvent {
     [[nodiscard]] bool operator!=(const AudioEvent& other) const { return description != other.description; }
 
    private:
+    ResourceRef<AudioBank> source_bank;
     FMOD::Studio::EventDescription* description {nullptr};
 };
 
 class VolumeControl {
    public:
-    VolumeControl(FMOD::Studio::VCA* vca) : vca {vca} {}
+    VolumeControl() = default;
+    VolumeControl(const ResourceRef<AudioBank>& source_bank, FMOD::Studio::VCA* vca) : source_bank {source_bank}, vca {vca} {}
 
     [[nodiscard]] bool is_valid() const;
     // Get the path/name of the VolumeControl (returns empty string when not in debug mode and not using the editor).
     [[nodiscard]] std::string get_path() const;
+    [[nodiscard]] FMOD_GUID get_guid() const;
+    [[nodiscard]] const ResourceRef<AudioBank>& get_source_bank() const { return source_bank; }
 
     [[nodiscard]] float get_volume() const;
     void set_volume(float volume) const;
@@ -133,6 +142,7 @@ class VolumeControl {
     [[nodiscard]] bool operator!=(const VolumeControl& other) const { return vca != other.vca; }
 
    private:
+    ResourceRef<AudioBank> source_bank;
     FMOD::Studio::VCA* vca {nullptr};
 };
 
@@ -160,16 +170,11 @@ class Audio : public OnGamePause, public OnGameResume, public OnGameEnd {
     void update();
     void end() const;
 
-    // Used to make sure pausing/ending the game doesn't keep playing the game's audio.
-    void on_game_pause() override;
-    void on_game_resume() override;
-    void on_game_end() override;
-
     // Initialize an FMOD bank with all its assets from a .bank file in memory.
     [[nodiscard]] FMOD::Studio::Bank* init_bank(const std::vector<char>& bank_data) const;
 
-    [[nodiscard]] AudioEvent get_event(const FMOD_GUID& guid) const;
-    [[nodiscard]] VolumeControl get_volume_control(const FMOD_GUID& guid) const;
+    [[nodiscard]] FMOD::Studio::EventDescription* get_event_description(const FMOD_GUID& guid) const;
+    [[nodiscard]] FMOD::Studio::VCA* get_vca(const FMOD_GUID& guid) const;
 
     void stop_all_audio_instances();
     void set_global_parameter(const AudioParameter& parameter, float value) const;
@@ -180,6 +185,14 @@ class Audio : public OnGamePause, public OnGameResume, public OnGameEnd {
     [[nodiscard]] DopplerSettings get_3d_settings() const;
 
    private:
+    void update_listeners() const;
+    static void update_emitters();
+
+    // Used to make sure pausing/ending the game doesn't keep playing the game's audio.
+    void on_game_pause() override;
+    void on_game_resume() override;
+    void on_game_end() override;
+
     void add_listener(entt::registry& registry, Entity entity) const;
     void remove_listener() const;
 

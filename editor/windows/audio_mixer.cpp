@@ -4,6 +4,8 @@
 #include "engine/core/audio.hpp"
 #include "engine/core/resources.hpp"
 #include "engine/core/resources/audio_bank.hpp"
+#include "engine/tools/serializer/audio.hpp"
+#include "engine/tools/serializer.hpp"
 
 #include <imgui.h>
 
@@ -14,7 +16,8 @@ void audio_drag_source(const std::string& type_name, const Type& value) {
     if (!ImGui::BeginDragDropSource()) return;
 
     ImGui::Text("%s: %s", type_name.c_str(), value.get_path().c_str());
-    ImGui::SetDragDropPayload(type_name.c_str(), &value, sizeof(Type));
+    const std::string json_string = tmt::Serializer::serialize(value).dump(4);
+    ImGui::SetDragDropPayload(type_name.c_str(), json_string.data(), json_string.size());
     ImGui::EndDragDropSource();
 }
 
@@ -148,5 +151,5 @@ int AudioMixer::get_selection_flags(const Type& selection_compare) {
     return ImGuiTreeNodeFlags_Bullet;
 }
 
-void AudioMixer::invalidate_selection() { selection = AudioEvent {nullptr}; }
+void AudioMixer::invalidate_selection() { selection = AudioEvent {}; }
 }  // namespace tmt
