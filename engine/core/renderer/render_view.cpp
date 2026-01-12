@@ -44,8 +44,11 @@ void RenderView::init() {
 
     /* Create the visibility buffer */
     const Size3D view_size {gpu_view.resolution.x, gpu_view.resolution.y};
-    vbuffer.texture = bank.create_texture("Visibility Buffer Texture", TextureUsage::Storage, TextureFormat::RG32Uint, view_size).expect("failed to create vbuffer texture.");
+    vbuffer.texture =
+        bank.create_texture("Visibility Buffer Texture", TextureUsage::Storage | TextureUsage::Sampled, TextureFormat::RG32Uint, view_size).expect("failed to create vbuffer texture.");
     vbuffer.image = bank.create_image("Visibility Buffer Image", vbuffer.texture).expect("failed to create vbuffer image.");
+    dbuffer.texture = bank.create_texture("Depth Buffer Texture", TextureUsage::DepthStencil, TextureFormat::D32Sfloat, view_size).expect("failed to create depth buffer texture.");
+    dbuffer.image = bank.create_image("Depth Buffer Image", dbuffer.texture).expect("failed to create depth buffer image.");
 
     /* Create the illuminance buffer */
     ibuffer.texture = bank.create_texture("Illuminance Buffer Texture", TextureUsage::Storage, TextureFormat::RG11B10Ufloat, view_size).expect("failed to create ibuffer texture.");
@@ -109,6 +112,8 @@ void RenderView::deinit() {
     /* Destroy screen buffers */
     bank.destroy(vbuffer.image);
     bank.destroy(vbuffer.texture);
+    bank.destroy(dbuffer.image);
+    bank.destroy(dbuffer.texture);
     bank.destroy(ibuffer.image);
     bank.destroy(ibuffer.texture);
     bank.destroy(viewport.texture);
@@ -146,6 +151,7 @@ void RenderView::resize_textures() {
     /* Resize the screen buffers */
     bank.resize_texture(viewport.texture, view_size).expect("failed to resize viewport texture.");
     bank.resize_texture(vbuffer.texture, view_size).expect("failed to resize vbuffer texture.");
+    bank.resize_texture(dbuffer.texture, view_size).expect("failed to resize depth buffer texture.");
     bank.resize_texture(ibuffer.texture, view_size).expect("failed to resize ibuffer texture.");
 
     /* Resize macrofacet buffers */
