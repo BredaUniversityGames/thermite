@@ -9,9 +9,11 @@ const float friction = 0.3f;     // Global friction coefficient
 using namespace tmt;
 
 void ConstraintSolver::solve_velocities(const float) {
+    size_t size = contact_index;
     // Solve velocity constraints
     for (size_t i = 0; i < velocity_iterations; i++) {
-        for (auto& collision : collisions) {
+        for (size_t j = 0; j < size; j++) {
+            auto& collision = collisions[j];
             // Get the rigid bodies involved in the constraint
             auto& body_a = engine.ecs.get_registry().get<VoxelBody>(collision.entity_a);
             auto& body_b = engine.ecs.get_registry().get<VoxelBody>(collision.entity_b);
@@ -97,8 +99,10 @@ void ConstraintSolver::solve_velocities(const float) {
 }
 
 void ConstraintSolver::solve_positions(const float) {
+    size_t size = contact_index;
     for (size_t i = 0; i < position_iterations; i++) {
-        for (auto& collision : collisions) {
+        for (size_t j = 0; j < size; j++) {
+            auto& collision = collisions[j];
             // Get the rigid bodies involved in the constraint
             auto& body_a = engine.ecs.get_registry().get<VoxelBody>(collision.entity_a);
             auto& body_b = engine.ecs.get_registry().get<VoxelBody>(collision.entity_b);
@@ -142,4 +146,5 @@ void ConstraintSolver::solve_positions(const float) {
     }
 
     collisions.clear();
+    contact_index = 0;
 }

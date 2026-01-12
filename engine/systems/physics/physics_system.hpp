@@ -29,6 +29,9 @@ class Physics : public ISystem {
     ConstraintSolver solver = {};
     Bvh2<VoxelObject> bvh {};
 
+    template <typename... Args>
+    void generate_constraint(const int index, const entt::basic_group<Args...>& group);
+
     // Simulation functions
     void generate_voxel_constraints_range(const int index, const int size);
     bool sat_early_out(const VoxelBody& vb_a, const VoxelBody& vb_b);
@@ -37,6 +40,7 @@ class Physics : public ISystem {
     bool is_separated(const glm::vec3& axis, const VoxelBody::Box& box_a, const VoxelBody::Box& box_b, float& overlap) const;
     void check_neighbors(const VoxelBody& vb_a, const VoxelBody& vb_b, const size_t x, const size_t y, const size_t z, Collision& coll) const;
     void apply_velocities() const;
+    void generate_constraints_parallel();
 
    public:
     // Static utility functions

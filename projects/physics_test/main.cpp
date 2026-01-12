@@ -250,7 +250,7 @@ void Game::on_update(const tmt::FrameData& time) {
 
     cooldown -= time.delta_time;
 
-    if (tmt::engine.input.is_mouse_button_just_pressed(tmt::MouseButton::LEFT) && cooldown <= 0.0f) {
+    if (tmt::engine.input.is_mouse_button_pressed(tmt::MouseButton::LEFT) && cooldown <= 0.0f) {
         auto& cam_transform = tmt::engine.ecs.get_component<tmt::Transform>(cam);
         const glm::vec3 cam_pos = cam_transform.get_world_position();
         const glm::vec3 cam_forward = cam_transform.get_forward();
@@ -267,11 +267,16 @@ void Game::on_update(const tmt::FrameData& time) {
                 vb.type = tmt::VoxelBody::DYNAMIC;
                 tmt::Physics::initialize_voxel_body(vb);
 
-                const glm::vec3 x_offset = cam_transform.get_right() * ((float)x * 1.8f);
-                const glm::vec3 y_offset = cam_transform.get_up() * ((float)y * 1.8f);
+                const glm::vec3 x_offset = cam_transform.get_right() * ((float)x * 2.5f);
+                const glm::vec3 y_offset = cam_transform.get_up() * ((float)y * 2.5f);
 
                 tmt::Physics::set_position(vb, cam_pos + cam_forward * 2.0f + x_offset + y_offset);
-                tmt::Physics::set_rotation(vb, cam_transform.get_world_rotation());
+
+                float random_rot_x = ((float)(rand() % 1000) / 1000.0f) * 3.1415f;
+                float random_rot_y = ((float)(rand() % 1000) / 1000.0f) * 3.1415f;
+                float random_rot_z = ((float)(rand() % 1000) / 1000.0f) * 3.1415f;
+
+                tmt::Physics::set_rotation(vb, cam_transform.get_world_rotation() * glm::vec3(random_rot_x, random_rot_y, random_rot_z));
                 tmt::Physics::add_force(vb, cam_forward * 20.0f);
             }
         }
@@ -291,7 +296,7 @@ void Game::on_update(const tmt::FrameData& time) {
         //    tmt::Physics::add_force(vb, cam_forward * 20.0f);
         //}
 
-        cooldown = 0.1f;
+        cooldown = 0.10f;
     }
 
     if (time_passed > 0.005f) {
