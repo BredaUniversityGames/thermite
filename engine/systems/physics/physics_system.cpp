@@ -48,38 +48,43 @@ void draw_node(tmt::Bvh2<VoxelObject>& bvh, uint32_t current_node) {
 }
 
 void Physics::on_update(const FrameData&) {
-    // engine.polyline.use_line_width(0.25f);
-    // for (const auto& [entity, vb, transform] : engine.ecs.get_registry().view<VoxelBody, Transform>().each()) {
-    //     auto edges = vb.get_world_edges();
-    //     engine.polyline.use_color(vb.type == VoxelBody::DYNAMIC ? glm::vec4(0, 1, 0, 1) : glm::vec4(1, 0, 0, 1));
-    //     for (size_t i = 0; i < edges.size(); i++) {
-    //         engine.polyline.draw_line(edges[i].start, edges[i].end);
-    //     }
+    engine.polyline.use_line_width(0.25f);
+    for (const auto& [entity, vb, transform] : engine.ecs.get_registry().view<VoxelBody, Transform>().each()) {
+        auto edges = vb.get_world_edges();
+        engine.polyline.use_color(vb.type == VoxelBody::DYNAMIC ? glm::vec4(0, 1, 0, 1) : glm::vec4(1, 0, 0, 1));
+        for (size_t i = 0; i < edges.size(); i++) {
+            engine.polyline.draw_line(edges[i].start, edges[i].end);
+        }
 
-    //    //engine.renderer.draw_cross(vb.center_of_mass, glm::vec3(1.0f, 0.0f, 1.0f), 0.2f);
-    //    //engine.renderer.draw_cross(vb.position, glm::vec3(1.0f, 0.0f, 0.0f), 0.2f);
-    //    //engine.renderer.draw_cross(vb.position + vb.rotation * vb.com_local_offset, glm::vec3(0.0f, 0.0f, 1.0f), 0.2f);
+        engine.polyline.use_color(1.0f, 0.0f, 0.0f);
+        engine.polyline.draw_circle(vb.center_of_mass, 0.1f);  // glm::vec3(1.0f, 0.0f, 1.0f), 0.2f);
+        engine.polyline.use_color(0.0f, 1.0f, 0.0f);
+        engine.polyline.draw_circle(vb.position, 0.1f);
+        engine.polyline.use_color(0.0f, 0.0f, 1.0f);
+        engine.polyline.draw_circle(vb.position + vb.rotation * vb.com_local_offset, 0.1f);
+        // engine.renderer.draw_cross(vb.position, glm::vec3(1.0f, 0.0f, 0.0f), 0.2f);
+        // engine.renderer.draw_cross(vb.position + vb.rotation * vb.com_local_offset, glm::vec3(0.0f, 0.0f, 1.0f), 0.2f);
 
-    //    // // Draw voxel normals
-    //    // glm::uvec3 size = vb.resource.get()->size;
-    //    // auto* tree = vb.resource.get()->blas.get();
-    //    // for (size_t z = 0; z < size.z; z++) {
-    //    //     for (size_t y = 0; y < size.y; y++) {
-    //    //         for (size_t x = 0; x < size.x; x++) {
-    //    //             const tmt::PhysicsVoxel* voxel = tree->get_physics_voxel(x, y, z);
-    //    //             if (voxel == nullptr || voxel->normal_index == 0 || voxel->normal_index == 28) continue;
+        // // Draw voxel normals
+        // glm::uvec3 size = vb.resource.get()->size;
+        // auto* tree = vb.resource.get()->blas.get();
+        // for (size_t z = 0; z < size.z; z++) {
+        //     for (size_t y = 0; y < size.y; y++) {
+        //         for (size_t x = 0; x < size.x; x++) {
+        //             const tmt::PhysicsVoxel* voxel = tree->get_physics_voxel(x, y, z);
+        //             if (voxel == nullptr || voxel->normal_index == 0 || voxel->normal_index == 28) continue;
 
-    //    //            glm::ivec3 local_normal = voxel->get_normal();
-    //    //            glm::vec3 normal = vb.rotation * glm::vec3((float)local_normal.x, (float)local_normal.y, (float)local_normal.z);
-    //    //            glm::vec3 local_pos = glm::vec3(
-    //    //                ((float)x + 0.5f - (size.x * 0.5f)) * UNITS_PER_VOXEL, ((float)y + 0.5f - (size.y * 0.5f)) * UNITS_PER_VOXEL, ((float)z + 0.5f - (size.z * 0.5f)) * UNITS_PER_VOXEL
-    //    //            );
-    //    //            glm::vec3 world_pos = vb.position + (vb.rotation * local_pos);
-    //    //            tmt::engine.renderer.draw_arrow(world_pos, normal, glm::vec3(0.0f, 0.6f, 0.0f), 0.15f, 0.05f);
-    //    //        }
-    //    //    }
-    //    //}
-    //}
+        //            glm::ivec3 local_normal = voxel->get_normal();
+        //            glm::vec3 normal = vb.rotation * glm::vec3((float)local_normal.x, (float)local_normal.y, (float)local_normal.z);
+        //            glm::vec3 local_pos = glm::vec3(
+        //                ((float)x + 0.5f - (size.x * 0.5f)) * UNITS_PER_VOXEL, ((float)y + 0.5f - (size.y * 0.5f)) * UNITS_PER_VOXEL, ((float)z + 0.5f - (size.z * 0.5f)) * UNITS_PER_VOXEL
+        //            );
+        //            glm::vec3 world_pos = vb.position + (vb.rotation * local_pos);
+        //            tmt::engine.renderer.draw_arrow(world_pos, normal, glm::vec3(0.0f, 0.6f, 0.0f), 0.15f, 0.05f);
+        //        }
+        //    }
+        //}
+    }
 
     // if (bvh.nodes) draw_node(bvh, 0u);
     //  draw_node(bvh, bvh.nodes[0].left_first + 1u);
@@ -178,7 +183,7 @@ void draw_solids(
             engine.polyline.use_color(0.7f, 0.9f, 0.1f);
             engine.polyline.use_line_width(0.1f);
         }
-        
+
         engine.polyline.draw_obb(child_center, glm::vec3(child_half_extent), rotation, Engine::Config::FIXED_TIME_STEP + 0.1f);
 
         // Get child node index
@@ -197,7 +202,7 @@ void draw_solids(
 
 void compare_trees(
     tmt::Svt64* tree_a, const glm::vec3& center_a, const glm::quat& rotation_a, float half_extent_a, tmt::Svt64* tree_b, const glm::vec3& center_b, const glm::quat& rotation_b,
-    float half_extent_b
+    float half_extent_b, Collision& coll
 ) {
     struct StackEntry {
         uint32_t node_index_a;
@@ -229,10 +234,115 @@ void compare_trees(
 
             // If voxel is overlapping with b leaf and is CORNER or EDGE, Do collision check with all voxels in leaf B
 
+            // Precompute overlap values
+            const float child_half_extent_a = entry.half_extent_a * 0.25f;
+            const float radius_b = entry.half_extent_b * SQRT3;
+            const float combined_radius = child_half_extent_a + radius_b;
+            const float combined_radius_sq = combined_radius * combined_radius;
+
+            uint64_t mask_a = node_a.child_mask;
+            while (mask_a != 0u) {
+                const uint32_t i_a = std::countr_zero(mask_a);
+                mask_a &= mask_a - 1u;
+
+                const uint32_t child_offset_a = __popcnt64(node_a.child_mask & ((1ull << i_a) - 1u));
+                const uint32_t child_index_a = node_a.abs_ptr() + child_offset_a;
+                const PhysicsVoxel* voxel_a = &tree_a->physics_data[child_index_a];
+
+                if (voxel_a->type == PhysicsVoxelType::INSIDE) continue;
+
+                const uint32_t local_x_a = (i_a >> 0u) & 3u;
+                const uint32_t local_y_a = (i_a >> 4u) & 3u;
+                const uint32_t local_z_a = (i_a >> 2u) & 3u;
+
+                const glm::vec3 local_offset_a = glm::vec3(
+                    (((float)local_x_a + 0.5f) * 0.25f - 0.5f) * entry.half_extent_a * 2.0f, (((float)local_y_a + 0.5f) * 0.25f - 0.5f) * entry.half_extent_a * 2.0f,
+                    (((float)local_z_a + 0.5f) * 0.25f - 0.5f) * entry.half_extent_a * 2.0f
+                );
+                const glm::vec3 child_center_a = entry.center_a + (rotation_a * local_offset_a);
+
+                const glm::vec3 diff_a = entry.center_b - child_center_a;
+                if (glm::dot(diff_a, diff_a) > combined_radius_sq) {
+                    /*engine.polyline.use_color(0.0f, 0.0f, 1.0f, 0.75f);
+                    engine.polyline.use_line_width(2.0f, true);
+                    engine.polyline.draw_obb(child_center_a, glm::vec3(child_half_extent_a), rotation_a, Engine::Config::FIXED_TIME_STEP + 0.1f);*/
+
+                    continue;
+                }
+
+                const float child_half_extent_b = entry.half_extent_b * 0.25f;
+                const float combined_child_radius = child_half_extent_a + child_half_extent_b;
+                const float child_radius_sq = combined_child_radius * combined_child_radius;
+
+                // Loop over all solid voxels in leaf B
+                uint64_t mask_b = node_b.child_mask;
+                while (mask_b != 0u) {
+                    // Find index of first set bit and clear it
+                    const uint32_t i_b = std::countr_zero(mask_b);
+                    mask_b &= mask_b - 1u;
+
+                    const uint32_t local_x_b = (i_b >> 0u) & 3u;
+                    const uint32_t local_y_b = (i_b >> 4u) & 3u;
+                    const uint32_t local_z_b = (i_b >> 2u) & 3u;
+
+                    const glm::vec3 local_offset_b = glm::vec3(
+                        (((float)local_x_b + 0.5f) * 0.25f - 0.5f) * entry.half_extent_b * 2.0f, (((float)local_y_b + 0.5f) * 0.25f - 0.5f) * entry.half_extent_b * 2.0f,
+                        (((float)local_z_b + 0.5f) * 0.25f - 0.5f) * entry.half_extent_b * 2.0f
+                    );
+                    const glm::vec3 child_center_b = entry.center_b + (rotation_b * local_offset_b);
+
+                    const glm::vec3 dir = child_center_b - child_center_a;
+                    const float dist = glm::dot(dir, dir);
+                    if (dist > child_radius_sq) continue;
+
+                    const uint32_t child_offset_b = __popcnt64(node_b.child_mask & ((1ull << i_b) - 1u));
+                    const uint32_t child_index_b = node_b.abs_ptr() + child_offset_b;
+                    const PhysicsVoxel* voxel_b = &tree_b->physics_data[child_index_b];
+
+                    ContactPoint contact = {};
+                    contact.point = child_center_a;
+
+                    // Decide penetration
+                    if (voxel_a->type == PhysicsVoxelType::INSIDE || voxel_b->type == PhysicsVoxelType::INSIDE)
+                        contact.penetration = UNITS_PER_VOXEL;
+                    else
+                        contact.penetration = UNITS_PER_VOXEL - sqrtf(dist);
+
+                    // Decide normal
+                    if (voxel_a->type == PhysicsVoxelType::INSIDE || voxel_a->type == PhysicsVoxelType::FACE)
+                        contact.normal = glm::normalize((glm::vec3)voxel_a->get_normal() * glm::inverse(rotation_a));
+                    else if (voxel_b->type == PhysicsVoxelType::INSIDE || voxel_b->type == PhysicsVoxelType::FACE)
+                        contact.normal = -glm::normalize((glm::vec3)voxel_b->get_normal() * glm::inverse(rotation_b));
+                    else if (voxel_a->normal_index == 0 || voxel_a->normal_index == 28)  // if there is no valid normal index
+                        contact.normal = glm::normalize(dir);
+                    else {
+                        // if there is a valid normal index use its value to check validity of normal
+                        const glm::vec3 lut_normal = (glm::vec3)voxel_a->get_normal() * glm::inverse(rotation_a);
+                        const glm::vec3 normal = glm::dot(dir, -lut_normal) < 0 ? glm::normalize(dir) : -glm::normalize(dir);
+                        contact.normal = normal;
+                    }
+
+                    if (std::isnan(contact.normal.x)) {
+                        continue;
+                    }
+
+                    coll.contacts.push_back(contact);
+
+                    engine.polyline.use_color(1.0f, 0.0f, 0.0f);
+                    engine.polyline.use_line_width(1.0f, true);
+                    engine.polyline.draw_obb(child_center_a, glm::vec3(child_half_extent_a), rotation_a, Engine::Config::FIXED_TIME_STEP + 0.1f);
+                    engine.polyline.draw_arrow(contact.point, contact.normal, 0.2f, Engine::Config::FIXED_TIME_STEP + 0.1f);
+
+                    // engine.polyline.use_color(0.0f, 1.0f, 0.0f);
+                    // engine.polyline.use_line_width(2.0f, true);
+                    // engine.polyline.draw_obb(child_center_b, glm::vec3(child_half_extent_b), rotation_b, Engine::Config::FIXED_TIME_STEP + 0.1f);
+                }
+            }
+
             // Debug draw leaf node
-            //engine.polyline.use_color(0.0f, 1.0f, 0.0f);
-            //engine.polyline.use_line_width(0.1f);
-            //engine.polyline.draw_obb(entry.center_a, glm::vec3(entry.half_extent_a), rotation_a, Engine::Config::FIXED_TIME_STEP + 0.1f);
+            // engine.polyline.use_color(0.0f, 1.0f, 0.0f);
+            // engine.polyline.use_line_width(0.1f);
+            // engine.polyline.draw_obb(entry.center_a, glm::vec3(entry.half_extent_a), rotation_a, Engine::Config::FIXED_TIME_STEP + 0.1f);
             continue;
         }
 
@@ -270,11 +380,11 @@ void compare_trees(
                 const glm::vec3 diff = child_center - entry.center_b;
                 if (glm::dot(diff, diff) > combined_radius_sq) continue;
 
-                // Debug draw OBB
-                engine.polyline.use_color(0.1f, 0.1f, 0.9f);
-                engine.polyline.use_line_width(0.1f);
-                //engine.polyline.draw_sphere(child_center, child_radius_a, 12u, Engine::Config::FIXED_TIME_STEP + 0.1f);
-                engine.polyline.draw_obb(child_center, glm::vec3(child_half_extent), rotation_a, Engine::Config::FIXED_TIME_STEP + 0.1f);
+                //// Debug draw OBB
+                // engine.polyline.use_color(0.1f, 0.1f, 0.9f);
+                // engine.polyline.use_line_width(2.0f, true);
+                //// engine.polyline.draw_sphere(child_center, child_radius_a, 12u, Engine::Config::FIXED_TIME_STEP + 0.1f);
+                // engine.polyline.draw_obb(child_center, glm::vec3(child_half_extent), rotation_a, Engine::Config::FIXED_TIME_STEP + 0.1f);
 
                 // Get child node index
                 const uint32_t child_offset = __popcnt64(node_a.child_mask & ((1ull << i) - 1u));
@@ -310,10 +420,10 @@ void compare_trees(
                 if (glm::dot(diff, diff) > combined_radius_sq) continue;
 
                 // Debug draw OBB
-                engine.polyline.use_color(0.9f, 0.1f, 0.1f);
+                /*engine.polyline.use_color(0.1f, 0.9f, 0.1f);
                 engine.polyline.use_line_width(0.1f);
                 engine.polyline.draw_obb(child_center, glm::vec3(child_half_extent), rotation_b, Engine::Config::FIXED_TIME_STEP + 0.1f);
-
+*/
                 const uint32_t child_offset = __popcnt64(node_b.child_mask & ((1ull << i) - 1u));
                 const uint32_t child_index = node_b.abs_ptr() + child_offset;
 
@@ -390,17 +500,16 @@ void Physics::generate_voxel_constraints_range(const int index, const int size) 
                 const glm::vec3 extents_diff_b = half_extent_b - ((glm::vec3)other_vb.resource->size * 0.5f * UNITS_PER_VOXEL);
                 const glm::vec3 root_center_b = other_vb.position + (other_vb.rotation * extents_diff_b);
 
-                engine.polyline.use_color(0.1f, 0.1f, 0.9f);
-                engine.polyline.use_line_width(0.25f);
-                engine.polyline.draw_sphere(root_center_a, half_extent_a * SQRT3, 64u, Engine::Config::FIXED_TIME_STEP + 0.1f);
+                // engine.polyline.use_color(0.1f, 0.1f, 0.9f);
+                // engine.polyline.use_line_width(0.25f);
+                // engine.polyline.draw_sphere(root_center_a, half_extent_a * SQRT3, 64u, Engine::Config::FIXED_TIME_STEP + 0.1f);
 
-                engine.polyline.use_color(0.9f, 0.1f, 0.1f);
-                engine.polyline.draw_sphere(root_center_b, half_extent_b * SQRT3, 64u, Engine::Config::FIXED_TIME_STEP + 0.1f);
+                // engine.polyline.use_color(0.9f, 0.1f, 0.1f);
+                // engine.polyline.draw_sphere(root_center_b, half_extent_b * SQRT3, 64u, Engine::Config::FIXED_TIME_STEP + 0.1f);
 
+                compare_trees(tree_a, root_center_a, vb.rotation, half_extent_a, tree_b, root_center_b, other_vb.rotation, half_extent_b, coll);
 
-                compare_trees(tree_a, root_center_a, vb.rotation, half_extent_a, tree_b, root_center_b, other_vb.rotation, half_extent_b);
-
-                //draw_solids(tree_a, 0u, 0u, half_extent_a, root_center_a, extents_diff_a, vb.rotation);
+                // draw_solids(tree_a, 0u, 0u, half_extent_a, root_center_a, extents_diff_a, vb.rotation);
 
                 // find_solids(tree_a, 0u, 0);
                 // find_solids(tree_a, 0u, 0u, vb.position, half_extent, vb);
@@ -433,18 +542,21 @@ void Physics::generate_voxel_constraints_range(const int index, const int size) 
 
                 //// Find overlapping area's
                 //// A's local collision overlap
-                // glm::ivec3 min_a = {};
-                // glm::ivec3 max_a = {};
-                // get_overlap(vb, other_vb, min_a, max_a);
+                //glm::ivec3 min_a = {};
+                //glm::ivec3 max_a = {};
+                //get_overlap(vb, other_vb, min_a, max_a);
 
-                // for (size_t z = min_a.z; z < max_a.z; z++) {
-                //     for (size_t y = min_a.y; y < max_a.y; y++) {
-                //         for (size_t x = min_a.x; x < max_a.x; x++) {
-                //             if (coll.contacts.size() >= max_contacts) continue;
-                //             check_neighbors(vb, other_vb, x, y, z, coll);
-                //         }
-                //     }
-                // }
+                //Collision old_coll(entity, other_entity);
+                //old_coll.contacts.reserve(64);
+
+                //for (size_t z = min_a.z; z < max_a.z; z++) {
+                //    for (size_t y = min_a.y; y < max_a.y; y++) {
+                //        for (size_t x = min_a.x; x < max_a.x; x++) {
+                //            if (coll.contacts.size() >= max_contacts) continue;
+                //            check_neighbors(vb, other_vb, x, y, z, old_coll);
+                //        }
+                //    }
+                //}
 
                 if (coll.contacts.size() <= 0) continue;
 
@@ -764,6 +876,11 @@ void Physics::initialize_voxel_body(VoxelBody& vb) {
     // Calculate mass and inertia
     size_t filled_counter = 0;
     glm::vec3 sum = {};
+    const glm::vec3 size = (glm::vec3)vb.resource->size * UNITS_PER_VOXEL;
+    vb.width = size.x;
+    vb.height = size.y;
+    vb.depth = size.z;
+
     const glm::vec3 half_scale = glm::vec3(vb.width, vb.height, vb.depth) * 0.5f;
 
     const auto& voxels = vb.resource;
@@ -776,9 +893,9 @@ void Physics::initialize_voxel_body(VoxelBody& vb) {
 
                 filled_counter++;
 
-                glm::vec3 local_pos =
-                    glm::vec3(((float)x + 0.5f - half_scale.x) * UNITS_PER_VOXEL, ((float)y + 0.5f - half_scale.y) * UNITS_PER_VOXEL, ((float)z + 0.5f - half_scale.z) * UNITS_PER_VOXEL);
-                sum += local_pos;
+                const glm::vec3 local_pos =
+                    glm::vec3(((float)x + 0.5f) * UNITS_PER_VOXEL, ((float)y + 0.5f) * UNITS_PER_VOXEL, ((float)z + 0.5f) * UNITS_PER_VOXEL);
+                sum += local_pos - half_scale;
             }
         }
     }
