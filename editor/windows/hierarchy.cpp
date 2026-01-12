@@ -187,6 +187,7 @@ bool Hierarchy::display_entity(const HierarchyState& state) {
     flags |= ImGuiTreeNodeFlags_SpanAvailWidth;
     flags |= ImGuiTreeNodeFlags_DrawLinesToNodes;
     flags |= ImGuiTreeNodeFlags_OpenOnArrow;
+    flags |= ImGuiTreeNodeFlags_OpenOnDoubleClick;
 
     const bool is_selected = selected_entities.contains(state.entity);
     if (is_selected) flags |= ImGuiTreeNodeFlags_Selected;
