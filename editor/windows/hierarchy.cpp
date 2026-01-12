@@ -186,6 +186,7 @@ bool Hierarchy::display_entity(const HierarchyState& state) {
     flags |= ImGuiTreeNodeFlags_FramePadding;
     flags |= ImGuiTreeNodeFlags_SpanAvailWidth;
     flags |= ImGuiTreeNodeFlags_DrawLinesToNodes;
+    flags |= ImGuiTreeNodeFlags_OpenOnArrow;
 
     const bool is_selected = selected_entities.contains(state.entity);
     if (is_selected) flags |= ImGuiTreeNodeFlags_Selected;
@@ -194,8 +195,8 @@ bool Hierarchy::display_entity(const HierarchyState& state) {
     if (is_leaf || filtering) flags |= ImGuiTreeNodeFlags_Leaf;
 
     const Entity parent = state.transform.get_parent();
-    const bool is_begin = state.position == selected_index_begin && selection_parent == parent;
-    if (is_begin) flags |= ImGuiTreeNodeFlags_Bullet;
+    //const bool is_begin = state.position == selected_index_begin && selection_parent == parent;
+    //if (is_begin) flags |= ImGuiTreeNodeFlags_Bullet;
 
     /* Debug name */
     // const auto name = state.name.name + " " + std::to_string(state.position.x) + "-" + std::to_string(state.position.y);
