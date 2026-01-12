@@ -35,7 +35,7 @@ void ChasePlayer::on_tick(tmt::Entity walking_entity, tmt::Registry&, float dt) 
 
     // If path has more waypoints, move to next one
     if (direction.x != 0 && direction.y != 0 && direction.z != 0) {
-        walking_transform.set_world_position(walking_entity_pos + direction * walking.walk_speed * 0.1f * dt);
+        walking_transform.set_world_position(walking_entity_pos + direction * walking.walk_speed * dt);
         
     } else {
         // At the last node or no path - stop moving

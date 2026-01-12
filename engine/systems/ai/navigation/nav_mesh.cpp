@@ -204,8 +204,7 @@ std::vector<int> NavMesh::find_path(const int starting_node_id, const int ending
                 nodes[i].h = 0.0f;
                 nodes[i].parent = 0;
             }
-            // std::reverse(path.begin(), path.end());
-            return path;
+            return repath;
         }
         repath.push_back(nodes[current].parent);
         current = nodes[current].parent;
