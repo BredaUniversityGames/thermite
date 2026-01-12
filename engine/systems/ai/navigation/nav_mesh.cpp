@@ -230,19 +230,17 @@ glm::vec3 tmt::NavMesh::follow_path(glm::vec3 start, glm::vec3 end) {
     int closest_node_id = find_closest_node(end);
     std::vector<int> new_path = find_path(start_pos, closest_node_id);
     path = new_path;
-    if (new_path.size() < 2) return glm::vec3(0, 0, 0);
+    if (new_path.size() < 1) return glm::vec3(0, 0, 0);
     
-
-    
-    glm::vec3 target_pos = nodes[new_path[1]].world_pos;
-    if (path.size() > 2.0f) {
+    glm::vec3 target_pos = nodes[new_path[0]].world_pos;
+    if (path.size() > 2) {
         float attraction_distance = 1.5f;
-        int current_node = 0;
+        int current_node = new_path.size() - 1;
         glm::vec3 current_pos = nodes[new_path[current_node]].world_pos;
         float travelled_distance = 0.0f;
-        while (1) {
+        while (current_node >= 1) {
             // Get next segment
-            glm::vec3 next_pos = nodes[new_path[current_node + 1]].world_pos;
+            glm::vec3 next_pos = nodes[new_path[current_node - 1]].world_pos;
             float segment_distance = glm::distance(current_pos, next_pos);
             // Check if we exceed attraction distance
             if (travelled_distance + segment_distance > attraction_distance) {
@@ -253,7 +251,7 @@ glm::vec3 tmt::NavMesh::follow_path(glm::vec3 start, glm::vec3 end) {
             // Exit loop
             } else {
                 travelled_distance += segment_distance;
-                current_node++;
+                current_node--;
                 current_pos = next_pos;
                 if (current_node >= (int)new_path.size() - 1) {
                     target_pos = nodes[new_path.back()].world_pos;
@@ -268,6 +266,7 @@ glm::vec3 tmt::NavMesh::follow_path(glm::vec3 start, glm::vec3 end) {
     if (glm::distance(target_pos, start) > 0.01f) {
         return glm::normalize(target_pos - start);
     }
+    return glm::vec3(0, 0, 0);
 }
 
 void tmt::NavMesh::inspect() {

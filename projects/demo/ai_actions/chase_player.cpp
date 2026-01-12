@@ -34,7 +34,7 @@ void ChasePlayer::on_tick(tmt::Entity walking_entity, tmt::Registry&, float dt) 
     glm::vec3 direction = nav_mesh.follow_path(walking_entity_pos, player_pos);
 
     // If path has more waypoints, move to next one
-    if (direction.x != 0 && direction.y != 0 && direction.z != 0) {
+    if (glm::abs(direction.x) > 0.01f || glm::abs(direction.y) > 0.01f || glm::abs(direction.z) > 0.01f) {
         walking_transform.set_world_position(walking_entity_pos + direction * walking.walk_speed * dt);
         
     } else {
