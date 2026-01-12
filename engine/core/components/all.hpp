@@ -10,6 +10,7 @@
 #include "engine/systems/physics/components/voxel_body.hpp"
 #include "engine/systems/animation/components/constraints.hpp"
 #include "engine/systems/animation/components/bone_hierarchy_renderer.hpp"
+#include "engine/systems/ai/navigation/nav_mesh.hpp"
 
 namespace tmt {
 
@@ -24,6 +25,7 @@ using SerializeComponents = ComponentRegistry<
 	ComponentCollection,
 	AnimConstraints::DampedTransformConstraint,
 	BoneHierarchyRenderer
+	NavMesh
 >;
 // clang-format on
 
@@ -37,6 +39,7 @@ using InspectComponents = ComponentRegistry<
 	VoxelBody,
 	AnimConstraints::DampedTransformConstraint,
 	BoneHierarchyRenderer
+	NavMesh
 >;
 // clang-format on
 
