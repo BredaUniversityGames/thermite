@@ -8,6 +8,7 @@
 #include "engine/core/components/camera.hpp"
 #include "engine/core/components/component_collection.hpp"
 #include "engine/systems/physics/components/voxel_body.hpp"
+#include "engine/systems/ai/navigation/nav_mesh.hpp"
 #include "engine/core/components/audio_listener.hpp"
 #include "engine/core/components/audio_emitter.hpp"
 
@@ -22,6 +23,7 @@ using SerializeComponents = ComponentRegistry<
 	Camera,
 	VoxelBody,
 	ComponentCollection,
+	NavMesh,
 	AudioListener,
 	AudioEmitter
 >;
@@ -35,6 +37,7 @@ using InspectComponents = ComponentRegistry<
 	VoxelRenderer, 
 	Camera,
 	VoxelBody,
+	NavMesh,
 	AudioListener,
 	AudioEmitter
 >;
