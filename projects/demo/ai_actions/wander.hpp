@@ -15,7 +15,7 @@ class Wander : public tmt::GoapAction {
     bool done_walking = false;
     bool has_path = false;
 
-    glm::vec3 wander_target; 
+    glm::vec3 wander_target;
 
     std::string get_id() const override { return "Wander"; }
 

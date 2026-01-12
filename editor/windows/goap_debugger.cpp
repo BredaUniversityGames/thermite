@@ -57,9 +57,9 @@ void GoapDebugger::display() {
     ImGui::Begin("GOAP Debugger");
 
     //// --- Agent Selector ---
-    //if (!agents.empty()) {
-    //    static std::vector<std::string> agent_name_storage;
-    //    agent_name_storage.clear();
+    // if (!agents.empty()) {
+    //     static std::vector<std::string> agent_name_storage;
+    //     agent_name_storage.clear();
 
     //    std::vector<const char*> agent_names;
     //    for (auto a : agents) {
@@ -125,7 +125,6 @@ void GoapDebugger::display() {
             }
         }
     }
-
 
     // --- Draw only selected agent ---
     if (selected_agent != entt::null && ecs.any_of<GoapAgent, WorldState>(selected_agent)) {

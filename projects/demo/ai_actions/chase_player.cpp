@@ -22,7 +22,7 @@ void ChasePlayer::on_start(tmt::Entity entity, tmt::Registry& registry) {
 }
 
 void ChasePlayer::on_tick(tmt::Entity walking_entity, tmt::Registry& ecs, float dt) {
-   const auto& walking = tmt::engine.ecs.get_component<Walking>(walking_entity);
+    const auto& walking = tmt::engine.ecs.get_component<Walking>(walking_entity);
     auto& nav_mesh = tmt::engine.ecs.get_component<tmt::NavMesh>(walking.walkable_asteroid);
 
     tmt::Transform& walking_transform = tmt::engine.ecs.get_component<tmt::Transform>(walking_entity);
@@ -50,7 +50,6 @@ void ChasePlayer::on_tick(tmt::Entity walking_entity, tmt::Registry& ecs, float 
         nav_mesh.path.clear();
     }
 
-
     // Debug drawing
     if (nav_mesh.path.size() > 1) {
         for (size_t i = 0; i < nav_mesh.path.size() - 1; ++i) {
@@ -60,6 +59,5 @@ void ChasePlayer::on_tick(tmt::Entity walking_entity, tmt::Registry& ecs, float 
         }
     }
 }
-
 
 bool ChasePlayer::is_done(tmt::Entity, tmt::Registry&) const { return false; }

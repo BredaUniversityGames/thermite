@@ -70,5 +70,4 @@ void Wander::on_tick(tmt::Entity walking_entity, tmt::Registry& ecs, float dt) {
     }
 }
 
-
 bool Wander::is_done(tmt::Entity agent, tmt::Registry& ecs) const { return false; }
