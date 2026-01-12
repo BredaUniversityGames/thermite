@@ -24,6 +24,7 @@
 #include "components/walking.hpp"
 
 #include "ai_actions/chase_player.hpp"
+#include "ai_actions/wander.hpp"
 
 class Demo : public tmt::Application {
    public:
@@ -59,27 +60,38 @@ class
     auto& goal_reg = tmt::GoapGoalRegistry::instance();
 
     action_reg.register_action(std::make_unique<ChasePlayer>());
+    action_reg.register_action(std::make_unique<Wander>());
 
     tmt::GoapAgentType dragon;
     dragon.id = "dragon";
-    dragon.action_ids = {"ChasePlayer"};
+    dragon.action_ids = {"ChasePlayer", "Wander"};
 
     dragon.default_world_state = {
-        {std::hash<std::string>()("player_visible"), true},
         {std::hash<std::string>()("player_in_range"), false},
+        {std::hash<std::string>()("in_attack_range"), false},
     };
 
     {
-        tmt::GoapGoal patrol;
-        patrol.name = "ChasePlayer";
-        patrol.desired_state = {{tmt::FactId("player_in_range"), tmt::FactValue(true)}};
-        patrol.priority = 1;
-        patrol.valid = true;
+        tmt::GoapGoal chase;
+        chase.name = "ChasePlayer";
+        chase.desired_state = {{tmt::FactId("in_attack_range"), tmt::FactValue(true)}};
+        chase.priority = 10;
+        chase.valid = true;
 
-        goal_reg.register_goal("ChasePlayer", patrol);
+        goal_reg.register_goal("ChasePlayer", chase);
     }
 
-    dragon.goal_ids = {"ChasePlayer"};
+    {
+        tmt::GoapGoal wander;
+        wander.name = "Wander";
+        wander.desired_state = {{tmt::FactId("player_in_range"), tmt::FactValue(true)}};
+        wander.priority = 1;
+        wander.valid = true;
+
+        goal_reg.register_goal("Wander", wander);
+    }
+
+    dragon.goal_ids = {"ChasePlayer", "Wander"};
 
     auto& type_reg = tmt::GoapAgentTypeRegistry::instance();
 

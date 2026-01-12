@@ -393,6 +393,7 @@
         "5": {
             "Walking": {
                 "attack_range": 1.0,
+                "max_chase_distance": 20.0,
                 "walk_speed": 2.5,
                 "walkable_asteroid": 1
             }
@@ -400,6 +401,7 @@
         "3145734": {
             "Walking": {
                 "attack_range": 1.0,
+                "max_chase_distance": 20.0,
                 "walk_speed": 2.5,
                 "walkable_asteroid": 4
             }
