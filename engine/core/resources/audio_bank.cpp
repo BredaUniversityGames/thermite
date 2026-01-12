@@ -12,6 +12,14 @@
 namespace tmt {
 
 bool AudioBank::load() {
+    if (file_location.relative_path.stem() != "Master") {
+        IO::FileLocation master_location = file_location;
+        master_location.relative_path.replace_filename("Master.bank");
+
+        assert(IO::file_exists(master_location) && "Can't load audio bank, can't find master bank called \"Master.bank\"");
+        master_bank_ref = engine.resources.load_resource<AudioBank>(master_location);
+    }
+
     std::vector bank_data = IO::read_file(file_location);
     if (bank_data.empty()) return false;
 
@@ -20,16 +28,18 @@ bool AudioBank::load() {
 
     // Defined check to skip trying to load the string bank when not in the editor and/or not in debug mode.
 #if defined(THERMITE_EDITOR) || defined(THERMITE_DEBUG)
-    // The string bank has the same name as the master bank but with the extension ".strings.bank", so we check for that here.
-    IO::FileLocation string_bank_location = file_location;
-    string_bank_location.relative_path.replace_extension(".strings.bank");
+    if (!master_bank_ref) {  // (If it doesn't have a master bank reference, it means it *is* the master bank).
+        // The string bank has the same name as the master bank but with the extension ".strings.bank", so we check for that here.
+        IO::FileLocation string_bank_location = file_location;
+        string_bank_location.relative_path.replace_extension(".strings.bank");
 
-    if (IO::file_exists(string_bank_location)) {
-        bank_data = IO::read_file(string_bank_location);
-        if (bank_data.empty()) {
-            Log::warn(Log::Scope::ENGINE, "Failed to load the Master.strings.bank, audio events/parameters won't have names.");
-        } else {
-            string_bank = engine.audio.init_bank(bank_data);
+        if (IO::file_exists(string_bank_location)) {
+            bank_data = IO::read_file(string_bank_location);
+            if (bank_data.empty()) {
+                Log::warn(Log::Scope::ENGINE, "Failed to load the Master.strings.bank, audio events/parameters won't have names.");
+            } else {
+                string_bank = engine.audio.init_bank(bank_data);
+            }
         }
     }
 #endif
@@ -38,6 +48,7 @@ bool AudioBank::load() {
 }
 
 void AudioBank::unload() {
+    master_bank_ref = {};
     if (string_bank != nullptr) string_bank->unload();
 
     bank->unload();

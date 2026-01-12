@@ -26,7 +26,7 @@ void tag_invoke(JsonReflect::deserialize_t, const JsonReflect::json& j, tmt::Aud
     if (j.contains("source_bank")) tmt::Serializer::deserialize(j["source_bank"], bank);
 
     FMOD_GUID guid {};
-    if (j.contains("guid"))tmt::Serializer::deserialize(j["guid"], guid);
+    if (j.contains("guid")) tmt::Serializer::deserialize(j["guid"], guid);
 
     if (bank) event = tmt::AudioEvent {bank, tmt::engine.audio.get_event_description(guid)};
 }
@@ -35,27 +35,26 @@ JsonReflect::json tag_invoke(JsonReflect::serialize_t, const tmt::VolumeControl&
     JsonReflect::json json;
 
     const tmt::ResourceRef<tmt::AudioBank>& bank = control.get_source_bank();
-    json["source_bank"] = tmt::Serializer::serialize(bank);
+    if (bank) json["source_bank"] = tmt::Serializer::serialize(bank);
 
-    const FMOD_GUID& guid = (control.is_valid() ? control.get_guid() : FMOD_GUID {});
-    json["guid"] = tmt::Serializer::serialize(guid);
+    if (control.is_valid()) json["guid"] = tmt::Serializer::serialize(control.get_guid());
 
     return json;
 }
 
 void tag_invoke(JsonReflect::deserialize_t, const JsonReflect::json& j, tmt::VolumeControl& control) {
     tmt::ResourceRef<tmt::AudioBank> bank {};
-    tmt::Serializer::deserialize(j["source_bank"], bank);
+    if (j.contains("source_bank")) tmt::Serializer::deserialize(j["source_bank"], bank);
 
     FMOD_GUID guid {};
-    tmt::Serializer::deserialize(j["guid"], guid);
+    if (j.contains("guid")) tmt::Serializer::deserialize(j["guid"], guid);
 
-    control = tmt::VolumeControl {bank, tmt::engine.audio.get_vca(guid)};
+    if (bank) control = tmt::VolumeControl {bank, tmt::engine.audio.get_vca(guid)};
 }
 
 void tag_invoke(JsonReflect::deserialize_t, const JsonReflect::json& j, tmt::AudioListener& audio_listener) {
     float weight = 1.0f;
-    tmt::Serializer::deserialize(j["cached_weight"], weight);
+    if (j.contains("cached_weight")) tmt::Serializer::deserialize(j["cached_weight"], weight);
 
     audio_listener.set_weight(weight);
 }

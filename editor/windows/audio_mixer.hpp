@@ -2,6 +2,7 @@
 
 #include <variant>
 
+#include <imgui.h>
 #include <engine/core/audio.hpp>
 
 #include "editor/core/window.hpp"
@@ -24,7 +25,9 @@ class AudioMixer : public IWindow, public OnGameEnd {
     void on_editor_end() override {}
 
    private:
-    void on_game_end() override { selection = {}; }
+    constexpr int get_window_flags() const override { return ImGuiWindowFlags_MenuBar; }
+    void on_game_end() override;
+    void display_menu_bar();
 
     // Template function is defined in the .cpp file, INTENTIONALLY making it only usable in that cpp file.
     template <typename Type>
@@ -35,5 +38,6 @@ class AudioMixer : public IWindow, public OnGameEnd {
     void invalidate_selection();
     // Selection can be any of these 3 audio types, so an std::variant gives us a convenient way of checking what type is selected and letting us access that type.
     std::variant<std::weak_ptr<AudioBank>, AudioEvent, VolumeControl> selection = AudioEvent {};
+    std::vector<ResourceRef<AudioBank>> cached_banks;
 };
 }  // namespace tmt
