@@ -264,7 +264,6 @@ std::optional<glm::vec3> tmt::NavMesh::follow_path(glm::vec3 start, glm::vec3 en
     tmt::engine.polyline.draw_sphere(start, 0.1f);
 
     if (glm::distance(target_pos, start) > 0.01f) {
-    Log::info("reached");
         return glm::normalize(target_pos - start);
     }
     return std::nullopt;
