@@ -42,7 +42,7 @@ class NavMesh {
     void generate_mesh();
     std::vector<int> find_path(const int starting_node_id, const int ending_node_id);
     int find_closest_node(const glm::vec3& position);
-    glm::vec3 follow_path(glm::vec3 start, glm::vec3 end);
+    std::optional<glm::vec3> follow_path(glm::vec3 start, glm::vec3 end);
     void inspect();
 };
 }  // namespace tmt

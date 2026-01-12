@@ -224,13 +224,13 @@ int tmt::NavMesh::find_closest_node(const glm::vec3& position) {
     return closest_node;
 }
 
-glm::vec3 tmt::NavMesh::follow_path(glm::vec3 start, glm::vec3 end) {
+std::optional<glm::vec3> tmt::NavMesh::follow_path(glm::vec3 start, glm::vec3 end) {
     // Calculate path
     int start_pos = find_closest_node(start);
     int closest_node_id = find_closest_node(end);
     std::vector<int> new_path = find_path(start_pos, closest_node_id);
     path = new_path;
-    if (new_path.size() < 1) return glm::vec3(0, 0, 0);
+    if (new_path.size() < 1) return std::nullopt;
     
     glm::vec3 target_pos = nodes[new_path[0]].world_pos;
     if (path.size() > 2) {
@@ -264,9 +264,10 @@ glm::vec3 tmt::NavMesh::follow_path(glm::vec3 start, glm::vec3 end) {
     tmt::engine.polyline.draw_sphere(start, 0.1f);
 
     if (glm::distance(target_pos, start) > 0.01f) {
+    Log::info("reached");
         return glm::normalize(target_pos - start);
     }
-    return glm::vec3(0, 0, 0);
+    return std::nullopt;
 }
 
 void tmt::NavMesh::inspect() {
