@@ -44,6 +44,8 @@ class Physics : public ISystem {
     static void add_force(VoxelBody& vb, const glm::vec3& force);
     static void add_torque(VoxelBody& vb, const glm::vec3& torque);
     static void add_force_at_position(VoxelBody& vb, const glm::vec3& force, const glm::vec3& position);
+    static void set_position(VoxelBody& vb, const glm::vec3& position);
+    static void set_rotation(VoxelBody& vb, const glm::quat& rotation);
 };
 
 }  // namespace tmt
