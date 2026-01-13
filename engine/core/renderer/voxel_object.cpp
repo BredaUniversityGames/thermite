@@ -38,7 +38,7 @@ Hit VoxelObject::intersect(Ray ray, const float tmax) const {
     if (hit_dist > tmax) return Hit(); /* miss */
 
     /* Overwrite the current hit with the closer one */
-    return Hit(hit_dist, 0xFFFFFFFFu);
+    return Hit(hit_dist, {}, local_hit.coord);
 }
 
 }  // namespace tmt

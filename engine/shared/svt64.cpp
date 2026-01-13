@@ -251,6 +251,12 @@ inline glm::vec3 mirror_pos(const glm::vec3 pos, const glm::vec3 dir) {
 // Count number of set bits in variable range [0..width]
 inline uint32_t popcnt_var64(uint64_t mask, uint32_t width) { return (uint32_t)__popcnt64(mask & ((1ull << width) - 1)); }
 
+/* Get the index of the voxel at a given position and traversal scale. */
+glm::uvec3 voxel_index(glm::vec3 pos, uint32_t scale_exp) {
+    const uint32_t inv_scale = (1u << (23 - scale_exp)) - 1u;
+    return inv_scale - (~(glm::uvec3&)pos >> scale_exp & 0b1111111111u);
+}
+
 Svt64Hit Svt64::trace(const Ray& ray) const {
     /* Traversal state */
     uint32_t stack[11] {};
@@ -333,9 +339,7 @@ Svt64Hit Svt64::trace(const Ray& ray) const {
     /* If we ended in a leaf, we can gather the hit data we need */
     if (node.is_leaf() && scale_exp <= 21) {
         pos = mirror_pos(pos, dir);
-        // const float t = glm::length(pos - ray.origin);
-
-        return Svt64Hit(pos, 0xFFFFFFFFu);
+        return Svt64Hit(pos, 0xFFFFFFFFu, voxel_index(pos, scale_exp));
     }
     return Svt64Hit();
 }

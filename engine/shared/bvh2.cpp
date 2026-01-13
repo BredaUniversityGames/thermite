@@ -1,5 +1,8 @@
 #include "bvh2.hpp"
 
+#include "engine/engine.hpp"
+#include "engine/core/renderer/renderer.hpp"
+#include "engine/core/renderer/scene_view.hpp"
 #include "engine/core/renderer/voxel_object.hpp"
 
 namespace tmt {
@@ -268,7 +271,11 @@ template <typename T>
 Hit Bvh2<T>::trace(const Ray& ray) const {
     /* Traversal state */
     uint32_t stack[32] {}, stack_ptr = 0u, node_index = 0u;
-    Hit chit {};
+
+    /* Hit state */
+    float hit_t = 1e30f;
+    uint32_t hit_index = 0xFFFFFFFFu;
+    glm::uvec3 hit_coord {};
 
     for (;;) {
         const Bvh2Node& node = nodes[node_index];
@@ -278,10 +285,11 @@ Hit Bvh2<T>::trace(const Ray& ray) const {
             /* Intersect all primitives */
             for (uint32_t i = 0u; i < node.prim_count; ++i) {
                 const T& prim = prims[indices[node.left_first + i]];
-                const Hit hit = prim.intersect(ray, chit.distance);
-                if (hit.distance < chit.distance) {
-                    chit.distance = hit.distance;
-                    chit.index = indices[node.left_first + i];
+                const Hit hit = prim.intersect(ray, hit_t);
+                if (hit.distance < hit_t) {
+                    hit_t = hit.distance;
+                    hit_index = indices[node.left_first + i];
+                    hit_coord = hit.coord;
                 }
             }
 
@@ -316,7 +324,8 @@ Hit Bvh2<T>::trace(const Ray& ray) const {
         }
     }
 
-    return chit;
+    if (hit_t == 1e30f) return Hit(); /* miss */
+    return Hit(hit_t, engine.renderer.scene_view.entities[hit_index], hit_coord);
 }
 
 template <typename T>

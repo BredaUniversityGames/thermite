@@ -103,15 +103,16 @@ void DragonScene::on_update(const tmt::FrameData& time) {
     // transform.set_world_scale(glm::vec3(1.0f, 1.5f + sinf(elapsed_time), 1.0f));
 
     if (tmt::engine.input.is_mouse_button_just_pressed(tmt::MouseButton::LEFT)) {
-        const int mouse_x = tmt::engine.input.get_mouse_x();
-        const int mouse_y = tmt::engine.input.get_mouse_y();
+        /* Get the mouse position */
+        const glm::ivec2 mouse_pos = glm::ivec2(tmt::engine.input.get_mouse_x(), tmt::engine.input.get_mouse_y());
 
-        const tmt::Ray mouse_ray = pinhole_ray(tmt::engine.renderer.render_view, glm::ivec2(mouse_x, mouse_y));
-        const tmt::Hit hit = tmt::engine.renderer.scene_view.bvh.trace(mouse_ray);
-        tmt::Log::info("pixel: {}, {} | hit: {} | id: {}", mouse_x, mouse_y, hit.distance, hit.index);
-        if (hit.distance < 1e30f) {
-            const tmt::Entity entity = tmt::engine.renderer.scene_view.entities[hit.index];
-            tmt::engine.ecs.destroy_entity(entity);
+        /* Create a ray from the mouse position for the current render view and trace it */
+        const tmt::Ray mouse_ray = tmt::engine.renderer.render_view.pixel_ray(mouse_pos);
+        const tmt::Hit hit = tmt::engine.renderer.trace_ray(mouse_ray);
+
+        if (hit.miss() == false) {
+            // tmt::engine.ecs.destroy_entity(hit.entity);
+            tmt::Log::info("pixel: {}, {} | hit: {}, {}, {}", mouse_pos.x, mouse_pos.y, hit.coord.x, hit.coord.y, hit.coord.z);
         }
     }
 
