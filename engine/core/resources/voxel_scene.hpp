@@ -18,6 +18,12 @@ struct VoxelSceneNode {
     /* Child nodes. */
     std::vector<VoxelSceneNode> children {};
 
+    /* Node name. */
+    std::string name;
+
+    /* Node name. */
+    glm::mat4 transform{};
+
     /* Returns true if this node is a voxel volume. */
     inline bool is_volume() const { return tree != nullptr; }
 };
