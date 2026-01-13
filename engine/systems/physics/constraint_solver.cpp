@@ -3,16 +3,13 @@
 #include "engine.hpp"
 #include <glm/gtx/norm.hpp>
 
-const float restitution = 0.1f;  // Global bounciness coefficient
-const float friction = 0.3f;     // Global friction coefficient
-
 using namespace tmt;
 
 void ConstraintSolver::solve_velocities(const float) {
-    size_t size = contact_index;
+    const size_t collision_count = contact_index;
     // Solve velocity constraints
     for (size_t i = 0; i < velocity_iterations; i++) {
-        for (size_t j = 0; j < size; j++) {
+        for (size_t j = 0; j < collision_count; j++) {
             auto& collision = collisions[j];
             // Get the rigid bodies involved in the constraint
             auto& body_a = engine.ecs.get_registry().get<VoxelBody>(collision.entity_a);
@@ -43,7 +40,7 @@ void ConstraintSolver::solve_velocities(const float) {
 
                 const float jv = glm::dot(contact.normal, body_a.velocity - body_b.velocity) + glm::dot(r_a_cross_n, body_a.angular_velocity) - glm::dot(r_b_cross_n, body_b.angular_velocity);
 
-                float impulse_delta = (1.0f + restitution) * jv * effective_mass;
+                float impulse_delta = (1.0f + RESTITUTION) * jv * effective_mass;
 
                 const float new_impulse = std::max(contact.normal_impulse + impulse_delta, 0.0f);
                 impulse_delta = new_impulse - contact.normal_impulse;
@@ -79,7 +76,7 @@ void ConstraintSolver::solve_velocities(const float) {
 
                     float friction_impulse = -glm::dot(relative_velocity, tangent) * friction_mass;
 
-                    float max_friction = contact.normal_impulse * friction;
+                    float max_friction = contact.normal_impulse * FRICTION;
                     float new_friction_impulse = glm::clamp(contact.tangent_impulse + friction_impulse, -max_friction, max_friction);
                     friction_impulse = new_friction_impulse - contact.tangent_impulse;
                     contact.tangent_impulse = new_friction_impulse;
@@ -99,9 +96,9 @@ void ConstraintSolver::solve_velocities(const float) {
 }
 
 void ConstraintSolver::solve_positions(const float) {
-    size_t size = contact_index;
+    const size_t collision_count = contact_index;
     for (size_t i = 0; i < position_iterations; i++) {
-        for (size_t j = 0; j < size; j++) {
+        for (size_t j = 0; j < collision_count; j++) {
             auto& collision = collisions[j];
             // Get the rigid bodies involved in the constraint
             auto& body_a = engine.ecs.get_registry().get<VoxelBody>(collision.entity_a);

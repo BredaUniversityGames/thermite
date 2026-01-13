@@ -4,7 +4,6 @@
 
 #include "engine/tools/vengi_parser.hpp"
 #include "engine/core/logger.hpp"
-#include "engine/core/salvo.hpp"
 #include "engine/engine.hpp"
 #include "engine/core/renderer/renderer.hpp"
 #include "engine/tools/profiler.hpp"
@@ -163,7 +162,7 @@ void compute_physics_data(RawVoxels& voxels) {
                                 voxels.physics_data[index].type = PhysicsVoxelType::CORNER;
                             }
 
-                            if (voxels.physics_data[index].normal_index == 0 && empty_sides != 0) voxels.physics_data[index].normal_index = 28;  // None empty 0 normal
+                            if (voxels.physics_data[index].normal_index == 0 && empty_sides != 0) voxels.physics_data[index].normal_index = INVALID_NORMAL_INDEX;  // None empty 0 normal
 
                             if (voxels.physics_data[index].normal_index != 0) {
                                 local_queue.push_back(index);

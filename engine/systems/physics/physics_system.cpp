@@ -160,7 +160,7 @@ void Physics::on_fixed_update(const FrameData&) {
 
         // Detect Colllisions
         // Generate Contacts
-        generate_constraints_parallel();
+        generate_constraints();
     }
 
     engine.salvo.deactivate_workers();
@@ -179,10 +179,10 @@ void Physics::on_fixed_update(const FrameData&) {
     }
 }
 
-void Physics::generate_constraints_parallel() {
-    solver.collisions.resize(10000);
+void Physics::generate_constraints() {
+    solver.collisions.resize(MAX_CONTACTS);
     const entt::basic_group group = engine.ecs.get_registry().group<VoxelBody>(entt::get<Transform>);
-    engine.salvo.parallel_for(group.size(), [this, &group](size_t i) { generate_constraint(i, group); });
+    engine.salvo.parallel_for(group.size(), [this, &group](size_t i) { generate_constraint((int)i, group); });
 }
 
 void Physics::on_end() { Log::info("Physics on_end"); }
@@ -227,7 +227,7 @@ void draw_solids(
         engine.polyline.draw_obb(child_center, glm::vec3(child_half_extent), rotation, Engine::Config::FIXED_TIME_STEP + 0.1f);
 
         // Get child node index
-        const uint32_t child_node_offset = __popcnt64(node.child_mask & ((1ull << i) - 1u));
+        const uint32_t child_node_offset = (uint32_t)__popcnt64(node.child_mask & ((1ull << i) - 1u));
         const uint32_t child_node_index = node.abs_ptr() + child_node_offset;
 
         // Recursively go deeper if child is not a leaf
@@ -285,7 +285,7 @@ void compare_trees(
                 const uint32_t i_a = std::countr_zero(mask_a);
                 mask_a &= mask_a - 1u;
 
-                const uint32_t child_offset_a = __popcnt64(node_a.child_mask & ((1ull << i_a) - 1u));
+                const uint32_t child_offset_a = (uint32_t)__popcnt64(node_a.child_mask & ((1ull << i_a) - 1u));
                 const uint32_t child_index_a = node_a.abs_ptr() + child_offset_a;
                 const PhysicsVoxel* voxel_a = &tree_a->physics_data[child_index_a];
 
@@ -335,7 +335,7 @@ void compare_trees(
                     const float dist = glm::dot(dir, dir);
                     if (dist > child_radius_sq) continue;
 
-                    const uint32_t child_offset_b = __popcnt64(node_b.child_mask & ((1ull << i_b) - 1u));
+                    const uint32_t child_offset_b = (uint32_t)__popcnt64(node_b.child_mask & ((1ull << i_b) - 1u));
                     const uint32_t child_index_b = node_b.abs_ptr() + child_offset_b;
                     const PhysicsVoxel* voxel_b = &tree_b->physics_data[child_index_b];
 
@@ -353,7 +353,7 @@ void compare_trees(
                         contact.normal = glm::normalize((glm::vec3)voxel_a->get_normal() * glm::inverse(rotation_a));
                     else if (voxel_b->type == PhysicsVoxelType::INSIDE || voxel_b->type == PhysicsVoxelType::FACE)
                         contact.normal = -glm::normalize((glm::vec3)voxel_b->get_normal() * glm::inverse(rotation_b));
-                    else if (voxel_a->normal_index == 0 || voxel_a->normal_index == 28)  // if there is no valid normal index
+                    else if (voxel_a->normal_index == 0 || voxel_a->normal_index == INVALID_NORMAL_INDEX)  // if there is no valid normal index
                         contact.normal = glm::normalize(dir);
                     else {
                         // if there is a valid normal index use its value to check validity of normal
@@ -423,7 +423,7 @@ void compare_trees(
                 // engine.polyline.draw_obb(child_center, glm::vec3(child_half_extent), rotation_a, Engine::Config::FIXED_TIME_STEP + 0.1f);
 
                 // Get child node index
-                const uint32_t child_offset = __popcnt64(node_a.child_mask & ((1ull << i) - 1u));
+                const uint32_t child_offset = (uint32_t)__popcnt64(node_a.child_mask & ((1ull << i) - 1u));
                 const uint32_t child_index = node_a.abs_ptr() + child_offset;
 
                 // Add pair to stack
@@ -460,7 +460,7 @@ void compare_trees(
                 engine.polyline.use_line_width(0.1f);
                 engine.polyline.draw_obb(child_center, glm::vec3(child_half_extent), rotation_b, Engine::Config::FIXED_TIME_STEP + 0.1f);
 */
-                const uint32_t child_offset = __popcnt64(node_b.child_mask & ((1ull << i) - 1u));
+                const uint32_t child_offset = (uint32_t)__popcnt64(node_b.child_mask & ((1ull << i) - 1u));
                 const uint32_t child_index = node_b.abs_ptr() + child_offset;
 
                 stack.push_back({entry.node_index_a, child_index, entry.half_extent_a, child_half_extent, entry.center_a, child_center});
@@ -627,7 +627,7 @@ void Physics::initialize_voxel_body(VoxelBody& vb) {
     for (size_t z = 0; z < voxels->size.z; z++) {
         for (size_t y = 0; y < voxels->size.y; y++) {
             for (size_t x = 0; x < voxels->size.x; x++) {
-                if (voxels->blas.get()->get_voxel(x, y, z) == nullptr) continue;
+                if (voxels->blas.get()->get_voxel((uint32_t)x, (uint32_t)y, (uint32_t)z) == nullptr) continue;
                 // if (vb.voxels.get_voxel(x, y, z).type == PhysicsVoxelType::EMPTY) continue;
 
                 filled_counter++;
@@ -646,7 +646,7 @@ void Physics::initialize_voxel_body(VoxelBody& vb) {
     for (size_t z = 0; z < voxels->size.z; z++) {
         for (size_t y = 0; y < voxels->size.y; y++) {
             for (size_t x = 0; x < voxels->size.x; x++) {
-                if (voxels->blas.get()->get_voxel(x, y, z) == nullptr) continue;
+                if (voxels->blas.get()->get_voxel((uint32_t)x, (uint32_t)y, (uint32_t)z) == nullptr) continue;
 
                 const glm::vec3 pos = glm::vec3(x, y, z) * UNITS_PER_VOXEL - half_scale + VOXEL_SIZE_HALF;
                 const glm::vec3 r = pos - vb.com_local_offset;

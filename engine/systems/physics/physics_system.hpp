@@ -37,7 +37,7 @@ class Physics : public ISystem {
     float ray_aabb(const glm::vec3& min, const glm::vec3& max, const glm::vec3& ro, const glm::vec3& rd) const;
     bool is_separated(const glm::vec3& axis, const VoxelBody::Box& box_a, const VoxelBody::Box& box_b, float& overlap) const;
     void apply_velocities() const;
-    void generate_constraints_parallel();
+    void generate_constraints();
 
    public:
     // Static utility functions
