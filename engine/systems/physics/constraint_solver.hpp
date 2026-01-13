@@ -1,7 +1,6 @@
 #pragma once
 #include "collision.hpp"
 
-
 namespace tmt {
 class ConstraintSolver {
    public:

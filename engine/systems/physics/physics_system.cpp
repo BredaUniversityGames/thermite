@@ -163,7 +163,6 @@ void Physics::on_fixed_update(const FrameData&) {
         generate_constraints_parallel();
     }
 
-
     engine.salvo.deactivate_workers();
 
     {
@@ -470,7 +469,7 @@ void compare_trees(
     }
 }
 
-template <typename ... Args>
+template <typename... Args>
 void Physics::generate_constraint(const int index, const entt::basic_group<Args...>& group) {
     const Entity entity = group[index];
     const auto& [vb, transform] = group.get<VoxelBody, Transform>(entity);
@@ -588,7 +587,6 @@ bool Physics::is_separated(const glm::vec3& axis, const VoxelBody::Box& box_a, c
 
     return false;  // Not separated
 }
-
 
 void Physics::apply_velocities() const {
     for (const auto& [entity, vb, transform] : engine.ecs.get_registry().view<VoxelBody, Transform>().each()) {

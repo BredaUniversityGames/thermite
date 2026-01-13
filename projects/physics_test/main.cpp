@@ -254,7 +254,7 @@ void Game::on_update(const tmt::FrameData& time) {
         auto& cam_transform = tmt::engine.ecs.get_component<tmt::Transform>(cam);
         const glm::vec3 cam_pos = cam_transform.get_world_position();
         const glm::vec3 cam_forward = cam_transform.get_forward();
-        
+
         for (int x = -2; x <= 2; x++) {
             for (int y = -2; y <= 2; y++) {
                 auto entity = tmt::engine.ecs.create_entity();

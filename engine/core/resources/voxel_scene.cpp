@@ -163,7 +163,7 @@ void compute_physics_data(RawVoxels& voxels) {
                                 voxels.physics_data[index].type = PhysicsVoxelType::CORNER;
                             }
 
-                            if (voxels.physics_data[index].normal_index == 0 && empty_sides != 0) voxels.physics_data[index].normal_index = 28; // None empty 0 normal
+                            if (voxels.physics_data[index].normal_index == 0 && empty_sides != 0) voxels.physics_data[index].normal_index = 28;  // None empty 0 normal
 
                             if (voxels.physics_data[index].normal_index != 0) {
                                 local_queue.push_back(index);
