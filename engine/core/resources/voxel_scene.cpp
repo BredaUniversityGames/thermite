@@ -268,37 +268,6 @@ void compute_physics_data(RawVoxels& voxels) {
             }
         }
     }
-
-
-    //engine.salvo.parallel_for(engine.salvo.get_thread_count() + 1, [&](size_t) {
-    //    while (queue_start < queue_end) {
-    //        const uint32_t& current = queue[queue_start.fetch_add(1)];
-    //        uint32_t x = current % voxels.w;
-    //        uint32_t y = (current % (voxels.w * voxels.h)) / voxels.w;
-    //        uint32_t z = current / (voxels.w * voxels.h);
-
-    //        // add voxel neighbours to queue and propegate normal index
-    //        for (int sign = 0; sign < 2; sign++) {
-    //            for (size_t axis = 0; axis < 3; axis++) {
-    //                glm::uvec3 p = glm::uvec3(x, y, z);
-    //                p[(glm::uvec3::length_type)axis] += (sign * 2) - 1;
-
-    //                // If not in range continue
-    //                if (p.x >= voxels.w || p.y >= voxels.h || p.z >= voxels.d) continue;
-
-    //                // If the voxel already has a normal index continue
-    //                uint32_t neighbour = p.x + voxels.w * p.y + voxels.w * voxels.h * p.z;
-    //                if (voxels.physics_data[neighbour].normal_index != 0) continue;
-
-    //                voxels.physics_data[neighbour].normal_index = voxels.physics_data[current].normal_index;
-
-    //                queue[queue_end.fetch_add(1)] = neighbour;
-    //            }
-    //        }
-    //    }
-    //});
-
-    //engine.salvo.deactivate_workers();
 }
 
 /* Gather all voxels inside a voxel model node. */
