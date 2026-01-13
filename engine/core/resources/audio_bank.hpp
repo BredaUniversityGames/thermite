@@ -28,7 +28,7 @@ class AudioBank : public FileResource {
 
    private:
     // TODO: Replace this with a proper method of handling resource dependencies.
-    ResourceRef<AudioBank> master_bank_ref{};
+    ResourceRef<AudioBank> master_bank_ref {};
     FMOD::Studio::Bank* bank {nullptr};
     FMOD::Studio::Bank* string_bank {nullptr};
 };
