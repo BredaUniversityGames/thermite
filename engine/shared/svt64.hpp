@@ -1,17 +1,16 @@
 #pragma once
 
-#include <cstdint>
 #include <vector>
 
 #include "engine/core/renderer/material.hpp"
 #include "engine/systems/physics/physics_voxel_data.hpp"
-#include "engine/shared/ray.hpp"
 
 namespace tmt {
 
 /* How much space should be reserved for real-time modifications. */
-constexpr uint32_t SVT64_BUFFER_MEMORY = 10000u /* 10 kb */;
+constexpr uint32_t SVT64_BUFFER_MEMORY = 1000u /* 1 kb */;
 
+/* Raw uniform voxel input data. */
 struct RawVoxels {
     MaterialPalette palette {};
     std::vector<MaterialIndex> materials {};
@@ -19,17 +18,8 @@ struct RawVoxels {
     uint32_t w = 0u, h = 0u, d = 0u;
 };
 
-struct VoxelHit {
-    float t = 1e30f;
-    glm::vec3 normal = glm::vec3(0.0f);
-    uint8_t material {};
-    uint16_t steps = 0u;
-
-    VoxelHit() = default;
-    VoxelHit(float t, glm::vec3 normal, uint8_t mat, uint16_t steps) : t(t), normal(normal), material(mat), steps(steps) {};
-};
-
 #pragma pack(push, 1)
+/* 64-wide Sparse Voxel Tree Node. */
 struct Svt64Node {
     /* The most significant bit indicates if this node is a leaf containing voxels. */
     /* The 31 least significant bits are an absolute offset into an array of child nodes / voxels. */
@@ -48,13 +38,16 @@ struct Svt64Node {
 };
 #pragma pack(pop)
 
-/* Ray hit data. */
+/* 64-wide Sparse Voxel Tree Ray Hit Data. */
 struct Svt64Hit {
     glm::vec3 pos = glm::vec3(1e30f);
     uint32_t index = 0xFFFFFFFFu;
+
     Svt64Hit() = default;
     Svt64Hit(glm::vec3 p, uint32_t i) : pos(p), index(i) {};
 };
+
+struct Ray;
 
 /* 64-wide Sparse Voxel Tree. */
 class Svt64 {
@@ -76,42 +69,22 @@ class Svt64 {
     Svt64() = default;
     ~Svt64();
 
-    /* No copies allowed */
-    Svt64(const Svt64& src) {
-        node_count = src.node_count;
-        voxel_count = src.voxel_count;
-        depth = src.depth;
-        nodes = new Svt64Node[node_count + SVT64_BUFFER_MEMORY / sizeof(Svt64Node)];
-        materials = new MaterialIndex[voxel_count + SVT64_BUFFER_MEMORY / sizeof(MaterialIndex)];
-        physics_data = new PhysicsVoxel[voxel_count + SVT64_BUFFER_MEMORY / sizeof(PhysicsVoxel)];
-        memcpy(nodes, src.nodes, node_count * sizeof(Svt64Node));
-        memcpy(materials, src.materials, voxel_count * sizeof(MaterialIndex));
-        memcpy(physics_data, src.physics_data, voxel_count * sizeof(PhysicsVoxel));
-        palette = src.palette;
-    }
-    Svt64& operator=(const Svt64& src) {
-        node_count = src.node_count;
-        voxel_count = src.voxel_count;
-        depth = src.depth;
-        nodes = new Svt64Node[node_count + SVT64_BUFFER_MEMORY / sizeof(Svt64Node)];
-        materials = new MaterialIndex[voxel_count + SVT64_BUFFER_MEMORY / sizeof(MaterialIndex)];
-        physics_data = new PhysicsVoxel[voxel_count + SVT64_BUFFER_MEMORY / sizeof(PhysicsVoxel)];
-        memcpy(nodes, src.nodes, node_count * sizeof(Svt64Node));
-        memcpy(materials, src.materials, voxel_count * sizeof(MaterialIndex));
-        memcpy(physics_data, src.physics_data, voxel_count * sizeof(PhysicsVoxel));
-        palette = src.palette;
-        return *this;
-    }
+    /* Copy constructor */
+    Svt64(const Svt64& src);
+    Svt64& operator=(const Svt64& src);
 
+    /* @returns True if the given voxel coordinate is empty. */
     bool is_empty(const uint32_t x, const uint32_t y, const uint32_t z);
 
+    /* @returns A pointer to the material of a voxel at the given coordinate. (nullptr if the voxel is emtpy) */
     Material* get_voxel(const uint32_t x, const uint32_t y, const uint32_t z);
+    /* @returns A pointer to the physics data of a voxel at the given coordinate. (nullptr if the voxel is emtpy) */
     PhysicsVoxel* get_physics_voxel(const uint32_t x, const uint32_t y, const uint32_t z);
 
-    /* Build the Sparse Voxel Tree. */
+    /* Build the tree. */
     void build(const RawVoxels& raw_data);
 
-    /* Trace the Sparse Voxel Tree. */
+    /* Trace a ray through the tree. */
     Svt64Hit trace(const Ray& ray) const;
 };
 

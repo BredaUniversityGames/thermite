@@ -20,9 +20,7 @@ struct Hit {
 };
 
 /* Convert a pixel coordinate to a normalized device coordinate. */
-inline glm::vec2 pixel_to_ndc(glm::ivec2 pixel, glm::uvec2 resolution) {
-    return ((glm::vec2(pixel) + 0.5f) / glm::vec2(resolution)) * 2.0f - 1.0f;
-}
+inline glm::vec2 pixel_to_ndc(glm::ivec2 pixel, glm::uvec2 resolution) { return ((glm::vec2(pixel) + 0.5f) / glm::vec2(resolution)) * 2.0f - 1.0f; }
 
 /* Generate a ray for a pin hole camera. */
 inline Ray pinhole_ray(const RenderView& view, glm::ivec2 pixel) {
