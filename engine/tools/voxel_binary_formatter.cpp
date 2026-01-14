@@ -6,6 +6,10 @@ namespace tmt {
 
 namespace {
 
+constexpr uint32_t MAGIC_NUMBER {0xFE2032A1};
+constexpr uint32_t CURRENT_MAJOR_VERSION {1};
+constexpr uint32_t CURRENT_MINOR_VERSION {0};
+
 // Helper structs with correct size to easily parse the binary data.
 struct FileHeader {
     uint32_t magic_number;
@@ -32,7 +36,7 @@ struct HierarchyNode {
 static_assert(sizeof(HierarchyNode) == 96);
 
 struct SVT64Header {
-    uint32_t node_count;
+    uint32_t tree_node_count;
     uint32_t voxel_count;
     uint32_t depth;
 };
@@ -97,7 +101,7 @@ std::unique_ptr<Svt64> deserialize_svt64_tree(const std::span<const uint8_t>& sv
     const auto& header = read_data<SVT64Header>(data_pointer);
 
     auto tree = std::make_unique<Svt64>();
-    tree->node_count = header.node_count;
+    tree->node_count = header.tree_node_count;
     tree->voxel_count = header.voxel_count;
     tree->depth = header.depth;
 
@@ -143,7 +147,7 @@ uint32_t serialize_svt64_tree(const std::unique_ptr<Svt64>& tree, std::vector<ui
     const size_t start_size = svt64_data.size();
 
     const SVT64Header header {
-        .node_count = tree->node_count,
+        .tree_node_count = tree->node_count,
         .voxel_count = tree->voxel_count,
         .depth = tree->depth,
     };
@@ -190,11 +194,12 @@ void recurse_parse_voxel_scene(const VoxelSceneNode& node, const uint32_t parent
 
 }  // namespace
 
-VoxelSceneNode load_voxel_scene(const std::vector<char>& data) {
-    const uint8_t* data_pointer = reinterpret_cast<const uint8_t*>(data.data());
+bool load_voxel_scene(const std::vector<char>& data, VoxelSceneNode& hierarchy) {
+    const auto* data_pointer = reinterpret_cast<const uint8_t*>(data.data());
 
-    // TODO: Actually handle the file header.
-    [[maybe_unused]] const auto& file_header = read_data<FileHeader>(data_pointer);
+    const auto& file_header = read_data<FileHeader>(data_pointer);
+    if (file_header.magic_number != 0xFE2032A1) return false;  // Make sure the magic number matches.
+    assert(file_header.minor_version == CURRENT_MINOR_VERSION && file_header.major_version == CURRENT_MAJOR_VERSION && "File format version not supported!");
     const auto& hierarchy_header = read_data<HierarchyHeader>(data_pointer);
 
     VoxelSceneDeserializeData deserialize_data;
@@ -204,17 +209,19 @@ VoxelSceneNode load_voxel_scene(const std::vector<char>& data) {
     deserialize_data.svt64_data = std::span<const uint8_t> {data_pointer, reinterpret_cast<const uint8_t*>(data.data() + data.size())};  // The rest of the file is svt64_data.
 
     size_t node_index = 0;
-    VoxelSceneNode scene {};
-    recurse_deserialize_scene_node(scene, deserialize_data, node_index);
+    recurse_deserialize_scene_node(hierarchy, deserialize_data, node_index);
 
-    return scene;
+    return true;
 }
 
 std::vector<uint8_t> save_voxel_scene(const ResourceRef<VoxelScene>& scene) {
     std::vector<uint8_t> data {};
 
-    // TODO: Actually handle the file header.
-    FileHeader file_header {};
+    constexpr FileHeader file_header {
+        .magic_number = MAGIC_NUMBER,
+        .major_version = CURRENT_MAJOR_VERSION,
+        .minor_version = CURRENT_MINOR_VERSION,
+    };
     write_data(data, file_header);
 
     VoxelSceneSerializeData serialize_data;
@@ -228,7 +235,7 @@ std::vector<uint8_t> save_voxel_scene(const ResourceRef<VoxelScene>& scene) {
 
     write_data(data, serialize_data.hierarchy_nodes);
 
-    const uint8_t* string_data = reinterpret_cast<const uint8_t*>(serialize_data.string_data.data());
+    const auto* string_data = reinterpret_cast<const uint8_t*>(serialize_data.string_data.data());
     data.insert(data.end(), string_data, string_data + serialize_data.string_data.size());
 
     // Insert the svt64 tree data at the end.

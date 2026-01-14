@@ -352,9 +352,10 @@ bool VoxelScene::load() {
     const std::string& file_extension = file_location.relative_path.extension().generic_string();
     if (file_extension == ".svh") {
         ScopedTimer timer("Parse Sparse Voxel Hierarchy File");
-        hierarchy = load_voxel_scene(IO::read_file(file_location));
 
-        return true;
+        const bool success = load_voxel_scene(IO::read_file(file_location), hierarchy);
+        if (!success) Log::error("Failed to load voxel scene from file: {}", file_location);
+        return success;
     }
 
     /* Parse the vengi file */
@@ -364,7 +365,7 @@ bool VoxelScene::load() {
         root = VengiParser::load(file_location);
     }
     if (!root) {
-        Log::error("Failed to load voxel scene from file: {}", file_location.get_relative_path().string());
+        Log::error("Failed to load voxel scene from file: {}", file_location);
         return false;
     }
 

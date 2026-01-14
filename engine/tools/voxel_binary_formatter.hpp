@@ -8,6 +8,6 @@ namespace tmt {
 struct VoxelSceneNode;
 class VoxelScene;
 
-VoxelSceneNode load_voxel_scene(const std::vector<char>& data);
+bool load_voxel_scene(const std::vector<char>& data, VoxelSceneNode& hierarchy);
 std::vector<uint8_t> save_voxel_scene(const ResourceRef<VoxelScene>& scene);
 }  // namespace tmt
