@@ -36,7 +36,7 @@ class VoxelScene : public tmt::FileResource {
     bool load() override;
     void unload() override;
 
-    inline static const std::set<std::string_view> SUPPORTED_FILE_EXTENSIONS {".vengi"};
+    inline static const std::set<std::string_view> SUPPORTED_FILE_EXTENSIONS {".vengi", ".svh"};
 
     /* Voxel scene hierarchy. */
     VoxelSceneNode hierarchy {};

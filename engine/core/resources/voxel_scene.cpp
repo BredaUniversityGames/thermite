@@ -8,6 +8,7 @@
 #include "engine/core/renderer/renderer.hpp"
 #include "engine/tools/profiler.hpp"
 #include "engine/tools/timer.hpp"
+#include "engine/tools/voxel_binary_formatter.hpp"
 
 #include <queue>
 #include <omp.h>
@@ -347,6 +348,14 @@ VoxelSceneNode parse_hierarchy(const vengi::Node* file_node) {
 
 bool VoxelScene::load() {
     TMT_ZONE_SCOPED
+
+    const std::string& file_extension = file_location.relative_path.extension().generic_string();
+    if (file_extension == ".svh") {
+        ScopedTimer timer("Parse Sparse Voxel Hierarchy File");
+        hierarchy = load_voxel_scene(IO::read_file(file_location));
+
+        return true;
+    }
 
     /* Parse the vengi file */
     std::unique_ptr<vengi::Node> root = nullptr;
