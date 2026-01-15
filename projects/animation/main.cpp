@@ -37,6 +37,7 @@ class AnimationScene : public tmt::Scene<AnimationScene> {
 
     tmt::Entity parent_entity;
     tmt::Entity snake_entity;
+    tmt::Entity arm_entity;
 };
 
 std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs& args) {
@@ -81,7 +82,10 @@ void AnimationScene::on_start() {
 
     { /* Test rig */
         parent_entity = engine.ecs.create_entity();
-        engine.ecs.add_component<BoneHierarchyRenderer>(parent_entity);
+        engine.ecs.add_component<AnimConstraints::DampedTransformConstraint>(parent_entity).damp = 0.95f;
+        auto& bone_renderer = engine.ecs.add_component<BoneHierarchyRenderer>(parent_entity);
+        bone_renderer.color = glm::vec4(1.f, 0.f, 1.f, 1.f);
+        bone_renderer.line_width = 1.f;
         auto& parent_transform = engine.ecs.get_component<Transform>(parent_entity);
         parent_transform.set_local_position(glm::vec3(5.f, 0.f, 0.f));
 
@@ -113,7 +117,10 @@ void AnimationScene::on_start() {
     }
     { /* snake rig */
         snake_entity = engine.ecs.create_entity();
-        engine.ecs.add_component<BoneHierarchyRenderer>(snake_entity);
+        engine.ecs.add_component<AnimConstraints::DampedTransformConstraint>(snake_entity).damp = 0.95f;
+        auto& bone_renderer = engine.ecs.add_component<BoneHierarchyRenderer>(snake_entity);
+        bone_renderer.color = glm::vec4(1.f, 1.f, 0.f, 1.f);
+        bone_renderer.line_width = 1.f;
         auto& parent_transform = engine.ecs.get_component<Transform>(snake_entity);
         parent_transform.set_local_position(glm::vec3(0.f, -3.f, -10.f));
 
@@ -143,6 +150,31 @@ void AnimationScene::on_start() {
         child_2_transform.add_child(child_3);
         child_3_transform.add_child(child_4);
     }
+    { /* arm rig */
+        arm_entity = engine.ecs.create_entity();
+        auto& two_bone_ik_constraint = engine.ecs.add_component<AnimConstraints::TwoBoneIKConstraint>(arm_entity);
+        auto& bone_renderer = engine.ecs.add_component<BoneHierarchyRenderer>(arm_entity);
+        bone_renderer.color = glm::vec4(0.f, 1.f, 1.f, 1.f);
+        bone_renderer.line_width = 0.4f;
+        auto& parent_transform = engine.ecs.get_component<Transform>(arm_entity);
+        parent_transform.set_local_position(glm::vec3(4.f, 0.f, -10.f));
+
+        auto child_0 = engine.ecs.create_entity();
+        auto& child_0_transform = engine.ecs.get_component<Transform>(child_0);
+        child_0_transform.set_local_position(glm::vec3(4.f, 10.f, -10.f));
+
+        auto child_1 = engine.ecs.create_entity();
+        auto& child_1_transform = engine.ecs.get_component<Transform>(child_1);
+        child_1_transform.set_local_position(glm::vec3(4.f, 20.f, -10.f));
+
+        two_bone_ik_constraint.root = arm_entity;
+        two_bone_ik_constraint.mid = child_0;
+        two_bone_ik_constraint.tip = child_1;
+        two_bone_ik_constraint.bend_position = glm::vec3(0.f, 100.f, 0.f);
+
+        parent_transform.add_child(child_0);
+        child_0_transform.add_child(child_1);       
+    }
 }
 
 void AnimationScene::on_update(const tmt::FrameData& time) 
@@ -150,9 +182,11 @@ void AnimationScene::on_update(const tmt::FrameData& time)
     using namespace tmt;
 
     auto& snake_transform = engine.ecs.get_component<Transform>(snake_entity);
-
     snake_transform.set_local_position(TestMotion::sample_position(time.elapsed_time));
     snake_transform.set_local_rotation(TestMotion::sample_rotation(time.elapsed_time, time.delta_time));
+
+    auto& two_bone_ik = engine.ecs.get_component<AnimConstraints::TwoBoneIKConstraint>(arm_entity);
+    two_bone_ik.target_position = TestMotion::sample_position(time.elapsed_time + 100.f);
 }
 
 void AnimationScene::on_end() {}

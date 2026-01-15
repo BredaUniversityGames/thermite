@@ -7,6 +7,8 @@
 #include "rig_renderer.hpp"
 #include "engine/core/polyline.hpp"
 #include "engine/systems/animation/components/bone_hierarchy_renderer.hpp"
+#include "engine/systems/animation/constraints/damped_transform.hpp"
+#include "engine/systems/animation/constraints/two_bone_ik.hpp"
 
 #define CONDITION(comparison) [](const Variant& parameter, const Variant& value) -> bool { return parameter comparison value; }
 
@@ -112,7 +114,7 @@ void tmt::ConstraintSystem::on_start()
         damped_constraint.local_rest_pose.bone_entity = entity;
         auto& start_transform = tmt::engine.ecs.get_component<Transform>(entity);
 
-        set_local_rest_pose(start_transform, damped_constraint.local_rest_pose);
+        AnimConstraints::DampedTransform::set_local_rest_pose(start_transform, damped_constraint.local_rest_pose);
     }
 }
 void tmt::ConstraintSystem::on_update(const tmt::FrameData& time) 
@@ -123,51 +125,34 @@ void tmt::ConstraintSystem::on_update(const tmt::FrameData& time)
         damped_constraint.local_rest_pose.local_pos = start_transform.get_local_position();
         damped_constraint.local_rest_pose.local_rot = start_transform.get_local_rotation();
 
-        update_damped_pose(damped_constraint.local_rest_pose, damped_constraint.local_rest_pose.local_pos, damped_constraint.local_rest_pose.local_rot, damped_constraint.damp);
+        AnimConstraints::DampedTransform::update_damped_pose(damped_constraint.local_rest_pose, damped_constraint.local_rest_pose.local_pos, damped_constraint.local_rest_pose.local_rot, damped_constraint.damp);
     }
-    
-}
-void tmt::ConstraintSystem::set_local_rest_pose(const tmt::Transform& transform, AnimConstraints::LocalRestPose& rest_pose) {
-    rest_pose.local_rot = transform.get_local_rotation();
-    rest_pose.local_pos = transform.get_local_position();
-    rest_pose.prev_world_rot = transform.get_world_rotation();
-    rest_pose.prev_world_pos = transform.get_world_position();
+    for (const auto& [entity, transform, two_bone_constraint] : engine.ecs.get_registry().view<Transform, AnimConstraints::TwoBoneIKConstraint>().each()) {
+        auto& start_transform = tmt::engine.ecs.get_component<Transform>(entity);
 
-    const auto& children = transform.get_children();
+        AnimConstraints::TwoBoneIK::TwoBoneInputData input_data;
+        if(engine.ecs.valid(two_bone_constraint.parent))
+        {
+            input_data.parent = &engine.ecs.get_component<Transform>(two_bone_constraint.parent);
+        }
 
-    for (auto child : children) {
-        const auto& child_transform = engine.ecs.get_component<Transform>(child);
+        auto& root_transform = engine.ecs.get_component<Transform>(two_bone_constraint.root);
+        auto& mid_transform = engine.ecs.get_component<Transform>(two_bone_constraint.mid);
 
-        AnimConstraints::LocalRestPose child_rest_pose;
-        child_rest_pose.bone_entity = child;
-        rest_pose.children_rest_poses.push_back(child_rest_pose);
+        input_data.root = &root_transform;
+        input_data.mid = &mid_transform;
+        input_data.end = &engine.ecs.get_component<Transform>(two_bone_constraint.tip);
 
-        set_local_rest_pose(child_transform, rest_pose.children_rest_poses.back());
-    }
-}
+        input_data.effector = two_bone_constraint.target_position;
+        input_data.bend_pos = two_bone_constraint.bend_position;
 
-void tmt::ConstraintSystem::update_damped_pose(AnimConstraints::LocalRestPose& local_rest_pose, const glm::vec3& parent_world_pos, const glm::quat& parent_world_rot, float damp) {
-    for (auto& child_pose : local_rest_pose.children_rest_poses) {
-        glm::quat ws_target_rot = parent_world_rot * child_pose.local_rot;
-        glm::vec3 ws_target_pos = parent_world_pos + (ws_target_rot * child_pose.local_pos);
-
-        glm::vec3 new_world_pos = glm::mix(ws_target_pos, child_pose.prev_world_pos, damp);
-        glm::quat new_world_rot = glm::slerp(ws_target_rot, child_pose.prev_world_rot, damp);
-
-        glm::quat new_local_rot = glm::inverse(parent_world_rot) * new_world_rot;
-        glm::vec3 new_local_pos = glm::inverse(parent_world_rot) * (new_world_pos - parent_world_pos);
-
-        auto& child_transform = tmt::engine.ecs.get_component<Transform>(child_pose.bone_entity);
-
-        child_transform.set_local_rotation(new_local_rot);
-        child_transform.set_local_position(new_local_pos);
-
-        child_pose.prev_world_pos = new_world_pos;
-        child_pose.prev_world_rot = new_world_rot;
-
-        update_damped_pose(child_pose, new_world_pos, new_world_rot, damp);
+        auto output = AnimConstraints::TwoBoneIK::solve_two_bone_ik(input_data);
+        
+        root_transform.set_local_rotation(output.root_rot);
+        mid_transform.set_local_rotation(output.mid_rot);
     }
 }
+
 
 
 void tmt::ConstraintSystem::on_end() {}

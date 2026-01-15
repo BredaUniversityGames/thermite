@@ -21,7 +21,6 @@ class ConstraintSystem : public ISystem
 {
    public:
 
-
 // Inherited via ISystem
     void on_start() override;
     void on_update(const tmt::FrameData& time) override;
@@ -29,7 +28,5 @@ class ConstraintSystem : public ISystem
     std::string get_name() override;
 
    private:
-    void set_local_rest_pose(const tmt::Transform& transform, AnimConstraints::LocalRestPose& rest_pose);
-    void update_damped_pose(AnimConstraints::LocalRestPose& rest_pose, const glm::vec3& parent_world_pos, const glm::quat& parent_world_rot, float damp);
 };
 }  // namespace tmt

@@ -21,6 +21,17 @@ struct DampedTransformConstraint{
     float damp = 0.f;
     LocalRestPose local_rest_pose; // root
 };
+struct TwoBoneIKConstraint
+{
+    tmt::Entity parent = entt::null;
+    tmt::Entity root;
+    tmt::Entity mid;
+    tmt::Entity tip;
+
+    glm::vec3 target_position;
+    glm::vec3 bend_position;
+};
+
 }  // namespace AnimConstraints
 }  // namespace tmt
 TMT_COMPONENT(tmt::AnimConstraints::DampedTransformConstraint, "DampedTransformConstraint", (damp));
