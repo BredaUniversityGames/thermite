@@ -155,10 +155,7 @@ void RenderView::resize_textures() {
     /* Resize the screen buffers */
     bank.resize_texture(viewport.texture, view_size).expect("failed to resize viewport texture.");
     bank.resize_texture(vbuffer.texture, view_size).expect("failed to resize vbuffer texture.");
-<<<<<<< HEAD
-=======
     bank.resize_texture(dbuffer.texture, view_size).expect("failed to resize depth buffer texture.");
->>>>>>> origin/main
     bank.resize_texture(ibuffer.texture, view_size).expect("failed to resize ibuffer texture.");
 
     /* Resize macrofacet buffers */
