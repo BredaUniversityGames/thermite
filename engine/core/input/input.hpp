@@ -117,13 +117,13 @@ class Input {
     /// Returns the mouse cursor's X position in window coordinates.
     /// </summary>
     /// <returns>X position in pixels.</returns>
-    float get_mouse_x() const { return mouse_x; }
+    float get_mouse_x() const;
 
     /// <summary>
     /// Returns the mouse cursor's Y position in window coordinates.
     /// </summary>
     /// <returns>Y position in pixels.</returns>
-    float get_mouse_y() const { return mouse_y; }
+    float get_mouse_y() const;
 
     /// <summary>
     /// Returns the mouse cursor's position as a 2D vector.
@@ -135,25 +135,25 @@ class Input {
     /// Returns horizontal scroll wheel delta for this frame.
     /// </summary>
     /// <returns>Horizontal scroll amount.</returns>
-    float get_mouse_wheel_x() const { return scroll_dx; }
+    float get_mouse_wheel_x() const;
 
     /// <summary>
     /// Returns vertical scroll wheel delta for this frame.
     /// </summary>
     /// <returns>Vertical scroll amount.</returns>
-    float get_mouse_wheel_y() const { return scroll_dy; }
+    float get_mouse_wheel_y() const;
 
     /// <summary>
     /// Returns mouse movement delta X since last frame.
     /// </summary>
     /// <returns>Horizontal movement in pixels.</returns>
-    float get_mouse_delta_x() const { return mouse_dx; }
+    float get_mouse_delta_x() const;
 
     /// <summary>
     /// Returns mouse movement delta Y since last frame.
     /// </summary>
     /// <returns>Vertical movement in pixels.</returns>
-    float get_mouse_delta_y() const { return mouse_dy; }
+    float get_mouse_delta_y() const;
 
     /// <summary>
     /// Enables or disables relative mouse mode (cursor hidden, infinite movement).
@@ -224,7 +224,13 @@ class Input {
     /// Locks or unlocks the mouse cursor to the window.
     /// </summary>
     /// <param name="value">True to lock, false to unlock.</param>
-    void lock_mouse(bool value) const;
+    void lock_mouse(bool value);
+
+    /// <summary>
+    /// Returns true if the mouse cursor is currently locked to the window.
+    /// </summary>
+    /// <returns>True if the mouse is locked.</returns>
+    bool is_mouse_locked() const;
 
     /// <summary>
     /// Moves the cursor position to given position using the default window.
@@ -295,6 +301,10 @@ class Input {
     float get_action_duration(const std::string& name) const;
 
    private:
+    bool can_use_input_mouse() const;
+    bool can_use_input_keyboard() const;
+    bool can_capture_keyboard = false;
+    bool can_capture_mouse = false;
     // non-owning pointer from SDL, do not free manually
     const bool* keys_sdl = nullptr;
     uint32_t mouse_buttons = 0u;
@@ -305,6 +315,7 @@ class Input {
     float mouse_dy = 0.0f;
     float scroll_dx = 0.0f;
     float scroll_dy = 0.0f;
+    bool mouse_locked = false;
     std::vector<bool> prev_keys {};
     std::unordered_map<int32_t, GamepadState> gamepads {};
 };
