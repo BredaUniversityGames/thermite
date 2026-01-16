@@ -28,6 +28,9 @@ struct Hit {
 
     /* @returns True if this hit was a miss. */
     inline bool miss() const { return distance == 1e30f; };
+
+    /* @returns True if this hit was a hit. */
+    operator bool() const { return !miss(); };
 };
 
 }  // namespace tmt

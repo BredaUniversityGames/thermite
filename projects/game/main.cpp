@@ -110,7 +110,7 @@ void DragonScene::on_update(const tmt::FrameData& time) {
         const tmt::Ray mouse_ray = tmt::engine.renderer.render_view.pixel_ray(mouse_pos);
         const tmt::Hit hit = tmt::engine.renderer.trace_ray(mouse_ray);
 
-        if (hit.miss() == false) {
+        if (hit) {
             // tmt::engine.ecs.destroy_entity(hit.entity);
             tmt::Log::info("pixel: {}, {} | hit: {}, {}, {}", mouse_pos.x, mouse_pos.y, hit.coord.x, hit.coord.y, hit.coord.z);
         }
