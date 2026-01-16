@@ -102,9 +102,6 @@ void DragonScene::on_update(const tmt::FrameData& time) {
     // if (tmt::engine.input.is_keyboard_button_released(tmt::Key::SPACE)) {
     //     tmt::engine.scenes.enqueue_scene<TableScene>();
     // }
-
-    const auto mouse_pos = tmt::engine.input.get_mouse_position();
-    tmt::Log::info("Mouse Position: x={}, y={}", mouse_pos.x, mouse_pos.y);
 }
 
 void DragonScene::on_end() {}
