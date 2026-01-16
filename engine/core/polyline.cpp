@@ -7,15 +7,13 @@
 #include "engine/core/renderer/renderer.hpp"
 #include "engine/core/renderer/pipelines/polyline_pipeline.hpp"
 #include "engine/core/logger.hpp"
+#include "utilities/constants.hpp"
 
 namespace tmt {
 
-/* Internal polyline pipeline quick access. */
-PolylinePipeline& polyline = engine.renderer.polyline_pipeline;
-
 void Polyline::draw_line(glm::vec3 a, glm::vec3 b, float time) {
     /* Check if we reached the maximum number of polylines */
-    if (polyline.line_segment_count >= MAX_POLYLINES - 1u) {
+    if (engine.renderer.polyline_pipeline.line_segment_count >= MAX_POLYLINES - 1u) {
         if (logged_once == false) {
             Log::warn(Log::Scope::RENDERER, "Max amount of polylines reached. Consider increasing MAX_POLYLINES, or draw less lines.");
             logged_once = true;
@@ -24,16 +22,16 @@ void Polyline::draw_line(glm::vec3 a, glm::vec3 b, float time) {
     }
 
     /* Increment the line segment count */
-    polyline.line_segment_count += 1u;
+    engine.renderer.polyline_pipeline.line_segment_count += 1u;
 
     /* If the time is 0 that means this is an immediate line */
     if (time == 0.0f) {
-        polyline.immediate_lines.emplace_back(a, b, color, line_width);
+        engine.renderer.polyline_pipeline.immediate_lines.emplace_back(a, b, color, line_width);
         return;
     }
 
     /* If the time *is* set, create a timed line */
-    polyline.timed_lines.emplace_back(a, b, color, line_width, time);
+    engine.renderer.polyline_pipeline.timed_lines.emplace_back(a, b, color, line_width, time);
 }
 
 void Polyline::draw_circle(glm::vec3 origin, float radius, uint32_t segments, float time) {
@@ -216,15 +214,15 @@ void Polyline::draw_cone(glm::vec3 origin, glm::vec3 dir, float angle, float len
 }
 
 void Polyline::draw_tube(glm::vec3 a, glm::vec3 b, float radius, uint32_t segments, float time) {
-    const glm::vec3 direction = glm::normalize(b - a);
+    const glm::vec3 dir = glm::normalize(b - a);
 
     /* Find perpendicular axes for the end circles */
     glm::vec3 ref = glm::vec3(0.0f, 1.0f, 0.0f);
-    if (glm::abs(glm::dot(direction, ref)) > 0.99f) {
+    if (glm::abs(glm::dot(dir, ref)) > 0.99f) {
         ref = glm::vec3(1.0f, 0.0f, 0.0f);
     }
-    const glm::vec3 axis_a = glm::normalize(glm::cross(direction, ref));
-    const glm::vec3 axis_b = glm::cross(direction, axis_a);
+    const glm::vec3 axis_a = glm::normalize(glm::cross(dir, ref));
+    const glm::vec3 axis_b = glm::cross(dir, axis_a);
 
     /* Draw the end circles */
     if (segments < 4u) segments = 4u;
@@ -243,7 +241,7 @@ void Polyline::draw_tube(glm::vec3 a, glm::vec3 b, float radius, uint32_t segmen
     const glm::vec3 camera_pos = engine.renderer.render_view.gpu_view.origin;
     const glm::vec3 to_camera = glm::normalize(camera_pos - center);
 
-    glm::vec3 perp = glm::cross(direction, to_camera);
+    glm::vec3 perp = glm::cross(dir, to_camera);
     if (glm::length2(perp) < 0.0001f) {
         perp = axis_a;
     } else {
@@ -254,4 +252,68 @@ void Polyline::draw_tube(glm::vec3 a, glm::vec3 b, float radius, uint32_t segmen
     draw_line(a - perp * radius, b - perp * radius, time);
 }
 
+void Polyline::draw_bone(glm::vec3 origin, glm::quat rot, float length, float time) {
+    if (length < 0.0001f) return;
+
+    /* Mid-point and width inferred from dir and length */
+    const glm::vec3 dir = rot * glm::vec3(0, 1, 0);
+    const glm::vec3 mid = origin + dir * length * 0.125f;
+    const float width = length * 0.125f;
+    const glm::vec3 b = origin + dir * length;
+
+    /* Get the four corner points of the bone */
+    const glm::vec3 rot_a = rot * glm::vec3(1, 0, 0) * width;
+    const glm::vec3 rot_b = rot * glm::vec3(0, 0, 1) * width;
+    const glm::vec3 points[4] = {mid + rot_a, mid + rot_b, mid - rot_a, mid - rot_b};
+    const glm::vec3 to_cam = glm::normalize(glm::vec3(engine.renderer.render_view.gpu_view.origin) - mid);
+
+    /* Draw each of the bone edges (only if they would be visible if it was solid) */
+    for (int i = 0; i < 4; ++i) {
+        const int n = (i + 1) & 3;
+        const int pr = (i + 3) & 3;
+
+        const bool front_i = glm::dot(glm::cross(points[i] - origin, points[n] - origin), to_cam) > 0.0f;
+        const bool front_pr = glm::dot(glm::cross(points[pr] - origin, points[i] - origin), to_cam) > 0.0f;
+        const bool back_i = glm::dot(glm::cross(points[n] - b, points[i] - b), to_cam) > 0.0f;
+        const bool back_pr = glm::dot(glm::cross(points[i] - b, points[pr] - b), to_cam) > 0.0f;
+
+        if (front_i || front_pr) draw_line(origin, points[i], time);
+        if (back_i || back_pr) draw_line(points[i], b, time);
+        if (front_i || back_i) draw_line(points[i], points[n], time);
+    }
+}
+
+void Polyline::draw_text(glm::vec3 origin, std::string_view text, float size, float time) {
+    /* Billboard toward camera */
+    const glm::vec3 cam_pos = engine.renderer.render_view.gpu_view.origin;
+    const glm::vec3 forward = glm::normalize(cam_pos - origin);
+
+    glm::vec3 world_up = glm::vec3(0.0f, 1.0f, 0.0f);
+    if (glm::abs(glm::dot(forward, world_up)) > 0.99f) {
+        world_up = glm::vec3(0.0f, 0.0f, 1.0f);
+    }
+
+    const glm::vec3 right = glm::normalize(glm::cross(forward, world_up));
+    const glm::vec3 up = glm::cross(right, forward);
+
+    glm::vec3 cursor = origin;
+    const float spacing = size * 1.2f;  // todo remove magic number for spacing?
+
+    for (char c : text) {
+        const char upper_case_character = (char)std::toupper(static_cast<unsigned char>(c));
+
+        auto it = char_text_constants::CHAR_SEGMENTS.find(upper_case_character);
+        if (it == char_text_constants::CHAR_SEGMENTS.end()) {
+            // assign invalid character
+            it = char_text_constants::CHAR_SEGMENTS.find('\0');
+        }
+        for (const auto& seg : it->second) {
+            const glm::vec3 p0 = cursor + right * seg.x0 * size + up * seg.y0 * size;
+            const glm::vec3 p1 = cursor + right * seg.x1 * size + up * seg.y1 * size;
+            draw_line(p0, p1, time);
+        }
+
+        cursor += right * spacing;
+    }
+}
 }  // namespace tmt

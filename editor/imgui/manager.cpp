@@ -12,6 +12,9 @@
 #include "engine/core/io.hpp"
 #include "engine/core/renderer/renderer.hpp"
 #include "ImGuizmo.h"
+#include "implot.h"
+#include "editor/editor.hpp"
+#include "editor/windows/viewport.hpp"
 
 namespace tmt {
 
@@ -20,6 +23,7 @@ void ImGuiManager::init() {
 
     /* Initialize the immediate mode GUI */
     ImGui::CreateContext();
+    ImPlot::CreateContext();
     ImGui_ImplSDL3_InitForVulkan(engine.window.window);
     imgui->set_clear_screen(true);
     tmt::engine.renderer.set_imgui(imgui);
@@ -57,12 +61,24 @@ void ImGuiManager::end_frame() {
 }
 
 void ImGuiManager::deinit() {
+    ImPlot::DestroyContext();
     imgui->deinit().expect("Failed to deinitialize ImGui");
 
     delete imgui;
 }
 
-void ImGuiManager::on_sdl_event(SDL_Event& event) { ImGui_ImplSDL3_ProcessEvent(&event); }
+void ImGuiManager::on_sdl_event(internal::SdlEvent& event) {
+    ImGui_ImplSDL3_ProcessEvent(&event.event);
+    const auto& viewport = editor.windows.get<Viewport>();
+    if (viewport.get_is_hovered()) {
+        /* Don't let imgui capture input if hovering viewport */
+        event.imgui_capture_mouse = false;
+        event.imgui_capture_keyboard = false;
+    } else {
+        event.imgui_capture_mouse = ImGui::GetIO().WantCaptureMouse;
+        event.imgui_capture_keyboard = ImGui::GetIO().WantCaptureKeyboard;
+    }
+}
 
 void ImGuiManager::on_engine_update(const FrameData&) {}
 
