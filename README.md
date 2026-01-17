@@ -23,13 +23,13 @@
 
 <h2><samp><b>Tech Stack</b></samp></h2>
 
-Modern C++20  
-[Graphite](https://github.com/mxcop/graphite) Render Graph *(Vulkan [SDK 1.4.328.1](https://sdk.lunarg.com/sdk/download/1.4.328.1/windows/vulkansdk-windows-X64-1.4.328.1.exe))*  
-CMake *(Build system)*
+- Modern C++20  
+- [Graphite](https://github.com/mxcop/graphite) Render Graph *(Vulkan [SDK 1.4.328.1](https://sdk.lunarg.com/sdk/download/1.4.328.1/windows/vulkansdk-windows-X64-1.4.328.1.exe))*  
+- CMake *(Build system)*
 
 <h2><samp><b>Getting Started</b></samp></h2>
 
-Open up the root folder inside your IDE, preferably Visual Studio or VSCode because they have cmake support built-in.  
+Open up the root folder inside your IDE, preferably Visual Studio or VSCode because they have cmake support built-in. 
 Upon opening, CMake will automatically run and configure.
 
 <h3><samp><b>Adding a new project</b></samp></h3>
