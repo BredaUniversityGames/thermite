@@ -3,13 +3,14 @@
 #include "engine/core/resource.hpp"
 #include "engine/shared/svt64.hpp"
 #include "engine/core/reflection.hpp"
+#include "uuid_v4.h"
 
 namespace tmt {
 
 /* Voxel scene resource node. */
 struct VoxelSceneNode {
     /* 128 bit unique identifier. */
-    uint64_t uuid[2] {};
+    UUIDv4::UUID uuid;
 
     /* Voxel acceleration structure. */
     std::unique_ptr<Svt64> tree {};

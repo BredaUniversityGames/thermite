@@ -1,5 +1,6 @@
 #include "voxel_binary_formatter.hpp"
 
+#include "core/logger.hpp"
 #include "core/resources/voxel_scene.hpp"
 
 namespace tmt {
@@ -25,6 +26,7 @@ struct HierarchyHeader {
 static_assert(sizeof(HierarchyHeader) == 8);
 
 struct HierarchyNode {
+    UUIDv4::UUID uuid; // *Technically* not trivially copyable, but has the same layout and will be copied right after.
     uint32_t parent_index;
     uint32_t svt64_offset;
     uint32_t svt64_size;
@@ -33,7 +35,7 @@ struct HierarchyNode {
     glm::uvec3 size;
     glm::mat4 transform;
 };
-static_assert(sizeof(HierarchyNode) == 96);
+static_assert(sizeof(HierarchyNode) == 112);
 
 struct SVT64Header {
     uint32_t tree_node_count;
@@ -129,6 +131,7 @@ void recurse_deserialize_scene_node(VoxelSceneNode& scene_node, VoxelSceneDeseri
     const HierarchyNode& node_data = deserialize_data.hierarchy_nodes[node_index];
 
     const auto& node_svt64_data = deserialize_data.svt64_data.subspan(node_data.svt64_offset, node_data.svt64_size);
+    scene_node.uuid = node_data.uuid;
     scene_node.tree = deserialize_svt64_tree(node_svt64_data);
     scene_node.size = node_data.size;
     scene_node.name = deserialize_data.string_data.substr(node_data.name_offset, node_data.name_length);
@@ -177,6 +180,7 @@ void recurse_parse_voxel_scene(const VoxelSceneNode& node, const uint32_t parent
     serialize_data.string_data += node.name;
 
     const HierarchyNode hierarchy_node {
+        .uuid = node.uuid,
         .parent_index = parent_index,
         .svt64_offset = svt64_offset,
         .svt64_size = svt64_size,
@@ -198,7 +202,7 @@ bool load_voxel_scene(const std::vector<char>& data, VoxelSceneNode& hierarchy) 
     const auto* data_pointer = reinterpret_cast<const uint8_t*>(data.data());
 
     const auto& file_header = read_data<FileHeader>(data_pointer);
-    if (file_header.magic_number != 0xFE2032A1) return false;  // Make sure the magic number matches.
+    if (file_header.magic_number != MAGIC_NUMBER) return false;  // Make sure the magic number matches.
     assert(file_header.minor_version == CURRENT_MINOR_VERSION && file_header.major_version == CURRENT_MAJOR_VERSION && "File format version not supported!");
     const auto& hierarchy_header = read_data<HierarchyHeader>(data_pointer);
 
