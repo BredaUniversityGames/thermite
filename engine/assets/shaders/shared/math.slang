@@ -55,6 +55,25 @@ public float3 decode_rgb9e5(const uint p) {
     return float3(r, g, b);
 }
 
+/* Quantization factor */
+static const float R21G22B21_QFACTOR = 1e3f;
+
+/* Encode fixed point RGB values into 64 bit integer. */
+public uint64_t encode_r21g22b21(const float3 rgb) {
+    const uint3 fxp = uint3(rgb * R21G22B21_QFACTOR);
+    return (uint64_t)fxp.r | ((uint64_t)fxp.g << 21) | ((uint64_t)fxp.b << 43);
+}
+
+/* Decode fixed point RGB values from 64 bit integer. */
+public float3 decode_r21g22b21(const uint64_t p) {
+    const uint3 fxp = uint3(
+        (uint)(p & 0x1FFFFFull),
+        (uint)(p >> 21 & 0x1FFFFFull),
+        (uint)(p >> 43)
+    );
+    return float3(fxp) * (1.0f / R21G22B21_QFACTOR);
+}
+
 public struct Basis {
     public float3 a;
     public float3 b;

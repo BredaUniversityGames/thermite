@@ -2,25 +2,19 @@ import view;
 import visibility;
 import math;
 import voxel;
+import cache;
 import debug;
-
-static const uint FUSE_LENGTH = 32u;
-static const uint64_t EMPTY_KEY = 0ull;
-
-struct HashCell {
-    uint64_t key;
-    uint value;
-    uint samples;
-};
 
 /* Active render view */
 ConstantBuffer<RenderView> render_view;
 /* Visibility buffer */
 Texture2D<uint2> vbuffer;
 /* Macrofacet illuminance cache buffer. */
-StructuredBuffer<HashCell> macrofacet_illuminance_cache;
+RWStructuredBuffer<cache::Slot> macrofacet_illuminance_cache;
 /* Render target. (Output) */
 RWTexture2D<float4> render_target;
+
+// static const float3 AO_LUMINANCE = float3(0.2f, 0.5f, 1.0f);
 
 [shader("compute")]
 [numthreads(16, 8, 1)]
@@ -33,7 +27,7 @@ void main(int2 thread_id: SV_DispatchThreadID) {
 
     /* Exit early if the visibility for this pixel is null */
     if (null_visibility(facet_key)) {
-        render_target[thread_id] = float4(0.075f, 0.075f, 0.075f, 1.0f);
+        render_target[thread_id] = float4(0.075f, 0.075f, 0.075f, 1.0f); // float4(pow(1.0f - exp(-1.2f * float3(0.2f, 0.5f, 1.0f)), 0.45f), 1.0f);
         return;
     }
     /* Unpack the key into its voxel components */
@@ -44,11 +38,12 @@ void main(int2 thread_id: SV_DispatchThreadID) {
     uint slot = voxel_hash(v.voxel_index, v.object_index, v.face_index) % capacity;
 
     /* Find the macrofacet */
-    for (uint fuse = 0u; fuse < FUSE_LENGTH; ++fuse) {
+    for (uint fuse = 0u; fuse < cache::FUSE_LENGTH; ++fuse) {
         /* Exit if we found a slot which matches our key */
         if (macrofacet_illuminance_cache[slot].key == facet_key) {
-            const float illuminance = ((float)macrofacet_illuminance_cache[slot].value * 1e-3f) / macrofacet_illuminance_cache[slot].samples;
-            render_target[thread_id] = float4(illuminance.xxx, 1.0f);
+            const float3 illuminance = macrofacet_illuminance_cache[slot].illuminance();
+            render_target[thread_id] = float4(illuminance, 1.0f);  // float4(pow(1.0f - exp(-1.2f * illuminance), 0.45f), 1.0f);
+            macrofacet_illuminance_cache[slot].samples = (macrofacet_illuminance_cache[slot].samples & 0xFFFFFu) | (render_view.frame_index << 20);
             return;
         }
 

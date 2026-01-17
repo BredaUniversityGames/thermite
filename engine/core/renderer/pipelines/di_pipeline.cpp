@@ -43,6 +43,7 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
 
     /* Recycling pass */
     render_graph.add_compute_pass("recycling pass", "recycling.cs")
+        .read(render_view.render_view_buffer) /* Render view buffer */
         .write(render_view.macrofacet_illuminance_cache) /* Illuminance cache buffer */
         .group_size(128)
         .work_size(10000000);
@@ -63,7 +64,7 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
         render_graph.add_compute_pass("[debug] illuminance pass", "debug/illuminance.cs")
             .read(render_view.render_view_buffer) /* Render view buffer */
             .read(render_view.vbuffer.image) /* Visibility buffer */
-            .read(render_view.macrofacet_illuminance_cache) /* Illuminance cache buffer */
+            .write(render_view.macrofacet_illuminance_cache) /* Illuminance cache buffer */
             .write(render_image) /* Render target */
             .group_size(16, 8)
             .work_size(render_res.x, render_res.y);

@@ -2,18 +2,17 @@
  * @name Recycling [1 thread per hash cell]
  * ...
  */
+import math;
 import view;
+import cache;
 
-static const uint64_t EMPTY_KEY = 0ull;
-
-struct HashCell {
-    uint64_t key;
-    uint value;
-    uint samples;
-};
-
+/* Active render view. */
+ConstantBuffer<RenderView> render_view;
 /* Macrofacet illuminance cache buffer. */
-RWStructuredBuffer<HashCell> macrofacet_illuminance_cache;
+RWStructuredBuffer<cache::Slot> macrofacet_illuminance_cache;
+
+static const uint NORM_THRESHOLD = 512u;
+static const uint BASE_COUNT = 256u;
 
 [shader("compute")]
 [numthreads(128, 1, 1)]
@@ -22,22 +21,27 @@ void main(int thread_id: SV_DispatchThreadID) {
     if (thread_id >= 10000000u) return;
 
     /* Skip empty slots */
-    if (macrofacet_illuminance_cache[thread_id].key == EMPTY_KEY) return;
+    if (macrofacet_illuminance_cache[thread_id].key == cache::EMPTY_KEY) return;
 
-    /* Get the sample count for this slot */
-    const uint sample_count = macrofacet_illuminance_cache[thread_id].samples;
-    if (sample_count == 1u) {
-        macrofacet_illuminance_cache[thread_id].key = EMPTY_KEY;
+    /* Free this slot if it has gone unused for a while */
+    // const uint test = ((macrofacet_illuminance_cache[thread_id].samples >> 20) + cache::FREE_THRESHOLD) & 0xFFFu;
+
+    const uint qframe = render_view.frame_index & 0xFFFu;
+    const uint qsampled = macrofacet_illuminance_cache[thread_id].samples >> 20;
+
+    int diff = ((qframe - qsampled) << 20) >> 20;
+
+    if (diff > cache::FREE_THRESHOLD) {
+        macrofacet_illuminance_cache[thread_id].reset();
         return;
     }
 
-    if (sample_count >= 512u) {
+    const uint sample_count = macrofacet_illuminance_cache[thread_id].samples & 0xFFFFFu;
+    if (sample_count > NORM_THRESHOLD) {
         /* Evaluate the mean value of this slot */
-        const float value = (float)macrofacet_illuminance_cache[thread_id].value * 1e-3f;
-        const float mean = value / sample_count;
+        const float3 mean = macrofacet_illuminance_cache[thread_id].illuminance();
 
         /* Reduce sample count back to 1 */
-        macrofacet_illuminance_cache[thread_id].samples = 256u;
-        macrofacet_illuminance_cache[thread_id].value = (uint)(mean * 256.0f * 1e3f);
+        macrofacet_illuminance_cache[thread_id].set(mean * BASE_COUNT, BASE_COUNT);
     }
 }
