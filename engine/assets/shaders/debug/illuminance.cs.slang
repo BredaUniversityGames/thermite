@@ -30,26 +30,14 @@ void main(int2 thread_id: SV_DispatchThreadID) {
         render_target[thread_id] = float4(0.075f, 0.075f, 0.075f, 1.0f); // float4(pow(1.0f - exp(-1.2f * float3(0.2f, 0.5f, 1.0f)), 0.45f), 1.0f);
         return;
     }
-    /* Unpack the key into its voxel components */
-    const VisData v = unpack_visibility(facet_key);
 
-    /* Evaluate the voxel hash function */
-    const uint capacity = 10000000u;
-    uint slot = voxel_hash(v.voxel_index, v.object_index, v.face_index) % capacity;
+    /* Sample the illuminance cache */
+    const float3 illuminance = cache::sample(macrofacet_illuminance_cache, facet_key, render_view.frame_index);
 
-    /* Find the macrofacet */
-    for (uint fuse = 0u; fuse < cache::FUSE_LENGTH; ++fuse) {
-        /* Exit if we found a slot which matches our key */
-        if (macrofacet_illuminance_cache[slot].key == facet_key) {
-            const float3 illuminance = macrofacet_illuminance_cache[slot].illuminance();
-            render_target[thread_id] = float4(illuminance, 1.0f);  // float4(pow(1.0f - exp(-1.2f * illuminance), 0.45f), 1.0f);
-            macrofacet_illuminance_cache[slot].samples = (macrofacet_illuminance_cache[slot].samples & 0xFFFFFu) | (render_view.frame_index << 20);
-            return;
-        }
-
-        /* Move to the next hash cache slot */
-        slot = (slot + 1u) % capacity;
+    if (illuminance.x == BIG_F32) {
+        /* We didn't find a sample in the cache! */
+        render_target[thread_id] = float4(1.0f, 0.0f, 1.0f, 1.0f);
+    } else {
+        render_target[thread_id] = float4(illuminance, 1.0f);
     }
-
-    render_target[thread_id] = float4(1.0f, 0.0f, 0.0f, 1.0f);
 }

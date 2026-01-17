@@ -23,25 +23,15 @@ void main(int thread_id: SV_DispatchThreadID) {
     /* Skip empty slots */
     if (macrofacet_illuminance_cache[thread_id].key == cache::EMPTY_KEY) return;
 
-    /* Free this slot if it has gone unused for a while */
-    // const uint test = ((macrofacet_illuminance_cache[thread_id].samples >> 20) + cache::FREE_THRESHOLD) & 0xFFFu;
+    /* Find the number of frames between the current and last sampled frame */
+    const uint inactivity = macrofacet_illuminance_cache[thread_id].inactivity(render_view.frame_index);
 
-    const uint qframe = render_view.frame_index & 0xFFFu;
-    const uint qsampled = macrofacet_illuminance_cache[thread_id].samples >> 20;
-
-    int diff = ((qframe - qsampled) << 20) >> 20;
-
-    if (diff > cache::FREE_THRESHOLD) {
+    /* If this slot has been inactive for too long, reset it so it can be re-used */
+    if (inactivity > cache::INACTIVE_THRESHOLD) {
         macrofacet_illuminance_cache[thread_id].reset();
         return;
     }
 
-    const uint sample_count = macrofacet_illuminance_cache[thread_id].samples & 0xFFFFFu;
-    if (sample_count > NORM_THRESHOLD) {
-        /* Evaluate the mean value of this slot */
-        const float3 mean = macrofacet_illuminance_cache[thread_id].illuminance();
-
-        /* Reduce sample count back to 1 */
-        macrofacet_illuminance_cache[thread_id].set(mean * BASE_COUNT, BASE_COUNT);
-    }
+    /* Normalize the illuminance in the cache slot */
+    macrofacet_illuminance_cache[thread_id].normalize();
 }

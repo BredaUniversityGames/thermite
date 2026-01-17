@@ -55,25 +55,6 @@ public float3 decode_rgb9e5(const uint p) {
     return float3(r, g, b);
 }
 
-/* Quantization factor */
-static const float R21G22B21_QFACTOR = 1e3f;
-
-/* Encode fixed point RGB values into 64 bit integer. */
-public uint64_t encode_r21g22b21(const float3 rgb) {
-    const uint3 fxp = uint3(rgb * R21G22B21_QFACTOR);
-    return (uint64_t)fxp.r | ((uint64_t)fxp.g << 21) | ((uint64_t)fxp.b << 43);
-}
-
-/* Decode fixed point RGB values from 64 bit integer. */
-public float3 decode_r21g22b21(const uint64_t p) {
-    const uint3 fxp = uint3(
-        (uint)(p & 0x1FFFFFull),
-        (uint)(p >> 21 & 0x1FFFFFull),
-        (uint)(p >> 43)
-    );
-    return float3(fxp) * (1.0f / R21G22B21_QFACTOR);
-}
-
 public struct Basis {
     public float3 a;
     public float3 b;
@@ -89,4 +70,40 @@ public [ForceInline] Basis orthonormal_basis(const float3 n) {
         float3(1.0f + sign * n.x * n.x * a, sign * b, -sign * n.x),
         float3(b, sign + n.y * n.y * a, -n.y)
     );
+}
+
+/* R1 quasi-random sequence. */
+public float r1(const uint n) {
+    const float g = 1.6180339887498948482f;
+    const float a1 = 1.0f / g;
+    return frac(0.5f + a1 * n);
+}
+
+/* R2 quasi-random sequence. */
+public float2 r2(const uint n) {
+    const float g = 1.32471795724f;
+    const float a1 = 1.0f / g;
+    const float a2 = 1.0f / (g * g);
+    return frac(float2(a1, a2) * n + 0.5f);
+}
+
+/* Generate a sample direction within a cone around a direction vector. */
+public float3 sample_cone(const float3 dir, const float half_angle, const float2 uv) {
+    const float cos_theta = 1.0f - uv.x * (1.0f - half_angle);
+    const float sin_theta = sqrt(1.0f - cos_theta * cos_theta);
+    const float phi = 2.0f * 3.14f * uv.y;
+    const float3 local_dir = float3(sin_theta * cos(phi), sin_theta * sin(phi), cos_theta);
+    const Basis basis = orthonormal_basis(dir);
+    return normalize(local_dir.x * basis.a + local_dir.y * basis.b + local_dir.z * dir);
+}
+
+/* Generate a cosine weighted sample in the hemisphere around a normal vector. */
+public float3 sample_hemisphere(const float3 n, const float2 uv) {
+    const float r = sqrt(uv.x);
+    const float phi = 2.0f * 3.14f * uv.y;
+    const float x = r * cos(phi);
+    const float y = r * sin(phi);
+    const float z = sqrt(1.0f - uv.x);
+    const Basis basis = orthonormal_basis(n);
+    return normalize(x * basis.a + y * basis.b + z * n);
 }
