@@ -14,6 +14,13 @@
 
 namespace {
 
+struct FileDropState {
+    bool is_dropping {false};
+    std::vector<tmt::IO::FileLocation> dropped_files;
+} file_drop_state;
+
+std::atomic_flag block_import_atomic {};
+
 template <typename ItemType, typename ContainerType>
 void apply_requests(ImGuiMultiSelectIO* io, std::vector<ItemType>& selection, const ContainerType& items) {
     for (const auto& request : io->Requests) {
@@ -41,20 +48,9 @@ void apply_requests(ImGuiMultiSelectIO* io, std::vector<ItemType>& selection, co
     }
 }
 
-void drag_drop_location(const tmt::IO::FileLocation& location) {
-    if (!ImGui::BeginDragDropSource()) return;
-
-    const std::string& location_json = tmt::Serializer::serialize(location).dump(4);
-    ImGui::SetDragDropPayload("FileLocation", location_json.data(), location_json.size());
-
-    ImGui::Text("sub_location: %s", magic_enum::enum_name(location.sub_location).data());
-    ImGui::Text("relative_path: %s", location.relative_path.generic_string().c_str());
-
-    ImGui::EndDragDropSource();
-}
-
 [[nodiscard]] bool path_valid(const std::filesystem::path& path) { return !path.empty() && exists(path); }
 
+// Generate an unused filename by appending "(NUMBER)" after the filename.
 tmt::IO::FileLocation find_unused_file_location(tmt::IO::FileLocation file_location) {
     if (!tmt::IO::file_exists(file_location)) return file_location;
 
@@ -72,14 +68,19 @@ tmt::IO::FileLocation find_unused_file_location(tmt::IO::FileLocation file_locat
     return new_location;
 }
 
-struct FileDropState {
-    bool is_dropping {false};
-    std::vector<tmt::IO::FileLocation> dropped_files;
-} file_drop_state;
+void drag_drop_file(const tmt::IO::FileLocation& location) {
+    if (!ImGui::BeginDragDropSource()) return;
 
-std::atomic_flag block_import_atomic {};
+    const std::string& location_json = tmt::Serializer::serialize(location).dump(4);
+    ImGui::SetDragDropPayload("FileLocation", location_json.data(), location_json.size());
 
-void drag_drop_target_folder(const tmt::IO::FileLocation& location, const bool is_window = false) {
+    ImGui::Text("sub_location: %s", magic_enum::enum_name(location.sub_location).data());
+    ImGui::Text("relative_path: %s", location.relative_path.generic_string().c_str());
+
+    ImGui::EndDragDropSource();
+}
+
+void drag_drop_directory(const tmt::IO::FileLocation& location, const bool is_window = false) {
     if (!is_window) {
         if (!ImGui::BeginDragDropTarget()) return;
     } else {
@@ -120,17 +121,14 @@ void AssetBrowser::on_sdl_event(internal::SdlEvent& event) {
     const SDL_DropEvent& drop_event = event.event.drop;
 
     switch (drop_event.type) {
-        // On begin drop, set the drop state, then continuously update the position:
         case SDL_EVENT_DROP_BEGIN:
             file_drop_state.is_dropping = true;
             break;
 
-        // Accumulate all the files that were dropped and return.
         case SDL_EVENT_DROP_FILE:
             file_drop_state.dropped_files.push_back(IO::path_to_file_location(drop_event.data));
             break;
 
-        // Once the drop has finished, break out of the switch statement and import them.
         case SDL_EVENT_DROP_COMPLETE:
             file_drop_state.is_dropping = false;
             break;
@@ -161,9 +159,9 @@ bool AssetBrowser::location_is_bookmarked(const IO::FileLocation& location) {
 }
 
 void AssetBrowser::display() {
-    // If we are dropping a file we make the hover effect invisible (we manually draw the drag/drop hover effect instead).
+    // If we are dragging a file in from another program we manually create a drag and drop source to use in ImGui.
     if (file_drop_state.is_dropping) {
-        ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceExtern);  // ..._SourceExtern always returns true;
+        ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceExtern);  // ImGuiDragDropFlags_SourceExtern means it'll always return true.
 
         ImGui::SetDragDropPayload("Import", nullptr, 0);
         ImGui::Text("Import files...");
@@ -222,7 +220,7 @@ void AssetBrowser::display() {
     if (ImGui::BeginChild("Files")) {
         display_viewing_location();
     }
-    drag_drop_target_folder(viewing_location, true);
+    drag_drop_directory(viewing_location, true);
     ImGui::EndChild();
 
     ImGui::EndTable();
@@ -408,7 +406,7 @@ ImGuiID AssetBrowser::recurse_display_bookmark_dirs(const Directory& directory) 
     const std::string node_display_text = (ImGui::GetStateStorage()->GetBool(node_id) ? ICON_MS_FOLDER_OPEN " " : ICON_MS_FOLDER " ") + directory_path;
     const bool node_open = ImGui::TreeNodeBehavior(node_id, flags, node_display_text.c_str(), nullptr);
 
-    drag_drop_target_folder(directory.location);
+    drag_drop_directory(directory.location);
 
     location_context_menu(directory.location, true);
     if (ImGui::IsItemClicked()) pending_viewing_location = directory.location;
@@ -527,10 +525,10 @@ void AssetBrowser::display_viewing_location() {
         ImGui::SetNextItemSelectionUserData(i);
         ImGui::Selectable(location_name.c_str(), is_selected);
         location_context_menu(location, location_is_directory);
-        if (!location_is_directory) {
-            drag_drop_location(location);
+        if (location_is_directory) {
+            drag_drop_directory(location);
         } else {
-            drag_drop_target_folder(location);
+            drag_drop_file(location);
         }
 
         if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
