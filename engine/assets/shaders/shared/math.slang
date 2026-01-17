@@ -54,3 +54,20 @@ public float3 decode_rgb9e5(const uint p) {
     const float r = ldexp(x, e), g = ldexp(y, e), b = ldexp(z, e);
     return float3(r, g, b);
 }
+
+public struct Basis {
+    public float3 a;
+    public float3 b;
+};
+
+/* Create two orthonormal basis vectors for a given normal vector. */
+public [ForceInline] Basis orthonormal_basis(const float3 n) {
+    const float sign = n.z >= 0.0f ? 1.0f : -1.0f;
+    const float a = -1.0f / (sign + n.z);
+    const float b = n.x * n.y * a;
+
+    return Basis(
+        float3(1.0f + sign * n.x * n.x * a, sign * b, -sign * n.x),
+        float3(b, sign + n.y * n.y * a, -n.y)
+    );
+}

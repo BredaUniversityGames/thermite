@@ -10,6 +10,7 @@ static const uint64_t EMPTY_KEY = 0ull;
 struct HashCell {
     uint64_t key;
     uint value;
+    uint samples;
 };
 
 /* Active render view */
@@ -46,7 +47,8 @@ void main(int2 thread_id: SV_DispatchThreadID) {
     for (uint fuse = 0u; fuse < FUSE_LENGTH; ++fuse) {
         /* Exit if we found a slot which matches our key */
         if (macrofacet_illuminance_cache[slot].key == facet_key) {
-            render_target[thread_id] = float4(decode_rgb9e5(macrofacet_illuminance_cache[slot].value), 1.0f);
+            const float illuminance = ((float)macrofacet_illuminance_cache[slot].value * 1e-3f) / macrofacet_illuminance_cache[slot].samples;
+            render_target[thread_id] = float4(illuminance.xxx, 1.0f);
             return;
         }
 
