@@ -26,7 +26,7 @@ struct HierarchyHeader {
 static_assert(sizeof(HierarchyHeader) == 8);
 
 struct HierarchyNode {
-    UUIDv4::UUID uuid; // *Technically* not trivially copyable, but has the same layout and will be copied right after.
+    UUIDv4::UUID uuid;  // *Technically* not trivially copyable, but has the same layout and will be copied right after.
     uint32_t parent_index;
     uint32_t svt64_offset;
     uint32_t svt64_size;
@@ -46,7 +46,7 @@ static_assert(sizeof(SVT64Header) == 12);
 
 // Helper functions for reading data.
 template <typename Type>
-const Type& read_data(const uint8_t*& data_pointer) {
+const Type& read_data(const char*& data_pointer) {
     const Type* value = reinterpret_cast<const Type*>(data_pointer);
     data_pointer += sizeof(Type);
 
@@ -54,7 +54,7 @@ const Type& read_data(const uint8_t*& data_pointer) {
 }
 
 template <typename Type>
-std::span<const Type> read_data(const uint8_t*& data_pointer, const uint32_t size) {
+std::span<const Type> read_data(const char*& data_pointer, const uint32_t size) {
     const Type* data_start = reinterpret_cast<const Type*>(data_pointer);
     data_pointer += size * sizeof(Type);
 
@@ -62,14 +62,14 @@ std::span<const Type> read_data(const uint8_t*& data_pointer, const uint32_t siz
 }
 
 template <typename Type>
-void read_data_to_buffer(const uint8_t*& data_pointer, Type* read_out_buffer, const uint32_t read_count) {
+void read_data_to_buffer(const char*& data_pointer, Type* read_out_buffer, const uint32_t read_count) {
     const size_t total_data_size = read_count * sizeof(Type);
     std::memcpy(read_out_buffer, data_pointer, total_data_size);
     data_pointer += total_data_size;
 }
 
 template <typename Type>
-void write_data(std::vector<uint8_t>& data, Type& value) {
+void write_data(std::vector<char>& data, Type& value) {
     const size_t write_index = data.size();
     data.resize(write_index + sizeof(Type));
     std::memcpy(data.data() + write_index, &value, sizeof(Type));
@@ -77,7 +77,7 @@ void write_data(std::vector<uint8_t>& data, Type& value) {
 
 // Helper functions for writing data.
 template <typename Type>
-void write_data(std::vector<uint8_t>& data, std::vector<Type>& value) {
+void write_data(std::vector<char>& data, std::vector<Type>& value) {
     const size_t write_index = data.size();
     const size_t total_data_size = value.size() * sizeof(Type);
 
@@ -86,7 +86,7 @@ void write_data(std::vector<uint8_t>& data, std::vector<Type>& value) {
 }
 
 template <typename Type>
-void write_data(std::vector<uint8_t>& data, const Type* write_data, const uint32_t write_data_count) {
+void write_data(std::vector<char>& data, const Type* write_data, const uint32_t write_data_count) {
     const size_t write_index = data.size();
 
     const size_t write_data_size = write_data_count * sizeof(Type);
@@ -95,11 +95,11 @@ void write_data(std::vector<uint8_t>& data, const Type* write_data, const uint32
     std::memcpy(data.data() + write_index, write_data, write_data_size);
 }
 
-std::unique_ptr<Svt64> deserialize_svt64_tree(const std::span<const uint8_t>& svt64_data) {
+std::unique_ptr<Svt64> deserialize_svt64_tree(const std::span<const char>& svt64_data) {
     // If the node doesn't have model/svt64 data then we skip parsing/allocating the svt64 tree.
     if (svt64_data.empty()) return {};
 
-    const uint8_t* data_pointer = svt64_data.data();
+    const char* data_pointer = svt64_data.data();
     const auto& header = read_data<SVT64Header>(data_pointer);
 
     auto tree = std::make_unique<Svt64>();
@@ -124,7 +124,7 @@ std::unique_ptr<Svt64> deserialize_svt64_tree(const std::span<const uint8_t>& sv
 struct VoxelSceneDeserializeData {
     std::span<const HierarchyNode> hierarchy_nodes;
     std::string_view string_data;
-    std::span<const uint8_t> svt64_data;
+    std::span<const char> svt64_data;
 };
 
 void recurse_deserialize_scene_node(VoxelSceneNode& scene_node, VoxelSceneDeserializeData& deserialize_data, size_t& node_index) {
@@ -143,7 +143,7 @@ void recurse_deserialize_scene_node(VoxelSceneNode& scene_node, VoxelSceneDeseri
     }
 }
 
-uint32_t serialize_svt64_tree(const std::unique_ptr<Svt64>& tree, std::vector<uint8_t>& svt64_data) {
+uint32_t serialize_svt64_tree(const std::unique_ptr<Svt64>& tree, std::vector<char>& svt64_data) {
     // If the node doesn't have a model/svt64 tree, then we skip trying to parse it.
     if (!tree) return 0;
 
@@ -167,7 +167,7 @@ uint32_t serialize_svt64_tree(const std::unique_ptr<Svt64>& tree, std::vector<ui
 struct VoxelSceneSerializeData {
     std::vector<HierarchyNode> hierarchy_nodes;
     std::string string_data;
-    std::vector<uint8_t> svt64_data;
+    std::vector<char> svt64_data;
 };
 
 void recurse_parse_voxel_scene(const VoxelSceneNode& node, const uint32_t parent_index, VoxelSceneSerializeData& serialize_data) {
@@ -199,18 +199,21 @@ void recurse_parse_voxel_scene(const VoxelSceneNode& node, const uint32_t parent
 }  // namespace
 
 bool load_voxel_scene(const std::vector<char>& data, VoxelSceneNode& hierarchy) {
-    const auto* data_pointer = reinterpret_cast<const uint8_t*>(data.data());
+    const auto* data_pointer = data.data();
 
     const auto& file_header = read_data<FileHeader>(data_pointer);
     if (file_header.magic_number != MAGIC_NUMBER) return false;  // Make sure the magic number matches.
-    assert(file_header.minor_version == CURRENT_MINOR_VERSION && file_header.major_version == CURRENT_MAJOR_VERSION && "File format version not supported!");
+    assert(
+        (file_header.major_version < CURRENT_MAJOR_VERSION || (file_header.major_version == CURRENT_MAJOR_VERSION && file_header.minor_version <= CURRENT_MINOR_VERSION)) &&
+        "File format version not supported!"
+    );
     const auto& hierarchy_header = read_data<HierarchyHeader>(data_pointer);
 
     VoxelSceneDeserializeData deserialize_data;
     deserialize_data.hierarchy_nodes = read_data<HierarchyNode>(data_pointer, hierarchy_header.node_count);
     deserialize_data.string_data = std::string_view {reinterpret_cast<const char*>(data_pointer), hierarchy_header.char_count};
     data_pointer += hierarchy_header.char_count;
-    deserialize_data.svt64_data = std::span<const uint8_t> {data_pointer, reinterpret_cast<const uint8_t*>(data.data() + data.size())};  // The rest of the file is svt64_data.
+    deserialize_data.svt64_data = std::span<const char> {data_pointer, data.data() + data.size()};  // The rest of the file is svt64_data.
 
     size_t node_index = 0;
     recurse_deserialize_scene_node(hierarchy, deserialize_data, node_index);
@@ -218,8 +221,8 @@ bool load_voxel_scene(const std::vector<char>& data, VoxelSceneNode& hierarchy) 
     return true;
 }
 
-std::vector<uint8_t> save_voxel_scene(const ResourceRef<VoxelScene>& scene) {
-    std::vector<uint8_t> data {};
+std::vector<char> save_voxel_scene(const VoxelScene& scene) {
+    std::vector<char> data {};
 
     constexpr FileHeader file_header {
         .magic_number = MAGIC_NUMBER,
@@ -229,7 +232,7 @@ std::vector<uint8_t> save_voxel_scene(const ResourceRef<VoxelScene>& scene) {
     write_data(data, file_header);
 
     VoxelSceneSerializeData serialize_data;
-    recurse_parse_voxel_scene(scene->hierarchy, UINT_MAX, serialize_data);
+    recurse_parse_voxel_scene(scene.hierarchy, UINT_MAX, serialize_data);
 
     HierarchyHeader hierarchy_header {
         .node_count = static_cast<uint32_t>(serialize_data.hierarchy_nodes.size()),

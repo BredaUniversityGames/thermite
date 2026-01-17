@@ -9,6 +9,10 @@
 
 #include <magic_enum/magic_enum.hpp>
 
+#include "engine/core/resources/voxel_scene.hpp"
+#include "engine/tools/file_dialog.hpp"
+#include "engine/tools/voxel_binary_formatter.hpp"
+
 namespace {
 
 template <typename ItemType, typename ContainerType>
@@ -52,25 +56,46 @@ void drag_drop_location(const tmt::IO::FileLocation& location) {
 
 [[nodiscard]] bool path_valid(const std::filesystem::path& path) { return !path.empty() && exists(path); }
 
+tmt::IO::FileLocation find_unused_file_location(tmt::IO::FileLocation file_location) {
+    if (!tmt::IO::file_exists(file_location)) return file_location;
+
+    const std::string& stem_string = file_location.relative_path.stem().generic_string();
+    const auto& extension = file_location.relative_path.extension();
+
+    size_t index = 0;
+    tmt::IO::FileLocation new_location = file_location;
+    do {
+        ++index;
+        new_location = file_location;
+        new_location.relative_path.replace_filename(stem_string + fmt::format("({})", index)) += extension;
+    } while (tmt::IO::file_exists(new_location));
+
+    return new_location;
+}
+
 }  // namespace
 
 namespace tmt {
 
 void AssetBrowser::recurse_parse_directory(Directory& directory) {
-    std::filesystem::directory_iterator iterator {directory.location.get_relative_path()};
-    for (const auto& entry : iterator) {
-        if (!entry.is_directory()) continue;
+    try {
+        std::filesystem::directory_iterator iterator {directory.location.get_relative_path()};
+        for (const auto& entry : iterator) {
+            if (!entry.is_directory()) continue;
 
-        Directory& sub_directory = directory.sub_directories.emplace_back();
-        sub_directory.location = {directory.location.sub_location, directory.location.relative_path / entry.path().filename()};
-        recurse_parse_directory(sub_directory);
+            Directory& sub_directory = directory.sub_directories.emplace_back();
+            sub_directory.location = {directory.location.sub_location, directory.location.relative_path / entry.path().filename()};
+            recurse_parse_directory(sub_directory);
+        }
+    } catch (const std::exception& e) {
+        Log::error("Error with parsing directory: {}", e.what());
     }
 }
 
 void AssetBrowser::update_bookmark_vector(std::vector<Bookmark>& bookmarks) {
     for (auto& bookmark : bookmarks) {
         if (!bookmark.location_watcher.is_valid()) {  // If the location watcher is invalid, make it valid.
-            bookmark.location_watcher = tmt::DirectoryWatcher {bookmark.directory.location};
+            bookmark.location_watcher = DirectoryWatcher {bookmark.directory.location, true, false, WatchReason::VISUAL};
         } else if (!bookmark.location_watcher.check_changes()) {  // If the watcher is valid skip updating the bookmark view if there were no updates to the directory.
             continue;
         }
@@ -92,22 +117,25 @@ void AssetBrowser::display() {
     const bool menu_bar_open = ImGui::BeginMenuBar();
     ImGui::PopStyleVar();
     if (menu_bar_open) {
+        if (ImGui::Button(ICON_MS_ARROW_DOWNWARD_ALT " Import...")) import_assets_dialog();
+
+        ImGui::Separator();
+
         ImGui::BeginDisabled(undo_viewing_locations.empty());
-        if (ImGui::Button(ICON_MS_ARROW_BACK)) move_location_stacks(undo_viewing_locations, redo_viewing_locations);
+        if (ImGui::MenuItem(ICON_MS_ARROW_BACK)) move_location_stacks(undo_viewing_locations, redo_viewing_locations);
         ImGui::EndDisabled();
 
         ImGui::BeginDisabled(redo_viewing_locations.empty());
-        if (ImGui::Button(ICON_MS_ARROW_FORWARD)) move_location_stacks(redo_viewing_locations, undo_viewing_locations);
+        if (ImGui::MenuItem(ICON_MS_ARROW_FORWARD)) move_location_stacks(redo_viewing_locations, undo_viewing_locations);
         ImGui::EndDisabled();
 
         const std::filesystem::path& current_path = viewing_location.relative_path;
         ImGui::BeginDisabled(current_path.empty());
-        if (ImGui::Button(ICON_MS_ARROW_UPWARD_ALT)) pending_viewing_location = {viewing_location.sub_location, current_path.parent_path()};
+        if (ImGui::MenuItem(ICON_MS_ARROW_UPWARD_ALT)) pending_viewing_location = {viewing_location.sub_location, current_path.parent_path()};
         ImGui::EndDisabled();
 
-        if (ImGui::Button(ICON_MS_AUTORENEW)) pending_viewing_location = viewing_location;
+        if (ImGui::MenuItem(ICON_MS_AUTORENEW)) pending_viewing_location = viewing_location;
 
-        ImGui::Text("Directory:");
         display_directory_bar();
 
         ImGui::BeginDisabled(location_is_bookmarked(viewing_location));
@@ -161,6 +189,39 @@ void AssetBrowser::on_editor_update(const FrameData&) {
     update_bookmark_vector(bookmarks);
 }
 
+void AssetBrowser::import_asset(const IO::FileLocation& file_location) const {
+    const std::string& extension = file_location.relative_path.extension().generic_string();
+    if (extension == ".vengi") {
+        VoxelScene vengi_scene {file_location};
+        if (!vengi_scene.load()) {
+            Log::error("Failed to import asset: failed to parse .vengi file.");
+            return;
+        }
+
+        IO::FileLocation import_file_location = viewing_location;
+        import_file_location.relative_path /= file_location.relative_path.filename().replace_extension(".svh");
+        import_file_location = find_unused_file_location(import_file_location);
+
+        const std::vector<char>& data = save_voxel_scene(vengi_scene);
+        IO::write_file(import_file_location, data.data(), data.size());
+
+        return;
+    }
+
+    Log::error("Failed to import asset: invalid file type.");
+}
+
+void AssetBrowser::import_assets_dialog() const {
+    open_files_dialog(
+        [this](const std::vector<IO::FileLocation>& file_locations) {
+            for (const auto& file_location : file_locations) {
+                import_asset(file_location);
+            }
+        },
+        {{"Vengi voxel object", "vengi"}}
+    );
+}
+
 void AssetBrowser::update_location_history() {
     if (pending_viewing_location.has_value()) {
         // Clear the redo history if the user manually went to a new directory.
@@ -202,7 +263,7 @@ void AssetBrowser::update_viewing_locations() {
         return is_directory(a_path);
     });
 
-    viewing_location_watcher = DirectoryWatcher {viewing_location, false};
+    viewing_location_watcher = DirectoryWatcher {viewing_location, false, false, WatchReason::VISUAL};
 }
 
 void AssetBrowser::move_location_stacks(std::stack<IO::FileLocation>& from, std::stack<IO::FileLocation>& to) {

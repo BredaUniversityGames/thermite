@@ -21,6 +21,9 @@ class AssetBrowser : public IWindow {
     void on_editor_update(const FrameData&) override;
     void on_editor_end() override {}
 
+    void import_asset(const IO::FileLocation& file_location) const;
+    void import_assets_dialog() const;
+
    private:
     struct Directory {
         IO::FileLocation location;
