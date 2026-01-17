@@ -45,7 +45,7 @@ void PolylinePipeline::enqueue(RenderGraph& render_graph, RenderView& render_vie
 
         /* Upload all the segments */
         render_graph.upload_buffer(line_buffer, segments.data(), 0, sizeof(PolylineSegment) * segments.size());
-    }
+    } else return;
 
     /* clang-format off */
 
