@@ -2,16 +2,15 @@
 
 #include "engine/core/io.hpp"
 #include "engine/core/logger.hpp"
+#include "engine/core/resources/voxel_scene.hpp"
+#include "engine/tools/file_dialog.hpp"
+#include "engine/tools/voxel_binary_formatter.hpp"
 
 #include <imgui.h>
 #include <imgui_stdlib.h>
 #include <imgui_internal.h>
 
 #include <magic_enum/magic_enum.hpp>
-
-#include "engine/core/resources/voxel_scene.hpp"
-#include "engine/tools/file_dialog.hpp"
-#include "engine/tools/voxel_binary_formatter.hpp"
 
 namespace {
 
@@ -72,6 +71,8 @@ tmt::IO::FileLocation find_unused_file_location(tmt::IO::FileLocation file_locat
 
     return new_location;
 }
+
+std::atomic_flag block_import_atomic{};
 
 }  // namespace
 
@@ -178,6 +179,8 @@ void AssetBrowser::on_editor_start() {
 }
 
 void AssetBrowser::on_editor_update(const FrameData&) {
+    block_import_atomic.wait(true);
+
     // Check if there are changes in the viewing directory, if so we update the viewing directory by setting it to pending.
     if (viewing_location_watcher.is_valid() && viewing_location_watcher.check_changes()) pending_viewing_location = viewing_location;
 
@@ -214,9 +217,12 @@ void AssetBrowser::import_asset(const IO::FileLocation& file_location) const {
 void AssetBrowser::import_assets_dialog() const {
     open_files_dialog(
         [this](const std::vector<IO::FileLocation>& file_locations) {
+            block_import_atomic.test_and_set();
             for (const auto& file_location : file_locations) {
                 import_asset(file_location);
             }
+            block_import_atomic.clear();
+            block_import_atomic.notify_one();
         },
         {{"Vengi voxel object", "vengi"}}
     );

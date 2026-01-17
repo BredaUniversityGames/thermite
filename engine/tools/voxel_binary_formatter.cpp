@@ -211,7 +211,7 @@ bool load_voxel_scene(const std::vector<char>& data, VoxelSceneNode& hierarchy) 
 
     VoxelSceneDeserializeData deserialize_data;
     deserialize_data.hierarchy_nodes = read_data<HierarchyNode>(data_pointer, hierarchy_header.node_count);
-    deserialize_data.string_data = std::string_view {reinterpret_cast<const char*>(data_pointer), hierarchy_header.char_count};
+    deserialize_data.string_data = std::string_view {data_pointer, hierarchy_header.char_count};
     data_pointer += hierarchy_header.char_count;
     deserialize_data.svt64_data = std::span<const char> {data_pointer, data.data() + data.size()};  // The rest of the file is svt64_data.
 
