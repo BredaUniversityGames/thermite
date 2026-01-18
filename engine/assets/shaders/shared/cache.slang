@@ -66,9 +66,9 @@ public struct Slot {
     /* Accumulate into the cache slot. */
     public [ForceInline] [mutating] void accumulate(const float3 value) {
         const uint3 fxp = uint3(value * QFACTOR);
-        InterlockedAdd(illuminance_r, fxp.r);
-        InterlockedAdd(illuminance_g, fxp.g);
-        InterlockedAdd(illuminance_b, fxp.b);
+        if (fxp.r > 0u) InterlockedAdd(illuminance_r, fxp.r);
+        if (fxp.g > 0u) InterlockedAdd(illuminance_g, fxp.g);
+        if (fxp.b > 0u) InterlockedAdd(illuminance_b, fxp.b);
         InterlockedAdd(samples, 1u);
     }
 
