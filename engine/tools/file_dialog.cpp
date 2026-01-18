@@ -59,6 +59,14 @@ void open_files_dialog(const std::function<void(const std::vector<IO::FileLocati
     SDL_ShowOpenFileDialog(&multi_file_dialog_function, nullptr, engine.window.window, filters.data(), static_cast<int>(filters.size()), default_location_string.c_str(), true);
 }
 
+void open_folder_dialog(const std::function<void(IO::FileLocation)>& callback, const IO::FileLocation& default_location) {
+    single_file_dialog = callback;
+
+    // Using path.string() instead of path.generic_string() because SDL3 will complain otherwise, it'll still work, but it'll *also* give an error.
+    const std::string& default_location_string = default_location.get_absolute_path().string();
+    SDL_ShowOpenFolderDialog(&single_file_dialog_function, nullptr, engine.window.window, default_location_string.c_str(), false);
+}
+
 void save_file_dialog(const std::function<void(IO::FileLocation)>& callback, const std::vector<SDL_DialogFileFilter>& filters, const IO::FileLocation& default_location) {
     single_file_dialog = callback;
 
