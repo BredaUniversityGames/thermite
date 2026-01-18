@@ -16,5 +16,4 @@ void open_folder_dialog(const std::function<void(IO::FileLocation)>& callback, c
 
 void save_file_dialog(const std::function<void(IO::FileLocation)>& callback, const std::vector<SDL_DialogFileFilter>& filters = {{"Any", "*"}}, const IO::FileLocation& default_location = {});
 
-
 }  // namespace tmt

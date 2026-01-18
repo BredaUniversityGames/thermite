@@ -23,7 +23,7 @@ struct VoxelSceneNode {
     std::string name;
 
     /* Node name. */
-    glm::mat4 transform{};
+    glm::mat4 transform {};
 
     /* Returns true if this node is a voxel volume. */
     inline bool is_volume() const { return tree != nullptr; }
