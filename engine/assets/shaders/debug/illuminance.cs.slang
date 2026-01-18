@@ -33,11 +33,5 @@ void main(int2 thread_id: SV_DispatchThreadID) {
 
     /* Sample the illuminance cache */
     const float3 illuminance = cache::sample(macrofacet_illuminance_cache, facet_key, render_view.frame_index);
-
-    if (illuminance.x == BIG_F32) {
-        /* We didn't find a sample in the cache! */
-        render_target[thread_id] = float4(1.0f, 0.0f, 1.0f, 1.0f);
-    } else {
-        render_target[thread_id] = float4(illuminance, 1.0f);
-    }
+    render_target[thread_id] = float4(illuminance, 1.0f);
 }

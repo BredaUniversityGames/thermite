@@ -144,7 +144,7 @@ public [ForceInline] float3 sample(RWStructuredBuffer<cache::Slot> cache, const 
         slot = (slot + 1u) % CAPACITY;
     }
 
-    return BIG_F32; /* Couldn't find a sample */
+    return 0.0f; /* Couldn't find a sample */
 }
 
 } // cache

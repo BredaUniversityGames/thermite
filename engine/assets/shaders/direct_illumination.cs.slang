@@ -9,8 +9,15 @@ import voxel;
 import bvh2;
 import cache;
 
+struct DiSettings {
+    /* 0 = FullRate, 1 = HalfRate, 2 = QuarterRate */
+    uint shading_rate;
+};
+
 /* Active render view. */
 ConstantBuffer<RenderView> render_view;
+/* Settings buffer. */
+ConstantBuffer<DiSettings> settings;
 /* Voxel objects buffers. */
 StructuredBuffer<float4> tlas_nodes;
 StructuredBuffer<uint> object_indices;
@@ -29,23 +36,38 @@ static const float3 LIGHT_DIR = normalize(float3(1.0f, 1.5f, 1.1f));
 [shader("compute")]
 [numthreads(16, 8, 1)]
 void main(int2 thread_id: SV_DispatchThreadID) {
+    int2 pixel_id = thread_id;
+    if (settings.shading_rate == 1u) {
+        /* Half-rate */
+        /*  [ XY ]  */
+        /*  [ YX ]  */
+        const int offset = (pixel_id.y + render_view.frame_index) & 0b1;
+        pixel_id.x = (pixel_id.x << 1) + offset;
+    } else if (settings.shading_rate == 2u) {
+        /* Quarter-rate */
+        /*  [ XY ]  */
+        /*  [ ZW ]  */
+        const int2 offset = int2(render_view.frame_index & 0b1, (render_view.frame_index >> 1) & 0b1);
+        pixel_id = (pixel_id << 1) + offset;
+    }
+
     /* Bounds check */
-    if (any(thread_id >= render_view.resolution)) return;
+    if (any(pixel_id >= render_view.resolution)) return;
 
     /* Load visibility buffer data */
-    const uint64_t facet_key = asuint64(vbuffer[thread_id]);
+    const uint64_t facet_key = asuint64(vbuffer[pixel_id]);
 
     /* Exit early if the visibility for this pixel is null */
     if (null_visibility(facet_key)) return;
 
     /* Generate a ray for our render view */
-    const Ray ray = pinhole_ray(render_view, thread_id);
+    const Ray ray = pinhole_ray(render_view, pixel_id);
 
     /* Unpack visibility data */
     const GeoData geo = unpack_geometry(unpack_visibility(facet_key), objects, ray);
     const float3 hit_point = ray.origin + ray.dir * geo.depth;
 
-    const uint n = thread_id.x + thread_id.y * render_view.resolution.x + render_view.frame_index * render_view.resolution.x * render_view.resolution.y;
+    const uint n = pixel_id.x + pixel_id.y * render_view.resolution.x + render_view.frame_index * render_view.resolution.x * render_view.resolution.y;
     
     float3 dir, ill;
     // if (r1(n % 512) < 0.5f) {
