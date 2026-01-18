@@ -2,7 +2,7 @@
 
 #include "engine/core/audio.hpp"
 #include "engine/tools/serializer.hpp"
-#include "editor/font/font_lookups.hpp"
+#include "editor/font/icon_lookups.hpp"
 
 #include <ImReflect.hpp>
 
