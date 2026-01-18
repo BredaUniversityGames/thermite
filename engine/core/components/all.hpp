@@ -27,7 +27,7 @@ using SerializeComponents = ComponentRegistry<
 	ComponentCollection,
 	NavMesh,
 	AnimConstraints::DampedTransformConstraint,
-	BoneHierarchyRenderer
+	BoneHierarchyRenderer,
 	AudioListener,
 	AudioEmitter
 >;
@@ -43,7 +43,7 @@ using InspectComponents = ComponentRegistry<
 	VoxelBody,
 	NavMesh,
 	AnimConstraints::DampedTransformConstraint,
-	BoneHierarchyRenderer
+	BoneHierarchyRenderer,
 	AudioListener,
 	AudioEmitter
 >;
