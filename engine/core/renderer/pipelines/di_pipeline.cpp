@@ -20,9 +20,7 @@ T div_up(const T x, const T y) {
 }
 
 /* Divide two numbers, rounding up. */
-glm::uvec2 div_up(const glm::uvec2 a, const uint32_t ax, const uint32_t ay) {
-    return glm::uvec2(div_up(a.x, ax), div_up(a.y, ay));
-}
+glm::uvec2 div_up(const glm::uvec2 a, const uint32_t ax, const uint32_t ay) { return glm::uvec2(div_up(a.x, ax), div_up(a.y, ay)); }
 
 void DiPipeline::init(GPUAdapter& gpu) {
     VRAMBank& bank = gpu.get_vram_bank();
@@ -83,7 +81,7 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
 
 /* clang-format on */
 
-void DiPipeline::deinit(GPUAdapter & gpu) {
+void DiPipeline::deinit(GPUAdapter& gpu) {
     VRAMBank& bank = gpu.get_vram_bank();
     bank.destroy(settings_buffer);
 }

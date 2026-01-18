@@ -167,7 +167,7 @@ void Editor::main_menu_bar() {
                 }
                 ImGui::EndMenu();
             }
-            
+
             /* List of shading rate labels */
             const char* SHADING_RATE_LABELS[] {"Full-Rate", "Half-Rate (1:2)", "Quarter-Rate (1:4)"};
 

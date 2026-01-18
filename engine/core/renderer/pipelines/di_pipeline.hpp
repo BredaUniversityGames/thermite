@@ -12,8 +12,8 @@ struct SceneView;
 
 /* Direct Illumination Shading Rate. */
 enum class ShadingRate : uint32_t {
-    FullRate = 0u, /* Perform shading for every pixel on screen. */
-    HalfRate = 1u, /* Perform shading for half the pixels on screen. */
+    FullRate = 0u,    /* Perform shading for every pixel on screen. */
+    HalfRate = 1u,    /* Perform shading for half the pixels on screen. */
     QuarterRate = 2u, /* Perform shading for 1/4th the pixels on screen. */
 };
 
@@ -45,7 +45,10 @@ class DiPipeline {
     /* Get the shading rate of the DI pipeline. */
     inline ShadingRate get_shading_rate() const { return settings.shading_rate; };
     /* Set the shading rate of the DI pipeline. */
-    inline void set_shading_rate(ShadingRate shading_rate) { settings.shading_rate = shading_rate; settings_dirty = true; };
+    inline void set_shading_rate(ShadingRate shading_rate) {
+        settings.shading_rate = shading_rate;
+        settings_dirty = true;
+    };
 };
 
 }  // namespace tmt
