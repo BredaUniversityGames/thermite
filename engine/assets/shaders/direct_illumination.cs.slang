@@ -62,7 +62,7 @@ void main(int2 thread_id: SV_DispatchThreadID) {
     const float3 hit_point = ray.origin + ray.dir * geo.depth;
 
     /* Generate a seed for the current pixel */
-    const uint seed = pixel_id.x + pixel_id.y * render_view.resolution.x + render_view.frame_index * render_view.resolution.x * render_view.resolution.y;
+    const uint seed = thread_id.x + thread_id.y * render_view.resolution.x + render_view.frame_index * render_view.resolution.x * render_view.resolution.y;
 
     /* Trace light occlusion */
     const float3 ray_dir = sample_hemisphere(geo.normal, r2(seed % 512));

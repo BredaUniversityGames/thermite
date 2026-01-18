@@ -184,7 +184,7 @@ void Editor::main_menu_bar() {
                     const std::string prefix = selected ? SELECTED_PREFIX : DEFAULT_PREFIX;
 
                     if (ImGui::MenuItem((prefix + SHADING_RATE_LABELS[i]).c_str())) {
-                        display_mode_index = i;
+                        shading_rate_index = i;
                         engine.renderer.di_pipeline.set_shading_rate(magic_enum::enum_cast<ShadingRate>(i).value_or(ShadingRate::FULL_RATE));
                     }
                 }
