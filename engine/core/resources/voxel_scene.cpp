@@ -8,7 +8,7 @@
 #include "engine/core/renderer/renderer.hpp"
 #include "engine/tools/profiler.hpp"
 #include "engine/tools/timer.hpp"
-#include "engine/tools/voxel_binary_formatter.hpp"
+#include "engine/tools/svh_format.hpp"
 
 #include <queue>
 #include <omp.h>
@@ -350,7 +350,7 @@ bool VoxelScene::load() {
 
     const std::string& file_extension = file_location.relative_path.extension().generic_string();
     if (file_extension == ".svh") {
-        const bool success = load_voxel_scene(IO::read_file(file_location), hierarchy);
+        const bool success = decode_svh(IO::read_file(file_location), hierarchy);
         if (!success) Log::error("Failed to load voxel scene from file: {}", file_location);
 
         return success;

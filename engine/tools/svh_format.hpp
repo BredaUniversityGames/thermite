@@ -9,7 +9,7 @@ namespace tmt {
 struct VoxelSceneNode;
 class VoxelScene;
 
-bool load_voxel_scene(const std::vector<char>& data, VoxelSceneNode& hierarchy);
-std::vector<char> save_voxel_scene(const VoxelScene& scene);
+bool decode_svh(const std::vector<char>& data, VoxelSceneNode& hierarchy);
+std::vector<char> encode_svh(const VoxelScene& scene);
 
 }  // namespace tmt

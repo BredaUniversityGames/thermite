@@ -1,4 +1,4 @@
-#include "voxel_binary_formatter.hpp"
+#include "svh_format.hpp"
 
 #include "core/logger.hpp"
 #include "core/resources/voxel_scene.hpp"
@@ -95,7 +95,7 @@ void write_data(std::vector<char>& data, const Type* write_data, const uint32_t 
     std::memcpy(data.data() + write_index, write_data, write_data_size);
 }
 
-std::unique_ptr<Svt64> deserialize_svt64_tree(const std::span<const char>& svt64_data) {
+std::unique_ptr<Svt64> decode_svt64_tree(const std::span<const char>& svt64_data) {
     // If the node doesn't have model/svt64 data then we skip parsing/allocating the svt64 tree.
     if (svt64_data.empty()) return {};
 
@@ -121,29 +121,29 @@ std::unique_ptr<Svt64> deserialize_svt64_tree(const std::span<const char>& svt64
     return tree;
 }
 
-struct VoxelSceneDeserializeData {
+struct VoxelSceneDecodeData {
     std::span<const HierarchyNode> hierarchy_nodes;
     std::string_view string_data;
     std::span<const char> svt64_data;
 };
 
-void recurse_deserialize_scene_node(VoxelSceneNode& scene_node, VoxelSceneDeserializeData& deserialize_data, size_t& node_index) {
-    const HierarchyNode& node_data = deserialize_data.hierarchy_nodes[node_index];
+void recurse_decode_scene_node(VoxelSceneNode& scene_node, VoxelSceneDecodeData& decode_data, size_t& node_index) {
+    const HierarchyNode& node_data = decode_data.hierarchy_nodes[node_index];
 
-    const auto& node_svt64_data = deserialize_data.svt64_data.subspan(node_data.svt64_offset, node_data.svt64_size);
+    const auto& node_svt64_data = decode_data.svt64_data.subspan(node_data.svt64_offset, node_data.svt64_size);
     scene_node.uuid = node_data.uuid;
-    scene_node.tree = deserialize_svt64_tree(node_svt64_data);
+    scene_node.tree = decode_svt64_tree(node_svt64_data);
     scene_node.size = node_data.size;
-    scene_node.name = deserialize_data.string_data.substr(node_data.name_offset, node_data.name_length);
+    scene_node.name = decode_data.string_data.substr(node_data.name_offset, node_data.name_length);
     scene_node.transform = node_data.transform;
 
     const size_t current_index = node_index;
-    while ((node_index + 1) < deserialize_data.hierarchy_nodes.size() && deserialize_data.hierarchy_nodes[node_index + 1].parent_index == current_index) {
-        recurse_deserialize_scene_node(scene_node.children.emplace_back(), deserialize_data, ++node_index);
+    while ((node_index + 1) < decode_data.hierarchy_nodes.size() && decode_data.hierarchy_nodes[node_index + 1].parent_index == current_index) {
+        recurse_decode_scene_node(scene_node.children.emplace_back(), decode_data, ++node_index);
     }
 }
 
-uint32_t serialize_svt64_tree(const std::unique_ptr<Svt64>& tree, std::vector<char>& svt64_data) {
+uint32_t encode_svt64_tree(const std::unique_ptr<Svt64>& tree, std::vector<char>& svt64_data) {
     // If the node doesn't have a model/svt64 tree, then we skip trying to parse it.
     if (!tree) return 0;
 
@@ -164,20 +164,20 @@ uint32_t serialize_svt64_tree(const std::unique_ptr<Svt64>& tree, std::vector<ch
     return static_cast<uint32_t>(svt64_data.size() - start_size);
 }
 
-struct VoxelSceneSerializeData {
+struct VoxelSceneEncodeData {
     std::vector<HierarchyNode> hierarchy_nodes;
     std::string string_data;
     std::vector<char> svt64_data;
 };
 
-void recurse_parse_voxel_scene(const VoxelSceneNode& node, const uint32_t parent_index, VoxelSceneSerializeData& serialize_data) {
-    const uint32_t current_index = static_cast<int32_t>(serialize_data.hierarchy_nodes.size());
+void recurse_encode_voxel_node(const VoxelSceneNode& node, const uint32_t parent_index, VoxelSceneEncodeData& encode_data) {
+    const uint32_t current_index = static_cast<int32_t>(encode_data.hierarchy_nodes.size());
 
-    const uint32_t svt64_offset = static_cast<uint32_t>(serialize_data.svt64_data.size());
-    const uint32_t svt64_size = serialize_svt64_tree(node.tree, serialize_data.svt64_data);
+    const uint32_t svt64_offset = static_cast<uint32_t>(encode_data.svt64_data.size());
+    const uint32_t svt64_size = encode_svt64_tree(node.tree, encode_data.svt64_data);
 
-    const uint32_t string_offset = static_cast<uint32_t>(serialize_data.string_data.size());
-    serialize_data.string_data += node.name;
+    const uint32_t string_offset = static_cast<uint32_t>(encode_data.string_data.size());
+    encode_data.string_data += node.name;
 
     const HierarchyNode hierarchy_node {
         .uuid = node.uuid,
@@ -189,16 +189,16 @@ void recurse_parse_voxel_scene(const VoxelSceneNode& node, const uint32_t parent
         .size = node.size,
         .transform = node.transform
     };
-    serialize_data.hierarchy_nodes.push_back(hierarchy_node);
+    encode_data.hierarchy_nodes.push_back(hierarchy_node);
 
     for (const VoxelSceneNode& child : node.children) {
-        recurse_parse_voxel_scene(child, current_index, serialize_data);
+        recurse_encode_voxel_node(child, current_index, encode_data);
     }
 }
 
 }  // namespace
 
-bool load_voxel_scene(const std::vector<char>& data, VoxelSceneNode& hierarchy) {
+bool decode_svh(const std::vector<char>& data, VoxelSceneNode& hierarchy) {
     const auto* data_pointer = data.data();
 
     const auto& file_header = read_data<FileHeader>(data_pointer);
@@ -209,19 +209,19 @@ bool load_voxel_scene(const std::vector<char>& data, VoxelSceneNode& hierarchy) 
     );
     const auto& hierarchy_header = read_data<HierarchyHeader>(data_pointer);
 
-    VoxelSceneDeserializeData deserialize_data;
-    deserialize_data.hierarchy_nodes = read_data<HierarchyNode>(data_pointer, hierarchy_header.node_count);
-    deserialize_data.string_data = std::string_view {data_pointer, hierarchy_header.char_count};
+    VoxelSceneDecodeData decode_data;
+    decode_data.hierarchy_nodes = read_data<HierarchyNode>(data_pointer, hierarchy_header.node_count);
+    decode_data.string_data = std::string_view {data_pointer, hierarchy_header.char_count};
     data_pointer += hierarchy_header.char_count;
-    deserialize_data.svt64_data = std::span<const char> {data_pointer, data.data() + data.size()};  // The rest of the file is svt64_data.
+    decode_data.svt64_data = std::span<const char> {data_pointer, data.data() + data.size()};  // The rest of the file is svt64_data.
 
     size_t node_index = 0;
-    recurse_deserialize_scene_node(hierarchy, deserialize_data, node_index);
+    recurse_decode_scene_node(hierarchy, decode_data, node_index);
 
     return true;
 }
 
-std::vector<char> save_voxel_scene(const VoxelScene& scene) {
+std::vector<char> encode_svh(const VoxelScene& scene) {
     std::vector<char> data {};
 
     constexpr FileHeader file_header {
@@ -231,22 +231,22 @@ std::vector<char> save_voxel_scene(const VoxelScene& scene) {
     };
     write_data(data, file_header);
 
-    VoxelSceneSerializeData serialize_data;
-    recurse_parse_voxel_scene(scene.hierarchy, UINT_MAX, serialize_data);
+    VoxelSceneEncodeData encode_data;
+    recurse_encode_voxel_node(scene.hierarchy, UINT_MAX, encode_data);
 
     HierarchyHeader hierarchy_header {
-        .node_count = static_cast<uint32_t>(serialize_data.hierarchy_nodes.size()),
-        .char_count = static_cast<uint32_t>(serialize_data.string_data.size()),
+        .node_count = static_cast<uint32_t>(encode_data.hierarchy_nodes.size()),
+        .char_count = static_cast<uint32_t>(encode_data.string_data.size()),
     };
     write_data(data, hierarchy_header);
 
-    write_data(data, serialize_data.hierarchy_nodes);
+    write_data(data, encode_data.hierarchy_nodes);
 
-    const auto* string_data = reinterpret_cast<const uint8_t*>(serialize_data.string_data.data());
-    data.insert(data.end(), string_data, string_data + serialize_data.string_data.size());
+    const auto* string_data = reinterpret_cast<const uint8_t*>(encode_data.string_data.data());
+    data.insert(data.end(), string_data, string_data + encode_data.string_data.size());
 
     // Insert the svt64 tree data at the end.
-    data.insert(data.end(), serialize_data.svt64_data.begin(), serialize_data.svt64_data.end());
+    data.insert(data.end(), encode_data.svt64_data.begin(), encode_data.svt64_data.end());
 
     return data;
 }

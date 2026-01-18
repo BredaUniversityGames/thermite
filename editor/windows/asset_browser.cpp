@@ -4,7 +4,7 @@
 #include "engine/core/logger.hpp"
 #include "engine/core/resources/voxel_scene.hpp"
 #include "engine/tools/file_dialog.hpp"
-#include "engine/tools/voxel_binary_formatter.hpp"
+#include "engine/tools/svh_format.hpp"
 
 #include <imgui.h>
 #include <imgui_stdlib.h>
@@ -261,7 +261,7 @@ void AssetBrowser::import_asset(const IO::FileLocation& import_file, const IO::F
         import_file_location.relative_path /= import_file.relative_path.filename().replace_extension(".svh");
         import_file_location = find_unused_file_location(import_file_location);
 
-        const std::vector<char>& data = save_voxel_scene(vengi_scene);
+        const std::vector<char>& data = encode_svh(vengi_scene);
         IO::write_file(import_file_location, data.data(), data.size());
 
         return;
