@@ -10,7 +10,7 @@ struct Params {
     glm::vec3 amp {10.5f, 5.6f, 10.5f};  // overall range per-axis
     float speed = 1.0f;                // global speed scalar
 
-    // Secondary wobble (adds “life” without noise)
+    // Secondary wobble (adds "life" without noise)
     glm::vec3 wobble_amp {0.25f, 0.12f, 0.25f};
     glm::vec3 wobble_freq {2.7f, 3.9f, 3.3f};
 
