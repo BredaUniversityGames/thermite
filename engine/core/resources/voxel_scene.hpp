@@ -22,7 +22,7 @@ struct VoxelSceneNode {
     /* Node name. */
     std::string name;
 
-    /* Node name. */
+    /* Local node transform. */
     glm::mat4 transform {};
 
     /* Returns true if this node is a voxel volume. */
