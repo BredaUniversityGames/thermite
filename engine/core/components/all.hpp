@@ -11,6 +11,8 @@
 #include "engine/systems/animation/components/constraints.hpp"
 #include "engine/systems/animation/components/bone_hierarchy_renderer.hpp"
 #include "engine/systems/ai/navigation/nav_mesh.hpp"
+#include "engine/core/components/audio_listener.hpp"
+#include "engine/core/components/audio_emitter.hpp"
 
 namespace tmt {
 
@@ -26,6 +28,8 @@ using SerializeComponents = ComponentRegistry<
 	NavMesh,
 	AnimConstraints::DampedTransformConstraint,
 	BoneHierarchyRenderer
+	AudioListener,
+	AudioEmitter
 >;
 // clang-format on
 
@@ -40,6 +44,8 @@ using InspectComponents = ComponentRegistry<
 	NavMesh,
 	AnimConstraints::DampedTransformConstraint,
 	BoneHierarchyRenderer
+	AudioListener,
+	AudioEmitter
 >;
 // clang-format on
 
