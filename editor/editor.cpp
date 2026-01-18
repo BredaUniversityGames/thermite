@@ -180,12 +180,12 @@ void Editor::main_menu_bar() {
                 const char* SELECTED_PREFIX = "* ";
                 const char* DEFAULT_PREFIX = "";
                 for (uint32_t i = 0u; i < COUNT; ++i) {
-                    const bool selected = engine.renderer.di_pipeline.get_shading_rate() == magic_enum::enum_cast<ShadingRate>(i).value_or(ShadingRate::FullRate);
+                    const bool selected = engine.renderer.di_pipeline.get_shading_rate() == magic_enum::enum_cast<ShadingRate>(i).value_or(ShadingRate::FULL_RATE);
                     const std::string prefix = selected ? SELECTED_PREFIX : DEFAULT_PREFIX;
 
                     if (ImGui::MenuItem((prefix + SHADING_RATE_LABELS[i]).c_str())) {
                         display_mode_index = i;
-                        engine.renderer.di_pipeline.set_shading_rate(magic_enum::enum_cast<ShadingRate>(i).value_or(ShadingRate::FullRate));
+                        engine.renderer.di_pipeline.set_shading_rate(magic_enum::enum_cast<ShadingRate>(i).value_or(ShadingRate::FULL_RATE));
                     }
                 }
                 ImGui::EndMenu();

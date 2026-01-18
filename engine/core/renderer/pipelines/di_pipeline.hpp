@@ -12,14 +12,14 @@ struct SceneView;
 
 /* Direct Illumination Shading Rate. */
 enum class ShadingRate : uint32_t {
-    FullRate = 0u,    /* Perform shading for every pixel on screen. */
-    HalfRate = 1u,    /* Perform shading for half the pixels on screen. */
-    QuarterRate = 2u, /* Perform shading for 1/4th the pixels on screen. */
+    FULL_RATE = 0u,    /* Perform shading for every pixel on screen. */
+    HALF_RATE = 1u,    /* Perform shading for half the pixels on screen. */
+    QUARTER_RATE = 2u, /* Perform shading for 1/4th the pixels on screen. */
 };
 
 struct DiSettings {
     /* Performance setting to reduce shading cost. */
-    ShadingRate shading_rate = ShadingRate::FullRate;
+    ShadingRate shading_rate = ShadingRate::FULL_RATE;
 };
 
 constexpr uint32_t CACHE_SIZE = 10000000u;

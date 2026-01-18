@@ -52,8 +52,8 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
         
     /* Shading resolution based on shading rate */
     glm::uvec2 shading_res = render_view.gpu_view.resolution;
-    if (settings.shading_rate == ShadingRate::HalfRate) shading_res = div_up(render_view.gpu_view.resolution, 2u, 1u);
-    if (settings.shading_rate == ShadingRate::QuarterRate) shading_res = div_up(render_view.gpu_view.resolution, 2u, 2u);
+    if (settings.shading_rate == ShadingRate::HALF_RATE) shading_res = div_up(render_view.gpu_view.resolution, 2u, 1u);
+    if (settings.shading_rate == ShadingRate::QUARTER_RATE) shading_res = div_up(render_view.gpu_view.resolution, 2u, 2u);
 
     /* Direct illumination pass */
     render_graph.add_compute_pass("direct illumination pass", "direct_illumination.cs")
