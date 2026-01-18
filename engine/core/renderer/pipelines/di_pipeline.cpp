@@ -19,6 +19,11 @@ T div_up(const T x, const T y) {
     return (x + y - 1) / y;
 }
 
+/* Divide two numbers, rounding up. */
+glm::uvec2 div_up(const glm::uvec2 a, const uint32_t ax, const uint32_t ay) {
+    return glm::uvec2(div_up(a.x, ax), div_up(a.y, ay));
+}
+
 void DiPipeline::init(GPUAdapter& gpu) {
     VRAMBank& bank = gpu.get_vram_bank();
     settings_buffer = bank.create_buffer("DI Settings Buffer", BufferUsage::Constant | BufferUsage::TransferDst, sizeof(DiSettings)).expect("failed to create di settings buffer.");
@@ -40,17 +45,17 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
         settings_dirty = false;
     }
     
-    /* Recycling pass */
-    render_graph.add_compute_pass("recycling pass", "recycling.cs")
+    /* Cache eviction pass (amortize over 8 frames) */
+    render_graph.add_compute_pass("cache eviction pass", "cache_evict.cs")
         .read(render_view.render_view_buffer) /* Render view buffer */
         .write(render_view.macrofacet_illuminance_cache) /* Illuminance cache buffer */
         .group_size(128)
-        .work_size(CACHE_SIZE);
+        .work_size(div_up(CACHE_SIZE, 8u));
         
     /* Shading resolution based on shading rate */
     glm::uvec2 shading_res = render_view.gpu_view.resolution;
-    if (settings.shading_rate == ShadingRate::HalfRate) shading_res = render_view.gpu_view.resolution >> glm::uvec2(1u, 0u);
-    if (settings.shading_rate == ShadingRate::QuarterRate) shading_res = render_view.gpu_view.resolution >> 1u;
+    if (settings.shading_rate == ShadingRate::HalfRate) shading_res = div_up(render_view.gpu_view.resolution, 2u, 1u);
+    if (settings.shading_rate == ShadingRate::QuarterRate) shading_res = div_up(render_view.gpu_view.resolution, 2u, 2u);
 
     /* Direct illumination pass */
     render_graph.add_compute_pass("direct illumination pass", "direct_illumination.cs")
