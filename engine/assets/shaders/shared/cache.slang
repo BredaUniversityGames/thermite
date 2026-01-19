@@ -65,7 +65,13 @@ public struct Slot {
 
     /* Accumulate into the cache slot. */
     public [ForceInline] [mutating] void accumulate(const float3 value) {
+        /* Avoid accumulating too many samples, we can only handle ~1.000.000 */
+        if (sample_count > 100000u) return;
+
+        /* Convert to fixed point representation for atomics */
         const uint3 fxp = uint3(value * QFACTOR);
+
+        /* Avoid atomics if the value is zero */
         if (fxp.r > 0u) InterlockedAdd(illuminance_r, fxp.r);
         if (fxp.g > 0u) InterlockedAdd(illuminance_g, fxp.g);
         if (fxp.b > 0u) InterlockedAdd(illuminance_b, fxp.b);
