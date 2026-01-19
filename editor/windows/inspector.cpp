@@ -32,62 +32,6 @@ void Inspector::on_editor_update(const tmt::FrameData& time) {}
 
 void Inspector::on_editor_end() {}
 
-void paste_component(const auto& name, const tmt::Inspector::MenuContext& menu_context) {
-    const char* clipboard_text = ImGui::GetClipboardText();
-    if (clipboard_text == nullptr) {
-        Log::warn("Failed to paste component, clipboard is empty.");
-        return;
-    }
-    const json deserialized = json::parse(clipboard_text, nullptr, false);
-    if (deserialized.is_discarded()) {
-        Log::error("Failed to parse clipboard JSON for component '{}'. Clipboard is: \"{}\"", name, clipboard_text);
-        return;
-    }
-
-    const auto name_in_clipboard = deserialized.value("component_type", "");
-    InspectComponents::for_each([&](auto type_tag_inner) {
-        using T_inner = typename decltype(type_tag_inner)::type;  // Extract type from tag
-        const auto name_of_type = tmt::Component<T_inner>::get_name();
-        if (name_in_clipboard != name_of_type) return;
-
-        const json data = deserialized.value("data", json::object());
-        for (const Entity& entity : menu_context.selected_entities) {
-            T_inner& target_instance = tmt::engine.ecs.add_or_get_component<T_inner>(entity);
-            Serializer::deserialize(data, target_instance);
-        }
-    });
-    OnSceneModified::dispatch();
-}
-
-void paste_values(const auto& name, const tmt::Inspector::MenuContext& menu_context) {
-    const char* clipboard_text = ImGui::GetClipboardText();
-    if (clipboard_text == nullptr) {
-        Log::warn("Failed to paste values, clipboard is empty.");
-        return;
-    }
-    const json deserialized = json::parse(clipboard_text, nullptr, false);
-    if (deserialized.is_discarded()) {
-        Log::error("Failed to parse clipboard JSON for component '{}'. Clipboard is: \"{}\"", name, clipboard_text);
-        return;
-    }
-
-    const auto name_in_clipboard = deserialized.value("component_type", "");
-    InspectComponents::for_each([&](auto type_tag_inner) {
-        using T_inner = typename decltype(type_tag_inner)::type;  // Extract type from tag
-        const auto name_of_type = tmt::Component<T_inner>::get_name();
-        if (name_in_clipboard != name_of_type) return;
-
-        const json data = deserialized.value("data", json::object());
-        for (const Entity& entity : menu_context.selected_entities) {
-            const bool has_comp = tmt::engine.ecs.has_component<T_inner>(entity);
-            if (has_comp == false) continue;
-            T_inner& target_instance = tmt::engine.ecs.get_component<T_inner>(entity);
-            Serializer::deserialize(data, target_instance);
-        }
-    });
-    OnSceneModified::dispatch();
-}
-
 void Inspector::display() {
     const auto& hierarchy = editor.windows.get<Hierarchy>();
 
@@ -229,6 +173,7 @@ void Inspector::display_runtime_components(const MenuContext& menu_context) {
         const ContextMenuResponse context_response = context_menu(name, header_response.right_clicked);
 
         if (context_response.remove_component) {
+            UndoRedoCollection collection;
             for (const Entity& entity : menu_context.selected_entities) {
                 const bool has_collection = engine.ecs.has_component<ComponentCollection>(entity);
                 if (has_collection == false) continue;
@@ -237,8 +182,13 @@ void Inspector::display_runtime_components(const MenuContext& menu_context) {
                 const bool has_component = component_collection.has_component(component_index);
                 if (has_component == false) continue;
 
+                RuntimeComponentDiff diff(entity, component_index);
+                diff.before();
                 component_collection.remove_component(component_index);
+                diff.after();
+                collection.add_action(diff);
             }
+            collection.commit("Remove Component: " + std::string(name));
             continue;
         }
 
@@ -342,7 +292,7 @@ void Inspector::add_runtime_component(const tmt::Inspector::MenuContext& menu_co
         if (ImGui::MenuItem(component_info.name.c_str())) {
             UndoRedoCollection collection;
             for (const Entity& entity : menu_context.selected_entities) {
-                ComponentDiff<ComponentCollection> diff(entity);
+                RuntimeComponentDiff diff(entity, componend_index);
                 diff.before();
                 auto& component_collection = engine.ecs.add_or_get_component<ComponentCollection>(entity);
                 component_collection.add_component(componend_index, entity);
@@ -408,8 +358,10 @@ void Inspector::paste_compile_time_component(const json& deserialized, const Men
         for (const Entity& entity : menu_context.selected_entities) {
             ComponentDiff<T_inner> component_diff(entity);
             component_diff.before();
+
             T_inner& target_instance = tmt::engine.ecs.add_or_get_component<T_inner>(entity);
             Serializer::deserialize(data, target_instance);
+
             component_diff.after();
             collection.add_action(component_diff);
         }
@@ -422,13 +374,21 @@ void Inspector::paste_runtime_component(const tmt::json& deserialized, const tmt
     const auto& registered_components = tmt::engine.component_registry.get_registered_components();
     for (const auto& [component_index, component_info] : registered_components) {
         if (name_in_clipboard != component_info.name) continue;
+
+        UndoRedoCollection collection;
         const json data = deserialized.value("data", json::object());
         for (const Entity& entity : menu_context.selected_entities) {
-            const bool has_collection = tmt::engine.ecs.has_component<ComponentCollection>(entity);
             auto& component_collection = tmt::engine.ecs.add_or_get_component<ComponentCollection>(entity);
+            RuntimeComponentDiff diff(entity, component_index);
+            diff.before();
+
             IGameComponent& target_instance = component_collection.add_or_get_component(component_index, entity);
             Serializer::deserialize(data, target_instance);
+            
+            diff.after();
+            collection.add_action(diff);
         }
+        collection.commit("Paste Component: " + std::string(component_info.name));
     }
 }
 
@@ -458,16 +418,25 @@ void Inspector::paste_runtime_values(const json& deserialized, const MenuContext
     const auto& registered_components = tmt::engine.component_registry.get_registered_components();
     for (const auto& [component_index, component_info] : registered_components) {
         if (name_in_clipboard != component_info.name) continue;
+
+        UndoRedoCollection collection;
         const json data = deserialized.value("data", json::object());
         for (const Entity& entity : menu_context.selected_entities) {
             const bool has_collection = tmt::engine.ecs.has_component<ComponentCollection>(entity);
             if (has_collection == false) continue;
+
             auto& component_collection = tmt::engine.ecs.get_component<ComponentCollection>(entity);
             const bool has_component = component_collection.has_component(component_index);
             if (has_component == false) continue;
+
             IGameComponent& target_instance = component_collection.get_component(component_index);
+            RuntimeComponentDiff diff(entity, component_index);
+            diff.before();
             Serializer::deserialize(data, target_instance);
+            diff.after();
+            collection.add_action(diff);
         }
+        collection.commit("Paste Values: " + std::string(component_info.name));
     }
 }
 
@@ -478,13 +447,19 @@ void Inspector::paste_compile_time_values(const json& deserialized, const MenuCo
         const auto name_of_type = tmt::Component<T_inner>::get_name();
         if (name_in_clipboard != name_of_type) return;
 
+        UndoRedoCollection collection;
         const json data = deserialized.value("data", json::object());
         for (const Entity& entity : menu_context.selected_entities) {
             const bool has_comp = tmt::engine.ecs.has_component<T_inner>(entity);
             if (has_comp == false) continue;
             T_inner& target_instance = tmt::engine.ecs.get_component<T_inner>(entity);
+            ComponentDiff<T_inner> component_diff(entity);
+            component_diff.before();
             Serializer::deserialize(data, target_instance);
+            component_diff.after();
+            collection.add_action(component_diff);
         }
+        collection.commit("Paste Values: " + std::string(name_of_type));
     });
 }
 

@@ -1,6 +1,7 @@
 #pragma once
 #include "editor/core/systems/undo_redo/undo_redo_manager.hpp"
 
+#include "engine/engine.hpp"
 #include "engine/core/entity.hpp"
 #include "engine/core/ecs.hpp"
 #include "engine/tools/serializer.hpp"
@@ -71,12 +72,15 @@ class ComponentDiff : public IUndoRedo {
     void inspect() override {}
 };
 
-class GameComponentDiff : public IUndoRedo {
+class RuntimeComponentDiff : public IUndoRedo {
    public:
-    GameComponentDiff(const Entity entity, const ComponentIndex component_index) : entity(entity), component_index(component_index) {}
+    RuntimeComponentDiff(const Entity entity, const ComponentIndex component_index) : entity(entity), component_index(component_index) {}
 
     void before();
+
     void after();
+
+    void commit(const std::string& component_name);
 
     // Inherited via IUndoRedo
     void undo() override;
@@ -89,6 +93,10 @@ class GameComponentDiff : public IUndoRedo {
 
     tmt::json before_json;
     tmt::json after_json;
+
+    void serialize_component(tmt::json& json_data) const;
+
+    void deserialize_component(const tmt::json& json_data) const;
 };
 
 }  // namespace tmt

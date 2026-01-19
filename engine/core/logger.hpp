@@ -27,7 +27,6 @@ class Log {
         loggers[Scope::RENDERER] = spdlog::stdout_color_mt("Renderer");
         loggers[Scope::EDITOR] = spdlog::stdout_color_mt("Editor");
         loggers[Scope::GLOBAL] = spdlog::stdout_color_mt("Global");
-        loggers[Scope::EDITOR] = spdlog::stdout_color_mt("Editor");
 
         std::shared_ptr<spdlog::sinks::basic_file_sink_mt> file_sink = nullptr;
         if (!log_file.empty()) {
