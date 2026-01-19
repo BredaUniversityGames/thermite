@@ -384,7 +384,7 @@ void Inspector::paste_runtime_component(const tmt::json& deserialized, const tmt
 
             IGameComponent& target_instance = component_collection.add_or_get_component(component_index, entity);
             Serializer::deserialize(data, target_instance);
-            
+
             diff.after();
             collection.add_action(diff);
         }

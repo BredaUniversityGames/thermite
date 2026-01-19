@@ -40,21 +40,21 @@ class ComponentDiff : public IUndoRedo {
 
     template <typename U>
     void serialize_component(tmt::json& json_data) const {
-        constexpr auto name = Component<U>::get_name();
+        constexpr auto NAME = Component<U>::get_name();
         const bool has_component = engine.ecs.has_component<U>(entity);
         if (has_component) {
             const U& component = engine.ecs.get_component<U>(entity);
             json_data[Component<U>::get_name()] = Serializer::serialize(component);
         } else {
-            json_data[name] = nullptr;
+            json_data[NAME] = nullptr;
         }
     }
 
     template <typename U>
     void deserialize_component(const tmt::json& json_data) const {
-        constexpr auto name = Component<U>::get_name();
-        if (json_data.contains(name)) {
-            if (json_data[name].is_null()) {
+        constexpr auto NAME = Component<U>::get_name();
+        if (json_data.contains(NAME)) {
+            if (json_data[NAME].is_null()) {
                 if (engine.ecs.has_component<U>(entity)) {
                     engine.ecs.remove_component<U>(entity);
                 }
@@ -63,7 +63,7 @@ class ComponentDiff : public IUndoRedo {
                     engine.ecs.add_component<U>(entity);
                 }
                 U& component = engine.ecs.get_component<U>(entity);
-                Serializer::deserialize(json_data[name], component);
+                Serializer::deserialize(json_data[NAME], component);
             }
         }
     }

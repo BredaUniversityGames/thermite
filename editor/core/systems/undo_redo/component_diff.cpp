@@ -43,7 +43,7 @@ void RuntimeComponentDiff::deserialize_component(const tmt::json& json_data) con
     if (!has_collection) {
         return;
     }
-    
+
     auto& component_collection = engine.ecs.get_component<ComponentCollection>(entity);
     if (!json_data.contains(name)) return;
 
