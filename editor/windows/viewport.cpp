@@ -56,7 +56,7 @@ std::string tmt::Viewport::get_title() const {
 int tmt::Viewport::get_window_flags() const {
     if (engine.game_controller.is_running()) return ImGuiWindowFlags_None;
 
-    const bool is_scene_dirty = editor.windows.get<ScenesWindow>().is_scene_dirty();
+    const bool is_scene_dirty = editor.windows[Editor::Mode::GAME].get<ScenesWindow>().is_scene_dirty();
     return is_scene_dirty ? ImGuiWindowFlags_UnsavedDocument : 0;
 };
 
@@ -134,7 +134,7 @@ void tmt::Viewport::on_retrieve_mouse_state(MouseOverride& event) {
 void tmt::Viewport::gizmo_manip() {
     if (engine.game_controller.is_running()) return;
 
-    auto& hierarchy = editor.windows.get<Hierarchy>();
+    auto& hierarchy = editor.windows[Editor::Mode::GAME].get<Hierarchy>();
     auto& selected_entities = hierarchy.get_selected_entities();
     if (selected_entities.empty()) return;
 
