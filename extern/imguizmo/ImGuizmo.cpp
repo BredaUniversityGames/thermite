@@ -49,7 +49,7 @@ namespace IMGUIZMO_NAMESPACE
    static const float DEG2RAD = (ZPI / 180.f);
    const float screenRotateSize = 0.06f;
    // scale a bit so translate axis do not touch when in universal
-   const float rotationDisplayFactor = 1.2f;
+   const float rotationDisplayFactor = 0.6f;
 
    static OPERATION operator&(OPERATION lhs, OPERATION rhs)
    {
@@ -1319,7 +1319,7 @@ namespace IMGUIZMO_NAMESPACE
          {
             float ng = angleStart + (float)circleMul * ZPI * ((float)i / (float)(circleMul * halfCircleSegmentCount));
             vec_t axisPos = makeVect(cosf(ng), sinf(ng), 0.f);
-            vec_t pos = makeVect(axisPos[axis], axisPos[(axis + 1) % 3], axisPos[(axis + 2) % 3]) * gContext.mScreenFactor * 0.6f;
+            vec_t pos = makeVect(axisPos[axis], axisPos[(axis + 1) % 3], axisPos[(axis + 2) % 3]) * gContext.mScreenFactor * rotationDisplayFactor;
             circlePos[i] = worldToPos(pos, gContext.mMVP);
          }
          if (!gContext.mbUsing || usingAxis)
