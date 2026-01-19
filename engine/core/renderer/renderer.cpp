@@ -110,7 +110,7 @@ void Renderer::update() {
     /* Enqueue pipelines */
     geometry_pipeline.enqueue(render_graph, render_view, scene_view);
     di_pipeline.enqueue(render_graph, render_view, scene_view);
-    polyline_pipeline.enqueue(render_graph, render_view);
+    polyline_pipeline.enqueue(render_graph, render_view, scene_view);
 
 #ifdef THERMITE_EDITOR
     /* Add the immediate mode GUI to the render graph */
@@ -145,6 +145,8 @@ void Renderer::end() {
     bank.deinit().expect("failed to destroy vram bank.");
     gpu.deinit().expect("failed to destroy gpu adapter.");
 }
+
+Hit Renderer::trace_ray(const Ray& ray) const { return scene_view.bvh.trace(ray); }
 
 #ifdef THERMITE_EDITOR
 void Renderer::set_imgui(ImGUI* new_imgui) {

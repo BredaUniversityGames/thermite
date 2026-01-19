@@ -19,6 +19,7 @@
 #include "editor/core/systems/font_manager.hpp"
 #include "editor/core/systems/undo_redo/undo_redo_manager.hpp"
 #include "engine/tools/profiler.hpp"
+#include "engine/tools/file_dialog.hpp"
 
 /* Windows */
 #include "editor/windows/hierarchy.hpp"
@@ -34,6 +35,7 @@
 #include "editor/windows/asset_browser.hpp"
 #include "editor/windows/imgui_demo.hpp"
 #include "editor/windows/console.hpp"
+#include "editor/windows/motion_math.hpp"
 
 /* Singleton */
 tmt::Editor tmt::editor;
@@ -65,6 +67,7 @@ void Editor::on_engine_init(const ApplicationSpecs&) {
     windows.add<Console>();
     windows.add<ImguiDemo>();
     windows.add<UndoRedoManager>();
+    windows.add<MotionMathPreview>();
 
     for (auto& window : windows) {
         window->on_editor_start();
@@ -128,6 +131,13 @@ void Editor::on_engine_end() {
 
 void Editor::main_menu_bar() {
     if (ImGui::BeginMainMenuBar()) {
+        if (ImGui::BeginMenu("File")) {
+            if (ImGui::MenuItem("Import Assets...")) {
+                windows.get<AssetBrowser>().import_assets_dialog();
+            }
+            ImGui::EndMenu();
+        }
+
         if (ImGui::BeginMenu("Scene")) {
             if (ImGui::MenuItem("Save Scene")) {
                 engine.scenes.serialize_active_scene();
