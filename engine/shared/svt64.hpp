@@ -8,7 +8,7 @@
 namespace tmt {
 
 /* How much space should be reserved for real-time modifications. */
-constexpr uint32_t SVT64_BUFFER_MEMORY = 1000u /* 1 kb */;
+constexpr uint32_t SVT64_BUFFER_MEMORY = 10000u /* 1 kb */;
 
 /* Raw uniform voxel input data. */
 struct RawVoxels {
@@ -60,6 +60,7 @@ class Svt64 {
     Svt64Node* nodes = nullptr;
     uint32_t node_count = 0u;
     uint32_t nodes_wasted = 0u;
+    uint32_t nodes_capacity = 0u;
 
     /* List of voxel data. */
     MaterialPalette palette {};
@@ -67,6 +68,7 @@ class Svt64 {
     PhysicsVoxel* physics_data = nullptr;
     uint32_t voxel_count = 0u;
     uint32_t voxels_wasted = 0u;
+    uint32_t voxels_capacity = 0u;
     uint32_t depth = 0u;
 
     Svt64() = default;

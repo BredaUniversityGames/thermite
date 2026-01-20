@@ -1,6 +1,7 @@
 #include "voxel_volume.hpp"
 
 #include <graphite/vram_bank.hh>
+#include <graphite/render_graph.hh>
 
 #include "engine/core/logger.hpp"
 
@@ -56,24 +57,33 @@ void VoxelVolume::unload() {
 }
 
 void VoxelVolume::update() {
-    VRAMBank& bank = engine.renderer.vram_bank();
-    const BufferUsage storage = BufferUsage::Storage | BufferUsage::TransferDst;
+    // VRAMBank& bank = engine.renderer.vram_bank();
+    // const BufferUsage storage = BufferUsage::Storage | BufferUsage::TransferDst;
 
-    /* Check if we need to resize the nodes buffer */
-    if (nodes_buffer_size < blas->node_count) {
-        bank.destroy(blas_nodes);
-        blas_nodes = bank.create_buffer("BLAS Nodes Buffer", storage, blas->node_count + SVT64_BUFFER_MEMORY, sizeof(Svt64Node)).expect("failed to create tree nodes buffer.");
-    } 
+    // /* Check if we need to resize the nodes buffer */
+    // if (nodes_buffer_size < blas->node_count) {
+    //     // bank.destroy(blas_nodes);
+    //     // blas_nodes = bank.create_buffer("BLAS Nodes Buffer", storage, blas->node_count + SVT64_BUFFER_MEMORY, sizeof(Svt64Node)).expect("failed to create tree nodes buffer.");
+    //     // bank.resize_buffer(blas_nodes, blas->node_count + SVT64_BUFFER_MEMORY, sizeof(Svt64Node));
+    //     nodes_buffer_size = blas->node_count + SVT64_BUFFER_MEMORY;
+    // } 
 
-    /* Check if we need to resize the voxels buffer */
-    if (voxel_buffer_size < blas->voxel_count) {
-        bank.destroy(blas_voxels);
-        blas_voxels = bank.create_buffer("BLAS Voxels Buffer", storage, blas->voxel_count + SVT64_BUFFER_MEMORY, sizeof(MaterialIndex)).expect("failed to create voxel data buffer.");
-    }   
-    
+    // /* Check if we need to resize the voxels buffer */
+    // if (voxel_buffer_size < blas->voxel_count) {
+    //     // bank.destroy(blas_voxels);
+    //     // blas_voxels = bank.create_buffer("BLAS Voxels Buffer", storage, blas->voxel_count + SVT64_BUFFER_MEMORY, sizeof(MaterialIndex)).expect("failed to create voxel data buffer.");
+    //     // bank.resize_buffer(blas_voxels, blas->voxel_count + SVT64_BUFFER_MEMORY, sizeof(MaterialIndex));
+    //     voxel_buffer_size = blas->voxel_count + SVT64_BUFFER_MEMORY;
+    // }   
+
+    if (blas->node_count > nodes_buffer_size || blas->voxel_count > voxel_buffer_size) {
+        return;
+    }
+
     /* Upload the new BLAS data */
-    bank.upload_buffer(blas_nodes, blas->nodes, 0u, blas->node_count * sizeof(Svt64Node));
+    VRAMBank& bank = engine.renderer.vram_bank();
     bank.upload_buffer(blas_voxels, blas->materials, 0u, blas->voxel_count * sizeof(MaterialIndex));
+    bank.upload_buffer(blas_nodes, blas->nodes, 0u, blas->node_count * sizeof(Svt64Node));
     bank.upload_buffer(blas_palette, &blas->palette, 0u, sizeof(MaterialPalette));
 }
 

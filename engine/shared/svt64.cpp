@@ -213,6 +213,7 @@ void Svt64::build(const RawVoxels& raw_data) {
     node_count = 1u;
     materials = new MaterialIndex[raw_voxels + SVT64_BUFFER_MEMORY];
     physics_data = new PhysicsVoxel[raw_voxels + SVT64_BUFFER_MEMORY];
+    voxels_capacity = raw_voxels + SVT64_BUFFER_MEMORY;
     voxel_count = 0u;
 
     /* Copy the material palette */
@@ -223,6 +224,7 @@ void Svt64::build(const RawVoxels& raw_data) {
 
     /* Reallocate the nodes to save memory */
     nodes = (Svt64Node*)realloc(nodes, (node_count + SVT64_BUFFER_MEMORY) * sizeof(Svt64Node));
+    nodes_capacity = node_count + SVT64_BUFFER_MEMORY;
 }
 
 inline uint32_t get_node_cell_index(const glm::vec3 pos, const int scale_exp) {
@@ -362,10 +364,14 @@ Svt64::~Svt64() {
 Svt64::Svt64(const Svt64& src) {
     node_count = src.node_count;
     voxel_count = src.voxel_count;
+    nodes_wasted = src.nodes_wasted;
+    voxels_wasted = src.voxels_wasted;
+    nodes_capacity = src.nodes_capacity;
+    voxels_capacity = src.voxels_capacity;
     depth = src.depth;
-    nodes = new Svt64Node[node_count + SVT64_BUFFER_MEMORY / sizeof(Svt64Node)];
-    materials = new MaterialIndex[voxel_count + SVT64_BUFFER_MEMORY / sizeof(MaterialIndex)];
-    physics_data = new PhysicsVoxel[voxel_count + SVT64_BUFFER_MEMORY / sizeof(PhysicsVoxel)];
+    nodes = new Svt64Node[nodes_capacity];
+    materials = new MaterialIndex[voxels_capacity];
+    physics_data = new PhysicsVoxel[voxels_capacity];
     memcpy(nodes, src.nodes, node_count * sizeof(Svt64Node));
     memcpy(materials, src.materials, voxel_count * sizeof(MaterialIndex));
     memcpy(physics_data, src.physics_data, voxel_count * sizeof(PhysicsVoxel));
@@ -376,10 +382,14 @@ Svt64::Svt64(const Svt64& src) {
 Svt64& Svt64::operator=(const Svt64& src) {
     node_count = src.node_count;
     voxel_count = src.voxel_count;
+    nodes_wasted = src.nodes_wasted;
+    voxels_wasted = src.voxels_wasted;
+    nodes_capacity = src.nodes_capacity;
+    voxels_capacity = src.voxels_capacity;
     depth = src.depth;
-    nodes = new Svt64Node[node_count + SVT64_BUFFER_MEMORY / sizeof(Svt64Node)];
-    materials = new MaterialIndex[voxel_count + SVT64_BUFFER_MEMORY / sizeof(MaterialIndex)];
-    physics_data = new PhysicsVoxel[voxel_count + SVT64_BUFFER_MEMORY / sizeof(PhysicsVoxel)];
+    nodes = new Svt64Node[nodes_capacity];
+    materials = new MaterialIndex[voxels_capacity];
+    physics_data = new PhysicsVoxel[voxels_capacity];
     memcpy(nodes, src.nodes, node_count * sizeof(Svt64Node));
     memcpy(materials, src.materials, voxel_count * sizeof(MaterialIndex));
     memcpy(physics_data, src.physics_data, voxel_count * sizeof(PhysicsVoxel));
@@ -389,7 +399,7 @@ Svt64& Svt64::operator=(const Svt64& src) {
 
 void Svt64::set_voxel(const uint32_t x, const uint32_t y, const uint32_t z, const MaterialIndex material) {
     /* Check if we ran out of space */
-    if (nodes_wasted >= SVT64_BUFFER_MEMORY || voxels_wasted >= SVT64_BUFFER_MEMORY) {
+    if (node_count >= nodes_capacity || voxel_count >= voxels_capacity) {
         static bool done_once = false;
         if (done_once == false) {
             Log::warn(Log::Scope::ENGINE, "SVT64 ran out of buffer memory.");
@@ -398,15 +408,21 @@ void Svt64::set_voxel(const uint32_t x, const uint32_t y, const uint32_t z, cons
         return;
     }
 
+    /* Check if the voxel is in bounds */
+    const uint32_t width = (uint32_t)powf(4.0f, (float)depth);
+    if (x >= width || y >= width || z >= width) { 
+        Log::warn("SVT64 tried to set voxel outside bounds.");
+        return;
+    }
+
 	uint32_t node_index = 0u;
-	uint32_t scale = depth * 2u;
+	uint32_t scale = depth * 2u - 2u;
 
 	for (;;) {
 		Svt64Node& node = nodes[node_index];
 
 		if (node.is_leaf()) break;
 
-		scale -= 2u;
 		const uint32_t lx = (x >> scale) & 3u;
 		const uint32_t ly = (y >> scale) & 3u;
 		const uint32_t lz = (z >> scale) & 3u;
@@ -416,10 +432,12 @@ void Svt64::set_voxel(const uint32_t x, const uint32_t y, const uint32_t z, cons
 		/* If the child doesn't exist yet, create it */
 		if ((node.child_mask & lm) == 0ull) {
 			const uint32_t prev_child_index = node.abs_ptr();
-			nodes_wasted += popcnt_var64(node.child_mask, 64u);
+            const uint32_t prev_nodes_count = popcnt_var64(node.child_mask, 64u);
+            if (node_count + prev_nodes_count + 64u >= nodes_capacity) return;
+			nodes_wasted += prev_nodes_count;
 			node = Svt64Node(false, node_count, node.child_mask | lm);
 
-			for (uint32_t i = 0u, j = 0u; i < 64u; ++i) {
+			for (int i = 0, j = 0; i < 64; ++i) {
 				const bool is_new = i == li;
 
 				if (is_new) {
@@ -435,6 +453,7 @@ void Svt64::set_voxel(const uint32_t x, const uint32_t y, const uint32_t z, cons
 			}
 		}
 
+		scale -= 2u;
 		node_index = node.abs_ptr() + popcnt_var64(node.child_mask, li);
 	}
 
@@ -449,10 +468,12 @@ void Svt64::set_voxel(const uint32_t x, const uint32_t y, const uint32_t z, cons
 	/* If the voxel doesn't exist yet, create it */
 	if ((node.child_mask & lm) == 0ull) {
 		const uint32_t prev_voxel_index = node.abs_ptr();
-		voxels_wasted += popcnt_var64(node.child_mask, 64u);
+        const uint32_t prev_voxel_count = popcnt_var64(node.child_mask, 64u);
+        if (voxel_count + prev_voxel_count + 64u >= voxels_capacity) return;
+		voxels_wasted += prev_voxel_count;
 
 		node = Svt64Node(true, voxel_count, node.child_mask | lm);
-		for (uint32_t i = 0u, j = 0u; i < 64u; ++i) {
+		for (int i = 0, j = 0; i < 64; ++i) {
 			const bool is_new = i == li;
 
 			if (is_new) {
