@@ -13,6 +13,7 @@ namespace tmt {
 
 namespace {
 
+// Plane intersection code from: https://stackoverflow.com/questions/7168484/3d-line-segment-and-plane-intersection
 bool plane_intersect(glm::vec3& contact, const Ray& ray, const glm::vec3& normal, const glm::vec3& coord) {
     // get d value
     const float d = glm::dot(normal, coord);
@@ -53,7 +54,9 @@ void draw_face_grid(const glm::vec3& start, const glm::vec3& right, const glm::v
     }
 }
 
-void draw_face(int32_t face_index, const Ray& ray, const Transform& transform, const glm::vec3& half_extent) {
+bool contains_axis(const glm::vec3& distance, const glm::vec3& direction, const float half_extent) { return glm::abs(glm::dot(distance, direction)) <= half_extent; }
+
+void draw_face(int32_t face_index, const Ray& ray, const Transform& transform, const glm::vec3& half_extent, const Hit& hit) {
     const auto& result = std::div(face_index, 2);
 
     glm::vec3 face_normal {};
@@ -77,20 +80,18 @@ void draw_face(int32_t face_index, const Ray& ray, const Transform& transform, c
     if (glm::dot(world_normal, ray.dir) < 0.0f) return;
 
     glm::vec3 contact;
-    if (!plane_intersect(contact, ray, world_normal, face_center)) return;
+    if (!plane_intersect(contact, ray, world_normal, face_center) || glm::distance(ray.origin, contact) > hit.distance) return;
 
     glm::vec3 min = -half_extent;
     min[result.quot] = half_extent[result.quot] * sign;
     min = transform.get_world_matrix() * glm::vec4 {min, 1.0f};
 
     glm::vec3 max = half_extent;
-    max[result.quot] = half_extent[result.quot] * sign;
+    max[result.quot] = min[result.quot];
     max = transform.get_world_matrix() * glm::vec4 {max, 1.0f};
 
     glm::vec3 distance = contact - face_center;
-    const bool contains = glm::abs(glm::dot(distance, transform.get_right())) <= half_extent.x && glm::abs(glm::dot(distance, transform.get_up())) <= half_extent.y &&
-                          glm::abs(glm::dot(distance, transform.get_forward())) <= half_extent.z;
-
+    const bool contains = contains_axis(distance, transform.get_right(), half_extent.x) && contains_axis(distance, transform.get_up(), half_extent.y) && contains_axis(distance, transform.get_forward(), half_extent.z);
 
     if (!contains) return;
 
@@ -140,10 +141,12 @@ void ModelViewer::on_editor_update(const FrameData& time) {
     const entt::basic_group group = engine.ecs.get_registry().group<const VoxelRenderer>(entt::get<Transform>);
     for (auto&& [entity, renderer, transform] : group.each()) {
         const Ray mouse_ray = engine.renderer.render_view.pixel_ray(mouse_position);
+        const Hit hit = engine.renderer.trace_ray(mouse_ray);
+
         const glm::vec3 half_extent = glm::vec3 {renderer.resource->size} / static_cast<float>(2 * VOXELS_PER_UNIT);
 
         for (int32_t i = 0; i < 6; i++) {
-            draw_face(i, mouse_ray, transform, half_extent);
+            draw_face(i, mouse_ray, transform, half_extent, hit);
         }
     }
 }
