@@ -28,7 +28,10 @@ void Rendering::display() {}
 constexpr float GIZMO_RETICLE_SIZE = 0.01f;
 
 /* Draw sphere light gizmo. */
-inline void sphere_light_gizmo(glm::vec3 pos, SphereLight light) {
+inline void sphere_light_gizmo(Transform& transform, SphereLight light) {
+    /* Get the position of the light source */
+    const glm::vec3 pos = transform.get_world_position();
+
     /* Draw the radii */
     engine.polyline.use_color(colors::DARK);
     engine.polyline.draw_circle(pos, light.source_radius, 32u); /* Source radius */
@@ -40,15 +43,29 @@ inline void sphere_light_gizmo(glm::vec3 pos, SphereLight light) {
 }
 
 /* Draw spot light gizmo. */
-inline void spot_light_gizmo(glm::vec3 pos, const SphereLight& light) {
-    /* Draw the radii */
+inline void spot_light_gizmo(Transform& transform, const SpotLight& light) {
+    /* Get the position of the light source */
+    const glm::vec3 pos = transform.get_world_position();
+    const glm::vec3 dir = transform.get_forward();
+
+    /* Draw the source radius */
     engine.polyline.use_color(colors::DARK);
     engine.polyline.draw_circle(pos, light.source_radius, 32u); /* Source radius */
-    engine.polyline.draw_circle(pos, light.attenuation_radius, 32u); /* Attenuation radius */
 
-    /* Draw vertical line */
+    /* Draw the attenuation distance using a line */
     engine.polyline.use_color(colors::DARK, 0.5f);
-    engine.polyline.draw_line(pos, pos * glm::vec3(1.0f, 0.0f, 1.0f));
+    engine.polyline.draw_line(pos, pos + dir * light.attenuation_distance); /* Attenuation distance */
+
+    /* Draw the end circle of the cone */
+    const float cone_length = (3.2f - light.beam_angle) * 5.0f;
+    const glm::vec3 cone_end = pos + dir * cone_length;
+    const float cone_end_radius = cone_length * glm::tan(light.beam_angle * 0.5f);
+    // engine.polyline.draw_world_circle(cone_end, dir, cone_end_radius, 32u);
+    engine.polyline.draw_cone(pos, dir, light.beam_angle, cone_length, 32u);
+    
+    /* Draw the inner circle of the cone, to show it's blend radius */
+    const float cone_inner_radius = cone_end_radius * (1.0f - light.spot_blend);
+    engine.polyline.draw_world_circle(cone_end, dir, cone_inner_radius, 32u);
 }
 
 /* Draw gizmos for light components. */
@@ -77,7 +94,11 @@ inline void light_gizmos() {
         switch (light.type) {
             /* Sphere light gizmo */
             case LightType::SPHERE_LIGHT:
-                sphere_light_gizmo(light_pos, std::get<SphereLight>(light.light));
+                sphere_light_gizmo(transform, std::get<SphereLight>(light.light));
+                break;
+            /* Sphere light gizmo */
+            case LightType::SPOT_LIGHT:
+                spot_light_gizmo(transform, std::get<SpotLight>(light.light));
                 break;
             default: break;
         }

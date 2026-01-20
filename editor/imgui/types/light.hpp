@@ -24,8 +24,15 @@ inline void tag_invoke(ImReflect::ImInput_t, const char*, tmt::Light& value, ImS
         constexpr uint32_t COUNT = sizeof(LIGHT_TYPE_LABELS) / sizeof(char*);
         for (uint32_t i = 0u; i < COUNT; ++i) {
             const bool is_selected = (selected == i);
-            if (ImGui::Selectable(LIGHT_TYPE_LABELS[i], is_selected))
+            if (ImGui::Selectable(LIGHT_TYPE_LABELS[i], is_selected)) {
                 value.type = magic_enum::enum_cast<tmt::LightType>(i).value_or(tmt::LightType::SPHERE_LIGHT);
+                switch (value.type) {
+                    case tmt::LightType::SPHERE_LIGHT: value.light = tmt::SphereLight(); break;
+                    case tmt::LightType::SUN_LIGHT: value.light = tmt::SunLight(); break;
+                    case tmt::LightType::SPOT_LIGHT: value.light = tmt::SpotLight(); break;
+                    case tmt::LightType::TUBE_LIGHT: value.light = tmt::TubeLight(); break;
+                }
+            }
             if (is_selected) ImGui::SetItemDefaultFocus();
         }
         ImGui::EndCombo();
@@ -39,13 +46,63 @@ inline void tag_invoke(ImReflect::ImInput_t, const char*, tmt::Light& value, ImS
         case tmt::LightType::SPHERE_LIGHT: {
             tmt::SphereLight light = std::get<tmt::SphereLight>(value.light);
 
-            ImGui::DragFloat("Source Radius", &light.source_radius, 0.025f, 0.0f, light.attenuation_radius);
+            ImGui::DragFloat("Source Radius", &light.source_radius, 0.025f, 0.0f, light.attenuation_radius, "%.3f u");
             help_tooltip("Radius of the sphere light source. (larger means softer shadows)");
-            ImGui::DragFloat("Attenuation Radius", &light.attenuation_radius, 0.1f, light.source_radius, 100.0f);
+            ImGui::DragFloat("Attenuation Radius", &light.attenuation_radius, 0.1f, light.source_radius, 100.0f, "%.3f u");
             help_tooltip("Radius at which the light influence will be zero.");
             
-            ImGui::DragFloat("Luminous Flux", &light.luminous_flux, 10.0f, 0.0f, 10000.0f);
+            ImGui::DragFloat("Luminous Flux", &light.luminous_flux, 1.0f, 0.0f, 10000.0f, "%.3f lm");
             help_tooltip("Luminous flux of the sphere light. (in lumen, default: 100lm)");
+
+            value.light = light;
+            break;
+        }
+        /* Directional area light */
+        case tmt::LightType::SUN_LIGHT: {
+            tmt::SunLight light = std::get<tmt::SunLight>(value.light);
+
+            float source_angle = glm::degrees(light.source_angle);
+            if (ImGui::DragFloat("Source Angle", &source_angle, 0.1f, 0.0f, 90.0f, "%.3f deg")) {
+                light.source_angle = glm::radians(source_angle);
+            }
+            help_tooltip("Angular diameter of the sun light. (larger means softer shadows)");
+            
+            ImGui::DragFloat("Luminous Intensity", &light.luminous_intensity, 1.0f, 0.0f, 10000.0f, "%.3f cd");
+            help_tooltip("Luminous flux of the sphere light. (in lumen, default: 100lm)");
+
+            value.light = light;
+            break;
+        }
+        /* Spot light */
+        case tmt::LightType::SPOT_LIGHT: {
+            tmt::SpotLight light = std::get<tmt::SpotLight>(value.light);
+
+            ImGui::DragFloat("Source Radius", &light.source_radius, 0.025f, 0.0f, light.attenuation_distance, "%.3f u");
+            help_tooltip("Radius of the spot light source. (larger means softer shadows)");
+            ImGui::DragFloat("Attenuation Distance", &light.attenuation_distance, 0.1f, light.source_radius, 100.0f, "%.3f u");
+            help_tooltip("Distance at which the light influence will be zero.");
+            float beam_angle = glm::degrees(light.beam_angle);
+            if (ImGui::DragFloat("Beam Angle", &beam_angle, 0.1f, 0.0f, 180.0f, "%.3f deg")) {
+                light.beam_angle = glm::radians(beam_angle);
+            }
+            help_tooltip("Angular diameter of the spot light beam.");
+            float spot_blend = light.spot_blend * 100.0f;
+            if (ImGui::DragFloat("Spot Blend", &spot_blend, 0.1f, 0.0f, 100.0f, "%.3f %")) {
+                light.spot_blend = spot_blend / 100.0f;
+            }
+            help_tooltip("The softness of the spot light edge.");
+            
+            ImGui::DragFloat("Luminous Flux", &light.luminous_flux, 1.0f, 0.0f, 10000.0f, "%.3f lm");
+            help_tooltip("Luminous flux of the spot light. (in lumen, default: 100lm)");
+
+            value.light = light;
+            break;
+        }
+        /* Tube area light */
+        case tmt::LightType::TUBE_LIGHT: {
+            tmt::TubeLight light = std::get<tmt::TubeLight>(value.light);
+
+            ImGui::Text("Work in progress!");
 
             value.light = light;
             break;
@@ -57,6 +114,6 @@ inline void tag_invoke(ImReflect::ImInput_t, const char*, tmt::Light& value, ImS
     /* Shared parameters */
     ImGui::ColorEdit3("Color", &value.color.x);
     help_tooltip("Color of the light emitted. (multiplied together with temperature)");
-    ImGui::DragFloat("Temperature", &value.temperature);
+    ImGui::DragFloat("Temperature", &value.temperature, 1.0f, 0.0f, 10000.0f, "%.3f K");
     help_tooltip("Temperature of the light emitted. (in kelvin, default: 6500k)");
 }

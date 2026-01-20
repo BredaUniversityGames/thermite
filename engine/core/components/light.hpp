@@ -11,7 +11,7 @@ enum class LightType : uint32_t {
     /* Spherical area light. */
     SPHERE_LIGHT = 0u,
     /* Directional area light. */
-    DIR_LIGHT = 1u,
+    SUN_LIGHT = 1u,
     /* Spot light. */
     SPOT_LIGHT = 2u,
     /* Tube area light. */
@@ -30,11 +30,11 @@ struct SphereLight {
 };
 
 /* Directional area light. */
-struct DirLight {
-    /* Angular diameter of the directional light. (larger means softer shadows) */
+struct SunLight {
+    /* Angular diameter of the sun light. (in radians, larger means softer shadows) */
     float source_angle = 0.1f;
 
-    /* Luminous intensity of the directional light. (in candela, default: 100cd) */
+    /* Luminous intensity of the sun light. (in candela, default: 100cd) */
     float luminous_intensity = 100.0f;
 };
 
@@ -75,14 +75,14 @@ struct Light {
     LightType type = LightType::SPHERE_LIGHT;
 
     /* Light properties. */
-    std::variant<SphereLight, DirLight, SpotLight, TubeLight> light {};
+    std::variant<SphereLight, SunLight, SpotLight, TubeLight> light {};
 };
 
 }  // namespace tmt
 
 /* Light types */
 TMT_OBJECT(tmt::SphereLight, (source_radius, attenuation_radius, luminous_flux));
-TMT_OBJECT(tmt::DirLight, (source_angle, luminous_intensity));
+TMT_OBJECT(tmt::SunLight, (source_angle, luminous_intensity));
 TMT_OBJECT(tmt::SpotLight, (source_radius, attenuation_distance, beam_angle, spot_blend, luminous_flux));
 TMT_OBJECT(tmt::TubeLight, (source_radius, attenuation_distance, luminous_flux));
 

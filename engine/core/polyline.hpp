@@ -42,6 +42,16 @@ class Polyline {
     void draw_circle(glm::vec3 origin, float radius, uint32_t segments = 32u, float time = 0.0f);
 
     /**
+     * @brief Draw a polyline circle in world-space.
+     * @param origin The center point of the circle in world-space.
+     * @param dir The direction of the circle in world-space.
+     * @param radius The radius of the circle in world-space.
+     * @param segments The number of line segments which make up the circle.
+     * @param time Optional timer for how long the polyline should stay alive. *(default is 1 frame)*
+     */
+    void draw_world_circle(glm::vec3 origin, glm::vec3 dir, float radius, uint32_t segments = 32u, float time = 0.0f);
+
+    /**
      * @brief Draw a polyline sphere using 3 orthogonal circles.
      * @param origin The center point of the sphere in world-space.
      * @param radius The radius of the sphere in world-space.
