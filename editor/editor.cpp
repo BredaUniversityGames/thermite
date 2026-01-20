@@ -34,6 +34,7 @@
 #include "editor/windows/imgui_demo.hpp"
 #include "editor/windows/console.hpp"
 #include "editor/windows/motion_math.hpp"
+#include "editor/windows/debug_lines.hpp"
 
 #include "editor/windows/model_viewer.hpp"
 
@@ -67,6 +68,7 @@ void Editor::on_engine_init(const ApplicationSpecs&) {
     windows[Mode::OBJECT].add<Console>();
     windows[Mode::OBJECT].add<ImguiDemo>();
     windows[Mode::OBJECT].add<MotionMathPreview>();
+    windows[Mode::OBJECT].add<DebugLines>();
 
     windows[Mode::EDIT].add<ModelViewer>();
 
