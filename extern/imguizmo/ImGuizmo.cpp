@@ -1379,20 +1379,76 @@ namespace IMGUIZMO_NAMESPACE
       }
    }
 
+   static void DrawScaleCube(ImDrawList* drawList, vec_t position, float size, ImU32 color, vec_t dirAxis, vec_t dirPlaneX, vec_t dirPlaneY)
+   {
+      const float s = size * 0.02f;
+      
+      // Build rotation matrix from the axis directions
+      vec_t axisX = dirPlaneX;
+      vec_t axisY = dirPlaneY;
+      vec_t axisZ = dirAxis;
+      
+      // 8 vertices of a cube in local space, then rotated by axis directions
+      vec_t localVerts[8] = {
+         makeVect(-s, -s, -s),
+         makeVect( s, -s, -s),
+         makeVect( s,  s, -s),
+         makeVect(-s,  s, -s),
+         makeVect(-s, -s,  s),
+         makeVect( s, -s,  s),
+         makeVect( s,  s,  s),
+         makeVect(-s,  s,  s)
+      };
+      
+      // Transform vertices using axis directions and project to screen
+      ImVec2 screenVerts[8];
+      for (int i = 0; i < 8; i++)
+      {
+         vec_t worldPos = axisX * localVerts[i].x + axisY * localVerts[i].y + axisZ * localVerts[i].z;
+         worldPos += position;
+         screenVerts[i] = worldToPos(worldPos, gContext.mViewProjection);
+      }
+      
+      // 12 edges of the cube
+      static const int edges[12][2] = {
+         {0, 1}, {1, 2}, {2, 3}, {3, 0},
+         {4, 5}, {5, 6}, {6, 7}, {7, 4},
+         {0, 4}, {1, 5}, {2, 6}, {3, 7}
+      };
+      
+      // 6 faces of the cube
+      static const int faces[6][4] = {
+         {0, 1, 2, 3},
+         {5, 4, 7, 6},
+         {4, 0, 3, 7},
+         {1, 5, 6, 2},
+         {3, 2, 6, 7},
+         {4, 5, 1, 0}
+      };
+      
+      for (int i = 0; i < 6; i++)
+      {
+         ImVec2 faceScreen[4];
+         for (int j = 0; j < 4; j++)
+         {
+            faceScreen[j] = screenVerts[faces[i][j]];
+         }
+         drawList->AddConvexPolyFilled(faceScreen, 4, color);
+      }
+   }
+
    static void DrawScaleGizmo(OPERATION op, int type)
    {
       ImDrawList* drawList = gContext.mDrawList;
 
       if(!Intersects(op, SCALE))
       {
-        return;
+      return;
       }
 
-      // colors
       ImU32 colors[7];
       ComputeColors(colors, type, SCALE);
 
-      // draw
       vec_t scaleDisplay = { 1.f, 1.f, 1.f, 1.f };
 
       if (gContext.mbUsing && (gContext.GetCurrentID() == gContext.mEditingID))
@@ -1412,28 +1468,39 @@ namespace IMGUIZMO_NAMESPACE
             vec_t dirPlaneX, dirPlaneY, dirAxis;
             bool belowAxisLimit, belowPlaneLimit;
             ComputeTripodAxisAndVisibility(i, dirAxis, dirPlaneX, dirPlaneY, belowAxisLimit, belowPlaneLimit, true);
+            
+            // Transform directions by model matrix
+            vec_t worldDirAxis = dirAxis;
+            vec_t worldDirPlaneX = dirPlaneX;
+            vec_t worldDirPlaneY = dirPlaneY;
+            worldDirAxis.TransformVector(gContext.mModelLocal);
+            worldDirPlaneX.TransformVector(gContext.mModelLocal);
+            worldDirPlaneY.TransformVector(gContext.mModelLocal);
 
-            // draw axis
             if (belowAxisLimit)
             {
                bool hasTranslateOnAxis = Contains(op, static_cast<OPERATION>(TRANSLATE_X << i));
                float markerScale = hasTranslateOnAxis ? 1.4f : 1.0f;
-               ImVec2 baseSSpace = worldToPos(dirAxis * 0.15f * gContext.mScreenFactor, gContext.mMVP);
-               ImVec2 worldDirSSpaceNoScale = worldToPos(dirAxis * 0.75f * markerScale * gContext.mScreenFactor, gContext.mMVP);
-               ImVec2 worldDirSSpace = worldToPos((dirAxis * 0.75f * markerScale * scaleDisplay[i]) * gContext.mScreenFactor, gContext.mMVP);
+               ImVec2 baseSSpace = worldToPos(dirAxis * 0.15f * gContext.mScreenFactor, gContext.mMVPLocal);
+               ImVec2 worldDirSSpace = worldToPos((dirAxis * 0.75f * markerScale * scaleDisplay[i]) * gContext.mScreenFactor, gContext.mMVPLocal);
 
                if (gContext.mbUsing && (gContext.GetCurrentID() == gContext.mEditingID))
                {
                   ImU32 scaleLineColor = GetColorU32(SCALE_LINE);
+                  ImVec2 worldDirSSpaceNoScale = worldToPos(dirAxis * 0.75f * markerScale * gContext.mScreenFactor, gContext.mMVPLocal);
                   drawList->AddLine(baseSSpace, worldDirSSpaceNoScale, scaleLineColor, gContext.mStyle.ScaleLineThickness);
-                  drawList->AddCircleFilled(worldDirSSpaceNoScale, gContext.mStyle.ScaleLineCircleSize, scaleLineColor);
+                  
+                  vec_t cubeWorldPosNoScale = gContext.mModelLocal.v.position + worldDirAxis * 0.75f * markerScale * gContext.mScreenFactor;
+                  DrawScaleCube(drawList, cubeWorldPosNoScale, gContext.mStyle.ScaleLineCircleSize * gContext.mScreenFactor, scaleLineColor, worldDirAxis, worldDirPlaneX, worldDirPlaneY);
                }
 
                if (!hasTranslateOnAxis || gContext.mbUsing)
                {
                   drawList->AddLine(baseSSpace, worldDirSSpace, colors[i + 1], gContext.mStyle.ScaleLineThickness);
                }
-               drawList->AddCircleFilled(worldDirSSpace, gContext.mStyle.ScaleLineCircleSize, colors[i + 1]);
+               
+               vec_t cubeWorldPos = gContext.mModelLocal.v.position + worldDirAxis * 0.75f * markerScale * scaleDisplay[i] * gContext.mScreenFactor;
+               DrawScaleCube(drawList, cubeWorldPos, gContext.mStyle.ScaleLineCircleSize * gContext.mScreenFactor, colors[i + 1], worldDirAxis, worldDirPlaneX, worldDirPlaneY);
 
                if (gContext.mAxisFactor[i] < 0.f)
                {
@@ -1443,22 +1510,12 @@ namespace IMGUIZMO_NAMESPACE
          }
       }
 
-      // draw screen cirle
       drawList->AddCircle(gContext.mScreenSquareCenter, gContext.mStyle.CenterCircleSize, colors[0], 32, 2.5f);
 
       if (gContext.mbUsing && (gContext.GetCurrentID() == gContext.mEditingID) && IsScaleType(type))
       {
-         //ImVec2 sourcePosOnScreen = worldToPos(gContext.mMatrixOrigin, gContext.mViewProjection);
          ImVec2 destinationPosOnScreen = worldToPos(gContext.mModel.v.position, gContext.mViewProjection);
-         /*vec_t dif(destinationPosOnScreen.x - sourcePosOnScreen.x, destinationPosOnScreen.y - sourcePosOnScreen.y);
-         dif.Normalize();
-         dif *= 5.f;
-         drawList->AddCircle(sourcePosOnScreen, 6.f, translationLineColor);
-         drawList->AddCircle(destinationPosOnScreen, 6.f, translationLineColor);
-         drawList->AddLine(ImVec2(sourcePosOnScreen.x + dif.x, sourcePosOnScreen.y + dif.y), ImVec2(destinationPosOnScreen.x - dif.x, destinationPosOnScreen.y - dif.y), translationLineColor, 2.f);
-         */
          char tmps[512];
-         //vec_t deltaInfo = gContext.mModel.v.position - gContext.mMatrixOrigin;
          int componentInfoIndex = (type - MT_SCALE_X) * 3;
          ImFormatString(tmps, sizeof(tmps), scaleInfoMask[type - MT_SCALE_X], scaleDisplay[translationInfoIndex[componentInfoIndex]]);
          drawList->AddText(ImVec2(destinationPosOnScreen.x + 15, destinationPosOnScreen.y + 15), GetColorU32(TEXT_SHADOW), tmps);

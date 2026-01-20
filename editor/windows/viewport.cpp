@@ -291,7 +291,7 @@ void tmt::Viewport::setup_gizmo_style() {
     style.RotationLineThickness = 3.0f;
     style.RotationOuterLineThickness = 3.0f;
     style.ScaleLineThickness = 2.0f;
-    style.ScaleLineCircleSize = 10.0f;
+    style.ScaleLineCircleSize = 1.5f;
     style.HatchedAxisLineThickness = 5.0f;
     style.CenterCircleSize = 24.0f;
 
