@@ -19,7 +19,7 @@ struct Hit {
     /* Distance to the object we hit in world-space. */
     float distance = 1e30f;
     /* Entity of the object we hit. */
-    Entity entity {};
+    Entity entity {entt::null};
     /* Voxel coordinate inside the object we hit. */
     glm::uvec3 coord {};
 
