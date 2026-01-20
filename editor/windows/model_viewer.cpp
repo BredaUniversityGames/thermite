@@ -132,7 +132,7 @@ void draw_selection(const glm::vec3& half_extent, const Transform& transform, co
     engine.polyline.draw_obb(world_voxel_pos, glm::vec3 {VOXEL_SIZE_HALF}, transform.get_world_rotation());
 }
 
-std::atomic_bool test{true};
+std::atomic_bool test {true};
 
 }  // namespace
 
@@ -217,6 +217,11 @@ void ModelViewer::on_editor_update(const FrameData& time) {
         const auto& [renderer, transform] = engine.ecs.get_component<VoxelRenderer, Transform>(hit.entity);
         const glm::vec3 half_extent = glm::vec3 {renderer.resource->size} / static_cast<float>(2 * VOXELS_PER_UNIT);
 
+        if (engine.input.is_mouse_button_pressed(MouseButton::LEFT)) {
+            renderer.resource->blas->set_voxel(hit.coord.x, hit.coord.y, hit.coord.z, MaterialIndex {1});
+            renderer.resource->update();
+        }
+
         draw_selection(half_extent, transform, hit);
         return;
     }
@@ -231,11 +236,15 @@ void ModelViewer::on_editor_update(const FrameData& time) {
 
     hit.coord = (local_position + selected_face.half_extent) * static_cast<float>(VOXELS_PER_UNIT);
     draw_selection(selected_face.half_extent, transform, hit);
+
+    if (engine.input.is_mouse_button_pressed(MouseButton::LEFT)) {
+        auto& renderer = engine.ecs.get_component<VoxelRenderer>(selected_face.entity);
+        renderer.resource->blas->set_voxel(hit.coord.x, hit.coord.y, hit.coord.z, MaterialIndex {1});
+        renderer.resource->update();
+    }
 }
 
-void ModelViewer::on_editor_end() {
-    editing_volume = {};
-}
+void ModelViewer::on_editor_end() { editing_volume = {}; }
 
 void ModelViewer::create_editing_entity() {
     editing_entity = engine.ecs.create_entity();
