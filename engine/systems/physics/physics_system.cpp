@@ -93,6 +93,8 @@ void Physics::on_update(const FrameData&) {
 }
 
 void Physics::on_fixed_update(const FrameData&) {
+    TMT_ZONE_SCOPED_N("Physics")
+
     // Update Forces
     for (const auto& [entity, vb, transform] : engine.ecs.get_registry().view<VoxelBody, Transform>().each()) {
         // if (!transform.is_enabled()) continue;
@@ -139,7 +141,7 @@ void Physics::on_fixed_update(const FrameData&) {
     std::vector<VoxelObject> objects {};
     objects.reserve(group.size());
     {
-        TMT_ZONE_SCOPED_N("Physics BVH Build")
+        TMT_ZONE_SCOPED_N("Build BVH")
         for (auto&& [entity, vb, transform] : group.each()) {
             // TODO: THIS CAN CAUSE ISSUES WITH MISSING RESOURCES!!!!
 
@@ -156,8 +158,7 @@ void Physics::on_fixed_update(const FrameData&) {
     }
 
     {
-        TMT_ZONE_SCOPED_N("Physics Collision Detection")
-
+        TMT_ZONE_SCOPED_N("Collision Detection")
         // Detect Colllisions
         // Generate Contacts
         generate_constraints();
@@ -166,16 +167,26 @@ void Physics::on_fixed_update(const FrameData&) {
     engine.salvo.deactivate_workers();
 
     {
-        TMT_ZONE_SCOPED_N("Physics Solver")
-        // Solve Velocities
-        solver.solve_velocities(Engine::Config::FIXED_TIME_STEP);
+        TMT_ZONE_SCOPED_N("Solver")
+        {
+            TMT_ZONE_SCOPED_N("Solve Velocity")
+            // Solve Velocities
+            solver.solve_velocities(Engine::Config::FIXED_TIME_STEP);
+        }
 
-        // Apply Velocities
-        // Update Positions
-        apply_velocities();
+        {
+            TMT_ZONE_SCOPED_N("Apply Velocity")
+            // Apply Velocities
+            // Update Positions
+            apply_velocities();
+        }
 
-        // Solve Positions
-        solver.solve_positions(Engine::Config::FIXED_TIME_STEP);
+        {
+            TMT_ZONE_SCOPED_N("Solve Position")
+            // Solve Positions
+            solver.solve_positions(Engine::Config::FIXED_TIME_STEP);
+        }
+
     }
 }
 
@@ -289,6 +300,7 @@ void Physics::compare_trees(
     tmt::Svt64* tree_a, const glm::vec3& center_a, const glm::quat& rotation_a, float half_extent_a, tmt::Svt64* tree_b, const glm::vec3& center_b, const glm::quat& rotation_b,
     float half_extent_b, Collision& coll
 ) {
+    TMT_ZONE_SCOPED_N("svt64 cd")
     struct StackEntry {
         uint32_t node_index_a;
         uint32_t node_index_b;
@@ -515,6 +527,8 @@ void Physics::compare_trees(
 }
 
 bool Physics::sat_early_out(const VoxelBody& vb_a, const VoxelBody& vb_b) {
+    TMT_ZONE_SCOPED_N("SAT")
+
     auto vert_a = vb_a.get_world_bounds();
     auto vert_b = vb_b.get_world_bounds();
     auto axes_a = vb_a.get_axes();
