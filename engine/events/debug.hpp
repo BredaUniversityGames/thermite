@@ -10,7 +10,7 @@ class OnDrawLines : public EventListenerBase<OnDrawLines, void> {
 
     void on_event() final override { on_draw_lines(); }
 
-    virtual void on_draw_lines() = 0;
+    virtual void on_draw_lines() const = 0;
     constexpr virtual std::string get_name() const = 0;
 
     /* [Optional] */
