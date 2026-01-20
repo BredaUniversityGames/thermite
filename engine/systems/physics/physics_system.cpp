@@ -181,10 +181,55 @@ void Physics::on_fixed_update(const FrameData&) {
 
 void Physics::generate_constraints() {
     solver.collisions.resize(MAX_CONTACTS);
-    const entt::basic_group group = engine.ecs.get_registry().group<VoxelBody>(entt::get<Transform>);
+    const PhysicsGroup group = engine.ecs.get_registry().group<VoxelBody>(entt::get<Transform>);
     engine.salvo.parallel_for(group.size(), [this, &group](size_t i) { generate_constraint((int)i, group); });
 }
 
+void Physics::generate_constraint(int index, const PhysicsGroup& group) {
+    Entity entity = group[index];
+    VoxelBody& vb = group.get<VoxelBody>(entity);
+    Transform& transform = group.get<Transform>(entity);
+    //auto& [vb, transform] = group.get<VoxelBody, Transform>(entity);
+
+    if (vb.type == VoxelBody::STATIC || vb.type == VoxelBody::SLEEPING) return;
+    if (vb.resource == nullptr) return;
+
+    Aabb current_aabb = vb.aabb();
+    std::vector<uint32_t> hits = bvh.overlap(current_aabb);
+
+    for (uint32_t hit : hits) {
+        Entity other_entity = group[hit];
+        if (other_entity == entity) continue;
+
+        VoxelBody& other_vb = group.get<VoxelBody>(other_entity);
+        Transform& other_transform = group.get<Transform>(other_entity);
+        //auto& [other_vb, other_transform] = group.get<VoxelBody, Transform>(other_entity);
+
+        if (sat_early_out(vb, other_vb)) continue;
+
+        Collision coll(entity, other_entity);
+        coll.contacts.reserve(64);
+
+        auto* tree_a = vb.resource->blas.get();
+        const float half_extent_a = powf(4.0f, (float)tree_a->depth) * 0.5f * UNITS_PER_VOXEL;
+        const glm::vec3 extents_diff_a = half_extent_a - ((glm::vec3)vb.resource->size * 0.5f * UNITS_PER_VOXEL);
+        const glm::vec3 root_center_a = vb.position + (vb.rotation * extents_diff_a);
+
+        auto* tree_b = other_vb.resource->blas.get();
+        const float half_extent_b = powf(4.0f, (float)tree_b->depth) * 0.5f * UNITS_PER_VOXEL;
+        const glm::vec3 extents_diff_b = half_extent_b - ((glm::vec3)other_vb.resource->size * 0.5f * UNITS_PER_VOXEL);
+        const glm::vec3 root_center_b = other_vb.position + (other_vb.rotation * extents_diff_b);
+
+        compare_trees(tree_a, root_center_a, vb.rotation, half_extent_a, tree_b, root_center_b, other_vb.rotation, half_extent_b, coll);
+
+        if (coll.contacts.empty()) continue;
+
+        if (other_vb.type == VoxelBody::SLEEPING) other_vb.accumulated_forces = 10000;
+
+        coll.normal = glm::normalize(other_vb.position - vb.position);
+        solver.collisions[solver.contact_index.fetch_add(1)] = coll;
+    }
+}
 void Physics::on_end() { Log::info("Physics on_end"); }
 
 void draw_solids(
@@ -240,7 +285,7 @@ void draw_solids(
     }
 }
 
-void compare_trees(
+void Physics::compare_trees(
     tmt::Svt64* tree_a, const glm::vec3& center_a, const glm::quat& rotation_a, float half_extent_a, tmt::Svt64* tree_b, const glm::vec3& center_b, const glm::quat& rotation_b,
     float half_extent_b, Collision& coll
 ) {
@@ -466,52 +511,6 @@ void compare_trees(
                 stack.push_back({entry.node_index_a, child_index, entry.half_extent_a, child_half_extent, entry.center_a, child_center});
             }
         }
-    }
-}
-
-template <typename... Args>
-void Physics::generate_constraint(const int index, const entt::basic_group<Args...>& group) {
-    const Entity entity = group[index];
-    const auto& [vb, transform] = group.get<VoxelBody, Transform>(entity);
-
-    if (vb.type == VoxelBody::STATIC || vb.type == VoxelBody::SLEEPING) return;
-    if (vb.resource == nullptr) return;
-
-    // Get current AABB
-    Aabb current_aabb = vb.aabb();
-
-    // Check against BVH
-    std::vector<uint32_t> hits = bvh.overlap(current_aabb);
-
-    // Collision checks for entities in bvh_overlaps
-    for (uint32_t hit : hits) {
-        const Entity other_entity = group[hit];
-        if (other_entity == entity) continue;
-
-        const auto& [other_vb, other_transform] = group.get<VoxelBody, Transform>(other_entity);
-
-        if (sat_early_out(vb, other_vb)) continue;
-
-        Collision coll(entity, other_entity);
-        coll.contacts.reserve(64);
-
-        auto* tree_a = vb.resource->blas.get();
-        const float half_extent_a = powf(4.0f, (float)tree_a->depth) * 0.5f * UNITS_PER_VOXEL;
-        const glm::vec3 extents_diff_a = half_extent_a - ((glm::vec3)vb.resource->size * 0.5f * UNITS_PER_VOXEL);
-        const glm::vec3 root_center_a = vb.position + (vb.rotation * extents_diff_a);
-
-        auto* tree_b = other_vb.resource->blas.get();
-        const float half_extent_b = powf(4.0f, (float)tree_b->depth) * 0.5f * UNITS_PER_VOXEL;
-        const glm::vec3 extents_diff_b = half_extent_b - ((glm::vec3)other_vb.resource->size * 0.5f * UNITS_PER_VOXEL);
-        const glm::vec3 root_center_b = other_vb.position + (other_vb.rotation * extents_diff_b);
-
-        compare_trees(tree_a, root_center_a, vb.rotation, half_extent_a, tree_b, root_center_b, other_vb.rotation, half_extent_b, coll);
-
-        if (coll.contacts.size() <= 0) continue;
-
-        if (other_vb.type == VoxelBody::SLEEPING) other_vb.accumulated_forces = 10000;
-        coll.normal = glm::normalize(other_vb.position - vb.position);
-        solver.collisions[solver.contact_index.fetch_add(1)] = coll;
     }
 }
 
