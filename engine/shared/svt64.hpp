@@ -54,17 +54,19 @@ struct Ray;
 class Svt64 {
     /* Recursive tree subdivide function. */
     Svt64Node subdivide(const RawVoxels& raw_data, uint32_t scale, glm::uvec3 index);
-
+    
    public:
     /* List of tree nodes. */
     Svt64Node* nodes = nullptr;
     uint32_t node_count = 0u;
+    uint32_t nodes_wasted = 0u;
 
     /* List of voxel data. */
     MaterialPalette palette {};
     MaterialIndex* materials = nullptr;
     PhysicsVoxel* physics_data = nullptr;
     uint32_t voxel_count = 0u;
+    uint32_t voxels_wasted = 0u;
     uint32_t depth = 0u;
 
     Svt64() = default;
@@ -81,9 +83,14 @@ class Svt64 {
     Material* get_voxel(const uint32_t x, const uint32_t y, const uint32_t z);
     /* @returns A pointer to the physics data of a voxel at the given coordinate. (nullptr if the voxel is emtpy) */
     PhysicsVoxel* get_physics_voxel(const uint32_t x, const uint32_t y, const uint32_t z);
+    /* Set a voxel inside the tree. */
+    void set_voxel(const uint32_t x, const uint32_t y, const uint32_t z, const MaterialIndex material);
 
     /* Build the tree. */
     void build(const RawVoxels& raw_data);
+
+    /* Defragment the tree. */
+	void defrag();
 
     /* Trace a ray through the tree. */
     Svt64Hit trace(const Ray& ray) const;

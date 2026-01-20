@@ -4,6 +4,7 @@
 
 #include "engine/tools/profiler.hpp"
 #include "engine/shared/ray.hpp"
+#include "engine/core/logger.hpp"
 
 namespace tmt {
 
@@ -221,7 +222,7 @@ void Svt64::build(const RawVoxels& raw_data) {
     nodes[0] = subdivide(raw_data, depth * 2u, glm::uvec3(0u));
 
     /* Reallocate the nodes to save memory */
-    nodes = (Svt64Node*)realloc(nodes, node_count * sizeof(Svt64Node) + SVT64_BUFFER_MEMORY);
+    nodes = (Svt64Node*)realloc(nodes, (node_count + SVT64_BUFFER_MEMORY) * sizeof(Svt64Node));
 }
 
 inline uint32_t get_node_cell_index(const glm::vec3 pos, const int scale_exp) {
@@ -384,6 +385,146 @@ Svt64& Svt64::operator=(const Svt64& src) {
     memcpy(physics_data, src.physics_data, voxel_count * sizeof(PhysicsVoxel));
     palette = src.palette;
     return *this;
+}
+
+void Svt64::set_voxel(const uint32_t x, const uint32_t y, const uint32_t z, const MaterialIndex material) {
+    /* Check if we ran out of space */
+    if (nodes_wasted >= SVT64_BUFFER_MEMORY || voxels_wasted >= SVT64_BUFFER_MEMORY) {
+        static bool done_once = false;
+        if (done_once == false) {
+            Log::warn(Log::Scope::ENGINE, "SVT64 ran out of buffer memory.");
+            done_once = true;
+        }
+        return;
+    }
+
+	uint32_t node_index = 0u;
+	uint32_t scale = depth * 2u;
+
+	for (;;) {
+		Svt64Node& node = nodes[node_index];
+
+		if (node.is_leaf()) break;
+
+		scale -= 2u;
+		const uint32_t lx = (x >> scale) & 3u;
+		const uint32_t ly = (y >> scale) & 3u;
+		const uint32_t lz = (z >> scale) & 3u;
+		const uint32_t li = lx + ly * 16u + lz * 4u;
+		const uint64_t lm = 1ull << li;
+
+		/* If the child doesn't exist yet, create it */
+		if ((node.child_mask & lm) == 0ull) {
+			const uint32_t prev_child_index = node.abs_ptr();
+			nodes_wasted += popcnt_var64(node.child_mask, 64u);
+			node = Svt64Node(false, node_count, node.child_mask | lm);
+
+			for (uint32_t i = 0u, j = 0u; i < 64u; ++i) {
+				const bool is_new = i == li;
+
+				if (is_new) {
+					/* Add new node */
+					nodes[node_count++] = Svt64Node(scale <= 2u, 0u, 0ull);
+				} else {
+					/* Copy over old node */
+					if (node.child_mask & (1ull << i)) {
+						nodes[node_count++] = nodes[prev_child_index + j];
+						j++;
+					}
+				}
+			}
+		}
+
+		node_index = node.abs_ptr() + popcnt_var64(node.child_mask, li);
+	}
+
+	Svt64Node& node = nodes[node_index];
+
+	const uint32_t lx = x & 3u;
+	const uint32_t ly = y & 3u;
+	const uint32_t lz = z & 3u;
+	const uint32_t li = lx + ly * 16u + lz * 4u;
+	const uint64_t lm = 1ull << li;
+
+	/* If the voxel doesn't exist yet, create it */
+	if ((node.child_mask & lm) == 0ull) {
+		const uint32_t prev_voxel_index = node.abs_ptr();
+		voxels_wasted += popcnt_var64(node.child_mask, 64u);
+
+		node = Svt64Node(true, voxel_count, node.child_mask | lm);
+		for (uint32_t i = 0u, j = 0u; i < 64u; ++i) {
+			const bool is_new = i == li;
+
+			if (is_new) {
+				/* Add new voxel */
+				materials[voxel_count++] = material;
+			} else {
+				/* Copy over old voxel */
+				if (node.child_mask & (1ull << i)) {
+					materials[voxel_count++] = materials[prev_voxel_index + j];
+					j++;
+				}
+			}
+		}
+	}
+}
+
+void Svt64::defrag() {
+	/* Copy current nodes and voxels */
+	Svt64Node* new_nodes = new Svt64Node[node_count];
+	MaterialIndex* new_materials = new MaterialIndex[voxel_count];
+	PhysicsVoxel* new_physics_data = new PhysicsVoxel[voxel_count];
+
+	/* Traverse the tree top down, move all child nodes/voxels into new lists */
+	node_count = 1u;
+	voxel_count = voxels_wasted = nodes_wasted = 0u;
+	
+    /* Non-recursive */
+	uint32_t old_stack[128] {};
+	uint32_t new_stack[128] {};
+	uint32_t stack_ptr = 0u;
+	uint32_t old_node_index = 0u;
+	uint32_t new_node_index = 0u;
+
+	for (;;) {
+		const Svt64Node& old_node = nodes[old_node_index];
+		Svt64Node& new_node = new_nodes[new_node_index];
+		const uint32_t child_count = popcnt_var64(old_node.child_mask, 64u);
+		const uint32_t child_ptr = old_node.abs_ptr();
+
+		/* Defrag leaf node */
+		if (old_node.is_leaf()) {
+			new_node = Svt64Node(true, voxel_count, old_node.child_mask);
+			memcpy(new_materials + voxel_count, materials + child_ptr, child_count * sizeof(MaterialIndex));
+			voxel_count += child_count;
+			if (stack_ptr == 0u) break;
+			old_node_index = old_stack[--stack_ptr];
+			new_node_index = new_stack[stack_ptr];
+			continue;
+		}
+
+		/* Defrag node */
+		new_node = Svt64Node(false, node_count, old_node.child_mask);
+		memcpy(new_nodes + node_count, nodes + child_ptr, child_count * sizeof(Svt64Node));
+		node_count += child_count;
+
+		/* Recurse into child nodes */
+		for (uint32_t i = 0u; i < child_count; ++i) {
+			old_stack[stack_ptr] = child_ptr + i;
+			new_stack[stack_ptr++] = new_node.abs_ptr() + i;
+		}
+
+		if (stack_ptr == 0u) break;
+		old_node_index = old_stack[--stack_ptr];
+		new_node_index = new_stack[stack_ptr];
+	}
+
+	delete[] nodes;
+	nodes = new_nodes;
+	delete[] materials;
+	materials = new_materials;
+	delete[] physics_data;
+	physics_data = new_physics_data;
 }
 
 }  // namespace tmt

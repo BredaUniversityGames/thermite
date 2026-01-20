@@ -17,10 +17,15 @@ class VoxelVolume : public tmt::RuntimeResource<VoxelScene> {
     bool load() override;
     void unload() override;
 
+    /* Update the GPU data of the voxel volume. */
+    void update();
+
     /* 128 bit unique identifier. */
     uint64_t uuid[2] {};
 
     /* Voxel acceleration structure. */
+    uint32_t voxel_buffer_size = 0u;
+    uint32_t nodes_buffer_size = 0u;
     std::unique_ptr<Svt64> blas {};
     glm::uvec3 size {};
 
