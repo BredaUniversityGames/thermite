@@ -5,9 +5,11 @@
 #include "engine/engine.hpp"
 #include "engine/core/ecs.hpp"
 #include "engine/core/polyline.hpp"
+#include "engine/core/resources.hpp"
 #include "engine/core/renderer/renderer.hpp"
 #include "engine/core/components/voxel_renderer.hpp"
 #include "engine/core/input/input.hpp"
+#include "engine/tools/file_dialog.hpp"
 
 namespace tmt {
 
@@ -130,9 +132,33 @@ void draw_selection(const glm::vec3& half_extent, const Transform& transform, co
     engine.polyline.draw_obb(world_voxel_pos, glm::vec3 {VOXEL_SIZE_HALF}, transform.get_world_rotation());
 }
 
+std::atomic_bool test{true};
+
 }  // namespace
 
 void ModelViewer::display() {
+    if (ImGui::BeginMenuBar()) {
+        if (ImGui::MenuItem("Load"))
+            open_file_dialog(
+                [this](const IO::FileLocation& location) {
+                    test.store(false);
+
+                    const ResourceRef<VoxelScene> resource = engine.resources.load_resource<VoxelScene>(location);
+                    const ResourceRef<VoxelVolume> copy = engine.resources.copy_resource<VoxelVolume>(resource);
+                    editing_volume = copy;
+
+                    test.store(true);
+                    test.notify_one();
+                },
+                {{"Voxel file", "svh;vengi"}}
+            );
+
+        ImGui::EndMenuBar();
+    }
+    test.wait(false);
+
+    if (editing_volume && editing_entity == entt::null) create_editing_entity();
+
     const ImVec2 content_start {0.0f, ImGui::GetFrameHeight()};
     ImGui::SetCursorPos(content_start);
 
@@ -189,7 +215,7 @@ void ModelViewer::on_editor_update(const FrameData& time) {
 
     if (hit.entity != entt::null) {
         const auto& [renderer, transform] = engine.ecs.get_component<VoxelRenderer, Transform>(hit.entity);
-        const glm::vec3 half_extent = glm::vec3{renderer.resource->size} / static_cast<float>(2 * VOXELS_PER_UNIT);
+        const glm::vec3 half_extent = glm::vec3 {renderer.resource->size} / static_cast<float>(2 * VOXELS_PER_UNIT);
 
         draw_selection(half_extent, transform, hit);
         return;
@@ -205,6 +231,15 @@ void ModelViewer::on_editor_update(const FrameData& time) {
 
     hit.coord = (local_position + selected_face.half_extent) * static_cast<float>(VOXELS_PER_UNIT);
     draw_selection(selected_face.half_extent, transform, hit);
+}
+
+void ModelViewer::on_editor_end() {
+    editing_volume = {};
+}
+
+void ModelViewer::create_editing_entity() {
+    editing_entity = engine.ecs.create_entity();
+    engine.ecs.add_component<VoxelRenderer>(editing_entity).resource = editing_volume;
 }
 
 }  // namespace tmt

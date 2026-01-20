@@ -1,25 +1,34 @@
 #pragma once
 
 #include "editor/core/window.hpp"
+#include "engine/core/resource.hpp"
 
 #include <imgui.h>
 
+#include "engine/core/entity.hpp"
+
 namespace tmt {
+
+class VoxelVolume;
 
 class ModelViewer : public IWindow {
    public:
     constexpr std::string get_title() const override { return ICON_MS_DEPLOYED_CODE " Model Viewer"; }
-    constexpr int get_window_flags() const override { return ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse; }
+    constexpr int get_window_flags() const override { return ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse; }
     constexpr bool default_open() const override { return true; }
 
     void display() override;
 
     void on_editor_start() override {}
     void on_editor_update(const FrameData& time) override;
-    void on_editor_end() override {}
+    void on_editor_end() override;
 
    private:
+       void create_editing_entity();
+
     glm::vec2 mouse_position{};
+    Entity editing_entity{entt::null};
+    ResourceRef<VoxelVolume> editing_volume{};
 };
 
 }  // namespace tmt
