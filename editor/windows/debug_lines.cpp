@@ -6,6 +6,11 @@
 #include "editor/editor.hpp"
 #include "engine/events/debug.hpp"
 
+#include "engine/engine.hpp"
+#include "engine/core/ecs.hpp"
+#include "engine/core/components/component_collection.hpp"
+#include "engine/systems/gameplay/game_component.hpp"
+
 namespace tmt {
 
 void DebugLines::display() {
@@ -34,8 +39,13 @@ void DebugLines::on_editor_update(const tmt::FrameData&) {
             listener->on_draw_lines();
         }
     }
-}
 
-void DebugLines::on_draw_lines() { printf("Debug Lines drawn\n"); }
+    auto view = engine.ecs.get_registry().view<const ComponentCollection>();
+    for (auto [entity, collection] : view.each()) {
+        for (const auto& [type_id, component] : collection.get_all_components()) {
+            component->draw_debug_lines();
+        }
+    }
+}
 
 }  // namespace tmt
