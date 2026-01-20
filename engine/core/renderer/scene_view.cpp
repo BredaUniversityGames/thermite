@@ -10,7 +10,7 @@
 #include "engine/core/polyline.hpp"
 
 #include "engine/core/components/voxel_renderer.hpp"
-#include "engine/core/components/sphere_light.hpp"
+#include "engine/core/components/light.hpp"
 
 namespace tmt {
 
@@ -96,23 +96,12 @@ void SceneView::update_voxel_objects(RenderGraph& render_graph) {
 }
 
 void SceneView::update_lights(RenderGraph& render_graph, const RenderView& render_view) {
-    /* Capture all sphere lights in the scene */
-    const entt::basic_group group = engine.ecs.get_registry().group<const SphereLight>(entt::get<Transform>);
+    /* Capture all lights in the scene */
+    const entt::basic_group group = engine.ecs.get_registry().group<const Light>(entt::get<Transform>);
     
-    /* Iterate over all sphere lights */
+    /* Iterate over all lights */
     for (auto&& [entity, light, transform] : group.each()) {
-        engine.polyline.use_line_width(1.5f);
-
-        engine.polyline.use_color(1.0f, 0.62352943f, 0.17254902f);
-        /* Center */
-        const float distance = glm::distance(glm::vec3(render_view.gpu_view.origin), transform.get_world_position());
-        engine.polyline.draw_circle(transform.get_world_position(), distance * 0.01f, 4u);
-
-        engine.polyline.use_color(0.4f, 0.4f, 0.4f);
-        /* Source radius */
-        engine.polyline.draw_circle(transform.get_world_position(), light.source_radius, 32u);
-        /* Attenuation radius */
-        engine.polyline.draw_circle(transform.get_world_position(), light.attenuation_radius, 32u);
+        /* ... */
     }
 
     (void)render_graph;

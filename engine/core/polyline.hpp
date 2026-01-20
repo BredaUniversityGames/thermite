@@ -18,7 +18,7 @@ class Polyline {
     Polyline() = default;
 
     /* Use the given color when drawing subsequent lines. */
-    inline void use_color(glm::vec3 new_color) { color = glm::vec4(new_color, 1.0f); };
+    inline void use_color(glm::vec3 new_color, float alpha = 1.0f) { color = glm::vec4(new_color, alpha); };
     inline void use_color(glm::vec4 new_color) { color = new_color; };
     inline void use_color(float r, float g, float b, float a = 1.0f) { color = glm::vec4(r, g, b, a); };
     /* Use the given line width when drawing subsequent lines. */
