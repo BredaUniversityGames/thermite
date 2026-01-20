@@ -12,6 +12,7 @@ template <typename... CollectionTypes>
 class Collection {
     constexpr static bool SINGLE_TYPE = (sizeof...(CollectionTypes) == 1);
     using SingleType = typename std::tuple_element<0, std::tuple<CollectionTypes...>>::type;
+
    public:
     /* Systems */
     template <typename T, typename... Args>
@@ -40,6 +41,17 @@ class Collection {
         throw std::runtime_error("System not found");
     }
 
+    template <typename T, typename CollectionType>
+        requires is_base_of_any<T, CollectionTypes...>::value
+    T& get() {
+        for (auto& system : get_systems<CollectionType>()) {
+            if (T* casted = dynamic_cast<T*>(system.get())) {
+                return *casted;
+            }
+        }
+        throw std::runtime_error("System not found");
+    }
+
     template <typename T>
         requires is_base_of_any<T, CollectionTypes...>::value && SINGLE_TYPE
     T* try_get() {
@@ -49,6 +61,16 @@ class Collection {
             }
         }
         return nullptr;
+    }
+
+    template <typename T, typename CollectionType>
+        requires is_base_of_any<T, CollectionTypes...>::value
+    T* try_get() {
+        for (auto& system : get_systems<CollectionType>()) {
+            if (T* casted = dynamic_cast<T*>(system.get())) {
+                return casted;
+            }
+        }
     }
 
     /* Iterators */
