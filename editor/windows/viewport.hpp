@@ -3,7 +3,7 @@
 #include "engine/events/input.hpp"
 
 namespace tmt {
-class Viewport : public IWindow,public OnRetrieveMouseState {
+class Viewport : public IWindow, public OnRetrieveMouseState {
    public:
     Viewport() = default;
     ~Viewport() = default;
@@ -26,6 +26,8 @@ class Viewport : public IWindow,public OnRetrieveMouseState {
     bool get_is_hovered() const { return is_hovered; }
 
    private:
+    friend class ModelViewer;
+
     void gizmo_manip();
     void setup_gizmo_style();
     void update_debug_camera(const tmt::FrameData& frame_data);

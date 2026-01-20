@@ -35,7 +35,7 @@
 #include "editor/windows/console.hpp"
 #include "editor/windows/motion_math.hpp"
 
-#include "editor/windows/voxel_editor.hpp"
+#include "editor/windows/model_viewer.hpp"
 
 /* Singleton */
 tmt::Editor tmt::editor;
@@ -68,7 +68,7 @@ void Editor::on_engine_init(const ApplicationSpecs&) {
     windows[Mode::GAME].add<ImguiDemo>();
     windows[Mode::GAME].add<MotionMathPreview>();
 
-    windows[Mode::VOXEL].add<VoxelEditor>();
+    windows[Mode::VOXEL].add<ModelViewer>();
 
     for (auto& [mode, collection] : windows) {
         for (const auto& window : collection) {
@@ -86,10 +86,8 @@ void Editor::on_engine_update(const FrameData& time) {
 
     main_menu_bar();
 
-    for (auto& [mode, collection] : windows) {
-        for (const auto& window : collection) {
-            window->on_editor_update(time);
-        }
+    for (const auto& window : windows[editor_mode]) {
+        window->on_editor_update(time);
     }
 
     auto& open_windows = editor.save_data.open_windows;
@@ -119,10 +117,8 @@ void Editor::on_engine_update(const FrameData& time) {
 }
 
 void Editor::on_engine_fixed_update(const FrameData& time) {
-    for (auto& [mode, collection] : windows) {
-        for (const auto& window : collection) {
-            window->on_editor_fixed_update(time);
-        }
+    for (const auto& window : windows[editor_mode]) {
+        window->on_editor_fixed_update(time);
     }
 }
 
@@ -178,7 +174,7 @@ void Editor::main_menu_bar() {
             ImGui::EndMenu();
         }
 
-        if (ImGui::BeginMenu("Mode")) {
+        if (ImGui::BeginMenu("Editor Mode")) {
             for (const auto [mode, name] : magic_enum::enum_entries<Editor::Mode>()) {
                 if (ImGui::MenuItem(name.data(), nullptr, editor_mode == mode)) editor_mode = mode;
             }
