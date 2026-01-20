@@ -76,6 +76,7 @@ void Engine::init(std::unique_ptr<Application> user_app) {
     audio.init();
     salvo.init();
 
+    constexpr bool test = std::is_base_of_v<ISystem, Physics>;
     ecs.systems.add<Physics>();
     ecs.systems.add<RigModelManager>();
     ecs.systems.add<Goap>();
