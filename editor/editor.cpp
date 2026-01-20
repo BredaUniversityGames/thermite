@@ -53,22 +53,22 @@ void Editor::on_engine_init(const ApplicationSpecs&) {
     imgui_manager.init();
     save_data.load();
 
-    windows[Mode::GAME].add<Hierarchy>();
-    windows[Mode::GAME].add<GameFlow>();
-    windows[Mode::GAME].add<Inspector>();
-    windows[Mode::GAME].add<Viewport>();
-    windows[Mode::GAME].add<Profiler>();
-    windows[Mode::GAME].add<GoapDebugger>();
-    windows[Mode::GAME].add<GoapActionEditor>();
-    windows[Mode::GAME].add<FontControl>();
-    windows[Mode::GAME].add<AudioMixer>();
-    windows[Mode::GAME].add<ScenesWindow>();
-    windows[Mode::GAME].add<AssetBrowser>();
-    windows[Mode::GAME].add<Console>();
-    windows[Mode::GAME].add<ImguiDemo>();
-    windows[Mode::GAME].add<MotionMathPreview>();
+    windows[Mode::OBJECT].add<Hierarchy>();
+    windows[Mode::OBJECT].add<GameFlow>();
+    windows[Mode::OBJECT].add<Inspector>();
+    windows[Mode::OBJECT].add<Viewport>();
+    windows[Mode::OBJECT].add<Profiler>();
+    windows[Mode::OBJECT].add<GoapDebugger>();
+    windows[Mode::OBJECT].add<GoapActionEditor>();
+    windows[Mode::OBJECT].add<FontControl>();
+    windows[Mode::OBJECT].add<AudioMixer>();
+    windows[Mode::OBJECT].add<ScenesWindow>();
+    windows[Mode::OBJECT].add<AssetBrowser>();
+    windows[Mode::OBJECT].add<Console>();
+    windows[Mode::OBJECT].add<ImguiDemo>();
+    windows[Mode::OBJECT].add<MotionMathPreview>();
 
-    windows[Mode::VOXEL].add<ModelViewer>();
+    windows[Mode::EDIT].add<ModelViewer>();
 
     for (auto& [mode, collection] : windows) {
         for (const auto& window : collection) {

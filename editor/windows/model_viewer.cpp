@@ -142,7 +142,7 @@ void ModelViewer::display() {
     engine.renderer.render_view.set_viewport_size(static_cast<uint32_t>(size.x), static_cast<uint32_t>(size.y));
     ImGui::Image(engine.renderer.render_view.imgui_viewport, size);
 
-    Viewport& viewport = editor.windows[Editor::Mode::GAME].get<Viewport>();
+    Viewport& viewport = editor.windows[Editor::Mode::OBJECT].get<Viewport>();
 
     viewport.is_hovered = ImGui::IsItemHovered();
     const ImVec2 mouse_pos = ImGui::GetMousePos() - ImGui::GetWindowPos();
@@ -151,7 +151,7 @@ void ModelViewer::display() {
 }
 
 void ModelViewer::on_editor_update(const FrameData& time) {
-    editor.windows[Editor::Mode::GAME].get<Viewport>().update_debug_camera(time);
+    editor.windows[Editor::Mode::OBJECT].get<Viewport>().update_debug_camera(time);
 
     const Ray mouse_ray = engine.renderer.render_view.pixel_ray(mouse_position);
     Hit hit = engine.renderer.trace_ray(mouse_ray);
@@ -162,26 +162,26 @@ void ModelViewer::on_editor_update(const FrameData& time) {
         const glm::vec3 half_extent = glm::vec3 {renderer.resource->size} / static_cast<float>(2 * VOXELS_PER_UNIT);
 
         for (int32_t i = 0; i < 6; i++) {
-            FaceData info = calculate_face_info(i, transform, half_extent);
+            FaceData face = calculate_face_info(i, transform, half_extent);
 
-            if (!draw_face(info, transform)) continue;
+            if (!draw_face(face, transform)) continue;
 
             // Check if the ray hits the plane which the face is on.
             glm::vec3 contact;
-            if (!plane_intersect(contact, mouse_ray, info.world_normal, info.face_center)) continue;
+            if (!plane_intersect(contact, mouse_ray, face.world_normal, face.face_center)) continue;
 
             // Check if the ray hit the plane is in front of the already hit object.
             const float contact_distance = glm::distance(mouse_ray.origin, contact);
             if (contact_distance > hit.distance) continue;
 
             // Check if we hit the plane inside the face area.
-            const glm::vec3 distance = contact - info.face_center;
-            const bool contains = contains_axis(distance, transform.get_right(), info.half_extent.x) && contains_axis(distance, transform.get_up(), info.half_extent.y) &&
-                                  contains_axis(distance, transform.get_forward(), info.half_extent.z);
+            const glm::vec3 distance = contact - face.face_center;
+            const bool contains = contains_axis(distance, transform.get_right(), face.half_extent.x) && contains_axis(distance, transform.get_up(), face.half_extent.y) &&
+                                  contains_axis(distance, transform.get_forward(), face.half_extent.z);
 
             if (!contains) continue;
 
-            selected_face = info;
+            selected_face = face;
             selected_face.entity = entity;
             hit.distance = contact_distance;
         }
