@@ -466,7 +466,10 @@ void Svt64::set_voxel(const uint32_t x, const uint32_t y, const uint32_t z, cons
 				}
 			}
 		}
-	}
+	} else {
+        const uint32_t voxel_index = node.abs_ptr() + popcnt_var64(node.child_mask, li);
+        materials[voxel_index] = material;
+    }
 }
 
 void Svt64::defrag() {
