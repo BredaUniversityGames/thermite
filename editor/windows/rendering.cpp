@@ -28,43 +28,50 @@ void Rendering::display() {}
 constexpr float GIZMO_RETICLE_SIZE = 0.01f;
 
 /* Draw sphere light gizmo. */
-inline void sphere_light_gizmo(Transform& transform, SphereLight light) {
+inline void sphere_light_gizmo(Transform& transform, SphereLight light, bool selected) {
     /* Get the position of the light source */
     const glm::vec3 pos = transform.get_world_position();
+    const glm::vec3 color = selected ? colors::SELECTED : colors::DARK;
 
     /* Draw the radii */
-    engine.polyline.use_color(colors::DARK);
+    engine.polyline.use_color(color);
     engine.polyline.draw_circle(pos, light.source_radius, 32u); /* Source radius */
     engine.polyline.draw_circle(pos, light.attenuation_radius, 32u); /* Attenuation radius */
 
     /* Draw vertical line */
-    engine.polyline.use_color(colors::DARK, 0.5f);
+    engine.polyline.use_color(color, 0.5f);
     engine.polyline.draw_line(pos, pos * glm::vec3(1.0f, 0.0f, 1.0f));
 }
 
+constexpr float SPOTLIGHT_CONE_SIZE = 10.0f;
+
 /* Draw spot light gizmo. */
-inline void spot_light_gizmo(Transform& transform, const SpotLight& light) {
+inline void spot_light_gizmo(Transform& transform, const SpotLight& light, bool selected) {
     /* Get the position of the light source */
     const glm::vec3 pos = transform.get_world_position();
     const glm::vec3 dir = transform.get_forward();
+    const glm::vec3 color = selected ? colors::SELECTED : colors::DARK;
 
     /* Draw the source radius */
-    engine.polyline.use_color(colors::DARK);
+    engine.polyline.use_color(color);
     engine.polyline.draw_circle(pos, light.source_radius, 32u); /* Source radius */
 
     /* Draw the attenuation distance using a line */
-    engine.polyline.use_color(colors::DARK, 0.5f);
+    engine.polyline.use_color(color, 0.5f);
     engine.polyline.draw_line(pos, pos + dir * light.attenuation_distance); /* Attenuation distance */
+    
+    /* Find the cone radius and length based on the cone size and angle */
+    const float safe_angle = glm::tan(glm::min(light.beam_angle * 0.5f, glm::pi<float>() * 0.5f - 0.001f));
+    const float cone_radius = SPOTLIGHT_CONE_SIZE * glm::sin(light.beam_angle * 0.5f);
+    const float cone_length = glm::max(0.01f, glm::sqrt(SPOTLIGHT_CONE_SIZE * SPOTLIGHT_CONE_SIZE - cone_radius * cone_radius));
 
-    /* Draw the end circle of the cone */
-    const float cone_length = (3.2f - light.beam_angle) * 5.0f;
-    const glm::vec3 cone_end = pos + dir * cone_length;
-    const float cone_end_radius = cone_length * glm::tan(light.beam_angle * 0.5f);
-    // engine.polyline.draw_world_circle(cone_end, dir, cone_end_radius, 32u);
-    engine.polyline.draw_cone(pos, dir, light.beam_angle, cone_length, 32u);
+    /* Draw the cone of the spot light */
+    engine.polyline.use_color(color);
+    engine.polyline.draw_cone(pos, dir, light.beam_angle * 0.5f, cone_length, 32u);
     
     /* Draw the inner circle of the cone, to show it's blend radius */
-    const float cone_inner_radius = cone_end_radius * (1.0f - light.spot_blend);
+    const float cone_inner_radius = cone_length * safe_angle * (1.0f - light.spot_blend);
+    const glm::vec3 cone_end = pos + dir * cone_length;
     engine.polyline.draw_world_circle(cone_end, dir, cone_inner_radius, 32u);
 }
 
@@ -94,11 +101,11 @@ inline void light_gizmos() {
         switch (light.type) {
             /* Sphere light gizmo */
             case LightType::SPHERE_LIGHT:
-                sphere_light_gizmo(transform, std::get<SphereLight>(light.light));
+                sphere_light_gizmo(transform, std::get<SphereLight>(light.light), selected);
                 break;
             /* Sphere light gizmo */
             case LightType::SPOT_LIGHT:
-                spot_light_gizmo(transform, std::get<SpotLight>(light.light));
+                spot_light_gizmo(transform, std::get<SpotLight>(light.light), selected);
                 break;
             default: break;
         }

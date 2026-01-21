@@ -82,7 +82,7 @@ inline void tag_invoke(ImReflect::ImInput_t, const char*, tmt::Light& value, ImS
             ImGui::DragFloat("Attenuation Distance", &light.attenuation_distance, 0.1f, light.source_radius, 100.0f, "%.3f u");
             help_tooltip("Distance at which the light influence will be zero.");
             float beam_angle = glm::degrees(light.beam_angle);
-            if (ImGui::DragFloat("Beam Angle", &beam_angle, 0.1f, 0.0f, 180.0f, "%.3f deg")) {
+            if (ImGui::DragFloat("Beam Angle", &beam_angle, 0.1f, 1.0f, 180.0f, "%.3f deg")) {
                 light.beam_angle = glm::radians(beam_angle);
             }
             help_tooltip("Angular diameter of the spot light beam.");

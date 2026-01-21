@@ -195,56 +195,95 @@ void Polyline::draw_obb(glm::vec3 origin, glm::vec3 half_extent, glm::quat rot, 
 }
 
 void Polyline::draw_cone(glm::vec3 origin, glm::vec3 dir, float angle, float length, uint32_t segments, float time) {
-    const float radius = length * glm::tan(angle);
+    const float safe_angle = glm::tan(glm::min(angle, glm::pi<float>() * 0.5f - 0.001f));
+    const float radius = length * safe_angle;
     const glm::vec3 cone_end = origin + dir * length;
     
+    /* Find a safe reference vector to get our two axes */
     const glm::vec3 ref = glm::abs(glm::dot(dir, glm::vec3(0.0f, 1.0f, 0.0f))) > 0.99f 
         ? glm::vec3(1.0f, 0.0f, 0.0f) : glm::vec3(0.0f, 1.0f, 0.0f);
     
+    /* Get our two axis based on the cone direction */
     const glm::vec3 axis_a = glm::normalize(glm::cross(dir, ref));
     const glm::vec3 axis_b = glm::cross(dir, axis_a);
+    
+    /* Check if we should or should not draw the cone edges */
     const glm::vec3 camera_pos = engine.renderer.render_view.gpu_view.origin;
+    const float d = glm::dot(glm::normalize(camera_pos - origin), dir);
+    const bool draw_edges = glm::abs(d) < glm::cos(angle);
     
+    /* Calculate the step size for the cone end circle */
     const float step = glm::two_pi<float>() / static_cast<float>(segments);
-    
-    glm::vec3 silhouette_a = cone_end;
-    glm::vec3 silhouette_b = cone_end;
-    float best_a = 0.0f;
-    float best_b = 0.0f;
-    
+
+    /* Transform the origin of the cone into clip-space (for finding ideal cone edges) */
+    const glm::vec4 clip_origin = engine.renderer.render_view.gpu_view.world_to_clip * glm::vec4(origin, 1.0f);
+    const glm::vec2 screen_origin = glm::vec2(clip_origin) / clip_origin.w; /* Perspective divide */
+    const glm::vec4 clip_end = engine.renderer.render_view.gpu_view.world_to_clip * glm::vec4(cone_end, 1.0f);
+    const glm::vec2 screen_end = glm::vec2(clip_end) / clip_end.w; /* Perspective divide */
+
+    /* Handle the case where the camera is looking at the cone from the side */
+    const glm::vec3 to_camera = glm::normalize(camera_pos - cone_end);
+    const float de = glm::dot(to_camera, dir);
+    const bool edge_case = glm::abs(de - glm::cos(glm::radians(90.0f))) < 0.2f;
+
+    /* Find the best edge attachment locations for the cone */
+    glm::vec3 silhouette_a = cone_end, silhouette_b = cone_end;
+    float best_a = 0.0f, best_b = 0.0f;
     for (uint32_t i = 0u; i < segments; ++i) {
+        /* Draw a segment of the cone end circle */
         const float a0 = step * static_cast<float>(i);
         const float a1 = step * static_cast<float>(i + 1u);
         const glm::vec3 p0 = cone_end + radius * (axis_a * glm::cos(a0) + axis_b * glm::sin(a0));
         const glm::vec3 p1 = cone_end + radius * (axis_a * glm::cos(a1) + axis_b * glm::sin(a1));
         draw_line(p0, p1, time);
 
+        /* If we don't want to draw the edges, just continue */
+        if (draw_edges == false) continue;
+
+        /* Transform the edge locations into clip-space */
         const glm::vec4 clip_p0 = engine.renderer.render_view.gpu_view.world_to_clip * glm::vec4(p0, 1.0f);
         const glm::vec4 clip_p1 = engine.renderer.render_view.gpu_view.world_to_clip * glm::vec4(p1, 1.0f);
-        const glm::vec4 clip_origin = engine.renderer.render_view.gpu_view.world_to_clip * glm::vec4(origin, 1.0f);
 
+        /* Perform perspective divide to get the screen coordinates */
         const glm::vec2 screen_p0 = glm::vec2(clip_p0) / clip_p0.w;
         const glm::vec2 screen_p1 = glm::vec2(clip_p1) / clip_p1.w;
-        const glm::vec2 screen_origin = glm::vec2(clip_origin) / clip_origin.w;
 
-        const glm::vec2 v0 = glm::normalize(screen_p1 - screen_p0);
-        const glm::vec2 v1 = glm::normalize(screen_p0 - screen_p1);
-        const glm::vec2 v2 = glm::normalize(screen_p1 - screen_origin);
-        const float d1 = glm::dot(v0, v2);
-        const float d2 = glm::dot(v1, v2);
-        
-        if (d1 > best_a) {
-            best_a = d1;
-            silhouette_a = p0;
-        }
-        if (d2 > best_b) {
-            best_b = d2;
-            silhouette_b = p0;
-        }
+        if (edge_case) {
+            const glm::vec2 cone_dir = glm::normalize(screen_end - screen_origin);
+            const glm::vec2 cross = glm::vec2(-cone_dir.y, cone_dir.x);
+            const float d1 = glm::dot(glm::normalize(screen_p0 - screen_origin), cross);
+
+            /* Update the best edge line candidates */
+            if (d1 > best_a) {
+                best_a = d1;
+                silhouette_a = p0;
+            }
+            if (d1 < best_b) {
+                best_b = d1;
+                silhouette_b = p0;
+            }
+        } else {
+            /* Check how similar the lines are to the ideal */
+            const float d1 = glm::dot(glm::normalize(screen_p1 - screen_p0), glm::normalize(screen_p1 - screen_origin));
+            const float d2 = glm::dot(glm::normalize(screen_p0 - screen_p1), glm::normalize(screen_p0 - screen_origin));
+
+            /* Update the best edge line candidates */
+            if (d1 > best_a) {
+                best_a = d1;
+                silhouette_a = p0;
+            }
+            if (d2 > best_b) {
+                best_b = d2;
+                silhouette_b = p0;
+            }
+        }        
     }
-    
-    draw_line(origin, silhouette_a, time);
-    draw_line(origin, silhouette_b, time);
+
+    if (draw_edges) {
+        /* Draw the cone edges */
+        draw_line(origin, silhouette_a, time);
+        draw_line(origin, silhouette_b, time);
+    }
 }
 
 void Polyline::draw_tube(glm::vec3 a, glm::vec3 b, float radius, uint32_t segments, float time) {
