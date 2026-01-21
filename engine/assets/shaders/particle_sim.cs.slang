@@ -24,12 +24,6 @@ static const float3 BILLBOARD[] = {
     float3(-1, 1, 0)   // TL
 };
 
-struct Utils {
-    float dt;
-};
-
-ConstantBuffer<Utils> utils;
-
 RWStructuredBuffer<Particle> particles;
 RWStructuredBuffer<uint32_t> alive_list;
 RWStructuredBuffer<uint32_t> alive_list_new;
@@ -51,11 +45,13 @@ void main(uint3 thread_id: SV_DispatchThreadID) {
     Particle p = particles[particle_index];
     uint32_t v0 = particle_index * 6;
 
-    p.age += utils.dt;
+    const float dt = 0.16f;
+
+    p.age += dt;
 
     if (p.age < p.lifetime) {
         // p.velocity += GRAVITY * utils.dt;
-        p.pos += p.velocity * utils.dt;
+        p.pos += p.velocity * dt;
 
         particles[particle_index] = p;
 

@@ -92,7 +92,7 @@ void DragonScene::on_start() {
     // generate_random_entities(voxel_volume);
 
     emitter = tmt::engine.ecs.create_entity();
-    auto& transform = tmt::engine.ecs.add_component<tmt::Transform>(emitter);
+    auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(emitter);
     auto& p_emitter = tmt::engine.ecs.add_component<tmt::ParticleEmitter>(emitter);
     p_emitter.pos = transform.get_world_position();
     p_emitter.dir = { 0.0f, 1.0f, 0.0f };
