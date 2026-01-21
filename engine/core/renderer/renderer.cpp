@@ -23,7 +23,12 @@
 namespace tmt {
 
 Renderer::Renderer()
-    : gpu(*new GPUAdapter()), render_graph(*new RenderGraph()), geometry_pipeline(*new GeometryPipeline()), di_pipeline(*new DiPipeline()), polyline_pipeline(*new PolylinePipeline()) {}
+    : gpu(*new GPUAdapter()),
+      render_graph(*new RenderGraph()),
+      geometry_pipeline(*new GeometryPipeline()),
+      di_pipeline(*new DiPipeline()),
+      polyline_pipeline(*new PolylinePipeline()),
+      vfx_pipeline(*new VfxPipeline()) {}
 
 Renderer::~Renderer() {
     delete &polyline_pipeline;

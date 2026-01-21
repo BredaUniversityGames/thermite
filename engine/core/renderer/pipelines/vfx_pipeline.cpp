@@ -21,7 +21,7 @@ void VfxPipeline::init(GPUAdapter& gpu) {
 
     /* Initialize the Counters Buffer */
     {
-        if (const Result r = bank.create_buffer(BufferUsage::Storage | BufferUsage::TransferDst, 1, sizeof(Counters)); r.is_err()) {
+        if (const Result r = bank.create_buffer("[Particles] Counters Buffer", BufferUsage::Storage | BufferUsage::TransferDst, 1, sizeof(Counters)); r.is_err()) {
             Log::error(Log::Scope::RENDERER, "failed to initialise the counters buffer.\nreason: {}", r.unwrap_err().c_str());
             return;
         } else
@@ -38,13 +38,13 @@ void VfxPipeline::init(GPUAdapter& gpu) {
 
     /* Initialize the Alive Lists */
     {
-        if (const Result r = bank.create_buffer(BufferUsage::Storage | BufferUsage::TransferDst, MAX_PARTICLES, sizeof(uint32_t)); r.is_err()) {
+        if (const Result r = bank.create_buffer("[Particles] Alive List", BufferUsage::Storage | BufferUsage::TransferDst, MAX_PARTICLES, sizeof(uint32_t)); r.is_err()) {
             Log::error(Log::Scope::RENDERER, "failed to initialise the alive list.\nreason: {}", r.unwrap_err().c_str());
             return;
         } else
             alive_list = r.unwrap();
 
-        if (const Result r = bank.create_buffer(BufferUsage::Storage | BufferUsage::TransferDst, MAX_PARTICLES, sizeof(uint32_t)); r.is_err()) {
+        if (const Result r = bank.create_buffer("[Particles] Alive List New", BufferUsage::Storage | BufferUsage::TransferDst, MAX_PARTICLES, sizeof(uint32_t)); r.is_err()) {
             Log::error(Log::Scope::RENDERER, "failed to initialise the alive list new.\nreason: {}", r.unwrap_err().c_str());
             return;
         } else
@@ -60,7 +60,7 @@ void VfxPipeline::init(GPUAdapter& gpu) {
 
     /* Initialize the Dead List */
     {
-        if (const Result r = bank.create_buffer(BufferUsage::Storage | BufferUsage::TransferDst, MAX_PARTICLES, sizeof(uint32_t)); r.is_err()) {
+        if (const Result r = bank.create_buffer("[Particles] Dead List", BufferUsage::Storage | BufferUsage::TransferDst, MAX_PARTICLES, sizeof(uint32_t)); r.is_err()) {
             Log::error(Log::Scope::RENDERER, "failed to initialise the dead list.\nreason: {}", r.unwrap_err().c_str());
             return;
         } else
@@ -75,7 +75,7 @@ void VfxPipeline::init(GPUAdapter& gpu) {
 
     /* Initialize the Particle Buffer */
     {
-        if (const Result r = bank.create_buffer(BufferUsage::Storage | BufferUsage::TransferDst, MAX_PARTICLES, sizeof(GpuParticle)); r.is_err()) {
+        if (const Result r = bank.create_buffer("[Particles] Particle Buffer", BufferUsage::Storage | BufferUsage::TransferDst, MAX_PARTICLES, sizeof(GpuParticle)); r.is_err()) {
             Log::error(Log::Scope::RENDERER, "failed to initialise the particle buffer.\nreason: {}", r.unwrap_err().c_str());
             return;
         } else
@@ -90,7 +90,7 @@ void VfxPipeline::init(GPUAdapter& gpu) {
             uint32_t z;
         };
 
-        if (const Result r = bank.create_buffer(BufferUsage::Storage | BufferUsage::Indirect, sizeof(IndirectDispatchArgs)); r.is_err()) {
+        if (const Result r = bank.create_buffer("[Particles] Indirect Dispatch Buffer", BufferUsage::Storage | BufferUsage::Indirect, sizeof(IndirectDispatchArgs)); r.is_err()) {
             Log::error(Log::Scope::RENDERER, "failed to initialise the indirect dispatch args buffer.\nreason: {}", r.unwrap_err().c_str());
             return;
         } else
@@ -103,7 +103,7 @@ void VfxPipeline::init(GPUAdapter& gpu) {
             uint32_t first_instance;
         };
 
-        if (const Result r = bank.create_buffer(BufferUsage::Storage | BufferUsage::Indirect, sizeof(IndirectDrawArgs)); r.is_err()) {
+        if (const Result r = bank.create_buffer("[Particles] Indirect Draw Buffer", BufferUsage::Storage | BufferUsage::Indirect, sizeof(IndirectDrawArgs)); r.is_err()) {
             Log::error(Log::Scope::RENDERER, "failed to initialise the indirect draw args buffer.\nreason: {}", r.unwrap_err().c_str());
             return;
         } else
@@ -112,7 +112,7 @@ void VfxPipeline::init(GPUAdapter& gpu) {
 
     /* Initialise Emitter Buffer */
     {
-        if (const Result r = bank.create_buffer(BufferUsage::Constant | BufferUsage::TransferDst, sizeof(ParticleEmitter)); r.is_err()) {
+        if (const Result r = bank.create_buffer("[Particles] Emitter Buffer", BufferUsage::Constant | BufferUsage::TransferDst, sizeof(ParticleEmitter)); r.is_err()) {
             Log::error(Log::Scope::RENDERER, "failed to initialise the particle emitter buffer.\nreason: {}", r.unwrap_err().c_str());
             return;
         } else
@@ -120,7 +120,7 @@ void VfxPipeline::init(GPUAdapter& gpu) {
     }
 
     /* Initialize the Billboard Vertex Buffer */
-    if (const Result r = bank.create_buffer(BufferUsage::Vertex | BufferUsage::TransferDst, 6, sizeof(GpuQuad)); r.is_err()) {
+    if (const Result r = bank.create_buffer("[Particles] Billboard Vertex Buffer", BufferUsage::Vertex | BufferUsage::TransferDst, 6, sizeof(GpuQuad)); r.is_err()) {
         Log::error(Log::Scope::RENDERER, "failed to initialise billboard vertex buffer.\nreason: {}", r.unwrap_err().c_str());
         return;
     } else
@@ -152,7 +152,9 @@ void VfxPipeline::init(GPUAdapter& gpu) {
         }
 
         /* Initialise a bojan texture */
-        if (const Result r = bank.create_texture(TextureUsage::Sampled | TextureUsage::TransferDst, TextureFormat::RGBA8Unorm, {(u32)tex_width, (u32)tex_height, 0}); r.is_err()) {
+        if (const Result r =
+                bank.create_texture("[Particles] Bojan", TextureUsage::Sampled | TextureUsage::TransferDst, TextureFormat::RGBA8Unorm, {(u32)tex_width, (u32)tex_height, 0});
+            r.is_err()) {
             Log::error(Log::Scope::RENDERER, "failed to initialise bojan texture.\nreason: {}", r.unwrap_err().c_str());
             return;
         } else
@@ -164,13 +166,13 @@ void VfxPipeline::init(GPUAdapter& gpu) {
         }
         free(data);
 
-        if (const Result r = bank.create_image(temp_texture); r.is_err()) {
+        if (const Result r = bank.create_image("[Particles] Bojan Image", temp_texture); r.is_err()) {
             Log::error(Log::Scope::RENDERER, "failed to initialize bojan image.\nreason: {}", r.unwrap_err().c_str());
             return;
         } else
             temp_image = r.unwrap();
 
-        if (const Result r = bank.create_sampler(); r.is_err()) {
+        if (const Result r = bank.create_sampler("[Particles] Linear Sampler"); r.is_err()) {
             Log::error(Log::Scope::RENDERER, "failed to initialize linear sampler.\nreason: {}", r.unwrap_err().c_str());
             return;
         } else
@@ -220,7 +222,7 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
                 .work_size(1, 1, 1);
 
     render_graph.add_compute_pass("Simulate Particles", "particle_sim.cs")
-                .read(render_view.utils_buffer)
+                //.read(render_view.utils_buffer)
                 .write(particle_buffer)
                 .write(alive_list)
                 .write(alive_list_new)
@@ -240,11 +242,11 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
                                 .topology(Topology::TriangleList)
                                 .attribute(AttrFormat::XY32_SFloat)  // Position
                                 .attribute(AttrFormat::XY32_SFloat)  // UVs
-                                .read(render_view.gpu_view_buffer, ShaderStages::Vertex)
+                                .read(render_view.render_view_buffer, ShaderStages::Vertex)
                                 .read(particle_buffer, ShaderStages::Vertex)
                                 .read(alive_list, ShaderStages::Vertex)
                                 .read(linear_sampler, ShaderStages::Pixel | ShaderStages::Vertex)
-                                .load_op(LoadOp::Load)
+                                .load_op_color(LoadOp::Load)
                                 .attach(render_image)
                                 .raster_extent(render_res.x, render_res.y);
     line_pass.draw_indirect(billboard_vertices, instanced_draw_args_buffer);

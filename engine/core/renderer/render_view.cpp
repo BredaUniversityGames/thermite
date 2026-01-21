@@ -9,7 +9,6 @@
 #include "renderer.hpp"
 
 #include "core/ecs.hpp"
-#include "core/timer.hpp"
 #include "core/window.hpp"
 #include "core/logger.hpp"
 
