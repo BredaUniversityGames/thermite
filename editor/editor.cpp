@@ -36,6 +36,7 @@
 #include "editor/windows/imgui_demo.hpp"
 #include "editor/windows/console.hpp"
 #include "editor/windows/motion_math.hpp"
+#include "editor/windows/debug_lines.hpp"
 #include "editor/windows/rendering.hpp"
 
 /* Singleton */
@@ -68,6 +69,7 @@ void Editor::on_engine_init(const ApplicationSpecs&) {
     windows.add<Console>();
     windows.add<ImguiDemo>();
     windows.add<MotionMathPreview>();
+    windows.add<DebugLines>();
     windows.add<Rendering>();
 
     for (auto& window : windows) {
