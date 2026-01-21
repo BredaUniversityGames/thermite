@@ -66,6 +66,10 @@ struct Transform {
 
     bool has_children() const;
     const std::set<Entity>& get_children() const;
+    /* Get all children recursivly, aka children of children too */
+    std::set<Entity> get_all_children() const;
+
+    void mark_dirty();
 
    private:
     BEFRIEND_VISITABLE();
@@ -81,8 +85,6 @@ struct Transform {
     Entity parent {entt::null};
     std::set<Entity> children;
 
-    void mark_dirty();
-
     /* Recalculate world matrix if dirty */
     void calculate_world_matrix() const;
 
@@ -92,4 +94,4 @@ struct Transform {
 }  // namespace tmt
 
 FMT_LOGGING(tmt::Transform, "Position: {}, Rotation: {}, Scale: {}", obj.get_world_position(), obj.get_world_rotation(), obj.get_world_scale());
-TMT_COMPONENT_EX(tmt::Transform, "Transform", (local_position, local_rotation, local_scale, parent, children, is_dirty), (local_position, local_rotation, local_scale, is_dirty));
+TMT_COMPONENT_EX(tmt::Transform, "Transform", (local_position, local_rotation, local_scale, parent, children), (local_position, local_rotation, local_scale));

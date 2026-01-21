@@ -13,6 +13,7 @@ class RigModel {
    public:
     RigModel() = default;
     RigModel(const IO::FileLocation& directory, Entity p);
+    // todo: change this to Resource ref
     void init(const IO::FileLocation& directory, Entity p);
 
     bool rig_is_loaded = false;
@@ -28,7 +29,7 @@ class RigModel {
     std::vector<Entity> bone_entities;
     std::vector<Entity> voxel_entities;
     std::vector<Entity> pivot_entities;
-    std::shared_ptr<RigData> data;
+    ResourceRef<RigData> data;
     IO::FileLocation file_directory = {};
 
     // void attach_voxel_objects(const IO::FileLocation& directory);

@@ -1,8 +1,9 @@
 #pragma once
 #include "editor/core/window.hpp"
+#include "engine/events/input.hpp"
 
 namespace tmt {
-class Viewport : public IWindow {
+class Viewport : public IWindow, public OnRetrieveMouseState {
    public:
     Viewport() = default;
     ~Viewport() = default;
@@ -17,8 +18,12 @@ class Viewport : public IWindow {
     void display() override;
     void end_display() override;
 
-    constexpr std::string get_title() const override { return ICON_MS_VISIBILITY " Viewport"; };
+    std::string get_title() const override;
+    int get_window_flags() const override;
     constexpr bool is_closable() const override { return false; };
+    constexpr bool default_open() const override { return true; }
+
+    bool get_is_hovered() const { return is_hovered; }
 
    private:
     void gizmo_manip();
@@ -39,6 +44,7 @@ class Viewport : public IWindow {
     float height = -1;
 
     bool is_hovered = false;
+    glm::vec2 mouse_pos = {0.0f, 0.0f};
 
     float camera_speed = 4.0f;
 
@@ -56,5 +62,8 @@ class Viewport : public IWindow {
         constexpr static const char* UP = "Camera Move Up";
         constexpr static const char* DOWN = "Camera Move Down";
     };
+
+    // Inherited via OnRetrieveMouseState
+    void on_retrieve_mouse_state(MouseOverride& event) override;
 };
 }  // namespace tmt

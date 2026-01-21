@@ -3,23 +3,30 @@
 #include <imgui.h>
 #include <imgui_impl_sdl3.h>
 #include <imgui_impl_vulkan.h>
-#include "engine/events/sdl.hpp"
+#include <graphite/imgui.hh>
 
+#include "engine/events/sdl.hpp"
 #include "engine/engine.hpp"
 
 #include "engine/core/window.hpp"
 #include "engine/core/io.hpp"
 #include "engine/core/renderer/renderer.hpp"
 #include "ImGuizmo.h"
+#include "implot.h"
+#include "editor/editor.hpp"
+#include "editor/windows/viewport.hpp"
 
 namespace tmt {
 
 void ImGuiManager::init() {
+    imgui = new ImGUI;
+
     /* Initialize the immediate mode GUI */
     ImGui::CreateContext();
+    ImPlot::CreateContext();
     ImGui_ImplSDL3_InitForVulkan(engine.window.window);
-    imgui.set_clear_screen(true);
-    tmt::engine.renderer.set_imgui(&imgui);
+    imgui->set_clear_screen(true);
+    tmt::engine.renderer.set_imgui(imgui);
 
     /* Initialize font manager */
     font_manager.init();
@@ -39,7 +46,7 @@ void ImGuiManager::new_frame() {
     if (font_manager.pending_reload) font_manager.reload_fonts();
 
     /* Start a new imgui frame */
-    imgui.new_frame();
+    imgui->new_frame();
     ImGui_ImplSDL3_NewFrame();
     ImGui::NewFrame();
     ImGuizmo::BeginFrame();
@@ -53,9 +60,25 @@ void ImGuiManager::end_frame() {
     ImGui::Render();
 }
 
-void ImGuiManager::deinit() { imgui.deinit().expect("Failed to deinitialize ImGui"); }
+void ImGuiManager::deinit() {
+    ImPlot::DestroyContext();
+    imgui->deinit().expect("Failed to deinitialize ImGui");
 
-void ImGuiManager::on_sdl_event(SDL_Event& event) { ImGui_ImplSDL3_ProcessEvent(&event); }
+    delete imgui;
+}
+
+void ImGuiManager::on_sdl_event(internal::SdlEvent& event) {
+    ImGui_ImplSDL3_ProcessEvent(&event.event);
+    const auto& viewport = editor.windows.get<Viewport>();
+    if (viewport.get_is_hovered()) {
+        /* Don't let imgui capture input if hovering viewport */
+        event.imgui_capture_mouse = false;
+        event.imgui_capture_keyboard = false;
+    } else {
+        event.imgui_capture_mouse = ImGui::GetIO().WantCaptureMouse;
+        event.imgui_capture_keyboard = ImGui::GetIO().WantCaptureKeyboard;
+    }
+}
 
 void ImGuiManager::on_engine_update(const FrameData&) {}
 

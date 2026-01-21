@@ -4,24 +4,103 @@
 #include "engine/core/components/camera.hpp"
 #include "engine/core/components/voxel_renderer.hpp"
 #include "engine/core/input/input.hpp"
+#include "engine/systems/camera/camera_system.hpp"
 #include "engine/core/logger.hpp"
+#include "engine/core/input/input.hpp"
 
 #include "engine/systems/ai/goap/goap_system.hpp"
 #include "engine/systems/ai/goap/components/goap_agent.hpp"
+#include "engine/systems/ai/goap/components/goap_agent_type_registry.hpp"
+#include "engine/systems/ai/goap/components/goap_agent_factory.hpp"
+#include "engine/systems/ai/goap/components/goap_action_registry.hpp"
+#include "engine/systems/ai/goap/components/goap_goal_registry.hpp"
 #include "goap_actions/chase_player.hpp"
 #include "goap_actions/kill_player.hpp"
 #include "goap_actions/patrol_area.hpp"
+#include "engine/core/scene.hpp"
+#include "engine/core/scenes.hpp"
+
+#include "engine/systems/ai/navigation/navigation_system.hpp"
 
 class Game : public tmt::Application {
    public:
-    Game(const tmt::ApplicationSpecs& specs) : Application(specs) {}
+    Game(const tmt::ApplicationSpecs& specs) : Application(specs) {
+        auto& action_reg = tmt::GoapActionRegistry::instance();
+        auto& goal_reg = tmt::GoapGoalRegistry::instance();
 
-    tmt::Entity voxel {};
+        // --- Register Actions ---
+        action_reg.register_action(std::make_unique<tmt::PatrolArea>());
+        action_reg.register_action(std::make_unique<tmt::ChasePlayer>());
+        action_reg.register_action(std::make_unique<tmt::KillPlayer>());
+
+        // --- Register Goals ---
+        {
+            tmt::GoapGoal patrol;
+            patrol.name = "PatrolArea";
+            patrol.desired_state = {{tmt::FactId("area_secure"), tmt::FactValue(true)}};
+            patrol.priority = 1;
+            patrol.valid = true;
+
+            goal_reg.register_goal("PatrolArea", patrol);
+        }
+
+        {
+            tmt::GoapGoal kill;
+            kill.name = "KillPlayer";
+            kill.desired_state = {{tmt::FactId("player_alive"), tmt::FactValue(false)}};
+            kill.priority = 10;
+            kill.valid = true;
+
+            goal_reg.register_goal("KillPlayer", kill);
+        }
+
+        // --- Register Agent Types ---
+        auto& type_reg = tmt::GoapAgentTypeRegistry::instance();
+
+        tmt::GoapAgentType enemy1;
+        enemy1.id = "Enemy 1";
+
+        enemy1.action_ids = {"PatrolArea", "ChasePlayer", "KillPlayer"};
+
+        enemy1.goal_ids = {"PatrolArea", "KillPlayer"};
+
+        enemy1.default_world_state = {
+            {std::hash<std::string>()("player_visible"), true},
+            {std::hash<std::string>()("player_in_range"), false},
+            {std::hash<std::string>()("player_alive"), true},
+            {std::hash<std::string>()("area_secure"), false}
+        };
+
+        type_reg.register_type(enemy1);
+
+        tmt::GoapAgentType enemy2;
+        enemy2.id = "Enemy 2";
+
+        enemy2.action_ids = {"PatrolArea"};
+
+        enemy2.goal_ids = {"PatrolArea"};
+
+        enemy2.default_world_state = {{std::hash<std::string>()("area_secure"), false}};
+
+        type_reg.register_type(enemy2);
+    }
+
     float time_passed = 0.0f;
 
+    void on_start() override {};
+    void on_update(const tmt::FrameData& time) override {};
+    void on_end() override {};
+};
+
+class AIScene : public tmt::Scene<AIScene> {
+   public:
+    static constexpr std::string_view scene_name() { return "AIScene"; }
+
+    tmt::Entity voxel {};
+    tmt::NavMesh* nav_mesh;
     void on_start() override;
-    void on_update(const tmt::FrameData& time) override;
-    void on_end() override;
+    void on_update(const tmt::FrameData& time) override {};
+    void on_end() override {};
 };
 
 std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs& args) {
@@ -33,95 +112,55 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     };
     // clang-format on
 
+    tmt::engine.ecs.systems.add<tmt::CameraSystem>();
+    tmt::engine.scenes.register_scene<AIScene>();
+
     return std::make_unique<Game>(specs);
 }
 
-void Game::on_start() {
+void AIScene::on_start() {
     { /* Camera entity */
         tmt::Entity entity = tmt::engine.ecs.create_entity();
-        auto& transform = tmt::engine.ecs.add_component<tmt::Transform>(entity);
+        auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
         auto& camera = tmt::engine.ecs.add_component<tmt::Camera>(entity);
         transform.set_world_position(glm::vec3(0.0f, 0.0f, -2.0f));
     }
 
-    // { /* Voxel entity */
-    //     voxel = tmt::engine.ecs.create_entity();
-    //     auto& transform = tmt::engine.ecs.add_component<tmt::Transform>(voxel);
-    //     auto& renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(voxel);
-    //     renderer.size = glm::uvec3(20u, 10u, 10u);
-    //     transform.set_world_position(glm::vec3(2.0f, 2.0f, 0.0f));
-    //     transform.set_world_rotation(glm::vec3(glm::radians(45.0f), glm::radians(45.0f), 0.0f));
-    //     transform.set_world_scale(glm::vec3(1.0f, 2.0f, 1.0f));
-    // }
+    auto& ecs = tmt::engine.ecs;
 
-    // constexpr float PRIM_RANGE = 128.0f;
-    // for (int i = 0; i < 255; ++i) {
-    //     auto entity = tmt::engine.ecs.create_entity();
-    //     auto& transform = tmt::engine.ecs.add_component<tmt::Transform>(entity);
-    //     auto& renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(entity);
-    //     renderer.size = glm::uvec3(10u + (rand() % 90u), 10u + (rand() % 90u), 10u + (rand() % 90u));
-    //     float rx = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * PRIM_RANGE - (PRIM_RANGE / 2.0f);
-    //     float ry = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * PRIM_RANGE - (PRIM_RANGE / 2.0f);
-    //     float rz = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * PRIM_RANGE - (PRIM_RANGE / 2.0f);
-    //     float rrx = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * 180.0f;
-    //     float rry = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * 180.0f;
-    //     transform.set_world_position(glm::vec3(rx, ry, rz));
-    //     transform.set_world_rotation(glm::vec3(glm::radians(rrx), glm::radians(rry), 0.0f));
-    //     transform.set_world_scale(glm::vec3(1.0f, 1.0f, 1.0f));
-    // }
-
-    // Register agents
     {
-        // Create agents
-        tmt::Entity ai = tmt::engine.ecs.create_entity();
+        // Spawn agents from type registry via factory
+        tmt::Entity ai1 = tmt::engine.ecs.create_entity("AI Agent 1");
+        tmt::GoapAgentFactory::spawn_agent_from_type("Enemy 1", ai1);
+        tmt::Entity ai2 = tmt::engine.ecs.create_entity("AI Agent 2");
+        tmt::GoapAgentFactory::spawn_agent_from_type("Enemy 1", ai2);
 
-        // Give it whatever normal game components it needs
-        auto& transform = tmt::engine.ecs.add_component<tmt::Transform>(ai);
+        // Set unique positions
+        ecs.get_component<tmt::Transform>(ai1).set_world_position({0.f, 0.f, 0.f});
+        ecs.get_component<tmt::Transform>(ai2).set_world_position({5.f, 0.f, 0.f});
+    }
 
-        // Add GOAP agent
-        auto& agent = tmt::engine.ecs.add_component<tmt::GoapAgent>(ai);
+    { /* Camera entity */
+        tmt::Entity entity = tmt::engine.ecs.create_entity("Camera");
+        auto& camera = tmt::engine.ecs.add_component<tmt::Camera>(entity);
 
-        // Add world state (facts relevant to planning)
-        auto& ws = tmt::engine.ecs.add_component<tmt::WorldState>(ai);
+        auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
+        transform.set_world_position(glm::vec3(0.0f, 0.25f, -5.0f));
+    }
 
-        transform.set_world_position({0.f, 0.f, 0.f});
+    {  // voxel entity with navmesh
+        auto voxel_file = tmt::engine.resources.load_resource<tmt::VoxelScene>({tmt::IO::Location::PROJECT, "test_asteroid_7.vengi"});
+        auto voxel_volume = tmt::engine.resources.copy_resource<tmt::VoxelVolume>(voxel_file);
+        voxel = tmt::engine.ecs.create_entity("Moving Voxel");
+        auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(voxel);
+        auto& renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(voxel);
+        renderer.resource = voxel_volume;
+        // transform.set_world_rotation(glm::vec3(glm::radians(45.0f), glm::radians(45.0f), 0.0f));
+        transform.set_world_scale(glm::vec3(1.0f, 1.0f, 1.0f));
 
-        // --- Give the agent actions ---
-        agent.actions.push_back(std::make_unique<tmt::PatrolArea>());
-        agent.actions.push_back(std::make_unique<tmt::ChasePlayer>());
-        agent.actions.push_back(std::make_unique<tmt::KillPlayer>());
-
-        tmt::GoapGoal patrol_goal;
-        patrol_goal.name = "patrol area";
-        patrol_goal.desired_state = {{tmt::FactId("area_secure"), tmt::FactValue(true)}};
-        patrol_goal.priority = 1;
-        patrol_goal.valid = true;
-
-        tmt::GoapGoal kill_goal;
-        kill_goal.name = "kill player";
-        kill_goal.desired_state = {{tmt::FactId("player_alive"), tmt::FactValue(false)}};
-        kill_goal.priority = 10;
-        kill_goal.valid = true;
-
-        agent.available_goals.push_back(patrol_goal);
-        agent.available_goals.push_back(kill_goal);
-
-        // --- Setup initial world state ---
-        ws.facts[std::hash<std::string>()("player_visible")] = true;
-        ws.facts[std::hash<std::string>()("player_in_range")] = false;
-        ws.facts[std::hash<std::string>()("player_alive")] = true;
-        ws.facts[std::hash<std::string>()("area_secure")] = false;
-
-        tmt::Log::info("GOAP Agent created!");
+        nav_mesh = &tmt::engine.ecs.add_component<tmt::NavMesh>(voxel);
+        nav_mesh->voxel_volume = voxel_volume;
+        nav_mesh->lod_level = 1;
+        nav_mesh->generate_mesh();
     }
 }
-
-void Game::on_update(const tmt::FrameData& time) {
-    // time_passed += time.delta_time;
-    // auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(voxel);
-    // transform.set_world_position(glm::vec3(1.0f, sinf(time_passed), 1.0f));
-    // transform.set_world_rotation(glm::vec3(0.0f, cosf(time_passed), 0.0f));
-    // transform.set_world_scale(glm::vec3(1.0f, 1.5f + sinf(time_passed), 1.0f));
-}
-
-void Game::on_end() {}

@@ -184,11 +184,8 @@ const glm::mat4& Transform::get_world_matrix() const {
 }
 
 void Transform::set_parent(Entity new_parent) {
-    if (new_parent == parent) {
-        return;
-    }
-
-    if (new_parent == get_self()) {
+    Entity self = get_self();
+    if (new_parent == self) {
         throw std::runtime_error("Transform::set_parent: Cannot set self as parent");
     }
 
@@ -197,7 +194,7 @@ void Transform::set_parent(Entity new_parent) {
     constexpr static int MAX_ITERATIONS = 1000;
     Entity current = new_parent;
     while (current != entt::null) {
-        if (current == get_self()) {
+        if (current == self) {
             throw std::runtime_error("Circular parent hierarchy detected");
         }
 
@@ -272,6 +269,15 @@ void Transform::remove_child(Entity child) {
 bool Transform::has_children() const { return !children.empty(); }
 
 const std::set<Entity>& Transform::get_children() const { return children; }
+
+std::set<Entity> Transform::get_all_children() const {
+    std::set<Entity> result = get_children();
+    for (const auto child : children) {
+        const auto& transform = tmt::engine.ecs.get_component<Transform>(child);
+        result.merge(transform.get_all_children());
+    }
+    return result;
+}
 
 void Transform::mark_dirty() {
     if (is_dirty) {

@@ -46,7 +46,7 @@ struct ImReflect::type_settings<T> : ImRequired<T>,
 };
 
 template <GlmVector T>
-void tag_invoke(ImReflect::ImInput_t, const char* label, T& value, ImSettings& settings, ImResponse& response) {
+inline void tag_invoke(ImReflect::ImInput_t, const char* label, T& value, ImSettings& settings, ImResponse& response) {
     using scalar = typename glm_traits<T>::scalar_type;
     constexpr int DIM = glm_traits<T>::DIMENSION;
 
@@ -75,7 +75,15 @@ void tag_invoke(ImReflect::ImInput_t, const char* label, T& value, ImSettings& s
     ImReflect::Detail::check_input_states(type_response);
 }
 
-void tag_invoke(ImReflect::ImInput_t, const char* label, glm::quat& value, ImSettings& settings, ImResponse& response) {
+template <GlmVector T>
+inline void tag_invoke(ImReflect::ImInput_t, const char* label, const T& value, ImSettings& settings, ImResponse& response) {
+    auto copy = value;
+    ImGui::BeginDisabled(true);
+    tag_invoke(ImReflect::ImInput_t {}, label, copy, settings, response);
+    ImGui::EndDisabled();
+}
+
+inline void tag_invoke(ImReflect::ImInput_t, const char* label, glm::quat& value, ImSettings& settings, ImResponse& response) {
     auto& type_settings = settings.get<glm::quat>();
     auto& type_response = response.get<glm::quat>();
 

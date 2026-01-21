@@ -1,13 +1,3 @@
-# Check that we're building for x64
-if(CMAKE_SIZEOF_VOID_P EQUAL 4)
-    message(FATAL_ERROR "Thermite currently only supports x64 architecture")
-endif()
-
-# Check that we're using MSVC as our compiler
-if (NOT MSVC)
-    message(FATAL_ERROR "Thermite currently only supports building with MSVC.")
-endif()
-
 # Collect source files
 file(GLOB_RECURSE THERMITE_SOURCES CONFIGURE_DEPENDS
     ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp
@@ -22,6 +12,10 @@ target_include_directories(thermite-engine
     PUBLIC ${CMAKE_SOURCE_DIR}  
     PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
 )
+
+# Add compile definitons
+target_compile_definitions(thermite-engine PRIVATE NOMINMAX) # Makes windows.h not define min and max
+target_compile_definitions(thermite-engine PRIVATE THERMITE_ENGINE) # Define that we're building the engine
 
 # Compile Shaders
 include(../scripts/cmake/shader_compilation.cmake)

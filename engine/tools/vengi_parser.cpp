@@ -5,19 +5,21 @@
 std::unique_ptr<vengi::Node> VengiParser::load(const tmt::IO::FileLocation& vengi_file) {
     using namespace tmt;
     std::vector<char> data = IO::read_file(vengi_file);
+    if (data.empty()) {
+        Log::error(Log::Scope::ENGINE, "Failed to read .vengi file: {}", vengi_file.get_absolute_path().string());
+        return nullptr;
+    }
 
     std::unique_ptr<vengi::Node> ret_node = std::make_unique_for_overwrite<vengi::Node>();
     try {
         if (data.size() < 8) {
             throw std::runtime_error("File too small to be valid VENGI file");
-            return ret_node;
         }
 
         // Check startfile "VENG" identifier
         uint32_t veng_mark = *reinterpret_cast<const uint32_t*>(&data[0]);
         if (veng_mark != 0x474E4556) {  // "VENG" in little-endian
             throw std::runtime_error("Invalid magic number. Expected 'VENG'");
-            return ret_node;
         }
 
         std::vector<char> decompressed_output = zlib_decompress_vengi_file(data);

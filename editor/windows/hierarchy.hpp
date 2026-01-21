@@ -9,19 +9,24 @@
 #include "engine/core/components/name.hpp"
 
 #include "editor/core/window.hpp"
+#include "engine/events/scene.hpp"
+
+#include "engine/tools/insertion_ordered_set.hpp"
 
 namespace tmt {
-class Hierarchy : public IWindow, public OnGameEnd {
+class Hierarchy : public IWindow, public OnGameEnd, public OnPreUnloadScene {
    public:
     Hierarchy() = default;
     ~Hierarchy() = default;
 
     void display() override;
 
+    virtual int get_window_flags() const override;
     constexpr std::string get_title() const override { return ICON_MS_FLOWCHART " Hierarchy"; };
+    constexpr bool default_open() const override { return true; }
 
     void on_editor_start() override {};
-    void on_editor_update(const FrameData&) override {};
+    void on_editor_update(const FrameData&) override;
     void on_editor_end() override {};
 
     template <typename... Components>
@@ -46,19 +51,19 @@ class Hierarchy : public IWindow, public OnGameEnd {
 
     Entity get_last_selected_entity() const {
         if (selected_entities.empty()) return entt::null;
-        return *selected_entities.end();
+        return selected_entities.back();
     };
     Entity get_first_selected_entity() const {
         if (selected_entities.empty()) return entt::null;
-        return first_selected_entity;
+        return selected_entities.front();
     };
 
-    const std::unordered_set<Entity>& get_selected_entities() const { return selected_entities; };
+    const std::vector<Entity>& get_selected_entities() const { return selected_entities; };
     bool is_entity_selected() const { return !selected_entities.empty(); }
+    bool is_entity_selected(const Entity entity) const { return selected_entities.contains(entity); }
 
    private:
-    std::unordered_set<Entity> selected_entities;
-    Entity first_selected_entity = entt::null;
+    tmt::InsertionOrderedSet<Entity> selected_entities;
 
     static constexpr glm::uvec2 NULL_INDEX {std::numeric_limits<uint32_t>::max()};
 
@@ -74,6 +79,8 @@ class Hierarchy : public IWindow, public OnGameEnd {
     glm::uvec2 previous_end_below = NULL_INDEX;
 
     Entity selection_parent = entt::null;
+
+    std::string filter = "";
 
     static inline bool is_between(const glm::uvec2& value, const glm::uvec2& begin, const glm::uvec2& end) {
         if (begin == NULL_INDEX || end == NULL_INDEX) return false;
@@ -96,9 +103,16 @@ class Hierarchy : public IWindow, public OnGameEnd {
         uint32_t index() const { return position.y; }
     };
 
+    void top_bar();
+
     void start_section();
     bool display_entity(const HierarchyState& state);
     void end_section();
+
+    void context_menu(const Entity hovered_entity);
+
+    void copy_selection();
+    void paste_entities(const Entity hovered_entity);
 
     void clear_selection();
 
@@ -112,5 +126,15 @@ class Hierarchy : public IWindow, public OnGameEnd {
 
     // Inherited via IGameEvents
     void on_game_end() override;
+
+    // Inherited via OnPreUnloadScene
+    void on_pre_unload_scene() override;
+
+    void before_begin() override;
+    void end_display() override;
+
+    struct Config {
+        constexpr static inline const char* RIGHT_CLICK_CONTEXT = "Hierarchy.RightClickContext";
+    };
 };
 }  // namespace tmt

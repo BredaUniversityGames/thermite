@@ -1,11 +1,13 @@
 #pragma once
+
 #include "core/application.hpp"
-#include "core/timer.hpp"
 
 #include "engine/core/game_controller.hpp"
 
 namespace tmt {
+
 /* Forward declarations */
+class InputMap;
 class Input;
 class Window;
 class Renderer;
@@ -14,6 +16,8 @@ class Resources;
 class Audio;
 class Salvo;
 class Scenes;
+class GameComponentRegistry;
+class Polyline;
 
 class Engine {
    public:
@@ -45,12 +49,15 @@ class Engine {
     Window& window;
     Audio& audio;
 
+    InputMap& input_map;
     Input& input;
     Ecs& ecs;
     Renderer& renderer;
     Resources& resources;
     Salvo& salvo;
     Scenes& scenes;
+    GameComponentRegistry& component_registry;
+    Polyline& polyline;
 
     GameController game_controller;
 
@@ -58,8 +65,7 @@ class Engine {
         constexpr static float FIXED_TIME_STEP = 1.0f / 60.0f;
     };
 
-    uint64_t get_frame_count() const { return frame_count; }
-    float get_elapsed_time() const { return timer.elapsed(); }
+    const FrameData& frame_data() const;
 
     bool get_is_running() const;
     void set_is_running(bool value);
@@ -67,8 +73,7 @@ class Engine {
     float dt {};
 
    private:
-    Timer timer;
-    uint64_t frame_count = 0;
+    FrameData current_frame_data {};
     bool is_running {true};
     std::unique_ptr<Application> app;
 

@@ -4,8 +4,7 @@
 
 #include "engine.hpp"
 #include "rig_model.hpp"
-#include "engine/core/renderer/pipelines/debug_pipeline.hpp"
-#include "engine/core/renderer/renderer.hpp"
+#include "engine/core/polyline.hpp"
 
 #define CONDITION(comparison) [](const Variant& parameter, const Variant& value) -> bool { return parameter comparison value; }
 
@@ -79,16 +78,18 @@ void tmt::RigModelManager::on_end() {}
 
 void RigModelManager::inspect(float) {
     int lines_drawn = 0;
+    engine.polyline.use_color(1.0f, 0.3f, 0.3f);
+    engine.polyline.use_line_width(0.25f);
     for (const auto& [entity, transform, rig] : engine.ecs.get_registry().view<Transform, RigModel>().each()) {
         for (const Entity bone_entity : rig.bone_entities) {
             auto& bone_transform = engine.ecs.get_component<Transform>(bone_entity);
-            auto& bone_name = engine.ecs.get_component<Name>(bone_entity);
+            // auto& bone_name = engine.ecs.get_component<Name>(bone_entity);
             const glm::vec3 joint = bone_transform.get_world_position();
 
             if (bone_transform.has_parent()) {
                 auto& parent_transform = engine.ecs.get_component<Transform>(bone_transform.get_parent());
                 const glm::vec3 parent_joint = parent_transform.get_world_position();
-                engine.renderer.draw_line(parent_joint, joint, glm::vec3(1.0f, 0.0f, 0.0f));
+                engine.polyline.draw_line(parent_joint, joint);
                 lines_drawn++;
             }
         }

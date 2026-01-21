@@ -1,15 +1,40 @@
 #include "hierarchy.hpp"
 
 #include <imgui.h>
+#include <imgui_stdlib.h>
 #include <imgui_internal.h>
+
+#include <ImReflect.hpp>
 
 #include "engine/engine.hpp"
 #include "engine/core/ecs.hpp"
+#include "engine/core/logger.hpp"
 
 #include "engine/core/components/name.hpp"
 #include "engine/core/components/transform.hpp"
 
+#include "engine/tools/serializer/ecs.hpp"
+
+#include "editor/events/scene.hpp"
+
 namespace tmt {
+
+void Hierarchy::before_begin() {
+    /* zero margin */
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+}
+
+void Hierarchy::display() {
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8, 8));
+
+    top_bar();
+    render_hierarchy();
+    context_menu(entt::null);
+
+    ImGui::PopStyleVar();
+}
+
+void Hierarchy::end_display() { ImGui::PopStyleVar(); }
 
 void Hierarchy::start_section() {
     /* Begin child section for hierarchy */
@@ -18,6 +43,13 @@ void Hierarchy::start_section() {
 
 void Hierarchy::end_section() {
     ImGui::EndChild();
+
+    if (ImGui::IsItemClicked(ImGuiMouseButton_Left) && !ImGui::IsAnyItemHovered()) {
+        clear_selection();
+    }
+    if (ImGui::IsItemClicked(ImGuiMouseButton_Right) && !ImGui::IsAnyItemHovered()) {
+        ImGui::OpenPopup(Config::RIGHT_CLICK_CONTEXT);
+    }
 
     drag_drop_target(entt::null);
 
@@ -38,9 +70,71 @@ void Hierarchy::end_section() {
     }
 }
 
+void Hierarchy::context_menu(const Entity hovered_entity) {
+    if (ImGui::BeginPopup(Config::RIGHT_CLICK_CONTEXT)) {
+        if (selected_entities.empty() == false) { /* Delete selection */
+            const auto text = selected_entities.size() > 1 ? "Delete Entities" : "Delete Entity";
+            if (ImGui::MenuItem(text)) {
+                for (const auto selected : selected_entities) {
+                    tmt::engine.ecs.destroy_entity(selected);
+                }
+                clear_selection();
+                ImGui::CloseCurrentPopup();
+            }
+        }
+        if (selected_entities.empty() == false) { /* Copy selection */
+            const auto text = selected_entities.size() > 1 ? "Copy Entities" : "Copy Entity";
+            if (ImGui::MenuItem(text)) {
+                copy_selection();
+                ImGui::CloseCurrentPopup();
+            }
+        }
+        { /* Paste selection */
+            const auto text = "Paste Entities";
+            if (ImGui::MenuItem(text)) {
+                paste_entities(hovered_entity);
+                ImGui::CloseCurrentPopup();
+            }
+        }
+        ImGui::EndPopup();
+    }
+}
+
+void Hierarchy::copy_selection() {
+    const auto json = Serializer::serialize(std::set(selected_entities.begin(), selected_entities.end()), tmt::engine.ecs);
+    ImGui::SetClipboardText(json.dump().c_str());
+}
+
+void Hierarchy::paste_entities(const Entity hovered_entity) {
+    const char* clipboard_text = ImGui::GetClipboardText();
+    if (clipboard_text == nullptr) {
+        Log::warn("Failed to paste entities, clipboard is empty.");
+        return;
+    }
+    const json deserialized = json::parse(clipboard_text, nullptr, false);
+    if (deserialized.is_discarded()) {
+        Log::error("Failed to parse clipboard JSON for entities. Clipboard is: \"{}\"", clipboard_text);
+        return;
+    }
+
+    std::set<Entity> new_entities;
+    Serializer::deserialize(deserialized, new_entities, tmt::engine.ecs);
+
+    const std::set<Entity> parents = EntityHelper::upper_parents(new_entities);
+    for (const Entity parent : parents) {
+        Transform& parent_transform = tmt::engine.ecs.get_component<Transform>(parent);
+        parent_transform.set_parent(hovered_entity);
+    }
+
+    clear_selection();
+    for (const auto entity : new_entities) {
+        selected_entities.insert(entity);
+    }
+    OnSceneModified::dispatch();
+}
+
 void Hierarchy::clear_selection() {
     selected_entities.clear();
-    first_selected_entity = entt::null;
     selection_parent = entt::null;
 
     selected_index_begin = NULL_INDEX;
@@ -52,40 +146,82 @@ void Hierarchy::clear_selection() {
     previous_end_below = NULL_INDEX;
 }
 
-void Hierarchy::display() { render_hierarchy(); }
+int Hierarchy::get_window_flags() const { return ImGuiWindowFlags_MenuBar; }
+
+void Hierarchy::on_editor_update(const FrameData&) {
+    for (int i = 0; i < selected_entities.size(); ++i) {
+        const auto entity = *std::next(selected_entities.begin(), i);
+        if (engine.ecs.valid(entity) == false) {
+            selected_entities.erase(entity);
+            break;
+        }
+    }
+}
+
+void Hierarchy::top_bar() {
+    /*menu bar*/
+    if (ImGui::BeginMenuBar()) {
+        if (ImGui::BeginMenu("Create")) {
+            if (ImGui::MenuItem("Empty Entity")) {
+                auto entity = engine.ecs.create_entity();
+                engine.ecs.add_or_get_component<Transform>(entity);
+                clear_selection();
+                selected_entities.insert(entity);
+            }
+            ImGui::EndMenu();
+        }
+
+        ImGui::Text(ICON_MS_FILTER_ALT);
+        ImGui::InputText("##" ICON_MS_FILTER_ALT, &filter);
+
+        ImGui::EndMenuBar();
+    }
+}
 
 bool Hierarchy::display_entity(const HierarchyState& state) {
-    const bool root_indent = state.depth() == 0;
-    const bool has_parent = state.transform.has_parent();
-    if (root_indent && has_parent) return false;
+    const auto scope = ImReflect::Detail::scope_id((int)state.entity);
+
+    const bool filtering = filter.empty() == false;
+    if (filtering) {
+        if (state.name.name.find(filter) == std::string::npos) {
+            return false;
+        }
+    } else {
+        const bool root_indent = state.depth() == 0;
+        const bool has_parent = state.transform.has_parent();
+        if (root_indent && has_parent) return false;
+    }
 
     ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_None;
     flags |= ImGuiTreeNodeFlags_FramePadding;
     flags |= ImGuiTreeNodeFlags_SpanAvailWidth;
     flags |= ImGuiTreeNodeFlags_DrawLinesToNodes;
+    flags |= ImGuiTreeNodeFlags_OpenOnArrow;
+    flags |= ImGuiTreeNodeFlags_OpenOnDoubleClick;
 
     const bool is_selected = selected_entities.contains(state.entity);
     if (is_selected) flags |= ImGuiTreeNodeFlags_Selected;
 
     const bool is_leaf = state.transform.has_children() == false;
-    if (is_leaf) flags |= ImGuiTreeNodeFlags_Leaf;
+    if (is_leaf || filtering) flags |= ImGuiTreeNodeFlags_Leaf;
 
     const Entity parent = state.transform.get_parent();
-    const bool is_begin = state.position == selected_index_begin && selection_parent == parent;
-    if (is_begin) flags |= ImGuiTreeNodeFlags_Bullet;
+    // const bool is_begin = state.position == selected_index_begin && selection_parent == parent;
+    // if (is_begin) flags |= ImGuiTreeNodeFlags_Bullet;
 
     /* Debug name */
     // const auto name = state.name.name + " " + std::to_string(state.position.x) + "-" + std::to_string(state.position.y);
-    const auto name = state.name.name;
+    const auto name = state.name.name.empty() ? "Entity_" + EntityHelper::to_string(state.entity) : state.name.name;
 
     const ImGuiID tree_node_id = ImGui::GetID(name.c_str());
     bool open_node = ImGui::TreeNodeBehavior(tree_node_id, flags, name.c_str(), NULL);
-    /* TODO: is a too early because it toggles when mouse down, but we use mouse released for selection */
 
     const bool is_hovered = ImGui::IsItemHovered();
     const bool is_left_mouse_released = ImGui::IsMouseReleased(ImGuiMouseButton_Left);
+    const bool is_right_mouse_released = ImGui::IsMouseReleased(ImGuiMouseButton_Right);
     const bool is_payload_being_dragged = ImGui::GetDragDropPayload() != nullptr;
     const bool is_left_clicked = is_hovered && is_left_mouse_released;
+    const bool is_right_clicked = is_hovered && is_right_mouse_released;
     const bool is_ctrl_held = ImGui::GetIO().KeyCtrl;
     const bool is_shift_held = ImGui::GetIO().KeyShift;
     const bool same_parent = selection_parent == parent;
@@ -103,14 +239,13 @@ bool Hierarchy::display_entity(const HierarchyState& state) {
     }
 
     /* Selection logic */
-    const bool select_entity = !dropped && !hover_arrow && !is_payload_being_dragged && is_left_clicked;
+    const bool select_entity = !dropped && !hover_arrow && !is_payload_being_dragged && (is_left_clicked || is_right_clicked);
     if (select_entity) {
         if (is_shift_held && same_parent) {
             const bool is_first_selected = selected_entities.empty();
             if (is_first_selected) {
                 selected_index_begin = state.position;
                 selection_parent = parent;
-                first_selected_entity = state.entity;
                 selected_index_end_above = state.position;
                 selected_index_end_below = state.position;
             } else {
@@ -126,6 +261,16 @@ bool Hierarchy::display_entity(const HierarchyState& state) {
             } else {
                 selected_entities.insert(state.entity);
             }
+        } else if (is_right_clicked) {
+            const bool already_selected = selected_entities.contains(state.entity);
+            if (already_selected == false) {
+                selected_entities.clear();
+                selected_entities.insert(state.entity);
+                selected_index_begin = state.position;
+                selection_parent = state.transform.get_parent();
+                selected_index_end_above = state.position;
+                selected_index_end_below = state.position;
+            }
         } else {
             selected_entities.clear();
             selected_entities.insert(state.entity);
@@ -133,7 +278,6 @@ bool Hierarchy::display_entity(const HierarchyState& state) {
             selection_parent = state.transform.get_parent();
             selected_index_end_above = state.position;
             selected_index_end_below = state.position;
-            first_selected_entity = state.entity;
         }
     }
 
@@ -152,8 +296,17 @@ bool Hierarchy::display_entity(const HierarchyState& state) {
         selected_entities.erase(state.entity);
     }
 
+    if (is_right_clicked) {
+        ImGui::OpenPopup(Config::RIGHT_CLICK_CONTEXT);
+    }
+    context_menu(state.entity);
+
     /* If the node is closed, don't display children */
     if (open_node == false) return true;
+    if (filtering) {
+        if (open_node) ImGui::TreePop();
+        return true;
+    }
 
     const bool has_children = state.transform.has_children();
     /* Display children */
@@ -226,6 +379,7 @@ bool Hierarchy::drag_drop_target(const Entity dropped_entity) {
             selection_parent = entt::null;
             selected_index_end_above = NULL_INDEX;
             selected_index_end_below = NULL_INDEX;
+            OnSceneModified::dispatch();
             return true;
         }
         ImGui::EndDragDropTarget();
@@ -233,5 +387,7 @@ bool Hierarchy::drag_drop_target(const Entity dropped_entity) {
     return false;
 }
 void Hierarchy::on_game_end() { clear_selection(); }
+
+void Hierarchy::on_pre_unload_scene() { clear_selection(); }
 
 }  // namespace tmt

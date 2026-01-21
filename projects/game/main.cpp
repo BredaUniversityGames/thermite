@@ -10,8 +10,10 @@
 #include "engine/core/logger.hpp"
 #include "engine/systems/physics/components/voxel_body.hpp"
 #include "engine/systems/camera/camera_system.hpp"
+
 #include "engine/core/scene.hpp"
 #include "engine/core/scenes.hpp"
+#include "engine/core/renderer/voxel_object.hpp"
 
 class Game : public tmt::Application {
    public:
@@ -63,36 +65,37 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     return std::make_unique<Game>(specs);
 }
 
-void generate_random_entities(std::shared_ptr<tmt::VoxelVolume>& voxel_volume);
+void generate_random_entities(tmt::ResourceRef<tmt::VoxelVolume>& voxel_volume);
 
 /* Dragon Scene */
 void DragonScene::on_start() {
     { /* Camera entity */
         tmt::Entity entity = tmt::engine.ecs.create_entity("Camera");
-        auto& transform = tmt::engine.ecs.add_component<tmt::Transform>(entity);
         auto& camera = tmt::engine.ecs.add_component<tmt::Camera>(entity);
-        transform.set_world_position(glm::vec3(0.0f, 0.25f, -10.0f));
+
+        auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
+        transform.set_world_position(glm::vec3(0.0f, 0.25f, -120.0f));
     }
 
-    auto voxel_file = tmt::engine.resources.load_resource<tmt::VoxelScene>({tmt::IO::Location::PROJECT, "dragon128.vengi"});
-    auto voxel_volume = tmt::engine.resources.copy_resource<tmt::VoxelVolume>(voxel_file);
+    // tmt::ResourceRef<tmt::VoxelScene> voxel_file = tmt::engine.resources.load_resource<tmt::VoxelScene>({tmt::IO::Location::PROJECT, "dragon128.vengi"});
+    // tmt::ResourceRef<tmt::VoxelVolume> voxel_volume = tmt::engine.resources.copy_resource<tmt::VoxelVolume>(voxel_file);
 
-    { /* Voxel entity */
-        voxel = tmt::engine.ecs.create_entity("Moving Voxel");
-        auto& transform = tmt::engine.ecs.add_component<tmt::Transform>(voxel);
-        auto& renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(voxel);
-        renderer.resource = voxel_volume;
-        transform.set_world_position(glm::vec3(0.0f, 0.0f, 0.0f));
-        transform.set_world_scale(glm::vec3(1.0f, 1.0f, 1.0f));
-    }
+    //{ /* Voxel entity */
+    //    voxel = tmt::engine.ecs.create_entity("Moving Voxel");
+    //    auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(voxel);
+    //    auto& renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(voxel);
+    //    renderer.resource = voxel_volume;
+    //    transform.set_world_position(glm::vec3(0.0f, 0.0f, 0.0f));
+    //    transform.set_world_scale(glm::vec3(1.0f, 1.0f, 1.0f));
+    //}
 
-    generate_random_entities(voxel_volume);
+    // generate_random_entities(voxel_volume);
 
     emitter = tmt::engine.ecs.create_entity();
     auto& transform = tmt::engine.ecs.add_component<tmt::Transform>(emitter);
     auto& p_emitter = tmt::engine.ecs.add_component<tmt::ParticleEmitter>(emitter);
     p_emitter.pos = transform.get_world_position();
-    p_emitter.dir = {0.0f, 1.0f, 0.0f};
+    p_emitter.dir = { 0.0f, 1.0f, 0.0f };
     p_emitter.cone_angle = 25.0f;
     p_emitter.min_speed = 2.0f;
     p_emitter.max_speed = 7.0f;
@@ -100,22 +103,40 @@ void DragonScene::on_start() {
     p_emitter.spawn_count = 500;
 }
 
+#include "engine/core/renderer/renderer.hpp"
+#include "engine/core/renderer/render_view.hpp"
+#include "engine/shared/ray.hpp"
+
 void DragonScene::on_update(const tmt::FrameData& time) {
     /* Animate the voxel */
-    elapsed_time += time.delta_time;
-    auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(voxel);
-    transform.set_world_position(glm::vec3(1.0f, sinf(elapsed_time), 1.0f));
-    transform.set_world_rotation(glm::vec3(sinf(elapsed_time), cosf(elapsed_time), 0.0f));
-    transform.set_world_scale(glm::vec3(1.0f, 1.5f + sinf(elapsed_time), 1.0f));
+    // elapsed_time += time.delta_time;
+    // auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(voxel);
+    // transform.set_world_position(glm::vec3(1.0f, sinf(elapsed_time), 1.0f));
+    // transform.set_world_rotation(glm::vec3(sinf(elapsed_time), cosf(elapsed_time), 0.0f));
+    // transform.set_world_scale(glm::vec3(1.0f, 1.5f + sinf(elapsed_time), 1.0f));
+
+    if (tmt::engine.input.is_mouse_button_just_pressed(tmt::MouseButton::LEFT)) {
+        /* Get the mouse position */
+        const glm::ivec2 mouse_pos = glm::ivec2(tmt::engine.input.get_mouse_x(), tmt::engine.input.get_mouse_y());
+
+        /* Create a ray from the mouse position for the current render view and trace it */
+        const tmt::Ray mouse_ray = tmt::engine.renderer.render_view.pixel_ray(mouse_pos);
+        const tmt::Hit hit = tmt::engine.renderer.trace_ray(mouse_ray);
+
+        if (hit) {
+            // tmt::engine.ecs.destroy_entity(hit.entity);
+            tmt::Log::info("pixel: {}, {} | hit: {}, {}, {}", mouse_pos.x, mouse_pos.y, hit.coord.x, hit.coord.y, hit.coord.z);
+        }
+    }
+
+    // if (tmt::engine.input.is_keyboard_button_released(tmt::Key::SPACE)) {
+    //     tmt::engine.scenes.enqueue_scene<TableScene>();
+    // }
 
     /* Emitter Update */
     auto& e_transform = tmt::engine.ecs.get_component<tmt::Transform>(emitter);
     auto& p_emitter = tmt::engine.ecs.get_component<tmt::ParticleEmitter>(emitter);
     p_emitter.pos = e_transform.get_world_position();
-
-    if (tmt::engine.input.is_keyboard_button_released(tmt::Key::SPACE)) {
-        tmt::engine.scenes.enqueue_scene<TableScene>();
-    }
 }
 
 void DragonScene::on_end() {}
@@ -124,9 +145,9 @@ void DragonScene::on_end() {}
 void TableScene::on_start() {
     { /* Camera entity */
         tmt::Entity entity = tmt::engine.ecs.create_entity("Camera");
-        auto& transform = tmt::engine.ecs.add_component<tmt::Transform>(entity);
+        auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
         auto& camera = tmt::engine.ecs.add_component<tmt::Camera>(entity);
-        transform.set_world_position(glm::vec3(0.0f, 0.25f, -5.0f));
+        transform.set_world_position(glm::vec3(0.0f, 0.0f, -260.0f));
     }
 
     auto voxel_file = tmt::engine.resources.load_resource<tmt::VoxelScene>({tmt::IO::Location::PROJECT, "table.vengi"});
@@ -144,12 +165,12 @@ void TableScene::on_update(const tmt::FrameData&) {
 void TableScene::on_end() {}
 
 /* Helper function */
-void generate_random_entities(std::shared_ptr<tmt::VoxelVolume>& voxel_volume) {
+void generate_random_entities(tmt::ResourceRef<tmt::VoxelVolume>& voxel_volume) {
     srand(0);  // Fixed seed for consistent results
     constexpr float PRIM_RANGE = 256.0f;
     for (int i = 0; i < 255; ++i) {
         auto entity = tmt::engine.ecs.create_entity();
-        auto& transform = tmt::engine.ecs.add_component<tmt::Transform>(entity);
+        auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
         auto& renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(entity);
         renderer.resource = voxel_volume;
         float s = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * 3.0f;
