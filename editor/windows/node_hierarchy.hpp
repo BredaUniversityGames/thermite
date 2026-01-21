@@ -21,7 +21,7 @@ class NodeHierarchy : public IWindow {
     void display() override;
 
     void on_editor_start() override {}
-    void on_editor_update(const FrameData& time) override {}
+    void on_editor_update(const FrameData&) override {}
     void on_editor_end() override {}
 
    private:
