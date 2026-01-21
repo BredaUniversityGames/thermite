@@ -15,26 +15,6 @@ namespace {
 
 std::atomic_bool model_load_atomic {true};
 
-void recurse_display_node(const VoxelSceneNode& node) {
-    const std::string uuid_string = node.uuid.str();
-    ImGui::PushID(uuid_string.c_str());
-
-    constexpr ImGuiTreeNodeFlags default_flags = ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_AllowOverlap | ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_OpenOnArrow;
-    ImGuiTreeNodeFlags flags = default_flags;
-    flags |= (node.children.empty() ? ImGuiTreeNodeFlags_Leaf : 0);
-
-    const bool tree_open = ImGui::TreeNodeEx(node.name.c_str(), flags);
-    if (tree_open) {
-        for (const VoxelSceneNode& child : node.children) {
-            recurse_display_node(child);
-        }
-
-        ImGui::TreePop();
-    }
-
-    ImGui::PopID();
-}
-
 }  // namespace
 
 void NodeHierarchy::menu_bar() {
@@ -64,8 +44,32 @@ void NodeHierarchy::display() {
     for (const IO::FileLocation& file_location : scene_locations) {
         const auto scene = engine.resources.load_resource<VoxelScene>(file_location);
 
-        recurse_display_node(scene->hierarchy);
+        if (recurse_display_node(scene->hierarchy)) selected_scene = scene;
     }
+}
+
+bool NodeHierarchy::recurse_display_node(VoxelSceneNode& node) {
+    const std::string uuid_string = node.uuid.str();
+    ImGui::PushID(uuid_string.c_str());
+
+    constexpr ImGuiTreeNodeFlags default_flags = ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_AllowOverlap | ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_OpenOnArrow;
+    ImGuiTreeNodeFlags flags = default_flags;
+    flags |= (node.children.empty() ? ImGuiTreeNodeFlags_Leaf : 0);
+
+    const bool tree_open = ImGui::TreeNodeEx(node.name.c_str(), flags);
+    bool is_clicked = ImGui::IsItemClicked();
+    if (is_clicked) selected_node = &node;
+    if (tree_open) {
+        for (VoxelSceneNode& child : node.children) {
+            is_clicked |= recurse_display_node(child);
+        }
+
+        ImGui::TreePop();
+    }
+
+    ImGui::PopID();
+
+    return is_clicked;
 }
 
 }  // namespace tmt

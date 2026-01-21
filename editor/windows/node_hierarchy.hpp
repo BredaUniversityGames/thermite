@@ -5,6 +5,8 @@
 
 #include <imgui.h>
 
+#include "engine/core/resources/voxel_scene.hpp"
+
 namespace tmt {
 
 class VoxelVolume;
@@ -19,8 +21,16 @@ class NodeHierarchy : public IWindow {
     void display() override;
 
     void on_editor_start() override {}
-    void on_editor_update(const FrameData& time) override {};
-    void on_editor_end() override {};
+    void on_editor_update(const FrameData& time) override {}
+    void on_editor_end() override {}
+
+   private:
+    friend class Palette;
+
+    bool recurse_display_node(VoxelSceneNode& node);
+
+    ResourceRef<VoxelScene> selected_scene;
+    VoxelSceneNode* selected_node {nullptr};
 };
 
 }  // namespace tmt

@@ -11,6 +11,8 @@
 #include "engine/core/input/input.hpp"
 #include "engine/tools/file_dialog.hpp"
 
+#include "editor/windows/palette.hpp"
+
 namespace tmt {
 
 namespace {
@@ -205,7 +207,9 @@ void ModelViewer::on_editor_update(const FrameData& time) {
     draw_selection(edit_data, transform);
 
     if (engine.input.is_mouse_button_pressed(MouseButton::LEFT)) {
-        renderer.resource->blas->set_voxel(edit_data.hit.coord.x, edit_data.hit.coord.y, edit_data.hit.coord.z, MaterialIndex {1});
+        const MaterialIndex material_index = editor.windows[Editor::Mode::EDIT].get<Palette>().selected_material_index;
+
+        renderer.resource->blas->set_voxel(edit_data.hit.coord.x, edit_data.hit.coord.y, edit_data.hit.coord.z, material_index);
         renderer.resource->update();
     }
 }
