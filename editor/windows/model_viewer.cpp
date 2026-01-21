@@ -129,33 +129,9 @@ void draw_selection(const EditData& edit_data, const Transform& transform) {
     engine.polyline.draw_obb(world_voxel_pos, glm::vec3 {VOXEL_SIZE_HALF}, transform.get_world_rotation());
 }
 
-std::atomic_bool model_load_atomic {true};
-
 }  // namespace
 
 void ModelViewer::display() {
-    if (ImGui::BeginMenuBar()) {
-        if (ImGui::MenuItem("Load"))
-            open_file_dialog(
-                [this](const IO::FileLocation& location) {
-                    model_load_atomic.store(false);
-
-                    const ResourceRef<VoxelScene> resource = engine.resources.load_resource<VoxelScene>(location);
-                    const ResourceRef<VoxelVolume> copy = engine.resources.copy_resource<VoxelVolume>(resource);
-                    editing_volume = copy;
-
-                    model_load_atomic.store(true);
-                    model_load_atomic.notify_one();
-                },
-                {{"Voxel file", "svh;vengi"}}
-            );
-
-        ImGui::EndMenuBar();
-    }
-    model_load_atomic.wait(false);
-
-    if (editing_volume && editing_entity == entt::null) create_editing_entity();
-
     const ImVec2 content_start {0.0f, ImGui::GetFrameHeight()};
     ImGui::SetCursorPos(content_start);
 
@@ -232,13 +208,6 @@ void ModelViewer::on_editor_update(const FrameData& time) {
         renderer.resource->blas->set_voxel(edit_data.hit.coord.x, edit_data.hit.coord.y, edit_data.hit.coord.z, MaterialIndex {1});
         renderer.resource->update();
     }
-}
-
-void ModelViewer::on_editor_end() { editing_volume = {}; }
-
-void ModelViewer::create_editing_entity() {
-    editing_entity = engine.ecs.create_entity();
-    engine.ecs.add_component<VoxelRenderer>(editing_entity).resource = editing_volume;
 }
 
 }  // namespace tmt

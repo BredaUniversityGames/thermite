@@ -35,8 +35,8 @@
 #include "editor/windows/console.hpp"
 #include "editor/windows/motion_math.hpp"
 #include "editor/windows/debug_lines.hpp"
-
 #include "editor/windows/model_viewer.hpp"
+#include "editor/windows/node_hierarchy.hpp"
 
 /* Singleton */
 tmt::Editor tmt::editor;
@@ -71,6 +71,7 @@ void Editor::on_engine_init(const ApplicationSpecs&) {
     windows[Mode::OBJECT].add<DebugLines>();
 
     windows[Mode::EDIT].add<ModelViewer>();
+    windows[Mode::EDIT].add<NodeHierarchy>();
 
     for (auto& [mode, collection] : windows) {
         for (const auto& window : collection) {
