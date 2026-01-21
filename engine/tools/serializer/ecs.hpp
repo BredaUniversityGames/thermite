@@ -1,6 +1,6 @@
 #pragma once
 #include <set>
-#include "engine/core/ecs.hpp"
+
 
 /* ECS */
 JsonReflect::json tag_invoke(JsonReflect::serialize_t, const tmt::Ecs& ecs);
