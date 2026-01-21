@@ -315,6 +315,8 @@ VoxelSceneNode parse_hierarchy(const vengi::Node* file_node) {
     /* Create a new scene node */
     VoxelSceneNode node {};
     node.uuid = UUIDv4::UUID(file_node->uuid[0], file_node->uuid[1]);
+    node.name = file_node->name;
+    node.transform = file_node->transform.get_world_matrix();
 
     /* If this node is a voxel model node */
     if (file_node->type == vengi::NodeType::MODEL) {
