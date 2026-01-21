@@ -21,7 +21,7 @@ class VoxelVolume : public tmt::RuntimeResource<VoxelScene> {
     void update();
 
     /* 128 bit unique identifier. */
-    uint64_t uuid[2] {};
+    UUIDv4::UUID uuid {};
 
     /* Voxel acceleration structure. */
     uint32_t voxel_buffer_size = 0u;
