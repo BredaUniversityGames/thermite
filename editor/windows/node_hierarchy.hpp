@@ -24,9 +24,9 @@ class NodeHierarchy : public IWindow {
     void on_editor_update(const FrameData&) override {}
     void on_editor_end() override {}
 
-   private:
-    friend class Palette;
+    VoxelSceneNode* get_selected_node() const { return selected_node; }
 
+   private:
     bool recurse_display_node(VoxelSceneNode& node);
 
     ResourceRef<VoxelScene> selected_scene;
