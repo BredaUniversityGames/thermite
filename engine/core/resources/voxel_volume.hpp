@@ -12,6 +12,7 @@ namespace tmt {
 class VoxelVolume : public tmt::RuntimeResource<VoxelScene> {
    public:
     VoxelVolume(const std::shared_ptr<VoxelScene>& file_resource) : RuntimeResource<VoxelScene>(file_resource) {}
+    VoxelVolume(const std::shared_ptr<VoxelScene>& file_resource, const UUID& uuid) : RuntimeResource<VoxelScene>(file_resource), uuid{uuid} {}
     ~VoxelVolume() { unload(); }
 
     bool load() override;
@@ -21,7 +22,7 @@ class VoxelVolume : public tmt::RuntimeResource<VoxelScene> {
     void update();
 
     /* 128 bit unique identifier. */
-    UUIDv4::UUID uuid {};
+    UUID uuid {NULL_UUID};
 
     /* Voxel acceleration structure. */
     uint32_t voxel_buffer_size = 0u;

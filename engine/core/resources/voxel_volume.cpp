@@ -7,25 +7,50 @@
 
 #include "engine/engine.hpp"
 #include "engine/core/renderer/renderer.hpp"
+#include "engine/tools/serializer/uuid.hpp"
 
 namespace tmt {
 
+namespace {
+
 /* Recursively find the first model inside a voxel model hierarchy. */
-const VoxelSceneNode* first_model(const VoxelSceneNode* parent) {
-    if (parent->tree != nullptr) return parent;
-    for (uint32_t i = 0u; i < parent->children.size(); ++i) {
-        const VoxelSceneNode* model = first_model(&parent->children[i]);
+const VoxelSceneNode* first_model(const VoxelSceneNode& parent) {
+    if (parent.tree != nullptr) return &parent;
+
+    for (const VoxelSceneNode& child : parent.children) {
+        const VoxelSceneNode* model = first_model(child);
         if (model != nullptr) return model;
     }
     return nullptr;
 }
 
+const VoxelSceneNode* find_model_by_uuid(const VoxelSceneNode& node, const UUID& uuid) {
+    if (node.uuid == uuid) return &node;
+
+    for (const VoxelSceneNode& child : node.children) {
+        const VoxelSceneNode* return_node = find_model_by_uuid(child, uuid);
+        if (return_node != nullptr) return return_node;
+    }
+
+    return nullptr;
+}
+
+}  // namespace
+
 bool VoxelVolume::load() {
-    /* TEMP: It's currently just grabbing the first model node */
-    const VoxelSceneNode* model = first_model(&file_resource->hierarchy);
+    const VoxelSceneNode* model;
+    if (uuid == NULL_UUID)
+        model = first_model(file_resource->hierarchy);
+    else
+        model = find_model_by_uuid(file_resource->hierarchy, uuid);
+
+    if (model == nullptr) {
+        Log::error("Failed to get model for VoxelVolume.");
+        return false;
+    }
 
     /* Copy the voxel data from the model */
-    blas = std::make_unique<Svt64>(*model->tree.get());
+    blas = std::make_unique<Svt64>(*model->tree);
     size = model->size;
     uuid = model->uuid;
 
@@ -42,7 +67,8 @@ bool VoxelVolume::load() {
     bank.upload_buffer(blas_nodes, blas->nodes, 0u, blas->node_count * sizeof(Svt64Node));
     bank.upload_buffer(blas_voxels, blas->materials, 0u, blas->voxel_count * sizeof(MaterialIndex));
     bank.upload_buffer(blas_palette, &blas->palette, 0u, sizeof(MaterialPalette));
-
+    auto test = Serializer::serialize(uuid).dump(4);
+    std::cout << test << '\n';
     return true;
 }
 
@@ -67,7 +93,7 @@ void VoxelVolume::update() {
     //     // blas_nodes = bank.create_buffer("BLAS Nodes Buffer", storage, blas->node_count + SVT64_BUFFER_MEMORY, sizeof(Svt64Node)).expect("failed to create tree nodes buffer.");
     //     // bank.resize_buffer(blas_nodes, blas->node_count + SVT64_BUFFER_MEMORY, sizeof(Svt64Node));
     //     nodes_buffer_size = blas->node_count + SVT64_BUFFER_MEMORY;
-    // } 
+    // }
 
     // /* Check if we need to resize the voxels buffer */
     // if (voxel_buffer_size < blas->voxel_count) {
@@ -75,7 +101,7 @@ void VoxelVolume::update() {
     //     // blas_voxels = bank.create_buffer("BLAS Voxels Buffer", storage, blas->voxel_count + SVT64_BUFFER_MEMORY, sizeof(MaterialIndex)).expect("failed to create voxel data buffer.");
     //     // bank.resize_buffer(blas_voxels, blas->voxel_count + SVT64_BUFFER_MEMORY, sizeof(MaterialIndex));
     //     voxel_buffer_size = blas->voxel_count + SVT64_BUFFER_MEMORY;
-    // }   
+    // }
 
     if (blas->node_count > nodes_buffer_size || blas->voxel_count > voxel_buffer_size) {
         return;

@@ -10,7 +10,7 @@ namespace tmt {
 /* Voxel scene resource node. */
 struct VoxelSceneNode {
     /* 128 bit unique identifier. */
-    UUID uuid;
+    UUID uuid{NULL_UUID};
 
     /* Voxel acceleration structure. */
     std::unique_ptr<Svt64> tree {};
