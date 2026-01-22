@@ -19,6 +19,7 @@ class NodeHierarchy : public IWindow {
     constexpr bool default_open() const override { return true; }
 
     [[nodiscard]] Entity get_selected_entity() const { return selected_entity; }
+    void set_selected_entity(const Entity entity) { selected_entity = entity; }
 
     void menu_bar() const;
     void display() override;
@@ -28,9 +29,9 @@ class NodeHierarchy : public IWindow {
     void on_editor_end() override {}
 
    private:
-    void recurse_display_node(const Entity entity, const Name& name, const Transform& transform);
+    void recurse_display_node(Entity entity, const Name& name, const Transform& transform);
 
-    Entity selected_entity{entt::null};
+    Entity selected_entity {entt::null};
 };
 
 }  // namespace tmt
