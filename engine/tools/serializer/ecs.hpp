@@ -1,6 +1,11 @@
 #pragma once
 #include <set>
+#include <JsonReflect.hpp>
+#include "engine/core/entity.hpp"
 
+namespace tmt {
+	class Ecs;
+}
 
 /* ECS */
 JsonReflect::json tag_invoke(JsonReflect::serialize_t, const tmt::Ecs& ecs);

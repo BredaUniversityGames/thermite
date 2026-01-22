@@ -3,9 +3,19 @@
 #include <string>
 #include <ranges>
 #include "engine/tools/fmt/helper.hpp"
+#include "engine/tools/uuid.hpp"
 
 namespace tmt {
 using Entity = entt::entity;
+
+struct EntityRef {
+    const Entity entity = entt::null;
+    /* 12 bytes of free space */
+    const UUID uuid;
+
+    EntityRef() = default;
+    EntityRef(Entity entity, UUID uuid) : entity(entity), uuid(uuid) {}
+};
 
 template <typename R, typename T>
 concept TypeRange = std::ranges::range<R> && std::same_as<std::ranges::range_value_t<R>, T>;
@@ -22,3 +32,4 @@ struct EntityHelper {
 }  // namespace tmt
 
 FMT_LOGGING(tmt::Entity, "{}", tmt::EntityHelper::to_string(obj));
+TMT_OBJECT(tmt::EntityRef, (entity, uuid));
