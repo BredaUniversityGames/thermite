@@ -47,7 +47,7 @@ Hit VoxelObject::intersect(Ray ray, const float tmax) const {
     }
 
     /* Overwrite the current hit with the closer one */
-    return Hit(hit_dist, {}, local_hit.coord, hit_normal);
+    return Hit(hit_dist, {}, local_hit.coord, glm::normalize(hit_normal));
 }
 
 }  // namespace tmt
