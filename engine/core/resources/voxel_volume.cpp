@@ -27,6 +27,7 @@ bool VoxelVolume::load() {
     /* Copy the voxel data from the model */
     blas = std::make_unique<Svt64>(*model->tree.get());
     size = model->size;
+    uuid = model->uuid;
 
     /* Create GPU buffers for the voxel data */
     VRAMBank& bank = engine.renderer.vram_bank();
