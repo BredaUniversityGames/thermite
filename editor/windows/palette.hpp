@@ -4,6 +4,7 @@
 
 #include "engine/core/resource.hpp"
 #include "engine/core/renderer/material.hpp"
+#include <imgui.h>
 
 namespace tmt {
 
@@ -16,6 +17,8 @@ class Palette : public IWindow {
 
     [[nodiscard]] MaterialIndex get_selected_material_index() const { return selected_material_index; }
 
+    void before_begin() override;
+    void end_display() override;
     void display() override;
 
     void on_editor_start() override {}
@@ -24,8 +27,14 @@ class Palette : public IWindow {
 
    private:
     void display_palette(const ResourceRef<VoxelVolume>& resource);
+    void display_material_editor() const;
 
     MaterialIndex selected_material_index {0};
+
+    struct Config {
+        constexpr static inline glm::ivec2 GRID_SIZE { 8, 32 };
+        constexpr static inline ImVec2 OUTSET { 2.0f, 2.0f };
+    };
 };
 
 }  // namespace tmt
