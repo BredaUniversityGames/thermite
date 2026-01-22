@@ -346,7 +346,12 @@ Svt64Hit Svt64::trace(const Ray& ray) const {
     /* If we ended in a leaf, we can gather the hit data we need */
     if (node.is_leaf() && scale_exp <= 21) {
         pos = mirror_pos(pos, dir);
-        return Svt64Hit(pos, 0xFFFFFFFFu, voxel_index(pos, scale_exp));
+
+        const float tmax = glm::min(glm::min(side_dist.x, side_dist.y), side_dist.z);
+        const glm::bvec3 side_mask = glm::greaterThanEqual(glm::vec3(tmax), side_dist);
+        const glm::vec3 normal = glm::vec3(side_mask.x ? -glm::sign(dir.x) : 0.0f, side_mask.y ? -glm::sign(dir.y) : 0.0f, side_mask.z ? -glm::sign(dir.z) : 0.0f);
+
+        return Svt64Hit(pos, 0xFFFFFFFFu, normal, voxel_index(pos, scale_exp));
     }
     return Svt64Hit();
 }

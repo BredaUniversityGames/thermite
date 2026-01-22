@@ -22,9 +22,11 @@ struct Hit {
     Entity entity {entt::null};
     /* Voxel coordinate inside the object we hit. */
     glm::uvec3 coord {};
+    /* Normal of the hit in world-space. */
+    glm::vec3 normal {};
 
     Hit() = default;
-    Hit(float distance, Entity entity, glm::uvec3 coord) : distance(distance), entity(entity), coord(coord) {};
+    Hit(float distance, Entity entity, glm::uvec3 coord, glm::vec3 normal) : distance(distance), entity(entity), coord(coord), normal(normal) {};
 
     /* @returns True if this hit was a miss. */
     inline bool miss() const { return distance == 1e30f; };

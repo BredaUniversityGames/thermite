@@ -42,10 +42,11 @@ struct Svt64Node {
 struct Svt64Hit {
     glm::vec3 pos = glm::vec3(1e30f);
     uint32_t index = 0xFFFFFFFFu;
+    glm::vec3 normal {};
     glm::uvec3 coord {};
 
     Svt64Hit() = default;
-    Svt64Hit(glm::vec3 p, uint32_t i, glm::uvec3 c) : pos(p), index(i), coord(c) {};
+    Svt64Hit(glm::vec3 p, uint32_t i, glm::vec3 n, glm::uvec3 c) : pos(p), index(i), normal(n), coord(c) {};
 };
 
 struct Ray;
