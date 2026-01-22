@@ -124,7 +124,9 @@ void tag_invoke(JsonReflect::deserialize_t, const Json& j, std::set<tmt::Entity>
 
     if (state.original_json["version"] != tmt::Serializer::Config::VERSION) {
         const Json& version = state.original_json["version"];
-        tmt::Log::warn(tmt::Log::Scope::ENGINE, "[Serialization] Using outdated version, something might break. current version: %ui, provided version: %ui", version, tmt::Serializer::Config::VERSION);
+        tmt::Log::warn(
+            tmt::Log::Scope::ENGINE, "[Serialization] Using outdated version, something might break. current version: %ui, provided version: %ui", version, tmt::Serializer::Config::VERSION
+        );
     }
 
     const auto& json_entities = state.original_json["entities"];

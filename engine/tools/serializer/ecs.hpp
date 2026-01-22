@@ -4,7 +4,7 @@
 #include "engine/core/entity.hpp"
 
 namespace tmt {
-	class Ecs;
+class Ecs;
 }
 
 /* ECS */
