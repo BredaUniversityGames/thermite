@@ -222,7 +222,7 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
                 .work_size(1, 1, 1);
 
     render_graph.add_compute_pass("Simulate Particles", "particle_sim.cs")
-                //.read(render_view.utils_buffer)
+                .read(render_view.render_view_buffer)
                 .write(particle_buffer)
                 .write(alive_list)
                 .write(alive_list_new)

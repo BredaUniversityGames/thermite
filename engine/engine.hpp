@@ -70,8 +70,6 @@ class Engine {
     bool get_is_running() const;
     void set_is_running(bool value);
 
-    float dt {};
-
    private:
     FrameData current_frame_data {};
     bool is_running {true};

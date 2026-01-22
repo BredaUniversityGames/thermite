@@ -16,6 +16,8 @@ public struct RenderView {
     public uint2 resolution;
     /* Index of the current frame. */
     public uint frame_index;
+    /* Delta Time in seconds. */
+    public float dt;
 };
 
 /* Represents a ray that can be traced. */
