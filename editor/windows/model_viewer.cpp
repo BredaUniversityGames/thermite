@@ -12,6 +12,7 @@
 #include "engine/tools/file_dialog.hpp"
 
 #include "editor/windows/palette.hpp"
+#include "editor/windows/node_hierarchy.hpp"
 
 namespace tmt {
 
@@ -118,7 +119,6 @@ void draw_selected_face(const FaceData& info, const glm::vec3& half_extent, cons
 struct EditData {
     Hit hit;
     glm::vec3 half_extent;
-    std::optional<FaceData> hit_face;
 };
 
 void draw_selection(const EditData& edit_data, const Transform& transform) {
@@ -155,12 +155,18 @@ void ModelViewer::on_editor_update(const FrameData& time) {
     editor.windows[Editor::Mode::OBJECT].get<Viewport>().update_debug_camera(time);
 
     const Ray mouse_ray = engine.renderer.render_view.pixel_ray(mouse_position);
-    EditData edit_data {.hit = engine.renderer.trace_ray(mouse_ray)};
 
-    const entt::basic_group group = engine.ecs.get_registry().group<const VoxelRenderer>(entt::get<Transform>);
-    for (auto&& [entity, renderer, transform] : group.each()) {
-        const glm::vec3 half_extent = glm::vec3 {renderer.resource->size} / static_cast<float>(2 * VOXELS_PER_UNIT);
+    const Entity selected_entity = editor.windows[Editor::Mode::EDIT].get<NodeHierarchy>().get_selected_entity();
+    const VoxelRenderer* renderer = engine.ecs.try_get_component<VoxelRenderer>(selected_entity);
+    if (renderer == nullptr || !renderer->resource) return;
 
+    EditData edit_data {
+        .hit = engine.renderer.trace_ray(mouse_ray),
+        .half_extent = glm::vec3 {renderer->resource->size} / static_cast<float>(2 * VOXELS_PER_UNIT),
+    };
+
+    const auto& transform = engine.ecs.get_component<Transform>(selected_entity);
+    {
         const glm::mat4 world_to_local_matrix = glm::inverse(transform.get_world_matrix());
 
         const Ray local_ray {
@@ -168,49 +174,41 @@ void ModelViewer::on_editor_update(const FrameData& time) {
             world_to_local_matrix * glm::vec4 {mouse_ray.dir, 0.0f},
         };
 
-        const float far = intersect_aabb(local_ray, -half_extent, half_extent);
+        const float far = intersect_aabb(local_ray, -edit_data.half_extent, edit_data.half_extent);
         const bool valid_hit = (far > 0.0f && edit_data.hit.distance >= far);
 
         for (int32_t i = 0; i < 6; i++) {
-            FaceData face = calculate_face_info(i, transform, half_extent);
+            FaceData face = calculate_face_info(i, transform, edit_data.half_extent);
 
-            if (!draw_face(face, transform, half_extent) || !valid_hit) continue;
+            if (!draw_face(face, transform, edit_data.half_extent) || !valid_hit) continue;
 
             const glm::vec3 local_hit_position = local_ray.origin + local_ray.dir * far;
-            const float extent_axis = half_extent[face.normal_index] * face.normal_sign;
+            const float extent_axis = edit_data.half_extent[face.normal_index] * face.normal_sign;
 
-            if (glm::distance(local_hit_position[face.normal_index], extent_axis) < std::numeric_limits<float>::epsilon() * 10.0f) edit_data.hit_face = face;
+            if (edit_data.hit.miss() && glm::distance(local_hit_position[face.normal_index], extent_axis) < std::numeric_limits<float>::epsilon() * 10.0f) {
+
+                edit_data.hit.entity = selected_entity;
+                edit_data.hit.distance = far;
+                edit_data.half_extent = edit_data.half_extent;
+
+                const glm::vec3 position = (mouse_ray.origin + mouse_ray.dir * edit_data.hit.distance) - (face.world_normal * VOXEL_SIZE_HALF);
+                const glm::vec3 local_position = glm::inverse(transform.get_world_matrix()) * glm::vec4 {position, 1.0f};
+
+                edit_data.hit.coord = (local_position + edit_data.half_extent) * static_cast<float>(VOXELS_PER_UNIT);
+
+                draw_selected_face(face, edit_data.half_extent, transform);
+            }
         }
-
-        if (!valid_hit) continue;
-
-        edit_data.hit.entity = entity;
-        edit_data.hit.distance = far;
-        edit_data.half_extent = half_extent;
     }
-
-    if (edit_data.hit.miss()) return;
-
-    const auto& [renderer, transform] = engine.ecs.get_component<VoxelRenderer, Transform>(edit_data.hit.entity);
-
-    if (edit_data.hit_face.has_value()) {
-        draw_selected_face(*edit_data.hit_face, edit_data.half_extent, transform);
-
-        const glm::vec3 position = (mouse_ray.origin + mouse_ray.dir * edit_data.hit.distance) - (edit_data.hit_face->world_normal * VOXEL_SIZE_HALF);
-        const glm::vec3 local_position = glm::inverse(transform.get_world_matrix()) * glm::vec4 {position, 1.0f};
-
-        edit_data.hit.coord = (local_position + edit_data.half_extent) * static_cast<float>(VOXELS_PER_UNIT);
-    } else {
-        edit_data.half_extent = glm::vec3 {renderer.resource->size} / static_cast<float>(2 * VOXELS_PER_UNIT);
-    }
+    if (edit_data.hit.miss() || edit_data.hit.entity != selected_entity) return;
 
     draw_selection(edit_data, transform);
 
     if (engine.input.is_mouse_button_pressed(MouseButton::LEFT)) {
         const MaterialIndex material_index = editor.windows[Editor::Mode::EDIT].get<Palette>().get_selected_material_index();
 
-        renderer.resource->blas->set_voxel(edit_data.hit.coord.x, edit_data.hit.coord.y, edit_data.hit.coord.z, material_index);
-        renderer.resource->update();
+        renderer->resource->blas->set_voxel(edit_data.hit.coord.x, edit_data.hit.coord.y, edit_data.hit.coord.z, material_index);
+        renderer->resource->update();
     }
 }
 

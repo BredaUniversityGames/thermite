@@ -3,7 +3,6 @@
 #include "editor/core/window.hpp"
 #include "engine/core/resource.hpp"
 #include "engine/core/entity.hpp"
-#include "engine/core/resources/voxel_scene.hpp"
 
 #include <imgui.h>
 

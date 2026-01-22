@@ -75,6 +75,7 @@ void NodeHierarchy::recurse_display_node(const Entity entity, const Name& name, 
 
     ImGuiTreeNodeFlags flags = default_flags;
     flags |= (children.empty() ? ImGuiTreeNodeFlags_Leaf : 0);
+    flags |= (entity == selected_entity ? ImGuiTreeNodeFlags_Selected : 0);
 
     const bool tree_open = ImGui::TreeNodeEx(name.name.c_str(), flags);
     if (ImGui::IsItemClicked()) selected_entity = entity;
