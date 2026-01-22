@@ -7,6 +7,8 @@ namespace tmt {
 
 using UUID = UUIDv4::UUID;
 
+static inline const UUID NULL_UUID(0, 0);
+
 class UUIDGenerator : public UUIDv4::UUIDGenerator<std::mt19937_64> {
    public:
     UUIDGenerator() : UUIDv4::UUIDGenerator<std::mt19937_64>() {}
@@ -20,4 +22,5 @@ class UUIDGenerator : public UUIDv4::UUIDGenerator<std::mt19937_64> {
 
 }  // namespace tmt
 
+FMT_LOGGING(tmt::UUID, "{}", obj.str());
 TMT_COMPONENT_NAME(tmt::UUID, "UUID");
