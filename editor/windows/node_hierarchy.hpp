@@ -2,12 +2,14 @@
 
 #include "editor/core/window.hpp"
 #include "engine/core/resource.hpp"
+#include "engine/core/entity.hpp"
+#include "engine/core/resources/voxel_scene.hpp"
 
 #include <imgui.h>
 
-#include "engine/core/resources/voxel_scene.hpp"
-
 namespace tmt {
+struct Name;
+struct Transform;
 
 class VoxelVolume;
 
@@ -17,7 +19,9 @@ class NodeHierarchy : public IWindow {
     constexpr int get_window_flags() const override { return ImGuiWindowFlags_MenuBar; }
     constexpr bool default_open() const override { return true; }
 
-    void menu_bar();
+    [[nodiscard]] Entity get_selected_entity() const { return selected_entity; }
+
+    void menu_bar() const;
     void display() override;
 
     void on_editor_start() override {}
@@ -25,12 +29,9 @@ class NodeHierarchy : public IWindow {
     void on_editor_end() override {}
 
    private:
-    friend class Palette;
+    void recurse_display_node(const Entity entity, const Name& name, const Transform& transform);
 
-    bool recurse_display_node(VoxelSceneNode& node);
-
-    ResourceRef<VoxelScene> selected_scene;
-    VoxelSceneNode* selected_node {nullptr};
+    Entity selected_entity{entt::null};
 };
 
 }  // namespace tmt

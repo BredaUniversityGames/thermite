@@ -2,16 +2,19 @@
 
 #include "editor/core/window.hpp"
 
+#include "engine/core/resource.hpp"
 #include "engine/core/renderer/material.hpp"
 
 namespace tmt {
 
-struct VoxelSceneNode;
+class VoxelVolume;
 
 class Palette : public IWindow {
    public:
     constexpr std::string get_title() const override { return ICON_MS_PALETTE " Palette"; }
     constexpr bool default_open() const override { return true; }
+
+    [[nodiscard]] MaterialIndex get_selected_material_index() const { return selected_material_index; }
 
     void display() override;
 
@@ -20,11 +23,9 @@ class Palette : public IWindow {
     void on_editor_end() override {}
 
    private:
-    friend class ModelViewer;
+    void display_palette(const ResourceRef<VoxelVolume>& resource);
 
-    void display_palette(const VoxelSceneNode& node);
-
-    MaterialIndex selected_material_index{0};
+    MaterialIndex selected_material_index {0};
 };
 
 }  // namespace tmt

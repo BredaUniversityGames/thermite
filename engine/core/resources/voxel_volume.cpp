@@ -67,8 +67,7 @@ bool VoxelVolume::load() {
     bank.upload_buffer(blas_nodes, blas->nodes, 0u, blas->node_count * sizeof(Svt64Node));
     bank.upload_buffer(blas_voxels, blas->materials, 0u, blas->voxel_count * sizeof(MaterialIndex));
     bank.upload_buffer(blas_palette, &blas->palette, 0u, sizeof(MaterialPalette));
-    auto test = Serializer::serialize(uuid).dump(4);
-    std::cout << test << '\n';
+
     return true;
 }
 

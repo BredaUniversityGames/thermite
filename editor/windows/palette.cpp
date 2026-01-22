@@ -1,8 +1,12 @@
 #include "palette.hpp"
 
 #include "editor.hpp"
-#include "imgui_internal.h"
+#include "engine/engine.hpp"
+#include "engine/core/ecs.hpp"
 #include "editor/windows/node_hierarchy.hpp"
+#include "engine/core/components/voxel_renderer.hpp"
+
+#include <imgui_internal.h>
 
 namespace tmt {
 
@@ -11,10 +15,13 @@ void display_material_editor() {
 }
 
 void Palette::display() {
-    const auto selected_node = editor.windows[Editor::Mode::EDIT].get<NodeHierarchy>().selected_node;
-    if (selected_node == nullptr || selected_node->tree == nullptr) return;
+    const auto selected_entity = editor.windows[Editor::Mode::EDIT].get<NodeHierarchy>().get_selected_entity();
+    if (selected_entity == entt::null) return;
 
-    display_palette(*selected_node);
+    const VoxelRenderer* renderer = engine.ecs.try_get_component<VoxelRenderer>(selected_entity);
+    if (renderer == nullptr) return;
+
+    display_palette(renderer->resource);
 
     if (ImGui::Begin(ICON_MS_EDIT " Material Editor")) {
         display_material_editor();
@@ -22,7 +29,7 @@ void Palette::display() {
     ImGui::End();
 }
 
-void Palette::display_palette(const VoxelSceneNode& node) {
+void Palette::display_palette(const ResourceRef<VoxelVolume>& resource) {
     ImDrawList* draw_list = ImGui::GetWindowDrawList();
 
     const ImVec2 frame_size = ImGui::GetContentRegionAvail();
@@ -37,7 +44,7 @@ void Palette::display_palette(const VoxelSceneNode& node) {
             const ImVec2 max = cursor + ImVec2((x + 1u) * entry_width, (y + 1u) * entry_height);
 
             const uint32_t i = x + y * 8u;
-            const Material& material = node.tree->palette.entries[i];
+            const Material& material = resource->blas->palette.entries[i];
 
             const ImVec4 color = ImVec4(material.albedo_r, material.albedo_g, material.albedo_b, 1.0f);
             draw_list->AddRectFilled(min, max, ImGui::ColorConvertFloat4ToU32(color));

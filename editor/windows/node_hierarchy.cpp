@@ -33,7 +33,7 @@ Entity recurse_create_entities(const VoxelSceneNode& node, const ResourceRef<Vox
 
 }  // namespace
 
-void NodeHierarchy::menu_bar() {
+void NodeHierarchy::menu_bar() const {
     if (!ImGui::BeginMenuBar()) return;
 
     if (ImGui::MenuItem("Load"))
@@ -57,36 +57,37 @@ void NodeHierarchy::display() {
     model_load_atomic.wait(false);
     menu_bar();
 
-    const auto& scene_locations = engine.resources.get_resource_locations<VoxelScene>();
-    for (const IO::FileLocation& file_location : scene_locations) {
-        const auto scene = engine.resources.load_resource<VoxelScene>(file_location);
+    const entt::basic_view view = engine.ecs.get_registry().view<Name, Transform>();
+    for (const auto&& [entity, name, transform] : view.each()) {
+        if (transform.get_parent() != entt::null) continue;
 
-        if (recurse_display_node(scene->hierarchy)) selected_scene = scene;
+        recurse_display_node(entity, name, transform);
     }
 }
 
-bool NodeHierarchy::recurse_display_node(VoxelSceneNode& node) {
-    const std::string uuid_string = node.uuid.str();
-    ImGui::PushID(uuid_string.c_str());
+void NodeHierarchy::recurse_display_node(const Entity entity, const Name& name, const Transform& transform) {
+    ImGui::PushID(static_cast<int>(entity));
 
-    constexpr ImGuiTreeNodeFlags default_flags = ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_AllowOverlap | ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_OpenOnArrow;
+    const std::set<Entity>& children = transform.get_children();
+
+    constexpr ImGuiTreeNodeFlags default_flags =
+        ImGuiTreeNodeFlags_FramePadding | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_DrawLinesToNodes | ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick;
+
     ImGuiTreeNodeFlags flags = default_flags;
-    flags |= (node.children.empty() ? ImGuiTreeNodeFlags_Leaf : 0);
+    flags |= (children.empty() ? ImGuiTreeNodeFlags_Leaf : 0);
 
-    const bool tree_open = ImGui::TreeNodeEx(node.name.c_str(), flags);
-    bool is_clicked = ImGui::IsItemClicked();
-    if (is_clicked) selected_node = &node;
+    const bool tree_open = ImGui::TreeNodeEx(name.name.c_str(), flags);
+    if (ImGui::IsItemClicked()) selected_entity = entity;
     if (tree_open) {
-        for (VoxelSceneNode& child : node.children) {
-            is_clicked |= recurse_display_node(child);
+        for (const Entity child : children) {
+            const auto&& [child_name, child_transform] = engine.ecs.get_component<Name, Transform>(child);
+            recurse_display_node(child, child_name, child_transform);
         }
 
         ImGui::TreePop();
     }
 
     ImGui::PopID();
-
-    return is_clicked;
 }
 
 }  // namespace tmt
