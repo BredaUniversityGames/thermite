@@ -82,7 +82,7 @@ void Palette::display_material_editor() const {
     Material& material = renderer->resource->blas->palette.entries[selected_material_index];
     ImGui::Text("Editing Material Index: %u", selected_material_index);
     ImGui::Separator();
-    ImGui::ColorPicker3("Albedo Color", &material.albedo_r);
+    if (ImGui::ColorPicker3("Albedo Color", &material.albedo_r)) renderer->resource->set_dirty();
 }
 
 }  // namespace tmt

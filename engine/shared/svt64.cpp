@@ -224,6 +224,7 @@ void Svt64::build(const RawVoxels& raw_data) {
 
     /* Reallocate the nodes to save memory */
     nodes = (Svt64Node*)realloc(nodes, (node_count + SVT64_BUFFER_MEMORY) * sizeof(Svt64Node));
+    nodes_capacity = node_count + SVT64_BUFFER_MEMORY;
 }
 
 inline uint32_t get_node_cell_index(const glm::vec3 pos, const int scale_exp) {
