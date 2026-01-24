@@ -82,11 +82,18 @@ class Svt64 {
     /* @returns A pointer to the physics data of a voxel at the given coordinate. (nullptr if the voxel is emtpy) */
     PhysicsVoxel* get_physics_voxel(const uint32_t x, const uint32_t y, const uint32_t z);
 
+    /* Removes voxels from this tree based on the others solids */
+    void subtract(const Svt64* other, glm::ivec3 offset);
+
     /* Build the tree. */
     void build(const RawVoxels& raw_data);
 
     /* Trace a ray through the tree. */
     Svt64Hit trace(const Ray& ray) const;
+
+   private:
+    /* Recursive function to remove voxels from the tree */
+    void subtract_recursive(uint32_t node_id, glm::ivec3 node_pos, uint32_t node_scale, const Svt64* other, uint32_t other_id, glm::ivec3 other_pos, uint32_t other_scale, glm::ivec3 offset);
 };
 
 }  // namespace tmt
