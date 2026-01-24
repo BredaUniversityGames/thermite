@@ -248,3 +248,24 @@ Json& SceneJson::entity_entry(Json& container, const tmt::Entity& entity) const 
     const auto key = tmt::EntityHelper::to_string(entity);
     return container[key];
 }
+
+/* Component specific deserialize functions */
+void tag_invoke(JsonReflect::deserialize_t, const Json& j, tmt::UUID& component, const DeserializeState& state) {
+    component = tmt::UUID::fromStrFactory(j.get<std::string>());
+    if (state.ecs.has_uuid(component) == false) return;
+
+    /* uuid already exists as a component */
+    const tmt::Entity owner = *state.ecs.get_entity_by_uuid(component);
+    const tmt::Entity current_entity = state.ecs.get_entity(component);
+
+    if (owner == current_entity) return;
+
+    /* UUID collision detected */
+    tmt::Log::warn(
+        tmt::Log::Scope::ENGINE, "[Serialization] UUID collision detected! Entity {} already owns UUID {}. Generating a new UUID for entity {}.", owner, component.str(), current_entity
+    );
+
+    /* Generate a new UUID for the current entity */
+    component = tmt::UUIDGenerator::generate();
+    state.ecs.register_uuid(component, current_entity);
+}

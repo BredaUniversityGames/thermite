@@ -177,7 +177,7 @@ class Ecs : public OnGameStart, public OnGameUpdate, public OnGameFixedUpdate, p
         return entt::to_entity(storage, instance);
     }
 
-    std::optional<Entity> get_entity(const UUID& uuid) const {
+    std::optional<Entity> get_entity_by_uuid(const UUID& uuid) const {
         if (uuid_entity_map.contains(uuid)) {
             return uuid_entity_map.at(uuid);
         }
@@ -187,6 +187,16 @@ class Ecs : public OnGameStart, public OnGameUpdate, public OnGameFixedUpdate, p
     UUID get_uuid(const Entity entity) const {
         const auto& uuid = get_component<UUID>(entity);
         return uuid;
+    }
+
+    bool has_uuid(const UUID& uuid) const { return uuid_entity_map.contains(uuid); }
+
+    bool register_uuid(const UUID& uuid, const Entity entity) {
+        if (has_uuid(uuid) && get_entity_by_uuid(uuid) != entity) {
+            return false;
+        }
+        uuid_entity_map[uuid] = entity;
+        return true;
     }
 
     void destroy_entity(const Entity entity, bool force = false) {
