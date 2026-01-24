@@ -31,18 +31,21 @@ Texture2D<uint2> vbuffer;
 [numthreads(16, 8, 1)]
 void main(int2 thread_id: SV_DispatchThreadID) {
     int2 pixel_id = thread_id;
+    int2 resolution = render_view.resolution;
     if (settings.shading_rate == 1u) {
         /* Half-rate */
         /*  [ XY ]  */
         /*  [ YX ]  */
         const int offset = (pixel_id.y + render_view.frame_index) & 0b1;
         pixel_id.x = (pixel_id.x << 1) + offset;
+        resolution.x = resolution.x >> 1;
     } else if (settings.shading_rate == 2u) {
         /* Quarter-rate */
         /*  [ XY ]  */
         /*  [ ZW ]  */
         const int2 offset = int2(render_view.frame_index & 0b1, (render_view.frame_index >> 1) & 0b1);
         pixel_id = (pixel_id << 1) + offset;
+        resolution = resolution >> 1;
     }
 
     /* Bounds check */
@@ -62,10 +65,10 @@ void main(int2 thread_id: SV_DispatchThreadID) {
     const float3 hit_point = ray.origin + ray.dir * geo.depth;
 
     /* Generate a seed for the current pixel */
-    const uint seed = thread_id.x + thread_id.y * render_view.resolution.x + render_view.frame_index * render_view.resolution.x * render_view.resolution.y;
+    const uint seed = thread_id.x + thread_id.y * resolution.x + (render_view.frame_index % (resolution.x * resolution.y));
 
     /* Trace light occlusion */
-    const float3 ray_dir = sample_hemisphere(geo.normal, r2(seed % 512));
+    const float3 ray_dir = sample_hemisphere(geo.normal, r2(seed));
     const Ray occlusion_ray = custom_ray(hit_point + geo.normal * 0.001f, ray_dir);
     const float t = occlusion_bvh2(tlas_nodes, object_indices, objects, occlusion_ray, 1e30f);
     float3 illuminance = 0.0f;

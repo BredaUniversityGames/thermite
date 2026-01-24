@@ -81,10 +81,9 @@ public float r1(const uint n) {
 
 /* R2 quasi-random sequence. */
 public float2 r2(const uint n) {
-    const float g = 1.32471795724f;
-    const float a1 = 1.0f / g;
-    const float a2 = 1.0f / (g * g);
-    return frac(float2(a1, a2) * n + 0.5f);
+    /* Improved coefficients from <https://www.martysmods.com/a-better-r2-sequence/> */
+    /* (1.0 - original coefficients) */
+    return frac(n * float2(0.2451223337533073f, 0.4301597090019468f));
 }
 
 /* Generate a sample direction within a cone around a direction vector. */
