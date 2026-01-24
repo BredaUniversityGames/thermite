@@ -196,6 +196,9 @@ void ModelViewer::display() {
 }
 
 void ModelViewer::on_editor_update(const FrameData& time) {
+    // Return if there are no entities, this is to avoid a crash with tracing rays.
+    if (engine.ecs.get_registry().storage<Transform>().empty()) return;
+
     editor.windows[Editor::Mode::OBJECT].get<Viewport>().update_debug_camera(time);
 
     NodeHierarchy& node_hierarchy = editor.windows[Editor::Mode::EDIT].get<NodeHierarchy>();

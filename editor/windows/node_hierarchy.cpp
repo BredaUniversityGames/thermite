@@ -7,8 +7,6 @@
 #include "engine/core/components/voxel_renderer.hpp"
 #include "engine/tools/file_dialog.hpp"
 
-#include <entt/entity/group.hpp>
-
 namespace tmt {
 
 namespace {

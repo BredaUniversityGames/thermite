@@ -11,8 +11,11 @@ namespace tmt {
 /* Voxel volume run-time resource, created from a Voxel model resource. */
 class VoxelVolume : public tmt::RuntimeResource<VoxelScene> {
    public:
+    // Constructor for temporary VoxelVolume's that aren't managed by the resource system (used in the voxel editor).
+    VoxelVolume(VoxelSceneNode&& node);
+
     VoxelVolume(const std::shared_ptr<VoxelScene>& file_resource) : RuntimeResource<VoxelScene>(file_resource) {}
-    VoxelVolume(const std::shared_ptr<VoxelScene>& file_resource, const UUID& uuid) : RuntimeResource<VoxelScene>(file_resource), uuid{uuid} {}
+    VoxelVolume(const std::shared_ptr<VoxelScene>& file_resource, const UUID& uuid) : RuntimeResource<VoxelScene>(file_resource), uuid {uuid} {}
     ~VoxelVolume() { unload(); }
 
     bool load() override;
@@ -32,6 +35,9 @@ class VoxelVolume : public tmt::RuntimeResource<VoxelScene> {
 
     /* Voxel acceleration structure buffers. */
     Buffer blas_nodes {}, blas_voxels {}, blas_palette {};
+
+   private:
+    void build_gpu_buffers(const VoxelSceneNode& node);
 };
 
 }  // namespace tmt

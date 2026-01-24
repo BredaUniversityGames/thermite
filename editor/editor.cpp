@@ -11,13 +11,14 @@
 
 #include "engine/core/ecs.hpp"
 #include "engine/core/logger.hpp"
-#include "engine/core/window.hpp"
 #include "engine/core/renderer/renderer.hpp"
 #include "engine/core/scenes.hpp"
 
 #include "editor/imgui/manager.hpp"
-#include "editor/core/font_manager.hpp"
-#include "engine/tools/profiler.hpp"
+
+/* Modes */
+#include "editor/modes/object.hpp"
+#include "editor/modes/edit.hpp"
 
 /* Windows */
 #include "editor/windows/hierarchy.hpp"
@@ -55,6 +56,9 @@ void Editor::on_engine_init(const ApplicationSpecs&) {
     imgui_manager.init();
     save_data.load();
 
+    mode_handlers[Mode::OBJECT] = std::make_unique<ObjectMode>();
+    mode_handlers[Mode::EDIT] = std::make_unique<EditMode>();
+
     windows[Mode::OBJECT].add<Hierarchy>();
     windows[Mode::OBJECT].add<GameFlow>();
     windows[Mode::OBJECT].add<Inspector>();
@@ -71,6 +75,7 @@ void Editor::on_engine_init(const ApplicationSpecs&) {
     windows[Mode::OBJECT].add<MotionMathPreview>();
     windows[Mode::OBJECT].add<DebugLines>();
 
+    engine.scenes.register_scene<VoxelEditScene>();
     windows[Mode::EDIT].add<ModelViewer>();
     windows[Mode::EDIT].add<NodeHierarchy>();
     windows[Mode::EDIT].add<Palette>();
@@ -128,6 +133,8 @@ void Editor::on_engine_fixed_update(const FrameData& time) {
 }
 
 void Editor::on_engine_end() {
+    mode_handlers.clear();
+
     for (auto& [mode, collection] : windows) {
         for (const auto& window : collection) {
             window->on_editor_end();
@@ -179,12 +186,20 @@ void Editor::main_menu_bar() {
             ImGui::EndMenu();
         }
 
+        ImGui::BeginDisabled(engine.game_controller.is_playing());
         if (ImGui::BeginMenu("Editor Mode")) {
-            for (const auto [mode, name] : magic_enum::enum_entries<Editor::Mode>()) {
-                if (ImGui::MenuItem(name.data(), nullptr, editor_mode == mode)) editor_mode = mode;
+            for (auto&& [mode, handler] : mode_handlers) {
+                const bool is_selected = (editor_mode == mode);
+                if (!ImGui::MenuItem(handler->get_name().c_str(), nullptr, is_selected) || is_selected) continue;
+
+                mode_handlers[editor_mode]->on_switch_away();
+                editor_mode = mode;
+
+                handler->on_switch_to();
             }
             ImGui::EndMenu();
         }
+        ImGui::EndDisabled();
 
         ImGui::EndMainMenuBar();
     }

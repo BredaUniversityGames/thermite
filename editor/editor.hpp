@@ -1,13 +1,14 @@
 #pragma once
 #include "engine/events/engine.hpp"
 
-#include "editor/core/window.hpp"
 #include "engine/core/collection.hpp"
+#include "editor/core/window.hpp"
 #include "editor/shared/save_data.hpp"
 
 namespace tmt {
 
 /* Forward declares */
+class IEditorMode;
 class ImGuiManager;
 class FontManager;
 
@@ -23,7 +24,8 @@ class Editor : public OnEngineInit, public OnEngineUpdate, public OnEngineFixedU
 
     void init();
 
-    Mode editor_mode = Mode::OBJECT;
+    Mode editor_mode {Mode::OBJECT};
+    std::map<Mode, std::unique_ptr<IEditorMode>> mode_handlers;
     std::map<Mode, Collection<IWindow>> windows;
     ImGuiManager& imgui_manager;
 
