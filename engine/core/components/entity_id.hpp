@@ -27,4 +27,5 @@ struct hash<tmt::EntityID> {
 };
 }  // namespace std
 
-TMT_COMPONENT(tmt::EntityID, "EntityID", (uuid))
+TMT_COMPONENT(tmt::EntityID, "EntityID", (uuid));
+FMT_LOGGING(tmt::EntityID, "{}", obj.get_uuid());

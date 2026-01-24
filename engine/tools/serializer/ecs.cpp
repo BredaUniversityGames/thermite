@@ -98,6 +98,24 @@ Json tag_invoke(JsonReflect::serialize_t, const tmt::Entity& entity, const tmt::
 
 void tag_invoke(JsonReflect::deserialize_t, const Json&, tmt::Entity&, tmt::Ecs&) {}
 
+template <typename ComponentType>
+void serialize_component(SerializeState& state) {
+    /* If no component instance exists, continue */
+    if (state.ecs.get_registry().view<ComponentType>().size() <= 0) return;
+
+    constexpr auto COMPONENT_NAME = tmt::Component<ComponentType>::get_name();
+    TMT_ZONE_SCOPED_N(COMPONENT_NAME);
+
+    Json& components = state.json.components(COMPONENT_NAME);
+
+    for (const auto entity : state.all_entities) {
+        if (state.ecs.has_component<ComponentType>(entity) == false) continue;
+
+        const auto value = tmt::Serializer::serialize(state.ecs.get_component<ComponentType>(entity));
+        state.json.entity_entry(components, entity, value);
+    }
+}
+
 /* [Serialize] Set of entities */
 Json tag_invoke(JsonReflect::serialize_t, const std::set<tmt::Entity>& entities_original, const tmt::Ecs& ecs) {
     TMT_ZONE_SCOPED_NS("Ecs::serialize");
@@ -118,24 +136,32 @@ Json tag_invoke(JsonReflect::serialize_t, const std::set<tmt::Entity>& entities_
 
     tmt::SerializeComponents::for_each([&state](auto type_tag) {
         using ComponentType = typename decltype(type_tag)::type;
-
-        /* If no component instance exists, continue */
-        if (state.ecs.get_registry().view<ComponentType>().size() <= 0) return;
-
-        constexpr auto COMPONENT_NAME = tmt::Component<ComponentType>::get_name();
-        TMT_ZONE_SCOPED_N(COMPONENT_NAME);
-
-        Json& components = state.json.components(COMPONENT_NAME);
-
-        for (const auto entity : state.all_entities) {
-            if (state.ecs.has_component<ComponentType>(entity) == false) continue;
-
-            const auto value = tmt::Serializer::serialize(state.ecs.get_component<ComponentType>(entity));
-            state.json.entity_entry(components, entity, value);
-        }
+        serialize_component<ComponentType>(state);
     });
 
     return state.json.get_json();
+}
+
+template <typename ComponentType>
+void deserialize_component(DeserializeState& state) {
+    constexpr auto COMPONENT_NAME = tmt::Component<ComponentType>::get_name();
+    TMT_ZONE_SCOPED_N(COMPONENT_NAME);
+
+    if (state.json.has_components(COMPONENT_NAME) == false) return;
+
+    const Json& entries = state.json.components(COMPONENT_NAME);
+    for (const auto& [json_key, json_value] : entries.items()) {
+        const tmt::Entity json_entity = tmt::EntityHelper::from_string(json_key);
+
+        if (json_entity == entt::null) {
+            tmt::Log::error(tmt::Log::Scope::ENGINE, "[Serialization] %s objects contain an entt::null entry.", COMPONENT_NAME);
+            continue;
+        }
+
+        const tmt::Entity entity = state.entity_mapping.at(json_entity);
+        ComponentType& component_value = state.ecs.add_or_get_component<ComponentType>(entity);
+        tmt::Serializer::deserialize(json_value, component_value, state);
+    }
 }
 
 /* [Deserialize] */
@@ -179,25 +205,7 @@ void tag_invoke(JsonReflect::deserialize_t, const Json& j, std::set<tmt::Entity>
     /* Deserialize each component */
     tmt::SerializeComponents::for_each([&state](auto type_tag) {
         using ComponentType = typename decltype(type_tag)::type;
-
-        constexpr auto COMPONENT_NAME = tmt::Component<ComponentType>::get_name();
-        TMT_ZONE_SCOPED_N(COMPONENT_NAME);
-
-        if (state.json.has_components(COMPONENT_NAME) == false) return;
-
-        const Json& entries = state.json.components(COMPONENT_NAME);
-        for (const auto& [json_key, json_value] : entries.items()) {
-            const tmt::Entity json_entity = tmt::EntityHelper::from_string(json_key);
-
-            if (json_entity == entt::null) {
-                tmt::Log::error(tmt::Log::Scope::ENGINE, "[Serialization] %s objects contain an entt::null entry.", COMPONENT_NAME);
-                continue;
-            }
-
-            const tmt::Entity entity = state.entity_mapping.at(json_entity);
-            ComponentType& component_value = state.ecs.add_or_get_component<ComponentType>(entity);
-            tmt::Serializer::deserialize(json_value, component_value, state);
-        }
+        deserialize_component<ComponentType>(state);
     });
 
     /* Return newly created entities */
@@ -250,7 +258,7 @@ Json& SceneJson::entity_entry(Json& container, const tmt::Entity& entity) const 
 }
 
 /* Component specific deserialize functions */
-void tag_invoke(JsonReflect::deserialize_t, const Json& j, tmt::UUID& component, const DeserializeState& state) {
+void tag_invoke(JsonReflect::deserialize_t, const Json& j, tmt::EntityID& component, const DeserializeState& state) {
     component = tmt::UUID::fromStrFactory(j.get<std::string>());
     if (state.ecs.has_uuid(component) == false) return;
 
@@ -261,9 +269,7 @@ void tag_invoke(JsonReflect::deserialize_t, const Json& j, tmt::UUID& component,
     if (owner == current_entity) return;
 
     /* UUID collision detected */
-    tmt::Log::warn(
-        tmt::Log::Scope::ENGINE, "[Serialization] UUID collision detected! Entity {} already owns UUID {}. Generating a new UUID for entity {}.", owner, component.str(), current_entity
-    );
+    tmt::Log::warn(tmt::Log::Scope::ENGINE, "[Serialization] UUID collision detected! Entity {} already owns UUID {}. Generating a new UUID for entity {}.", owner, component, current_entity);
 
     /* Generate a new UUID for the current entity */
     component = tmt::UUIDGenerator::generate();
