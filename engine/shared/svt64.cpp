@@ -224,7 +224,6 @@ void Svt64::build(const RawVoxels& raw_data) {
 
     /* Reallocate the nodes to save memory */
     nodes = (Svt64Node*)realloc(nodes, (node_count + SVT64_BUFFER_MEMORY) * sizeof(Svt64Node));
-    nodes_capacity = node_count + SVT64_BUFFER_MEMORY;
 }
 
 inline uint32_t get_node_cell_index(const glm::vec3 pos, const int scale_exp) {
@@ -374,9 +373,9 @@ Svt64::Svt64(const Svt64& src) {
     nodes_capacity = src.nodes_capacity;
     voxels_capacity = src.voxels_capacity;
     depth = src.depth;
-    nodes = new Svt64Node[nodes_capacity];
-    materials = new MaterialIndex[voxels_capacity];
-    physics_data = new PhysicsVoxel[voxels_capacity];
+    nodes = new Svt64Node[node_count + SVT64_BUFFER_MEMORY];
+    materials = new MaterialIndex[voxel_count + SVT64_BUFFER_MEMORY];
+    physics_data = new PhysicsVoxel[voxel_count + SVT64_BUFFER_MEMORY];
     memcpy(nodes, src.nodes, node_count * sizeof(Svt64Node));
     memcpy(materials, src.materials, voxel_count * sizeof(MaterialIndex));
     memcpy(physics_data, src.physics_data, voxel_count * sizeof(PhysicsVoxel));
@@ -392,9 +391,9 @@ Svt64& Svt64::operator=(const Svt64& src) {
     nodes_capacity = src.nodes_capacity;
     voxels_capacity = src.voxels_capacity;
     depth = src.depth;
-    nodes = new Svt64Node[nodes_capacity];
-    materials = new MaterialIndex[voxels_capacity];
-    physics_data = new PhysicsVoxel[voxels_capacity];
+    nodes = new Svt64Node[node_count + SVT64_BUFFER_MEMORY];
+    materials = new MaterialIndex[voxel_count + SVT64_BUFFER_MEMORY];
+    physics_data = new PhysicsVoxel[voxel_count + SVT64_BUFFER_MEMORY];
     memcpy(nodes, src.nodes, node_count * sizeof(Svt64Node));
     memcpy(materials, src.materials, voxel_count * sizeof(MaterialIndex));
     memcpy(physics_data, src.physics_data, voxel_count * sizeof(PhysicsVoxel));

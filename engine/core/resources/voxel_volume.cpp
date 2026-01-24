@@ -79,31 +79,22 @@ void VoxelVolume::unload() {
     size = glm::uvec3(0u);
 }
 
-void VoxelVolume::update() {
-    // VRAMBank& bank = engine.renderer.vram_bank();
-    // const BufferUsage storage = BufferUsage::Storage | BufferUsage::TransferDst;
+void VoxelVolume::update_if_dirty() {
+    if (is_dirty == false) return;
 
-    // /* Check if we need to resize the nodes buffer */
-    // if (nodes_buffer_size < blas->node_count) {
-    //     // bank.destroy(blas_nodes);
-    //     // blas_nodes = bank.create_buffer("BLAS Nodes Buffer", storage, blas->node_count + SVT64_BUFFER_MEMORY, sizeof(Svt64Node)).expect("failed to create tree nodes buffer.");
-    //     // bank.resize_buffer(blas_nodes, blas->node_count + SVT64_BUFFER_MEMORY, sizeof(Svt64Node));
-    //     nodes_buffer_size = blas->node_count + SVT64_BUFFER_MEMORY;
-    // }
+    /* Mark this volume as no longer dirty */
+    is_dirty = false;
 
-    // /* Check if we need to resize the voxels buffer */
-    // if (voxel_buffer_size < blas->voxel_count) {
-    //     // bank.destroy(blas_voxels);
-    //     // blas_voxels = bank.create_buffer("BLAS Voxels Buffer", storage, blas->voxel_count + SVT64_BUFFER_MEMORY, sizeof(MaterialIndex)).expect("failed to create voxel data buffer.");
-    //     // bank.resize_buffer(blas_voxels, blas->voxel_count + SVT64_BUFFER_MEMORY, sizeof(MaterialIndex));
-    //     voxel_buffer_size = blas->voxel_count + SVT64_BUFFER_MEMORY;
-    // }
-
-    if (blas->node_count > nodes_buffer_size || blas->voxel_count > voxel_buffer_size) {
+    static bool logged = false;
+    if (blas->voxel_count >= blas_voxels_capacity || blas->node_count >= blas_nodes_capacity) {
+        if (logged == false) {
+            Log::warn(Log::Scope::ENGINE, "Ran out of SVT64 buffer space.");
+            logged = true;
+        }
         return;
     }
 
-    /* Upload the new BLAS data */
+    /* Re-upload voxel data */
     VRAMBank& bank = engine.renderer.vram_bank();
     bank.upload_buffer(blas_voxels, blas->materials, 0u, blas->voxel_count * sizeof(MaterialIndex));
     bank.upload_buffer(blas_nodes, blas->nodes, 0u, blas->node_count * sizeof(Svt64Node));
@@ -112,15 +103,17 @@ void VoxelVolume::update() {
 
 void VoxelVolume::build_gpu_buffers(const VoxelSceneNode& node) {
     /* Create GPU buffers for the voxel data */
+    /* TODO: These buffers need to scale when the voxel data is modified at run-time! */
     VRAMBank& bank = engine.renderer.vram_bank();
     const BufferUsage storage = BufferUsage::Storage | BufferUsage::TransferDst;
-    blas_nodes = bank.create_buffer("BLAS Nodes Buffer", storage, blas->node_count + SVT64_BUFFER_MEMORY, sizeof(Svt64Node)).expect("failed to create tree nodes buffer.");
-    blas_voxels = bank.create_buffer("BLAS Voxels Buffer", storage, blas->voxel_count + SVT64_BUFFER_MEMORY, sizeof(MaterialIndex)).expect("failed to create voxel data buffer.");
+    blas_nodes_capacity = blas->node_count + SVT64_BUFFER_MEMORY;
+    blas_voxels_capacity = blas->voxel_count + SVT64_BUFFER_MEMORY;
+    blas_nodes = bank.create_buffer("BLAS Nodes Buffer", storage, blas_nodes_capacity, sizeof(Svt64Node)).expect("failed to create tree nodes buffer.");
+    blas_voxels = bank.create_buffer("BLAS Voxels Buffer", storage, blas_voxels_capacity, sizeof(MaterialIndex)).expect("failed to create voxel data buffer.");
     blas_palette = bank.create_buffer("BLAS Palette Buffer", storage, sizeof(MaterialPalette)).expect("failed to create material palette buffer.");
-    voxel_buffer_size = blas->voxel_count + SVT64_BUFFER_MEMORY;
-    nodes_buffer_size = blas->node_count + SVT64_BUFFER_MEMORY;
 
     /* Upload the voxel data into the GPU buffers */
+    /* TODO: These buffers need to be updated when voxel data is modified at run-time! */
     bank.upload_buffer(blas_nodes, blas->nodes, 0u, blas->node_count * sizeof(Svt64Node));
     bank.upload_buffer(blas_voxels, blas->materials, 0u, blas->voxel_count * sizeof(MaterialIndex));
     bank.upload_buffer(blas_palette, &blas->palette, 0u, sizeof(MaterialPalette));
