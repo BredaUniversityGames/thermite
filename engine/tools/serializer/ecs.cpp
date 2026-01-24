@@ -14,17 +14,51 @@
 
 using Json = JsonReflect::json;
 
+class SceneJson {
+   private:
+    Json json;
+
+   public:
+    SceneJson() = default;
+    SceneJson(const Json& j) : json(j) {}
+
+    const Json& get_json() const { return json; }
+    std::string dump() const;
+
+    /* version */
+    bool has_version() const;
+    uint64_t get_version() const;
+    void set_version(uint64_t version);
+
+    /* entities */
+    bool has_entities() const;
+    Json& entities();
+    const Json& entities() const;
+
+    /* components */
+    bool has_components(const std::string& component_name) const;
+    Json& components(const std::string& component_name);
+    const Json& components(const std::string& component_name) const;
+
+    /* entity entry */
+    bool has_entity_entry(const Json& container, const tmt::Entity& entity) const;
+    void entity_entry(Json& container, const tmt::Entity& entity, const Json& value) const;
+    Json& entity_entry(Json& container, const tmt::Entity& entity) const;
+};
+
 struct SerializeState {
     const tmt::Ecs& ecs;
     /* Original provided entities */
     const std::set<tmt::Entity>& original_entities;
     /* Originals + children */
     const std::set<tmt::Entity>& all_entities;
+
+    SceneJson json;
 };
 
 struct DeserializeState {
     tmt::Ecs& ecs;
-    const Json& original_json;
+    const SceneJson& json;
 
     std::unordered_map<tmt::Entity, tmt::Entity> entity_mapping {{entt::null, entt::null}}; /* Default null to null value */
 };
@@ -67,24 +101,22 @@ void tag_invoke(JsonReflect::deserialize_t, const Json&, tmt::Entity&, tmt::Ecs&
 /* [Serialize] Set of entities */
 Json tag_invoke(JsonReflect::serialize_t, const std::set<tmt::Entity>& entities_original, const tmt::Ecs& ecs) {
     TMT_ZONE_SCOPED_NS("Ecs::serialize");
-    auto entities = entities_original;
 
     /* Add children */
+    auto entities = entities_original;
     for (const auto entity : entities_original) {
         entities.merge(ecs.get_component<tmt::Transform>(entity).get_all_children());
     }
 
-    SerializeState state {ecs, entities_original, entities};
+    SerializeState state {ecs, entities_original, entities, SceneJson()};
 
-    Json result;
-    result["version"] = tmt::Serializer::Config::VERSION;
+    state.json.set_version(tmt::Serializer::Config::VERSION);
 
-    Json& json_entities = result["entities"];
     for (const auto entity : entities) {
-        json_entities.push_back(entity);
+        state.json.entities().push_back(entity);
     }
 
-    tmt::SerializeComponents::for_each([&state, &result](auto type_tag) {
+    tmt::SerializeComponents::for_each([&state](auto type_tag) {
         using ComponentType = typename decltype(type_tag)::type;
 
         /* If no component instance exists, continue */
@@ -93,43 +125,42 @@ Json tag_invoke(JsonReflect::serialize_t, const std::set<tmt::Entity>& entities_
         constexpr auto COMPONENT_NAME = tmt::Component<ComponentType>::get_name();
         TMT_ZONE_SCOPED_N(COMPONENT_NAME);
 
-        Json& components = result[COMPONENT_NAME];
+        Json& components = state.json.components(COMPONENT_NAME);
 
         for (const auto entity : state.all_entities) {
             if (state.ecs.has_component<ComponentType>(entity) == false) continue;
 
-            const auto key = tmt::EntityHelper::to_string(entity);
             const auto value = tmt::Serializer::serialize(state.ecs.get_component<ComponentType>(entity));
-            components[key] = value;
+            state.json.entity_entry(components, entity, value);
         }
     });
 
-    return result;
+    return state.json.get_json();
 }
 
 /* [Deserialize] */
 void tag_invoke(JsonReflect::deserialize_t, const Json& j, std::set<tmt::Entity>& new_entities, tmt::Ecs& ecs) {
     TMT_ZONE_SCOPED_NS("Ecs::deserialize");
 
-    if (j.contains("entities") == false) {
+    DeserializeState state {ecs, SceneJson(j)};
+
+    if (state.json.entities() == false) {
         tmt::Log::error(tmt::Log::Scope::ENGINE, "[Serialization] Json does not contain \"entities\" object. Json:\n---\n%s\n---", j.dump());
         return;
     }
-    if (j.contains("version") == false) {
+    if (state.json.has_version() == false) {
         tmt::Log::error(tmt::Log::Scope::ENGINE, "[Serialization] Json does not contain \"version\" number. Json:\n---\n%s\n---", j.dump());
         return;
     }
 
-    DeserializeState state {ecs, j};
-
-    if (state.original_json["version"] != tmt::Serializer::Config::VERSION) {
-        const Json& version = state.original_json["version"];
+    const uint64_t version = state.json.get_version();
+    if (version != tmt::Serializer::Config::VERSION) {
         tmt::Log::warn(
             tmt::Log::Scope::ENGINE, "[Serialization] Using outdated version, something might break. current version: %ui, provided version: %ui", version, tmt::Serializer::Config::VERSION
         );
     }
 
-    const auto& json_entities = state.original_json["entities"];
+    const auto& json_entities = state.json.entities();
 
     /* Create entities */
     for (const auto& json_entity : json_entities) {
@@ -152,9 +183,9 @@ void tag_invoke(JsonReflect::deserialize_t, const Json& j, std::set<tmt::Entity>
         constexpr auto COMPONENT_NAME = tmt::Component<ComponentType>::get_name();
         TMT_ZONE_SCOPED_N(COMPONENT_NAME);
 
-        if (state.original_json.contains(COMPONENT_NAME) == false) return;
+        if (state.json.has_components(COMPONENT_NAME) == false) return;
 
-        const Json& entries = state.original_json[COMPONENT_NAME];
+        const Json& entries = state.json.components(COMPONENT_NAME);
         for (const auto& [json_key, json_value] : entries.items()) {
             const tmt::Entity json_entity = tmt::EntityHelper::from_string(json_key);
 
@@ -175,4 +206,45 @@ void tag_invoke(JsonReflect::deserialize_t, const Json& j, std::set<tmt::Entity>
             new_entities.insert(mapped_entity);
         }
     }
+}
+
+std::string SceneJson::dump() const { return json.dump(4); }
+
+bool SceneJson::has_version() const { return json.contains("version"); }
+
+uint64_t SceneJson::get_version() const {
+    if (json.contains("version")) {
+        return json.at("version").get<uint64_t>();
+    }
+    tmt::Log::warn(tmt::Log::Scope::ENGINE, "[Serialization] Json does not contain \"version\" number. Json:\n---\n%s\n---", json.dump());
+    return 0;
+}
+
+void SceneJson::set_version(uint64_t version) { json["version"] = version; }
+
+bool SceneJson::has_entities() const { return json.contains("entities"); }
+
+Json& SceneJson::entities() { return json["entities"]; }
+
+const Json& SceneJson::entities() const { return json.at("entities"); }
+
+bool SceneJson::has_components(const std::string& component_name) const { return json.contains(component_name); }
+
+Json& SceneJson::components(const std::string& component_name) { return json[component_name]; }
+
+const Json& SceneJson::components(const std::string& component_name) const { return json.at(component_name); }
+
+bool SceneJson::has_entity_entry(const Json& container, const tmt::Entity& entity) const {
+    const auto key = tmt::EntityHelper::to_string(entity);
+    return container.contains(key);
+}
+
+void SceneJson::entity_entry(Json& container, const tmt::Entity& entity, const Json& value) const {
+    const auto key = tmt::EntityHelper::to_string(entity);
+    container[key] = value;
+}
+
+Json& SceneJson::entity_entry(Json& container, const tmt::Entity& entity) const {
+    const auto key = tmt::EntityHelper::to_string(entity);
+    return container[key];
 }
