@@ -213,7 +213,7 @@ void ModelViewer::on_editor_update(const FrameData& time) {
             const MaterialIndex material_index = editor.windows[Editor::Mode::EDIT].get<Palette>().get_selected_material_index();
 
             renderer->resource->blas->set_voxel(hit.coord.x, hit.coord.y, hit.coord.z, material_index);
-            renderer->resource->update();
+            renderer->resource->set_dirty();
         }
     } else if (hit.entity != entt::null && engine.input.is_mouse_button_just_pressed(MouseButton::LEFT)) {
         node_hierarchy.set_selected_entity(hit.entity);
