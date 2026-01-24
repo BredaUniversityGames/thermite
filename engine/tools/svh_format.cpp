@@ -2,6 +2,7 @@
 
 #include "core/logger.hpp"
 #include "core/resources/voxel_scene.hpp"
+#include "engine/tools/uuid.hpp"
 
 namespace tmt {
 
@@ -26,7 +27,7 @@ struct HierarchyHeader {
 static_assert(sizeof(HierarchyHeader) == 8);
 
 struct HierarchyNode {
-    UUIDv4::UUID uuid;  // *Technically* not trivially copyable, but has the same layout and will be copied right after.
+    UUID uuid;  // *Technically* not trivially copyable, but has the same layout and will be copied right after.
     uint32_t parent_index;
     uint32_t svt64_offset;
     uint32_t svt64_size;
@@ -109,7 +110,7 @@ std::unique_ptr<Svt64> decode_svt64_tree(const std::span<const char>& svt64_data
 
     tree->palette = read_data<MaterialPalette>(data_pointer);
 
-    tree->nodes = new Svt64Node[tree->node_count];
+    tree->nodes = new Svt64Node[tree->node_count + SVT64_BUFFER_MEMORY];
     read_data_to_buffer(data_pointer, tree->nodes, tree->node_count);
 
     tree->materials = new MaterialIndex[tree->voxel_count + SVT64_BUFFER_MEMORY];
