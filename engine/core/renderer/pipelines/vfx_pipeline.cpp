@@ -192,6 +192,9 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
         /* Skip inactive emitters */
         if (!emitter.active) continue;
 
+        // Temp set active to false to simulate burst behaviour
+        emitter.active = false;
+
         GpuEmitter em {};
         em.pos = emitter.pos;
         em.dir = glm::normalize(emitter.dir);
@@ -202,7 +205,7 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
         em.spawn_count = emitter.spawn_count;
         em.tex_index = temp_image.get_index();
         
-        render_graph.upload_buffer(emitter_buffer, &em, 0, sizeof(GpuEmitter));
+        bank.upload_buffer(emitter_buffer, &em, 0, sizeof(GpuEmitter));
 
         render_graph.add_compute_pass("Emit Particles", "emit.cs")
                     .read(emitter_buffer)

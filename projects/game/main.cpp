@@ -33,7 +33,8 @@ class DragonScene : public tmt::Scene<DragonScene> {
     void on_end() override;
 
     tmt::Entity voxel {};
-    tmt::Entity emitter {};
+    tmt::Entity emitter1 {};
+    tmt::Entity emitter2 {};
     float elapsed_time = 0.0f;
 };
 
@@ -91,16 +92,33 @@ void DragonScene::on_start() {
 
     // generate_random_entities(voxel_volume);
 
-    emitter = tmt::engine.ecs.create_entity();
-    auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(emitter);
-    auto& p_emitter = tmt::engine.ecs.add_component<tmt::ParticleEmitter>(emitter);
-    p_emitter.pos = transform.get_world_position();
-    p_emitter.dir = { 0.0f, 1.0f, 0.0f };
-    p_emitter.cone_angle = 25.0f;
-    p_emitter.min_speed = 2.0f;
-    p_emitter.max_speed = 7.0f;
-    p_emitter.particle_lifetime = 1.0f;
-    p_emitter.spawn_count = 500;
+    /* Particle Emitters */
+    {
+        emitter1 = tmt::engine.ecs.create_entity("Emitter 1");
+        auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(emitter1);
+        auto& p_emitter = tmt::engine.ecs.add_component<tmt::ParticleEmitter>(emitter1);
+        p_emitter.pos = transform.get_world_position();
+        p_emitter.dir = {0.0f, 1.0f, 0.0f};
+        p_emitter.cone_angle = 90.0f;
+        p_emitter.min_speed = 2.0f;
+        p_emitter.max_speed = 7.0f;
+        p_emitter.particle_lifetime = 3.0f;
+        p_emitter.spawn_count = 49000;
+        p_emitter.active = false;
+
+        emitter2 = tmt::engine.ecs.create_entity("Emitter 2");
+        auto& transform2 = tmt::engine.ecs.get_component<tmt::Transform>(emitter2);
+        auto& p2_emitter = tmt::engine.ecs.add_component<tmt::ParticleEmitter>(emitter2);
+        transform2.set_world_position({20.0f, 0.0f, 0.0f});
+        p2_emitter.pos = transform2.get_world_position();
+        p2_emitter.dir = {0.0f, 1.0f, 0.0f};
+        p2_emitter.cone_angle = 90.0f;
+        p2_emitter.min_speed = 2.0f;
+        p2_emitter.max_speed = 7.0f;
+        p2_emitter.particle_lifetime = 3.0f;
+        p2_emitter.spawn_count = 50000;
+        p2_emitter.active = false;
+    }
 }
 
 #include "engine/core/renderer/renderer.hpp"
@@ -134,9 +152,23 @@ void DragonScene::on_update(const tmt::FrameData& time) {
     // }
 
     /* Emitter Update */
-    auto& e_transform = tmt::engine.ecs.get_component<tmt::Transform>(emitter);
-    auto& p_emitter = tmt::engine.ecs.get_component<tmt::ParticleEmitter>(emitter);
-    p_emitter.pos = e_transform.get_world_position();
+    {
+        auto& e_transform = tmt::engine.ecs.get_component<tmt::Transform>(emitter1);
+        auto& p_emitter = tmt::engine.ecs.get_component<tmt::ParticleEmitter>(emitter1);
+        p_emitter.pos = e_transform.get_world_position();
+
+        auto& e2_transform = tmt::engine.ecs.get_component<tmt::Transform>(emitter2);
+        auto& p2_emitter = tmt::engine.ecs.get_component<tmt::ParticleEmitter>(emitter2);
+        p2_emitter.pos = e2_transform.get_world_position();
+
+        /* Burst Both Emitters */
+        if (tmt::engine.input.is_keyboard_button_just_pressed(tmt::Key::O)) {
+            p_emitter.active = true;
+        }
+        if (tmt::engine.input.is_keyboard_button_just_pressed(tmt::Key::P)) {
+            p2_emitter.active = true;
+        }
+    }
 }
 
 void DragonScene::on_end() {}
