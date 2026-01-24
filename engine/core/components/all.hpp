@@ -11,14 +11,14 @@
 #include "engine/systems/ai/navigation/nav_mesh.hpp"
 #include "engine/core/components/audio_listener.hpp"
 #include "engine/core/components/audio_emitter.hpp"
-#include "engine/tools/uuid.hpp"
+#include "engine/core/components/entity_id.hpp"
 
 namespace tmt {
 
 // clang-format off
 using SerializeComponents = ComponentRegistry<
 	/* Order in which components are serialized */
-	UUID,
+	EntityID,
 	Name, 
 	Transform, 
 	VoxelRenderer, 
