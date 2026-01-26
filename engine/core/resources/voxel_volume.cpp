@@ -37,13 +37,8 @@ const VoxelSceneNode* find_model_by_uuid(const VoxelSceneNode& node, const UUID&
 
 }  // namespace
 
-VoxelVolume::VoxelVolume(VoxelSceneNode&& node) : RuntimeResource<VoxelScene>({}) {
-        /* Copy the voxel data from the model */
-    blas = std::move(node.tree);
-    size = node.size;
-    uuid = node.uuid;
-
-    build_gpu_buffers(node);
+VoxelVolume::VoxelVolume(const VoxelSceneNode& node) : RuntimeResource<VoxelScene>({}) { 
+    load_from_node(node); 
 }
 
 bool VoxelVolume::load() {
@@ -58,12 +53,7 @@ bool VoxelVolume::load() {
         return false;
     }
 
-    /* Copy the voxel data from the model */
-    blas = std::make_unique<Svt64>(*model->tree);
-    size = model->size;
-    uuid = model->uuid;
-
-    build_gpu_buffers(*model);
+    load_from_node(*model);
 
     return true;
 }
@@ -101,7 +91,12 @@ void VoxelVolume::update_if_dirty() {
     bank.upload_buffer(blas_palette, &blas->palette, 0u, sizeof(MaterialPalette));
 }
 
-void VoxelVolume::build_gpu_buffers(const VoxelSceneNode& node) {
+void VoxelVolume::load_from_node(const VoxelSceneNode& node) {
+    /* Copy the voxel data from the model */
+    blas = std::make_unique<Svt64>(*node.tree);
+    size = node.size;
+    uuid = node.uuid;
+
     /* Create GPU buffers for the voxel data */
     /* TODO: These buffers need to scale when the voxel data is modified at run-time! */
     VRAMBank& bank = engine.renderer.vram_bank();

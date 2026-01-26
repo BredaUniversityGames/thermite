@@ -7,31 +7,21 @@
 #include "engine/core/components/voxel_renderer.hpp"
 #include "engine/tools/file_dialog.hpp"
 
+#include "glm/gtx/quaternion.hpp"
+
 namespace tmt {
 
 namespace {
 
+struct VoxelEditUUID {
+    UUID uuid {NULL_UUID};
+};
+
 std::atomic_bool model_load_atomic {true};
-
-Entity recurse_create_entities(const VoxelSceneNode& node, const ResourceRef<VoxelScene>& scene) {
-    const Entity entity = engine.ecs.create_entity(node.name);
-
-    Transform& transform = engine.ecs.get_component<Transform>(entity);
-    transform.set_world_matrix(node.transform);
-
-    if (node.tree) engine.ecs.add_component<VoxelRenderer>(entity).resource = engine.resources.copy_resource<VoxelVolume>(scene, node.uuid);
-
-    for (const VoxelSceneNode& child : node.children) {
-        const Entity child_entity = recurse_create_entities(child, scene);
-        transform.add_child(child_entity);
-    }
-
-    return entity;
-}
 
 }  // namespace
 
-void NodeHierarchy::menu_bar() const {
+void NodeHierarchy::menu_bar() {
     if (!ImGui::BeginMenuBar()) return;
 
     if (ImGui::MenuItem("Load"))
@@ -39,8 +29,11 @@ void NodeHierarchy::menu_bar() const {
             [this](const IO::FileLocation& location) {
                 model_load_atomic.store(false);
 
+                loaded_location = location;
+                engine.ecs.clear();
+
                 const ResourceRef<VoxelScene> resource = engine.resources.load_resource<VoxelScene>(location);
-                recurse_create_entities(resource->hierarchy, resource);
+                recurse_build_scene(resource->hierarchy);
 
                 model_load_atomic.store(true);
                 model_load_atomic.notify_one();
@@ -60,6 +53,54 @@ void NodeHierarchy::display() {
         if (transform.get_parent() != entt::null) continue;
 
         recurse_display_node(entity, name, transform);
+    }
+}
+
+Entity NodeHierarchy::recurse_build_scene(const VoxelSceneNode& node) {
+    const Entity entity = engine.ecs.create_entity(node.name);
+
+    Transform& transform = engine.ecs.get_component<Transform>(entity);
+    transform.set_world_matrix(node.transform);
+
+    VoxelEditUUID& uuid_component = engine.ecs.add_component<VoxelEditUUID>(entity);
+    uuid_component.uuid = node.uuid;
+
+    if (node.tree) {
+        VoxelRenderer& renderer = engine.ecs.add_component<VoxelRenderer>(entity);
+
+        // Create a fake voxel resource managed by the voxel editor.
+        const ResourceRef volume {{}, std::make_shared<VoxelVolume>(node)};
+        renderer.resource = volume;
+    }
+
+    for (const VoxelSceneNode& child : node.children) {
+        const Entity child_entity = recurse_build_scene(child);
+        transform.add_child(child_entity);
+    }
+
+    return entity;
+}
+
+void NodeHierarchy::recurse_parse_scene(Entity entity, const Transform& transform, VoxelSceneNode& node) {
+    node.name = engine.ecs.get_component<Name>(entity).name;
+
+    const glm::mat4 translation = glm::translate(glm::identity<glm::mat4>(), transform.get_local_position());
+    const glm::mat4 rotation = glm::toMat4(transform.get_local_rotation());
+    const glm::mat4 scale = glm::scale(glm::identity<glm::mat4>(), transform.get_local_scale());
+    node.transform = translation * rotation * scale;
+
+    node.uuid = engine.ecs.get_component<VoxelEditUUID>(entity).uuid;
+
+    const VoxelRenderer* renderer = engine.ecs.try_get_component<VoxelRenderer>(entity);
+    if (renderer != nullptr) {
+        node.uuid = renderer->resource->uuid;
+        node.size = renderer->resource->size;
+        node.tree = std::make_unique<Svt64>(*renderer->resource->blas);
+    }
+
+    for (const Entity child : transform.get_children()) {
+        const Transform& child_transform = engine.ecs.get_component<Transform>(child);
+        recurse_parse_scene(child, child_transform, node.children.emplace_back());
     }
 }
 
