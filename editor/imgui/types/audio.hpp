@@ -4,10 +4,10 @@
 
 namespace tmt {
 
-	class AudioEvent;
-	class VolumeControl;
+class AudioEvent;
+class VolumeControl;
 
-}
+}  // namespace tmt
 
 void tag_invoke(ImReflect::ImInput_t, const char* label, tmt::AudioEvent& value, ImSettings& settings, ImResponse& response);
 
