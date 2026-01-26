@@ -14,6 +14,12 @@ struct RenderView;
 constexpr uint32_t MAX_VOXEL_OBJECTS = 10000u;
 /* We have a hard limit due to technical limitations. */
 static_assert(MAX_VOXEL_OBJECTS < (1u << 14));
+/* Maximum number of lights we support in the scene at once. */
+constexpr uint32_t MAX_LIGHTS = 1000u;
+
+struct GpuSceneView {
+    uint32_t light_count = 0u;
+};
 
 /* View of the scene, containing all scene data required for rendering. */
 struct SceneView {
@@ -28,6 +34,8 @@ struct SceneView {
     Buffer bvh_nodes {};
     Buffer object_indices {};
     Buffer object_data {};
+    Buffer lights_data {};
+    Buffer scene_view {};
 
     /* Acceleration structures */
     Bvh2<struct VoxelObject> bvh {};
