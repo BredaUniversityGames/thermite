@@ -13,6 +13,7 @@ class ObjectMode : public IEditorMode, public OnPreLoadScene {
 
     // Inherited via IEditorMode.
     constexpr std::string get_name() override { return "Object"; }
+    void display_main_menu() override;
     void on_switch_to() override;
     void on_switch_away() override;
 

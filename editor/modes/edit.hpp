@@ -15,6 +15,7 @@ class EditMode : public IEditorMode {
    public:
     // Inherited via IEditorMode.
     constexpr std::string get_name() override { return "Edit"; }
+    void display_main_menu() override;
     void on_switch_to() override;
     void on_switch_away() override;
 

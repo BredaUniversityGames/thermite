@@ -148,12 +148,8 @@ void Editor::on_engine_end() {
 
 void Editor::main_menu_bar() {
     if (ImGui::BeginMainMenuBar()) {
-        if (ImGui::BeginMenu("Scene")) {
-            if (ImGui::MenuItem("Save Scene")) {
-                engine.scenes.serialize_active_scene();
-            }
-            ImGui::EndMenu();
-        }
+        mode_handlers[editor_mode]->display_main_menu();
+
         if (ImGui::BeginMenu("Windows")) {
             for (const auto& window : windows[editor_mode]) {
                 const auto& name = window->get_title();

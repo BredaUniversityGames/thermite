@@ -5,9 +5,20 @@
 #include "engine/tools/serializer.hpp"
 #include "engine/tools/serializer/ecs.hpp"
 
+#include <imgui.h>
+
 namespace tmt {
 
 ObjectMode::ObjectMode() : previous_scene_type(engine.scenes.get_active_scene_type()) {}
+
+void ObjectMode::display_main_menu() {
+    if (ImGui::BeginMenu("Scene")) {
+        if (ImGui::MenuItem("Save Scene")) {
+            engine.scenes.serialize_active_scene();
+        }
+        ImGui::EndMenu();
+    }
+}
 
 void ObjectMode::on_switch_to() {
     is_switching_to = true;

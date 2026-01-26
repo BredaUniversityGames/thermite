@@ -6,8 +6,10 @@
 #include "engine/core/components/transform.hpp"
 #include "engine/core/components/voxel_renderer.hpp"
 #include "engine/tools/file_dialog.hpp"
+#include "engine/tools/svh_format.hpp"
 
-#include "glm/gtx/quaternion.hpp"
+#include <glm/gtx/quaternion.hpp>
+#include <imgui.h>
 
 namespace tmt {
 
@@ -21,32 +23,71 @@ std::atomic_bool model_load_atomic {true};
 
 }  // namespace
 
-void NodeHierarchy::menu_bar() {
-    if (!ImGui::BeginMenuBar()) return;
+void NodeHierarchy::new_svh() {
+    engine.ecs.clear();
+    loaded_location = {};
+}
 
-    if (ImGui::MenuItem("Load"))
-        open_file_dialog(
-            [this](const IO::FileLocation& location) {
-                model_load_atomic.store(false);
+void NodeHierarchy::open_svh() {
+    open_file_dialog(
+        [this](const IO::FileLocation& location) {
+            model_load_atomic.store(false);
 
-                loaded_location = location;
-                engine.ecs.clear();
+            loaded_location = location;
+            engine.ecs.clear();
 
-                const ResourceRef<VoxelScene> resource = engine.resources.load_resource<VoxelScene>(location);
-                recurse_build_scene(resource->hierarchy);
+            const ResourceRef<VoxelScene> resource = engine.resources.load_resource<VoxelScene>(location);
+            recurse_build_scene(resource->hierarchy);
 
-                model_load_atomic.store(true);
-                model_load_atomic.notify_one();
-            },
-            {{"Voxel file", "svh;vengi"}}
-        );
+            model_load_atomic.store(true);
+            model_load_atomic.notify_one();
+        },
+        {{"Thermite voxel file", "svh"}}
+    );
+}
 
-    ImGui::EndMenuBar();
+void NodeHierarchy::save_svh() {
+    if (loaded_location.relative_path.empty()) {
+        save_svh_as();
+        return;
+    }
+
+    const std::vector<char> scene_data = encode_voxel_scene();
+    IO::write_file(loaded_location, scene_data.data(), scene_data.size());
+}
+
+void NodeHierarchy::save_svh_as() {
+    save_file_dialog(
+        [this](const IO::FileLocation& location) {
+            loaded_location = location;
+
+            const std::vector<char> scene_data = encode_voxel_scene();
+            IO::write_file(location, scene_data.data(), scene_data.size());
+        },
+        {{"Thermite voxel file", "svh"}}
+    );
+}
+
+void NodeHierarchy::import_file() {
+    open_file_dialog(
+        [this](const IO::FileLocation& location) {
+            model_load_atomic.store(false);
+
+            loaded_location = {};
+            engine.ecs.clear();
+
+            const ResourceRef<VoxelScene> resource = engine.resources.load_resource<VoxelScene>(location);
+            recurse_build_scene(resource->hierarchy);
+
+            model_load_atomic.store(true);
+            model_load_atomic.notify_one();
+        },
+        {{"Vengi voxel file", "vengi"}}
+    );
 }
 
 void NodeHierarchy::display() {
     model_load_atomic.wait(false);
-    menu_bar();
 
     const entt::basic_view view = engine.ecs.get_registry().view<Name, Transform>();
     for (const auto&& [entity, name, transform] : view.each()) {
@@ -102,6 +143,20 @@ void NodeHierarchy::recurse_parse_scene(Entity entity, const Transform& transfor
         const Transform& child_transform = engine.ecs.get_component<Transform>(child);
         recurse_parse_scene(child, child_transform, node.children.emplace_back());
     }
+}
+
+std::vector<char> NodeHierarchy::encode_voxel_scene() {
+    const auto& entities = engine.ecs.get_registry().storage<Transform>();
+    if (entities.empty()) return {};  // Return empty scene encoding.
+
+    VoxelSceneNode node;
+    for (const auto&& [entity, transform] : entities.each()) {
+        if (transform.has_parent()) continue;
+
+        recurse_parse_scene(entity, transform, node);
+    }
+
+    return encode_svh(node);
 }
 
 void NodeHierarchy::recurse_display_node(const Entity entity, const Name& name, const Transform& transform) {
