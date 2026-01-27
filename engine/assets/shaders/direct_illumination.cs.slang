@@ -31,15 +31,43 @@ RWStructuredBuffer<cache::Slot> macrofacet_illuminance_cache;
 /* Visibility buffer. */
 Texture2D<uint2> vbuffer;
 
-inline float3 direct_illuminance(const float3 point, const float3 normal, const uint seed) {
+struct LightSample {
+    uint i; /* Selected light index. */
+    float rcp_pdf; /* Reciprocal probability distribution function. */
+};
+
+/* Pick a light to sample for a given sample point using reservoir sampling. */
+inline LightSample pick_light(const float3 point, const float3 normal, inout uint seed) {
+    /* Reservoir state */
+    uint i = 0u;
+    float w_sum = 0.0f;
+    float w_i = 0.0f;
+
+    for (uint l = 0u; l < scene_view.light_count; ++l) {
+        /* Calculate light weight */
+        const Light light = lights[l];
+        const float t = distance(point, light.origin);
+        const float w = (t < (light.attenuation_radius + light.source_radius)) ? 1.0f : 0.0f;
+
+        w_sum += w; /* Update the reservoir */
+        if (rand_float(seed) * w_sum < w) {
+            i = l;
+            w_i = w;
+        }
+    }
+
+    return LightSample(i, w_sum / w_i);
+}
+
+inline float3 direct_illuminance(const float3 point, const float3 normal, inout uint seed) {
     if (scene_view.light_count == 0u) return 0.0f;
 
     /* Fetch a light to sample */
-    const uint light_index = (uint)(r1(seed) * (float)scene_view.light_count);
-    const Light light = lights[light_index];
+    const LightSample light_sample = pick_light(point, normal, seed);
+    const Light light = lights[light_sample.i];
 
     /* Calculate the direction and distance to the light */
-    const float3 light_pos = light.origin + sample_hemisphere_uniform(normalize(light.origin - point), r2(seed)) * light.source_radius;
+    const float3 light_pos = light.origin + sample_hemisphere_uniform(normalize(light.origin - point), rand_float2(seed)) * light.source_radius;
     const float3 light_dir = normalize(light_pos - point);
     const float ndotl = max(0.0f, dot(normal, light_dir));
     if (ndotl == 0.0f) return 0.0f;
@@ -55,7 +83,7 @@ inline float3 direct_illuminance(const float3 point, const float3 normal, const 
     const float attenuation = (inverse_dist * inverse_dist) / (1.0f + 4.0f * relative_dist);
 
     /* Evaluate illuminance if there is no occlusion */
-    return light.luminance * ndotl * attenuation;
+    return light.luminance * ndotl * attenuation * light_sample.rcp_pdf;
 }
 
 [shader("compute")]
@@ -96,18 +124,20 @@ void main(int2 thread_id: SV_DispatchThreadID) {
     const float3 hit_point = ray.origin + ray.dir * geo.depth + geo.normal * 0.001f;
 
     /* Generate a seed for the current pixel */
-    const uint seed = thread_id.x + thread_id.y * resolution.x + (render_view.frame_index % (resolution.x * resolution.y));
+    uint seed = thread_id.x + thread_id.y * resolution.x + (render_view.frame_index * (resolution.x * resolution.y));
+
+    float3 illuminance = direct_illuminance(hit_point, geo.normal, seed);
 
     /* Trace light occlusion */
-    // const float3 ray_dir = sample_hemisphere(geo.normal, r2(seed));
-    // const Ray occlusion_ray = custom_ray(hit_point + geo.normal * 0.001f, ray_dir);
-    // const float t = occlusion_bvh2(tlas_nodes, object_indices, objects, occlusion_ray, 1e30f);
-    // float3 illuminance = 0.0f;
-    // if (t >= 1e30f) {
-    //     illuminance += float3(0.3f, 0.3f, 0.3f);
+    // const float3 ray_dir = sample_hemisphere_cosine(geo.normal, r2(seed));
+    // const Ray gi_ray = custom_ray(hit_point, ray_dir);
+    // const Hit hit = trace_bvh2<false>(tlas_nodes, object_indices, objects, gi_ray, 32.0f);
+    // if (hit.t < 32.0f) {
+    //     // const uint64_t hit_key = pack_visibility(hit);
+    //     // illuminance += cache::sample(macrofacet_illuminance_cache, hit_key, render_view.frame_index);
+    // } else {
+    //     illuminance += 0.05f;
     // }
-
-    const float3 illuminance = direct_illuminance(hit_point, geo.normal, seed);
 
     /* Insert the sample into the illuminance cache */
     cache::insert(macrofacet_illuminance_cache, facet_key, illuminance);

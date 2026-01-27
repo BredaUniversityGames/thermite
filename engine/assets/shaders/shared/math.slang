@@ -86,6 +86,22 @@ public float2 r2(const uint n) {
     return frac(n * float2(0.2451223337533073f, 0.4301597090019468f));
 }
 
+uint pcg(inout uint state) {
+    state = state * 747796405u + 2891336453u;
+    uint word = ((state >> ((state >> 28u) + 4u)) ^ state) * 277803737u;
+    return (word >> 22u) ^ word;
+}
+
+/* Random float in range [0, 1) */
+public float rand_float(inout uint state) {
+    return pcg(state) / 4294967296.0f;
+}
+
+/* Random float2 in range [0, 1) */
+public float2 rand_float2(inout uint state) {
+    return float2(rand_float(state), rand_float(state));
+}
+
 /* Generate a sample direction within a cone around a direction vector. */
 public float3 sample_cone(const float3 dir, const float half_angle, const float2 uv) {
     const float cos_theta = 1.0f - uv.x * (1.0f - half_angle);
