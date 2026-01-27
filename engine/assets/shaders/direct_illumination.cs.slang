@@ -31,13 +31,13 @@ RWStructuredBuffer<cache::Slot> macrofacet_illuminance_cache;
 /* Visibility buffer. */
 Texture2D<uint2> vbuffer;
 
-struct LightSample {
+struct PickedLight {
     uint i; /* Selected light index. */
     float rcp_pdf; /* Reciprocal probability distribution function. */
 };
 
 /* Pick a light to sample for a given sample point using reservoir sampling. */
-inline LightSample pick_light(const float3 point, const float3 normal, inout uint seed) {
+inline PickedLight pick_light(const float3 point, const float3 normal, inout uint seed) {
     /* Reservoir state */
     uint i = 0u;
     float w_sum = 0.0f, w_i = 0.0f;
@@ -53,34 +53,56 @@ inline LightSample pick_light(const float3 point, const float3 normal, inout uin
         }
     }
 
-    return LightSample(i, w_sum / w_i);
+    return PickedLight(i, w_sum / w_i);
 }
 
 inline float3 direct_illuminance(const float3 point, const float3 normal, inout uint seed) {
     if (scene_view.light_count == 0u) return 0.0f;
 
     /* Fetch a light to sample */
-    const LightSample light_sample = pick_light(point, normal, seed);
-    const Light light = lights[light_sample.i];
+    const PickedLight picked_light = pick_light(point, normal, seed);
+    const Light light = lights[picked_light.i];
+
+    const LightSample light_sample = sample_light(point, light, rand_float2(seed));
+    const float t = occlusion_bvh2(tlas_nodes, object_indices, objects, custom_ray(point, light_sample.dir), light_sample.tmax);
+    if (t < light_sample.tmax) return 0.0f;
+
+    float attenuation = 0.0f;
+    /* Distance based attenuation */
+    if (light.type != LightType::SUN_LIGHT) {
+        const float relative_dist = saturate(light_sample.tmax / light.attenuation_radius);
+        const float inverse_dist = 1.0f - relative_dist * relative_dist;
+        attenuation = (inverse_dist * inverse_dist) / (1.0f + 4.0f * relative_dist);
+    }
+
+    /* Spot based attenuation */
+    if (light.type == LightType::SPOT_LIGHT) {
+        const float cos_theta = dot(-light_sample.dir, light.direction);
+        const float cos_inner = lerp(light.culling_angle, 1.0f, light.spot_blend);
+        const float spot = saturate((cos_theta - light.culling_angle) / (cos_inner - light.culling_angle));
+        attenuation *= spot * spot;
+    }
+
+    return light.luminance * max(0.0f, dot(normal, light_sample.dir)) * attenuation * picked_light.rcp_pdf * light_sample.rcp_pdf;
 
     /* Calculate the direction and distance to the light */
-    const float3 light_pos = light.origin + sample_hemisphere_uniform(normalize(light.origin - point), rand_float2(seed)) * light.source_radius;
-    const float3 light_dir = normalize(light_pos - point);
-    const float ndotl = max(0.0f, dot(normal, light_dir));
-    if (ndotl == 0.0f) return 0.0f;
-    const float light_t = distance(light_pos, point);
-    if (light_t >= light.attenuation_radius) return 0.0f;
+    // const float3 light_pos = light.origin + sample_hemisphere_uniform(normalize(light.origin - point), rand_float2(seed)) * light.source_radius;
+    // const float3 light_dir = normalize(light_pos - point);
+    // const float ndotl = max(0.0f, dot(normal, light_dir));
+    // if (ndotl == 0.0f) return 0.0f;
+    // const float light_t = distance(light_pos, point);
+    // if (light_t >= light.attenuation_radius) return 0.0f;
 
     /* Trace a ray towards the light to check for occlusions */
-    const float t = occlusion_bvh2(tlas_nodes, object_indices, objects, custom_ray(point, light_dir), light_t);
-    if (t < light_t) return 0.0f;
+    // const float t = occlusion_bvh2(tlas_nodes, object_indices, objects, custom_ray(point, light_dir), light_t);
+    // if (t < light_t) return 0.0f;
 
-    const float relative_dist = saturate(light_t / light.attenuation_radius);
-    const float inverse_dist = 1.0f - relative_dist * relative_dist;
-    const float attenuation = (inverse_dist * inverse_dist) / (1.0f + 4.0f * relative_dist);
+    // const float relative_dist = saturate(light_t / light.attenuation_radius);
+    // const float inverse_dist = 1.0f - relative_dist * relative_dist;
+    // const float attenuation = (inverse_dist * inverse_dist) / (1.0f + 4.0f * relative_dist);
 
     /* Evaluate illuminance if there is no occlusion */
-    return light.luminance * ndotl * attenuation * light_sample.rcp_pdf;
+    // return light.luminance * ndotl * attenuation * light_sample.rcp_pdf;
 }
 
 [shader("compute")]

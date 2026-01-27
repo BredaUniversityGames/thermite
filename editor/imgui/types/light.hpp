@@ -57,7 +57,7 @@ inline void tag_invoke(ImReflect::ImInput_t, const char*, tmt::Light& value, ImS
             help_tooltip("Radius at which the light influence will be zero.");
             
             ImGui::DragFloat("Luminous Flux", &light.luminous_flux, 1.0f, 0.0f, 10000.0f, "%.3f lm");
-            help_tooltip("Luminous flux of the sphere light. (in lumen, default: 100lm)");
+            help_tooltip("Luminous flux of the sphere light.");
 
             value.light = light;
             break;
@@ -70,10 +70,10 @@ inline void tag_invoke(ImReflect::ImInput_t, const char*, tmt::Light& value, ImS
             if (ImGui::DragFloat("Source Angle", &source_angle, 0.1f, 0.0f, 90.0f, "%.3f deg")) {
                 light.source_angle = glm::radians(source_angle);
             }
-            help_tooltip("Angular diameter of the sun light. (larger means softer shadows)");
+            help_tooltip("Angle between the center of the sun and its edge, as seen from your position. (larger means softer shadows)");
             
             ImGui::DragFloat("Luminous Intensity", &light.luminous_intensity, 1.0f, 0.0f, 10000.0f, "%.3f cd");
-            help_tooltip("Luminous flux of the sphere light. (in lumen, default: 100lm)");
+            help_tooltip("Luminous intensity of the sun light.");
 
             value.light = light;
             break;
@@ -97,8 +97,8 @@ inline void tag_invoke(ImReflect::ImInput_t, const char*, tmt::Light& value, ImS
             }
             help_tooltip("The softness of the spot light edge.");
             
-            ImGui::DragFloat("Luminous Flux", &light.luminous_flux, 1.0f, 0.0f, 10000.0f, "%.3f lm");
-            help_tooltip("Luminous flux of the spot light. (in lumen, default: 100lm)");
+            ImGui::DragFloat("Luminous Intensity", &light.luminous_intensity, 1.0f, 0.0f, 10000.0f, "%.3f cd");
+            help_tooltip("Luminous intensity of the spot light.");
 
             value.light = light;
             break;
@@ -113,7 +113,7 @@ inline void tag_invoke(ImReflect::ImInput_t, const char*, tmt::Light& value, ImS
             help_tooltip("Distance at which the light influence will be zero.");
             
             ImGui::DragFloat("Luminous Flux", &light.luminous_flux, 1.0f, 0.0f, 10000.0f, "%.3f lm");
-            help_tooltip("Luminous flux of the tube light. (in lumen, default: 100lm)");
+            help_tooltip("Luminous flux of the tube light.");
 
             value.light = light;
             break;

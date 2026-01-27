@@ -26,11 +26,11 @@ struct UniversalLightDesc {
     float source_radius = 0.0f;
 
     /* Radius/distance at which the emitted light influence reaches zero. */
-    float attenuation_radius = 0.0f;
+    float attenuation_radius = 1e30f;
     /* Radius/distance at which the light source will be culled. */
-    float culling_radius = 0.0f;
-    /* Cosine of the angular radius of the spot light beam. */
-    float beam_angle = -1.0f; /* cos(pi) */
+    float culling_radius = 1e30f;
+    /* Cosine of the angular radius of the spot/sun light beam. */
+    float culling_angle = -1.0f;
     /* The softness of the spot light edge. (0..1) */
     float spot_blend = 0.0f;
 
@@ -146,7 +146,9 @@ void SceneView::update_lights(RenderGraph& render_graph, const RenderView&) {
         UniversalLightDesc& gpu_light = gpu_lights.emplace_back();
         gpu_light.light_type = light.type;
         gpu_light.origin = transform.get_world_position();
-        gpu_light.luminance = light.calculate_luminance();
+        gpu_light.direction = transform.get_forward();
+        const glm::vec3 scale = transform.get_world_scale();
+        gpu_light.luminance = light.calculate_luminance(scale);
 
         switch (light.type) {
             /* Spherical area light */
@@ -155,6 +157,31 @@ void SceneView::update_lights(RenderGraph& render_graph, const RenderView&) {
                 gpu_light.source_radius = sphere_light.source_radius;
                 gpu_light.attenuation_radius = sphere_light.attenuation_radius;
                 gpu_light.culling_radius = sphere_light.attenuation_radius;
+                break;
+            }
+            /* Sun area light */
+            case LightType::SUN_LIGHT: {
+                const SunLight sun_light = std::get<SunLight>(light.light);
+                gpu_light.source_radius = glm::cos(sun_light.source_angle);
+                break;
+            }
+            /* Spot light */
+            case LightType::SPOT_LIGHT: {
+                const SpotLight spot_light = std::get<SpotLight>(light.light);
+                gpu_light.source_radius = spot_light.source_radius;
+                gpu_light.attenuation_radius = spot_light.attenuation_distance;
+                gpu_light.culling_angle = glm::cos(spot_light.beam_angle * 0.5f);
+                gpu_light.spot_blend = spot_light.spot_blend;
+                gpu_light.culling_radius = spot_light.attenuation_distance;
+                break;
+            }
+            /* Spot light */
+            case LightType::TUBE_LIGHT: {
+                const TubeLight tube_light = std::get<TubeLight>(light.light);
+                gpu_light.source_radius = tube_light.source_radius;
+                gpu_light.attenuation_radius = tube_light.attenuation_distance;
+                gpu_light.source_length = scale.z;
+                gpu_light.culling_radius = scale.z * 0.5f + tube_light.attenuation_distance;
                 break;
             }
         }

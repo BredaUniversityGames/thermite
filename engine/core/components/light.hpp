@@ -31,11 +31,11 @@ struct SphereLight {
 
 /* Directional area light. */
 struct SunLight {
-    /* Angular diameter of the sun light. (in radians, larger means softer shadows) */
+    /* Angle between the center of the sun and its edge, as seen from your position. (in radians, larger means softer shadows) */
     float source_angle = 0.1f;
 
-    /* Luminous intensity of the sun light. (in candela, default: 100cd) */
-    float luminous_intensity = 100.0f;
+    /* Luminous intensity of the sun light. (in candela, default: 20cd) */
+    float luminous_intensity = 20.0f;
 };
 
 /* Spot light. */
@@ -49,8 +49,8 @@ struct SpotLight {
     /* The softness of the spot light edge. (0..1, default: 20%) */
     float spot_blend = 0.2f;
 
-    /* Luminous flux of the spot light. (in lumen, default: 100lm) */
-    float luminous_flux = 100.0f;
+    /* Luminous intensity of the spot light. (in candela, default: 20cd) */
+    float luminous_intensity = 20.0f;
 };
 
 /* Tube area light. */
@@ -78,7 +78,7 @@ struct Light {
     std::variant<SphereLight, SunLight, SpotLight, TubeLight> light {};
 
     /* Calculate the luminance of the light source. */
-    glm::vec3 calculate_luminance() const;
+    glm::vec3 calculate_luminance(const glm::vec3 scale) const;
 };
 
 }  // namespace tmt
@@ -86,7 +86,7 @@ struct Light {
 /* Light types */
 TMT_OBJECT(tmt::SphereLight, (source_radius, attenuation_radius, luminous_flux));
 TMT_OBJECT(tmt::SunLight, (source_angle, luminous_intensity));
-TMT_OBJECT(tmt::SpotLight, (source_radius, attenuation_distance, beam_angle, spot_blend, luminous_flux));
+TMT_OBJECT(tmt::SpotLight, (source_radius, attenuation_distance, beam_angle, spot_blend, luminous_intensity));
 TMT_OBJECT(tmt::TubeLight, (source_radius, attenuation_distance, luminous_flux));
 
 /* Component */

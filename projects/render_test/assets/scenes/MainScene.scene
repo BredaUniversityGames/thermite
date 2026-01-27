@@ -156,7 +156,7 @@
         "14": {
             "local_position": {
                 "x": 9.388147354125977,
-                "y": 7.736207485198975,
+                "y": 12.586021423339844,
                 "z": 65.44178771972656
             },
             "local_rotation": {
@@ -180,15 +180,15 @@
                 "z": 78.78814697265625
             },
             "local_rotation": {
-                "w": 0.9331359267234802,
-                "x": 0.0,
-                "y": -0.3595237731933594,
-                "z": 0.0
+                "w": 0.9342567324638367,
+                "x": 0.029628628864884377,
+                "y": -0.3551798164844513,
+                "z": 0.011567392386496067
             },
             "local_scale": {
-                "x": 0.9999988079071045,
-                "y": 1.0,
-                "z": 0.9999988079071045
+                "x": 0.9999998807907104,
+                "y": 0.9999997615814209,
+                "z": 0.9999998211860657
             },
             "parent": 4294967295,
             "children": []
@@ -200,15 +200,15 @@
                 "z": 120.85078430175781
             },
             "local_rotation": {
-                "w": 0.9643778204917908,
-                "x": 0.1442396640777588,
-                "y": -0.21930448710918427,
-                "z": 0.0328008309006691
+                "w": 0.999171793460846,
+                "x": -0.017934195697307587,
+                "y": -0.0356765054166317,
+                "z": -0.007827133871614933
             },
             "local_scale": {
-                "x": 0.9999992847442627,
-                "y": 0.9999992847442627,
-                "z": 9.999994277954102
+                "x": 0.9999999403953552,
+                "y": 0.9999998807907104,
+                "z": 8.999999046325684
             },
             "parent": 4294967295,
             "children": []
@@ -717,8 +717,8 @@
     "Light": {
         "10": {
             "color": {
-                "x": 0.25,
-                "y": 0.25,
+                "x": 1.0,
+                "y": 1.0,
                 "z": 1.0
             },
             "temperature": 16000.0,
@@ -728,7 +728,7 @@
                 "value": {
                     "source_radius": 1.0,
                     "attenuation_radius": 25.0,
-                    "luminous_flux": 70.0
+                    "luminous_flux": 3000.0
                 }
             }
         },
@@ -738,22 +738,22 @@
                 "y": 1.0,
                 "z": 1.0
             },
-            "temperature": 1250.0,
+            "temperature": 3030.0,
             "type": "SPHERE_LIGHT",
             "light": {
                 "index": 0,
                 "value": {
-                    "source_radius": 2.0,
+                    "source_radius": 1.0,
                     "attenuation_radius": 20.0,
-                    "luminous_flux": 60.0
+                    "luminous_flux": 1000.0
                 }
             }
         },
         "12": {
             "color": {
-                "x": 0.09803921729326248,
+                "x": 0.27799999713897705,
                 "y": 1.0,
-                "z": 0.09803921729326248
+                "z": 0.23800000548362732
             },
             "temperature": 6500.0,
             "type": "SPHERE_LIGHT",
@@ -761,8 +761,8 @@
                 "index": 0,
                 "value": {
                     "source_radius": 1.5,
-                    "attenuation_radius": 20.0,
-                    "luminous_flux": 30.0
+                    "attenuation_radius": 20.600000381469727,
+                    "luminous_flux": 1000.0
                 }
             }
         },
@@ -777,9 +777,9 @@
             "light": {
                 "index": 0,
                 "value": {
-                    "source_radius": 2.0,
+                    "source_radius": 3.0,
                     "attenuation_radius": 30.0,
-                    "luminous_flux": 80.0
+                    "luminous_flux": 16000.0
                 }
             }
         },
@@ -794,8 +794,8 @@
             "light": {
                 "index": 1,
                 "value": {
-                    "source_angle": 0.10000000149011612,
-                    "luminous_intensity": 100.0
+                    "source_angle": 0.06806784123182297,
+                    "luminous_intensity": 0.0
                 }
             }
         },
@@ -810,11 +810,11 @@
             "light": {
                 "index": 2,
                 "value": {
-                    "source_radius": 0.20000000298023224,
-                    "attenuation_distance": 20.0,
-                    "beam_angle": 0.6108652353286743,
-                    "spot_blend": 0.30000001192092896,
-                    "luminous_flux": 100.0
+                    "source_radius": 1.149999976158142,
+                    "attenuation_distance": 23.399999618530273,
+                    "beam_angle": 0.7853981852531433,
+                    "spot_blend": 0.6710000038146973,
+                    "luminous_intensity": 115.01000213623047
                 }
             }
         },
@@ -824,14 +824,14 @@
                 "y": 1.0,
                 "z": 1.0
             },
-            "temperature": 13000.0,
+            "temperature": 3500.0,
             "type": "TUBE_LIGHT",
             "light": {
                 "index": 3,
                 "value": {
-                    "source_radius": 0.15000000596046448,
-                    "attenuation_distance": 10.0,
-                    "luminous_flux": 100.0
+                    "source_radius": 0.20000000298023224,
+                    "attenuation_distance": 11.5,
+                    "luminous_flux": 800.0
                 }
             }
         }
