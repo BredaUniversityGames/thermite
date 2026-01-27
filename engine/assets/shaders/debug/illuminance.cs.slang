@@ -3,7 +3,7 @@ import visibility;
 import math;
 import voxel;
 import cache;
-import debug;
+import colorspace;
 
 /* Active render view */
 ConstantBuffer<RenderView> render_view;
@@ -13,14 +13,6 @@ Texture2D<uint2> vbuffer;
 RWStructuredBuffer<cache::Slot> macrofacet_illuminance_cache;
 /* Render target. (Output) */
 RWTexture2D<float4> render_target;
-
-/**
- * ACES filmic tonemapping.
- * Source: <https://knarkowicz.wordpress.com/2016/01/06/aces-filmic-tone-mapping-curve/>
- */
-inline float3 aces_filmic(const float3 x) {
-    return saturate((x * (2.51 * x + 0.03)) / (x * (2.43 * x + 0.59) + 0.14));
-}
 
 [shader("compute")]
 [numthreads(16, 8, 1)]
@@ -39,5 +31,5 @@ void main(int2 thread_id: SV_DispatchThreadID) {
 
     /* Sample the illuminance cache */
     const float3 illuminance = cache::sample(macrofacet_illuminance_cache, facet_key, render_view.frame_index);
-    render_target[thread_id] = float4(pow(aces_filmic(illuminance), 1.0f / 2.2f), 1.0f); /* TEMP: Remove tonemapping! */
+    render_target[thread_id] = float4(cs::delinearize_srgb(cs::acescg_to_linear_srgb(illuminance)), 1.0f); /* TEMP: Remove tonemapping! */
 }

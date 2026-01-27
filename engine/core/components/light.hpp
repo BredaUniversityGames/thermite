@@ -66,7 +66,7 @@ struct TubeLight {
 
 /* Light source component. */
 struct Light {
-    /* Color of the light emitted. */
+    /* Color of the light emitted. (in ACEScg color-space) */
     glm::vec3 color = glm::vec3(1.0f, 1.0f, 1.0f);
     /* Temperature of the light emitted. (in kelvin, default: 6500k) */
     float temperature = 6500.0f;
@@ -76,6 +76,9 @@ struct Light {
 
     /* Light properties. */
     std::variant<SphereLight, SunLight, SpotLight, TubeLight> light {};
+
+    /* Calculate the luminance of the light source. */
+    glm::vec3 calculate_luminance() const;
 };
 
 }  // namespace tmt

@@ -645,35 +645,35 @@
     "Light": {
         "10": {
             "color": {
-                "x": 0.09803921729326248,
-                "y": 0.09803921729326248,
+                "x": 0.25,
+                "y": 0.25,
                 "z": 1.0
             },
-            "temperature": 6500.0,
+            "temperature": 16000.0,
             "type": "SPHERE_LIGHT",
             "light": {
                 "index": 0,
                 "value": {
                     "source_radius": 1.0,
                     "attenuation_radius": 25.0,
-                    "luminous_flux": 50.0
+                    "luminous_flux": 70.0
                 }
             }
         },
         "11": {
             "color": {
                 "x": 1.0,
-                "y": 0.09803921729326248,
-                "z": 0.09803921729326248
+                "y": 1.0,
+                "z": 1.0
             },
-            "temperature": 6500.0,
+            "temperature": 1250.0,
             "type": "SPHERE_LIGHT",
             "light": {
                 "index": 0,
                 "value": {
                     "source_radius": 2.0,
                     "attenuation_radius": 20.0,
-                    "luminous_flux": 50.0
+                    "luminous_flux": 60.0
                 }
             }
         },
@@ -690,14 +690,14 @@
                 "value": {
                     "source_radius": 1.5,
                     "attenuation_radius": 20.0,
-                    "luminous_flux": 40.0
+                    "luminous_flux": 30.0
                 }
             }
         },
         "13": {
             "color": {
-                "x": 0.6534652709960938,
-                "y": 0.0,
+                "x": 0.6830000281333923,
+                "y": 0.15000000596046448,
                 "z": 1.0
             },
             "temperature": 6500.0,
@@ -706,7 +706,7 @@
                 "index": 0,
                 "value": {
                     "source_radius": 2.0,
-                    "attenuation_radius": 35.0,
+                    "attenuation_radius": 30.0,
                     "luminous_flux": 80.0
                 }
             }

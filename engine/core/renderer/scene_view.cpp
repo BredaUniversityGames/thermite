@@ -134,7 +134,7 @@ void SceneView::update_lights(RenderGraph& render_graph, const RenderView& rende
 
         gpu_light.origin = transform.get_world_position();
         gpu_light.source_radius = sphere_light.source_radius;
-        gpu_light.luminance = light.color * sphere_light.luminous_flux / (glm::pi<float>() * 4.0f);
+        gpu_light.luminance = light.calculate_luminance();
         gpu_light.attenuation_radius = sphere_light.attenuation_radius;
     }
 

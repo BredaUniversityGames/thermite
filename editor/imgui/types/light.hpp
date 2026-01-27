@@ -3,11 +3,16 @@
 #include <ImReflect.hpp>
 
 #include "engine/core/components/light.hpp"
+#include "engine/shared/colorspace.hpp"
 #include "editor/font/icon_lookups.hpp"
 
 inline void help_tooltip(const char* desc) {
     if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayShort))
         ImGui::SetTooltip("%s", desc);
+}
+
+inline void color_preview() {
+
 }
 
 inline void tag_invoke(ImReflect::ImInput_t, const char*, tmt::Light& value, ImSettings&, ImResponse&) {
@@ -112,8 +117,20 @@ inline void tag_invoke(ImReflect::ImInput_t, const char*, tmt::Light& value, ImS
     ImGui::Separator();
 
     /* Shared parameters */
-    ImGui::ColorEdit3("Color", &value.color.x);
-    help_tooltip("Color of the light emitted. (multiplied together with temperature)");
-    ImGui::DragFloat("Temperature", &value.temperature, 1.0f, 0.0f, 10000.0f, "%.3f K");
-    help_tooltip("Temperature of the light emitted. (in kelvin, default: 6500k)");
+    ImGui::DragFloat3("Color (ACEScg)", &value.color.x, 0.01f, 0.0f, 1.0f);
+    help_tooltip("Color of the light emitted. (in ACEScg, multiplied together with temperature)");
+    ImGui::DragFloat("Temperature", &value.temperature, 10.0f, 1000.0f, 16000.0f, "%.3f K");
+    help_tooltip("Temperature of the light emitted. (in kelvin, default: 6500k whitepoint)");
+
+    /* Calculate the non-linear SRGB (Rec.709) color of the light source */
+    const glm::vec3 linear_srgb = tmt::cs::acescg_to_linear_srgb(value.color) * tmt::cs::temperature_to_linear_srgb(value.temperature);
+    const glm::vec3 nonlinear_srgb = tmt::cs::delinearize_srgb(linear_srgb);
+    const ImU32 color = ImGui::ColorConvertFloat4ToU32(ImVec4(nonlinear_srgb.x, nonlinear_srgb.y, nonlinear_srgb.z, 1.0f));
+
+    /* Draw a little color preview */
+    ImDrawList* draw_list = ImGui::GetWindowDrawList();
+    const ImVec2 min = ImGui::GetCursorScreenPos() + ImVec2(0.0f, 4.0f);
+    const ImVec2 max = min + ImVec2(ImGui::GetContentRegionAvail().x, 64.0f);
+    draw_list->AddRectFilled(min, max, color, 0.0f);
+    ImGui::SetCursorScreenPos(ImVec2(min.x, max.y + 4.0f));
 }
