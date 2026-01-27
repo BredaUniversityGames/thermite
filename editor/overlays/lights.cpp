@@ -15,9 +15,11 @@ namespace tmt {
 
 /* Size of the reticle used for overlays. (diamond shape in the center) */
 constexpr float OVERLAY_RETICLE_SIZE = 0.01f;
+/* Fading radius for sphere light radii. */
+constexpr float FADE_RADIUS = 8.0f;
 
 /* Draw sphere light overlay. */
-inline void sphere_light_gizmo(Transform& transform, SphereLight light, bool selected) {
+inline void sphere_light_overlay(Transform& transform, SphereLight light, bool selected) {
     /* Get the position of the light source */
     const glm::vec3 pos = transform.get_world_position();
     const glm::vec3 color = selected ? colors::SELECTED : colors::DARK;
@@ -25,7 +27,6 @@ inline void sphere_light_gizmo(Transform& transform, SphereLight light, bool sel
     const float camera_dist = glm::distance(camera_pos, pos);
 
     /* Draw the radii */
-    constexpr float FADE_RADIUS = 8.0f;
     if (camera_dist > light.source_radius) { 
         engine.polyline.use_color(color, (camera_dist - light.source_radius) / FADE_RADIUS);
         engine.polyline.draw_circle(pos, light.source_radius, 32u); /* Source radius */
@@ -40,10 +41,58 @@ inline void sphere_light_gizmo(Transform& transform, SphereLight light, bool sel
     engine.polyline.draw_line(pos, pos * glm::vec3(1.0f, 0.0f, 1.0f));
 }
 
+/* Number of lines used to indicate a sun light overlay. */
+constexpr uint32_t SUN_LINES = 8u;
+/* Padding of the lines used to indicate a sun light overlay. */
+constexpr float SUN_LINES_PADDING = 0.004f;
+/* Length of the lines used to indicate a sun light overlay. */
+constexpr float SUN_LINES_LENGTH = 0.0075f;
+/* Length of the line used to indicate the sun light direction. */
+constexpr float SUN_INDICATOR_LENGTH = 10.0f;
+
+/* Draw sun light overlay. */
+inline void sun_light_overlay(Transform& transform, bool selected) {
+    /* Get the position of the light source */
+    const glm::vec3 pos = transform.get_world_position();
+    const glm::vec3 color = selected ? colors::SELECTED : colors::DARK;
+    engine.polyline.use_color(color);
+
+    /* Calculate the camera position, direction, and distance */
+    const glm::vec3 camera_pos = engine.renderer.render_view.gpu_view.origin;
+    const glm::vec3 camera_dir = glm::normalize(camera_pos - pos);
+    const float camera_dist = glm::distance(camera_pos, pos);
+
+    /* Pick a reference vector that isn't parallel to camera_dir */
+    const glm::vec3 ref = glm::abs(glm::dot(camera_dir, glm::vec3(0.0f, 1.0f, 0.0f))) > 0.99f ? glm::vec3(1.0f, 0.0f, 0.0f) : glm::vec3(0.0f, 1.0f, 0.0f);
+
+    /* Find the two axis on which the circle should be drawn */
+    const glm::vec3 axis_a = glm::normalize(glm::cross(camera_dir, ref));
+    const glm::vec3 axis_b = glm::cross(camera_dir, axis_a);
+
+    /* Finally draw the line segments which make up the circle */
+    const float step = glm::two_pi<float>() / static_cast<float>(SUN_LINES);
+    const float inner_radius = camera_dist * (OVERLAY_RETICLE_SIZE + 0.004f);
+    const float outer_radius = camera_dist * (OVERLAY_RETICLE_SIZE + 0.004f + 0.0075f);
+    for (uint32_t i = 0u; i < SUN_LINES; ++i) {
+        const float a = step * static_cast<float>(i);
+        const glm::vec3 p0 = pos + inner_radius * (axis_a * glm::cos(a) + axis_b * glm::sin(a));
+        const glm::vec3 p1 = pos + outer_radius * (axis_a * glm::cos(a) + axis_b * glm::sin(a));
+        engine.polyline.draw_line(p0, p1);
+    }
+
+    /* Draw forward facing line */
+    engine.polyline.draw_line(pos, pos + transform.get_forward() * SUN_INDICATOR_LENGTH);
+
+    /* Draw vertical line */
+    engine.polyline.use_color(color, 0.5f);
+    engine.polyline.draw_line(pos, pos * glm::vec3(1.0f, 0.0f, 1.0f));
+}
+
+/* Base cone size for the spot light overlay. */
 constexpr float SPOTLIGHT_CONE_SIZE = 10.0f;
 
 /* Draw spot light overlay. */
-inline void spot_light_gizmo(Transform& transform, const SpotLight& light, bool selected) {
+inline void spot_light_overlay(Transform& transform, const SpotLight& light, bool selected) {
     /* Get the position of the light source */
     const glm::vec3 pos = transform.get_world_position();
     const glm::vec3 dir = transform.get_forward();
@@ -96,13 +145,17 @@ void draw_lights_overlay() {
         engine.polyline.draw_circle(light_pos, distance * OVERLAY_RETICLE_SIZE, 4u);
 
         switch (light.type) {
-            /* Sphere light gizmo */
+            /* Sphere light overlay */
             case LightType::SPHERE_LIGHT:
-                sphere_light_gizmo(transform, std::get<SphereLight>(light.light), selected);
+                sphere_light_overlay(transform, std::get<SphereLight>(light.light), selected);
                 break;
-            /* Sphere light gizmo */
+            /* Sun light overlay */
+            case LightType::SUN_LIGHT:
+                sun_light_overlay(transform, selected);
+                break;
+            /* Spot light overlay */
             case LightType::SPOT_LIGHT:
-                spot_light_gizmo(transform, std::get<SpotLight>(light.light), selected);
+                spot_light_overlay(transform, std::get<SpotLight>(light.light), selected);
                 break;
             default:
                 break;
