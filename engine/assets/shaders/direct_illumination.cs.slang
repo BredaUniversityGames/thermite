@@ -40,14 +40,11 @@ struct LightSample {
 inline LightSample pick_light(const float3 point, const float3 normal, inout uint seed) {
     /* Reservoir state */
     uint i = 0u;
-    float w_sum = 0.0f;
-    float w_i = 0.0f;
+    float w_sum = 0.0f, w_i = 0.0f;
 
     for (uint l = 0u; l < scene_view.light_count; ++l) {
         /* Calculate light weight */
-        const Light light = lights[l];
-        const float t = distance(point, light.origin);
-        const float w = (t < (light.attenuation_radius + light.source_radius)) ? 1.0f : 0.0f;
+        const float w = evaluate_weight(point, normal, lights[l]);
 
         w_sum += w; /* Update the reservoir */
         if (rand_float(seed) * w_sum < w) {

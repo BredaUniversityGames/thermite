@@ -53,7 +53,7 @@ public [ForceInline] float3 srgb_to_acescg(const float3 srgb) {
 }
 
 /* Transform color from linear ACEScg to linear SRGB (Rec.709) color-space and apply tonemapping. */
-public [ForceInline] float3 acescg_to_linear_srgb(float3 acescg) {
+public [ForceInline] float3 acescg_to_linear_srgb(const float3 acescg) {
     /* Linear ACEScg -> Linear ACES2065-1 */
     const float3 aces2065 = float3(
         0.695452241f * acescg.r + 0.140678697f * acescg.g + 0.163869062f * acescg.b,
@@ -82,6 +82,12 @@ public [ForceInline] float3 delinearize_srgb(const float3 linear) {
         delinearize_srgb(linear.b)
     );
     return nonlinear_srgb;
+}
+
+/* Get the luminance of a linear ACEScg color. */
+public [ForceInline] float acescg_luminance(const float3 acescg) {
+    /* AP1 luminance coefficients */
+    return dot(acescg, float3(0.2722287168f, 0.6740817658f, 0.0536895174f));
 }
 
 }

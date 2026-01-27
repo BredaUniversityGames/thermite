@@ -13,15 +13,31 @@
 
 namespace tmt {
 
-struct GpuLight {
+/* Universal light descriptor. */
+struct UniversalLightDesc {
+    /* The kind of light source. */
+    LightType light_type {};
     /* Origin point of the light source. */
     glm::vec3 origin {};
-    /* Radius of the light source, defines the softness of its shadows. */
-    float source_radius = 0.0f;
+
     /* Exitent luminance of the light source. (in candela) */
     glm::vec3 luminance {};
-    /* Radius at which the emitted light influence reaches zero. */
+    /* Radius of the light source, defines the softness of its shadows. */
+    float source_radius = 0.0f;
+
+    /* Radius/distance at which the emitted light influence reaches zero. */
     float attenuation_radius = 0.0f;
+    /* Radius/distance at which the light source will be culled. */
+    float culling_radius = 0.0f;
+    /* Cosine of the angular radius of the spot light beam. */
+    float beam_angle = -1.0f; /* cos(pi) */
+    /* The softness of the spot light edge. (0..1) */
+    float spot_blend = 0.0f;
+
+    /* Primary direction of the light source. */
+    glm::vec3 direction = glm::vec3(0.0f, 1.0f, 0.0f);
+    /* Length of the light source. (used for tube lights) */
+    float source_length = 0.0f;
 };
 
 void SceneView::init() {
@@ -34,7 +50,7 @@ void SceneView::init() {
     bvh_nodes = bank.create_buffer("BVH Nodes Buffer", s, MAX_VOXEL_OBJECTS * 2u + 1u, sizeof(AilaLaineNode)).expect("failed to create bvh nodes buffer.");
     object_indices = bank.create_buffer("Object Indices Buffer", s, MAX_VOXEL_OBJECTS, sizeof(uint32_t)).expect("failed to create object indices buffer.");
     object_data = bank.create_buffer("Object Data Buffer", s, MAX_VOXEL_OBJECTS, sizeof(GpuVoxelObject)).expect("failed to create object data buffer.");
-    lights_data = bank.create_buffer("Lights Data Buffer", s, MAX_LIGHTS, sizeof(GpuLight)).expect("failed to create lights data buffer.");
+    lights_data = bank.create_buffer("Lights Data Buffer", s, MAX_LIGHTS, sizeof(UniversalLightDesc)).expect("failed to create lights data buffer.");
     scene_view = bank.create_buffer("Scene View Buffer", c, sizeof(GpuSceneView)).expect("failed to create scene view buffer.");
 }
 
@@ -116,33 +132,39 @@ void SceneView::update_voxel_objects(RenderGraph& render_graph) {
     render_graph.upload_buffer(object_data, gpu_objects.data(), 0u, bvh.prim_count * sizeof(GpuVoxelObject));
 }
 
-void SceneView::update_lights(RenderGraph& render_graph, const RenderView& render_view) {
+void SceneView::update_lights(RenderGraph& render_graph, const RenderView&) {
     /* Capture all lights in the scene */
     const entt::basic_group group = engine.ecs.get_registry().group<const Light>(entt::get<Transform>);
     
     /* Allocate space for all lights */
     const size_t count = std::min(group.size(), (size_t)MAX_LIGHTS);
-    std::vector gpu_lights = reserved<GpuLight>(count);
+    std::vector gpu_lights = reserved<UniversalLightDesc>(count);
     
     /* Iterate over all lights */
     for (auto&& [entity, light, transform] : group.each()) {
-        /* TEMP: Skip all lights which are not sphere lights. */
-        if (light.type != LightType::SPHERE_LIGHT) continue;
-
-        GpuLight& gpu_light = gpu_lights.emplace_back();
-        const SphereLight sphere_light = std::get<SphereLight>(light.light);
-
+        /* Create a new universal light descriptor */
+        UniversalLightDesc& gpu_light = gpu_lights.emplace_back();
+        gpu_light.light_type = light.type;
         gpu_light.origin = transform.get_world_position();
-        gpu_light.source_radius = sphere_light.source_radius;
         gpu_light.luminance = light.calculate_luminance();
-        gpu_light.attenuation_radius = sphere_light.attenuation_radius;
+
+        switch (light.type) {
+            /* Spherical area light */
+            case LightType::SPHERE_LIGHT: {
+                const SphereLight sphere_light = std::get<SphereLight>(light.light);
+                gpu_light.source_radius = sphere_light.source_radius;
+                gpu_light.attenuation_radius = sphere_light.attenuation_radius;
+                gpu_light.culling_radius = sphere_light.attenuation_radius;
+                break;
+            }
+        }
     }
 
     GpuSceneView gpu_view {};
     gpu_view.light_count = (uint32_t)gpu_lights.size();
 
     /* Upload the light buffers */
-    render_graph.upload_buffer(lights_data, gpu_lights.data(), 0u, gpu_lights.size() * sizeof(GpuLight));
+    render_graph.upload_buffer(lights_data, gpu_lights.data(), 0u, gpu_lights.size() * sizeof(UniversalLightDesc));
     render_graph.upload_buffer(scene_view, &gpu_view, 0u, sizeof(GpuSceneView));
 }
 
