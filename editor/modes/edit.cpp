@@ -24,6 +24,7 @@ void EditMode::display_main_menu() {
     if (ImGui::MenuItem("Save As...")) editor.windows[Editor::Mode::EDIT].get<NodeHierarchy>().save_svh_as();
     ImGui::Separator();
     if (ImGui::MenuItem("Import...")) editor.windows[Editor::Mode::EDIT].get<NodeHierarchy>().import_file();
+    if (ImGui::MenuItem("Export...")) editor.windows[Editor::Mode::EDIT].get<NodeHierarchy>().export_file();
 
     ImGui::EndMenu();
 }

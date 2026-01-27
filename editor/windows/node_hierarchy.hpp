@@ -25,6 +25,7 @@ class NodeHierarchy : public IWindow {
     void save_svh();
     void save_svh_as();
     void import_file();
+    void export_file();
 
     void display() override;
 
