@@ -16,7 +16,7 @@ namespace tmt {
 /* Size of the reticle used for overlays. (diamond shape in the center) */
 constexpr float OVERLAY_RETICLE_SIZE = 0.01f;
 /* Fading radius for sphere light radii. */
-constexpr float FADE_RADIUS = 8.0f;
+constexpr float SPHERE_FADE_RADIUS = 8.0f;
 
 /* Draw sphere light overlay. */
 inline void sphere_light_overlay(Transform& transform, SphereLight light, bool selected) {
@@ -28,11 +28,11 @@ inline void sphere_light_overlay(Transform& transform, SphereLight light, bool s
 
     /* Draw the radii */
     if (camera_dist > light.source_radius) { 
-        engine.polyline.use_color(color, (camera_dist - light.source_radius) / FADE_RADIUS);
+        engine.polyline.use_color(color, (camera_dist - light.source_radius) / SPHERE_FADE_RADIUS);
         engine.polyline.draw_circle(pos, light.source_radius, 32u); /* Source radius */
     }
     if (camera_dist > light.attenuation_radius) { 
-        engine.polyline.use_color(color, (camera_dist - light.attenuation_radius) / FADE_RADIUS);
+        engine.polyline.use_color(color, (camera_dist - light.attenuation_radius) / SPHERE_FADE_RADIUS);
         engine.polyline.draw_circle(pos, light.attenuation_radius, 32u); /* Attenuation radius */
     }
 
@@ -121,6 +121,34 @@ inline void spot_light_overlay(Transform& transform, const SpotLight& light, boo
     engine.polyline.draw_world_circle(cone_end, dir, cone_inner_radius, 32u);
 }
 
+/* Fading radius for tube light. */
+constexpr float TUBE_FADE_RADIUS = 2.0f;
+
+/* Draw tube light overlay. */
+inline void tube_light_overlay(Transform& transform, TubeLight light, bool selected) {
+    /* Get the position of the light source */
+    const glm::vec3 pos = transform.get_world_position();
+    const glm::vec3 dir = transform.get_forward();
+    const float half_length = transform.get_world_scale().z * 0.5f;
+    const glm::vec3 color = selected ? colors::SELECTED : colors::DARK;
+    const glm::vec3 camera_pos = engine.renderer.render_view.gpu_view.origin;
+    const float camera_dist = glm::distance(camera_pos, pos);
+
+    /* Draw the culling distance */
+    const float culling_distance = light.attenuation_distance + half_length;
+    if (camera_dist > culling_distance) { 
+        engine.polyline.use_color(color, (camera_dist - culling_distance) / SPHERE_FADE_RADIUS);
+        engine.polyline.draw_circle(pos, culling_distance, 32u); /* Culling distance */
+    }
+
+    /* Draw the source tube area */
+    const float tube_distance = glm::max(half_length, light.source_radius);
+    if (camera_dist > tube_distance) {
+        engine.polyline.use_color(color, (camera_dist - tube_distance) / TUBE_FADE_RADIUS);
+        engine.polyline.draw_tube(pos - dir * half_length, pos + dir * half_length, light.source_radius, 16u);
+    }
+}
+
 /* Draw the overlay for light components. */
 void draw_lights_overlay() {
     /* Capture all lights in the scene */
@@ -156,6 +184,10 @@ void draw_lights_overlay() {
             /* Spot light overlay */
             case LightType::SPOT_LIGHT:
                 spot_light_overlay(transform, std::get<SpotLight>(light.light), selected);
+                break;
+            /* Tube light overlay */
+            case LightType::TUBE_LIGHT:
+                tube_light_overlay(transform, std::get<TubeLight>(light.light), selected);
                 break;
             default:
                 break;
