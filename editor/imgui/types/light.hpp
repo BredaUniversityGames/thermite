@@ -107,7 +107,13 @@ inline void tag_invoke(ImReflect::ImInput_t, const char*, tmt::Light& value, ImS
         case tmt::LightType::TUBE_LIGHT: {
             tmt::TubeLight light = std::get<tmt::TubeLight>(value.light);
 
-            ImGui::Text("Work in progress!");
+            ImGui::DragFloat("Source Radius", &light.source_radius, 0.025f, 0.0f, light.attenuation_distance, "%.3f u");
+            help_tooltip("Radius of the tube light source. (larger means softer shadows)");
+            ImGui::DragFloat("Attenuation Distance", &light.attenuation_distance, 0.1f, light.source_radius, 100.0f, "%.3f u");
+            help_tooltip("Distance at which the light influence will be zero.");
+            
+            ImGui::DragFloat("Luminous Flux", &light.luminous_flux, 1.0f, 0.0f, 10000.0f, "%.3f lm");
+            help_tooltip("Luminous flux of the tube light. (in lumen, default: 100lm)");
 
             value.light = light;
             break;
