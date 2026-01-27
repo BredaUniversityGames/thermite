@@ -21,11 +21,19 @@ inline void sphere_light_gizmo(Transform& transform, SphereLight light, bool sel
     /* Get the position of the light source */
     const glm::vec3 pos = transform.get_world_position();
     const glm::vec3 color = selected ? colors::SELECTED : colors::DARK;
+    const glm::vec3 camera_pos = engine.renderer.render_view.gpu_view.origin;
+    const float camera_dist = glm::distance(camera_pos, pos);
 
     /* Draw the radii */
-    engine.polyline.use_color(color);
-    engine.polyline.draw_circle(pos, light.source_radius, 32u);      /* Source radius */
-    engine.polyline.draw_circle(pos, light.attenuation_radius, 32u); /* Attenuation radius */
+    constexpr float FADE_RADIUS = 8.0f;
+    if (camera_dist > light.source_radius) { 
+        engine.polyline.use_color(color, (camera_dist - light.source_radius) / FADE_RADIUS);
+        engine.polyline.draw_circle(pos, light.source_radius, 32u); /* Source radius */
+    }
+    if (camera_dist > light.attenuation_radius) { 
+        engine.polyline.use_color(color, (camera_dist - light.attenuation_radius) / FADE_RADIUS);
+        engine.polyline.draw_circle(pos, light.attenuation_radius, 32u); /* Attenuation radius */
+    }
 
     /* Draw vertical line */
     engine.polyline.use_color(color, 0.5f);
