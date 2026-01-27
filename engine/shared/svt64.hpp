@@ -94,6 +94,11 @@ class Svt64 {
    private:
     /* Recursive function to remove voxels from the tree */
     void subtract_recursive(uint32_t node_id, glm::ivec3 node_pos, uint32_t node_scale, const Svt64* other, uint32_t other_id, glm::ivec3 other_pos, uint32_t other_scale, glm::ivec3 offset);
+
+    void rebuild_recursive(
+        uint32_t old_index, uint32_t new_index, Svt64Node* original_nodes, Svt64Node* new_nodes, MaterialIndex* new_materials, PhysicsVoxel* new_physics_data, uint32_t& new_node_count,
+        uint32_t& new_voxel_count
+    );
 };
 
 }  // namespace tmt

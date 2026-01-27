@@ -106,12 +106,12 @@ void Physics::on_update(const FrameData&) {
      engine.polyline.use_line_width(0.25f);
      for (const auto& [entity, vb, transform] : engine.ecs.get_registry().view<VoxelBody, Transform>().each()) {
 
-         auto* tree_a = vb.resource->blas.get();
-         const float half_extent_a = powf(4.0f, (float)tree_a->depth) * 0.5f * UNITS_PER_VOXEL;
-         const glm::vec3 extents_diff_a = half_extent_a - ((glm::vec3)vb.resource->size * 0.5f * UNITS_PER_VOXEL);
-         const glm::vec3 root_center_a = vb.position + (vb.rotation * extents_diff_a);
+         //auto* tree_a = vb.resource->blas.get();
+         //const float half_extent_a = powf(4.0f, (float)tree_a->depth) * 0.5f * UNITS_PER_VOXEL;
+         //const glm::vec3 extents_diff_a = half_extent_a - ((glm::vec3)vb.resource->size * 0.5f * UNITS_PER_VOXEL);
+         //const glm::vec3 root_center_a = vb.position + (vb.rotation * extents_diff_a);
 
-         draw_solids(tree_a, 0u, 0u, half_extent_a, root_center_a + glm::vec3(10, 0, 0), extents_diff_a, vb.rotation);
+         //draw_solids(tree_a, 0u, 0u, half_extent_a, root_center_a + glm::vec3(10, 0, 0), extents_diff_a, vb.rotation);
 
         // auto edges = vb.get_world_edges();
         // engine.polyline.use_color(vb.type == VoxelBody::DYNAMIC ? glm::vec4(0, 1, 0, 1) : glm::vec4(1, 0, 0, 1));

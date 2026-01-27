@@ -192,12 +192,47 @@ PhysicsVoxel* Svt64::get_physics_voxel(const uint32_t x, const uint32_t y, const
 }
 
 void Svt64::subtract(const Svt64* other, glm::ivec3 offset) {
-    if (depth == 0 || other->depth == 0) return;
+    TMT_ZONE_SCOPED_N("svt64 subtract")
 
+    // Copy nodes to preserve original masks for popcount lookups
+    Svt64Node* original_nodes = new Svt64Node[node_count];
+    memcpy(original_nodes, nodes, node_count * sizeof(Svt64Node));
+
+    // Remove voxels based on other tree
     uint32_t this_extent = 1u << (depth * 2u);
     uint32_t other_extent = 1u << (other->depth * 2u);
 
-    subtract_recursive(0, glm::ivec3(0), this_extent, other, 0, glm::ivec3(0), other_extent, offset);
+    {
+        TMT_ZONE_SCOPED_N("svt64 subtract rec")
+        subtract_recursive(0, glm::ivec3(0), this_extent, other, 0, glm::ivec3(0), other_extent, offset);
+    }
+
+    // Rebuild tree using original_nodes for popcount, nodes for new masks
+    Svt64Node* new_nodes = new Svt64Node[node_count + SVT64_BUFFER_MEMORY / sizeof(Svt64Node)];
+    MaterialIndex* new_materials = new MaterialIndex[voxel_count + SVT64_BUFFER_MEMORY / sizeof(MaterialIndex)];
+    PhysicsVoxel* new_physics_data = new PhysicsVoxel[voxel_count + SVT64_BUFFER_MEMORY / sizeof(PhysicsVoxel)];
+
+    uint32_t new_node_count = 1;
+    uint32_t new_voxel_count = 0;
+
+    {
+        TMT_ZONE_SCOPED_N("svt64 rebuild")
+        // Rebuild based on updated masks using original_nodes for popcount lookups
+        rebuild_recursive(0, 0, original_nodes, new_nodes, new_materials, new_physics_data, new_node_count, new_voxel_count);
+    }
+
+    // Delete old data
+    delete[] original_nodes;
+    delete[] nodes;
+    delete[] materials;
+    delete[] physics_data;
+
+    // Assign new data
+    nodes = new_nodes;
+    materials = new_materials;
+    physics_data = new_physics_data;
+    node_count = new_node_count;
+    voxel_count = new_voxel_count;
 }
 
 void Svt64::subtract_recursive(
@@ -213,7 +248,7 @@ void Svt64::subtract_recursive(
 
         // Loop over solid voxels in other
         uint64_t other_mask = other_node.child_mask;
-        while (other_mask != 0) {
+        while (other_mask != 0ull) {
             // Get child index and clear bit
             uint32_t other_voxel_id = std::countr_zero(other_mask);
             other_mask &= other_mask - 1;
@@ -241,7 +276,7 @@ void Svt64::subtract_recursive(
 
         // Loop over children in other
         uint64_t other_mask = other_node.child_mask;
-        while (other_mask != 0) {
+        while (other_mask != 0ull) {
             // Get child index and clear bit
             uint32_t other_child_id = std::countr_zero(other_mask);
             other_mask &= other_mask - 1;
@@ -290,10 +325,10 @@ void Svt64::subtract_recursive(
             // Recurse
             subtract_recursive(node.abs_ptr() + this_child_ptr, this_child_pos, this_child_scale, other, other_id, other_pos, other_scale, offset);
 
-            // If child is empty after recursing, remove it
-            if (nodes[node.abs_ptr() + this_child_ptr].child_mask == 0ull) {
-                node.child_mask &= ~(1ull << this_child_id);
-            }
+            //// If child is empty after recursing, remove it
+            //if (nodes[node.abs_ptr() + this_child_ptr].child_mask == 0ull) {
+            //    node.child_mask &= ~(1ull << this_child_id);
+            //}
         }
         return;
     }
@@ -339,10 +374,90 @@ void Svt64::subtract_recursive(
 
             subtract_recursive(node.abs_ptr() + this_child_ptr, this_child_pos, this_child_scale, other, other_node.abs_ptr() + other_child_ptr, other_child_pos, other_child_scale, offset);
 
-            if (nodes[node.abs_ptr() + this_child_ptr].child_mask == 0ull) {
-                node.child_mask &= ~(1ull << this_child_id);
-            }
+            //if (nodes[node.abs_ptr() + this_child_ptr].child_mask == 0ull) {
+            //    node.child_mask &= ~(1ull << this_child_id);
+            //}
         }
+    }
+}
+
+void Svt64::rebuild_recursive(
+    uint32_t old_index, uint32_t new_index, Svt64Node* original_nodes, Svt64Node* new_nodes, MaterialIndex* new_materials, PhysicsVoxel* new_physics_data, uint32_t& new_node_count,
+    uint32_t& new_voxel_count
+) {
+    // Original for indices
+    const Svt64Node& original_node = original_nodes[old_index];  
+    // For current mask state
+    const Svt64Node& modified_node = nodes[old_index];           
+
+    // Handle leaf node
+    if (original_node.is_leaf()) {
+        uint64_t mask = modified_node.child_mask;
+        uint32_t voxel_start = new_voxel_count;
+
+        // loop over solid voxels in modified mask
+        while (mask != 0ull) {
+            // Get voxel index and clear bit
+            uint32_t voxel_id = std::countr_zero(mask);
+            mask &= mask - 1;
+
+            // Use the original mask for popcount lookup
+            uint32_t old_voxel_ptr = original_node.abs_ptr() + std::popcount(original_node.child_mask & ((1ull << voxel_id) - 1));
+
+            // Copy voxel data
+            new_materials[new_voxel_count] = materials[old_voxel_ptr];
+            new_physics_data[new_voxel_count] = physics_data[old_voxel_ptr];
+            new_voxel_count++;
+        }
+
+        new_nodes[new_index] = Svt64Node(true, voxel_start, modified_node.child_mask);
+        return;
+    }
+
+    // Build new child mask from modified masks
+    uint64_t new_child_mask = 0ull;
+    uint64_t original_mask = original_node.child_mask;
+
+    // Loop over original children
+    while (original_mask != 0ull) {
+        // Get child index and clear bit
+        uint32_t child_id = std::countr_zero(original_mask);
+        original_mask &= original_mask - 1;
+
+        uint32_t old_child_ptr = original_node.abs_ptr() + std::popcount(original_node.child_mask & ((1ull << child_id) - 1));
+
+        // Check if child is solid in the modified tree
+        if (nodes[old_child_ptr].child_mask != 0ull) {
+            new_child_mask |= (1ull << child_id);
+        }
+    }
+
+    // Reserve slots for children
+    uint32_t children_start = new_node_count;
+    uint32_t child_count = std::popcount(new_child_mask);
+    new_node_count += child_count;
+
+    new_nodes[new_index] = Svt64Node(false, children_start, new_child_mask);
+
+    // Recurse into solid children
+    uint32_t new_child_offset = 0;
+    original_mask = original_node.child_mask;
+
+    // Loop over original children
+    while (original_mask != 0ull) {
+        // Get child index and clear bit
+        uint32_t child_id = std::countr_zero(original_mask);
+        original_mask &= original_mask - 1;
+
+        uint32_t old_child_ptr = original_node.abs_ptr() + std::popcount(original_node.child_mask & ((1ull << child_id) - 1));
+
+        // Skip if empty in modified tree
+        if (nodes[old_child_ptr].child_mask == 0ull) continue;
+
+        // Recurse
+        rebuild_recursive(old_child_ptr, children_start + new_child_offset, original_nodes, new_nodes, new_materials, new_physics_data, new_node_count, new_voxel_count);
+
+        new_child_offset++;
     }
 }
 
@@ -376,7 +491,7 @@ void Svt64::build(const RawVoxels& raw_data) {
     nodes[0] = subdivide(raw_data, depth * 2u, glm::uvec3(0u));
 
     /* Reallocate the nodes to save memory */
-    nodes = (Svt64Node*)realloc(nodes, (node_count + SVT64_BUFFER_MEMORY) * sizeof(Svt64Node));
+    nodes = (Svt64Node*)realloc(nodes, node_count * sizeof(Svt64Node) + SVT64_BUFFER_MEMORY);
 }
 
 inline uint32_t get_node_cell_index(const glm::vec3 pos, const int scale_exp) {
@@ -517,9 +632,9 @@ Svt64::Svt64(const Svt64& src) {
     node_count = src.node_count;
     voxel_count = src.voxel_count;
     depth = src.depth;
-    nodes = new Svt64Node[node_count + SVT64_BUFFER_MEMORY];
-    materials = new MaterialIndex[voxel_count + SVT64_BUFFER_MEMORY];
-    physics_data = new PhysicsVoxel[voxel_count + SVT64_BUFFER_MEMORY];
+    nodes = new Svt64Node[node_count + SVT64_BUFFER_MEMORY / sizeof(Svt64Node)];
+    materials = new MaterialIndex[voxel_count + SVT64_BUFFER_MEMORY / sizeof(MaterialIndex)];
+    physics_data = new PhysicsVoxel[voxel_count + SVT64_BUFFER_MEMORY / sizeof(PhysicsVoxel)];
     memcpy(nodes, src.nodes, node_count * sizeof(Svt64Node));
     memcpy(materials, src.materials, voxel_count * sizeof(MaterialIndex));
     memcpy(physics_data, src.physics_data, voxel_count * sizeof(PhysicsVoxel));
@@ -531,9 +646,9 @@ Svt64& Svt64::operator=(const Svt64& src) {
     node_count = src.node_count;
     voxel_count = src.voxel_count;
     depth = src.depth;
-    nodes = new Svt64Node[node_count + SVT64_BUFFER_MEMORY];
-    materials = new MaterialIndex[voxel_count + SVT64_BUFFER_MEMORY];
-    physics_data = new PhysicsVoxel[voxel_count + SVT64_BUFFER_MEMORY];
+    nodes = new Svt64Node[node_count + SVT64_BUFFER_MEMORY / sizeof(Svt64Node)];
+    materials = new MaterialIndex[voxel_count + SVT64_BUFFER_MEMORY / sizeof(MaterialIndex)];
+    physics_data = new PhysicsVoxel[voxel_count + SVT64_BUFFER_MEMORY / sizeof(PhysicsVoxel)];
     memcpy(nodes, src.nodes, node_count * sizeof(Svt64Node));
     memcpy(materials, src.materials, voxel_count * sizeof(MaterialIndex));
     memcpy(physics_data, src.physics_data, voxel_count * sizeof(PhysicsVoxel));
