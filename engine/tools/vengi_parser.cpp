@@ -186,34 +186,36 @@ bool BinaryParser::parse_properties(vengi::Node& node) {
 bool BinaryParser::parse_voxel_data(vengi::Node& node) {
     node.voxel_data = std::make_unique<VoxelData>();
 
-    // IMPORTANT: VENGI stores region as (Z, Y, X) order, NOT (X, Y, Z)!
-    // Read 6 int32s: lower z, lower y, lower x, upper z, upper y, upper x
-    int32_t lower_z = read_int32();
-    int32_t lower_y = read_int32();
+    // Read 6 int32s: lower x, lower y, lower z, upper x, upper y, upperzx
     int32_t lower_x = read_int32();
-    int32_t upper_z = read_int32();
-    int32_t upper_y = read_int32();
+    int32_t lower_y = read_int32();
+    int32_t lower_z = read_int32();
     int32_t upper_x = read_int32();
+    int32_t upper_y = read_int32();
+    int32_t upper_z = read_int32();
 
-    // Store in our X, Y, Z order
     node.voxel_data->region.lower = glm::ivec3(lower_x, lower_y, lower_z);
     node.voxel_data->region.upper = glm::ivec3(upper_x, upper_y, upper_z) + 1;
+    const uint32_t wh = node.voxel_data->region.width() * node.voxel_data->region.height();
 
     int64_t volume = node.voxel_data->region.volume();
-    node.voxel_data->voxels.reserve(volume);
+    node.voxel_data->voxels.resize(volume);
 
-    // Voxels are also stored in Z->Y->X order (not X->Y->Z)
-    for (int32_t z = node.voxel_data->region.lower.z; z < node.voxel_data->region.upper.z; z++) {
+    for (int32_t x = node.voxel_data->region.lower.x; x < node.voxel_data->region.upper.x; x++) {
         for (int32_t y = node.voxel_data->region.lower.y; y < node.voxel_data->region.upper.y; y++) {
-            for (int32_t x = node.voxel_data->region.lower.x; x < node.voxel_data->region.upper.x; x++) {
+            for (int32_t z = node.voxel_data->region.lower.z; z < node.voxel_data->region.upper.z; z++) {
                 bool is_air = read_bool();
-                if (is_air) {
-                    node.voxel_data->voxels.emplace_back();
-                } else {
-                    uint8_t color_index = read_uint8();
-                    uint8_t normal_index = read_uint8();
-                    node.voxel_data->voxels.emplace_back(color_index, normal_index);
-                }
+
+                if (is_air) continue;
+
+                uint32_t xi = x - lower_x;
+                uint32_t yi = y - lower_y;
+                uint32_t zi = z - lower_z;
+                const uint32_t i = xi + yi * node.voxel_data->region.width() + zi * wh;
+
+                uint8_t color_index = read_uint8();
+                uint8_t normal_index = read_uint8();
+                node.voxel_data->voxels[i] = VoxelInformation(color_index, normal_index);
             }
         }
     }
