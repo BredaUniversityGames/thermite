@@ -86,9 +86,9 @@ public struct Slot {
     }
 
     /* How many samples must be accumulated before we normalize illuminance. */
-    static const uint NORM_THRESHOLD = 1u << 8u;
+    static const uint NORM_THRESHOLD = 1u << 9u;
     /* How many samples do we normalize into. */
-    static const uint NORM_COUNT = 1u << 7u;
+    static const uint NORM_COUNT = 1u << 9u;
 
     /* Normalize the accumulated illuminance in the cache slot. */
     public [ForceInline] [mutating] void normalize() {

@@ -15,29 +15,33 @@ public enum LightType : uint {
 public struct Light {
     float4 type_origin;
     float4 luminance_source;
-    float4 attenuation_culling_blend;
+    float4 attenuation_culling_beam_blend;
     float4 direction_length;
 
     /* The kind of light source. */
     public property LightType type { get { return (LightType)asuint(type_origin.x); } }
     /* Origin point of the light source. */
     public property float3 origin { get { return type_origin.yzw; } }
-    /* Exitent luminance of the light source. (in candela, in ACEScg color-space) */
-    public property float3 luminance { get { return luminance_source.xyz; } }
-    /* Radius of the light source, defines the softness of its shadows. */
-    public property float source_radius { get { return luminance_source.w; } }
-    /* Radius/distance at which the emitted light influence reaches zero. */
-    public property float attenuation_radius { get { return attenuation_culling_blend.x; } }
-    /* Radius/distance at which the light source should be culled. */
-    public property float culling_radius { get { return attenuation_culling_blend.y; } }
-    /* Cosine of the angular radius of the spot light beam. */
-    public property float culling_angle { get { return attenuation_culling_blend.z; } }
-    /* The softness of the spot light edge. (0..1) */
-    public property float spot_blend { get { return attenuation_culling_blend.w; } }
     /* Primary direction of the light source. */
     public property float3 direction { get { return direction_length.xyz; } }
-    /* Length of the light source. (used for tube lights) */
+
+    /* Exitent luminance of the light source. (in cd/m2, in ACEScg color-space) */
+    public property float3 luminance { get { return luminance_source.xyz; } }
+
+    /* Radius of the light source, defines the softness of its shadows. (cos(theta) for sun lights) */
+    public property float source_radius { get { return luminance_source.w; } }
+    /* Length of the light source. (only used for tube lights) */
     public property float source_length { get { return direction_length.w; } }
+
+    /* Radius/distance at which the emitted light influence reaches zero. */
+    public property float attenuation_radius { get { return attenuation_culling_beam_blend.x; } }
+    /* The softness of the spot light edge. (0..1) */
+    public property float spot_blend { get { return attenuation_culling_beam_blend.w; } }
+
+    /* Radius/distance at which the light source should be culled. (used for coarse culling) */
+    public property float culling_radius { get { return attenuation_culling_beam_blend.y; } }
+    /* Cosine of the angular radius of the spot light beam. (also used for fine culling) */
+    public property float cos_beam_angle { get { return attenuation_culling_beam_blend.z; } }
 };
 
 /* Calculate distance attenuation. */
@@ -59,21 +63,22 @@ public [ForceInline] float evaluate_weight(const float3 p, const float3 n, const
     /* Calculate the direction and angle towards the light source */
     const float3 src_dir = src_local / src_dist;
     const float src_angle = dot(src_dir, -light.direction);
-    if (src_angle < light.culling_angle) return 0.0f; /* Out of range */
+    if (src_angle < light.cos_beam_angle) return 0.0f; /* Out of range */
 
-    return 1.0f;
-    /* Calculate light attenuation */
-    // const float ndotl = max(0.0f, dot(n, src_dir));
-    // const float luminance = cs::acescg_luminance(light.luminance);
-    // return luminance * ndotl * distance_attenuation(src_dist, light.attenuation_radius);
+    /* Calculate the weight based on the perceived brightness of the light */
+    const float luminance = cs::acescg_luminance(light.luminance);
+    if (light.type == LightType::SUN_LIGHT) return luminance * 0.1f;
+    return 1.0f + luminance * distance_attenuation(src_dist, light.culling_radius);
 }
 
+/* Light source sample. */
 public struct LightSample {
     public float3 dir;
     public float rcp_pdf;
     public float tmax;
 };
 
+/* Generate a sample for a universal light source. */
 public [ForceInline] LightSample sample_light(const float3 point, const Light light, const float2 r01) {
     LightSample sample;
 
@@ -85,18 +90,20 @@ public [ForceInline] LightSample sample_light(const float3 point, const Light li
 
     /* Tube light requires special path */
     if (light.type == LightType::TUBE_LIGHT) {
-        const float3 tube_axis = cross(light_dir, light.direction);
+        /* Generate a random point on the tube */
         const float3 tube_point = light.origin 
             + (r01.x - 0.5f) * light.source_length * light.direction 
-            + (r01.y - 0.5f) * light.source_radius * tube_axis;
+            + (r01.y - 0.5f) * light.source_radius * cross(light_dir, light.direction);
 
-        const float3 to_light = tube_point - point;
-        sample.tmax = length(to_light);
-        sample.dir = to_light / sample.tmax;
+        /* Calculate the tmax and sample direction */
+        const float3 sample_dir = tube_point - point;
+        sample.tmax = length(sample_dir);
+        sample.dir = sample_dir / sample.tmax;
 
-        const float area = light.source_length * light.source_radius;
+        /* Calculate the PDF of the sample */
+        const float tube_area = light.source_length * light.source_radius;
         const float cos_light = abs(dot(light_dir, sample.dir));
-        sample.rcp_pdf = (area * cos_light) / (sample.tmax * sample.tmax);
+        sample.rcp_pdf = (tube_area * cos_light) / (sample.tmax * sample.tmax);
         return sample;
     }
 
@@ -118,6 +125,7 @@ public [ForceInline] LightSample sample_light(const float3 point, const Light li
     const float c = dot(light_local, light_local) - light.source_radius * light.source_radius;
     sample.tmax = is_sun ? BIG_F32 : (-b + sqrt(b * b - c));
 
+    /* Calculate the PDF of the sample */
     sample.rcp_pdf = 2.0f * PI_F32 * (1.0f - sample_angle);
     return sample;
 }

@@ -67,7 +67,7 @@ inline float3 direct_illuminance(const float3 point, const float3 normal, inout 
     const float t = occlusion_bvh2(tlas_nodes, object_indices, objects, custom_ray(point, light_sample.dir), light_sample.tmax);
     if (t < light_sample.tmax) return 0.0f;
 
-    float attenuation = 0.0f;
+    float attenuation = 1.0f;
     /* Distance based attenuation */
     if (light.type != LightType::SUN_LIGHT) {
         const float relative_dist = saturate(light_sample.tmax / light.attenuation_radius);
@@ -78,8 +78,8 @@ inline float3 direct_illuminance(const float3 point, const float3 normal, inout 
     /* Spot based attenuation */
     if (light.type == LightType::SPOT_LIGHT) {
         const float cos_theta = dot(-light_sample.dir, light.direction);
-        const float cos_inner = lerp(light.culling_angle, 1.0f, light.spot_blend);
-        const float spot = saturate((cos_theta - light.culling_angle) / (cos_inner - light.culling_angle));
+        const float cos_inner = lerp(light.cos_beam_angle, 1.0f, light.spot_blend);
+        const float spot = saturate((cos_theta - light.cos_beam_angle) / (cos_inner - light.cos_beam_angle));
         attenuation *= spot * spot;
     }
 
