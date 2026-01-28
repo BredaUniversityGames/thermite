@@ -12,12 +12,14 @@
 #include "engine/core/components/audio_listener.hpp"
 #include "engine/core/components/audio_emitter.hpp"
 #include "engine/core/components/entity_id.hpp"
+#include "engine/core/components/prefab.hpp"
 
 namespace tmt {
 
 // clang-format off
 using SerializeComponents = ComponentRegistry<
 	/* Order in which components are serialized */
+	Prefab,
 	Name, 
 	Transform, 
 	VoxelRenderer, 

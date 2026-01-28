@@ -4,88 +4,47 @@
         "6914fc38-4af5-4da7-9697-0f5d5f3be79e",
         "46fd9e84-d885-4bb6-bfc7-dfd9bd35da9e"
     ],
-    "Name": {
+    "Prefab": {
         "6914fc38-4af5-4da7-9697-0f5d5f3be79e": {
-            "name": "Entity_0"
+            "source_location": {
+                "sub_location": "PROJECT",
+                "relative_path": "test.prefab"
+            },
+            "source_entity": "6914fc38-4af5-4da7-9697-0f5d5f3be79e",
+            "root_entity": "6914fc38-4af5-4da7-9697-0f5d5f3be79e",
+            "instance_id": "e74f11fd-9be4-49da-b793-5729943808b8"
         },
         "46fd9e84-d885-4bb6-bfc7-dfd9bd35da9e": {
-            "name": "Child"
+            "source_location": {
+                "sub_location": "PROJECT",
+                "relative_path": "test.prefab"
+            },
+            "source_entity": "46fd9e84-d885-4bb6-bfc7-dfd9bd35da9e",
+            "root_entity": "6914fc38-4af5-4da7-9697-0f5d5f3be79e",
+            "instance_id": "e74f11fd-9be4-49da-b793-5729943808b8"
         }
     },
+    "Name": null,
     "Transform": {
-        "6914fc38-4af5-4da7-9697-0f5d5f3be79e": {
-            "local_position": {
-                "x": 0.0,
-                "y": 0.0,
-                "z": 0.0
-            },
-            "local_rotation": {
-                "w": 1.0,
-                "x": 0.0,
-                "y": 0.0,
-                "z": 0.0
-            },
-            "local_scale": {
-                "x": 1.0,
-                "y": 1.0,
-                "z": 1.0
-            },
-            "parent": "00000000-0000-0000-0000-000000000000",
-            "children": [
-                "46fd9e84-d885-4bb6-bfc7-dfd9bd35da9e"
-            ]
-        },
         "46fd9e84-d885-4bb6-bfc7-dfd9bd35da9e": {
-            "local_position": {
-                "x": 14.2630033493042,
-                "y": 0.0,
-                "z": 0.0
-            },
-            "local_rotation": {
-                "w": 1.0,
-                "x": 0.0,
-                "y": 0.0,
-                "z": 0.0
-            },
-            "local_scale": {
-                "x": 0.33000004291534424,
-                "y": 0.33000004291534424,
-                "z": 0.33000004291534424
-            },
-            "parent": "6914fc38-4af5-4da7-9697-0f5d5f3be79e",
-            "children": []
+            "diff": [
+                {
+                    "op": "replace",
+                    "path": "/local_position/x",
+                    "value": 11.163000106811523
+                },
+                {
+                    "op": "replace",
+                    "path": "/local_position/y",
+                    "value": 4.099999904632568
+                },
+                {
+                    "op": "replace",
+                    "path": "/local_position/z",
+                    "value": 3.0
+                }
+            ]
         }
     },
-    "Voxel Renderer": {
-        "6914fc38-4af5-4da7-9697-0f5d5f3be79e": {
-            "resource": {
-                "file_location": {
-                    "sub_location": "PROJECT",
-                    "relative_path": "dragon128.vengi"
-                },
-                "data": {
-                    "size": {
-                        "x": 128,
-                        "y": 90,
-                        "z": 58
-                    }
-                }
-            }
-        },
-        "46fd9e84-d885-4bb6-bfc7-dfd9bd35da9e": {
-            "resource": {
-                "file_location": {
-                    "sub_location": "PROJECT",
-                    "relative_path": "dragon128.vengi"
-                },
-                "data": {
-                    "size": {
-                        "x": 128,
-                        "y": 90,
-                        "z": 58
-                    }
-                }
-            }
-        }
-    }
+    "Voxel Renderer": null
 }

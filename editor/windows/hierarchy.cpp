@@ -14,6 +14,7 @@
 #include "engine/core/components/transform.hpp"
 
 #include "engine/tools/serializer/ecs.hpp"
+#include "engine/tools/prefab_helper.hpp"
 
 #include "editor/events/scene.hpp"
 
@@ -93,6 +94,17 @@ void Hierarchy::context_menu(const Entity hovered_entity) {
             const auto text = "Paste Entities";
             if (ImGui::MenuItem(text)) {
                 paste_entities(hovered_entity);
+                ImGui::CloseCurrentPopup();
+            }
+        }
+        ImGui::Separator();
+        {
+            const auto text = "Make Prefab...";
+            // TODO: give extra pop-up for name
+            if (ImGui::MenuItem(text)) {
+                const IO::FileLocation temp_location = {IO::Location::PROJECT, "test.prefab"};  // TODO: remove
+                const Entity root_entity = *EntityHelper::upper_parents(selected_entities).begin();
+                PrefabHelper::create_prefab(temp_location, root_entity);
                 ImGui::CloseCurrentPopup();
             }
         }

@@ -40,10 +40,13 @@ class SceneJson {
     Json& components(const std::string& component_name);
     const Json& components(const std::string& component_name) const;
 
+    /* Copy */
+    std::optional<Json> component_value(const std::string& component_name, const tmt::EntityID& entity_id) const;
+
     /* entity entry */
-    bool has_entity_entry(const Json& container, const tmt::Entity& entity, const tmt::Ecs& ecs) const;
-    void entity_entry(Json& container, const tmt::Entity& entity, const Json& value, const tmt::Ecs& ecs) const;
-    Json& entity_entry(Json& container, const tmt::Entity& entity, const tmt::Ecs& ecs) const;
+    bool has_entity_entry(const Json& container, const tmt::EntityID& entity_id) const;
+    void add_entity_entry(Json& container, const tmt::EntityID& entity_id, const Json& value) const;
+    const Json& get_entity_entry(const Json& container, const tmt::EntityID& entity_id) const;
 };
 
 struct SerializeState {
@@ -106,6 +109,23 @@ Json tag_invoke(JsonReflect::serialize_t, const tmt::Entity& entity, const tmt::
 
 void tag_invoke(JsonReflect::deserialize_t, const Json&, tmt::Entity&, tmt::Ecs&) {}
 
+std::optional<Json> recursive_find_component_json(const SceneJson& prefab_json, const std::string& component_name, const tmt::EntityID& entity_id) {
+    /*Check if it's a prefab inside this prefab */
+    constexpr auto PREFAB_COMPONENT_NAME = tmt::Component<tmt::Prefab>::get_name();
+    const std::optional<Json> maybe_value = prefab_json.component_value(PREFAB_COMPONENT_NAME, entity_id);
+    if (maybe_value.has_value()) {
+        const Json& prefab_component_json = maybe_value.value();
+
+        tmt::Prefab prefab_component {};
+        tmt::Serializer::deserialize<tmt::Prefab>(prefab_component_json, prefab_component);
+        auto original_prefab_json = tmt::engine.resources.load_resource<tmt::Json>(prefab_component.source_location);
+
+        SceneJson nested_prefab_json(original_prefab_json->get_parsed_json());
+        return recursive_find_component_json(nested_prefab_json, component_name, entity_id);
+    }
+    return prefab_json.component_value(component_name, entity_id);
+}
+
 template <typename ComponentType>
 void serialize_component(SerializeState& state) {
     /* If no component instance exists, continue */
@@ -118,9 +138,33 @@ void serialize_component(SerializeState& state) {
 
     for (const auto entity : state.all_entities) {
         if (state.ecs.has_component<ComponentType>(entity) == false) continue;
+        const auto& component = state.ecs.get_component<ComponentType>(entity);
 
-        const auto value = tmt::Serializer::serialize(state.ecs.get_component<ComponentType>(entity), state);
-        state.json.entity_entry(components, entity, value, state.ecs);
+        const bool has_prefab = state.ecs.has_component<tmt::Prefab>(entity);
+        const auto& entity_id = state.ecs.get_component<tmt::EntityID>(entity);
+
+        if (has_prefab) {
+            const tmt::Prefab& prefab = tmt::engine.ecs.get_component<tmt::Prefab>(entity);
+            auto original_prefab_json = tmt::engine.resources.load_resource<tmt::Json>(prefab.source_location);
+            SceneJson prefab_json(original_prefab_json->get_parsed_json());
+
+            const auto maybe_value = recursive_find_component_json(prefab_json, COMPONENT_NAME, entity_id);
+            if (maybe_value.has_value()) {
+                /* diff */
+                const Json prefab_component_json = maybe_value.value();
+                const Json value = tmt::Serializer::serialize(component, state);
+
+                const Json diff = nlohmann::json::diff(prefab_component_json, value);
+                if (diff.empty() == false) {
+                    Json value = Json::object();
+                    value["diff"] = diff;
+                    state.json.add_entity_entry(components, entity_id, value);
+                }
+                continue;
+            }
+        }
+        const auto value = tmt::Serializer::serialize(component, state);
+        state.json.add_entity_entry(components, entity_id, value);
     }
 }
 
@@ -283,39 +327,46 @@ Json& SceneJson::components(const std::string& component_name) { return json[com
 
 const Json& SceneJson::components(const std::string& component_name) const { return json.at(component_name); }
 
-bool SceneJson::has_entity_entry(const Json& container, const tmt::Entity& entity, const tmt::Ecs& ecs) const {
-    const auto& entity_id = ecs.get_component<tmt::EntityID>(entity);
+std::optional<Json> SceneJson::component_value(const std::string& component_name, const tmt::EntityID& entity_id) const {
+    if (has_components(component_name) == false) return std::nullopt;
+
+    const Json& component_container = components(component_name);
+    if (has_entity_entry(component_container, entity_id) == false) return std::nullopt;
+
+    return get_entity_entry(component_container, entity_id);
+}
+
+bool SceneJson::has_entity_entry(const Json& container, const tmt::EntityID& entity_id) const {
     const auto key = entity_id.str();
     return container.contains(key);
 }
 
-void SceneJson::entity_entry(Json& container, const tmt::Entity& entity, const Json& value, const tmt::Ecs& ecs) const {
-    const auto& entity_id = ecs.get_component<tmt::EntityID>(entity);
+void SceneJson::add_entity_entry(Json& container, const tmt::EntityID& entity_id, const Json& value) const {
     const auto key = entity_id.str();
     container[key] = value;
 }
 
-Json& SceneJson::entity_entry(Json& container, const tmt::Entity& entity, const tmt::Ecs& ecs) const {
-    const auto& entity_id = ecs.get_component<tmt::EntityID>(entity);
+const Json& SceneJson::get_entity_entry(const Json& container, const tmt::EntityID& entity_id) const {
     const auto key = entity_id.str();
-    return container[key];
+    return container.at(key);
 }
 
 /* Component specific deserialize functions */
-//void tag_invoke(JsonReflect::deserialize_t, const Json& j, tmt::EntityID& component, const DeserializeState& state) {
-//    component = tmt::UUID::fromStrFactory(j.get<std::string>());
-//    if (state.ecs.has_uuid(component) == false) return;
+// void tag_invoke(JsonReflect::deserialize_t, const Json& j, tmt::EntityID& component, const DeserializeState& state) {
+//     component = tmt::UUID::fromStrFactory(j.get<std::string>());
+//     if (state.ecs.has_uuid(component) == false) return;
 //
-//    /* uuid already exists as a component */
-//    const tmt::Entity owner = *state.ecs.get_entity_by_uuid(component);
-//    const tmt::Entity current_entity = state.ecs.get_entity(component);
+//     /* uuid already exists as a component */
+//     const tmt::Entity owner = *state.ecs.get_entity_by_uuid(component);
+//     const tmt::Entity current_entity = state.ecs.get_entity(component);
 //
-//    if (owner == current_entity) return;
+//     if (owner == current_entity) return;
 //
-//    /* UUID collision detected */
-//    tmt::Log::warn(tmt::Log::Scope::ENGINE, "[Serialization] UUID collision detected! Entity {} already owns UUID {}. Generating a new UUID for entity {}.", owner, component, current_entity);
+//     /* UUID collision detected */
+//     tmt::Log::warn(tmt::Log::Scope::ENGINE, "[Serialization] UUID collision detected! Entity {} already owns UUID {}. Generating a new UUID for entity {}.", owner, component,
+//     current_entity);
 //
-//    /* Generate a new UUID for the current entity */
-//    component = tmt::UUIDGenerator::generate();
-//    state.ecs.register_uuid(component, current_entity);
-//}
+//     /* Generate a new UUID for the current entity */
+//     component = tmt::UUIDGenerator::generate();
+//     state.ecs.register_uuid(component, current_entity);
+// }
