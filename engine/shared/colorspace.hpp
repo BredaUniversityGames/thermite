@@ -30,4 +30,4 @@ glm::vec3 acescg_to_srgb(const glm::vec3 acescg);
 /* Convert temperature in kelvin to a linear SRGB (Rec.709) color. */
 glm::vec3 temperature_to_linear_srgb(const float t);
 
-}  // namespace tmt
+}  // namespace tmt::cs

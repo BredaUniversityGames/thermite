@@ -137,4 +137,4 @@ glm::vec3 temperature_to_linear_srgb(const float t) {
 
 /* clang-format on */
 
-}  // namespace tmt
+}  // namespace tmt::cs
