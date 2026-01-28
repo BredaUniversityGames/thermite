@@ -40,17 +40,29 @@ glm::vec3 delinearize_srgb(const glm::vec3 linear) {
     return nonlinear_srgb;
 }
 
-glm::vec3 aces_filmic_tone_curve(const glm::vec3 aces2065) {
-    constexpr float a = 2.51f;
-    constexpr float b = 0.03f;
-    constexpr float c = 2.43f;
-    constexpr float d = 0.59f;
-    constexpr float e = 0.14f;
-    return {
+glm::vec3 aces_filmic_tone_curve(const glm::vec3 acescg) {
+    /* Linear ACEScg -> Linear ACES2065-1 */
+    const glm::vec3 aces2065 = glm::vec3(
+         0.695452241f * acescg.r + 0.140678697f * acescg.g + 0.163869062f * acescg.b,
+         0.044794563f * acescg.r + 0.859671118f * acescg.g + 0.095534319f * acescg.b,
+        -0.005525882f * acescg.r + 0.004025210f * acescg.g + 1.001500672f * acescg.b
+    );
+
+    /* Tonemapping */
+    constexpr float a = 2.51f, b = 0.03f;
+    constexpr float c = 2.43f, d = 0.59f, e = 0.14f;
+    const glm::vec3 tonemapped = glm::vec3(
         glm::max(0.0f, (aces2065.r * (a * aces2065.r + b)) / (aces2065.r * (c * aces2065.r + d) + e)),
         glm::max(0.0f, (aces2065.g * (a * aces2065.g + b)) / (aces2065.g * (c * aces2065.g + d) + e)),
         glm::max(0.0f, (aces2065.b * (a * aces2065.b + b)) / (aces2065.b * (c * aces2065.b + d) + e))
-    };
+    );
+
+    /* Linear ACES2065-1 -> Linear ACEScg */
+    return glm::vec3(
+         1.451439316f * aces2065.r + -0.236510747f * aces2065.g + -0.214928569f * aces2065.b,
+        -0.076553773f * aces2065.r +  1.176229700f * aces2065.g + -0.099675927f * aces2065.b,
+         0.008316148f * aces2065.r + -0.006032450f * aces2065.g +  0.997716302f * aces2065.b
+    );
 }
 
 glm::vec3 linear_srgb_to_acescg(const glm::vec3 linear_srgb) {
@@ -64,23 +76,12 @@ glm::vec3 linear_srgb_to_acescg(const glm::vec3 linear_srgb) {
 }
 
 glm::vec3 acescg_to_linear_srgb(const glm::vec3 acescg) {
-    /* Linear ACEScg -> Linear ACES2065-1 */
-    const glm::vec3 aces2065 = glm::vec3(
-         0.695452241f * acescg.r + 0.140678697f * acescg.g + 0.163869062f * acescg.b,
-         0.044794563f * acescg.r + 0.859671118f * acescg.g + 0.095534319f * acescg.b,
-        -0.005525882f * acescg.r + 0.004025210f * acescg.g + 1.001500672f * acescg.b
+    /* Linear ACEScg -> Linear SRGB (Rec.709) */
+    return glm::vec3(
+        glm::max(0.0f,  1.705050993f * acescg.r - 0.621792120f * acescg.g - 0.083258873f * acescg.b),
+        glm::max(0.0f, -0.130256414f * acescg.r + 1.140804737f * acescg.g - 0.010548323f * acescg.b),
+        glm::max(0.0f, -0.024003530f * acescg.r - 0.128968719f * acescg.g + 1.152972249f * acescg.b)
     );
-
-    /* Apply ACES tonemapping in ACES2065-1 color-space */
-    const glm::vec3 tonemapped = aces_filmic_tone_curve(aces2065);
-
-    /* Linear ACES2065-1 -> Linear SRGB (Rec.709) */
-    const glm::vec3 linear_srgb = glm::vec3(
-        glm::max(0.0f,  2.52168619f * tonemapped.r + -1.13413099f * tonemapped.g + -0.38755520f * tonemapped.b),
-        glm::max(0.0f, -0.27648212f * tonemapped.r +  1.37271909f * tonemapped.g + -0.09623697f * tonemapped.b),
-        glm::max(0.0f, -0.01538516f * tonemapped.r + -0.15298289f * tonemapped.g +  1.16836805f * tonemapped.b)
-    );
-    return linear_srgb;
 }
 
 glm::vec3 srgb_to_acescg(const glm::vec3 srgb) {
