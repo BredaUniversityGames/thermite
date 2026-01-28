@@ -18,7 +18,6 @@ namespace tmt {
 // clang-format off
 using SerializeComponents = ComponentRegistry<
 	/* Order in which components are serialized */
-	EntityID,
 	Name, 
 	Transform, 
 	VoxelRenderer, 

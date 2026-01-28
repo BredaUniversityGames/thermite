@@ -1,19 +1,19 @@
 {
     "version": 1,
     "entities": [
-        0,
-        1
+        "6914fc38-4af5-4da7-9697-0f5d5f3be79e",
+        "46fd9e84-d885-4bb6-bfc7-dfd9bd35da9e"
     ],
     "Name": {
-        "0": {
+        "6914fc38-4af5-4da7-9697-0f5d5f3be79e": {
             "name": "Entity_0"
         },
-        "1": {
-            "name": "Entity_1"
+        "46fd9e84-d885-4bb6-bfc7-dfd9bd35da9e": {
+            "name": "Child"
         }
     },
     "Transform": {
-        "0": {
+        "6914fc38-4af5-4da7-9697-0f5d5f3be79e": {
             "local_position": {
                 "x": 0.0,
                 "y": 0.0,
@@ -30,13 +30,15 @@
                 "y": 1.0,
                 "z": 1.0
             },
-            "parent": 4294967295,
-            "children": []
+            "parent": "00000000-0000-0000-0000-000000000000",
+            "children": [
+                "46fd9e84-d885-4bb6-bfc7-dfd9bd35da9e"
+            ]
         },
-        "1": {
+        "46fd9e84-d885-4bb6-bfc7-dfd9bd35da9e": {
             "local_position": {
-                "x": 5.718718528747559,
-                "y": 11.108129501342773,
+                "x": 14.2630033493042,
+                "y": 0.0,
                 "z": 0.0
             },
             "local_rotation": {
@@ -46,20 +48,20 @@
                 "z": 0.0
             },
             "local_scale": {
-                "x": 1.0,
-                "y": 1.0,
-                "z": 1.0
+                "x": 0.33000004291534424,
+                "y": 0.33000004291534424,
+                "z": 0.33000004291534424
             },
-            "parent": 4294967295,
+            "parent": "6914fc38-4af5-4da7-9697-0f5d5f3be79e",
             "children": []
         }
     },
     "Voxel Renderer": {
-        "0": {
+        "6914fc38-4af5-4da7-9697-0f5d5f3be79e": {
             "resource": {
                 "file_location": {
                     "sub_location": "PROJECT",
-                    "relative_path": "Dragon128.vengi"
+                    "relative_path": "dragon128.vengi"
                 },
                 "data": {
                     "size": {
@@ -70,11 +72,11 @@
                 }
             }
         },
-        "1": {
+        "46fd9e84-d885-4bb6-bfc7-dfd9bd35da9e": {
             "resource": {
                 "file_location": {
                     "sub_location": "PROJECT",
-                    "relative_path": "Dragon128.vengi"
+                    "relative_path": "dragon128.vengi"
                 },
                 "data": {
                     "size": {
@@ -84,42 +86,6 @@
                     }
                 }
             }
-        }
-    },
-    "Voxel Body": {
-        "0": {
-            "resource": {
-                "file_location": {
-                    "sub_location": "PROJECT",
-                    "relative_path": "Dragon128.vengi"
-                },
-                "data": {
-                    "size": {
-                        "x": 128,
-                        "y": 90,
-                        "z": 58
-                    }
-                }
-            },
-            "type": "STATIC",
-            "gravity": 0.0
-        },
-        "1": {
-            "resource": {
-                "file_location": {
-                    "sub_location": "PROJECT",
-                    "relative_path": "Dragon128.vengi"
-                },
-                "data": {
-                    "size": {
-                        "x": 128,
-                        "y": 90,
-                        "z": 58
-                    }
-                }
-            },
-            "type": "DYNAMIC",
-            "gravity": 9.800000190734863
         }
     }
 }

@@ -41,9 +41,9 @@ class SceneJson {
     const Json& components(const std::string& component_name) const;
 
     /* entity entry */
-    bool has_entity_entry(const Json& container, const tmt::Entity& entity) const;
-    void entity_entry(Json& container, const tmt::Entity& entity, const Json& value) const;
-    Json& entity_entry(Json& container, const tmt::Entity& entity) const;
+    bool has_entity_entry(const Json& container, const tmt::Entity& entity, const tmt::Ecs& ecs) const;
+    void entity_entry(Json& container, const tmt::Entity& entity, const Json& value, const tmt::Ecs& ecs) const;
+    Json& entity_entry(Json& container, const tmt::Entity& entity, const tmt::Ecs& ecs) const;
 };
 
 struct SerializeState {
@@ -60,19 +60,27 @@ struct DeserializeState {
     tmt::Ecs& ecs;
     const SceneJson& json;
 
-    std::unordered_map<tmt::Entity, tmt::Entity> entity_mapping {{entt::null, entt::null}}; /* Default null to null value */
+    std::unordered_map<tmt::EntityID, tmt::Entity> entity_mapping {{tmt::NULL_UUID, entt::null}}; /* Default null to null value */
 };
 
-/* Entt entity with state */
-static inline void tag_invoke(JsonReflect::deserialize_t, const JsonReflect::json& j, tmt::Entity& entity, const DeserializeState& state) {
-    tmt::Entity json_entity = entt::null;
-    tmt::Serializer::deserialize(j, json_entity);
+/* Entity with state */
+Json tag_invoke(JsonReflect::serialize_t, const tmt::Entity& entity, const SerializeState& state) {
+    if (entity == entt::null) {
+        return tmt::NULL_ENTITY_ID.str();
+    }
+    const auto& entity_id = state.ecs.get_component<tmt::EntityID>(entity);
+    return entity_id.str();
+}
 
-    if (state.entity_mapping.contains(json_entity)) {
-        entity = state.entity_mapping.at(json_entity);
+static void tag_invoke(JsonReflect::deserialize_t, const JsonReflect::json& j, tmt::Entity& entity, const DeserializeState& state) {
+    const std::string uuid_str = j.get<std::string>();
+    const tmt::UUID uuid = tmt::UUID::fromStrFactory(uuid_str);
+
+    if (state.entity_mapping.contains(uuid)) {
+        entity = state.entity_mapping.at(uuid);
     } else {
-        tmt::Log::warn(tmt::Log::Scope::ENGINE, "[Serialization] Entity mapping does not contain entity {}", json_entity);
-        entity = json_entity;
+        tmt::Log::warn(tmt::Log::Scope::ENGINE, "[Serialization] Entity mapping does not contain UUID {}", uuid_str);
+        entity = entt::null;
     }
 }
 
@@ -111,8 +119,8 @@ void serialize_component(SerializeState& state) {
     for (const auto entity : state.all_entities) {
         if (state.ecs.has_component<ComponentType>(entity) == false) continue;
 
-        const auto value = tmt::Serializer::serialize(state.ecs.get_component<ComponentType>(entity));
-        state.json.entity_entry(components, entity, value);
+        const auto value = tmt::Serializer::serialize(state.ecs.get_component<ComponentType>(entity), state);
+        state.json.entity_entry(components, entity, value, state.ecs);
     }
 }
 
@@ -131,7 +139,9 @@ Json tag_invoke(JsonReflect::serialize_t, const std::set<tmt::Entity>& entities_
     state.json.set_version(tmt::Serializer::Config::VERSION);
 
     for (const auto entity : entities) {
-        state.json.entities().push_back(entity);
+        // state.json.entities().push_back(entity);
+        const auto& entity_id = ecs.get_component<tmt::EntityID>(entity);
+        state.json.entities().push_back(entity_id.str());
     }
 
     tmt::SerializeComponents::for_each([&state](auto type_tag) {
@@ -150,16 +160,29 @@ void deserialize_component(DeserializeState& state) {
     if (state.json.has_components(COMPONENT_NAME) == false) return;
 
     const Json& entries = state.json.components(COMPONENT_NAME);
+    /* Add components */
     for (const auto& [json_key, json_value] : entries.items()) {
-        const tmt::Entity json_entity = tmt::EntityHelper::from_string(json_key);
+        const auto json_entity_id = tmt::EntityID(json_key);
 
-        if (json_entity == entt::null) {
+        if (json_entity_id == tmt::NULL_ENTITY_ID) {
             tmt::Log::error(tmt::Log::Scope::ENGINE, "[Serialization] %s objects contain an entt::null entry.", COMPONENT_NAME);
             continue;
         }
 
-        const tmt::Entity entity = state.entity_mapping.at(json_entity);
-        ComponentType& component_value = state.ecs.add_or_get_component<ComponentType>(entity);
+        const tmt::Entity entity = state.entity_mapping.at(json_entity_id);
+        state.ecs.add_or_get_component<ComponentType>(entity);
+    }
+    /* Deserialize values */
+    for (const auto& [json_key, json_value] : entries.items()) {
+        const auto json_entity_id = tmt::EntityID(json_key);
+
+        if (json_entity_id == tmt::NULL_ENTITY_ID) {
+            continue;
+        }
+
+        const tmt::Entity entity = state.entity_mapping.at(json_entity_id);
+
+        ComponentType& component_value = state.ecs.get_component<ComponentType>(entity);
         tmt::Serializer::deserialize(json_value, component_value, state);
     }
 }
@@ -189,17 +212,35 @@ void tag_invoke(JsonReflect::deserialize_t, const Json& j, std::set<tmt::Entity>
     const auto& json_entities = state.json.entities();
 
     /* Create entities */
-    for (const auto& json_entity : json_entities) {
-        tmt::Entity deserialized_entity = entt::null;
-        tmt::Serializer::deserialize(json_entity, deserialized_entity);
+    for (const auto& json_uuid : json_entities) {
+        tmt::EntityID deserialized_entity_id = tmt::NULL_ENTITY_ID;
+        tmt::Serializer::deserialize(json_uuid, deserialized_entity_id);
 
-        if (deserialized_entity == entt::null) {
+        if (deserialized_entity_id == tmt::NULL_ENTITY_ID) {
             tmt::Log::error(tmt::Log::Scope::ENGINE, "[Serialization] \"Entities\" object contain an entt::null entity.");
             continue;
         }
 
-        const tmt::Entity created_entity = state.ecs.create_entity("", deserialized_entity);
-        state.entity_mapping[deserialized_entity] = created_entity;
+        /* Create entity and add to mapping */
+        const tmt::Entity created_entity = state.ecs.create_empty_entity();
+        state.entity_mapping[deserialized_entity_id] = created_entity;
+
+        if (state.ecs.has_uuid(deserialized_entity_id)) {
+            tmt::Log::warn(
+                tmt::Log::Scope::ENGINE, "[Serialization] UUID collision detected! Entity {} already owns UUID {}. Generating a new UUID for entity {}.",
+                *state.ecs.get_entity_by_uuid(deserialized_entity_id), deserialized_entity_id, created_entity
+            );
+
+            /* Generate a new UUID for the created entity */
+            tmt::EntityID& id_component = state.ecs.add_or_get_component<tmt::EntityID>(created_entity);
+            id_component = tmt::UUIDGenerator::generate();
+            state.ecs.register_uuid(id_component, created_entity);
+        } else {
+            /* Set EntityID component */
+            tmt::EntityID& id_component = state.ecs.add_or_get_component<tmt::EntityID>(created_entity);
+            id_component = deserialized_entity_id;
+            state.ecs.register_uuid(id_component, created_entity);
+        }
     }
 
     /* Deserialize each component */
@@ -242,36 +283,39 @@ Json& SceneJson::components(const std::string& component_name) { return json[com
 
 const Json& SceneJson::components(const std::string& component_name) const { return json.at(component_name); }
 
-bool SceneJson::has_entity_entry(const Json& container, const tmt::Entity& entity) const {
-    const auto key = tmt::EntityHelper::to_string(entity);
+bool SceneJson::has_entity_entry(const Json& container, const tmt::Entity& entity, const tmt::Ecs& ecs) const {
+    const auto& entity_id = ecs.get_component<tmt::EntityID>(entity);
+    const auto key = entity_id.str();
     return container.contains(key);
 }
 
-void SceneJson::entity_entry(Json& container, const tmt::Entity& entity, const Json& value) const {
-    const auto key = tmt::EntityHelper::to_string(entity);
+void SceneJson::entity_entry(Json& container, const tmt::Entity& entity, const Json& value, const tmt::Ecs& ecs) const {
+    const auto& entity_id = ecs.get_component<tmt::EntityID>(entity);
+    const auto key = entity_id.str();
     container[key] = value;
 }
 
-Json& SceneJson::entity_entry(Json& container, const tmt::Entity& entity) const {
-    const auto key = tmt::EntityHelper::to_string(entity);
+Json& SceneJson::entity_entry(Json& container, const tmt::Entity& entity, const tmt::Ecs& ecs) const {
+    const auto& entity_id = ecs.get_component<tmt::EntityID>(entity);
+    const auto key = entity_id.str();
     return container[key];
 }
 
 /* Component specific deserialize functions */
-void tag_invoke(JsonReflect::deserialize_t, const Json& j, tmt::EntityID& component, const DeserializeState& state) {
-    component = tmt::UUID::fromStrFactory(j.get<std::string>());
-    if (state.ecs.has_uuid(component) == false) return;
-
-    /* uuid already exists as a component */
-    const tmt::Entity owner = *state.ecs.get_entity_by_uuid(component);
-    const tmt::Entity current_entity = state.ecs.get_entity(component);
-
-    if (owner == current_entity) return;
-
-    /* UUID collision detected */
-    tmt::Log::warn(tmt::Log::Scope::ENGINE, "[Serialization] UUID collision detected! Entity {} already owns UUID {}. Generating a new UUID for entity {}.", owner, component, current_entity);
-
-    /* Generate a new UUID for the current entity */
-    component = tmt::UUIDGenerator::generate();
-    state.ecs.register_uuid(component, current_entity);
-}
+//void tag_invoke(JsonReflect::deserialize_t, const Json& j, tmt::EntityID& component, const DeserializeState& state) {
+//    component = tmt::UUID::fromStrFactory(j.get<std::string>());
+//    if (state.ecs.has_uuid(component) == false) return;
+//
+//    /* uuid already exists as a component */
+//    const tmt::Entity owner = *state.ecs.get_entity_by_uuid(component);
+//    const tmt::Entity current_entity = state.ecs.get_entity(component);
+//
+//    if (owner == current_entity) return;
+//
+//    /* UUID collision detected */
+//    tmt::Log::warn(tmt::Log::Scope::ENGINE, "[Serialization] UUID collision detected! Entity {} already owns UUID {}. Generating a new UUID for entity {}.", owner, component, current_entity);
+//
+//    /* Generate a new UUID for the current entity */
+//    component = tmt::UUIDGenerator::generate();
+//    state.ecs.register_uuid(component, current_entity);
+//}
