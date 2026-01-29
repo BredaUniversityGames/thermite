@@ -8,8 +8,7 @@ namespace tmt {
 
 glm::vec3 Light::calculate_luminance(const glm::vec3 scale) const {
     /* Calculate the linear ACEScg temperture color */
-    const glm::vec3 temperature_linear_srgb = cs::temperature_to_linear_srgb(temperature);
-    const glm::vec3 temperature_acescg = cs::linear_srgb_to_acescg(temperature_linear_srgb);
+    const glm::vec3 temperature_acescg = cs::black_body_acescg(temperature);
     float luminance = 0.0f;
     
     switch (type) {
