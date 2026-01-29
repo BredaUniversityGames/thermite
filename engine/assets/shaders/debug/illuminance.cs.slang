@@ -31,5 +31,5 @@ void main(int2 thread_id: SV_DispatchThreadID) {
 
     /* Sample the illuminance cache */
     const float3 illuminance = cache::sample(macrofacet_illuminance_cache, facet_key, render_view.frame_index);
-    render_target[thread_id] = float4(cs::delinearize_srgb(cs::acescg_to_linear_srgb(illuminance)), 1.0f); /* TEMP: Remove tonemapping! */
+    render_target[thread_id] = float4(cs::delinearize(cs::acescg_to_r709(cs::aces_filmic_tonemapping(illuminance))), 1.0f); /* TEMP: Remove tonemapping! */
 }

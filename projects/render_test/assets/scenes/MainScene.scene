@@ -789,7 +789,7 @@
                 "y": 1.0,
                 "z": 1.0
             },
-            "temperature": 5490.0,
+            "temperature": 5500.0,
             "type": "SUN_LIGHT",
             "light": {
                 "index": 1,
