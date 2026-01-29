@@ -107,7 +107,7 @@ void NodeHierarchy::open_svh() {
             model_load_atomic.store(true);
             model_load_atomic.notify_one();
         },
-        {{"Thermite voxel file", "svh"}}
+        {{"Thermite Voxel File", "svh"}}
     );
 }
 
@@ -129,29 +129,26 @@ void NodeHierarchy::save_svh_as() {
             const std::vector<char> scene_data = encode_voxel_scene();
             IO::write_file(location, scene_data.data(), scene_data.size());
         },
-        {{"Thermite voxel file", "svh"}}
+        {{"Thermite Voxel File", "svh"}}
     );
 }
 
-void NodeHierarchy::import_file() {
+void NodeHierarchy::import_file(const std::string& file_description, const std::string& file_extension) const {
     open_file_dialog(
         [this](const IO::FileLocation& location) {
             model_load_atomic.store(false);
 
-            loaded_location = {};
-            engine.ecs.clear();
-
             const ResourceRef<VoxelScene> resource = engine.resources.load_resource<VoxelScene>(location);
-            recurse_build_scene(resource->hierarchy);
+            recurse_build_scene(resource->hierarchy, true);
 
             model_load_atomic.store(true);
             model_load_atomic.notify_one();
         },
-        {{"Vengi voxel file", "vengi"}}
+        {{file_description.c_str(), file_extension.c_str()}}
     );
 }
 
-void NodeHierarchy::export_file() const {
+void NodeHierarchy::export_file(const std::string& file_description, const std::string& file_extension) const {
     save_file_dialog(
         [this](const IO::FileLocation& location) {
             const entt::basic_group renderer_group = engine.ecs.get_registry().group<VoxelRenderer>(entt::get<Transform>);
@@ -222,7 +219,7 @@ void NodeHierarchy::export_file() const {
             obj_file.close();
             mtl_file.close();
         },
-        {{"wavefront object file", "obj"}}
+        {{file_description.c_str(), file_extension.c_str()}}
     );
 }
 
@@ -239,7 +236,7 @@ void NodeHierarchy::display() {
     drop_hierarchy();
 }
 
-Entity NodeHierarchy::recurse_build_scene(const VoxelSceneNode& node, const Entity parent_entity, const glm::mat4& parent_matrix) {
+Entity NodeHierarchy::recurse_build_scene(const VoxelSceneNode& node, bool assign_new_uuids, const Entity parent_entity, const glm::mat4& parent_matrix) {
     const Entity entity = engine.ecs.create_entity(node.name);
 
     Transform& transform = engine.ecs.get_component<Transform>(entity);
@@ -247,18 +244,19 @@ Entity NodeHierarchy::recurse_build_scene(const VoxelSceneNode& node, const Enti
     transform.set_parent(parent_entity);
 
     VoxelEditUUID& uuid_component = engine.ecs.add_component<VoxelEditUUID>(entity);
-    uuid_component.uuid = node.uuid;
+    uuid_component.uuid = (assign_new_uuids ? UUIDGenerator::generate() : node.uuid);
 
     if (node.tree) {
         VoxelRenderer& renderer = engine.ecs.add_component<VoxelRenderer>(entity);
 
         // Create a fake voxel resource managed by the voxel editor.
         const ResourceRef volume {{}, std::make_shared<VoxelVolume>(node)};
+        volume->uuid = uuid_component.uuid;
         renderer.resource = volume;
     }
 
     for (const VoxelSceneNode& child : node.children) {
-        recurse_build_scene(child, entity, transform.get_world_matrix());
+        recurse_build_scene(child, assign_new_uuids, entity, transform.get_world_matrix());
     }
 
     return entity;

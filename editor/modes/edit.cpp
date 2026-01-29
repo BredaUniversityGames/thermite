@@ -19,12 +19,25 @@ void EditMode::display_main_menu() {
 
     if (ImGui::MenuItem("New")) editor.windows[Editor::Mode::EDIT].get<NodeHierarchy>().new_svh();
     if (ImGui::MenuItem("Open...")) editor.windows[Editor::Mode::EDIT].get<NodeHierarchy>().open_svh();
+
     ImGui::Separator();
+
     if (ImGui::MenuItem("Save")) editor.windows[Editor::Mode::EDIT].get<NodeHierarchy>().save_svh();
     if (ImGui::MenuItem("Save As...")) editor.windows[Editor::Mode::EDIT].get<NodeHierarchy>().save_svh_as();
+
     ImGui::Separator();
-    if (ImGui::MenuItem("Import...")) editor.windows[Editor::Mode::EDIT].get<NodeHierarchy>().import_file();
-    if (ImGui::MenuItem("Export...")) editor.windows[Editor::Mode::EDIT].get<NodeHierarchy>().export_file();
+
+    if (ImGui::BeginMenu("Import")) {
+        if (ImGui::MenuItem("Vengi Voxel File (.vengi)")) editor.windows[Editor::Mode::EDIT].get<NodeHierarchy>().import_file("Vengi Voxel File", "vengi");
+        if (ImGui::MenuItem("Sparse Voxel Hierarchy (.svh)")) editor.windows[Editor::Mode::EDIT].get<NodeHierarchy>().import_file("Sparse Voxel Hierarchy", "svh");
+
+        ImGui::EndMenu();
+    }
+    if (ImGui::BeginMenu("Export")) {
+        if (ImGui::MenuItem("Wavefront (.obj)")) editor.windows[Editor::Mode::EDIT].get<NodeHierarchy>().export_file("Wavefront", "obj");
+
+        ImGui::EndMenu();
+    }
 
     ImGui::EndMenu();
 }
