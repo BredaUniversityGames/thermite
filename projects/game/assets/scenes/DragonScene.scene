@@ -1,50 +1,17 @@
 {
     "version": 1,
     "entities": [
-        "6914fc38-4af5-4da7-9697-0f5d5f3be79e",
-        "46fd9e84-d885-4bb6-bfc7-dfd9bd35da9e"
+        "05602176-c510-4381-a0a0-14dd5862f7cd"
     ],
     "Prefab": {
-        "6914fc38-4af5-4da7-9697-0f5d5f3be79e": {
+        "05602176-c510-4381-a0a0-14dd5862f7cd": {
             "source_location": {
                 "sub_location": "PROJECT",
                 "relative_path": "test.prefab"
             },
-            "source_entity": "6914fc38-4af5-4da7-9697-0f5d5f3be79e",
-            "root_entity": "6914fc38-4af5-4da7-9697-0f5d5f3be79e",
-            "instance_id": "e74f11fd-9be4-49da-b793-5729943808b8"
-        },
-        "46fd9e84-d885-4bb6-bfc7-dfd9bd35da9e": {
-            "source_location": {
-                "sub_location": "PROJECT",
-                "relative_path": "test.prefab"
-            },
-            "source_entity": "46fd9e84-d885-4bb6-bfc7-dfd9bd35da9e",
-            "root_entity": "6914fc38-4af5-4da7-9697-0f5d5f3be79e",
-            "instance_id": "e74f11fd-9be4-49da-b793-5729943808b8"
+            "source_entity": "1f7560ce-4dcb-4728-8717-3b4987645a4c",
+            "root_entity": "05602176-c510-4381-a0a0-14dd5862f7cd",
+            "instance_id": "26a3fe99-2e3f-4aa9-9120-d310c08ef59b"
         }
-    },
-    "Name": null,
-    "Transform": {
-        "46fd9e84-d885-4bb6-bfc7-dfd9bd35da9e": {
-            "diff": [
-                {
-                    "op": "replace",
-                    "path": "/local_position/x",
-                    "value": 11.163000106811523
-                },
-                {
-                    "op": "replace",
-                    "path": "/local_position/y",
-                    "value": 4.099999904632568
-                },
-                {
-                    "op": "replace",
-                    "path": "/local_position/z",
-                    "value": 3.0
-                }
-            ]
-        }
-    },
-    "Voxel Renderer": null
+    }
 }

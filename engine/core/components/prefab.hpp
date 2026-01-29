@@ -10,8 +10,8 @@ using PrefabInstanceID = UUID;
 
 struct Prefab {
     IO::FileLocation source_location;
-    EntityID source_entity;
-    EntityID root_entity;
+    EntityID source_entity; /* in Prefab */
+    EntityID root_entity;   /* in Scene */
     PrefabInstanceID instance_id;
 };
 
