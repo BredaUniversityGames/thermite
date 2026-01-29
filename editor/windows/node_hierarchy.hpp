@@ -25,7 +25,7 @@ class NodeHierarchy : public IWindow {
     void save_svh();
     void save_svh_as();
     void import_file();
-    void export_file();
+    void export_file() const;
 
     void display() override;
 
@@ -33,7 +33,7 @@ class NodeHierarchy : public IWindow {
     void on_editor_update(const FrameData&) override {}
     void on_editor_end() override {}
 
-    static Entity recurse_build_scene(const VoxelSceneNode& node);
+    static Entity recurse_build_scene(const VoxelSceneNode& node, const Entity parent_entity = entt::null, const glm::mat4& parent_matrix = {1.0f});
     static void recurse_parse_scene(Entity entity, const Transform& transform, VoxelSceneNode& node);
 
     static std::vector<char> encode_voxel_scene();

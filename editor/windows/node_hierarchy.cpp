@@ -16,12 +16,15 @@
 
 #include <fstream>
 
+#include "engine/shared/const.hpp"
+
 namespace tmt {
 
 namespace {
 
 std::vector<uint8_t> create_uniform_voxels(const std::unique_ptr<Svt64>& tree, const glm::uvec3& size) {
-    std::vector<uint8_t> voxels(size.x * size.y * size.z, 0);
+    const uint32_t voxel_count = size.x * size.y * size.z;
+    std::vector<uint8_t> voxels(voxel_count, 0);
 
     for (uint32_t x = 0; x < size.x; x++) {
         for (uint32_t y = 0; y < size.y; y++) {
@@ -117,66 +120,78 @@ void NodeHierarchy::import_file() {
     );
 }
 
-void NodeHierarchy::export_file() {
+void NodeHierarchy::export_file() const {
     save_file_dialog(
         [this](const IO::FileLocation& location) {
-            const auto& renderer_storage = engine.ecs.get_registry().storage<VoxelRenderer>();
-            if (renderer_storage.empty()) return;
+            const entt::basic_group renderer_group = engine.ecs.get_registry().group<VoxelRenderer>(entt::get<Transform>);
+            if (renderer_group.empty()) return;
 
-            const ResourceRef<VoxelVolume>& resource = renderer_storage.begin()->resource;
-            const std::unique_ptr<Svt64>& tree = resource->blas;
-            const glm::uvec3& size = resource->size;
-
-            // Loop over all the voxels in the Svt64 tree to create a uniform voxel grid.
-            const std::vector<uint8_t> uniform_voxels = create_uniform_voxels(tree, size);
-
-            constexpr ogt_mesh_rgba palette[256] {};  // We don't really need to initialize the array, we only care about the indices, so we just need to allocate it for the ogt function.
-            constexpr ogt_voxel_meshify_context context {};
-            // Create a mesh from the uniform voxel grid.
-            const ogt_mesh* mesh = ogt_mesh_from_paletted_voxels_polygon(&context, uniform_voxels.data(), size.x, size.y, size.z, palette);
-
-            const std::string obj_path = location.get_relative_path().generic_string();
-            constexpr std::string_view mtl_filename {"palette.mtl"};
-            const std::string mtl_path = location.get_relative_path().replace_filename(mtl_filename).generic_string();
+            const std::filesystem::path obj_path = location.get_relative_path();
+            const std::filesystem::path mtl_path = location.get_relative_path().replace_extension(".mtl");
 
             std::ofstream obj_file {obj_path, std::ios::trunc};
-            if (obj_file.is_open()) {
-                obj_file << std::format("mtllib {}", mtl_filename) << '\n';
 
-                // Write all visuals to the file.
-                for (uint32_t i = 0; i < mesh->vertex_count; i++) {
-                    const ogt_mesh_vec3& coord = mesh->vertices[i].pos;
-                    obj_file << std::format("v {} {} {}", coord.x, coord.y, coord.z) << '\n';
-                }
-
-                // Write all the polygons using the indices (+1 because .obj indices start at 1).
-                for (uint32_t i = 0; i < mesh->index_count; i += 3) {
-                    // Use the material with the correct color.
-                    obj_file << std::format("usemtl {}", mesh->vertices[mesh->indices[i]].palette_index - 1) << '\n';
-
-                    obj_file << std::format("f {} {} {}", mesh->indices[i + 0] + 1, mesh->indices[i + 1] + 1, mesh->indices[i + 2] + 1) << '\n';
-                }
-
-                obj_file.close();
-            }
-
+            if (obj_file.is_open()) obj_file << std::format("mtllib {}", mtl_path.filename().generic_string()) << '\n';
             std::ofstream mtl_file {mtl_path, std::ios::trunc};
-            if (mtl_file.is_open()) {
-                // Write the colors to the mtl file.
-                for (uint32_t i = 0; i < 256; i++) {
-                    // Start a new material.
-                    mtl_file << std::format("newmtl {}", i) << '\n';
 
-                    // Write the color then the alpha, which is always 1.0.
-                    const Material& material = tree->palette.entries[i];
-                    mtl_file << std::format("Kd {} {} {}", linearize_srgb(material.albedo_r), linearize_srgb(material.albedo_g), linearize_srgb(material.albedo_b)) << '\n';
-                    mtl_file << "d 1.0" << '\n';
+            uint32_t indices_offset = 0;
+            for (const auto&& [entity, renderer, transform] : renderer_group.each()) {
+                const std::string& name = engine.ecs.get_component<Name>(entity).name;
+                const std::string& uuid_string = engine.ecs.get_component<VoxelEditUUID>(entity).uuid.str();
+
+                const ResourceRef<VoxelVolume>& resource = renderer.resource;
+                const std::unique_ptr<Svt64>& tree = resource->blas;
+                const glm::uvec3& size = resource->size;
+
+                // Loop over all the voxels in the Svt64 tree to create a uniform voxel grid.
+                const std::vector<uint8_t> uniform_voxels = create_uniform_voxels(tree, size);
+
+                constexpr ogt_mesh_rgba palette[256] {};  // We don't really need to initialize the array, we only care about the indices, so we just need to allocate it for the ogt function.
+                constexpr ogt_voxel_meshify_context context {};
+                // Create a mesh from the uniform voxel grid.
+                const ogt_mesh* mesh = ogt_mesh_from_paletted_voxels_polygon(&context, uniform_voxels.data(), size.x, size.y, size.z, palette);
+
+                if (obj_file.is_open()) {
+                    // Start new names object in the wavefront object file.
+                    obj_file << std::format("o {}", name) << '\n';
+
+                    // Write all visuals to the file.
+                    for (uint32_t i = 0; i < mesh->vertex_count; i++) {
+                        const glm::vec3& local_coord = glm::make_vec3(&mesh->vertices[i].pos.x) - (glm::vec3 {size} * 0.5f);
+                        const glm::vec3& coord = transform.get_world_matrix() * glm::vec4 {local_coord * UNITS_PER_VOXEL, 1.0f};
+
+                        obj_file << std::format("v {} {} {}", coord.x, coord.y, coord.z) << '\n';
+                    }
+
+                    // Write all the polygons using the indices (+1 because .obj indices start at 1).
+                    for (uint32_t i = 0; i < mesh->index_count; i += 3) {
+                        // Use the material with the correct color.
+                        obj_file << std::format("usemtl {}_{}", uuid_string, mesh->vertices[mesh->indices[i]].palette_index - 1) << '\n';
+
+                        obj_file << std::format("f {} {} {}", indices_offset + mesh->indices[i + 0] + 1, indices_offset + mesh->indices[i + 1] + 1, indices_offset + mesh->indices[i + 2] + 1)
+                                 << '\n';
+                    }
+                    indices_offset += mesh->vertex_count;
                 }
 
-                mtl_file.close();
+                if (mtl_file.is_open()) {
+                    // Write the colors to the mtl file.
+                    for (uint32_t i = 0; i < 256; i++) {
+                        // Start a new material.
+                        mtl_file << std::format("newmtl {}_{}", uuid_string, i) << '\n';
+
+                        // Write the color then the alpha, which is always 1.0.
+                        const Material& material = tree->palette.entries[i];
+                        mtl_file << std::format("Kd {} {} {}", linearize_srgb(material.albedo_r), linearize_srgb(material.albedo_g), linearize_srgb(material.albedo_b)) << '\n';
+                        mtl_file << "d 1.0" << '\n';
+                    }
+                }
             }
+
+            obj_file.close();
+            mtl_file.close();
         },
-        {{"Wavefront object model", "obj"}}
+        {{"wavefront object file", "obj"}}
     );
 }
 
@@ -191,11 +206,24 @@ void NodeHierarchy::display() {
     }
 }
 
-Entity NodeHierarchy::recurse_build_scene(const VoxelSceneNode& node) {
+/* Right-handed Y-up negative Z -> Left-handed Y-up positive Z */
+glm::mat4 rhyuzn_to_lhyuzp(const glm::mat4& m) {
+    constexpr float S[4] = {-1, 1, -1, 1};
+    glm::mat4 result;
+    for (int col = 0; col < 4; ++col) {
+        for (int row = 0; row < 4; ++row) {
+            result[col][row] = S[col] * S[row] * m[col][row];
+        }
+    }
+    return result;
+}
+
+Entity NodeHierarchy::recurse_build_scene(const VoxelSceneNode& node, const Entity parent_entity, const glm::mat4& parent_matrix) {
     const Entity entity = engine.ecs.create_entity(node.name);
 
     Transform& transform = engine.ecs.get_component<Transform>(entity);
-    transform.set_world_matrix(node.transform);
+    transform.set_world_matrix(parent_matrix * node.transform);
+    transform.set_parent(parent_entity);
 
     VoxelEditUUID& uuid_component = engine.ecs.add_component<VoxelEditUUID>(entity);
     uuid_component.uuid = node.uuid;
@@ -209,8 +237,7 @@ Entity NodeHierarchy::recurse_build_scene(const VoxelSceneNode& node) {
     }
 
     for (const VoxelSceneNode& child : node.children) {
-        const Entity child_entity = recurse_build_scene(child);
-        transform.add_child(child_entity);
+        recurse_build_scene(child, entity, transform.get_world_matrix());
     }
 
     return entity;
