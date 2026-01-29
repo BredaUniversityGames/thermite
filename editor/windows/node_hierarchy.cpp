@@ -7,16 +7,17 @@
 #include "engine/core/components/voxel_renderer.hpp"
 #include "engine/tools/file_dialog.hpp"
 #include "engine/tools/svh_format.hpp"
+#include "engine/shared/colorspace.hpp"
+#include "engine/shared/const.hpp"
 
 #include <imgui.h>
+#include <imgui_internal.h>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/quaternion.hpp>
 #define OGT_VOXEL_MESHIFY_IMPLEMENTATION
 #include <ogt_voxel_meshify.h>
 
 #include <fstream>
-
-#include "engine/shared/const.hpp"
 
 namespace tmt {
 
@@ -41,12 +42,42 @@ std::vector<uint8_t> create_uniform_voxels(const std::unique_ptr<Svt64>& tree, c
     return voxels;
 }
 
-float linearize_srgb(const float value) {
-    if (value <= 0.04045f) {
-        return value / 12.92f;
-    } else {
-        return powf((value + 0.055f) / 1.055f, 2.4f);
+void drag_node(const Entity entity, const std::string& name) {
+    if (!ImGui::BeginDragDropSource()) return;
+
+    ImGui::SetDragDropPayload("VoxelNode", &entity, sizeof(entity));
+    ImGui::Text("%s", name.c_str());
+
+    ImGui::EndDragDropSource();
+}
+
+void drop_node(const Entity entity, Transform& transform) {
+    if (!ImGui::BeginDragDropTarget()) return;
+
+    const ImGuiPayload* payload = ImGui::GetDragDropPayload();
+    if (payload != nullptr && payload->IsDataType("VoxelNode")) {
+        const Entity dropped_entity = *static_cast<Entity*>(payload->Data);
+
+        if (entity != dropped_entity && ImGui::AcceptDragDropPayload("VoxelNode")) {
+            transform.add_child(dropped_entity);
+        }
     }
+
+    ImGui::EndDragDropTarget();
+}
+
+void drop_hierarchy() {
+    const ImRect window_rect {ImGui::GetWindowContentRegionMin(), ImGui::GetWindowContentRegionMax()};
+    if (!ImGui::BeginDragDropTargetCustom(window_rect, ImGui::GetID("NodeEmptyDropArea"))) return;
+
+    const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("VoxelNode");
+    if (payload != nullptr) {
+        const Entity dropped_entity = *static_cast<Entity*>(payload->Data);
+
+        engine.ecs.get_component<Transform>(dropped_entity).clear_parent();
+    }
+
+    ImGui::EndDragDropTarget();
 }
 
 struct VoxelEditUUID {
@@ -182,7 +213,7 @@ void NodeHierarchy::export_file() const {
 
                         // Write the color then the alpha, which is always 1.0.
                         const Material& material = tree->palette.entries[i];
-                        mtl_file << std::format("Kd {} {} {}", linearize_srgb(material.albedo_r), linearize_srgb(material.albedo_g), linearize_srgb(material.albedo_b)) << '\n';
+                        mtl_file << std::format("Kd {} {} {}", cs::linearize(material.albedo_r), cs::linearize(material.albedo_g), cs::linearize(material.albedo_b)) << '\n';
                         mtl_file << "d 1.0" << '\n';
                     }
                 }
@@ -204,18 +235,8 @@ void NodeHierarchy::display() {
 
         recurse_display_node(entity, name, transform);
     }
-}
 
-/* Right-handed Y-up negative Z -> Left-handed Y-up positive Z */
-glm::mat4 rhyuzn_to_lhyuzp(const glm::mat4& m) {
-    constexpr float S[4] = {-1, 1, -1, 1};
-    glm::mat4 result;
-    for (int col = 0; col < 4; ++col) {
-        for (int row = 0; row < 4; ++row) {
-            result[col][row] = S[col] * S[row] * m[col][row];
-        }
-    }
-    return result;
+    drop_hierarchy();
 }
 
 Entity NodeHierarchy::recurse_build_scene(const VoxelSceneNode& node, const Entity parent_entity, const glm::mat4& parent_matrix) {
@@ -280,7 +301,7 @@ std::vector<char> NodeHierarchy::encode_voxel_scene() {
     return encode_svh(node);
 }
 
-void NodeHierarchy::recurse_display_node(const Entity entity, const Name& name, const Transform& transform) {
+void NodeHierarchy::recurse_display_node(const Entity entity, const Name& name, Transform& transform) {
     ImGui::PushID(static_cast<int>(entity));
 
     const std::set<Entity>& children = transform.get_children();
@@ -293,10 +314,12 @@ void NodeHierarchy::recurse_display_node(const Entity entity, const Name& name, 
     flags |= (entity == selected_entity ? ImGuiTreeNodeFlags_Selected : 0);
 
     const bool tree_open = ImGui::TreeNodeEx(name.name.c_str(), flags);
+    drag_node(entity, name.name);
+    drop_node(entity, transform);
     if (ImGui::IsItemClicked()) selected_entity = entity;
     if (tree_open) {
         for (const Entity child : children) {
-            const auto&& [child_name, child_transform] = engine.ecs.get_component<Name, Transform>(child);
+            auto&& [child_name, child_transform] = engine.ecs.get_component<Name, Transform>(child);
             recurse_display_node(child, child_name, child_transform);
         }
 

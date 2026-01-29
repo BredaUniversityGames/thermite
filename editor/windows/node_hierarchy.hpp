@@ -39,7 +39,7 @@ class NodeHierarchy : public IWindow {
     static std::vector<char> encode_voxel_scene();
 
    private:
-    void recurse_display_node(Entity entity, const Name& name, const Transform& transform);
+    void recurse_display_node(Entity entity, const Name& name, Transform& transform);
 
     IO::FileLocation loaded_location {};
     Entity selected_entity {entt::null};
