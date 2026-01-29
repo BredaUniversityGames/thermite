@@ -38,7 +38,7 @@ std::unique_ptr<vengi::Node> VengiParser::load(const tmt::IO::FileLocation& veng
             throw std::runtime_error("Node data parsing error!");
         }
 
-        compute_ref_world_transforms(*ret_node, glm::mat4(1.f));
+        compute_parent_transform_offsets(*ret_node, glm::vec3(0.0f));
 
         return ret_node;
     } catch (const std::exception& e) {
@@ -84,15 +84,33 @@ std::vector<char> VengiParser::zlib_decompress_vengi_file(std::vector<char>& com
     return decompressed_output;
 }
 
-void VengiParser::compute_ref_world_transforms(vengi::Node& node, const glm::mat4& parent_matrix) {
+void VengiParser::compute_parent_transform_offsets(vengi::Node& node, const glm::vec3& parent_offset) {
     if (node.animations.empty()) return;
 
-    const glm::mat4& local = node.animations[0].keyframes[0].local_matrix;
-    glm::mat4 world = parent_matrix * local;
-    node.transform.set_world_matrix(world);
+    glm::mat4& local = node.animations[0].keyframes[0].local_matrix;
+    local[3][0] -= parent_offset.x;
+    local[3][1] -= parent_offset.y;
+    local[3][2] -= parent_offset.z;
+
+    glm::vec3 offset(0.0f);
+
+    // If the node has a voxel data we should add offsets (vengi objects have their pivot in the corner instead of the center).
+    if (node.voxel_data) {
+        glm::vec3 half_size(node.voxel_data->region.width(), node.voxel_data->region.height(), node.voxel_data->region.depth());
+        half_size /= static_cast<float>(VOXELS_PER_UNIT * 2);
+
+        offset = half_size;
+        offset.z = -offset.z;  // Flip the Z-axis to account for right-handed to left-handed coordinate system conversion.
+
+        local[3][0] += offset.x;
+        local[3][1] += offset.y;
+        local[3][2] += offset.z;
+    }
+
+    node.transform.set_world_matrix(local);
 
     for (auto& child : node.children) {
-        compute_ref_world_transforms(*child, world);
+        compute_parent_transform_offsets(*child, offset);
     }
 }
 
@@ -152,6 +170,9 @@ bool BinaryParser::parse_node(vengi::Node& node) {
             case 0x4D494E41: {
                 Animation anim;
                 if (!parse_animation(anim)) return false;
+
+                // Set the local matrix of the local transform, but only for the first animation.
+                if (node.animations.empty()) node.transform.set_world_matrix(anim.keyframes[0].local_matrix);
                 node.animations.push_back(anim);
                 break;
             }
@@ -186,7 +207,7 @@ bool BinaryParser::parse_properties(vengi::Node& node) {
 bool BinaryParser::parse_voxel_data(vengi::Node& node) {
     node.voxel_data = std::make_unique<VoxelData>();
 
-    // Read 6 int32s: lower x, lower y, lower z, upper x, upper y, upperzx
+    // Read 6 int32s: lower x, lower y, lower z, upper x, upper y, upper z
     int32_t lower_x = read_int32();
     int32_t lower_y = read_int32();
     int32_t lower_z = read_int32();
@@ -210,8 +231,9 @@ bool BinaryParser::parse_voxel_data(vengi::Node& node) {
 
                 uint32_t xi = x - lower_x;
                 uint32_t yi = y - lower_y;
-                uint32_t zi = z - lower_z;
-                const uint32_t i = xi + yi * node.voxel_data->region.width() + zi * wh;
+                uint32_t zi = -z + upper_z;  // Flip the z-axis to convert from right-handed to left-handed.
+
+                uint32_t i = xi + yi * node.voxel_data->region.width() + zi * wh;
 
                 uint8_t color_index = read_uint8();
                 uint8_t normal_index = read_uint8();
@@ -322,6 +344,21 @@ bool BinaryParser::parse_animation(vengi::Animation& anim) {
             keyframe.long_rotation = read_bool();
             keyframe.interpolation_type = read_string();
             keyframe.local_matrix = read_matrix4x4();
+
+            // Scale vengi positions to match our engine's positions.
+            keyframe.local_matrix[3][0] /= static_cast<float>(VOXELS_PER_UNIT);
+            keyframe.local_matrix[3][1] /= static_cast<float>(VOXELS_PER_UNIT);
+            keyframe.local_matrix[3][2] /= static_cast<float>(VOXELS_PER_UNIT);
+
+            // Convert the matrix from Vengi's right-handed coordinate system to Thermite's left-handed coordinate system.
+            constexpr glm::mat4 right_to_left_handed {
+                glm::vec4(1.0f, 0.0f, 0.0f, 0.0f),
+                glm::vec4(0.0f, 1.0f, 0.0f, 0.0f),
+                glm::vec4(0.0f, 0.0f, -1.0f, 0.0f),
+                glm::vec4(0.0f, 0.0f, 0.0f, 1.0f),
+            };
+            keyframe.local_matrix = glm::inverse(right_to_left_handed) * keyframe.local_matrix * right_to_left_handed;
+
             anim.keyframes.push_back(keyframe);
         } else {
             throw std::runtime_error("Unexpected chunk in animation!");
