@@ -64,6 +64,7 @@ class Svt64 {
     uint32_t node_count = 0u;
     uint32_t nodes_wasted = 0u;
     uint32_t nodes_capacity = 0u;
+    uint32_t root_node = 0u;
 
     /* List of voxel data. */
     MaterialPalette palette {};

@@ -438,6 +438,11 @@ void Svt64::set_voxel(const uint32_t x, const uint32_t y, const uint32_t z, cons
 			nodes_wasted += prev_nodes_count;
 			node = Svt64Node(false, node_count, node.child_mask | lm);
 
+            /* If the root node is moved, update the root node index */
+            if (scale == (depth * 2u - 2u)) {
+                root_node = node_count;
+            }
+
 			for (int i = 0, j = 0; i < 64; ++i) {
 				const bool is_new = i == li;
 
@@ -510,8 +515,9 @@ void Svt64::defrag() {
 	uint32_t old_stack[128] {};
 	uint32_t new_stack[128] {};
 	uint32_t stack_ptr = 0u;
-	uint32_t old_node_index = 0u;
+	uint32_t old_node_index = root_node;
 	uint32_t new_node_index = 0u;
+    root_node = 0u;
 
 	for (;;) {
 		const Svt64Node& old_node = nodes[old_node_index];
