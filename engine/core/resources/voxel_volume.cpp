@@ -71,21 +71,21 @@ void VoxelVolume::unload() {
 
 void VoxelVolume::update_if_dirty() {
     if (is_dirty == false) return;
+    VRAMBank& bank = engine.renderer.vram_bank();
 
     /* Mark this volume as no longer dirty */
     is_dirty = false;
 
-    static bool logged = false;
     if (blas->voxel_count >= blas_voxels_capacity || blas->node_count >= blas_nodes_capacity) {
-        if (logged == false) {
-            Log::warn(Log::Scope::ENGINE, "Ran out of SVT64 buffer space.");
-            logged = true;
-        }
-        return;
+        /* Resize the BLAS buffers */
+        blas_nodes_capacity = blas->nodes_capacity;
+        blas_voxels_capacity = blas->voxels_capacity;
+        bank.resize_buffer(blas_nodes, blas_nodes_capacity, sizeof(Svt64Node));
+        bank.resize_buffer(blas_voxels, blas_voxels_capacity, sizeof(MaterialIndex));
+        Log::info("Resized SVT64 buffers.");
     }
 
     /* Re-upload voxel data */
-    VRAMBank& bank = engine.renderer.vram_bank();
     bank.upload_buffer(blas_voxels, blas->materials, 0u, blas->voxel_count * sizeof(MaterialIndex));
     bank.upload_buffer(blas_nodes, blas->nodes, 0u, blas->node_count * sizeof(Svt64Node));
     bank.upload_buffer(blas_palette, &blas->palette, 0u, sizeof(MaterialPalette));
@@ -101,8 +101,8 @@ void VoxelVolume::load_from_node(const VoxelSceneNode& node) {
     /* TODO: These buffers need to scale when the voxel data is modified at run-time! */
     VRAMBank& bank = engine.renderer.vram_bank();
     const BufferUsage storage = BufferUsage::Storage | BufferUsage::TransferDst;
-    blas_nodes_capacity = blas->node_count + SVT64_BUFFER_MEMORY;
-    blas_voxels_capacity = blas->voxel_count + SVT64_BUFFER_MEMORY;
+    blas_nodes_capacity = blas->nodes_capacity;
+    blas_voxels_capacity = blas->voxels_capacity;
     blas_nodes = bank.create_buffer("BLAS Nodes Buffer", storage, blas_nodes_capacity, sizeof(Svt64Node)).expect("failed to create tree nodes buffer.");
     blas_voxels = bank.create_buffer("BLAS Voxels Buffer", storage, blas_voxels_capacity, sizeof(MaterialIndex)).expect("failed to create voxel data buffer.");
     blas_palette = bank.create_buffer("BLAS Palette Buffer", storage, sizeof(MaterialPalette)).expect("failed to create material palette buffer.");

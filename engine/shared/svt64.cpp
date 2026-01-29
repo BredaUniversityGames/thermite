@@ -403,21 +403,17 @@ Svt64& Svt64::operator=(const Svt64& src) {
 }
 
 void Svt64::set_voxel(const uint32_t x, const uint32_t y, const uint32_t z, const MaterialIndex material) {
-    /* Check if we ran out of space */
-    if (node_count >= nodes_capacity || voxel_count >= voxels_capacity) {
-        static bool done_once = false;
-        if (done_once == false) {
-            Log::warn(Log::Scope::ENGINE, "SVT64 ran out of buffer memory.");
-            done_once = true;
-        }
-        return;
-    }
-
     /* Check if the voxel is in bounds */
     const uint32_t width = (uint32_t)powf(4.0f, (float)depth);
     if (x >= width || y >= width || z >= width) { 
         Log::warn("SVT64 tried to set voxel outside bounds.");
         return;
+    }
+
+    /* Check if we need to defragment the tree */
+    if ((node_count + SVT64_DEFRAG_THRESHOLD) >= nodes_capacity || (voxel_count + SVT64_DEFRAG_THRESHOLD) >= voxels_capacity) {
+        Log::info("Running SVT64 defragmentation.");
+        defrag();
     }
 
 	uint32_t node_index = 0u;
@@ -438,7 +434,7 @@ void Svt64::set_voxel(const uint32_t x, const uint32_t y, const uint32_t z, cons
 		if ((node.child_mask & lm) == 0ull) {
 			const uint32_t prev_child_index = node.abs_ptr();
             const uint32_t prev_nodes_count = popcnt_var64(node.child_mask, 64u);
-            if (node_count + prev_nodes_count + 64u >= nodes_capacity) return;
+            // if (node_count + prev_nodes_count + 64u >= nodes_capacity) return;
 			nodes_wasted += prev_nodes_count;
 			node = Svt64Node(false, node_count, node.child_mask | lm);
 
@@ -474,7 +470,7 @@ void Svt64::set_voxel(const uint32_t x, const uint32_t y, const uint32_t z, cons
 	if ((node.child_mask & lm) == 0ull) {
 		const uint32_t prev_voxel_index = node.abs_ptr();
         const uint32_t prev_voxel_count = popcnt_var64(node.child_mask, 64u);
-        if (voxel_count + prev_voxel_count + 64u >= voxels_capacity) return;
+        // if (voxel_count + prev_voxel_count + 64u >= voxels_capacity) return;
 		voxels_wasted += prev_voxel_count;
 
 		node = Svt64Node(true, voxel_count, node.child_mask | lm);
@@ -500,11 +496,13 @@ void Svt64::set_voxel(const uint32_t x, const uint32_t y, const uint32_t z, cons
 
 void Svt64::defrag() {
 	/* Copy current nodes and voxels */
-	Svt64Node* new_nodes = new Svt64Node[node_count];
-	MaterialIndex* new_materials = new MaterialIndex[voxel_count];
-	PhysicsVoxel* new_physics_data = new PhysicsVoxel[voxel_count];
+	Svt64Node* new_nodes = new Svt64Node[node_count + SVT64_BUFFER_MEMORY];
+	MaterialIndex* new_materials = new MaterialIndex[voxel_count + SVT64_BUFFER_MEMORY];
+	PhysicsVoxel* new_physics_data = new PhysicsVoxel[voxel_count + SVT64_BUFFER_MEMORY];
 
 	/* Traverse the tree top down, move all child nodes/voxels into new lists */
+    nodes_capacity = node_count + SVT64_BUFFER_MEMORY;
+    voxels_capacity = voxel_count + SVT64_BUFFER_MEMORY;
 	node_count = 1u;
 	voxel_count = voxels_wasted = nodes_wasted = 0u;
 	
@@ -525,6 +523,7 @@ void Svt64::defrag() {
 		if (old_node.is_leaf()) {
 			new_node = Svt64Node(true, voxel_count, old_node.child_mask);
 			memcpy(new_materials + voxel_count, materials + child_ptr, child_count * sizeof(MaterialIndex));
+			memcpy(new_physics_data + voxel_count, physics_data + child_ptr, child_count * sizeof(PhysicsVoxel));
 			voxel_count += child_count;
 			if (stack_ptr == 0u) break;
 			old_node_index = old_stack[--stack_ptr];

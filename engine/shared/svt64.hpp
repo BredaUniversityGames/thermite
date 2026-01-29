@@ -7,8 +7,10 @@
 
 namespace tmt {
 
+/* TODO: Only apply buffer space in the voxel editor! */
 /* How much space should be reserved for real-time modifications. */
-constexpr uint32_t SVT64_BUFFER_MEMORY = 1000u;
+constexpr uint32_t SVT64_BUFFER_MEMORY = 10000u; /* x 14 bytes (140kb) */
+constexpr uint32_t SVT64_DEFRAG_THRESHOLD = 2000u;
 
 /* Raw uniform voxel input data. */
 struct RawVoxels {
