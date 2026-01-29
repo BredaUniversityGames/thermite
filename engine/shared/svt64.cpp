@@ -252,7 +252,7 @@ inline glm::vec3 mirror_pos(const glm::vec3 pos, const glm::vec3 dir) {
 }
 
 // Count number of set bits in variable range [0..width]
-inline uint32_t popcnt_var64(uint64_t mask, uint32_t width) { return (uint32_t)__popcnt64(mask & ((1ull << width) - 1)); }
+inline uint32_t popcnt_var64(uint64_t mask, uint32_t width) { return (uint32_t)__popcnt64(mask & (0xFFFFFFFFFFFFFFFFull >> (64u - width))); }
 
 /* Get the index of the voxel at a given position and traversal scale. */
 glm::uvec3 voxel_index(glm::vec3 pos, uint32_t scale_exp) {
@@ -433,7 +433,7 @@ void Svt64::set_voxel(const uint32_t x, const uint32_t y, const uint32_t z, cons
 		/* If the child doesn't exist yet, create it */
 		if ((node.child_mask & lm) == 0ull) {
 			const uint32_t prev_child_index = node.abs_ptr();
-            const uint32_t prev_nodes_count = __popcnt64(node.child_mask); // popcnt_var64(node.child_mask, 64u);
+            const uint32_t prev_nodes_count = popcnt_var64(node.child_mask, 64u);
             // if (node_count + prev_nodes_count + 64u >= nodes_capacity) return;
 			nodes_wasted += prev_nodes_count;
 			node = Svt64Node(false, node_count, node.child_mask | lm);
@@ -474,7 +474,7 @@ void Svt64::set_voxel(const uint32_t x, const uint32_t y, const uint32_t z, cons
 	/* If the voxel doesn't exist yet, create it */
 	if ((node.child_mask & lm) == 0ull) {
 		const uint32_t prev_voxel_index = node.abs_ptr();
-        const uint32_t prev_voxel_count = __popcnt64(node.child_mask); // popcnt_var64(node.child_mask, 64u);
+        const uint32_t prev_voxel_count = popcnt_var64(node.child_mask, 64u);
         // if (voxel_count + prev_voxel_count + 64u >= voxels_capacity) return;
 		voxels_wasted += prev_voxel_count;
 
@@ -522,7 +522,7 @@ void Svt64::defrag() {
 	for (;;) {
 		const Svt64Node& old_node = nodes[old_node_index];
 		Svt64Node& new_node = new_nodes[new_node_index];
-		const uint32_t child_count = __popcnt64(old_node.child_mask); // popcnt_var64(old_node.child_mask, 64u);
+		const uint32_t child_count = popcnt_var64(old_node.child_mask, 64u);
 		const uint32_t child_ptr = old_node.abs_ptr();
 
 		/* Defrag leaf node */
