@@ -346,9 +346,9 @@ bool BinaryParser::parse_animation(vengi::Animation& anim) {
             keyframe.local_matrix = read_matrix4x4();
 
             // Scale vengi positions to match our engine's positions.
-            keyframe.local_matrix[3][0] /= static_cast<float>(VOXELS_PER_UNIT);
-            keyframe.local_matrix[3][1] /= static_cast<float>(VOXELS_PER_UNIT);
-            keyframe.local_matrix[3][2] /= static_cast<float>(VOXELS_PER_UNIT);
+            keyframe.local_matrix[3][0] *= UNITS_PER_VOXEL;
+            keyframe.local_matrix[3][1] *= UNITS_PER_VOXEL;
+            keyframe.local_matrix[3][2] *= UNITS_PER_VOXEL;
 
             // Convert the matrix from Vengi's right-handed coordinate system to Thermite's left-handed coordinate system.
             constexpr glm::mat4 right_to_left_handed {
@@ -357,7 +357,7 @@ bool BinaryParser::parse_animation(vengi::Animation& anim) {
                 glm::vec4(0.0f, 0.0f, -1.0f, 0.0f),
                 glm::vec4(0.0f, 0.0f, 0.0f, 1.0f),
             };
-            keyframe.local_matrix = glm::inverse(right_to_left_handed) * keyframe.local_matrix * right_to_left_handed;
+            keyframe.local_matrix = right_to_left_handed * keyframe.local_matrix * right_to_left_handed;
 
             anim.keyframes.push_back(keyframe);
         } else {
