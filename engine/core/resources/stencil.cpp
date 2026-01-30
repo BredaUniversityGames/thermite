@@ -27,7 +27,8 @@ bool Stencil::load() {
 
     copy_recursive(0u, glm::ivec3(0), root_extent, tree);
 
-    // recursive lambda to walk nodes
+    // claudia made this:
+    // recursive lambda to traverse nodes
     std::function<void(uint32_t, glm::ivec3, uint32_t)> traverse;
     traverse = [&](uint32_t node_id, glm::ivec3 node_pos, uint32_t node_scale) {
         const Svt64Node& node = tree->nodes[node_id];

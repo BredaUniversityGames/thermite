@@ -193,56 +193,9 @@ PhysicsVoxel* Svt64::get_physics_voxel(const uint32_t x, const uint32_t y, const
 }
 
 void Svt64::subtract(const Stencil* stencil, glm::ivec3 offset) {
-    TMT_ZONE_SCOPED_N("stencil subtract")
+    TMT_ZONE_SCOPED
 
     subtract_recursive(0, glm::ivec3(0), 1u << (depth * 2u), stencil, offset);
-
-    // print the size of the stencil
-    printf("Subtracting stencil of size (%u, %u, %u) with offset (%d, %d, %d)\n", stencil->size.x, stencil->size.y, stencil->size.z, offset.x, offset.y, offset.z);
-}
-
-void Svt64::subtract(const Svt64* other, glm::ivec3 offset) {
-    TMT_ZONE_SCOPED_N("svt64 subtract")
-
-    // Copy nodes to preserve original masks for popcount lookups
-    Svt64Node* original_nodes = new Svt64Node[node_count];
-    memcpy(original_nodes, nodes, node_count * sizeof(Svt64Node));
-
-    // Remove voxels based on other tree
-    uint32_t this_extent = 1u << (depth * 2u);
-    uint32_t other_extent = 1u << (other->depth * 2u);
-
-    {
-        TMT_ZONE_SCOPED_N("svt64 subtract rec")
-        subtract_recursive(0, glm::ivec3(0), this_extent, other, 0, glm::ivec3(0), other_extent, offset);
-    }
-
-    // Rebuild tree using original_nodes for popcount, nodes for new masks
-    Svt64Node* new_nodes = new Svt64Node[node_count + SVT64_BUFFER_MEMORY / sizeof(Svt64Node)];
-    MaterialIndex* new_materials = new MaterialIndex[voxel_count + SVT64_BUFFER_MEMORY / sizeof(MaterialIndex)];
-    PhysicsVoxel* new_physics_data = new PhysicsVoxel[voxel_count + SVT64_BUFFER_MEMORY / sizeof(PhysicsVoxel)];
-
-    uint32_t new_node_count = 1;
-    uint32_t new_voxel_count = 0;
-
-    {
-        TMT_ZONE_SCOPED_N("svt64 rebuild")
-        // Rebuild based on updated masks using original_nodes for popcount lookups
-        rebuild_recursive(0, 0, original_nodes, new_nodes, new_materials, new_physics_data, new_node_count, new_voxel_count);
-    }
-
-    // Delete old data
-    delete[] original_nodes;
-    delete[] nodes;
-    delete[] materials;
-    delete[] physics_data;
-
-    // Assign new data
-    nodes = new_nodes;
-    materials = new_materials;
-    physics_data = new_physics_data;
-    node_count = new_node_count;
-    voxel_count = new_voxel_count;
 }
 
 void tmt::Svt64::subtract_recursive(uint32_t node_id, glm::ivec3 node_pos, uint32_t node_scale, const Stencil* stencil, glm::ivec3 offset) {
@@ -267,7 +220,7 @@ void tmt::Svt64::subtract_recursive(uint32_t node_id, glm::ivec3 node_pos, uint3
             if (voxels_subtracted > 0) {
                 // Get current material index
                 const uint32_t child_pos = (uint32_t)__popcnt64(node.child_mask & ((1ull << voxel_id) - 1u));
-                // Shift material index
+                // Update material index
                 materials[node.abs_ptr() + child_pos] = palette_lookup[child_pos + voxels_subtracted];
             }
 
@@ -321,149 +274,40 @@ void tmt::Svt64::subtract_recursive(uint32_t node_id, glm::ivec3 node_pos, uint3
     }
 }
 
-void Svt64::subtract_recursive(
-    uint32_t node_id, glm::ivec3 node_pos, uint32_t node_scale, const Svt64* other, uint32_t other_id, glm::ivec3 other_pos, uint32_t other_scale, glm::ivec3 offset
-) {
-    Svt64Node& node = nodes[node_id];
-    const Svt64Node& other_node = other->nodes[other_id];
+void tmt::Svt64::remove_voxel(const uint32_t x, const uint32_t y, const uint32_t z) {
+    Svt64Node* current = &nodes[0];
 
-    // if are both are leafs, remove overlapping voxels
-    if (node.is_leaf() && other_node.is_leaf()) {
-        // Calculate leaf offset
-        glm::ivec3 leaf_offset = (other_pos + offset) - node_pos;
+    // Bounds check
+    if (x >= (1u << (depth * 2u)) || y >= (1u << (depth * 2u)) || z >= (1u << (depth * 2u))) return;
 
-        // Loop over solid voxels in other
-        uint64_t other_mask = other_node.child_mask;
-        while (other_mask != 0ull) {
-            // Get child index and clear bit
-            uint32_t other_voxel_id = std::countr_zero(other_mask);
-            other_mask &= other_mask - 1;
+    for (uint32_t level = 1u; level <= depth; ++level) {
+        // Get child position
+        const uint32_t x_index = (x >> ((depth - level) * 2u)) & 3u;
+        const uint32_t y_index = (y >> ((depth - level) * 2u)) & 3u;
+        const uint32_t z_index = (z >> ((depth - level) * 2u)) & 3u;
 
-            // Calculate position of this child in the other
-            glm::ivec3 other_voxel_local = glm::ivec3((other_voxel_id >> 0) & 3, (other_voxel_id >> 4) & 3, (other_voxel_id >> 2) & 3);
-            glm::ivec3 this_voxel_pos = other_voxel_local + leaf_offset;
+        // Get child index
+        const uint32_t child_index = (x_index << 0u) | (z_index << 2u) | (y_index << 4u);
 
-            // Bounds check
-            if (this_voxel_pos.x < 0 || this_voxel_pos.x >= 4) continue;
-            if (this_voxel_pos.y < 0 || this_voxel_pos.y >= 4) continue;
-            if (this_voxel_pos.z < 0 || this_voxel_pos.z >= 4) continue;
+        // Check if child exists
+        if ((current->child_mask & (1ull << child_index)) == 0u) {
+            return;
+        } else if (level == depth)  // Leaf node
+        {
+            const uint32_t num_voxels = (uint32_t)__popcnt64(current->child_mask);
+            const uint32_t child_pos = (uint32_t)__popcnt64(current->child_mask & ((1ull << child_index) - 1u));
+            // Remove the voxel from the child mask
+            current->child_mask &= ~(1ull << child_index);
 
-            // Remove voxel from this node
-            uint32_t this_voxel_id = this_voxel_pos.x + (this_voxel_pos.y << 4) + (this_voxel_pos.z << 2);
-            node.child_mask &= ~(1ull << this_voxel_id);
+            // Move all data relevant to this node over by 1
+            memmove(&materials[current->abs_ptr() + child_pos], &materials[current->abs_ptr() + child_pos + 1u], (num_voxels - child_pos - 1u) * sizeof(MaterialIndex));
+
+            return;
         }
-        return;
-    }
 
-    // Only current is leaf, recurse into other children
-    if (node.is_leaf()) {
-        // Get other child scale
-        uint32_t other_child_scale = other_scale >> 2;
-
-        // Loop over children in other
-        uint64_t other_mask = other_node.child_mask;
-        while (other_mask != 0ull) {
-            // Get child index and clear bit
-            uint32_t other_child_id = std::countr_zero(other_mask);
-            other_mask &= other_mask - 1;
-
-            // Get child pointer
-            uint32_t other_child_ptr = std::popcount(other_node.child_mask & ((1ull << other_child_id) - 1));
-
-            // Calculate other child position
-            glm::ivec3 other_child_local = glm::ivec3((other_child_id >> 0) & 3, (other_child_id >> 4) & 3, (other_child_id >> 2) & 3);
-            glm::ivec3 other_child_pos = other_pos + other_child_local * (int)other_child_scale;
-
-            // Recurse
-            subtract_recursive(node_id, node_pos, node_scale, other, other_node.abs_ptr() + other_child_ptr, other_child_pos, other_child_scale, offset);
-        }
-        return;
-    }
-
-    // Only other is leaf, recurse into this children
-    if (other_node.is_leaf()) {
-        // Get child scale
-        uint32_t this_child_scale = node_scale >> 2;
-
-        // Loop over children in this node
-        uint64_t this_mask = node.child_mask;
-        while (this_mask != 0ull) {
-            // Get child index and clear bit
-            uint32_t this_child_id = std::countr_zero(this_mask);
-            this_mask &= this_mask - 1;
-
-            // Get child pointer
-            uint32_t this_child_ptr = std::popcount(node.child_mask & ((1ull << this_child_id) - 1));
-
-            // Calculate child position
-            glm::ivec3 this_child_local = glm::ivec3((this_child_id >> 0) & 3, (this_child_id >> 4) & 3, (this_child_id >> 2) & 3);
-            glm::ivec3 this_child_pos = node_pos + this_child_local * (int)this_child_scale;
-
-            // AABB overlap
-            glm::ivec3 other_world_min = other_pos + offset;
-            glm::ivec3 other_world_max = other_world_min + (int)other_scale;
-            glm::ivec3 this_child_max = this_child_pos + (int)this_child_scale;
-
-            if (this_child_pos.x >= other_world_max.x || this_child_max.x <= other_world_min.x) continue;
-            if (this_child_pos.y >= other_world_max.y || this_child_max.y <= other_world_min.y) continue;
-            if (this_child_pos.z >= other_world_max.z || this_child_max.z <= other_world_min.z) continue;
-
-            // Recurse
-            subtract_recursive(node.abs_ptr() + this_child_ptr, this_child_pos, this_child_scale, other, other_id, other_pos, other_scale, offset);
-
-            //// If child is empty after recursing, remove it
-            // if (nodes[node.abs_ptr() + this_child_ptr].child_mask == 0ull) {
-            //     node.child_mask &= ~(1ull << this_child_id);
-            // }
-        }
-        return;
-    }
-
-    // Both internal nodes, recurse into overlapping children
-    // Get scale of children
-    uint32_t other_child_scale = other_scale >> 2;
-    uint32_t this_child_scale = node_scale >> 2;
-
-    // Loop over children in other node
-    uint64_t other_mask = other_node.child_mask;
-    while (other_mask != 0ull) {
-        // Get child index and clear bit
-        uint32_t other_child_id = std::countr_zero(other_mask);
-        other_mask &= other_mask - 1;
-
-        // Get child pointer
-        uint32_t other_child_ptr = std::popcount(other_node.child_mask & ((1ull << other_child_id) - 1));
-
-        // Calculate other child position
-        glm::ivec3 other_child_local = glm::ivec3((other_child_id >> 0) & 3, (other_child_id >> 4) & 3, (other_child_id >> 2) & 3);
-        glm::ivec3 other_child_pos = other_pos + other_child_local * (int)other_child_scale;
-        glm::ivec3 other_child_world = other_child_pos + offset;
-
-        // Find which children in this node overlap with this other child
-        uint64_t this_mask = node.child_mask;
-        while (this_mask != 0ull) {
-            uint32_t this_child_id = std::countr_zero(this_mask);
-            this_mask &= this_mask - 1;
-
-            uint32_t this_child_ptr = std::popcount(node.child_mask & ((1ull << this_child_id) - 1));
-
-            glm::ivec3 this_child_local = glm::ivec3((this_child_id >> 0) & 3, (this_child_id >> 4) & 3, (this_child_id >> 2) & 3);
-            glm::ivec3 this_child_pos = node_pos + this_child_local * (int)this_child_scale;
-
-            // AABB overlap
-            glm::ivec3 other_child_world_max = other_child_world + (int)other_child_scale;
-            glm::ivec3 this_child_max = this_child_pos + (int)this_child_scale;
-
-            if (this_child_pos.x >= other_child_world_max.x || this_child_max.x <= other_child_world.x) continue;
-            if (this_child_pos.y >= other_child_world_max.y || this_child_max.y <= other_child_world.y) continue;
-            if (this_child_pos.z >= other_child_world_max.z || this_child_max.z <= other_child_world.z) continue;
-
-            subtract_recursive(node.abs_ptr() + this_child_ptr, this_child_pos, this_child_scale, other, other_node.abs_ptr() + other_child_ptr, other_child_pos, other_child_scale, offset);
-
-            // if (nodes[node.abs_ptr() + this_child_ptr].child_mask == 0ull) {
-            //     node.child_mask &= ~(1ull << this_child_id);
-            // }
-        }
+        // Descend
+        const uint32_t child_pos = (uint32_t)__popcnt64(current->child_mask & ((1ull << child_index) - 1u));
+        current = &nodes[current->abs_ptr() + child_pos];
     }
 }
 

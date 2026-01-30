@@ -69,7 +69,7 @@ void Game::on_start() {
     auto voxel_volume_ass7 = tmt::engine.resources.copy_resource<tmt::VoxelVolume>(voxel_file_ass7);
 
     {
-        auto voxel_file = tmt::engine.resources.load_resource<tmt::VoxelScene>({tmt::IO::Location::PROJECT, "cube16.vengi"});
+        auto voxel_file = tmt::engine.resources.load_resource<tmt::VoxelScene>({tmt::IO::Location::PROJECT, "cube64.vengi"});
         volume_cube16 = tmt::engine.resources.copy_resource<tmt::VoxelVolume>(voxel_file);
         stencil = tmt::engine.resources.copy_resource<tmt::Stencil>(voxel_file);
     }
@@ -305,7 +305,8 @@ void Game::on_update(const tmt::FrameData& time) {
 
         if (hit) {
             auto* resource = tmt::engine.ecs.get_component<tmt::VoxelBody>(hit.entity).resource.resource.get();
-            resource->blas->subtract(stencil.resource.get(), hit.coord);
+            //resource->blas->subtract(stencil.resource.get(), hit.coord);
+            resource->blas->remove_voxel(hit.coord.x, hit.coord.y, hit.coord.z);
             resource->set_dirty();
         }
     }
