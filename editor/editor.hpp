@@ -4,6 +4,7 @@
 #include "engine/core/collection.hpp"
 #include "editor/core/window.hpp"
 #include "editor/shared/save_data.hpp"
+#include "editor/gizmo.hpp"
 
 namespace tmt {
 
@@ -30,6 +31,7 @@ class Editor : public OnEngineInit, public OnEngineUpdate, public OnEngineFixedU
     ImGuiManager& imgui_manager;
 
     SaveData save_data;
+    Gizmo gizmo;
 
    private:
     void on_engine_init(const ApplicationSpecs& specs) override;

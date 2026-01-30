@@ -191,15 +191,13 @@ void ModelViewer::display() {
     const ImVec2 size = ImGui::GetWindowSize() - content_start;
     if (size.x <= 0.0f || size.y <= 0.0f) return;
 
-    const ImVec2 window_position = ImGui::GetWindowPos() + ImVec2 {0.0f, ImGui::GetFrameHeight()};
-    ImGuizmo::SetRect(window_position.x, window_position.y, size.x, size.y);
+    const ImVec2 window_pos = ImGui::GetWindowPos() + ImVec2 {0.0f, ImGui::GetFrameHeight()};
 
     engine.renderer.render_view.set_viewport_size(static_cast<uint32_t>(size.x), static_cast<uint32_t>(size.y));
     ImGui::Image(engine.renderer.render_view.imgui_viewport, size);
 
-    ImGuizmo::SetDrawlist();
-
-    handle_gizmo(size.x, size.y);
+    const Entity selected_entity = editor.windows[Editor::Mode::EDIT].get<NodeHierarchy>().get_selected_entity();
+    editor.gizmo.manip(window_pos.x, window_pos.y, size.x, size.y, {&selected_entity, &selected_entity + 1});
 
     Viewport& viewport = editor.windows[Editor::Mode::OBJECT].get<Viewport>();
 
@@ -232,27 +230,6 @@ void ModelViewer::on_editor_update(const FrameData& time) {
     } else if (hit.entity != entt::null && engine.input.is_mouse_button_just_pressed(MouseButton::LEFT)) {
         node_hierarchy.set_selected_entity(hit.entity);
     }
-}
-
-void ModelViewer::handle_gizmo(const float width, const float height) {
-    const Entity selected_entity = editor.windows[Editor::Mode::EDIT].get<NodeHierarchy>().get_selected_entity();
-    if (engine.ecs.valid(selected_entity) == false) return;
-
-    const Transform& transform = engine.renderer.get_debug_transform();
-    const Camera& camera = engine.renderer.get_debug_camera();
-
-
-    auto view = glm::inverse(transform.get_world_matrix());
-    const float aspect_ratio = width / height;
-    auto perspective = glm::perspective(glm::radians(camera.fov), aspect_ratio, 0.05f, 1000.0f);
-
-    Transform& selected_transform = engine.ecs.get_component<Transform>(selected_entity);
-    auto& selected_matrix = selected_transform.get_world_matrix();
-    glm::mat4 imguizmo_input_matrix = selected_matrix;
-
-    glm::mat4 delta;
-    const bool changed = ImGuizmo::Manipulate(&view[0][0], &perspective[0][0], gizmo_operations[gizmo_operation], gizmo_space, &imguizmo_input_matrix[0][0], &delta[0][0]);
-    if (changed) selected_transform.set_world_matrix(imguizmo_input_matrix);
 }
 
 }  // namespace tmt

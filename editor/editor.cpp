@@ -15,6 +15,7 @@
 #include "engine/core/scenes.hpp"
 
 #include "editor/imgui/manager.hpp"
+#include "editor/gizmo.hpp"
 
 /* Modes */
 #include "editor/modes/object.hpp"
@@ -55,6 +56,7 @@ void Editor::on_engine_init(const ApplicationSpecs&) {
     tmt::Log::info("Starting Thermite Editor...");
     imgui_manager.init();
     save_data.load();
+    gizmo.init();
 
     mode_handlers[Mode::OBJECT] = std::make_unique<ObjectMode>();
     mode_handlers[Mode::EDIT] = std::make_unique<EditMode>();
