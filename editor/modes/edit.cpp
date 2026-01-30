@@ -3,6 +3,7 @@
 #include "engine/engine.hpp"
 #include "engine/core/ecs.hpp"
 #include "engine/core/scenes.hpp"
+#include "engine/core/renderer/renderer.hpp"
 #include "engine/core/components/transform.hpp"
 #include "engine/core/resources/voxel_scene.hpp"
 #include "engine/tools/svh_format.hpp"
@@ -11,6 +12,7 @@
 #include "editor/windows/node_hierarchy.hpp"
 
 #include <imgui.h>
+
 
 namespace tmt {
 
@@ -52,8 +54,16 @@ void EditMode::on_switch_to() {
     }
 
     edit_data.clear();
+
+    engine.renderer.get_debug_camera() = cached_editor_camera;
+    engine.renderer.get_debug_transform() = cached_editor_transform;
 }
 
-void EditMode::on_switch_away() { edit_data = editor.windows[Editor::Mode::EDIT].get<NodeHierarchy>().encode_voxel_scene(); }
+void EditMode::on_switch_away() {
+    edit_data = editor.windows[Editor::Mode::EDIT].get<NodeHierarchy>().encode_voxel_scene();
+
+    cached_editor_camera = engine.renderer.get_debug_camera();
+    cached_editor_transform = engine.renderer.get_debug_transform();
+}
 
 }  // namespace tmt

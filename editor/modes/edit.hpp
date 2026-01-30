@@ -3,6 +3,8 @@
 #include "editor/core/mode.hpp"
 
 #include "engine/core/scene.hpp"
+#include "engine/core/components/camera.hpp"
+#include "engine/core/components/transform.hpp"
 
 namespace tmt {
 
@@ -20,6 +22,8 @@ class EditMode : public IEditorMode {
     void on_switch_away() override;
 
    private:
+    Camera cached_editor_camera;
+    Transform cached_editor_transform;
 
     std::vector<char> edit_data;
 };

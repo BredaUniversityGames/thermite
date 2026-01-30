@@ -4,6 +4,8 @@
 
 #include "engine/events/scene.hpp"
 #include "engine/tools/scene_types.hpp"
+#include "engine/core/components/camera.hpp"
+#include "engine/core/components/transform.hpp"
 
 namespace tmt {
 
@@ -23,6 +25,9 @@ class ObjectMode : public IEditorMode, public OnPreLoadScene {
 
     SceneIndex previous_scene_type;
     nlohmann::json cached_scene {};
+
+    Camera cached_editor_camera;
+    Transform cached_editor_transform;
 
     // Used as a flag for the on_pre_load_scene function call.
     bool is_switching_to {false};

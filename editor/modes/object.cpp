@@ -3,6 +3,7 @@
 #include "engine/engine.hpp"
 #include "engine/core/scenes.hpp"
 #include "engine/tools/serializer.hpp"
+#include "engine/core/renderer/renderer.hpp"
 #include "engine/tools/serializer/ecs.hpp"
 
 #include <imgui.h>
@@ -26,11 +27,17 @@ void ObjectMode::on_switch_to() {
     is_switching_to = false;
 
     cached_scene.clear();
+
+    engine.renderer.get_debug_camera() = cached_editor_camera;
+    engine.renderer.get_debug_transform() = cached_editor_transform;
 }
 
 void ObjectMode::on_switch_away() {
     previous_scene_type = engine.scenes.get_active_scene_type();
     cached_scene = Serializer::serialize(engine.ecs);
+
+    cached_editor_camera = engine.renderer.get_debug_camera();
+    cached_editor_transform = engine.renderer.get_debug_transform();
 }
 
 void ObjectMode::on_pre_load_scene(PreLoadSceneEvent& event) {
