@@ -4,6 +4,7 @@
 
 #include "engine/tools/profiler.hpp"
 #include "engine/shared/ray.hpp"
+#include "engine/core/resources/stencil.hpp"
 
 namespace tmt {
 
@@ -191,6 +192,15 @@ PhysicsVoxel* Svt64::get_physics_voxel(const uint32_t x, const uint32_t y, const
     return nullptr;
 }
 
+void Svt64::subtract(const Stencil* stencil, glm::ivec3 offset) {
+    TMT_ZONE_SCOPED_N("stencil subtract")
+
+    subtract_recursive(0, glm::ivec3(0), 1u << (depth * 2u), stencil, offset);
+
+    // print the size of the stencil
+    printf("Subtracting stencil of size (%u, %u, %u) with offset (%d, %d, %d)\n", stencil->size.x, stencil->size.y, stencil->size.z, offset.x, offset.y, offset.z);
+}
+
 void Svt64::subtract(const Svt64* other, glm::ivec3 offset) {
     TMT_ZONE_SCOPED_N("svt64 subtract")
 
@@ -233,6 +243,82 @@ void Svt64::subtract(const Svt64* other, glm::ivec3 offset) {
     physics_data = new_physics_data;
     node_count = new_node_count;
     voxel_count = new_voxel_count;
+}
+
+void tmt::Svt64::subtract_recursive(uint32_t node_id, glm::ivec3 node_pos, uint32_t node_scale, const Stencil* stencil, glm::ivec3 offset) {
+    Svt64Node& node = nodes[node_id];
+    uint32_t child_scale = node_scale >> 2;
+
+    // If leaf node
+    if (node.is_leaf()) {
+        // memcpy all possible entries to avoid issues when shifting indices
+        tmt::MaterialIndex palette_lookup[64];
+        memcpy(palette_lookup, &materials[node.abs_ptr()], sizeof(tmt::MaterialIndex) * 64);
+
+        // Loop over solid voxels
+        uint8_t voxels_subtracted = 0;
+        uint64_t mask = node.child_mask;
+        while (mask != 0ull) {
+            // Get child index and clear bit
+            const uint32_t voxel_id = std::countr_zero(mask);
+            mask &= mask - 1;
+
+            // Apply indices offset
+            if (voxels_subtracted > 0) {
+                // Get current material index
+                const uint32_t child_pos = (uint32_t)__popcnt64(node.child_mask & ((1ull << voxel_id) - 1u));
+                // Shift material index
+                materials[node.abs_ptr() + child_pos] = palette_lookup[child_pos + voxels_subtracted];
+            }
+
+            // Calculate position of this child in the stencil
+            const glm::ivec3 voxel_local = glm::ivec3((voxel_id >> 0) & 3, (voxel_id >> 4) & 3, (voxel_id >> 2) & 3);
+            const glm::ivec3 voxel_pos = node_pos + voxel_local * (int)child_scale;
+            const glm::ivec3 voxel_relative = voxel_pos - offset;
+
+            // Bounds check
+            if (voxel_relative.x < 0 || voxel_relative.x >= stencil->size.x) continue;
+            if (voxel_relative.y < 0 || voxel_relative.y >= stencil->size.y) continue;
+            if (voxel_relative.z < 0 || voxel_relative.z >= stencil->size.z) continue;
+
+            // Check if stencil has solid voxel here
+            const uint32_t stencil_index = voxel_relative.x + stencil->size.x * (voxel_relative.y + stencil->size.y * voxel_relative.z);
+            if (stencil->data[stencil_index] == 0) continue;
+
+            // Remove voxel from this node
+            node.child_mask &= ~(1ull << voxel_id);
+            voxels_subtracted++;
+        }
+
+        return;
+    }
+
+    // Recurse into children if they overlap with the stencil
+    uint64_t mask = node.child_mask;
+    while (mask != 0ull) {
+        // Get child index and clear bit
+        const uint32_t child_id = std::countr_zero(mask);
+        mask &= mask - 1;
+
+        // Get child pointer
+        const uint32_t child_ptr = std::popcount(node.child_mask & ((1ull << child_id) - 1));
+
+        // Calculate child position
+        const glm::ivec3 child_local = glm::ivec3((child_id >> 0) & 3, (child_id >> 4) & 3, (child_id >> 2) & 3);
+        const glm::ivec3 child_pos = node_pos + child_local * (int)child_scale;
+
+        // AABB overlap
+        glm::ivec3 stencil_world_min = offset;
+        glm::ivec3 stencil_world_max = stencil_world_min + glm::ivec3((int)stencil->size.x, (int)stencil->size.y, (int)stencil->size.z);
+        glm::ivec3 child_max = child_pos + (int)child_scale;
+
+        if (child_pos.x >= stencil_world_max.x || child_max.x <= stencil_world_min.x) continue;
+        if (child_pos.y >= stencil_world_max.y || child_max.y <= stencil_world_min.y) continue;
+        if (child_pos.z >= stencil_world_max.z || child_max.z <= stencil_world_min.z) continue;
+
+        // Recurse into child
+        subtract_recursive(node.abs_ptr() + child_ptr, child_pos, child_scale, stencil, offset);
+    }
 }
 
 void Svt64::subtract_recursive(
@@ -326,9 +412,9 @@ void Svt64::subtract_recursive(
             subtract_recursive(node.abs_ptr() + this_child_ptr, this_child_pos, this_child_scale, other, other_id, other_pos, other_scale, offset);
 
             //// If child is empty after recursing, remove it
-            //if (nodes[node.abs_ptr() + this_child_ptr].child_mask == 0ull) {
-            //    node.child_mask &= ~(1ull << this_child_id);
-            //}
+            // if (nodes[node.abs_ptr() + this_child_ptr].child_mask == 0ull) {
+            //     node.child_mask &= ~(1ull << this_child_id);
+            // }
         }
         return;
     }
@@ -374,9 +460,9 @@ void Svt64::subtract_recursive(
 
             subtract_recursive(node.abs_ptr() + this_child_ptr, this_child_pos, this_child_scale, other, other_node.abs_ptr() + other_child_ptr, other_child_pos, other_child_scale, offset);
 
-            //if (nodes[node.abs_ptr() + this_child_ptr].child_mask == 0ull) {
-            //    node.child_mask &= ~(1ull << this_child_id);
-            //}
+            // if (nodes[node.abs_ptr() + this_child_ptr].child_mask == 0ull) {
+            //     node.child_mask &= ~(1ull << this_child_id);
+            // }
         }
     }
 }
@@ -386,9 +472,9 @@ void Svt64::rebuild_recursive(
     uint32_t& new_voxel_count
 ) {
     // Original for indices
-    const Svt64Node& original_node = original_nodes[old_index];  
+    const Svt64Node& original_node = original_nodes[old_index];
     // For current mask state
-    const Svt64Node& modified_node = nodes[old_index];           
+    const Svt64Node& modified_node = nodes[old_index];
 
     // Handle leaf node
     if (original_node.is_leaf()) {

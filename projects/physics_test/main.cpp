@@ -11,6 +11,8 @@
 #include "engine/systems/camera/camera_system.hpp"
 #include "engine/systems/physics/physics_system.hpp"
 #include "engine/core/renderer/renderer.hpp"
+#include "engine/core/resources/stencil.hpp"
+#include "engine/core/polyline.hpp"
 
 class Game : public tmt::Application {
    public:
@@ -25,6 +27,7 @@ class Game : public tmt::Application {
     tmt::ResourceRef<tmt::VoxelVolume> voxel_volume_cube;
     tmt::ResourceRef<tmt::VoxelVolume> volume_cube16;
     tmt::ResourceRef<tmt::VoxelVolume> volume_cube64;
+    tmt::ResourceRef<tmt::Stencil> stencil;
 
     void on_start() override;
     void on_update(const tmt::FrameData& time) override;
@@ -53,7 +56,7 @@ void Game::on_start() {
         transform.set_world_position(glm::vec3(0.0f, 0.25f, -5.0f));
     }
 
-    auto voxel_file_cube = tmt::engine.resources.load_resource<tmt::VoxelScene>({tmt::IO::Location::PROJECT, "box-10.vengi"});
+    auto voxel_file_cube = tmt::engine.resources.load_resource<tmt::VoxelScene>({tmt::IO::Location::PROJECT, "cube64.vengi"});
     voxel_volume_cube = tmt::engine.resources.copy_resource<tmt::VoxelVolume>(voxel_file_cube);
 
     auto voxel_file_piece = tmt::engine.resources.load_resource<tmt::VoxelScene>({tmt::IO::Location::PROJECT, "piece_1.vengi"});
@@ -66,48 +69,49 @@ void Game::on_start() {
     auto voxel_volume_ass7 = tmt::engine.resources.copy_resource<tmt::VoxelVolume>(voxel_file_ass7);
 
     {
-        auto voxel_file = tmt::engine.resources.load_resource<tmt::VoxelScene>({tmt::IO::Location::PROJECT, "cube64.vengi"});
+        auto voxel_file = tmt::engine.resources.load_resource<tmt::VoxelScene>({tmt::IO::Location::PROJECT, "cube16.vengi"});
         volume_cube16 = tmt::engine.resources.copy_resource<tmt::VoxelVolume>(voxel_file);
+        stencil = tmt::engine.resources.copy_resource<tmt::Stencil>(voxel_file);
     }
 
-    {
-        auto voxel_file = tmt::engine.resources.load_resource<tmt::VoxelScene>({tmt::IO::Location::PROJECT, "cube16.vengi"});
-        volume_cube64 = tmt::engine.resources.copy_resource<tmt::VoxelVolume>(voxel_file);
-    }
+    //{
+    //    auto voxel_file = tmt::engine.resources.load_resource<tmt::VoxelScene>({tmt::IO::Location::PROJECT, "cube64.vengi"});
+    //    volume_cube64 = tmt::engine.resources.copy_resource<tmt::VoxelVolume>(voxel_file);
+    //}
 
     {
         auto entity = tmt::engine.ecs.create_entity();
         auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
         auto& renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(entity);
-        renderer.resource = volume_cube64;
+        renderer.resource = voxel_volume_cube;
         auto& vb = tmt::engine.ecs.add_component<tmt::VoxelBody>(entity);
-        vb.resource = volume_cube64;
+        vb.resource = voxel_volume_cube;
         vb.gravity = 0.0f;
     }
 
-    for (size_t z = 0; z < 5; z++) {
-        for (size_t i = 0; i < 0; i++) { /* Voxel Physics Entity */
-            auto entity = tmt::engine.ecs.create_entity();
-            auto& transform = tmt::engine.ecs.add_component<tmt::Transform>(entity);
-            auto& renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(entity);
-            renderer.resource = voxel_volume_piece;
+    //for (size_t z = 0; z < 5; z++) {
+    //    for (size_t i = 0; i < 0; i++) { /* Voxel Physics Entity */
+    //        auto entity = tmt::engine.ecs.create_entity();
+    //        auto& transform = tmt::engine.ecs.add_component<tmt::Transform>(entity);
+    //        auto& renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(entity);
+    //        renderer.resource = voxel_volume_piece;
 
-            auto& vb = tmt::engine.ecs.add_component<tmt::VoxelBody>(entity);
-            vb.resource = voxel_volume_piece;
+    //        auto& vb = tmt::engine.ecs.add_component<tmt::VoxelBody>(entity);
+    //        vb.resource = voxel_volume_piece;
 
-            vb.gravity = 0.0f;
-            vb.type = tmt::VoxelBody::DYNAMIC;
-            float random_x = ((float)(rand() % 1000) / 1000.0f - 0.5f) * 150.0f;
-            float random_y = ((float)(rand() % 1000) / 1000.0f - 0.5f) * 150.0f;
-            transform.set_world_position(glm::vec3(random_x, random_y, (5 - z) * 5.0f));
+    //        vb.gravity = 0.0f;
+    //        vb.type = tmt::VoxelBody::DYNAMIC;
+    //        float random_x = ((float)(rand() % 1000) / 1000.0f - 0.5f) * 150.0f;
+    //        float random_y = ((float)(rand() % 1000) / 1000.0f - 0.5f) * 150.0f;
+    //        transform.set_world_position(glm::vec3(random_x, random_y, (5 - z) * 5.0f));
 
-            float random_rot_x = ((float)(rand() % 1000) / 1000.0f) * 3.1415f * 2.0f;
-            float random_rot_y = ((float)(rand() % 1000) / 1000.0f) * 3.1415f * 2.0f;
-            float random_rot_z = ((float)(rand() % 1000) / 1000.0f) * 3.1415f * 2.0f;
-            transform.set_world_rotation(glm::vec3(random_rot_x, random_rot_y, random_rot_z));
-            voxels.push_back(entity);
-        }
-    }
+    //        float random_rot_x = ((float)(rand() % 1000) / 1000.0f) * 3.1415f * 2.0f;
+    //        float random_rot_y = ((float)(rand() % 1000) / 1000.0f) * 3.1415f * 2.0f;
+    //        float random_rot_z = ((float)(rand() % 1000) / 1000.0f) * 3.1415f * 2.0f;
+    //        transform.set_world_rotation(glm::vec3(random_rot_x, random_rot_y, random_rot_z));
+    //        voxels.push_back(entity);
+    //    }
+    //}
 
     { /* Voxel Physics Entity, Asteroid 3 */
         auto entity = tmt::engine.ecs.create_entity();
@@ -269,6 +273,24 @@ void Game::on_start() {
 }
 
 void Game::on_update(const tmt::FrameData& time) {
+
+    // Debug Draw Stencil
+    //tmt::engine.polyline.use_color(0.3f, 0.3f, 1.0f);
+    //tmt::engine.polyline.use_line_width(0.25f);
+    //auto* stencil_resource = stencil.resource.get();
+    //glm::vec3 half_size = glm::vec3(stencil_resource->size) * UNITS_PER_VOXEL * 0.5f;
+    //for (size_t x = 0; x < stencil_resource->size.x; x++) {
+    //    for (size_t y = 0; y < stencil_resource->size.y; y++) {
+    //        for (size_t z = 0; z < stencil_resource->size.z; z++) {
+    //            if (stencil_resource->get_voxel(x, y, z) == 0) continue;
+
+    //            glm::vec3 min = glm::vec3(x, y, z) * UNITS_PER_VOXEL;
+    //            glm::vec3 max = min + UNITS_PER_VOXEL;
+    //            tmt::engine.polyline.draw_aabb(min - half_size, max - half_size);
+    //        }
+    //    }
+    //}
+    
     time_passed += time.delta_time;
 
     cooldown -= time.delta_time;
@@ -283,7 +305,7 @@ void Game::on_update(const tmt::FrameData& time) {
 
         if (hit) {
             auto* resource = tmt::engine.ecs.get_component<tmt::VoxelBody>(hit.entity).resource.resource.get();
-            resource->blas->subtract(volume_cube16->blas.get(), hit.coord);
+            resource->blas->subtract(stencil.resource.get(), hit.coord);
             resource->set_dirty();
         }
     }
