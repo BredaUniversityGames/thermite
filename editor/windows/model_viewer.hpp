@@ -24,6 +24,8 @@ class ModelViewer : public IWindow {
     void on_editor_end() override {}
 
    private:
+    static void handle_gizmo(float width, float height);
+
     glm::vec2 mouse_position {};
 };
 
