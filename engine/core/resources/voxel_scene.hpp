@@ -40,7 +40,7 @@ class VoxelScene : public tmt::FileResource {
     inline static const std::set<std::string_view> SUPPORTED_FILE_EXTENSIONS {".vengi", ".svh"};
 
     /* Voxel scene hierarchy. */
-    VoxelSceneNode hierarchy {};
+    std::vector<VoxelSceneNode> root_nodes {};
 };
 
 }  // namespace tmt

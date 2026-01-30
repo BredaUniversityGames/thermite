@@ -264,7 +264,7 @@ void AssetBrowser::import_asset(const IO::FileLocation& import_file, const IO::F
         import_file_location.relative_path /= import_file.relative_path.filename().replace_extension(".svh");
         import_file_location = find_unused_file_location(import_file_location);
 
-        const std::vector<char>& data = encode_svh(vengi_scene.resource->hierarchy);
+        const std::vector<char>& data = encode_svh(vengi_scene.resource->root_nodes);
         IO::write_file(import_file_location, data.data(), data.size());
 
         return;

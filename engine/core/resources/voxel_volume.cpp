@@ -37,16 +37,24 @@ const VoxelSceneNode* find_model_by_uuid(const VoxelSceneNode& node, const UUID&
 
 }  // namespace
 
-VoxelVolume::VoxelVolume(const VoxelSceneNode& node) : RuntimeResource<VoxelScene>({}) { 
-    load_from_node(node); 
-}
+VoxelVolume::VoxelVolume(const VoxelSceneNode& node) : RuntimeResource<VoxelScene>({}) { load_from_node(node); }
 
 bool VoxelVolume::load() {
-    const VoxelSceneNode* model;
-    if (uuid == NULL_UUID)
-        model = first_model(file_resource->hierarchy);
-    else
-        model = find_model_by_uuid(file_resource->hierarchy, uuid);
+    const VoxelSceneNode* model = nullptr;
+
+    if (uuid == NULL_UUID) {
+        for (VoxelSceneNode& root_node : file_resource->root_nodes) {
+            model = first_model(root_node);
+
+            if (model != nullptr) break;  // If a first node was found in a root node, then we exit the loop.
+        }
+    } else {
+        for (VoxelSceneNode& root_node : file_resource->root_nodes) {
+            model = find_model_by_uuid(root_node, uuid);
+
+            if (model != nullptr) break;  // If the node with the UUID was found in the root node, then we exit the loop.
+        }
+    }
 
     if (model == nullptr) {
         Log::error("Failed to get model for VoxelVolume.");

@@ -8,7 +8,7 @@ namespace tmt {
 
 struct VoxelSceneNode;
 
-bool decode_svh(const std::vector<char>& data, VoxelSceneNode& hierarchy);
-std::vector<char> encode_svh(const VoxelSceneNode& node);
+std::vector<VoxelSceneNode> decode_svh(const std::vector<char>& data);
+std::vector<char> encode_svh(const std::span<VoxelSceneNode>& root_nodes);
 
 }  // namespace tmt

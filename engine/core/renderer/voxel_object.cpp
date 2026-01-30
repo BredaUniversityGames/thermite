@@ -3,6 +3,8 @@
 namespace tmt {
 
 Hit VoxelObject::intersect(Ray ray, const float tmax) const {
+    if (!volume->blas) return Hit();
+
     /* Transform the ray into the local space of the object */
     const glm::vec3 world_origin = ray.origin;
     ray.origin = glm::vec3(world_to_local * glm::vec4(ray.origin, 1.0f));

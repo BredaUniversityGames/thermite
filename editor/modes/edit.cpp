@@ -45,12 +45,15 @@ void EditMode::display_main_menu() {
 void EditMode::on_switch_to() {
     engine.scenes.load_scene<VoxelEditScene>();
 
-    VoxelSceneNode node;
-    if (!edit_data.empty() && decode_svh(edit_data, node)) NodeHierarchy::recurse_build_scene(node);
+    if (!edit_data.empty()) {
+        std::vector<VoxelSceneNode> root_nodes = decode_svh(edit_data);
+
+        editor.windows[Editor::Mode::EDIT].get<NodeHierarchy>().build_scene(root_nodes);
+    }
 
     edit_data.clear();
 }
 
-void EditMode::on_switch_away() { edit_data = NodeHierarchy::encode_voxel_scene(); }
+void EditMode::on_switch_away() { edit_data = editor.windows[Editor::Mode::EDIT].get<NodeHierarchy>().encode_voxel_scene(); }
 
 }  // namespace tmt

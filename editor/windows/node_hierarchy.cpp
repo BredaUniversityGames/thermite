@@ -66,20 +66,6 @@ void drop_node(const Entity entity, Transform& transform) {
     ImGui::EndDragDropTarget();
 }
 
-void drop_hierarchy() {
-    const ImRect window_rect {ImGui::GetWindowContentRegionMin(), ImGui::GetWindowContentRegionMax()};
-    if (!ImGui::BeginDragDropTargetCustom(window_rect, ImGui::GetID("NodeEmptyDropArea"))) return;
-
-    const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("VoxelNode");
-    if (payload != nullptr) {
-        const Entity dropped_entity = *static_cast<Entity*>(payload->Data);
-
-        engine.ecs.get_component<Transform>(dropped_entity).clear_parent();
-    }
-
-    ImGui::EndDragDropTarget();
-}
-
 struct VoxelEditUUID {
     UUID uuid {NULL_UUID};
 };
@@ -89,7 +75,7 @@ std::atomic_bool model_load_atomic {true};
 }  // namespace
 
 void NodeHierarchy::new_svh() {
-    engine.ecs.clear();
+    clear_hierarchy();
     loaded_location = {};
 }
 
@@ -98,11 +84,11 @@ void NodeHierarchy::open_svh() {
         [this](const IO::FileLocation& location) {
             model_load_atomic.store(false);
 
+            clear_hierarchy();
             loaded_location = location;
-            engine.ecs.clear();
 
             const ResourceRef<VoxelScene> resource = engine.resources.load_resource<VoxelScene>(location);
-            recurse_build_scene(resource->hierarchy);
+            build_scene(resource->root_nodes);
 
             model_load_atomic.store(true);
             model_load_atomic.notify_one();
@@ -133,13 +119,13 @@ void NodeHierarchy::save_svh_as() {
     );
 }
 
-void NodeHierarchy::import_file(const std::string& file_description, const std::string& file_extension) const {
+void NodeHierarchy::import_file(const std::string& file_description, const std::string& file_extension) {
     open_file_dialog(
         [this](const IO::FileLocation& location) {
             model_load_atomic.store(false);
 
             const ResourceRef<VoxelScene> resource = engine.resources.load_resource<VoxelScene>(location);
-            recurse_build_scene(resource->hierarchy, true);
+            build_scene(resource->root_nodes, true);
 
             model_load_atomic.store(true);
             model_load_atomic.notify_one();
@@ -224,12 +210,18 @@ void NodeHierarchy::export_file(const std::string& file_description, const std::
     );
 }
 
+void NodeHierarchy::build_scene(const std::span<VoxelSceneNode>& root_nodes, bool assign_new_uuids) {
+    for (VoxelSceneNode& root_node : root_nodes) {
+        const Entity root_entity = recurse_build_scene(root_node, assign_new_uuids);
+
+        root_entities.push_back(root_entity);
+    }
+}
+
 void NodeHierarchy::display() {
     model_load_atomic.wait(false);
-
-    const entt::basic_view view = engine.ecs.get_registry().view<Name, Transform>();
-    for (const auto&& [entity, name, transform] : view.each()) {
-        if (transform.get_parent() != entt::null) continue;
+    for (const Entity entity : root_entities) {
+        auto&& [transform, name] = engine.ecs.get_component<Transform, Name>(entity);
 
         recurse_display_node(entity, name, transform);
     }
@@ -290,14 +282,19 @@ std::vector<char> NodeHierarchy::encode_voxel_scene() {
     const auto& entities = engine.ecs.get_registry().storage<Transform>();
     if (entities.empty()) return {};  // Return empty scene encoding.
 
-    VoxelSceneNode node;
-    for (const auto&& [entity, transform] : entities.each()) {
-        if (transform.has_parent()) continue;
+    std::vector<VoxelSceneNode> root_nodes;
+    // For each root entity, recursively build a VoxelSceneNode of it and its children.
+    for (const Entity entity : root_entities) {
+        Transform& transform = engine.ecs.get_component<Transform>(entity);
 
-        recurse_parse_scene(entity, transform, node);
+        VoxelSceneNode& root_node = root_nodes.emplace_back();
+        recurse_parse_scene(entity, transform, root_node);
     }
 
-    return encode_svh(node);
+    clear_hierarchy();
+
+    // Encode those VoxelSceneNodes into the .svh format.
+    return encode_svh(root_nodes);
 }
 
 void NodeHierarchy::recurse_display_node(const Entity entity, const Name& name, Transform& transform) {
@@ -326,6 +323,27 @@ void NodeHierarchy::recurse_display_node(const Entity entity, const Name& name, 
     }
 
     ImGui::PopID();
+}
+
+void NodeHierarchy::clear_hierarchy() {
+    selected_entity = entt::null;
+    root_entities.clear();
+    engine.ecs.clear();
+}
+
+void NodeHierarchy::drop_hierarchy() {
+    const ImRect window_rect {ImGui::GetWindowContentRegionMin(), ImGui::GetWindowContentRegionMax()};
+    if (!ImGui::BeginDragDropTargetCustom(window_rect, ImGui::GetID("NodeEmptyDropArea"))) return;
+
+    const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("VoxelNode");
+    if (payload != nullptr) {
+        const Entity dropped_entity = *static_cast<Entity*>(payload->Data);
+
+        engine.ecs.get_component<Transform>(dropped_entity).clear_parent();
+        root_entities.push_back(dropped_entity);
+    }
+
+    ImGui::EndDragDropTarget();
 }
 
 }  // namespace tmt

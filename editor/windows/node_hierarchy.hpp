@@ -24,8 +24,21 @@ class NodeHierarchy : public IWindow {
     void open_svh();
     void save_svh();
     void save_svh_as();
-    void import_file(const std::string& file_description, const std::string& file_extension) const;
+    void import_file(const std::string& file_description, const std::string& file_extension);
     void export_file(const std::string& file_description, const std::string& file_extension) const;
+
+    void build_scene(const std::span<VoxelSceneNode>& root_nodes, bool assign_new_uuids = false);
+
+    std::vector<char> encode_voxel_scene();
+
+   private:
+    static Entity recurse_build_scene(const VoxelSceneNode& node, bool assign_new_uuids = false, Entity parent_entity = entt::null, const glm::mat4& parent_matrix = {1.0f});
+    static void recurse_parse_scene(Entity entity, const Transform& transform, VoxelSceneNode& node);
+
+    void recurse_display_node(Entity entity, const Name& name, Transform& transform);
+    void clear_hierarchy();
+
+    void drop_hierarchy();
 
     void display() override;
 
@@ -33,16 +46,10 @@ class NodeHierarchy : public IWindow {
     void on_editor_update(const FrameData&) override {}
     void on_editor_end() override {}
 
-    static Entity recurse_build_scene(const VoxelSceneNode& node, bool assign_new_uuids = false, const Entity parent_entity = entt::null, const glm::mat4& parent_matrix = {1.0f});
-    static void recurse_parse_scene(Entity entity, const Transform& transform, VoxelSceneNode& node);
-
-    static std::vector<char> encode_voxel_scene();
-
-   private:
-    void recurse_display_node(Entity entity, const Name& name, Transform& transform);
-
     IO::FileLocation loaded_location {};
+
     Entity selected_entity {entt::null};
+    std::vector<Entity> root_entities;
 };
 
 }  // namespace tmt
