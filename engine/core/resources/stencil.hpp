@@ -1,10 +1,6 @@
 #pragma once
 
-#include <vector>
-#include <bit>
 #include "engine/core/resources/voxel_scene.hpp"
-//#include "voxel_scene.hpp"
-#include "engine/core/reflection.hpp"
 
 namespace tmt {
 
