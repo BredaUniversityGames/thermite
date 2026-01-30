@@ -89,12 +89,12 @@ void Game::on_start() {
         vb.gravity = 0.0f;
     }
 
-    //for (size_t z = 0; z < 5; z++) {
-    //    for (size_t i = 0; i < 0; i++) { /* Voxel Physics Entity */
-    //        auto entity = tmt::engine.ecs.create_entity();
-    //        auto& transform = tmt::engine.ecs.add_component<tmt::Transform>(entity);
-    //        auto& renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(entity);
-    //        renderer.resource = voxel_volume_piece;
+    // for (size_t z = 0; z < 5; z++) {
+    //     for (size_t i = 0; i < 0; i++) { /* Voxel Physics Entity */
+    //         auto entity = tmt::engine.ecs.create_entity();
+    //         auto& transform = tmt::engine.ecs.add_component<tmt::Transform>(entity);
+    //         auto& renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(entity);
+    //         renderer.resource = voxel_volume_piece;
 
     //        auto& vb = tmt::engine.ecs.add_component<tmt::VoxelBody>(entity);
     //        vb.resource = voxel_volume_piece;
@@ -265,21 +265,20 @@ void Game::on_start() {
         vb.gravity = 0.0f;
         vb.type = tmt::VoxelBody::STATIC;
         transform.set_world_position(glm::vec3(54.0f, -48.0f, 75.0f));
-        //float random_rot_x = ((float)(rand() % 1000) / 1000.0f) * 3.1415f * 2.0f;
-        //float random_rot_y = ((float)(rand() % 1000) / 1000.0f) * 3.1415f * 2.0f;
-        //float random_rot_z = ((float)(rand() % 1000) / 1000.0f) * 3.1415f * 2.0f;
-        //transform.set_world_rotation(glm::vec3(random_rot_x, random_rot_y, random_rot_z));
+        // float random_rot_x = ((float)(rand() % 1000) / 1000.0f) * 3.1415f * 2.0f;
+        // float random_rot_y = ((float)(rand() % 1000) / 1000.0f) * 3.1415f * 2.0f;
+        // float random_rot_z = ((float)(rand() % 1000) / 1000.0f) * 3.1415f * 2.0f;
+        // transform.set_world_rotation(glm::vec3(random_rot_x, random_rot_y, random_rot_z));
     }
 }
 
 void Game::on_update(const tmt::FrameData& time) {
-
     // Debug Draw Stencil
-    //tmt::engine.polyline.use_color(0.3f, 0.3f, 1.0f);
-    //tmt::engine.polyline.use_line_width(0.25f);
-    //auto* stencil_resource = stencil.resource.get();
-    //glm::vec3 half_size = glm::vec3(stencil_resource->size) * UNITS_PER_VOXEL * 0.5f;
-    //for (size_t x = 0; x < stencil_resource->size.x; x++) {
+    // tmt::engine.polyline.use_color(0.3f, 0.3f, 1.0f);
+    // tmt::engine.polyline.use_line_width(0.25f);
+    // auto* stencil_resource = stencil.resource.get();
+    // glm::vec3 half_size = glm::vec3(stencil_resource->size) * UNITS_PER_VOXEL * 0.5f;
+    // for (size_t x = 0; x < stencil_resource->size.x; x++) {
     //    for (size_t y = 0; y < stencil_resource->size.y; y++) {
     //        for (size_t z = 0; z < stencil_resource->size.z; z++) {
     //            if (stencil_resource->get_voxel(x, y, z) == 0) continue;
@@ -290,7 +289,7 @@ void Game::on_update(const tmt::FrameData& time) {
     //        }
     //    }
     //}
-    
+
     time_passed += time.delta_time;
 
     cooldown -= time.delta_time;
@@ -305,16 +304,16 @@ void Game::on_update(const tmt::FrameData& time) {
 
         if (hit) {
             auto* resource = tmt::engine.ecs.get_component<tmt::VoxelBody>(hit.entity).resource.resource.get();
-            //resource->blas->subtract(stencil.resource.get(), hit.coord);
+            // resource->blas->subtract(stencil.resource.get(), hit.coord);
             resource->blas->remove_voxel(hit.coord.x, hit.coord.y, hit.coord.z);
             resource->set_dirty();
         }
     }
 
-    //if (tmt::engine.input.is_mouse_button_pressed(tmt::MouseButton::LEFT) && cooldown <= 0.0f) {
-    //    auto& cam_transform = tmt::engine.ecs.get_component<tmt::Transform>(cam);
-    //    const glm::vec3 cam_pos = cam_transform.get_world_position();
-    //    const glm::vec3 cam_forward = cam_transform.get_forward();
+    // if (tmt::engine.input.is_mouse_button_pressed(tmt::MouseButton::LEFT) && cooldown <= 0.0f) {
+    //     auto& cam_transform = tmt::engine.ecs.get_component<tmt::Transform>(cam);
+    //     const glm::vec3 cam_pos = cam_transform.get_world_position();
+    //     const glm::vec3 cam_forward = cam_transform.get_forward();
 
     //    for (int x = -2; x <= 2; x++) {
     //        for (int y = -2; y <= 2; y++) {

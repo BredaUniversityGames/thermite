@@ -103,15 +103,14 @@ void draw_solids(
 }
 
 void Physics::on_update(const FrameData&) {
-     engine.polyline.use_line_width(0.25f);
-     for (const auto& [entity, vb, transform] : engine.ecs.get_registry().view<VoxelBody, Transform>().each()) {
+    engine.polyline.use_line_width(0.25f);
+    for (const auto& [entity, vb, transform] : engine.ecs.get_registry().view<VoxelBody, Transform>().each()) {
+        // auto* tree_a = vb.resource->blas.get();
+        // const float half_extent_a = powf(4.0f, (float)tree_a->depth) * 0.5f * UNITS_PER_VOXEL;
+        // const glm::vec3 extents_diff_a = half_extent_a - ((glm::vec3)vb.resource->size * 0.5f * UNITS_PER_VOXEL);
+        // const glm::vec3 root_center_a = vb.position + (vb.rotation * extents_diff_a);
 
-         //auto* tree_a = vb.resource->blas.get();
-         //const float half_extent_a = powf(4.0f, (float)tree_a->depth) * 0.5f * UNITS_PER_VOXEL;
-         //const glm::vec3 extents_diff_a = half_extent_a - ((glm::vec3)vb.resource->size * 0.5f * UNITS_PER_VOXEL);
-         //const glm::vec3 root_center_a = vb.position + (vb.rotation * extents_diff_a);
-
-         //draw_solids(tree_a, 0u, 0u, half_extent_a, root_center_a + glm::vec3(10, 0, 0), extents_diff_a, vb.rotation);
+        // draw_solids(tree_a, 0u, 0u, half_extent_a, root_center_a + glm::vec3(10, 0, 0), extents_diff_a, vb.rotation);
 
         // auto edges = vb.get_world_edges();
         // engine.polyline.use_color(vb.type == VoxelBody::DYNAMIC ? glm::vec4(0, 1, 0, 1) : glm::vec4(1, 0, 0, 1));
@@ -119,14 +118,14 @@ void Physics::on_update(const FrameData&) {
         //     engine.polyline.draw_line(edges[i].start, edges[i].end);
         // }
 
-        //engine.polyline.use_color(1.0f, 0.0f, 0.0f);
-        //engine.polyline.draw_circle(vb.center_of_mass, 0.1f);  // glm::vec3(1.0f, 0.0f, 1.0f), 0.2f);
-        //engine.polyline.use_color(0.0f, 1.0f, 0.0f);
-        //engine.polyline.draw_circle(vb.position, 0.1f);
-        //engine.polyline.use_color(0.0f, 0.0f, 1.0f);
-        //engine.polyline.draw_circle(vb.position + vb.rotation * vb.com_local_offset, 0.1f);
-        // engine.renderer.draw_cross(vb.position, glm::vec3(1.0f, 0.0f, 0.0f), 0.2f);
-        // engine.renderer.draw_cross(vb.position + vb.rotation * vb.com_local_offset, glm::vec3(0.0f, 0.0f, 1.0f), 0.2f);
+        // engine.polyline.use_color(1.0f, 0.0f, 0.0f);
+        // engine.polyline.draw_circle(vb.center_of_mass, 0.1f);  // glm::vec3(1.0f, 0.0f, 1.0f), 0.2f);
+        // engine.polyline.use_color(0.0f, 1.0f, 0.0f);
+        // engine.polyline.draw_circle(vb.position, 0.1f);
+        // engine.polyline.use_color(0.0f, 0.0f, 1.0f);
+        // engine.polyline.draw_circle(vb.position + vb.rotation * vb.com_local_offset, 0.1f);
+        //  engine.renderer.draw_cross(vb.position, glm::vec3(1.0f, 0.0f, 0.0f), 0.2f);
+        //  engine.renderer.draw_cross(vb.position + vb.rotation * vb.com_local_offset, glm::vec3(0.0f, 0.0f, 1.0f), 0.2f);
 
         // // Draw voxel normals
         // glm::uvec3 size = vb.resource.get()->size;
@@ -228,8 +227,7 @@ void Physics::on_fixed_update(const FrameData&) {
     engine.salvo.deactivate_workers();
 
     {
-        TMT_ZONE_SCOPED_N("Solver")
-        {
+        TMT_ZONE_SCOPED_N("Solver") {
             TMT_ZONE_SCOPED_N("Solve Velocity")
             // Solve Velocities
             solver.solve_velocities(Engine::Config::FIXED_TIME_STEP);
@@ -247,12 +245,11 @@ void Physics::on_fixed_update(const FrameData&) {
             // Solve Positions
             solver.solve_positions(Engine::Config::FIXED_TIME_STEP);
         }
-
     }
 }
 
 void Physics::generate_constraints() {
-    //solver.collisions.resize(MAX_CONTACTS);
+    // solver.collisions.resize(MAX_CONTACTS);
     const PhysicsGroup group = engine.ecs.get_registry().group<VoxelBody>(entt::get<Transform>);
     engine.salvo.parallel_for(group.size(), [this, &group](size_t i) { generate_constraint((int)i, group); });
 }
@@ -261,7 +258,7 @@ void Physics::generate_constraint(int index, const PhysicsGroup& group) {
     Entity entity = group[index];
     VoxelBody& vb = group.get<VoxelBody>(entity);
     Transform& transform = group.get<Transform>(entity);
-    //auto& [vb, transform] = group.get<VoxelBody, Transform>(entity);
+    // auto& [vb, transform] = group.get<VoxelBody, Transform>(entity);
 
     if (vb.type == VoxelBody::STATIC || vb.type == VoxelBody::SLEEPING) return;
     if (vb.resource == nullptr) return;
@@ -275,7 +272,7 @@ void Physics::generate_constraint(int index, const PhysicsGroup& group) {
 
         VoxelBody& other_vb = group.get<VoxelBody>(other_entity);
         Transform& other_transform = group.get<Transform>(other_entity);
-        //auto& [other_vb, other_transform] = group.get<VoxelBody, Transform>(other_entity);
+        // auto& [other_vb, other_transform] = group.get<VoxelBody, Transform>(other_entity);
 
         if (sat_early_out(vb, other_vb)) continue;
 
