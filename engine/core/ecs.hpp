@@ -20,7 +20,6 @@
 
 #include "engine/tools/fmt/helper.hpp"
 
-
 namespace tmt {
 
 using Registry = entt::registry;

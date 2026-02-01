@@ -13,6 +13,7 @@
 #include "engine/core/scene.hpp"
 #include "engine/core/scenes.hpp"
 #include "engine/core/renderer/voxel_object.hpp"
+#include "engine/systems/gameplay/game_component.hpp"
 
 class Game : public tmt::Application {
    public:
@@ -44,6 +45,24 @@ class TableScene : public tmt::Scene<TableScene> {
     void on_end() override;
 };
 
+class EntityRef : public tmt::GameComponent<EntityRef> {
+   public:
+    using GameComponent::GameComponent;
+
+    tmt::Entity entity_ref = entt::null;
+
+    static constexpr std::string_view get_name() { return "EntityRef"; }
+
+    // Inherited via GameComponent
+    void start() override {
+        const auto& name = tmt::engine.ecs.get_component<tmt::Name>(entity_ref);
+        tmt::Log::info("EntityRef Component started! Referenced entity name: {}", name.name);
+    }
+    void update(const tmt::FrameData& time) override {}
+    void end() override {}
+};
+TMT_OBJECT(EntityRef, (entity_ref));
+
 std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs& args) {
     // clang-format off
     tmt::ApplicationSpecs specs {
@@ -59,6 +78,9 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     /* Register Scenes */
     tmt::engine.scenes.register_scene<DragonScene>();
     tmt::engine.scenes.register_scene<TableScene>();
+
+    /* Register Game Components */
+    tmt::engine.component_registry.register_component<EntityRef>();
 
     return std::make_unique<Game>(specs);
 }

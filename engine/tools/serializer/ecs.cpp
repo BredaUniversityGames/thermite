@@ -12,6 +12,7 @@
 #include "engine/tools/serializer/all.hpp"
 #include "engine/tools/fmt/nlohmann.hpp"
 #include "engine/tools/profiler.hpp"
+#include "engine/tools/tree_map.hpp"
 
 using Json = JsonReflect::json;
 
@@ -63,10 +64,9 @@ struct SerializeState {
     /* All entities coming from prefabs that have been changed */
     /* Needed for tracking changes in prefab instances */
     std::set<tmt::Entity> changed_prefab_entities;
+    // TODO: add prefab entities that are referenced
 
     std::optional<tmt::PrefabInstanceID> current_prefab_instance_id;
-
-    // TODO: add prefab entities that are referenced
 
     SceneJson json;
 };
@@ -75,7 +75,9 @@ struct DeserializeState {
     tmt::Ecs& ecs;
     const SceneJson& json;
 
-    std::unordered_map<tmt::EntityID, tmt::Entity> entity_mapping {{tmt::NULL_UUID, entt::null}}; /* Default null to null value */
+    // std::unordered_map<tmt::EntityID, tmt::Entity> entity_mapping {{tmt::NULL_UUID, entt::null}}; /* Default null to null value */
+
+    tmt::TreeMap<tmt::UUID, tmt::Entity> entity_mapping {tmt::NULL_UUID, entt::null}; /* Default null to null value */
 };
 
 /* Entity with state */
@@ -85,6 +87,7 @@ Json tag_invoke(JsonReflect::serialize_t, const tmt::Entity& entity, const Seria
     }
     const auto& entity_id = state.ecs.get_component<tmt::EntityID>(entity);
 
+    // TODO: maybe not needed if entity mapping works
     if (state.current_prefab_instance_id.has_value()) {
         if (state.ecs.has_component<tmt::Prefab>(entity)) {
             const auto& prefab = state.ecs.get_component<tmt::Prefab>(entity);
@@ -102,7 +105,7 @@ static void tag_invoke(JsonReflect::deserialize_t, const JsonReflect::json& j, t
     const tmt::UUID uuid = tmt::UUID::fromStrFactory(uuid_str);
 
     if (state.entity_mapping.contains(uuid)) {
-        entity = state.entity_mapping.at(uuid);
+        entity = state.entity_mapping.at(uuid).value();
     } else {
         tmt::Log::warn(tmt::Log::Scope::ENGINE, "[Serialization] Entity mapping does not contain UUID {}", uuid_str);
         entity = entt::null;
@@ -270,7 +273,9 @@ void deserialize_component(DeserializeState& state) {
             continue;
         }
 
-        const tmt::Entity entity = state.entity_mapping.at(json_entity_id);
+        // todo: check if component removed in diff
+
+        const tmt::Entity entity = state.entity_mapping.at(json_entity_id).value();
         state.ecs.add_or_get_component<ComponentType>(entity);
     }
 
@@ -282,30 +287,20 @@ void deserialize_component(DeserializeState& state) {
             continue;
         }
 
-        const tmt::Entity entity = state.entity_mapping.at(json_entity_id);
-
+        const tmt::Entity entity = state.entity_mapping.at(json_entity_id).value();
         ComponentType& component_value = state.ecs.get_component<ComponentType>(entity);
-        tmt::Serializer::deserialize(json_value, component_value, state);
-    }
-}
 
-void spawn_prefabs(DeserializeState& state) {
-    constexpr auto PREFAB_COMPONENT_NAME = tmt::Component<tmt::Prefab>::get_name();
-
-    if (state.json.has_components(PREFAB_COMPONENT_NAME) == false) return;
-
-    const Json& prefab_components = state.json.components(PREFAB_COMPONENT_NAME);
-    for (const auto& [json_key, json_value] : prefab_components.items()) {
-        const auto json_entity_id = tmt::EntityID(json_key);
-        if (json_entity_id == tmt::NULL_ENTITY_ID) {
-            continue;
+        // const auto maybe_value = recursive_find_component_json(prefab_json, COMPONENT_NAME, prefab.source_entity);
+        /* check if diff */
+        if (json_value.is_object() && json_value.contains("diff")) {
+            const Json diff = json_value.at("diff");
+            SerializeState temp_state {state.ecs, {}, {}};
+            Json base = tmt::Serializer::serialize(component_value, temp_state);
+            Json patched = base.patch(diff);
+            tmt::Serializer::deserialize<ComponentType>(patched, component_value, state);
+        } else {
+            tmt::Serializer::deserialize<ComponentType>(json_value, component_value, state);
         }
-
-        const tmt::Entity entity = state.entity_mapping.at(json_entity_id);
-        tmt::Prefab& prefab_component = state.ecs.get_component<tmt::Prefab>(entity);
-        const auto& prefab_json = tmt::engine.resources.load_resource<tmt::Json>(prefab_component.source_location);
-        
-        tmt::Serializer::deserialize(prefab_json->get_parsed_json(), state.ecs);
     }
 }
 
@@ -365,11 +360,6 @@ void tag_invoke(JsonReflect::deserialize_t, const Json& j, std::set<tmt::Entity>
         }
     }
 
-    /* Deserialize Prefab component first */
-    deserialize_component<tmt::Prefab>(state);
-
-    spawn_prefabs(state);
-
     /* Deserialize each component */
     tmt::SerializeComponents::for_each([&state](auto type_tag) {
         using ComponentType = typename decltype(type_tag)::type;
@@ -381,8 +371,9 @@ void tag_invoke(JsonReflect::deserialize_t, const Json& j, std::set<tmt::Entity>
 
     /* Return newly created entities */
     for (const auto& [_, mapped_entity] : state.entity_mapping) {
-        if (mapped_entity != entt::null) {
-            new_entities.insert(mapped_entity);
+        if (mapped_entity.value() != entt::null) {
+            // TODO: refactor this to return all entities of tree
+            new_entities.insert(mapped_entity.value());
         }
     }
 }

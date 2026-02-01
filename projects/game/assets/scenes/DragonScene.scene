@@ -1,17 +1,122 @@
 {
     "version": 1,
     "entities": [
-        "05602176-c510-4381-a0a0-14dd5862f7cd"
+        "d5b5d91d-34e6-4efc-9f5b-93e0b624b233",
+        "d893ce28-3bf1-4034-b975-f3ac758772dc",
+        "facce7cb-bc38-4686-85fd-326e801ca1cb"
     ],
-    "Prefab": {
-        "05602176-c510-4381-a0a0-14dd5862f7cd": {
-            "source_location": {
-                "sub_location": "PROJECT",
-                "relative_path": "test.prefab"
+    "Name": {
+        "d5b5d91d-34e6-4efc-9f5b-93e0b624b233": {
+            "name": "Entity_0"
+        },
+        "d893ce28-3bf1-4034-b975-f3ac758772dc": {
+            "name": "Child"
+        },
+        "facce7cb-bc38-4686-85fd-326e801ca1cb": {
+            "name": "Ref"
+        }
+    },
+    "Transform": {
+        "d5b5d91d-34e6-4efc-9f5b-93e0b624b233": {
+            "local_position": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
             },
-            "source_entity": "1f7560ce-4dcb-4728-8717-3b4987645a4c",
-            "root_entity": "05602176-c510-4381-a0a0-14dd5862f7cd",
-            "instance_id": "26a3fe99-2e3f-4aa9-9120-d310c08ef59b"
+            "local_rotation": {
+                "w": 1.0,
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "local_scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "parent": "00000000-0000-0000-0000-000000000000",
+            "children": [
+                "d893ce28-3bf1-4034-b975-f3ac758772dc"
+            ]
+        },
+        "d893ce28-3bf1-4034-b975-f3ac758772dc": {
+            "local_position": {
+                "x": 14.2630033493042,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "local_rotation": {
+                "w": 1.0,
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "local_scale": {
+                "x": 0.33000004291534424,
+                "y": 0.33000004291534424,
+                "z": 0.33000004291534424
+            },
+            "parent": "d5b5d91d-34e6-4efc-9f5b-93e0b624b233",
+            "children": []
+        },
+        "facce7cb-bc38-4686-85fd-326e801ca1cb": {
+            "local_position": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "local_rotation": {
+                "w": 1.0,
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "local_scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "parent": "00000000-0000-0000-0000-000000000000",
+            "children": []
+        }
+    },
+    "Voxel Renderer": {
+        "d5b5d91d-34e6-4efc-9f5b-93e0b624b233": {
+            "resource": {
+                "file_location": {
+                    "sub_location": "PROJECT",
+                    "relative_path": "dragon128.vengi"
+                },
+                "data": {
+                    "size": {
+                        "x": 128,
+                        "y": 90,
+                        "z": 58
+                    }
+                }
+            }
+        },
+        "d893ce28-3bf1-4034-b975-f3ac758772dc": {
+            "resource": {
+                "file_location": {
+                    "sub_location": "PROJECT",
+                    "relative_path": "dragon128.vengi"
+                },
+                "data": {
+                    "size": {
+                        "x": 128,
+                        "y": 90,
+                        "z": 58
+                    }
+                }
+            }
+        }
+    },
+    "ComponentCollection": {
+        "facce7cb-bc38-4686-85fd-326e801ca1cb": {
+            "EntityRef": {
+                "entity_ref": 1
+            }
         }
     }
 }

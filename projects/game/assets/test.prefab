@@ -1,19 +1,19 @@
 {
     "version": 1,
     "entities": [
-        "1f7560ce-4dcb-4728-8717-3b4987645a4c",
-        "ec6abecb-3f7c-479c-aac3-511106720c82"
+        "d5b5d91d-34e6-4efc-9f5b-93e0b624b233",
+        "d893ce28-3bf1-4034-b975-f3ac758772dc"
     ],
     "Name": {
-        "1f7560ce-4dcb-4728-8717-3b4987645a4c": {
+        "d5b5d91d-34e6-4efc-9f5b-93e0b624b233": {
             "name": "Entity_0"
         },
-        "ec6abecb-3f7c-479c-aac3-511106720c82": {
+        "d893ce28-3bf1-4034-b975-f3ac758772dc": {
             "name": "Child"
         }
     },
     "Transform": {
-        "1f7560ce-4dcb-4728-8717-3b4987645a4c": {
+        "d5b5d91d-34e6-4efc-9f5b-93e0b624b233": {
             "local_position": {
                 "x": 0.0,
                 "y": 0.0,
@@ -32,10 +32,10 @@
             },
             "parent": "00000000-0000-0000-0000-000000000000",
             "children": [
-                "ec6abecb-3f7c-479c-aac3-511106720c82"
+                "d893ce28-3bf1-4034-b975-f3ac758772dc"
             ]
         },
-        "ec6abecb-3f7c-479c-aac3-511106720c82": {
+        "d893ce28-3bf1-4034-b975-f3ac758772dc": {
             "local_position": {
                 "x": 14.2630033493042,
                 "y": 0.0,
@@ -52,12 +52,12 @@
                 "y": 0.33000004291534424,
                 "z": 0.33000004291534424
             },
-            "parent": "1f7560ce-4dcb-4728-8717-3b4987645a4c",
+            "parent": "d5b5d91d-34e6-4efc-9f5b-93e0b624b233",
             "children": []
         }
     },
     "Voxel Renderer": {
-        "1f7560ce-4dcb-4728-8717-3b4987645a4c": {
+        "d5b5d91d-34e6-4efc-9f5b-93e0b624b233": {
             "resource": {
                 "file_location": {
                     "sub_location": "PROJECT",
@@ -72,7 +72,7 @@
                 }
             }
         },
-        "ec6abecb-3f7c-479c-aac3-511106720c82": {
+        "d893ce28-3bf1-4034-b975-f3ac758772dc": {
             "resource": {
                 "file_location": {
                     "sub_location": "PROJECT",

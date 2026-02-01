@@ -5,13 +5,16 @@
 
 #include "engine/core/ecs.hpp"
 #include "engine/systems/gameplay/types.hpp"
-#include "engine/systems/gameplay/game_component.hpp"
 #include "engine/engine.hpp"
 #include "engine/core/logger.hpp"
 #include "engine/systems/gameplay/game_component_registry.hpp"
 #include "engine/core/reflection.hpp"
 
 namespace tmt {
+
+/* Forward declare */
+class IGameComponent;
+
 /* Attached to an entity */
 class ComponentCollection {
    public:
