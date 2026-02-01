@@ -198,20 +198,19 @@ void Polyline::draw_cone(glm::vec3 origin, glm::vec3 dir, float angle, float len
     const float safe_angle = glm::tan(glm::min(angle, glm::pi<float>() * 0.5f - 0.001f));
     const float radius = length * safe_angle;
     const glm::vec3 cone_end = origin + dir * length;
-    
+
     /* Find a safe reference vector to get our two axes */
-    const glm::vec3 ref = glm::abs(glm::dot(dir, glm::vec3(0.0f, 1.0f, 0.0f))) > 0.99f 
-        ? glm::vec3(1.0f, 0.0f, 0.0f) : glm::vec3(0.0f, 1.0f, 0.0f);
-    
+    const glm::vec3 ref = glm::abs(glm::dot(dir, glm::vec3(0.0f, 1.0f, 0.0f))) > 0.99f ? glm::vec3(1.0f, 0.0f, 0.0f) : glm::vec3(0.0f, 1.0f, 0.0f);
+
     /* Get our two axis based on the cone direction */
     const glm::vec3 axis_a = glm::normalize(glm::cross(dir, ref));
     const glm::vec3 axis_b = glm::cross(dir, axis_a);
-    
+
     /* Check if we should or should not draw the cone edges */
     const glm::vec3 camera_pos = engine.renderer.render_view.gpu_view.origin;
     const float d = glm::dot(glm::normalize(camera_pos - origin), dir);
     const bool draw_edges = glm::abs(d) < glm::cos(angle);
-    
+
     /* Calculate the step size for the cone end circle */
     const float step = glm::two_pi<float>() / static_cast<float>(segments);
 
@@ -276,7 +275,7 @@ void Polyline::draw_cone(glm::vec3 origin, glm::vec3 dir, float angle, float len
                 best_b = d2;
                 silhouette_b = p0;
             }
-        }        
+        }
     }
 
     if (draw_edges) {

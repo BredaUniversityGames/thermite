@@ -7,18 +7,13 @@
 #include "editor/font/icon_lookups.hpp"
 
 inline void help_tooltip(const char* desc) {
-    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayShort))
-        ImGui::SetTooltip("%s", desc);
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayShort)) ImGui::SetTooltip("%s", desc);
 }
 
-inline void color_preview() {
-
-}
+inline void color_preview() {}
 
 inline void tag_invoke(ImReflect::ImInput_t, const char*, tmt::Light& value, ImSettings&, ImResponse&) {
-    auto tab_flags = [&](tmt::LightType t) {
-        return (value.type == t) ? ImGuiTabItemFlags_SetSelected : ImGuiTabItemFlags_None;
-    };
+    auto tab_flags = [&](tmt::LightType t) { return (value.type == t) ? ImGuiTabItemFlags_SetSelected : ImGuiTabItemFlags_None; };
 
     /* List of light type labels */
     const char* LIGHT_TYPE_LABELS[] {"Sphere Light", "Sun Light", "Spot Light", "Tube Light"};
@@ -32,10 +27,18 @@ inline void tag_invoke(ImReflect::ImInput_t, const char*, tmt::Light& value, ImS
             if (ImGui::Selectable(LIGHT_TYPE_LABELS[i], is_selected)) {
                 value.type = magic_enum::enum_cast<tmt::LightType>(i).value_or(tmt::LightType::SPHERE_LIGHT);
                 switch (value.type) {
-                    case tmt::LightType::SPHERE_LIGHT: value.light = tmt::SphereLight(); break;
-                    case tmt::LightType::SUN_LIGHT: value.light = tmt::SunLight(); break;
-                    case tmt::LightType::SPOT_LIGHT: value.light = tmt::SpotLight(); break;
-                    case tmt::LightType::TUBE_LIGHT: value.light = tmt::TubeLight(); break;
+                    case tmt::LightType::SPHERE_LIGHT:
+                        value.light = tmt::SphereLight();
+                        break;
+                    case tmt::LightType::SUN_LIGHT:
+                        value.light = tmt::SunLight();
+                        break;
+                    case tmt::LightType::SPOT_LIGHT:
+                        value.light = tmt::SpotLight();
+                        break;
+                    case tmt::LightType::TUBE_LIGHT:
+                        value.light = tmt::TubeLight();
+                        break;
                 }
             }
             if (is_selected) ImGui::SetItemDefaultFocus();
@@ -55,7 +58,7 @@ inline void tag_invoke(ImReflect::ImInput_t, const char*, tmt::Light& value, ImS
             help_tooltip("Radius of the sphere light source. (larger means softer shadows)");
             ImGui::DragFloat("Attenuation Radius", &light.attenuation_radius, 0.1f, light.source_radius, 100.0f, "%.3f u");
             help_tooltip("Radius at which the light influence will be zero.");
-            
+
             ImGui::DragFloat("Luminous Flux", &light.luminous_flux, 1.0f, 0.0f, 10000.0f, "%.3f lm");
             help_tooltip("Luminous flux of the sphere light.");
 
@@ -71,7 +74,7 @@ inline void tag_invoke(ImReflect::ImInput_t, const char*, tmt::Light& value, ImS
                 light.source_angle = glm::radians(source_angle);
             }
             help_tooltip("Angle between the center of the sun and its edge, as seen from your position. (larger means softer shadows)");
-            
+
             ImGui::DragFloat("Luminous Intensity", &light.luminous_intensity, 1.0f, 0.0f, 10000.0f, "%.3f cd");
             help_tooltip("Luminous intensity of the sun light.");
 
@@ -96,7 +99,7 @@ inline void tag_invoke(ImReflect::ImInput_t, const char*, tmt::Light& value, ImS
                 light.spot_blend = spot_blend / 100.0f;
             }
             help_tooltip("The softness of the spot light edge.");
-            
+
             ImGui::DragFloat("Luminous Intensity", &light.luminous_intensity, 1.0f, 0.0f, 10000.0f, "%.3f cd");
             help_tooltip("Luminous intensity of the spot light.");
 
@@ -111,7 +114,7 @@ inline void tag_invoke(ImReflect::ImInput_t, const char*, tmt::Light& value, ImS
             help_tooltip("Radius of the tube light source. (larger means softer shadows)");
             ImGui::DragFloat("Attenuation Distance", &light.attenuation_distance, 0.1f, light.source_radius, 100.0f, "%.3f u");
             help_tooltip("Distance at which the light influence will be zero.");
-            
+
             ImGui::DragFloat("Luminous Flux", &light.luminous_flux, 1.0f, 0.0f, 10000.0f, "%.3f lm");
             help_tooltip("Luminous flux of the tube light.");
 
@@ -119,7 +122,7 @@ inline void tag_invoke(ImReflect::ImInput_t, const char*, tmt::Light& value, ImS
             break;
         }
     }
-    
+
     ImGui::Separator();
 
     /* Shared parameters */

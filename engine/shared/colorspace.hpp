@@ -29,4 +29,4 @@ glm::vec3 aces2065_to_acescg(const glm::vec3 acescg);
 /* Calculate the black body color for a given temperature in Kelvin in the linear ACEScg color-space. */
 glm::vec3 black_body_acescg(const float k);
 
-}  // namespace tmt
+}  // namespace tmt::cs

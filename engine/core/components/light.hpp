@@ -21,9 +21,9 @@ enum class LightType : uint32_t {
 /* Spherical area light. */
 struct SphereLight {
     /* Radius of the sphere light source. (larger means softer shadows) */
-    float source_radius = 0.2f; 
+    float source_radius = 0.2f;
     /* Radius at which the light influence will be zero. */
-    float attenuation_radius = 10.0f; 
+    float attenuation_radius = 10.0f;
 
     /* Luminous flux of the sphere light. (in lumen, default: 100lm) */
     float luminous_flux = 100.0f;
@@ -41,9 +41,9 @@ struct SunLight {
 /* Spot light. */
 struct SpotLight {
     /* Radius of the spot light source. (larger means softer shadows) */
-    float source_radius = 0.2f; 
+    float source_radius = 0.2f;
     /* Distance at which the light influence will be zero. */
-    float attenuation_distance = 10.0f; 
+    float attenuation_distance = 10.0f;
     /* Angular diameter of the spot light beam. (in radians, default: 45deg) */
     float beam_angle = 0.785398f;
     /* The softness of the spot light edge. (0..1, default: 20%) */
@@ -56,9 +56,9 @@ struct SpotLight {
 /* Tube area light. */
 struct TubeLight {
     /* Radius of the tube light source. (larger means softer shadows) */
-    float source_radius = 0.2f; 
+    float source_radius = 0.2f;
     /* Distance at which the light influence will be zero. */
-    float attenuation_distance = 10.0f; 
+    float attenuation_distance = 10.0f;
 
     /* Luminous flux of the tube light. (in lumen, default: 100lm) */
     float luminous_flux = 100.0f;

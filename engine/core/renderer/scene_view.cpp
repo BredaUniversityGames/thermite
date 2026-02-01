@@ -135,11 +135,11 @@ void SceneView::update_voxel_objects(RenderGraph& render_graph) {
 void SceneView::update_lights(RenderGraph& render_graph, const RenderView&) {
     /* Capture all lights in the scene */
     const entt::basic_group group = engine.ecs.get_registry().group<const Light>(entt::get<Transform>);
-    
+
     /* Allocate space for all lights */
     const size_t count = std::min(group.size(), (size_t)MAX_LIGHTS);
     std::vector gpu_lights = reserved<UniversalLightDesc>(count);
-    
+
     /* Iterate over all lights */
     for (auto&& [entity, light, transform] : group.each()) {
         /* Create a new universal light descriptor */

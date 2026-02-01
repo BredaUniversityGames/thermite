@@ -27,11 +27,11 @@ inline void sphere_light_overlay(Transform& transform, SphereLight light, bool s
     const float camera_dist = glm::distance(camera_pos, pos);
 
     /* Draw the radii */
-    if (camera_dist > light.source_radius) { 
+    if (camera_dist > light.source_radius) {
         engine.polyline.use_color(color, (camera_dist - light.source_radius) / SPHERE_FADE_RADIUS);
         engine.polyline.draw_circle(pos, light.source_radius, 32u); /* Source radius */
     }
-    if (camera_dist > light.attenuation_radius) { 
+    if (camera_dist > light.attenuation_radius) {
         engine.polyline.use_color(color, (camera_dist - light.attenuation_radius) / SPHERE_FADE_RADIUS);
         engine.polyline.draw_circle(pos, light.attenuation_radius, 32u); /* Attenuation radius */
     }
@@ -136,7 +136,7 @@ inline void tube_light_overlay(Transform& transform, TubeLight light, bool selec
 
     /* Draw the culling distance */
     const float culling_distance = light.attenuation_distance + half_length;
-    if (camera_dist > culling_distance) { 
+    if (camera_dist > culling_distance) {
         engine.polyline.use_color(color, (camera_dist - culling_distance) / SPHERE_FADE_RADIUS);
         engine.polyline.draw_circle(pos, culling_distance, 32u); /* Culling distance */
     }
