@@ -99,6 +99,7 @@ void SceneView::update_voxel_objects(RenderGraph& render_graph) {
 
         /* Don't render objects with a zero scale or null resource */
         if (glm::any(glm::equal(transform.get_world_scale(), glm::vec3(0.0f))) || renderer.resource == nullptr) continue;
+        renderer.resource->update_if_dirty();
 
         /* Create new CPU and GPU object */
         VoxelObject& cpu_object = cpu_objects.emplace_back();
