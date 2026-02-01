@@ -39,8 +39,8 @@ struct PickedLight {
 /* Pick a light to sample for a given sample point using reservoir sampling. */
 inline PickedLight pick_light(const float3 point, const float3 normal, inout uint seed) {
     /* Reservoir state */
-    uint i = 0u;
-    float w_sum = 0.0f, w_i = 0.0f;
+    uint i = uint::maxValue;
+    float w_sum = 0.0f, w_i = BIG_F32;
 
     for (uint l = 0u; l < scene_view.light_count; ++l) {
         /* Calculate light weight */
@@ -61,6 +61,7 @@ inline float3 direct_illuminance(const float3 point, const float3 normal, inout 
 
     /* Fetch a light to sample */
     const PickedLight picked_light = pick_light(point, normal, seed);
+    if (picked_light.i == uint::maxValue) return 0.0f;
     const Light light = lights[picked_light.i];
 
     const LightSample light_sample = sample_light(point, light, rand_float2(seed));

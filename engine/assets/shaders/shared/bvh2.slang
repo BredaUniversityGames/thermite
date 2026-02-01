@@ -119,7 +119,7 @@ public [ForceInline] float occlusion_bvh2(
     Ray ray, float tmax
 ) {
     /* Check to make sure the root node of the BVH is valid */
-    if (asuint(nodes[0].w) == 0u && asuint(nodes[3].w) == 0u) {
+    if ((asuint(nodes[0].w) == 0u && asuint(nodes[3].w) == 0u) || tmax <= 0.0f) {
         return tmax;
     }
 

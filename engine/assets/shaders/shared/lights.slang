@@ -58,7 +58,7 @@ public [ForceInline] float evaluate_weight(const float3 p, const float3 n, const
     /* Calculate the local origin and distance to the light source */
     const float3 src_local = light.origin - p;
     const float src_dist = length(src_local);
-    if (src_dist > light.culling_radius || src_dist < light.source_radius) return 0.0f; /* Out of range */
+    if (src_dist >= light.culling_radius || src_dist <= 0.0f) return 0.0f; /* Out of range */
 
     /* Calculate the direction and angle towards the light source */
     const float3 src_dir = src_local / src_dist;
@@ -85,7 +85,7 @@ public [ForceInline] LightSample sample_light(const float3 point, const Light li
     /* Sphere, Sun, and Spot lights take the same path */
     const bool is_sun = light.type == LightType::SUN_LIGHT;
     const float3 light_dir = is_sun ? -light.direction : normalize(light.origin - point);
-    const float light_dist = is_sun ? BIG_F32 : distance(light.origin, point);
+    const float light_dist = is_sun ? BIG_F32 : max(0.001f, distance(light.origin, point));
     const float sample_angle = is_sun ? light.source_radius : sqrt(1.0f - pow(light.source_radius / light_dist, 2.0f));
 
     /* Tube light requires special path */
@@ -97,7 +97,7 @@ public [ForceInline] LightSample sample_light(const float3 point, const Light li
 
         /* Calculate the tmax and sample direction */
         const float3 sample_dir = tube_point - point;
-        sample.tmax = length(sample_dir);
+        sample.tmax = max(0.001f, length(sample_dir));
         sample.dir = sample_dir / sample.tmax;
 
         /* Calculate the PDF of the sample */
@@ -123,7 +123,7 @@ public [ForceInline] LightSample sample_light(const float3 point, const Light li
     const float3 light_local = point - light.origin;
     const float b = dot(light_local, sample.dir);
     const float c = dot(light_local, light_local) - light.source_radius * light.source_radius;
-    sample.tmax = is_sun ? BIG_F32 : (-b + sqrt(b * b - c));
+    sample.tmax = is_sun ? BIG_F32 : max(0.0f, -b + sqrt(b * b - c));
 
     /* Calculate the PDF of the sample */
     sample.rcp_pdf = 2.0f * PI_F32 * (1.0f - sample_angle);
