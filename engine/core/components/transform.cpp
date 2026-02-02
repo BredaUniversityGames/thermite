@@ -48,7 +48,7 @@ const glm::quat& Transform::get_local_rotation() const { return local_rotation; 
 
 const glm::vec3& Transform::get_local_scale() const { return local_scale; }
 
-const glm::vec3& Transform::get_local_eulers() const {return local_eulers; }
+const glm::vec3& Transform::get_local_eulers() const { return local_eulers; }
 
 void Transform::set_world_position(const glm::vec3& pos) {
     if (has_parent()) {
