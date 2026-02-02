@@ -35,6 +35,11 @@ struct Svt64Node {
 
     /* Absolute offset into an array of child nodes / voxels. */
     inline uint32_t abs_ptr() const { return child_ptr & 0x7FFFFFFFu; };
+
+    /* Is a given child node index active? */
+    inline bool child_active(uint32_t child_index) {
+        return (child_mask >> child_index & 1u) != 0u;
+    }
 };
 #pragma pack(pop)
 
@@ -87,6 +92,8 @@ class Svt64 {
     void subtract(const Stencil* stencil, glm::ivec3 offset);
 
     /* Removes a voxel (fragmentizes memory) */
+    void remove_voxel_dirty(const uint32_t x, const uint32_t y, const uint32_t z);
+    /* Removes a voxel. */
     void remove_voxel(const uint32_t x, const uint32_t y, const uint32_t z);
 
     /* Build the tree. */

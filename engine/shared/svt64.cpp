@@ -7,6 +7,12 @@
 #include "engine/core/resources/stencil.hpp"
 
 namespace tmt {
+    
+// Count number of set bits
+inline uint32_t popcnt(uint64_t mask) { return (uint32_t)__popcnt64(mask); }
+
+// Count number of set bits in variable range [0..width]
+inline uint32_t popcnt_var64(uint64_t mask, uint32_t width) { return (uint32_t)__popcnt64(mask & ((1ull << width) - 1)); }
 
 /* Log with base. */
 inline uint32_t log_base(const uint32_t x, const uint32_t b) { return (uint32_t)ceil(log((double)x) / log((double)b)); }
@@ -198,7 +204,7 @@ void Svt64::subtract(const Stencil* stencil, glm::ivec3 offset) {
     subtract_recursive(0, glm::ivec3(0), 1u << (depth * 2u), stencil, offset);
 }
 
-void tmt::Svt64::subtract_recursive(uint32_t node_id, glm::ivec3 node_pos, uint32_t node_scale, const Stencil* stencil, glm::ivec3 offset) {
+void Svt64::subtract_recursive(uint32_t node_id, glm::ivec3 node_pos, uint32_t node_scale, const Stencil* stencil, glm::ivec3 offset) {
     Svt64Node& node = nodes[node_id];
     uint32_t child_scale = node_scale >> 2;
 
@@ -230,9 +236,9 @@ void tmt::Svt64::subtract_recursive(uint32_t node_id, glm::ivec3 node_pos, uint3
             const glm::ivec3 voxel_relative = voxel_pos - offset;
 
             // Bounds check
-            if (voxel_relative.x < 0 || voxel_relative.x >= stencil->size.x) continue;
-            if (voxel_relative.y < 0 || voxel_relative.y >= stencil->size.y) continue;
-            if (voxel_relative.z < 0 || voxel_relative.z >= stencil->size.z) continue;
+            if (voxel_relative.x < 0 || voxel_relative.x >= (int)stencil->size.x) continue;
+            if (voxel_relative.y < 0 || voxel_relative.y >= (int)stencil->size.y) continue;
+            if (voxel_relative.z < 0 || voxel_relative.z >= (int)stencil->size.z) continue;
 
             // Check if stencil has solid voxel here
             const uint32_t stencil_index = voxel_relative.x + stencil->size.x * (voxel_relative.y + stencil->size.y * voxel_relative.z);
@@ -274,7 +280,7 @@ void tmt::Svt64::subtract_recursive(uint32_t node_id, glm::ivec3 node_pos, uint3
     }
 }
 
-void tmt::Svt64::remove_voxel(const uint32_t x, const uint32_t y, const uint32_t z) {
+void Svt64::remove_voxel_dirty(const uint32_t x, const uint32_t y, const uint32_t z) {
     Svt64Node* current = &nodes[0];
 
     // Bounds check
@@ -308,6 +314,70 @@ void tmt::Svt64::remove_voxel(const uint32_t x, const uint32_t y, const uint32_t
         // Descend
         const uint32_t child_pos = (uint32_t)__popcnt64(current->child_mask & ((1ull << child_index) - 1u));
         current = &nodes[current->abs_ptr() + child_pos];
+    }
+}
+
+void Svt64::remove_voxel(const uint32_t x, const uint32_t y, const uint32_t z) {
+    /* Bounds check */
+    const uint32_t tree_width = 1u << (depth * 2u);
+    if (x >= tree_width || y >= tree_width || z >= tree_width) return;
+
+    /* Traversal state */
+    Svt64Node* node = &nodes[0];
+    uint32_t level = depth - 1u;
+    uint32_t stack[8] {};
+
+    for (;;) {
+        /* Find the local index at the current tree depth (0..4) */
+        const uint32_t local_index_x = x >> (level << 1) & 0b11u;
+        const uint32_t local_index_y = y >> (level << 1) & 0b11u;
+        const uint32_t local_index_z = z >> (level << 1) & 0b11u;
+        const uint32_t child_pos = local_index_x | (local_index_z << 2) | (local_index_y << 4);
+
+        /* Get the sparse child node / voxel pointer */
+        const uint32_t child_ptr = popcnt_var64(node->child_mask, child_pos);
+
+        if (node->child_active(child_pos) == false) {
+            return; /* Voxel doesn't exist */
+        } else if (level == 0u) {
+            /* Found the voxel, remove it from the child mask */
+            node->child_mask &= ~(1ull << child_pos);
+        
+            /* Shift voxel data over to keep indices aligned */
+            const uint32_t num_voxels = popcnt(node->child_mask) + 1u;
+            if (child_ptr < num_voxels) {
+                const uint32_t voxel_ptr = node->abs_ptr() + child_ptr;
+                memmove(&materials[voxel_ptr], &materials[voxel_ptr + 1u], (num_voxels - child_ptr) * sizeof(MaterialIndex));
+            }
+
+            for (; node->child_mask == 0u;) {
+                /* Fetch the next node up */
+                node = &nodes[stack[++level]];
+
+                /* Find the local index at the current tree depth (0..4) */
+                const uint32_t node_index_x = x >> (level << 1) & 0b11u;
+                const uint32_t node_index_y = y >> (level << 1) & 0b11u;
+                const uint32_t node_index_z = z >> (level << 1) & 0b11u;
+                const uint32_t node_pos = node_index_x | (node_index_z << 2) | (node_index_y << 4);
+
+                /* Get the sparse child node / voxel pointer */
+                const uint32_t child_node_ptr = popcnt_var64(node->child_mask, node_pos);
+
+                /* Update the child mask */
+                node->child_mask &= ~(1ull << node_pos);
+
+                /* Shift node data over to keep indices aligned */
+                const uint32_t num_nodes = popcnt(node->child_mask) + 1u;
+                const uint32_t node_ptr = node->abs_ptr() + child_node_ptr;
+                memmove(&nodes[node_ptr], &nodes[node_ptr + 1u], (num_nodes - child_node_ptr) * sizeof(Svt64Node));
+            }
+            return;
+        }
+
+        /* Traverse further down the tree */
+        level -= 1u;
+        stack[level] = node->abs_ptr() + child_ptr;
+        node = &nodes[stack[level]];
     }
 }
 
@@ -367,9 +437,6 @@ inline glm::vec3 mirror_pos(const glm::vec3 pos, const glm::vec3 dir) {
     mirrored.z = dir.z > 0.0f ? (3.0f - pos.z) : pos.z;
     return mirrored;
 }
-
-// Count number of set bits in variable range [0..width]
-inline uint32_t popcnt_var64(uint64_t mask, uint32_t width) { return (uint32_t)__popcnt64(mask & ((1ull << width) - 1)); }
 
 /* Get the index of the voxel at a given position and traversal scale. */
 glm::uvec3 voxel_index(glm::vec3 pos, uint32_t scale_exp) {

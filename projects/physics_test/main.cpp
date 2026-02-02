@@ -294,7 +294,7 @@ void Game::on_update(const tmt::FrameData& time) {
 
     cooldown -= time.delta_time;
 
-    if (tmt::engine.input.is_mouse_button_just_pressed(tmt::MouseButton::LEFT)) {
+    if (tmt::engine.input.is_mouse_button_pressed(tmt::MouseButton::LEFT)) {
         /* Get the mouse position */
         const glm::ivec2 mouse_pos = glm::ivec2(tmt::engine.input.get_mouse_x(), tmt::engine.input.get_mouse_y());
 
@@ -305,6 +305,7 @@ void Game::on_update(const tmt::FrameData& time) {
         if (hit) {
             auto* resource = tmt::engine.ecs.get_component<tmt::VoxelBody>(hit.entity).resource.resource.get();
             // resource->blas->subtract(stencil.resource.get(), hit.coord);
+            tmt::Log::info("voxel: {}, {}, {}", hit.coord.x, hit.coord.y, hit.coord.z);
             resource->blas->remove_voxel(hit.coord.x, hit.coord.y, hit.coord.z);
             resource->set_dirty();
         }
