@@ -125,7 +125,7 @@ void DragonScene::on_start() {
 #include "engine/core/renderer/render_view.hpp"
 #include "engine/shared/ray.hpp"
 
-void DragonScene::on_update(const tmt::FrameData& time) {
+void DragonScene::on_update(const tmt::FrameData&) {
     /* Animate the voxel */
     // elapsed_time += time.delta_time;
     // auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(voxel);

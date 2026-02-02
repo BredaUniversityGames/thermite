@@ -1,6 +1,7 @@
 #pragma once
 
 namespace tmt {
+
 struct ParticleEmitter {
     glm::vec3 pos = {0.0f, 0.0f, 0.0f};
     float particle_lifetime = 1.0f;
@@ -14,6 +15,7 @@ struct ParticleEmitter {
 
     bool active = true;
 };
+
 }  // namespace tmt
 
 TMT_COMPONENT(tmt::ParticleEmitter, "ParticleEmitter", (pos, particle_lifetime, dir, cone_angle, min_speed, max_speed, spawn_count, active));

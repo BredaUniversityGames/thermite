@@ -37,7 +37,7 @@ struct GpuParticle {
     float lifetime {};
 
     uint32_t tex_index {};
-    glm::vec3 _pad;
+    glm::vec3 pad;
 };
 
 struct Counters {
