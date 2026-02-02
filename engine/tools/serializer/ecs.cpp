@@ -76,39 +76,22 @@ struct DeserializeState {
     const SceneJson& json;
 
     // std::unordered_map<tmt::EntityID, tmt::Entity> entity_mapping {{tmt::NULL_UUID, entt::null}}; /* Default null to null value */
-
-    tmt::TreeMap<tmt::UUID, tmt::Entity> entity_mapping {tmt::NULL_UUID, entt::null}; /* Default null to null value */
+    using EntityMap = tmt::TreeMap<tmt::UUID, std::unordered_map<tmt::Entity, tmt::Entity>>;
+    EntityMap entity_mapping {tmt::NULL_UUID, {{entt::null, entt::null}}}; /* Default null to null value */
+    EntityMap* current_entity_mapping = nullptr;
 };
 
 /* Entity with state */
-Json tag_invoke(JsonReflect::serialize_t, const tmt::Entity& entity, const SerializeState& state) {
-    if (entity == entt::null) {
-        return tmt::NULL_ENTITY_ID.str();
-    }
-    const auto& entity_id = state.ecs.get_component<tmt::EntityID>(entity);
-
-    // TODO: maybe not needed if entity mapping works
-    if (state.current_prefab_instance_id.has_value()) {
-        if (state.ecs.has_component<tmt::Prefab>(entity)) {
-            const auto& prefab = state.ecs.get_component<tmt::Prefab>(entity);
-            if (prefab.instance_id == state.current_prefab_instance_id.value()) {
-                return prefab.source_entity.str();
-            }
-        }
-    }
-
-    return entity_id.str();
-}
+//Json tag_invoke(JsonReflect::serialize_t, const tmt::Entity& entity, const SerializeState& state) {
+//
+//}
 
 static void tag_invoke(JsonReflect::deserialize_t, const JsonReflect::json& j, tmt::Entity& entity, const DeserializeState& state) {
-    const std::string uuid_str = j.get<std::string>();
-    const tmt::UUID uuid = tmt::UUID::fromStrFactory(uuid_str);
+    tmt::Entity deserialized_entity = entt::null;
+    tmt::Serializer::deserialize(j, deserialized_entity, state.ecs);
+    if (state.current_entity_mapping) {
+        /* Check if deserialized entity is in the mapping */
 
-    if (state.entity_mapping.contains(uuid)) {
-        entity = state.entity_mapping.at(uuid).value();
-    } else {
-        tmt::Log::warn(tmt::Log::Scope::ENGINE, "[Serialization] Entity mapping does not contain UUID {}", uuid_str);
-        entity = entt::null;
     }
 }
 
