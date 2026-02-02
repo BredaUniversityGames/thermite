@@ -80,7 +80,7 @@ class Collection {
         return get_systems_single().begin();
     }
 
-    const auto begin() const
+    auto begin() const
         requires SINGLE_TYPE
     {
         return get_systems_single().begin();
@@ -92,7 +92,7 @@ class Collection {
         return get_systems_single().end();
     }
 
-    const auto end() const
+    auto end() const
         requires SINGLE_TYPE
     {
         return get_systems_single().end();
