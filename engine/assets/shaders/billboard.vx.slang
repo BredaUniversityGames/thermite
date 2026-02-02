@@ -32,8 +32,8 @@ VertexOutput main(VertexInput input, uint32_t instance_id: SV_InstanceID) {
 
     Particle particle = particles[alive_list[instance_id]];
 
-    float3 cam_right = normalize(float3(gpu_view.inv_view[0][0], gpu_view.inv_view[1][0], gpu_view.inv_view[2][0]));
-    float3 cam_up = normalize(float3(gpu_view.inv_view[0][1], gpu_view.inv_view[1][1], gpu_view.inv_view[2][1]));
+    float3 cam_right = normalize(float3(gpu_view.view_to_world[0][0], gpu_view.view_to_world[1][0], gpu_view.view_to_world[2][0]));
+    float3 cam_up = normalize(float3(gpu_view.view_to_world[0][1], gpu_view.view_to_world[1][1], gpu_view.view_to_world[2][1]));
 
     float3 world_pos = particle.pos.xyz +  
                        cam_right * input.pos.x /** b.size*/ + 

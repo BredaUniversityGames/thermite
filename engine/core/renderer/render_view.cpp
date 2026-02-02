@@ -97,7 +97,7 @@ void RenderView::update_gpu_view(RenderGraph& render_graph, const Camera& camera
     p[1][1] *= -1.0f;
     gpu_view.world_to_clip = p * glm::inverse(world); // p * v
     gpu_view.clip_to_world = glm::inverse(gpu_view.world_to_clip);
-    gpu_view.inv_view = world; // the world matrix is the inverse view matrix
+    gpu_view.view_to_world = world; // the world matrix is the inverse view matrix
     gpu_view.origin = glm::vec4(transform.get_world_position(), 0.0f);
     gpu_view.frame_index = frame_counter;
     gpu_view.dt = engine.frame_data().delta_time;

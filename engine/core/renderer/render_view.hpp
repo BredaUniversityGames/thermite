@@ -19,8 +19,8 @@ struct GpuView {
     glm::mat4 world_to_clip {};
     /* Clip-space to world-space transformation matrix. */
     glm::mat4 clip_to_world {};
-    /* Inverse View matrix. */
-    glm::mat4 inv_view {};
+    /* View-space to world-space transformation matrix. */
+    glm::mat4 view_to_world {};
     /* Origin of the view in world-space. */
     glm::vec4 origin {};
     /* Resolution of the view in pixels. */
