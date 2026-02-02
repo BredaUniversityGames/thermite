@@ -152,8 +152,7 @@ void VfxPipeline::init(GPUAdapter& gpu) {
         }
 
         /* Initialise a bojan texture */
-        if (const Result r =
-                bank.create_texture("[Particles] Bojan", TextureUsage::Sampled | TextureUsage::TransferDst, TextureFormat::RGBA8Unorm, {(u32)tex_width, (u32)tex_height, 0});
+        if (const Result r = bank.create_texture("[Particles] Bojan", TextureUsage::Sampled | TextureUsage::TransferDst, TextureFormat::RGBA8Unorm, {(u32)tex_width, (u32)tex_height, 0});
             r.is_err()) {
             Log::error(Log::Scope::RENDERER, "failed to initialise bojan texture.\nreason: {}", r.unwrap_err().c_str());
             return;
