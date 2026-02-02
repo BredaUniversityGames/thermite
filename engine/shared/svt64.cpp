@@ -7,7 +7,7 @@
 #include "engine/core/resources/stencil.hpp"
 
 namespace tmt {
-    
+
 // Count number of set bits
 inline uint32_t popcnt(uint64_t mask) { return (uint32_t)__popcnt64(mask); }
 
@@ -342,7 +342,7 @@ void Svt64::remove_voxel(const uint32_t x, const uint32_t y, const uint32_t z) {
         } else if (level == 0u) {
             /* Found the voxel, remove it from the child mask */
             node->child_mask &= ~(1ull << child_pos);
-        
+
             /* Shift voxel data over to keep indices aligned */
             const uint32_t num_voxels = popcnt(node->child_mask) + 1u;
             if (child_ptr < num_voxels) {

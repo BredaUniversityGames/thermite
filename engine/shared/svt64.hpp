@@ -37,9 +37,7 @@ struct Svt64Node {
     inline uint32_t abs_ptr() const { return child_ptr & 0x7FFFFFFFu; };
 
     /* Is a given child node index active? */
-    inline bool child_active(uint32_t child_index) {
-        return (child_mask >> child_index & 1u) != 0u;
-    }
+    inline bool child_active(uint32_t child_index) const { return (child_mask >> child_index & 1u) != 0u; }
 };
 #pragma pack(pop)
 
