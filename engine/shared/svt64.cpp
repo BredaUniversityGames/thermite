@@ -317,6 +317,30 @@ void Svt64::remove_voxel_dirty(const uint32_t x, const uint32_t y, const uint32_
     }
 }
 
+/* Convert absolute voxel coordinate to level local voxel coordinate. */
+inline uint32_t get_level_local_pos(const uint32_t x, const uint32_t y, const uint32_t z, const uint32_t level) {
+    const uint32_t level_2x = level << 1;           /* x2 */
+    const uint32_t local_x = x >> level_2x & 0b11u; /* % 4 */
+    const uint32_t local_y = y >> level_2x & 0b11u;
+    const uint32_t local_z = z >> level_2x & 0b11u;
+    return local_x | (local_z << 2) | (local_y << 4); /* x & y need to be flipped */
+}
+
+/* Remove child node / voxel from node without corrupting child indices. */
+template <typename T>
+inline void remove_child(Svt64Node* node, T* data, const uint32_t pos, const uint32_t idx) {
+    /* Find the number of children present in the node */
+    const uint32_t child_count = popcnt(node->child_mask);
+
+    /* Remove the child at `pos` from the child mask */
+    node->child_mask &= ~(1ull << pos);
+    if (idx >= child_count) return; /* No re-alignment required */
+
+    /* Shift child data over to keep indices aligned */
+    const uint32_t ptr = node->abs_ptr() + idx;
+    memmove(data + ptr, data + ptr + 1, (child_count - idx) * sizeof(T));
+}
+
 void Svt64::remove_voxel(const uint32_t x, const uint32_t y, const uint32_t z) {
     /* Bounds check */
     const uint32_t tree_width = 1u << (depth * 2u);
@@ -325,59 +349,38 @@ void Svt64::remove_voxel(const uint32_t x, const uint32_t y, const uint32_t z) {
     /* Traversal state */
     Svt64Node* node = &nodes[0];
     uint32_t level = depth - 1u;
-    uint32_t stack[8] {};
+    uint32_t stack[6] {};
 
+    /* First, traverse down the tree, to find the voxel to remove */
     for (;;) {
-        /* Find the local index at the current tree depth (0..4) */
-        const uint32_t local_index_x = x >> (level << 1) & 0b11u;
-        const uint32_t local_index_y = y >> (level << 1) & 0b11u;
-        const uint32_t local_index_z = z >> (level << 1) & 0b11u;
-        const uint32_t child_pos = local_index_x | (local_index_z << 2) | (local_index_y << 4);
-
         /* Get the sparse child node / voxel pointer */
+        const uint32_t child_pos = get_level_local_pos(x, y, z, level);
         const uint32_t child_ptr = popcnt_var64(node->child_mask, child_pos);
 
-        if (node->child_active(child_pos) == false) {
-            return; /* Voxel doesn't exist */
-        } else if (level == 0u) {
-            /* Found the voxel, remove it from the child mask */
-            node->child_mask &= ~(1ull << child_pos);
+        /* Check if the next child node / voxel is already empty */
+        const bool is_emtpy = node->child_active(child_pos) == false;
+        if (is_emtpy) return; /* Done */
 
-            /* Shift voxel data over to keep indices aligned */
-            const uint32_t num_voxels = popcnt(node->child_mask) + 1u;
-            if (child_ptr < num_voxels) {
-                const uint32_t voxel_ptr = node->abs_ptr() + child_ptr;
-                memmove(&materials[voxel_ptr], &materials[voxel_ptr + 1u], (num_voxels - child_ptr) * sizeof(MaterialIndex));
-            }
-
-            for (; node->child_mask == 0u;) {
-                /* Fetch the next node up */
-                node = &nodes[stack[++level]];
-
-                /* Find the local index at the current tree depth (0..4) */
-                const uint32_t node_index_x = x >> (level << 1) & 0b11u;
-                const uint32_t node_index_y = y >> (level << 1) & 0b11u;
-                const uint32_t node_index_z = z >> (level << 1) & 0b11u;
-                const uint32_t node_pos = node_index_x | (node_index_z << 2) | (node_index_y << 4);
-
-                /* Get the sparse child node / voxel pointer */
-                const uint32_t child_node_ptr = popcnt_var64(node->child_mask, node_pos);
-
-                /* Update the child mask */
-                node->child_mask &= ~(1ull << node_pos);
-
-                /* Shift node data over to keep indices aligned */
-                const uint32_t num_nodes = popcnt(node->child_mask) + 1u;
-                const uint32_t node_ptr = node->abs_ptr() + child_node_ptr;
-                memmove(&nodes[node_ptr], &nodes[node_ptr + 1u], (num_nodes - child_node_ptr) * sizeof(Svt64Node));
-            }
-            return;
+        /* If we're at the bottom level we're done traversing down */
+        if (level == 0u) {
+            remove_child(node, materials, child_pos, child_ptr);
+            break;
         }
 
-        /* Traverse further down the tree */
-        level -= 1u;
-        stack[level] = node->abs_ptr() + child_ptr;
+        /* Traverse down the tree, update the stack */
+        stack[--level] = node->abs_ptr() + child_ptr;
         node = &nodes[stack[level]];
+    }
+
+    /* Next, traverse back up the tree, to update any masks that need updating */
+    for (; node->child_mask == 0u;) {
+        /* Fetch the next node up */
+        node = &nodes[stack[++level]];
+
+        /* Find the node position & pointer, remove the child */
+        const uint32_t node_pos = get_level_local_pos(x, y, z, level);
+        const uint32_t node_ptr = popcnt_var64(node->child_mask, node_pos);
+        remove_child(node, nodes, node_pos, node_ptr);
     }
 }
 
