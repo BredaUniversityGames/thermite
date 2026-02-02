@@ -373,7 +373,7 @@ void Svt64::remove_voxel(const uint32_t x, const uint32_t y, const uint32_t z) {
     }
 
     /* Next, traverse back up the tree, to update any masks that need updating */
-    for (; node->child_mask == 0u;) {
+    for (; node->child_mask == 0u && level < (depth - 1u);) {
         /* Fetch the next node up */
         node = &nodes[stack[++level]];
 

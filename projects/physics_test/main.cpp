@@ -294,24 +294,42 @@ void Game::on_update(const tmt::FrameData& time) {
 
     cooldown -= time.delta_time;
 
-    if (tmt::engine.input.is_mouse_button_pressed(tmt::MouseButton::LEFT)) {
-        /* Get the mouse position */
-        const glm::ivec2 mouse_pos = glm::ivec2(tmt::engine.input.get_mouse_x(), tmt::engine.input.get_mouse_y());
+    static float tool_radius = 2.0f;
+    tool_radius = fmaxf(fminf(tool_radius + tmt::engine.input.get_mouse_wheel_y() * 0.1f, 6.0f), 1.0f);
+    const int radius = (int)ceilf(tool_radius);
 
-        /* Create a ray from the mouse position for the current render view and trace it */
-        const tmt::Ray mouse_ray = tmt::engine.renderer.render_view.pixel_ray(mouse_pos);
-        const tmt::Hit hit = tmt::engine.renderer.trace_ray(mouse_ray);
+    /* Get the mouse position */
+    const glm::ivec2 mouse_pos = glm::ivec2(tmt::engine.input.get_mouse_x(), tmt::engine.input.get_mouse_y());
 
-        if (hit) {
+    /* Create a ray from the mouse position for the current render view and trace it */
+    const tmt::Ray mouse_ray = tmt::engine.renderer.render_view.pixel_ray(mouse_pos);
+    const tmt::Hit hit = tmt::engine.renderer.trace_ray(mouse_ray);
+
+    if (hit.miss() == false) {
+        tmt::engine.polyline.use_color(0.95686274f, 0.60392156f, 0.21960784f);
+        tmt::engine.polyline.use_line_width(2.0f);
+        const float draw_radius = tool_radius * UNITS_PER_VOXEL;
+        tmt::engine.polyline.draw_circle(mouse_ray.origin + mouse_ray.dir * (hit.distance - draw_radius), draw_radius);
+
+        if (tmt::engine.input.is_mouse_button_pressed(tmt::MouseButton::LEFT)) {
             auto* resource = tmt::engine.ecs.get_component<tmt::VoxelBody>(hit.entity).resource.resource.get();
-            // resource->blas->subtract(stencil.resource.get(), hit.coord);
-            tmt::Log::info("voxel: {}, {}, {}", hit.coord.x, hit.coord.y, hit.coord.z);
-            resource->blas->remove_voxel(hit.coord.x, hit.coord.y, hit.coord.z);
+
+            const float r2 = tool_radius * tool_radius;
+            for (int z = -radius; z <= radius; ++z) {
+                for (int y = -radius; y <= radius; ++y) {
+                    for (int x = -radius; x <= radius; ++x) {
+                        const float fx = (float)x + 0.5f, fy = (float)y + 0.5f, fz = (float)z + 0.5f;
+                        const float d2 = fx * fx + fy * fy + fz * fz;
+                        if (d2 > r2) continue;
+                        resource->blas->remove_voxel((uint32_t)((int)hit.coord.x + x), (uint32_t)((int)hit.coord.y + y), (uint32_t)((int)hit.coord.z + z));
+                    }
+                }
+            }
             resource->set_dirty();
         }
     }
 
-    // if (tmt::engine.input.is_mouse_button_pressed(tmt::MouseButton::LEFT) && cooldown <= 0.0f) {
+        // if (tmt::engine.input.is_mouse_button_pressed(tmt::MouseButton::LEFT) && cooldown <= 0.0f) {
     //     auto& cam_transform = tmt::engine.ecs.get_component<tmt::Transform>(cam);
     //     const glm::vec3 cam_pos = cam_transform.get_world_position();
     //     const glm::vec3 cam_forward = cam_transform.get_forward();
