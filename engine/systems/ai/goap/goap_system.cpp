@@ -180,7 +180,7 @@ EffectiveGoapAction build_effective_action(const GoapAction& base, const GoapAct
 void Goap::update_plan(Entity entity, GoapAgent& agent, WorldState& ws) {
     // Stop any running action before replanning
     if (agent.current_action) {
-        agent.current_action->on_interrupt(entity, engine.ecs.get_registry());
+        agent.current_action->on_interrupt(entity);
         agent.current_action->is_running = false;
         agent.current_action = nullptr;
     }
@@ -356,7 +356,7 @@ void Goap::update_action(Entity entity, GoapAgent& agent, WorldState& ws, float 
             Log::info("GOAP {} START (index = {})", action->get_id(), agent.current_index);
         }
         action->is_running = true;
-        action->on_start(entity, engine.ecs.get_registry());
+        action->on_start(entity);
     }
 
     // If world state changed and now invalidates preconditions -> interrupt
@@ -364,7 +364,7 @@ void Goap::update_action(Entity entity, GoapAgent& agent, WorldState& ws, float 
         if (show_logging) {
             Log::info("GOAP {} INTERRUPT (preconditions failed)", action->get_id());
         }
-        action->on_interrupt(entity, engine.ecs.get_registry());
+        action->on_interrupt(entity);
 
         action->is_running = false;
         agent.current_action = nullptr;
@@ -374,16 +374,16 @@ void Goap::update_action(Entity entity, GoapAgent& agent, WorldState& ws, float 
     }
 
     // Tick action
-    action->on_tick(entity, engine.ecs.get_registry(), dt);
+    action->on_tick(entity, dt);
 
     // Check if action is completed
-    if (action->is_done(entity, engine.ecs.get_registry())) {
+    if (action->is_done(entity)) {
         if (show_logging) {
             Log::info("GOAP {} FINISHED", action->get_id());
         }
 
         action->apply_effects(ws);
-        action->on_finished(entity, engine.ecs.get_registry());
+        action->on_finished(entity);
         action->is_running = false;
 
         agent.current_index++;
