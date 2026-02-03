@@ -12,7 +12,6 @@
 
 #include "engine/core/components/name.hpp"
 #include "engine/core/components/transform.hpp"
-#include "engine/core/components/entity_id.hpp"
 #include "engine/core/collection.hpp"
 
 #include "engine/events/game.hpp"
@@ -56,8 +55,6 @@ class Ecs : public OnGameStart, public OnGameUpdate, public OnGameFixedUpdate, p
         /* Enforce Name component */
         registry.emplace<Name>(entity, name.empty() ? "Entity_" + EntityHelper::to_string(entity) : name);
         registry.emplace<Transform>(entity);
-        auto& uuid = registry.emplace<EntityID>(entity, UUIDGenerator::generate());
-        uuid_entity_map[uuid] = entity;
         return entity;
     }
 
@@ -176,28 +173,6 @@ class Ecs : public OnGameStart, public OnGameUpdate, public OnGameFixedUpdate, p
         return entt::to_entity(storage, instance);
     }
 
-    std::optional<Entity> get_entity_by_uuid(const EntityID& uuid) const {
-        if (uuid_entity_map.contains(uuid)) {
-            return uuid_entity_map.at(uuid);
-        }
-        return std::nullopt;
-    }
-
-    EntityID get_uuid(const Entity entity) const {
-        const auto& uuid = get_component<EntityID>(entity);
-        return uuid;
-    }
-
-    bool has_uuid(const EntityID& uuid) const { return uuid_entity_map.contains(uuid); }
-
-    bool register_uuid(const EntityID& uuid, const Entity entity) {
-        if (has_uuid(uuid) && get_entity_by_uuid(uuid) != entity) {
-            return false;
-        }
-        uuid_entity_map[uuid] = entity;
-        return true;
-    }
-
     void destroy_entity(const Entity entity, bool force = false) {
         auto children = get_component<Transform>(entity).get_all_children();
         if (force) {
@@ -219,7 +194,6 @@ class Ecs : public OnGameStart, public OnGameUpdate, public OnGameFixedUpdate, p
 
    private:
     Registry registry;
-    std::unordered_map<EntityID, Entity> uuid_entity_map;
 
     void on_game_start() override;
 

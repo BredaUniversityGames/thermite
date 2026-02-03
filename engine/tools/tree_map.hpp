@@ -40,7 +40,14 @@ class TreeMap {
 
     void set_value(const V& val) { data_ = val; }
 
-    std::optional<V> get_value() const { return std::holds_alternative<V>(data_) ? std::optional<V>(std::get<V>(data_)) : std::nullopt; }
+    //std::optional<V> get_value() const { return std::holds_alternative<V>(data_) ? std::optional<V>(std::get<V>(data_)) : std::nullopt; }
+
+    V& value() {
+        if (!std::holds_alternative<V>(data_)) {
+            throw std::runtime_error("Node is not a leaf");
+        }
+        return std::get<V>(data_);
+    }
 
     const V& value() const {
         if (!std::holds_alternative<V>(data_)) {

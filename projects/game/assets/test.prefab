@@ -1,19 +1,39 @@
 {
     "version": 1,
     "entities": [
-        "d5b5d91d-34e6-4efc-9f5b-93e0b624b233",
-        "d893ce28-3bf1-4034-b975-f3ac758772dc"
+        0,
+        1
     ],
     "Name": {
-        "d5b5d91d-34e6-4efc-9f5b-93e0b624b233": {
-            "name": "Entity_0"
-        },
-        "d893ce28-3bf1-4034-b975-f3ac758772dc": {
+        "0": {
             "name": "Child"
+        },
+        "1": {
+            "name": "Parent"
         }
     },
     "Transform": {
-        "d5b5d91d-34e6-4efc-9f5b-93e0b624b233": {
+        "0": {
+            "local_position": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": -13.925943374633789
+            },
+            "local_rotation": {
+                "w": 1.0,
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "local_scale": {
+                "x": 0.27000001072883606,
+                "y": 0.27000001072883606,
+                "z": 0.27000001072883606
+            },
+            "parent": 1,
+            "children": []
+        },
+        "1": {
             "local_position": {
                 "x": 0.0,
                 "y": 0.0,
@@ -30,34 +50,14 @@
                 "y": 1.0,
                 "z": 1.0
             },
-            "parent": "00000000-0000-0000-0000-000000000000",
+            "parent": 4294967295,
             "children": [
-                "d893ce28-3bf1-4034-b975-f3ac758772dc"
+                0
             ]
-        },
-        "d893ce28-3bf1-4034-b975-f3ac758772dc": {
-            "local_position": {
-                "x": 14.2630033493042,
-                "y": 0.0,
-                "z": 0.0
-            },
-            "local_rotation": {
-                "w": 1.0,
-                "x": 0.0,
-                "y": 0.0,
-                "z": 0.0
-            },
-            "local_scale": {
-                "x": 0.33000004291534424,
-                "y": 0.33000004291534424,
-                "z": 0.33000004291534424
-            },
-            "parent": "d5b5d91d-34e6-4efc-9f5b-93e0b624b233",
-            "children": []
         }
     },
     "Voxel Renderer": {
-        "d5b5d91d-34e6-4efc-9f5b-93e0b624b233": {
+        "0": {
             "resource": {
                 "file_location": {
                     "sub_location": "PROJECT",
@@ -65,14 +65,14 @@
                 },
                 "data": {
                     "size": {
-                        "x": 128,
+                        "x": 58,
                         "y": 90,
-                        "z": 58
+                        "z": 128
                     }
                 }
             }
         },
-        "d893ce28-3bf1-4034-b975-f3ac758772dc": {
+        "1": {
             "resource": {
                 "file_location": {
                     "sub_location": "PROJECT",
@@ -80,9 +80,9 @@
                 },
                 "data": {
                     "size": {
-                        "x": 128,
+                        "x": 58,
                         "y": 90,
-                        "z": 58
+                        "z": 128
                     }
                 }
             }

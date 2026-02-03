@@ -2,7 +2,6 @@
 #include "engine/core/io.hpp"
 #include "engine/core/entity.hpp"
 #include "engine/core/reflection.hpp"
-#include "engine/core/components/entity_id.hpp"
 
 namespace tmt {
 
@@ -10,8 +9,8 @@ using PrefabInstanceID = UUID;
 
 struct Prefab {
     IO::FileLocation source_location;
-    EntityID source_entity; /* in Prefab */
-    EntityID root_entity;   /* in Scene */
+    tmt::Entity source_entity; /* in Prefab */
+    tmt::Entity root_entity;   /* in Scene */
     PrefabInstanceID instance_id;
 };
 

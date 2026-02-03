@@ -120,8 +120,6 @@ void Inspector::display_entity_info(const MenuContext& menu_context) {
     }
     const tmt::Entity& entity = menu_context.primary_entity;
     ImGui::Text("Entity: %s", tmt::EntityHelper::to_string(entity).c_str());
-    const auto& id = tmt::engine.ecs.get_component<tmt::EntityID>(menu_context.primary_entity);
-    ImGui::Text("UUID: %s", id.str().c_str());
 }
 
 void Inspector::display_compile_time_components(const tmt::Inspector::MenuContext& menu_context) {
