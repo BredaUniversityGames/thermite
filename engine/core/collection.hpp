@@ -46,7 +46,11 @@ class Collection {
 
     /* Iterators */
     auto begin() { return systems.begin(); }
+    auto begin() const { return systems.begin(); }
     auto end() { return systems.end(); }
+    auto end() const { return systems.end(); }
+
+    size_t size() const { return systems.size(); }
 
    protected:
     std::vector<std::unique_ptr<CollectionType>> systems;
