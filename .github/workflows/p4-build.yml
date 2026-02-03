@@ -1,46 +1,66 @@
-name: P4 Build
+# =============================================================================
+# Release Workflow
+# =============================================================================
+# Generated with AI assistance
+# First prompt: "how to make a release with versioning and all that is needed 
+#               for pushing to a branch via CI CD github. I already have a 
+#               project on main setup. I only want the github action for 
+#               making a new release on push"
+# Date: February 3, 2026
+# Model: Claude Opus 4.5
+# =============================================================================
+
+name: Release
 
 on:
+  workflow_dispatch:
   pull_request:
     branches: 'main'
-  workflow_dispatch:
+
 
 jobs:
-  test:
+  release:
     runs-on: ubuntu-latest
-    env:
-      P4PORT: ${{ secrets.P4PORT }}
-      P4USER: ${{ secrets.P4USER }}
-      P4PASSWD: ${{ secrets.P4PASSWD }}
-
+    permissions:
+      contents: write
+    
     steps:
-      - name: p4 login
-        uses: perforce/setup-p4@v1
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
-          command: login
+          fetch-depth: 0
 
-      - name: Check login status
-        uses: perforce/setup-p4@v1
+      - name: Get next version
+        id: version
+        run: |
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          VERSION=${LATEST_TAG#v}
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+          PATCH=$((PATCH + 1))
+          NEW_VERSION="v${MAJOR}.${MINOR}.${PATCH}"
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "New version: $NEW_VERSION"
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -z "$LATEST_TAG" ]; then
+            CHANGES=$(git log --pretty=format:"- %s (%h)" HEAD)
+          else
+            CHANGES=$(git log --pretty=format:"- %s (%h)" ${LATEST_TAG}..HEAD)
+          fi
+          echo "changes<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
         with:
-          command: login
-          arguments: -s
-
-      - name: Create workspace
-        uses: perforce/setup-p4@v1
-        with:
-          command: client
-          spec: |
-            Client: ci-test-${{ github.run_id }}
-            Root: ${{ github.workspace }}
-            View:
-              //Y2526-Y3-CustomTech/Thermite/... //ci-test-${{ github.run_id }}/...
-
-      - name: p4 sync
-        uses: perforce/setup-p4@v1
-        env:
-          P4CLIENT: ci-test-${{ github.run_id }}
-        with:
-          command: sync
-
-      - name: List synced files
-        run: ls -la
+          tag_name: ${{ steps.version.outputs.new_version }}
+          name: Release ${{ steps.version.outputs.new_version }}
+          body: |
+            ## What's Changed
+            ${{ steps.changelog.outputs.changes }}
+          draft: false
+          prerelease: false
