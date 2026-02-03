@@ -14,8 +14,8 @@ inline uint32_t log_base(const uint32_t x, const uint32_t b) { return (uint32_t)
 inline uint32_t tree_depth(uint32_t width, uint32_t height, uint32_t depth) {
     TMT_ZONE_SCOPED
 
-    const float max_axis = (float)std::max(std::max(width, height), depth);
-    return (uint32_t)ceilf(logf(max_axis) / logf(4.0f));
+    const float max_axis = (float)glm::max(glm::max(width, height), depth);
+    return (uint32_t)glm::max(1.0f, ceilf(logf(max_axis) / logf(4.0f)));
 }
 
 /* Calculate the maximum number of nodes a SVT64 can have given its depth. */
