@@ -16,7 +16,7 @@ class Texture2D : public FileResource {
 
     Texture texture {};
     Image image {};
-    
+
     std::string name = "Unknown Texture";
 };
 

@@ -50,9 +50,9 @@ bool Texture2D::load() {
     return true;
 }
 
-void Texture2D::unload() { 
-    auto& bank = engine.renderer.vram_bank(); 
-    
+void Texture2D::unload() {
+    auto& bank = engine.renderer.vram_bank();
+
     bank.destroy(texture);
     bank.destroy(image);
 }
