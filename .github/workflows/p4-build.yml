@@ -19,16 +19,54 @@ on:
 
 
 jobs:
+  build:
+    name: Build Developer-Packaging
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Configure
+        shell: pwsh
+        run: cmake --preset Developer-Packaging
+
+      - name: Build
+        shell: pwsh
+        run: cmake --build --preset Developer-Packaging -j
+
+      - name: Package build
+        shell: pwsh
+        run: |
+          $outputDir = "build/Developer-Packaging/bin/game"
+          Compress-Archive -Path "$outputDir/*" -DestinationPath "thermite-Developer-Packaging.zip"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: thermite-Developer-Packaging
+          path: thermite-Developer-Packaging.zip
+
   release:
+    name: Create Release
+    needs: build
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: thermite-Developer-Packaging
 
       - name: Get next version
         id: version
@@ -39,7 +77,6 @@ jobs:
           PATCH=$((PATCH + 1))
           NEW_VERSION="v${MAJOR}.${MINOR}.${PATCH}"
           echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
-          echo "New version: $NEW_VERSION"
 
       - name: Generate changelog
         id: changelog
@@ -63,5 +100,6 @@ jobs:
           body: |
             ## What's Changed
             ${{ steps.changelog.outputs.changes }}
+          files: thermite-Developer-Packaging.zip
           draft: false
           prerelease: false
