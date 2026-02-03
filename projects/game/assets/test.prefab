@@ -1,39 +1,15 @@
 {
     "version": 1,
     "entities": [
-        0,
-        1
+        1048578
     ],
     "Name": {
-        "0": {
-            "name": "Child"
-        },
-        "1": {
-            "name": "Parent"
+        "1048578": {
+            "name": "Wheel 1"
         }
     },
     "Transform": {
-        "0": {
-            "local_position": {
-                "x": 0.0,
-                "y": 0.0,
-                "z": -13.925943374633789
-            },
-            "local_rotation": {
-                "w": 1.0,
-                "x": 0.0,
-                "y": 0.0,
-                "z": 0.0
-            },
-            "local_scale": {
-                "x": 0.27000001072883606,
-                "y": 0.27000001072883606,
-                "z": 0.27000001072883606
-            },
-            "parent": 1,
-            "children": []
-        },
-        "1": {
+        "1048578": {
             "local_position": {
                 "x": 0.0,
                 "y": 0.0,
@@ -51,38 +27,21 @@
                 "z": 1.0
             },
             "parent": 4294967295,
-            "children": [
-                0
-            ]
+            "children": []
         }
     },
     "Voxel Renderer": {
-        "0": {
+        "1048578": {
             "resource": {
                 "file_location": {
                     "sub_location": "PROJECT",
-                    "relative_path": "dragon128.vengi"
+                    "relative_path": "table.vengi"
                 },
                 "data": {
                     "size": {
-                        "x": 58,
-                        "y": 90,
-                        "z": 128
-                    }
-                }
-            }
-        },
-        "1": {
-            "resource": {
-                "file_location": {
-                    "sub_location": "PROJECT",
-                    "relative_path": "dragon128.vengi"
-                },
-                "data": {
-                    "size": {
-                        "x": 58,
-                        "y": 90,
-                        "z": 128
+                        "x": 10,
+                        "y": 10,
+                        "z": 10
                     }
                 }
             }

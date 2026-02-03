@@ -72,6 +72,8 @@ void Hierarchy::end_section() {
 }
 
 void Hierarchy::context_menu(const Entity hovered_entity) {
+    const ImGuiID prefab_popup_id = ImGui::GetID(Config::PREFAB_POP_UP);
+
     if (ImGui::BeginPopup(Config::RIGHT_CLICK_CONTEXT)) {
         if (selected_entities.empty() == false) { /* Delete selection */
             const auto text = selected_entities.size() > 1 ? "Delete Entities" : "Delete Entity";
@@ -97,16 +99,32 @@ void Hierarchy::context_menu(const Entity hovered_entity) {
                 ImGui::CloseCurrentPopup();
             }
         }
-        ImGui::Separator();
-        {
+        if (selected_entities.empty() == false) {
+            ImGui::Separator();
             const auto text = "Make Prefab...";
             // TODO: give extra pop-up for name
             if (ImGui::MenuItem(text)) {
-                const IO::FileLocation temp_location = {IO::Location::PROJECT, "test.prefab"};  // TODO: remove
-                const Entity root_entity = *EntityHelper::upper_parents(selected_entities).begin();
-                PrefabHelper::create_prefab(temp_location, root_entity);
+                ImGui::OpenPopup(prefab_popup_id);
                 ImGui::CloseCurrentPopup();
             }
+        }
+        ImGui::EndPopup();
+    }
+
+    if (ImGui::BeginPopupModal(Config::PREFAB_POP_UP, nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings)) {
+        static std::string prefab_name = "NewPrefab";
+        ImGui::InputText("Prefab Name", &prefab_name);
+        if (ImGui::Button("Create")) {
+            const IO::FileLocation temp_location = {IO::Location::PROJECT, prefab_name + ".prefab"};
+            const Entity root_entity = *EntityHelper::upper_parents(selected_entities).begin();
+            PrefabHelper::create_prefab(temp_location, root_entity);
+            prefab_name = "NewPrefab";
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel")) {
+            prefab_name = "NewPrefab";
+            ImGui::CloseCurrentPopup();
         }
         ImGui::EndPopup();
     }

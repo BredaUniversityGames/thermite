@@ -24,10 +24,12 @@ struct SerializeState {
     /* Originals + children */
     const std::set<tmt::Entity>& all_entities;
 
+    // todo: change to reference -> referencer
+    std::set<tmt::Entity> referenced_entities;
+
     /* All entities coming from prefabs that have been changed */
     /* Needed for tracking changes in prefab instances */
     std::set<tmt::Entity> changed_prefab_entities;
-    // TODO: add prefab entities that are referenced
 
     std::optional<tmt::PrefabInstanceID> current_prefab_instance_id;
 
@@ -35,8 +37,9 @@ struct SerializeState {
 };
 
 /* Entity with state */
-tmt::json tag_invoke(JsonReflect::serialize_t, const tmt::Entity& entity, const SerializeState& state) {
-
+tmt::json tag_invoke(JsonReflect::serialize_t, const tmt::Entity& entity, SerializeState& state) {
+    state.referenced_entities.insert(entity);
+    return static_cast<std::uint32_t>(entity);
 }
 
 static void tag_invoke(JsonReflect::deserialize_t, const JsonReflect::json& j, tmt::Entity& entity, const tmt::DeserializeState& state) {
@@ -112,7 +115,27 @@ std::optional<tmt::json> recursive_find_component_json(const tmt::SceneJson& pre
         auto original_prefab_json = tmt::engine.resources.load_resource<tmt::Json>(prefab_component.source_location);
 
         tmt::SceneJson nested_prefab_json(original_prefab_json->get_parsed_json());
-        return recursive_find_component_json(nested_prefab_json, component_name, prefab_component.source_entity);
+        const std::optional<tmt::json> found = recursive_find_component_json(nested_prefab_json, component_name, prefab_component.source_entity);
+        if (found.has_value() == false) {
+            return found;
+        }
+
+        /* we found something, check if this prefab overrides it */
+        const std::optional<tmt::json> override = prefab_json.component_value(component_name, entity_id);
+        if (override.has_value() == false) {
+            return found;
+        }
+
+        /* patch override */
+        const tmt::json& override_value = override.value();
+        if (override_value.contains("diff")) {
+            const tmt::json& diff = override_value["diff"];
+            tmt::json base = found.value();
+            tmt::json patched = base.patch(diff);
+            return patched;
+        } else {
+            return found;
+        }
     }
     return prefab_json.component_value(component_name, entity_id);
 }
@@ -132,8 +155,9 @@ void serialize_component(SerializeState& state) {
 
         if constexpr (std::is_same_v<ComponentType, tmt::Prefab>) {
             const bool changed = state.changed_prefab_entities.contains(entity);
+            const bool referenced = state.referenced_entities.contains(entity);
             const bool is_root = component.root_entity == entity;
-            if (!changed && !is_root) {
+            if (!changed && !is_root && !referenced) {
                 continue;
             }
         }
@@ -208,6 +232,7 @@ tmt::json tag_invoke(JsonReflect::serialize_t, const std::set<tmt::Entity>& enti
             const bool is_root = prefab.root_entity == entity;
             should_add |= is_root;
             should_add |= state.changed_prefab_entities.contains(entity);
+            should_add |= state.referenced_entities.contains(entity);
         }
 
         if (should_add) {

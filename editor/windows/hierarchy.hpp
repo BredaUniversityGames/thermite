@@ -135,6 +135,7 @@ class Hierarchy : public IWindow, public OnGameEnd, public OnPreUnloadScene {
 
     struct Config {
         constexpr static inline const char* RIGHT_CLICK_CONTEXT = "Hierarchy.RightClickContext";
+        constexpr static inline const char* PREFAB_POP_UP = "Hierarchy.PrefabPopUp";
     };
 };
 }  // namespace tmt

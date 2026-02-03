@@ -1,0 +1,116 @@
+{
+    "version": 1,
+    "entities": [
+        0,
+        1,
+        2097154
+    ],
+    "Name": {
+        "0": {
+            "name": "Car"
+        },
+        "1": {
+            "diff": [
+                {
+                    "op": "replace",
+                    "path": "/name",
+                    "value": "Wheel_Left"
+                }
+            ]
+        },
+        "2097154": {
+            "diff": [
+                {
+                    "op": "replace",
+                    "path": "/name",
+                    "value": "Wheel_Right"
+                }
+            ]
+        }
+    },
+    "Transform": {
+        "0": {
+            "local_position": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "local_rotation": {
+                "w": 1.0,
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "local_scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "parent": 4294967295,
+            "children": [
+                1,
+                2097154
+            ]
+        },
+        "1": {
+            "diff": [
+                {
+                    "op": "replace",
+                    "path": "/parent",
+                    "value": 0
+                }
+            ]
+        },
+        "2097154": {
+            "diff": [
+                {
+                    "op": "replace",
+                    "path": "/local_position/x",
+                    "value": 2.6102590560913086
+                },
+                {
+                    "op": "replace",
+                    "path": "/parent",
+                    "value": 0
+                }
+            ]
+        }
+    },
+    "Voxel Renderer": {
+        "0": {
+            "resource": {
+                "file_location": {
+                    "sub_location": "PROJECT",
+                    "relative_path": "dragon128.vengi"
+                },
+                "data": {
+                    "size": {
+                        "x": 58,
+                        "y": 90,
+                        "z": 128
+                    }
+                }
+            }
+        }
+    },
+    "Prefab": {
+        "1": {
+            "source_location": {
+                "sub_location": "PROJECT",
+                "relative_path": "Wheel.prefab"
+            },
+            "source_entity": 2097154,
+            "root_entity": 1,
+            "instance_id": "751fad5e-7b9d-404b-8828-364bcdfa9787"
+        },
+        "2097154": {
+            "source_location": {
+                "sub_location": "PROJECT",
+                "relative_path": "Wheel.prefab"
+            },
+            "source_entity": 2097154,
+            "root_entity": 2097154,
+            "instance_id": "751fad6e-7b9d-404b-8828-364bcdfa9787"
+        }
+    }
+}
