@@ -39,6 +39,7 @@ class NodeHierarchy : public IWindow {
     void clear_hierarchy();
 
     void drop_hierarchy();
+    void drop_node(Entity entity, Transform& transform);
 
     void display() override;
 
@@ -49,7 +50,7 @@ class NodeHierarchy : public IWindow {
     IO::FileLocation loaded_location {};
 
     Entity selected_entity {entt::null};
-    std::vector<Entity> root_entities;
+    std::set<Entity> root_entities;
 };
 
 }  // namespace tmt

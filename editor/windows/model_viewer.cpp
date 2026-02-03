@@ -19,12 +19,6 @@ namespace tmt {
 
 namespace {
 
-uint8_t gizmo_operation = 0;
-
-static constexpr uint8_t GIZMO_OP_COUNT = 2;
-ImGuizmo::MODE gizmo_space = ImGuizmo::WORLD;
-ImGuizmo::OPERATION gizmo_operations[GIZMO_OP_COUNT] = {ImGuizmo::TRANSLATE, ImGuizmo::ROTATE};
-
 /* Ray AABB intersection function. */
 float intersect_aabb(const Ray& ray, const glm::vec3 box_min, const glm::vec3 box_max) {
     const glm::vec3 t_to_min = (box_min - ray.origin) * ray.rcp_dir;
@@ -208,9 +202,6 @@ void ModelViewer::display() {
 }
 
 void ModelViewer::on_editor_update(const FrameData& time) {
-    // Return if there are no entities, this is to avoid a crash with tracing rays.
-    if (engine.ecs.get_registry().storage<Transform>().empty()) return;
-
     editor.windows[Editor::Mode::OBJECT].get<Viewport>().update_debug_camera(time);
 
     NodeHierarchy& node_hierarchy = editor.windows[Editor::Mode::EDIT].get<NodeHierarchy>();

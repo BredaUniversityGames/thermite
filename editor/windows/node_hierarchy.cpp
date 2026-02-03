@@ -51,19 +51,13 @@ void drag_node(const Entity entity, const std::string& name) {
     ImGui::EndDragDropSource();
 }
 
-void drop_node(const Entity entity, Transform& transform) {
-    if (!ImGui::BeginDragDropTarget()) return;
+void node_context_menu(const Entity node_entity) {
+    if (!ImGui::BeginPopupContextItem()) return;
 
-    const ImGuiPayload* payload = ImGui::GetDragDropPayload();
-    if (payload != nullptr && payload->IsDataType("VoxelNode")) {
-        const Entity dropped_entity = *static_cast<Entity*>(payload->Data);
+    //if (ImGui::MenuItem("Add node")) engine.ecs.create_entity<Transform>("New Node");
+    if (ImGui::MenuItem("Delete node")) engine.ecs.destroy_entity(node_entity);
 
-        if (entity != dropped_entity && ImGui::AcceptDragDropPayload("VoxelNode")) {
-            transform.add_child(dropped_entity);
-        }
-    }
-
-    ImGui::EndDragDropTarget();
+    ImGui::EndPopup();
 }
 
 struct VoxelEditUUID {
@@ -214,17 +208,20 @@ void NodeHierarchy::build_scene(const std::span<VoxelSceneNode>& root_nodes, boo
     for (VoxelSceneNode& root_node : root_nodes) {
         const Entity root_entity = recurse_build_scene(root_node, assign_new_uuids);
 
-        root_entities.push_back(root_entity);
+        root_entities.emplace(root_entity);
     }
 }
 
 void NodeHierarchy::display() {
     model_load_atomic.wait(false);
+
+    std::vector<Entity> test;
     for (const Entity entity : root_entities) {
         auto&& [transform, name] = engine.ecs.get_component<Transform, Name>(entity);
 
         recurse_display_node(entity, name, transform);
     }
+    std::erase_if(root_entities, [](const Entity& entity) { return !engine.ecs.valid(entity) || engine.ecs.has_component<Delete>(entity); });
 
     drop_hierarchy();
 }
@@ -300,7 +297,7 @@ std::vector<char> NodeHierarchy::encode_voxel_scene() {
 void NodeHierarchy::recurse_display_node(const Entity entity, const Name& name, Transform& transform) {
     ImGui::PushID(static_cast<int>(entity));
 
-    const std::set<Entity>& children = transform.get_children();
+    const std::set<Entity> children = transform.get_children();
 
     constexpr ImGuiTreeNodeFlags default_flags =
         ImGuiTreeNodeFlags_FramePadding | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_DrawLinesToNodes | ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick;
@@ -310,11 +307,13 @@ void NodeHierarchy::recurse_display_node(const Entity entity, const Name& name, 
     flags |= (entity == selected_entity ? ImGuiTreeNodeFlags_Selected : 0);
 
     const bool tree_open = ImGui::TreeNodeEx(name.name.c_str(), flags);
+    node_context_menu(entity);
     drag_node(entity, name.name);
     drop_node(entity, transform);
     if (ImGui::IsItemClicked()) selected_entity = entity;
     if (tree_open) {
         for (const Entity child : children) {
+            assert(engine.ecs.valid(child));
             auto&& [child_name, child_transform] = engine.ecs.get_component<Name, Transform>(child);
             recurse_display_node(child, child_name, child_transform);
         }
@@ -340,7 +339,23 @@ void NodeHierarchy::drop_hierarchy() {
         const Entity dropped_entity = *static_cast<Entity*>(payload->Data);
 
         engine.ecs.get_component<Transform>(dropped_entity).clear_parent();
-        root_entities.push_back(dropped_entity);
+        root_entities.emplace(dropped_entity);
+    }
+
+    ImGui::EndDragDropTarget();
+}
+
+void NodeHierarchy::drop_node(const Entity entity, Transform& transform) {
+    if (!ImGui::BeginDragDropTarget()) return;
+
+    const ImGuiPayload* payload = ImGui::GetDragDropPayload();
+    if (payload != nullptr && payload->IsDataType("VoxelNode")) {
+        const Entity dropped_entity = *static_cast<Entity*>(payload->Data);
+
+        if (entity != dropped_entity && ImGui::AcceptDragDropPayload("VoxelNode")) {
+            transform.add_child(dropped_entity);
+            if (root_entities.contains(dropped_entity)) root_entities.erase(dropped_entity);
+        }
     }
 
     ImGui::EndDragDropTarget();
