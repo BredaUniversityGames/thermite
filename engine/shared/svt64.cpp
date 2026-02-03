@@ -193,6 +193,9 @@ PhysicsVoxel* Svt64::get_physics_voxel(const uint32_t x, const uint32_t y, const
 
 void Svt64::build(const RawVoxels& raw_data) {
     TMT_ZONE_SCOPED
+    /* Bounds check */
+    if (raw_data.w == 0u || raw_data.h == 0u || raw_data.d == 0u) return;
+    if (raw_data.w > 1024u || raw_data.h > 1024u || raw_data.d > 1024u) return;
 
     /* Delete old data */
     if (depth > 0u) {
