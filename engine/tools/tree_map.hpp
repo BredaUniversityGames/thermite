@@ -85,9 +85,11 @@ class TreeMap {
     // ============= UTILITIES =============
     void print(const std::string& prefix = "", const K& key = K {}, bool isRoot = true) const {
         if (!isRoot) {
-            std::cout << prefix << "Key: " << key;
+            const std::string keyStr = Serializer::serialize(key).dump();
+            std::cout << prefix << "Key: " << keyStr;
             if (value_.has_value()) {
-                std::cout << " -> Value: " << *value_;
+                const std::string valueStr = Serializer::serialize(*value_).dump();
+                std::cout << " -> Value: " << valueStr;
             }
             std::cout << '\n';
         }

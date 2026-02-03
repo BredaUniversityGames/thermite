@@ -1,11 +1,11 @@
 {
     "version": 1,
     "entities": [
-        0,
-        2097154
+        69,
+        420
     ],
     "Transform": {
-        "2097154": {
+        "420": {
             "diff": [
                 {
                     "op": "replace",
@@ -16,7 +16,7 @@
         }
     },
     "Prefab": {
-        "0": {
+        "69": {
             "source_location": {
                 "sub_location": "PROJECT",
                 "relative_path": "Car.prefab"
@@ -25,7 +25,7 @@
             "root_entity": 0,
             "instance_id": "80ae7362-03fe-4af7-8261-b299563457fd"
         },
-        "2097154": {
+        "420": {
             "source_location": {
                 "sub_location": "PROJECT",
                 "relative_path": "Car.prefab"

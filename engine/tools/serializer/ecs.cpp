@@ -319,7 +319,15 @@ void deserialize_component(tmt::DeserializeState& state) {
             tmt::json patched = base.patch(diff);
             tmt::Serializer::deserialize<ComponentType>(patched, component_value, state);
         } else {
-            tmt::Serializer::deserialize<ComponentType>(json_value, component_value, state);
+            if constexpr (std::is_same_v<ComponentType, tmt::Prefab>) {
+                /* Special handling for Prefab component */
+                tmt::Prefab prefab_original;
+                tmt::Serializer::deserialize<tmt::Prefab>(json_value, prefab_original, state);
+                tmt::Serializer::deserialize<ComponentType>(json_value, component_value, state);
+                component_value.source_entity = prefab_original.source_entity;
+            } else {
+                tmt::Serializer::deserialize<ComponentType>(json_value, component_value, state);
+            }
         }
     }
 }
@@ -382,21 +390,23 @@ static void deserialize_scene(std::set<tmt::Entity>& new_entities, tmt::Ecs& ecs
         };
 
         std::unordered_map<tmt::PrefabInstanceID, PrefabInfo> prefab_instance_ids;
-        for (const auto& [new_entity, _] : new_to_old) {
-            /*if (state.ecs.has_component<tmt::Prefab>(new_entity) == false) continue;*/
+        for (const auto& [new_entity, old_entity] : new_to_old) {
             constexpr auto PREFAB_COMPONENT_NAME = tmt::Component<tmt::Prefab>::get_name();
-            if (state.json.has_component_entry(PREFAB_COMPONENT_NAME, new_entity) == false) {
+            auto prefab_entry = state.json.component_value(PREFAB_COMPONENT_NAME, old_entity);
+            if (prefab_entry.has_value() == false) {
                 continue;
             }
 
-            const tmt::Prefab& prefab_comp = state.ecs.get_component<tmt::Prefab>(new_entity);
+            // const tmt::Prefab& prefab_comp = state.ecs.get_component<tmt::Prefab>(new_entity);
+            tmt::Prefab prefab_comp;
+            tmt::Serializer::deserialize<tmt::Prefab>(prefab_entry.value(), prefab_comp, state);
             const tmt::PrefabInstanceID& instance_id = prefab_comp.instance_id;
             prefab_instance_ids[instance_id] = {
                 prefab_comp.source_location,
                 prefab_comp.root_entity,
             };
 
-            /* add to new mapping absed on isntance id */
+            /* add to new mapping absed on instance id */
             const tmt::Entity& source_entity = prefab_comp.source_entity;
             auto& branch = state.current_entity_mapping->get(instance_id);
             if (branch.has_value() == false) {
@@ -405,17 +415,19 @@ static void deserialize_scene(std::set<tmt::Entity>& new_entities, tmt::Ecs& ecs
             branch.value().insert({source_entity, new_entity});
         }
 
+        /* for each prefab instance */
         for (const auto& [prefab_instance_id, prefab_info] : prefab_instance_ids) {
             auto original_prefab_json = tmt::engine.resources.load_resource<tmt::Json>(prefab_info.source_location);
 
-            // Create state with prefab JSON
             tmt::DeserializeState prefab_state {state.ecs, tmt::SceneJson(original_prefab_json->get_parsed_json())};
-            prefab_state.current_entity_mapping = &state.current_entity_mapping->get(prefab_instance_id);
 
-            std::set<tmt::Entity> prefab_entities;
+            prefab_state.current_entity_mapping = &state.current_entity_mapping->get(prefab_instance_id);
             prefab_state.current_prefab_instance_id = prefab_instance_id;
             prefab_state.current_root_entity = prefab_info.root_entity;
             prefab_state.current_prefab_location = prefab_info.source_location;
+
+            /* Deserialize prefab */
+            std::set<tmt::Entity> prefab_entities;
             deserialize_scene(prefab_entities, state.ecs, prefab_state);
 
             /* Merge new entities */
@@ -448,6 +460,7 @@ void tag_invoke(JsonReflect::deserialize_t, const tmt::json& j, std::set<tmt::En
     tmt::DeserializeState state {ecs, tmt::SceneJson(j)};
     state.current_entity_mapping = &state.entity_mapping[tmt::NULL_UUID];
     deserialize_scene(new_entities, ecs, state);
+    state.entity_mapping.print();
 }
 
 std::string tmt::SceneJson::dump() const { return json_value.dump(4); }
