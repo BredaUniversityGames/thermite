@@ -37,6 +37,9 @@ struct Svt64Node {
 
     /* Absolute offset into an array of child nodes / voxels. */
     inline uint32_t abs_ptr() const { return child_ptr & 0x7FFFFFFFu; };
+
+    /* Is a given child node index active? */
+    inline bool child_active(uint32_t child_index) const { return (child_mask >> child_index & 1u) != 0u; }
 };
 #pragma pack(pop)
 
@@ -52,6 +55,7 @@ struct Svt64Hit {
 };
 
 struct Ray;
+class Stencil;
 
 /* 64-wide Sparse Voxel Tree. */
 class Svt64 {
@@ -91,6 +95,14 @@ class Svt64 {
     /* Set a voxel inside the tree. */
     void set_voxel(const uint32_t x, const uint32_t y, const uint32_t z, const MaterialIndex material);
 
+    /* Removes voxels from this tree based on the solids in the stencil (fragmentizes memory) */
+    void subtract(const Stencil* stencil, glm::ivec3 offset);
+
+    /* Removes a voxel (fragmentizes memory) */
+    void remove_voxel_dirty(const uint32_t x, const uint32_t y, const uint32_t z);
+    /* Removes a voxel. */
+    void remove_voxel(const uint32_t x, const uint32_t y, const uint32_t z);
+
     /* Build the tree. */
     void build(const RawVoxels& raw_data);
 
@@ -99,6 +111,10 @@ class Svt64 {
 
     /* Trace a ray through the tree. */
     Svt64Hit trace(const Ray& ray) const;
+
+   private:
+    /* Recursive function to remove voxels from the tree */
+    void subtract_recursive(uint32_t node_id, glm::ivec3 node_pos, uint32_t node_scale, const Stencil* stencil, glm::ivec3 offset);
 };
 
 }  // namespace tmt
