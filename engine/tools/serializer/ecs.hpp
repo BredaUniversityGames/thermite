@@ -35,6 +35,7 @@ class SceneJson {
     json& components(const std::string& component_name);
     const json& components(const std::string& component_name) const;
 
+    bool has_component_entry(const std::string& component_name, const tmt::Entity entity_id) const;
     /* Copy */
     std::optional<json> component_value(const std::string& component_name, const tmt::Entity entity_id) const;
     /* entity entry */

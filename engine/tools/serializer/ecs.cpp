@@ -24,8 +24,35 @@ struct SerializeState {
     /* Originals + children */
     const std::set<tmt::Entity>& all_entities;
 
-    // todo: change to reference -> referencer
-    std::set<tmt::Entity> referenced_entities;
+    /* per prefab */
+    std::set<tmt::Entity> referenced_entities_scope;
+    /* Global */
+    std::unordered_map<tmt::Entity, std::set<tmt::Entity>> reference_to_referencers;
+
+    bool is_being_referenced(const tmt::Entity& entity) const {
+        if (reference_to_referencers.contains(entity) == false) {
+            return false;
+        }
+
+        const bool is_prefab = ecs.has_component<tmt::Prefab>(entity);
+        if (is_prefab) {
+            return false;
+        }
+
+        const auto& referencers = reference_to_referencers.at(entity);
+        for (const auto& referencer : referencers) {
+            const bool is_referencer_prefab = ecs.has_component<tmt::Prefab>(referencer);
+            if (is_referencer_prefab == false) {
+                return true;
+            }
+
+            const auto& prefab_comp = ecs.get_component<tmt::Prefab>(referencer);
+            if (prefab_comp.instance_id != current_prefab_instance_id) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     /* All entities coming from prefabs that have been changed */
     /* Needed for tracking changes in prefab instances */
@@ -38,7 +65,7 @@ struct SerializeState {
 
 /* Entity with state */
 tmt::json tag_invoke(JsonReflect::serialize_t, const tmt::Entity& entity, SerializeState& state) {
-    state.referenced_entities.insert(entity);
+    state.referenced_entities_scope.insert(entity);
     return static_cast<std::uint32_t>(entity);
 }
 
@@ -55,6 +82,7 @@ static void tag_invoke(JsonReflect::deserialize_t, const JsonReflect::json& j, t
             entity = deserialized_entity;
         }
     } else {
+        tmt::Log::warn(tmt::Log::Scope::ENGINE, "[Serialization] No current entity mapping found during deserialization.");
         entity = deserialized_entity;
     }
 }
@@ -155,11 +183,13 @@ void serialize_component(SerializeState& state) {
 
         if constexpr (std::is_same_v<ComponentType, tmt::Prefab>) {
             const bool changed = state.changed_prefab_entities.contains(entity);
-            const bool referenced = state.referenced_entities.contains(entity);
+            const bool referenced = state.is_being_referenced(entity);
             const bool is_root = component.root_entity == entity;
             if (!changed && !is_root && !referenced) {
                 continue;
             }
+        } else {
+            state.referenced_entities_scope.clear();
         }
 
         if (has_prefab) {
@@ -191,6 +221,10 @@ void serialize_component(SerializeState& state) {
         tmt::json& components = state.json.components(COMPONENT_NAME);
         const auto value = tmt::Serializer::serialize(component, state);
         state.json.add_entity_entry(components, entity, value);
+
+        for (const auto& referenced_entity : state.referenced_entities_scope) {
+            state.reference_to_referencers[referenced_entity].insert(entity);
+        }
     }
 }
 
@@ -232,7 +266,7 @@ tmt::json tag_invoke(JsonReflect::serialize_t, const std::set<tmt::Entity>& enti
             const bool is_root = prefab.root_entity == entity;
             should_add |= is_root;
             should_add |= state.changed_prefab_entities.contains(entity);
-            should_add |= state.referenced_entities.contains(entity);
+            should_add |= state.is_being_referenced(entity);
         }
 
         if (should_add) {
@@ -327,6 +361,7 @@ static void deserialize_scene(std::set<tmt::Entity>& new_entities, tmt::Ecs& ecs
 
         if (mapping.contains(deserialized_entity_id)) {
             /* Entity already exists in mapping, skip */
+            new_to_old.insert({mapping.at(deserialized_entity_id), deserialized_entity_id});
             continue;
         } else {
             /* Create entity and add to mapping */
@@ -343,17 +378,22 @@ static void deserialize_scene(std::set<tmt::Entity>& new_entities, tmt::Ecs& ecs
 
         struct PrefabInfo {
             tmt::IO::FileLocation source_location;
-            tmt::Entity source_entity;
+            tmt::Entity root_entity;
         };
 
         std::unordered_map<tmt::PrefabInstanceID, PrefabInfo> prefab_instance_ids;
         for (const auto& [new_entity, _] : new_to_old) {
-            if (state.ecs.has_component<tmt::Prefab>(new_entity) == false) continue;
+            /*if (state.ecs.has_component<tmt::Prefab>(new_entity) == false) continue;*/
+            constexpr auto PREFAB_COMPONENT_NAME = tmt::Component<tmt::Prefab>::get_name();
+            if (state.json.has_component_entry(PREFAB_COMPONENT_NAME, new_entity) == false) {
+                continue;
+            }
+
             const tmt::Prefab& prefab_comp = state.ecs.get_component<tmt::Prefab>(new_entity);
             const tmt::PrefabInstanceID& instance_id = prefab_comp.instance_id;
             prefab_instance_ids[instance_id] = {
                 prefab_comp.source_location,
-                prefab_comp.source_entity,
+                prefab_comp.root_entity,
             };
 
             /* add to new mapping absed on isntance id */
@@ -374,7 +414,7 @@ static void deserialize_scene(std::set<tmt::Entity>& new_entities, tmt::Ecs& ecs
 
             std::set<tmt::Entity> prefab_entities;
             prefab_state.current_prefab_instance_id = prefab_instance_id;
-            prefab_state.current_root_entity = prefab_info.source_entity;
+            prefab_state.current_root_entity = prefab_info.root_entity;
             prefab_state.current_prefab_location = prefab_info.source_location;
             deserialize_scene(prefab_entities, state.ecs, prefab_state);
 
@@ -435,6 +475,14 @@ bool tmt::SceneJson::has_components(const std::string& component_name) const { r
 tmt::json& tmt::SceneJson::components(const std::string& component_name) { return json_value[component_name]; }
 
 const tmt::json& tmt::SceneJson::components(const std::string& component_name) const { return json_value.at(component_name); }
+
+bool tmt::SceneJson::has_component_entry(const std::string& component_name, const tmt::Entity entity_id) const {
+    if (has_components(component_name) == false) return false;
+
+    const json& component_container = components(component_name);
+
+    return has_entity_entry(component_container, entity_id);
+}
 
 std::optional<tmt::json> tmt::SceneJson::component_value(const std::string& component_name, const tmt::Entity entity_id) const {
     if (has_components(component_name) == false) return std::nullopt;
