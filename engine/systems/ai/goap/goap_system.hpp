@@ -51,8 +51,9 @@ class Goap : public ISystem {
     // Builds a plan toward the current goal (A*).
     void update_plan(Entity entity, GoapAgent& agent, WorldState& ws);
 
-    // Executes or advances the current action.
-    void update_action(Entity entity, GoapAgent& agent, WorldState& ws, float dt);
+    // Starts & validates the current action, actual running of the action happens
+    // in on_update() and on_fixed_update().
+    void update_action(Entity entity, GoapAgent& agent, WorldState& ws);
 
     // Set to true if you want more logging to see whats happening internally
     bool show_logging = false;

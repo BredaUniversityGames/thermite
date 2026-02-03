@@ -33,8 +33,14 @@ class GoapAction {
     // Used during action execution
     bool is_running = false;
 
-    // readable name
-    // virtual const char* get_name() const = 0;
+    /**
+     * Set to true if u want to use the fixed update instead of update.
+     * Set it to true in the constructor.
+     * MoveToAction() {
+     *   wants_fixed_update = true;
+     * }
+     */
+    bool wants_fixed_update = false;
 
     /**
      * Checks if world state satisfies the action's preconditions.
@@ -52,10 +58,12 @@ class GoapAction {
      *
      * - start:      called once when the action begins.
      * - tick:       called every frame while action is running.
+     * - fixed tick: can als choose to use fixed tick, safe for physics updates etc.
      * - finished:   called only when the action finished normally.
      */
     virtual void on_start(Entity /*agent*/) {}
-    virtual void on_tick(Entity /*agent*/, float /*dt*/) {}
+    virtual void on_tick(Entity /*agent*/, float /*dt*/) {}        // variable update
+    virtual void on_fixed_tick(Entity /*agent*/, float /*dt*/) {}  // physics-safe update
     virtual void on_finished(Entity /*agent*/) {}
 
     /**
