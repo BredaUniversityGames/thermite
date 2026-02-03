@@ -9,6 +9,7 @@
 
 namespace tmt {
 
+struct Hit;
 class VoxelVolume;
 
 class ModelViewer : public IWindow {
@@ -24,6 +25,8 @@ class ModelViewer : public IWindow {
     void on_editor_end() override {}
 
    private:
+    void handle_brush_mode(const ResourceRef<VoxelVolume>& model, const Hit& hit, const glm::mat4& world_matrix);
+
     glm::vec2 mouse_position {};
 };
 

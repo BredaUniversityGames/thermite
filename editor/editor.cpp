@@ -40,6 +40,7 @@
 #include "editor/windows/model_viewer.hpp"
 #include "editor/windows/node_hierarchy.hpp"
 #include "editor/windows/palette.hpp"
+#include "editor/windows/brush.hpp"
 
 /* Singleton */
 tmt::Editor tmt::editor;
@@ -81,6 +82,7 @@ void Editor::on_engine_init(const ApplicationSpecs&) {
     windows[Mode::EDIT].add<ModelViewer>();
     windows[Mode::EDIT].add<NodeHierarchy>();
     windows[Mode::EDIT].add<Palette>();
+    windows[Mode::EDIT].add<Brush>();
 
     for (auto& [mode, collection] : windows) {
         for (const auto& window : collection) {

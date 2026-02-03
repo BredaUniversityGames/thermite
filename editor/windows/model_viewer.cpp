@@ -14,6 +14,7 @@
 
 #include "editor/windows/palette.hpp"
 #include "editor/windows/node_hierarchy.hpp"
+#include "editor/windows/brush.hpp"
 
 namespace tmt {
 
@@ -127,13 +128,11 @@ void draw_selection(const Hit& hit, const glm::vec3& half_extent, const Transfor
     engine.polyline.draw_obb(world_voxel_pos, glm::vec3 {VOXEL_SIZE_HALF}, transform.get_world_rotation());
 }
 
-bool draw_valid_selection(const Ray& mouse_ray, Hit& hit, const Entity entity, const VoxelRenderer* renderer) {
+bool draw_valid_selection(const Ray& mouse_ray, Hit& hit, const Entity entity, const Transform& transform, const VoxelRenderer* renderer) {
     if (renderer == nullptr || !renderer->resource) return false;
 
     const ResourceRef<VoxelVolume> resource = renderer->resource;
     const glm::vec3 half_extent = glm::vec3 {resource->size} / static_cast<float>(2 * VOXELS_PER_UNIT);
-
-    const auto& transform = engine.ecs.get_component<Transform>(entity);
 
     const glm::mat4 world_to_local_matrix = glm::inverse(transform.get_world_matrix());
 
@@ -206,20 +205,65 @@ void ModelViewer::on_editor_update(const FrameData& time) {
 
     NodeHierarchy& node_hierarchy = editor.windows[Editor::Mode::EDIT].get<NodeHierarchy>();
     const Entity selected_entity = node_hierarchy.get_selected_entity();
+    if (!engine.ecs.valid(selected_entity)) return;
+
+    const Transform& transform = engine.ecs.get_component<Transform>(selected_entity);
     const VoxelRenderer* renderer = engine.ecs.try_get_component<VoxelRenderer>(selected_entity);
 
     const Ray mouse_ray = engine.renderer.render_view.pixel_ray(mouse_position);
     Hit hit = engine.renderer.trace_ray(mouse_ray);
 
-    if (draw_valid_selection(mouse_ray, hit, selected_entity, renderer)) {
-        if (engine.input.is_mouse_button_pressed(MouseButton::LEFT)) {
-            const MaterialIndex material_index = editor.windows[Editor::Mode::EDIT].get<Palette>().get_selected_material_index();
+    if (draw_valid_selection(mouse_ray, hit, selected_entity, transform, renderer)) {
+        if (engine.input.is_mouse_button_pressed(MouseButton::LEFT)) handle_brush_mode(renderer->resource, hit, transform.get_world_matrix());
 
-            renderer->resource->blas->set_voxel(hit.coord.x, hit.coord.y, hit.coord.z, material_index);
-            renderer->resource->set_dirty();
-        }
     } else if (hit.entity != entt::null && engine.input.is_mouse_button_just_pressed(MouseButton::LEFT)) {
         node_hierarchy.set_selected_entity(hit.entity);
+    }
+}
+
+void ModelViewer::handle_brush_mode(const ResourceRef<VoxelVolume>& model, const Hit& hit, const glm::mat4& world_matrix) {
+    const Brush::Mode mode = editor.windows[Editor::Mode::EDIT].get<Brush>().get_active_mode();
+    switch (mode) {
+        case Brush::Mode::MULTI_TOOL:
+            break;
+
+        case Brush::Mode::PAINT: {
+            if (hit.normal.x == 0.0f && hit.normal.y == 0.0f && hit.normal.z == 0.0f) break;
+
+            const MaterialIndex material_index = editor.windows[Editor::Mode::EDIT].get<Palette>().get_selected_material_index();
+
+            model->blas->set_voxel(hit.coord.x, hit.coord.y, hit.coord.z, material_index);
+            model->set_dirty();
+            break;
+        }
+
+        case Brush::Mode::COLOR_PICKER: {
+            const Material* picked_material = model->blas->get_voxel(hit.coord.x, hit.coord.y, hit.coord.z);
+
+            if (picked_material == nullptr) break;
+
+            editor.windows[Editor::Mode::EDIT].get<Palette>().set_selected_material_index(static_cast<MaterialIndex>(picked_material - model->blas->palette.entries));
+            break;
+        }
+
+        case Brush::Mode::ADD: {
+            const glm::vec3 local_normal = glm::inverse(world_matrix) * glm::vec4 {hit.normal, 0.0f};
+            const glm::uvec3 voxel_grid_normal {glm::round(local_normal)};
+            const glm::uvec3 add_position = hit.coord + voxel_grid_normal;
+
+            if (add_position.x >= model->size.x || add_position.y >= model->size.y || add_position.z >= model->size.z) break;
+
+            const MaterialIndex material_index = editor.windows[Editor::Mode::EDIT].get<Palette>().get_selected_material_index();
+            model->blas->set_voxel(add_position.x, add_position.y, add_position.z, material_index);
+            model->set_dirty();
+            break;
+        }
+
+        case Brush::Mode::REMOVE:
+            break;
+
+        case Brush::Mode::SHAPE:
+            break;
     }
 }
 
