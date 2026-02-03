@@ -35,9 +35,9 @@ struct SerializeState {
 };
 
 /* Entity with state */
- Json tag_invoke(JsonReflect::serialize_t, const tmt::Entity& entity, const SerializeState& state) {
+tmt::json tag_invoke(JsonReflect::serialize_t, const tmt::Entity& entity, const SerializeState& state) {
 
- }
+}
 
 static void tag_invoke(JsonReflect::deserialize_t, const JsonReflect::json& j, tmt::Entity& entity, const tmt::DeserializeState& state) {
     tmt::Entity deserialized_entity = entt::null;
