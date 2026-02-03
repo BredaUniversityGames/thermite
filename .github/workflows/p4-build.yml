@@ -10,7 +10,7 @@
 # Model: Claude Opus 4.5
 # =============================================================================
 
-name: Release
+name: release
 
 on:
   workflow_dispatch:
@@ -46,10 +46,11 @@ jobs:
         run: |
           LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
           if [ -z "$LATEST_TAG" ]; then
-            CHANGES=$(git log --pretty=format:"- %s (%h)" HEAD)
+            CHANGES=$(git log --pretty=format:"- %s" HEAD | grep -iE "^- (feat|fix|breaking|docs|chore):" | head -20)
           else
-            CHANGES=$(git log --pretty=format:"- %s (%h)" ${LATEST_TAG}..HEAD)
+            CHANGES=$(git log --pretty=format:"- %s" ${LATEST_TAG}..HEAD | grep -iE "^- (feat|fix|breaking|docs|chore):" | head -20)
           fi
+          [ -z "$CHANGES" ] && CHANGES="- Minor updates and improvements"
           echo "changes<<EOF" >> $GITHUB_OUTPUT
           echo "$CHANGES" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
