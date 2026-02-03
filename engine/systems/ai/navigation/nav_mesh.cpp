@@ -4,87 +4,64 @@
 #include "engine/core/polyline.hpp"
 #include "engine/core/logger.hpp"
 
-#include "engine/tools/profiler.hpp"
-
 using namespace tmt;
 
-void NavMesh::generate_mesh() {
-    TMT_ZONE_SCOPED_N("NavMesh::generate_mesh");
-    nodes.clear();
+void NavMesh::generate_mesh_over_time() { 
+    entered_loop = false;
+    if (iteration_nmg == 0) {
+        volume = nullptr;
+        nodes.clear();
+        generating = true;
+        generate_mesh(100);
+    } 
+    else {
+        generate_mesh(100);
+    }
 
-    uint32_t full_depth = voxel_volume->blas->depth;
-    uint32_t target_depth = (lod_level < (int)full_depth) ? (full_depth - lod_level) : 1;
+    iteration_nmg++;
 
-    uint32_t divisor = 1u << (lod_level * 2);
-    glm::uvec3 size = (voxel_volume->size + divisor - 1u) / divisor;
+    if (!entered_loop) {
+        generating = false;
+        generation_complete = true;
+        iteration_nmg = 0;
+    }
+}
 
-    std::vector<bool> occupied(size.x * size.y * size.z, false);
+void NavMesh::generate_mesh(int iterations) {
+    if (!volume || !generating) {
+        volume = new Volume();
+        volume->traverse(voxel_volume, lod_level);
+    }
+    if (!generating) {
+        nodes.clear();
+    }
 
-    auto set_occupied = [&](glm::uvec3 pos) {
-        if (pos.x < size.x && pos.y < size.y && pos.z < size.z) {
-            occupied[pos.x + size.x * pos.y + size.x * size.y * pos.z] = true;
-        }
-    };
-
-    std::function<void(uint32_t, glm::uvec3, uint32_t, uint32_t)> traverse = [&](uint32_t node_idx, glm::uvec3 origin, uint32_t scale, uint32_t depth) {
-        TMT_ZONE_SCOPED_N("NavMesh::traverse");
-        const auto& node = voxel_volume->blas->nodes[node_idx];
-        uint64_t mask = node.child_mask;
-        uint32_t base = node.abs_ptr();
-
-        for (int i = 0; mask; ++i, mask >>= 1) {
-            if (!(mask & 1)) continue;
-
-            glm::uvec3 local = {i & 3, (i >> 4) & 3, (i >> 2) & 3};
-            glm::uvec3 child_origin = origin + local * scale;
-
-            // Stop early at target depth, or if we hit a leaf
-            if (depth >= target_depth || node.is_leaf()) {
-                set_occupied(child_origin / divisor);
-            } else {
-                uint32_t child_idx = base + std::popcount(node.child_mask & ((1ull << i) - 1));
-                traverse(child_idx, child_origin, scale / 4, depth + 1);
-            }
-        }
-    };
-    uint32_t scale = 1u << ((full_depth - 1) * 2);
-    traverse(0, {0, 0, 0}, scale, 1);
-
-    // Helper lambda
-    auto voxel_empty = [&](uint32_t x, uint32_t y, uint32_t z) { return !occupied[x + size.x * y + size.x * size.y * z]; };
-    auto is_surface = [&](uint32_t x, uint32_t y, uint32_t z) {
-        TMT_ZONE_SCOPED_N("NavMesh::is_surface");
-        if (voxel_empty(x, y, z)) return false;
-        for (size_t sign = 0; sign < 2; sign++) {
-            for (size_t dir = 0; dir < 3; dir++) {
-                glm::uvec3 temp = {x, y, z};
-                temp[(int)dir] += sign == 0 ? (int)1 : -((int)1);
-                if (!(temp.x < size.x && temp.y < size.y && temp.z < size.z) || voxel_empty(temp.x, temp.y, temp.z)) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    };
-
+    
     std::unordered_map<uint32_t, int> node_map;
     constexpr float voxel_scale = 0.1f;
     glm::vec3 full_size = glm::vec3(voxel_volume->size);
 
-    for (uint32_t z = 0; z < size.z; z++) {
-        for (uint32_t y = 0; y < size.y; y++) {
-            for (uint32_t x = 0; x < size.x; x++) {
-                TMT_ZONE_SCOPED_N("NavMesh::Loops");
-                if (!is_surface(x, y, z)) continue;
+    int count = 0;
+    for (uint32_t z = 0; z < volume->size.z; z++) {
+        for (uint32_t y = 0; y < volume->size.y; y++) {
+            for (uint32_t x = 0; x < volume->size.x; x++) {
+                count++;
+                // every call, skip iterations weve already handled, and from there, only do 'iterations' number of iterations
+                if (generating) {
+                    if (count <= iteration_nmg * iterations) continue;
+                    if (count > (iteration_nmg + 1) * iterations) return;
+                    entered_loop = true;
+                }
+                if (!volume->is_surface(x, y, z)) continue;
 
-                const uint32_t pos_index = x + size.x * y + size.x * size.y * z;
+                const uint32_t pos_index = x + volume->size.x * y + volume->size.x * volume->size.y * z;
 
                 int node_index;
                 if (node_map.contains(pos_index)) {
                     node_index = node_map[pos_index];
                 } else {
                     Node node;
-                    glm::vec3 voxel_pos = (glm::vec3(x, y, z) + 0.5f) * float(divisor);
+                    glm::vec3 voxel_pos = (glm::vec3(x, y, z) + 0.5f) * float(volume->divisor);
                     glm::vec3 centered = voxel_pos - full_size * 0.5f;
                     node.local_pos = centered * voxel_scale;
                     node_map[pos_index] = (int)nodes.size();
@@ -98,17 +75,17 @@ void NavMesh::generate_mesh() {
                             if (dx == 0 && dy == 0 && dz == 0) continue;
 
                             glm::uvec3 neighbor = {x + dx, y + dy, z + dz};
-                            if (neighbor.x >= size.x || neighbor.y >= size.y || neighbor.z >= size.z) continue;
-                            if (!is_surface(neighbor.x, neighbor.y, neighbor.z)) continue;
+                            if (neighbor.x >= volume->size.x || neighbor.y >= volume->size.y || neighbor.z >= volume->size.z) continue;
+                            if (!volume->is_surface(neighbor.x, neighbor.y, neighbor.z)) continue;
 
-                            const uint32_t neighbor_pos_index = neighbor.x + size.x * neighbor.y + size.x * size.y * neighbor.z;
+                            const uint32_t neighbor_pos_index = neighbor.x + volume->size.x * neighbor.y + volume->size.x * volume->size.y * neighbor.z;
 
                             int neighbor_node_index;
                             if (node_map.contains(neighbor_pos_index)) {
                                 neighbor_node_index = node_map[neighbor_pos_index];
                             } else {
                                 Node node;
-                                glm::vec3 voxel_pos = (glm::vec3(neighbor.x, neighbor.y, neighbor.z) + 0.5f) * float(divisor);
+                                glm::vec3 voxel_pos = (glm::vec3(neighbor.x, neighbor.y, neighbor.z) + 0.5f) * float(volume->divisor);
                                 glm::vec3 centered = voxel_pos - full_size * 0.5f;
                                 node.local_pos = centered * voxel_scale;
                                 node_map[neighbor_pos_index] = (int)nodes.size();
@@ -270,7 +247,7 @@ std::optional<glm::vec3> tmt::NavMesh::follow_path(glm::vec3 start, glm::vec3 en
 }
 
 void tmt::NavMesh::inspect() {
-    return;
+    //return;
     tmt::engine.polyline.use_color(1.0f, 0.0f, 0.0f);
     tmt::engine.polyline.use_line_width(2, true);
 

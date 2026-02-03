@@ -6,7 +6,7 @@ std::string tmt::NavigationSystem::get_name() { return std::string(); }
 
 void tmt::NavigationSystem::on_start() {
     for (const auto& [entity, nav_mesh] : engine.ecs.get_registry().view<NavMesh>().each()) {
-        nav_mesh.generate_mesh();
+        //nav_mesh.generate_mesh();
     }
     for (const auto& [entity, nav_mesh] : engine.ecs.get_registry().view<NavMesh>().each()) {
         glm::mat4 world_matrix = engine.ecs.get_component<Transform>(entity).get_world_matrix();
@@ -26,6 +26,10 @@ void tmt::NavigationSystem::on_update(const FrameData&) {
         }
 
         nav_mesh.inspect();
+
+        if (nav_mesh.generating) {
+            nav_mesh.generate_mesh_over_time();
+        }
     }
 }
 
