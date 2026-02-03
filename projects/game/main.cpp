@@ -91,7 +91,8 @@ void DragonScene::on_start() {
 
     // generate_random_entities(voxel_volume);
 
-    tmt::engine.resources.load_resource<tmt::Texture2D>({tmt::IO::Location::PROJECT, "bojan.png"});
+    /* Load a Bojan */
+    tmt::engine.resources.load_resource<tmt::Texture2D>({tmt::IO::Location::PROJECT, "bojan.png"}, "Bojan");
 }
 
 #include "engine/core/renderer/renderer.hpp"
