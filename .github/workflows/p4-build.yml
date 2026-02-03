@@ -1,0 +1,46 @@
+name: P4 Build
+
+on:
+  pull_request:
+    branches: 'main'
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      P4PORT: ${{ secrets.P4PORT }}
+      P4USER: ${{ secrets.P4USER }}
+      P4PASSWD: ${{ secrets.P4PASSWD }}
+
+    steps:
+      - name: p4 login
+        uses: perforce/setup-p4@v1
+        with:
+          command: login
+
+      - name: Check login status
+        uses: perforce/setup-p4@v1
+        with:
+          command: login
+          arguments: -s
+
+      - name: Create workspace
+        uses: perforce/setup-p4@v1
+        with:
+          command: client
+          spec: |
+            Client: ci-test-${{ github.run_id }}
+            Root: ${{ github.workspace }}
+            View:
+              //Y2526-Y3-CustomTech/Thermite/... //ci-test-${{ github.run_id }}/...
+
+      - name: p4 sync
+        uses: perforce/setup-p4@v1
+        env:
+          P4CLIENT: ci-test-${{ github.run_id }}
+        with:
+          command: sync
+
+      - name: List synced files
+        run: ls -la
