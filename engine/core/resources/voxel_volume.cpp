@@ -37,7 +37,31 @@ const VoxelSceneNode* find_model_by_uuid(const VoxelSceneNode& node, const UUID&
 
 }  // namespace
 
-VoxelVolume::VoxelVolume(const VoxelSceneNode& node) : RuntimeResource<VoxelScene>({}) { load_from_node(node); }
+VoxelVolume::VoxelVolume(const glm::uvec3& grid_size) : RuntimeResource<VoxelScene>({}) {
+    RawVoxels raw_voxels {.w = grid_size.x, .h = grid_size.y, .d = grid_size.z};
+
+    const size_t total_size = grid_size.x * grid_size.y * grid_size.z;
+    raw_voxels.materials.resize(total_size, AIR_INDEX);
+    raw_voxels.physics_data.resize(total_size, {EMPTY, 0});
+
+    /* Create and build the voxel acceleration structure */
+    blas = std::make_unique<Svt64>();
+    blas->build(raw_voxels);
+
+    size = grid_size;
+    uuid = UUIDGenerator::generate(); /* Generate a new UUID. */
+
+    create_gpu_buffers();
+}
+
+VoxelVolume::VoxelVolume(const VoxelSceneNode& node) : RuntimeResource<VoxelScene>({}) {
+    /* Copy the voxel data from the model */
+    blas = std::make_unique<Svt64>(*node.tree);
+    size = node.size;
+    uuid = node.uuid;
+
+    create_gpu_buffers();
+}
 
 bool VoxelVolume::load() {
     const VoxelSceneNode* model = nullptr;
@@ -61,7 +85,12 @@ bool VoxelVolume::load() {
         return false;
     }
 
-    load_from_node(*model);
+    /* Copy the voxel data from the model */
+    blas = std::make_unique<Svt64>(*model->tree);
+    size = model->size;
+    uuid = model->uuid;
+
+    create_gpu_buffers();
 
     return true;
 }
@@ -99,12 +128,7 @@ void VoxelVolume::update_if_dirty() {
     bank.upload_buffer(blas_palette, &blas->palette, 0u, sizeof(MaterialPalette));
 }
 
-void VoxelVolume::load_from_node(const VoxelSceneNode& node) {
-    /* Copy the voxel data from the model */
-    blas = std::make_unique<Svt64>(*node.tree);
-    size = node.size;
-    uuid = node.uuid;
-
+void VoxelVolume::create_gpu_buffers() {
     /* Create GPU buffers for the voxel data */
     /* TODO: These buffers need to scale when the voxel data is modified at run-time! */
     VRAMBank& bank = engine.renderer.vram_bank();

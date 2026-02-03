@@ -12,6 +12,7 @@ namespace tmt {
 class VoxelVolume : public tmt::RuntimeResource<VoxelScene> {
    public:
     // Constructor for temporary VoxelVolume's that aren't managed by the resource system (used in the voxel editor).
+    VoxelVolume(const glm::uvec3& grid_size);
     VoxelVolume(const VoxelSceneNode& node);
 
     VoxelVolume(const std::shared_ptr<VoxelScene>& file_resource) : RuntimeResource<VoxelScene>(file_resource) {}
@@ -38,7 +39,7 @@ class VoxelVolume : public tmt::RuntimeResource<VoxelScene> {
     Buffer blas_nodes {}, blas_voxels {}, blas_palette {};
 
    private:
-    void load_from_node(const VoxelSceneNode& node);
+    void create_gpu_buffers();
     
     uint32_t blas_nodes_capacity = 0u, blas_voxels_capacity = 0u;
     bool is_dirty = false;

@@ -11,6 +11,7 @@
 #include "engine/shared/const.hpp"
 
 #include <imgui.h>
+#include <imgui_stdlib.h>
 #include <imgui_internal.h>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/quaternion.hpp>
@@ -51,18 +52,67 @@ void drag_node(const Entity entity, const std::string& name) {
     ImGui::EndDragDropSource();
 }
 
-void node_context_menu(const Entity node_entity) {
-    if (!ImGui::BeginPopupContextItem()) return;
+struct NodeCreationData {
+    Entity parent {entt::null};
+    std::string name {"New Node"};
 
-    //if (ImGui::MenuItem("Add node")) engine.ecs.create_entity<Transform>("New Node");
-    if (ImGui::MenuItem("Delete node")) engine.ecs.destroy_entity(node_entity);
-
-    ImGui::EndPopup();
-}
+    bool has_voxel_grid {false};
+    glm::uvec3 voxel_size {2, 2, 2};
+};
+std::unique_ptr<NodeCreationData> node_creation_info;
 
 struct VoxelEditUUID {
     UUID uuid {NULL_UUID};
 };
+
+Entity recurse_build_scene(const VoxelSceneNode& node, bool assign_new_uuids, const Entity parent_entity = entt::null, const glm::mat4& parent_matrix = glm::identity<glm::mat4>()) {
+    const Entity entity = engine.ecs.create_entity(node.name);
+
+    Transform& transform = engine.ecs.get_component<Transform>(entity);
+    transform.set_world_matrix(parent_matrix * node.transform);
+    transform.set_parent(parent_entity);
+
+    VoxelEditUUID& uuid_component = engine.ecs.add_component<VoxelEditUUID>(entity);
+    uuid_component.uuid = (assign_new_uuids ? UUIDGenerator::generate() : node.uuid);
+
+    if (node.tree) {
+        VoxelRenderer& renderer = engine.ecs.add_component<VoxelRenderer>(entity);
+
+        // Create a fake voxel resource managed by the voxel editor.
+        const ResourceRef volume {{}, std::make_shared<VoxelVolume>(node)};
+        volume->uuid = uuid_component.uuid;
+        renderer.resource = volume;
+    }
+
+    for (const VoxelSceneNode& child : node.children) {
+        recurse_build_scene(child, assign_new_uuids, entity, transform.get_world_matrix());
+    }
+
+    return entity;
+}
+
+void recurse_parse_scene(Entity entity, const Transform& transform, VoxelSceneNode& node) {
+    node.name = engine.ecs.get_component<Name>(entity).name;
+
+    const glm::mat4 translation = glm::translate(glm::identity<glm::mat4>(), transform.get_local_position());
+    const glm::mat4 rotation = glm::toMat4(transform.get_local_rotation());
+    const glm::mat4 scale = glm::scale(glm::identity<glm::mat4>(), transform.get_local_scale());
+    node.transform = translation * rotation * scale;
+
+    node.uuid = engine.ecs.get_component<VoxelEditUUID>(entity).uuid;
+
+    const VoxelRenderer* renderer = engine.ecs.try_get_component<VoxelRenderer>(entity);
+    if (renderer != nullptr) {
+        node.uuid = renderer->resource->uuid;
+        node.size = renderer->resource->size;
+        node.tree = std::make_unique<Svt64>(*renderer->resource->blas);
+    }
+
+    for (const Entity child : transform.get_children()) {
+        const Transform& child_transform = engine.ecs.get_component<Transform>(child);
+        recurse_parse_scene(child, child_transform, node.children.emplace_back());
+    }
+}
 
 std::atomic_bool model_load_atomic {true};
 
@@ -212,69 +262,6 @@ void NodeHierarchy::build_scene(const std::span<VoxelSceneNode>& root_nodes, boo
     }
 }
 
-void NodeHierarchy::display() {
-    model_load_atomic.wait(false);
-
-    std::vector<Entity> test;
-    for (const Entity entity : root_entities) {
-        auto&& [transform, name] = engine.ecs.get_component<Transform, Name>(entity);
-
-        recurse_display_node(entity, name, transform);
-    }
-    std::erase_if(root_entities, [](const Entity& entity) { return !engine.ecs.valid(entity) || engine.ecs.has_component<Delete>(entity); });
-
-    drop_hierarchy();
-}
-
-Entity NodeHierarchy::recurse_build_scene(const VoxelSceneNode& node, bool assign_new_uuids, const Entity parent_entity, const glm::mat4& parent_matrix) {
-    const Entity entity = engine.ecs.create_entity(node.name);
-
-    Transform& transform = engine.ecs.get_component<Transform>(entity);
-    transform.set_world_matrix(parent_matrix * node.transform);
-    transform.set_parent(parent_entity);
-
-    VoxelEditUUID& uuid_component = engine.ecs.add_component<VoxelEditUUID>(entity);
-    uuid_component.uuid = (assign_new_uuids ? UUIDGenerator::generate() : node.uuid);
-
-    if (node.tree) {
-        VoxelRenderer& renderer = engine.ecs.add_component<VoxelRenderer>(entity);
-
-        // Create a fake voxel resource managed by the voxel editor.
-        const ResourceRef volume {{}, std::make_shared<VoxelVolume>(node)};
-        volume->uuid = uuid_component.uuid;
-        renderer.resource = volume;
-    }
-
-    for (const VoxelSceneNode& child : node.children) {
-        recurse_build_scene(child, assign_new_uuids, entity, transform.get_world_matrix());
-    }
-
-    return entity;
-}
-
-void NodeHierarchy::recurse_parse_scene(Entity entity, const Transform& transform, VoxelSceneNode& node) {
-    node.name = engine.ecs.get_component<Name>(entity).name;
-
-    const glm::mat4 translation = glm::translate(glm::identity<glm::mat4>(), transform.get_local_position());
-    const glm::mat4 rotation = glm::toMat4(transform.get_local_rotation());
-    const glm::mat4 scale = glm::scale(glm::identity<glm::mat4>(), transform.get_local_scale());
-    node.transform = translation * rotation * scale;
-
-    node.uuid = engine.ecs.get_component<VoxelEditUUID>(entity).uuid;
-
-    const VoxelRenderer* renderer = engine.ecs.try_get_component<VoxelRenderer>(entity);
-    if (renderer != nullptr) {
-        node.uuid = renderer->resource->uuid;
-        node.size = renderer->resource->size;
-        node.tree = std::make_unique<Svt64>(*renderer->resource->blas);
-    }
-
-    for (const Entity child : transform.get_children()) {
-        const Transform& child_transform = engine.ecs.get_component<Transform>(child);
-        recurse_parse_scene(child, child_transform, node.children.emplace_back());
-    }
-}
-
 std::vector<char> NodeHierarchy::encode_voxel_scene() {
     const auto& entities = engine.ecs.get_registry().storage<Transform>();
     if (entities.empty()) return {};  // Return empty scene encoding.
@@ -359,6 +346,93 @@ void NodeHierarchy::drop_node(const Entity entity, Transform& transform) {
     }
 
     ImGui::EndDragDropTarget();
+}
+
+void NodeHierarchy::popup_create_node() {
+    // Store the popup id so other functions can use it to open the popup.
+    if (popup_id == 0) popup_id = ImGui::GetCurrentWindow()->GetID("Create New Node");
+
+    constexpr ImGuiWindowFlags flags = ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove;
+    if (!ImGui::BeginPopupModal("Create New Node", nullptr, flags)) return;
+
+    ImGui::InputText("Node name", &node_creation_info->name);
+
+    bool& has_voxel_grid = node_creation_info->has_voxel_grid;
+    ImGui::Checkbox("Has voxel grid", &has_voxel_grid);
+
+    if (has_voxel_grid) {
+        constexpr glm::uvec2 min_max {2, 1024};
+        ImGui::DragScalarN("Size", ImGuiDataType_U32, &node_creation_info->voxel_size.x, 3, 0.25f, &min_max.x, &min_max.y);
+    }
+
+    if (ImGui::Button("Create")) {
+        const Entity new_node_entity = engine.ecs.create_entity(node_creation_info->name);
+
+        if (node_creation_info->parent != entt::null)
+            engine.ecs.get_component<Transform>(new_node_entity).set_parent(node_creation_info->parent);
+        else
+            root_entities.emplace(new_node_entity);
+
+        UUID uuid;
+        if (has_voxel_grid) {
+            // Create a fake voxel resource managed by the voxel editor.
+            const ResourceRef volume {{}, std::make_shared<VoxelVolume>(node_creation_info->voxel_size)};
+            uuid = volume->uuid;
+            engine.ecs.add_component<VoxelRenderer>(new_node_entity).resource = volume;
+        }
+
+        if (uuid == NULL_UUID) uuid = UUIDGenerator::generate();
+        engine.ecs.add_component<VoxelEditUUID>(new_node_entity).uuid = uuid;
+
+        ImGui::CloseCurrentPopup();
+        node_creation_info.reset();
+    }
+    if (ImGui::Button("Cancel")) {
+        ImGui::CloseCurrentPopup();
+        node_creation_info.reset();
+    }
+
+    ImGui::EndPopup();
+}
+
+void NodeHierarchy::node_context_menu(const Entity node_entity) const {
+    constexpr ImGuiPopupFlags flags = ImGuiPopupFlags_NoOpenOverExistingPopup | ImGuiPopupFlags_MouseButtonRight;
+    if (!ImGui::BeginPopupContextItem(nullptr, flags)) return;
+
+    if (ImGui::MenuItem("Add node")) {
+        node_creation_info = std::make_unique<NodeCreationData>();
+        node_creation_info->parent = node_entity;
+        ImGui::OpenPopupEx(popup_id);
+    }
+    if (ImGui::MenuItem("Delete node")) engine.ecs.destroy_entity(node_entity);
+
+    ImGui::EndPopup();
+}
+
+void NodeHierarchy::display() {
+    model_load_atomic.wait(false);
+
+    popup_create_node();
+
+    std::vector<Entity> test;
+    for (const Entity entity : root_entities) {
+        auto&& [transform, name] = engine.ecs.get_component<Transform, Name>(entity);
+
+        recurse_display_node(entity, name, transform);
+    }
+    // Erase all root entities that have been marked for delete.
+    std::erase_if(root_entities, [](const Entity& entity) { return !engine.ecs.valid(entity) || engine.ecs.has_component<Delete>(entity); });
+
+    constexpr ImGuiPopupFlags flags = ImGuiPopupFlags_NoOpenOverExistingPopup | ImGuiPopupFlags_MouseButtonRight;
+    if (ImGui::BeginPopupContextWindow(nullptr, flags)) {
+        if (ImGui::MenuItem("Add node")) {
+            node_creation_info = std::make_unique<NodeCreationData>();
+            ImGui::OpenPopupEx(popup_id);
+        }
+        ImGui::EndPopup();
+    }
+
+    drop_hierarchy();
 }
 
 }  // namespace tmt

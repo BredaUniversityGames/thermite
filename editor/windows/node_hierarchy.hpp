@@ -32,20 +32,22 @@ class NodeHierarchy : public IWindow {
     std::vector<char> encode_voxel_scene();
 
    private:
-    static Entity recurse_build_scene(const VoxelSceneNode& node, bool assign_new_uuids = false, Entity parent_entity = entt::null, const glm::mat4& parent_matrix = {1.0f});
-    static void recurse_parse_scene(Entity entity, const Transform& transform, VoxelSceneNode& node);
-
     void recurse_display_node(Entity entity, const Name& name, Transform& transform);
     void clear_hierarchy();
 
     void drop_hierarchy();
     void drop_node(Entity entity, Transform& transform);
 
+    void popup_create_node();
+    void node_context_menu(Entity node_entity) const;
+
     void display() override;
 
     void on_editor_start() override {}
     void on_editor_update(const FrameData&) override {}
     void on_editor_end() override {}
+
+    uint32_t popup_id {0};
 
     IO::FileLocation loaded_location {};
 
