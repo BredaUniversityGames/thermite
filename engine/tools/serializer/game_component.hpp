@@ -8,9 +8,11 @@
 #include "engine/systems/gameplay/game_component_registry.hpp"
 #include "engine/tools/serializer.hpp"
 
-JsonReflect::json tag_invoke(JsonReflect::serialize_lib_t, const tmt::IGameComponent& value);
+template <typename... Args>
+JsonReflect::json tag_invoke(JsonReflect::serialize_lib_t, const tmt::IGameComponent& value, Args&&... args);
 
-void tag_invoke(JsonReflect::deserialize_lib_t, const JsonReflect::json& j, tmt::IGameComponent& value);
+template <typename... Args>
+void tag_invoke(JsonReflect::deserialize_lib_t, const JsonReflect::json& j, tmt::IGameComponent& value, Args&&... args);
 
 template <typename... Args>
 inline JsonReflect::json tag_invoke(JsonReflect::serialize_t, const tmt::ComponentCollection& collection, Args&&... args) {

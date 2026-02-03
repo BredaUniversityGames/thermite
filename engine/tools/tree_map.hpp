@@ -2,8 +2,8 @@
 #include <map>
 #include <unordered_map>
 #include <optional>
-#include <variant>
 #include <stdexcept>
+#include <iostream>
 
 namespace tmt {
 
@@ -11,89 +11,89 @@ template <typename K, typename V, bool ORDERED = true>
 class TreeMap {
    private:
     using MapType = std::conditional_t<ORDERED, std::map<K, TreeMap>, std::unordered_map<K, TreeMap>>;
-    std::variant<V, MapType> data_;
+
+    std::optional<V> value_;
+    MapType children_;
 
    public:
-    TreeMap() : data_(MapType {}) {}
-    TreeMap(const V& val) : data_(val) {}
-    TreeMap(const MapType& map) : data_(map) {}
-    TreeMap(const K& key, const V& val) : data_(MapType {{key, TreeMap(val)}}) {}
+    // ============= CONSTRUCTORS =============
+    TreeMap() : value_(std::nullopt), children_() {}
 
-    TreeMap& operator[](const K& key) {
-        if (std::holds_alternative<V>(data_)) {
-            data_ = MapType {};  // Convert leaf to branch
-        }
-        return std::get<MapType>(data_)[key];
-    }
+    TreeMap(const V& val) : value_(val), children_() {}
 
-    const TreeMap& at(const K& key) const {
-        if (!std::holds_alternative<MapType>(data_)) {
-            throw std::runtime_error("Cannot navigate through a leaf node");
-        }
-        return std::get<MapType>(data_).at(key);
-    }
+    TreeMap(const MapType& map) : value_(std::nullopt), children_(map) {}
 
+    TreeMap(const K& key, const V& val) : value_(std::nullopt), children_ {{key, TreeMap(val)}} {}
+
+    // ============= CHILD ACCESS =============
+    TreeMap& operator[](const K& key) { return children_[key]; }
+
+    TreeMap& get(const K& key) { return children_[key]; }
+
+    TreeMap& at(const K& key) { return children_.at(key); }
+
+    const TreeMap& at(const K& key) const { return children_.at(key); }
+
+    bool contains(const K& key) const { return children_.contains(key); }
+
+    // ============= VALUE MANAGEMENT =============
     TreeMap& operator=(const V& val) {
-        data_ = val;
+        value_ = val;
         return *this;
     }
 
-    void set_value(const V& val) { data_ = val; }
+    void set_value(const V& val) { value_ = val; }
 
-    //std::optional<V> get_value() const { return std::holds_alternative<V>(data_) ? std::optional<V>(std::get<V>(data_)) : std::nullopt; }
+    std::optional<V> get_value() const { return value_; }
 
     V& value() {
-        if (!std::holds_alternative<V>(data_)) {
-            throw std::runtime_error("Node is not a leaf");
+        if (!value_.has_value()) {
+            throw std::runtime_error("Node does not have a value");
         }
-        return std::get<V>(data_);
+        return *value_;
     }
 
     const V& value() const {
-        if (!std::holds_alternative<V>(data_)) {
-            throw std::runtime_error("Node is not a leaf");
+        if (!value_.has_value()) {
+            throw std::runtime_error("Node does not have a value");
         }
-        return std::get<V>(data_);
+        return *value_;
     }
 
-    bool contains(const K& key) const {
-        auto* map = std::get_if<MapType>(&data_);
-        return map && map->contains(key);
-    }
+    void clear_value() { value_ = std::nullopt; }
 
-    bool is_leaf() const { return std::holds_alternative<V>(data_); }
-    bool is_branch() const { return std::holds_alternative<MapType>(data_); }
-    bool has_branches() const {
-        auto* map = std::get_if<MapType>(&data_);
-        return map && !map->empty();
-    }
+    bool has_value() const { return value_.has_value(); }
 
-    auto begin() {
-        if (!std::holds_alternative<MapType>(data_)) {
-            throw std::runtime_error("Cannot iterate over a leaf");
-        }
-        return std::get<MapType>(data_).begin();
-    }
-    auto end() {
-        if (!std::holds_alternative<MapType>(data_)) {
-            throw std::runtime_error("Cannot iterate over a leaf");
-        }
-        return std::get<MapType>(data_).end();
-    }
+    // ============= NODE STATE QUERIES =============
+    bool has_children() const { return !children_.empty(); }
 
+    size_t child_count() const { return children_.size(); }
+
+    // Legacy compatibility (can now both be true!)
+    bool is_leaf() const { return value_.has_value(); }
+
+    bool is_branch() const { return !children_.empty(); }
+
+    bool has_branches() const { return !children_.empty(); }
+
+    // ============= ITERATION =============
+    auto begin() { return children_.begin(); }
+    auto end() { return children_.end(); }
+    auto begin() const { return children_.begin(); }
+    auto end() const { return children_.end(); }
+
+    // ============= UTILITIES =============
     void print(const std::string& prefix = "", const K& key = K {}, bool isRoot = true) const {
         if (!isRoot) {
             std::cout << prefix << "Key: " << key;
-            if (auto* val = std::get_if<V>(&data_)) {
-                std::cout << " -> Value: " << *val;
+            if (value_.has_value()) {
+                std::cout << " -> Value: " << *value_;
             }
             std::cout << '\n';
         }
 
-        if (auto* map = std::get_if<MapType>(&data_)) {
-            for (const auto& [childKey, childNode] : *map) {
-                childNode.print(prefix + "  ", childKey, false);
-            }
+        for (const auto& [childKey, childNode] : children_) {
+            childNode.print(prefix + "  ", childKey, false);
         }
     }
 };
