@@ -23,6 +23,9 @@ bool Texture2D::load() {
         return false;
     }
 
+    width = (uint32_t)tex_width;
+    height = (uint32_t)tex_height;
+
     auto& bank = engine.renderer.vram_bank();
 
     /* Initialise the texture */
