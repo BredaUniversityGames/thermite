@@ -38,6 +38,9 @@ class IO {
         }
     };
 
+    // Resolve IO::FileLocation mounts automatically
+    static void init_mounts();
+
     // Write arbitrary data, returns success
     static bool write_file(const FileLocation& file_location, const char* data, size_t size);
 
@@ -46,6 +49,12 @@ class IO {
 
     // Check if file exists on disk
     static bool file_exists(const FileLocation& file_location);
+
+    // Gets executable path
+    static std::filesystem::path get_exec_path();
+
+    // Returns pair containing (packaged mode or not, root path)
+    static std::pair<bool, std::filesystem::path> find_root(const std::filesystem::path& exe_dir);
 
     // Read file, returns vector containing bytes
     static std::vector<char> read_file(const FileLocation& file_location);
@@ -62,7 +71,7 @@ class IO {
     [[nodiscard]] static FileLocation path_to_file_location(const std::filesystem::path& path);
 
    private:
-    static inline const std::filesystem::path SUB_LOCATIONS[3] {"assets/game", "assets/engine", "assets/editor"};
+    static std::filesystem::path SUB_LOCATIONS[3];
 
     static bool stream_open(std::fstream& file_stream, const std::filesystem::path& absolute, std::ios::openmode open_mode);
     static bool create_directories(const std::filesystem::path& absolute);
