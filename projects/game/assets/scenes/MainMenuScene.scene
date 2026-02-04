@@ -1,0 +1,59 @@
+{
+    "version": 1,
+    "entities": [
+        0
+    ],
+    "UUID": {
+        "0": "c911278a-069c-4443-971e-1dead0013006"
+    },
+    "Name": {
+        "0": {
+            "name": "Entity_Player"
+        }
+    },
+    "Transform": {
+        "0": {
+            "local_position": {
+                "x": -9.514979362487793,
+                "y": 57.25965881347656,
+                "z": 0.9680987000465393
+            },
+            "local_rotation": {
+                "w": 0.7794253826141357,
+                "x": -0.039483506232500076,
+                "y": 0.6244488954544067,
+                "z": 0.03163283318281174
+            },
+            "local_scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "parent": 4294967295,
+            "children": []
+        }
+    },
+    "Camera": {
+        "0": {
+            "fov": 80.0,
+            "pitch": 5.799884796142578,
+            "yaw": 12.598980903625488,
+            "active": true
+        }
+    },
+    "ComponentCollection": {
+        "0": {
+            "Player": {
+                "acceleration": 20.0,
+                "battery": 100.0,
+                "camera_sensitivity": 0.10000000149011612,
+                "drag": 5.0,
+                "health": 100.0,
+                "max_battery": 100.0,
+                "max_health": 100.0,
+                "max_speed": 10.0
+            }
+        }
+    },
+    "systems": null
+}
