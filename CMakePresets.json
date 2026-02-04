@@ -36,7 +36,8 @@
       "CMAKE_BUILD_TYPE": "Release",
       "THERMITE_EDITOR_BUILD": "ON",
       "THERMITE_DEBUG_BUILD": "OFF",
-      "THERMITE_DEVELOPER_BUILD": "ON"
+      "THERMITE_DEVELOPER_BUILD": "ON",
+      "THERMITE_SHARED_OUTPUT":  "OFF"
       }
     },
     {
