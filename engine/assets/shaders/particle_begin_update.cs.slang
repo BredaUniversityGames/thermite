@@ -1,15 +1,4 @@
-struct Counters {
-    uint32_t alive_count;
-    uint32_t alive_count_after_sim;
-    uint32_t dead_count;
-    uint32_t draw_count;
-};
-
-struct DispatchArgs {
-    uint32_t x;
-    uint32_t y;
-    uint32_t z;
-};
+import particles;
 
 RWStructuredBuffer<Counters> counters;
 RWStructuredBuffer<DispatchArgs> dispatch_args;

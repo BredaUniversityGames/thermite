@@ -1,30 +1,5 @@
 import view;
-
-struct Particle {
-    float3 pos;
-    float age;
-
-    float3 velocity;
-    float lifetime;
-
-    uint32_t tex_index;
-};
-
-struct Counters {
-    uint32_t alive_count;
-    uint32_t alive_count_after_sim;
-    uint32_t dead_count;
-    uint32_t draw_count;
-};
-
-static const float3 BILLBOARD[] = {
-    float3(-1, -1, 0), // BL
-    float3(1, -1, 0),  // BR
-    float3(-1, 1, 0),  // TL
-    float3(1, -1, 0),  // BR
-    float3(1, 1, 0),   // TR
-    float3(-1, 1, 0)   // TL
-};
+import particles;
 
 /* Active render view. */
 ConstantBuffer<RenderView> render_view;

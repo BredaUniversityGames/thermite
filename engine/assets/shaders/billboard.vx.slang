@@ -1,14 +1,5 @@
 import view;
-
-struct Particle {
-    float3 pos;
-    float age;
-
-    float3 velocity;
-    float lifetime;
-
-    uint32_t tex_index;
-};
+import particles;
 
 struct VertexInput {
     float2 pos;

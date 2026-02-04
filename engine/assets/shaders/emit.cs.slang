@@ -1,32 +1,4 @@
-struct ParticleEmitter {
-    float3 pos;
-    float lifetime;
-
-    float3 dir;
-    float cone_angle;
-
-    float min_speed;
-    float max_speed;
-    uint32_t spawn_count;
-    uint32_t tex_index;
-};
-
-struct Particle {
-    float3 pos;
-    float age;
-
-    float3 velocity;
-    float lifetime;
-
-    uint32_t tex_index;
-};
-
-struct Counters {
-    uint32_t alive_count;
-    uint32_t alive_count_after_sim;
-    uint32_t dead_count;
-    uint32_t draw_count;
-};
+import particles;
 
 ConstantBuffer<ParticleEmitter> emitter;
 
