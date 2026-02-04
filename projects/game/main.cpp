@@ -28,12 +28,12 @@ class Game : public tmt::Application {
 };
 
 class MainMenuScene : public tmt::Scene<MainMenuScene> {
-public:
+   public:
     static constexpr std::string_view scene_name() { return "MainMenuScene"; }
 };
 
 class MainGameScene : public tmt::Scene<MainGameScene> {
-public:
+   public:
     static constexpr std::string_view scene_name() { return "MainGameScene"; }
 };
 
