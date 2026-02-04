@@ -166,10 +166,10 @@
     "ComponentCollection": {
         "0": {
             "Player": {
-                "acceleration": 20.0,
+                "acceleration": 3.0,
                 "battery": 100.0,
                 "camera_sensitivity": 0.10000000149011612,
-                "drag": 5.0,
+                "drag": 0.4,
                 "health": 100.0,
                 "max_battery": 100.0,
                 "max_health": 100.0,
