@@ -23,4 +23,7 @@ constexpr glm::vec3 DARK = glm::vec3(0.4f);
 /* Light color, used for gizmos. */
 constexpr glm::vec3 LIGHT = glm::vec3(0.8f);
 
+/* Prefab color, used for prefab entities in inspector. */
+constexpr glm::vec4 PREFAB = glm::vec4(0.4f, 0.6f, 1.0f, 1.0f);
+
 }  // namespace tmt::colors

@@ -18,6 +18,9 @@
 
 #include "editor/events/scene.hpp"
 
+#include "editor/shared/colors.hpp"
+#include "editor/shared/icons.hpp"
+
 namespace tmt {
 
 void Hierarchy::before_begin() {
@@ -241,10 +244,18 @@ bool Hierarchy::display_entity(const HierarchyState& state) {
 
     /* Debug name */
     // const auto name = state.name.name + " " + std::to_string(state.position.x) + "-" + std::to_string(state.position.y);
-    const auto name = state.name.name.empty() ? "Entity_" + EntityHelper::to_string(state.entity) : state.name.name;
+    auto name = state.name.name.empty() ? "Entity_" + EntityHelper::to_string(state.entity) : state.name.name;
+
+    const bool is_prefab = engine.ecs.has_component<Prefab>(state.entity);
+    if (is_prefab) {
+        name = tmt::icons::PREFAB_ICON + name;
+    }
 
     const ImGuiID tree_node_id = ImGui::GetID(name.c_str());
+
+    if (is_prefab) ImGui::PushStyleColor(ImGuiCol_Text, tmt::colors::to_u32(tmt::colors::PREFAB));
     bool open_node = ImGui::TreeNodeBehavior(tree_node_id, flags, name.c_str(), NULL);
+    if (is_prefab) ImGui::PopStyleColor();
 
     const bool is_hovered = ImGui::IsItemHovered();
     const bool is_left_mouse_released = ImGui::IsMouseReleased(ImGuiMouseButton_Left);
