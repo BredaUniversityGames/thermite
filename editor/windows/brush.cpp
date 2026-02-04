@@ -17,12 +17,9 @@ const std::unordered_map<Brush::Mode, const char*> Brush::mode_icons {
 };
 
 void Brush::display() {
-    bool first_item = true;
     for (const auto& [mode, icon] : mode_icons) {
-        if (!first_item) {
-            first_item = false;
-            ImGui::SameLine();
-        }
+        // Keep everything on the same line (skip ImGui::SameLine on the first element).
+        if (mode != mode_icons.begin()->first) ImGui::SameLine();
 
         ImGui::BeginDisabled(active_mode == mode);
 

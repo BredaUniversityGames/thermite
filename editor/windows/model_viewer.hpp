@@ -1,11 +1,12 @@
 #pragma once
 
 #include "editor/core/window.hpp"
-#include "engine/core/resource.hpp"
+#include "editor/windows/brush.hpp"
 
 #include <imgui.h>
 
-#include "engine/core/entity.hpp"
+#include <engine/core/entity.hpp>
+#include <engine/core/resource.hpp>
 
 namespace tmt {
 
@@ -25,8 +26,6 @@ class ModelViewer : public IWindow {
     void on_editor_end() override {}
 
    private:
-    void handle_brush_mode(const ResourceRef<VoxelVolume>& model, const Hit& hit, const glm::mat4& world_matrix);
-
     glm::vec2 mouse_position {};
 };
 

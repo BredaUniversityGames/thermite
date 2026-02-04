@@ -122,27 +122,37 @@ void draw_selection(const Hit& hit, const glm::vec3& half_extent, const Transfor
     engine.polyline.use_line_width(2.0f);
     engine.polyline.use_color(glm::vec4 {1.0f, 0.5f, 0.5f, 1.0f});
 
-    const glm::vec3 local_voxel_pos = glm::vec3 {hit.coord} / static_cast<float>(VOXELS_PER_UNIT) - half_extent + VOXEL_SIZE_HALF;
+    const glm::vec3 local_voxel_pos = glm::vec3 {hit.coord} * UNITS_PER_VOXEL - half_extent + VOXEL_SIZE_HALF;
     const glm::vec3 world_voxel_pos = transform.get_world_matrix() * glm::vec4 {local_voxel_pos, 1.0f};
 
     engine.polyline.draw_obb(world_voxel_pos, glm::vec3 {VOXEL_SIZE_HALF}, transform.get_world_rotation());
 }
 
-bool draw_valid_selection(const Ray& mouse_ray, Hit& hit, const Entity entity, const Transform& transform, const VoxelRenderer* renderer) {
-    if (renderer == nullptr || !renderer->resource) return false;
-
-    const ResourceRef<VoxelVolume> resource = renderer->resource;
-    const glm::vec3 half_extent = glm::vec3 {resource->size} / static_cast<float>(2 * VOXELS_PER_UNIT);
-
+bool handle_selection(const Ray& mouse_ray, Hit& hit, const bool can_hit_face, const Entity entity, const Transform& transform, const ResourceRef<VoxelVolume>& resource) {
+    const glm::vec3 half_extent = glm::vec3 {resource->size} * VOXEL_SIZE_HALF;
     const glm::mat4 world_to_local_matrix = glm::inverse(transform.get_world_matrix());
 
-    const Ray local_ray {
-        world_to_local_matrix * glm::vec4 {mouse_ray.origin, 1.0f},
-        world_to_local_matrix * glm::vec4 {mouse_ray.dir, 0.0f},
-    };
+    Ray local_ray {};
+    float far = 0.0f;
+    bool is_valid_hit = false;
+    if (can_hit_face) {
+        // If we can hit a face, that means we want to work on top of the voxel the mouse is pointing at, we get the voxel coord by adjusting it here.
+        const glm::vec3 local_normal = world_to_local_matrix * glm::vec4 {hit.normal, 0.0f};
+        const glm::uvec3 voxel_grid_normal {glm::round(local_normal)};
+        hit.coord += voxel_grid_normal;
 
-    const float far = intersect_aabb(local_ray, -half_extent, half_extent);
-    const bool is_valid_hit = (far > 0.0f && hit.distance >= far);
+        if (glm::any(glm::greaterThanEqual(hit.coord, resource->size))) hit.entity = entt::null;
+
+        // Create a local version of the ray to simplify the aabb test later.
+        local_ray = Ray {
+            world_to_local_matrix * glm::vec4 {mouse_ray.origin, 1.0f},
+            world_to_local_matrix * glm::vec4 {mouse_ray.dir, 0.0f},
+        };
+
+        // Do an aabb test with the bounding box of the voxel object, this tells use if the user is pointing at a face of the grid, and thus we should draw the grid.
+        far = intersect_aabb(local_ray, -half_extent, half_extent);
+        is_valid_hit = (far > 0.0f && hit.distance >= far);
+    }
 
     for (int32_t i = 0; i < 6; i++) {
         FaceData face = calculate_face_info(i, transform, half_extent);
@@ -175,6 +185,54 @@ bool draw_valid_selection(const Ray& mouse_ray, Hit& hit, const Entity entity, c
     return true;
 }
 
+void modify_voxels(const Brush::Mode brush_mode, const ResourceRef<VoxelVolume>& model, const Hit& hit) {
+    switch (brush_mode) {
+        case Brush::Mode::PAINT: {
+            if (!engine.input.is_mouse_button_pressed(MouseButton::LEFT)) break;
+
+            const MaterialIndex material_index = editor.windows[Editor::Mode::EDIT].get<Palette>().get_selected_material_index();
+            model->blas->set_voxel(hit.coord.x, hit.coord.y, hit.coord.z, material_index);
+
+            model->set_dirty();
+            break;
+        }
+
+        case Brush::Mode::COLOR_PICKER: {
+            if (!engine.input.is_mouse_button_pressed(MouseButton::LEFT)) break;
+
+            const Material* picked_material = model->blas->get_voxel(hit.coord.x, hit.coord.y, hit.coord.z);
+            if (picked_material == nullptr) break;
+
+            editor.windows[Editor::Mode::EDIT].get<Palette>().set_selected_material_index(static_cast<MaterialIndex>(picked_material - model->blas->palette.entries));
+            break;
+        }
+
+        case Brush::Mode::ADD: {
+            if (!engine.input.is_mouse_button_just_pressed(MouseButton::LEFT)) break;
+
+            const MaterialIndex material_index = editor.windows[Editor::Mode::EDIT].get<Palette>().get_selected_material_index();
+
+            model->blas->set_voxel(hit.coord.x, hit.coord.y, hit.coord.z, material_index);
+            model->set_dirty();
+            break;
+        }
+
+        case Brush::Mode::REMOVE: {
+            if (!engine.input.is_mouse_button_just_pressed(MouseButton::LEFT)) break;
+
+            model->blas->remove_voxel(hit.coord.x, hit.coord.y, hit.coord.z);
+            model->set_dirty();
+            break;
+        }
+
+        case Brush::Mode::SHAPE:
+            break;
+
+        default:
+            break;
+    }
+}
+
 }  // namespace
 
 void ModelViewer::display() {
@@ -189,8 +247,12 @@ void ModelViewer::display() {
     engine.renderer.render_view.set_viewport_size(static_cast<uint32_t>(size.x), static_cast<uint32_t>(size.y));
     ImGui::Image(engine.renderer.render_view.imgui_viewport, size);
 
-    const Entity selected_entity = editor.windows[Editor::Mode::EDIT].get<NodeHierarchy>().get_selected_entity();
-    editor.gizmo.manip(window_pos.x, window_pos.y, size.x, size.y, {&selected_entity, &selected_entity + 1});
+    const Brush::Mode brush_mode = editor.windows[Editor::Mode::EDIT].get<Brush>().get_active_mode();
+    if (brush_mode == Brush::Mode::MULTI_TOOL) {
+        const Entity selected_entity = editor.windows[Editor::Mode::EDIT].get<NodeHierarchy>().get_selected_entity();
+
+        editor.gizmo.manip(window_pos.x, window_pos.y, size.x, size.y, {&selected_entity, &selected_entity + 1});
+    }
 
     Viewport& viewport = editor.windows[Editor::Mode::OBJECT].get<Viewport>();
 
@@ -203,68 +265,36 @@ void ModelViewer::display() {
 void ModelViewer::on_editor_update(const FrameData& time) {
     editor.windows[Editor::Mode::OBJECT].get<Viewport>().update_debug_camera(time);
 
+    const Brush::Mode brush_mode = editor.windows[Editor::Mode::EDIT].get<Brush>().get_active_mode();
+
+    if (brush_mode == Brush::Mode::MULTI_TOOL) {
+        if (!engine.input.is_mouse_button_just_pressed(MouseButton::LEFT)) return;
+
+        const Ray mouse_ray = engine.renderer.render_view.pixel_ray(mouse_position);
+        const Hit hit = engine.renderer.trace_ray(mouse_ray);
+
+        if (hit.miss()) return;
+
+        editor.windows[Editor::Mode::EDIT].get<NodeHierarchy>().set_selected_entity(hit.entity);
+        return;
+    }
+
     NodeHierarchy& node_hierarchy = editor.windows[Editor::Mode::EDIT].get<NodeHierarchy>();
     const Entity selected_entity = node_hierarchy.get_selected_entity();
-    if (!engine.ecs.valid(selected_entity)) return;
+
+    if (!engine.ecs.valid(selected_entity) || !engine.ecs.has_component<VoxelRenderer>(selected_entity)) return;
 
     const Transform& transform = engine.ecs.get_component<Transform>(selected_entity);
-    const VoxelRenderer* renderer = engine.ecs.try_get_component<VoxelRenderer>(selected_entity);
+    const ResourceRef<VoxelVolume>& resource = engine.ecs.get_component<VoxelRenderer>(selected_entity).resource;
 
     const Ray mouse_ray = engine.renderer.render_view.pixel_ray(mouse_position);
     Hit hit = engine.renderer.trace_ray(mouse_ray);
 
-    if (draw_valid_selection(mouse_ray, hit, selected_entity, transform, renderer)) {
-        if (engine.input.is_mouse_button_pressed(MouseButton::LEFT)) handle_brush_mode(renderer->resource, hit, transform.get_world_matrix());
+    const bool can_hit_face = (brush_mode == Brush::Mode::ADD || brush_mode == Brush::Mode::SHAPE);
 
-    } else if (hit.entity != entt::null && engine.input.is_mouse_button_just_pressed(MouseButton::LEFT)) {
-        node_hierarchy.set_selected_entity(hit.entity);
-    }
-}
+    if (!handle_selection(mouse_ray, hit, can_hit_face, selected_entity, transform, resource)) return;
 
-void ModelViewer::handle_brush_mode(const ResourceRef<VoxelVolume>& model, const Hit& hit, const glm::mat4& world_matrix) {
-    const Brush::Mode mode = editor.windows[Editor::Mode::EDIT].get<Brush>().get_active_mode();
-    switch (mode) {
-        case Brush::Mode::MULTI_TOOL:
-            break;
-
-        case Brush::Mode::PAINT: {
-            if (hit.normal.x == 0.0f && hit.normal.y == 0.0f && hit.normal.z == 0.0f) break;
-
-            const MaterialIndex material_index = editor.windows[Editor::Mode::EDIT].get<Palette>().get_selected_material_index();
-
-            model->blas->set_voxel(hit.coord.x, hit.coord.y, hit.coord.z, material_index);
-            model->set_dirty();
-            break;
-        }
-
-        case Brush::Mode::COLOR_PICKER: {
-            const Material* picked_material = model->blas->get_voxel(hit.coord.x, hit.coord.y, hit.coord.z);
-
-            if (picked_material == nullptr) break;
-
-            editor.windows[Editor::Mode::EDIT].get<Palette>().set_selected_material_index(static_cast<MaterialIndex>(picked_material - model->blas->palette.entries));
-            break;
-        }
-
-        case Brush::Mode::ADD: {
-            const glm::vec3 local_normal = glm::inverse(world_matrix) * glm::vec4 {hit.normal, 0.0f};
-            const glm::uvec3 voxel_grid_normal {glm::round(local_normal)};
-            const glm::uvec3 add_position = hit.coord + voxel_grid_normal;
-
-            if (add_position.x >= model->size.x || add_position.y >= model->size.y || add_position.z >= model->size.z) break;
-
-            const MaterialIndex material_index = editor.windows[Editor::Mode::EDIT].get<Palette>().get_selected_material_index();
-            model->blas->set_voxel(add_position.x, add_position.y, add_position.z, material_index);
-            model->set_dirty();
-            break;
-        }
-
-        case Brush::Mode::REMOVE:
-            break;
-
-        case Brush::Mode::SHAPE:
-            break;
-    }
+    modify_voxels(brush_mode, resource, hit);
 }
 
 }  // namespace tmt
