@@ -84,7 +84,6 @@ inline void tag_invoke(ImReflect::ImInput_t, const char* label, const T& value, 
 }
 
 inline void tag_invoke(ImReflect::ImInput_t, const char* label, glm::quat& value, ImSettings&, ImResponse& response) {
-    // auto& type_settings = settings.get<glm::quat>();
     auto& type_response = response.get<glm::quat>();
 
     auto scope_id = ImReflect::Detail::scope_id(label);
