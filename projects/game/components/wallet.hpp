@@ -7,9 +7,9 @@ class Wallet : public tmt::GameComponent<Wallet> {
 
     static std::string_view get_name() { return "Wallet"; }
 
-    void start() override;
-    void update(const tmt::FrameData& time) override;
-    void end() override;
+    void start() override {}
+    void update(const tmt::FrameData& time) override {}
+    void end() override {}
 
     // Currencies
     float dollars = 0.0f;
@@ -23,4 +23,4 @@ class Wallet : public tmt::GameComponent<Wallet> {
 
 
 };
-TMT_OBJECT(Wallet, (dollars, gold, silver, copper, iron));
+TMT_OBJECT(Wallet, (dollars, gold, silver, copper, iron, enemy_cores));

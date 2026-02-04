@@ -14,7 +14,9 @@
 #include "engine/core/scenes.hpp"
 #include "engine/core/renderer/voxel_object.hpp"
 
+// Game Components
 #include "components/player.hpp"
+#include "components/wallet.hpp"
 
 class Game : public tmt::Application {
    public:
@@ -50,6 +52,7 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
 
     /* Register Components */
     tmt::engine.component_registry.register_component<Player>();
+    tmt::engine.component_registry.register_component<Wallet>();
 
     return std::make_unique<Game>(specs);
 }
