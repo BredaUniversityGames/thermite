@@ -11,7 +11,7 @@
 
 #include <cstdlib>
 
-void ChasePlayer::on_start(tmt::Entity /*entity*/) {
+void ChasePlayer::on_start(tmt::Entity) {
     //
     for (const auto& [CamEntity, camera] : tmt::engine.ecs.get_registry().view<tmt::Camera>().each()) {
         player = CamEntity;
