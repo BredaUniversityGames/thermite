@@ -51,7 +51,7 @@ bool Gizmo::manip(const float x, const float y, const float width, const float h
 
         glm::mat4 delta;
         changed = ImGuizmo::Manipulate(
-            &view[0][0], &perspective[0][0], static_cast<ImGuizmo::OPERATION>(operations[operation]), static_cast<ImGuizmo::MODE>(space), &imguizmo_input_matrix[0][0], &delta[0][0]
+            &view[0][0], &perspective[0][0], static_cast<ImGuizmo::OPERATION>(OPERATIONS[operation]), static_cast<ImGuizmo::MODE>(space), &imguizmo_input_matrix[0][0], &delta[0][0]
         );
         if (changed) {
             selected_transform.set_world_matrix(imguizmo_input_matrix);
@@ -89,7 +89,7 @@ bool Gizmo::manip(const float x, const float y, const float width, const float h
 
     glm::mat4 avg = glm::translate(glm::mat4(1.f), avg_translation) * glm::mat4_cast(avg_rotation) * glm::scale(glm::mat4(1.f), scale);
     glm::mat4 delta;
-    changed = ImGuizmo::Manipulate(&view[0][0], &perspective[0][0], static_cast<ImGuizmo::OPERATION>(operations[operation]), static_cast<ImGuizmo::MODE>(space), &avg[0][0], &delta[0][0]);
+    changed = ImGuizmo::Manipulate(&view[0][0], &perspective[0][0], static_cast<ImGuizmo::OPERATION>(OPERATIONS[operation]), static_cast<ImGuizmo::MODE>(space), &avg[0][0], &delta[0][0]);
     if (changed) {
         for (const Entity entity : selected_entities) {
             Transform& multi_select_transform = engine.ecs.get_component<Transform>(entity);

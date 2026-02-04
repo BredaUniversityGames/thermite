@@ -22,7 +22,7 @@ class Brush : public IWindow {
 
     void display() override;
 
-    static const std::unordered_map<Mode, const char*> mode_icons;
+    static const std::unordered_map<Mode, const char*> MODE_ICONS;
     Mode active_mode;
 };
 
