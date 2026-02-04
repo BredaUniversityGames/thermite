@@ -23,14 +23,23 @@ VertexOutput main(VertexInput input, uint32_t instance_id: SV_InstanceID) {
 
     Particle particle = particles[alive_list[instance_id]];
 
-    float3 cam_right = normalize(float3(gpu_view.view_to_world[0][0], gpu_view.view_to_world[1][0], gpu_view.view_to_world[2][0]));
-    float3 cam_up = normalize(float3(gpu_view.view_to_world[0][1], gpu_view.view_to_world[1][1], gpu_view.view_to_world[2][1]));
+    /* 1. Transform to clip space  */
+    float4 clip_pos = mul(gpu_view.world_to_clip, float4(particle.pos, 1.0f));
 
-    float3 world_pos = particle.pos.xyz +  
-                       cam_right * input.pos.x /** b.size*/ + 
-                       cam_up * input.pos.y /** b.size*/;
+    /* 2. Transform to pixel space */
+    float2 pixel_center = gpu_view.resolution * (0.5f * (clip_pos.xy / clip_pos.w) + 0.5f);
 
-    output.pos = mul(gpu_view.world_to_clip, float4(world_pos, 1.0f));
+    /* 3. Get pixel size */
+    float pixel_size = /* particle.size */ 64.0f / clip_pos.w;
+
+    /* 4. Get pixel pos */
+    float2 pixel_pos = pixel_center + float2(input.pos.x, -input.pos.y) * pixel_size;
+
+    /* 5. Convert to ndc space */
+    float2 ndc_pos = (pixel_pos / gpu_view.resolution) * 2.0f - 1.0f;
+
+    /* 6. Convert to clip space */
+    output.pos = float4(ndc_pos * clip_pos.w, clip_pos.z, clip_pos.w);
     output.uv = input.uv;
     output.tex_index = particle.tex_index;
 

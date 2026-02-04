@@ -8,8 +8,6 @@ public struct RenderView {
     public float4x4 world_to_clip;
     /* Clip-space to world-space transformation matrix. */
     public float4x4 clip_to_world;
-    /* Inverse View matrix. */
-    public float4x4 view_to_world;
     /* Origin of the view in world-space. */
     public float4 origin;
     /* Resolution of the view in pixels. */
