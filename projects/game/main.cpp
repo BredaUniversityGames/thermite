@@ -95,7 +95,7 @@ void DragonScene::on_start() {
     // generate_random_entities(voxel_volume);
 
     /* Load a Bojan */
-    tmt::ResourceRef<tmt::Texture2D> tex = tmt::engine.resources.load_resource<tmt::Texture2D>({tmt::IO::Location::PROJECT, "bojan.png"}, "Bojan");
+    tmt::ResourceRef<tmt::Texture2D> tex = tmt::engine.resources.load_resource<tmt::Texture2D>({tmt::IO::Location::PROJECT, "bojan.png"});
 
     /* Particle Emitters */
     {

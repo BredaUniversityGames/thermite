@@ -13,6 +13,7 @@
 namespace tmt {
 
 bool Texture2D::load() {
+
     int tex_width = -1;
     int tex_height = -1;
     int channels = -1;
@@ -25,6 +26,7 @@ bool Texture2D::load() {
 
     width = (uint32_t)tex_width;
     height = (uint32_t)tex_height;
+    name = file_location.get_relative_path().string();
 
     auto& bank = engine.renderer.vram_bank();
 
