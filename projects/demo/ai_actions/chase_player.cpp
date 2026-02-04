@@ -5,6 +5,7 @@
 // todo: make projects not have to use realtive paths
 #include "../components/walking.hpp"
 #include "engine/core/components/camera.hpp"
+#include "engine/engine.hpp"
 
 #include "engine/core/polyline.hpp"
 
@@ -33,7 +34,8 @@ void ChasePlayer::on_tick(tmt::Entity walking_entity, float dt) {
 
     // Stop chasing only if player is too far
     if (dist > walking.max_chase_distance) {
-        auto& ws = ecs.get<tmt::WorldState>(walking_entity);
+        auto& ecs = tmt::engine.ecs;
+        auto& ws = ecs.get_component<tmt::WorldState>(walking_entity);
         ws.facts[std::hash<std::string>()("player_in_range")] = false;
         done_walking = true;
         return;

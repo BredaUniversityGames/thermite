@@ -5,6 +5,7 @@
 #include "engine/systems/ai/navigation/nav_mesh.hpp"
 #include "../components/walking.hpp"
 #include "engine/core/components/camera.hpp"
+#include "engine/engine.hpp"
 
 #include "engine/core/polyline.hpp"
 
@@ -32,7 +33,8 @@ void Wander::on_tick(tmt::Entity walking_entity, float dt) {
 
     // in chase range, update world state
     if (dist < walking.max_chase_distance) {
-        auto& ws = ecs.get<tmt::WorldState>(walking_entity);
+        auto& ecs = tmt::engine.ecs;
+        auto& ws = ecs.get_component<tmt::WorldState>(walking_entity);
         ws.facts[std::hash<std::string>()("player_in_range")] = true;
         done_walking = true;
         return;
