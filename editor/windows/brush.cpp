@@ -12,14 +12,14 @@
 
 namespace tmt {
 
-const std::unordered_map<Brush::Mode, const char*> Brush::mode_icons {
+const std::unordered_map<Brush::Mode, const char*> Brush::MODE_ICONS {
     {Mode::MULTI_TOOL, ICON_MS_OPEN_WITH}, {Mode::PAINT, ICON_MS_BRUSH}, {Mode::COLOR_PICKER, ICON_MS_COLORIZE}, {Mode::ADD, ICON_MS_ADD_BOX}, {Mode::REMOVE, ICON_MS_DESTRUCTION},
 };
 
 void Brush::display() {
-    for (const auto& [mode, icon] : mode_icons) {
+    for (const auto& [mode, icon] : MODE_ICONS) {
         // Keep everything on the same line (skip ImGui::SameLine on the first element).
-        if (mode != mode_icons.begin()->first) ImGui::SameLine();
+        if (mode != MODE_ICONS.begin()->first) ImGui::SameLine();
 
         ImGui::BeginDisabled(active_mode == mode);
 
