@@ -1,44 +1,16 @@
 {
     "version": 1,
     "entities": [
-        0,
-        2,
-        3,
+        1048576,
         1048577
     ],
     "Name": {
-        "0": {
-            "diff": [
-                {
-                    "op": "replace",
-                    "path": "/name",
-                    "value": "Right Wheel"
-                }
-            ]
-        },
-        "2": {
+        "1048576": {
             "name": "Car"
-        },
-        "3": {
-            "name": "Person"
         }
     },
     "Transform": {
-        "0": {
-            "diff": [
-                {
-                    "op": "replace",
-                    "path": "/local_position/x",
-                    "value": 2.0752828121185303
-                },
-                {
-                    "op": "replace",
-                    "path": "/parent",
-                    "value": 2
-                }
-            ]
-        },
-        "2": {
+        "1048576": {
             "local_position": {
                 "x": 0.0,
                 "y": 0.0,
@@ -57,68 +29,20 @@
             },
             "parent": 4294967295,
             "children": [
-                0,
-                3,
                 1048577
             ]
-        },
-        "3": {
-            "local_position": {
-                "x": 0.0,
-                "y": 1.0784046649932861,
-                "z": 0.0
-            },
-            "local_rotation": {
-                "w": 0.6606729030609131,
-                "x": 0.0,
-                "y": 0.7506738901138306,
-                "z": 0.0
-            },
-            "local_scale": {
-                "x": 0.1000000610947609,
-                "y": 0.10000000149011612,
-                "z": 0.10000009834766388
-            },
-            "parent": 2,
-            "children": []
         },
         "1048577": {
             "diff": [
                 {
                     "op": "replace",
                     "path": "/parent",
-                    "value": 2
+                    "value": 1048576
                 }
             ]
         }
     },
-    "Voxel Renderer": {
-        "3": {
-            "resource": {
-                "file_location": {
-                    "sub_location": "PROJECT",
-                    "relative_path": "dragon128.vengi"
-                },
-                "data": {
-                    "size": {
-                        "x": 58,
-                        "y": 90,
-                        "z": 128
-                    }
-                }
-            }
-        }
-    },
     "Prefab": {
-        "0": {
-            "source_location": {
-                "sub_location": "PROJECT",
-                "relative_path": "Wheel.prefab"
-            },
-            "source_entity": 1048577,
-            "root_entity": 0,
-            "instance_id": "751fad6e-7b9d-404b-8828-364bcdfa9787"
-        },
         "1048577": {
             "source_location": {
                 "sub_location": "PROJECT",
@@ -126,7 +50,7 @@
             },
             "source_entity": 1048577,
             "root_entity": 1048577,
-            "instance_id": "123fad6e-7b9d-404b-8828-364bcdfa9787"
+            "instance_id": "8f8083bd-6b80-4118-a025-9f3e4a666b23"
         }
     }
 }

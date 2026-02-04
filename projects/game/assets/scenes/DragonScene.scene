@@ -1,17 +1,17 @@
 {
     "version": 1,
     "entities": [
-        2
+        1048576
     ],
     "Prefab": {
-        "2": {
+        "1048576": {
             "source_location": {
                 "sub_location": "PROJECT",
                 "relative_path": "Car.prefab"
             },
-            "source_entity": 2,
-            "root_entity": 2,
-            "instance_id": "c4ace417-e742-4ff4-a8a6-a9f9f209ff62"
+            "source_entity": 1048576,
+            "root_entity": 1048576,
+            "instance_id": "7802561a-3309-4882-bd36-7e48a431cbce"
         }
     },
     "systems": null
