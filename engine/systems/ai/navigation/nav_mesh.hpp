@@ -13,8 +13,10 @@ class Volume {
     glm::uvec3 size;
     std::vector<bool> occupied;
     uint32_t divisor;
+    bool traversed = false;
 
     void traverse(tmt::ResourceRef<tmt::VoxelVolume> voxel_volume, int lod_level) {
+        traversed = true;
         uint32_t full_depth = voxel_volume->blas->depth;
         uint32_t target_depth = (lod_level < (int)full_depth) ? (full_depth - lod_level) : 1;
 
@@ -95,15 +97,18 @@ class NavMesh {
     NavMesh() = default;
     ~NavMesh() = default;
 
-    std::vector<Node> nodes;
+    std::vector<Node>* generating_nodes;
+    std::vector<Node>* nodes;
     std::vector<int> path;
 
     tmt::ResourceRef<tmt::VoxelVolume> voxel_volume;
-    Volume* volume;
+    Volume volume;
     int lod_level = 0;
+    
 
     bool generating = false;
    private:
+    int generating_lod = 0;
     int iteration_nmg = 0;
     bool generation_complete = false;
     bool entered_loop = false;

@@ -185,6 +185,6 @@ void AIScene::on_start() {
         nav_mesh = &tmt::engine.ecs.add_component<tmt::NavMesh>(voxel);
         nav_mesh->voxel_volume = voxel_volume;
         nav_mesh->lod_level = 1;
-        nav_mesh->generate_mesh();
+        //nav_mesh->generate_mesh();
     }
 }
