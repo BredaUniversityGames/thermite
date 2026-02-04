@@ -33,15 +33,11 @@ function(find_and_add_targets)
 			)
 			
 			target_sources(${target_name} PRIVATE "${cfg_cpp}")
-			if(THERMITE_SHARED_OUTPUT)
-				set(output_dir "${CMAKE_BINARY_DIR}/bin")
-			else()
-				set(output_dir "${CMAKE_BINARY_DIR}/bin/${target_name}")
-			endif()
+
 
 			# Set runtime output directory to its own folder inside /bin/
 			set_target_properties(${target_name} PROPERTIES
-				RUNTIME_OUTPUT_DIRECTORY "${output_dir}"
+				RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/${target_name}"
 				OUTPUT_NAME "${target_name}${BUILD_VERSION}"
 			)
 			# Disables the windows console
@@ -52,13 +48,14 @@ function(find_and_add_targets)
 			# Copy over dll files for FMOD
 			set(FMOD_POSTFIX "$<$<CONFIG:Debug>:L>")
 			add_custom_command(
-				TARGET ${target_name} POST_BUILD
-				COMMAND ${CMAKE_COMMAND} -E copy_if_different
-						"${CMAKE_SOURCE_DIR}/extern/fmod/lib/fmod${FMOD_POSTFIX}.dll"
-						"$<TARGET_FILE_DIR:${target_name}>/fmod${FMOD_POSTFIX}.dll"
-				COMMAND ${CMAKE_COMMAND} -E copy_if_different
-						"${CMAKE_SOURCE_DIR}/extern/fmod/lib/fmodstudio${FMOD_POSTFIX}.dll"
-						"$<TARGET_FILE_DIR:${target_name}>/fmodstudio${FMOD_POSTFIX}.dll"
+		        TARGET ${target_name} POST_BUILD
+		        COMMAND ${CMAKE_COMMAND} -E copy
+		                "${CMAKE_SOURCE_DIR}/extern/fmod/lib/fmod${FMOD_POSTFIX}.dll"
+		                "${CMAKE_BINARY_DIR}/bin/${target_name}/fmod${FMOD_POSTFIX}.dll"
+		
+		        COMMAND ${CMAKE_COMMAND} -E copy
+		                "${CMAKE_SOURCE_DIR}/extern/fmod/lib/fmodstudio${FMOD_POSTFIX}.dll"
+		                "${CMAKE_BINARY_DIR}/bin/${target_name}/fmodstudio${FMOD_POSTFIX}.dll"
 			)
 			# Copy over auxialliary assets for developer use
 			if(THERMITE_DEVELOPER_BUILD)
