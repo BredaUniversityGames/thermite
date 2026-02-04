@@ -18,11 +18,8 @@ void VfxPipeline::init(GPUAdapter& gpu) {
 
     /* Initialize the Counters Buffer */
     {
-        if (const Result r = bank.create_buffer("[Particles] Counters Buffer", BufferUsage::Storage | BufferUsage::TransferDst, 1, sizeof(Counters)); r.is_err()) {
-            Log::error(Log::Scope::RENDERER, "failed to initialise the counters buffer.\nreason: {}", r.unwrap_err().c_str());
-            return;
-        } else
-            counter_buffer = r.unwrap();
+        counter_buffer =
+            bank.create_buffer("[Particles] Counters Buffer", BufferUsage::Storage | BufferUsage::TransferDst, 1, sizeof(Counters)).expect("failed to initialise the counters buffer.");
 
         Counters counters = {};
         counters.alive_count = 0;
@@ -35,17 +32,11 @@ void VfxPipeline::init(GPUAdapter& gpu) {
 
     /* Initialize the Alive Lists */
     {
-        if (const Result r = bank.create_buffer("[Particles] Alive List", BufferUsage::Storage | BufferUsage::TransferDst, MAX_PARTICLES, sizeof(uint32_t)); r.is_err()) {
-            Log::error(Log::Scope::RENDERER, "failed to initialise the alive list.\nreason: {}", r.unwrap_err().c_str());
-            return;
-        } else
-            alive_list = r.unwrap();
+        alive_list =
+            bank.create_buffer("[Particles] Alive List", BufferUsage::Storage | BufferUsage::TransferDst, MAX_PARTICLES, sizeof(uint32_t)).expect("failed to initialise the alive list.");
 
-        if (const Result r = bank.create_buffer("[Particles] Alive List New", BufferUsage::Storage | BufferUsage::TransferDst, MAX_PARTICLES, sizeof(uint32_t)); r.is_err()) {
-            Log::error(Log::Scope::RENDERER, "failed to initialise the alive list new.\nreason: {}", r.unwrap_err().c_str());
-            return;
-        } else
-            alive_list_new = r.unwrap();
+        alive_list_new = bank.create_buffer("[Particles] Alive List New", BufferUsage::Storage | BufferUsage::TransferDst, MAX_PARTICLES, sizeof(uint32_t))
+                             .expect("failed to initialise the alive list new.");
 
         uint32_t arr[MAX_PARTICLES] {};
         size_t size = sizeof(uint32_t) * MAX_PARTICLES;
@@ -57,11 +48,7 @@ void VfxPipeline::init(GPUAdapter& gpu) {
 
     /* Initialize the Dead List */
     {
-        if (const Result r = bank.create_buffer("[Particles] Dead List", BufferUsage::Storage | BufferUsage::TransferDst, MAX_PARTICLES, sizeof(uint32_t)); r.is_err()) {
-            Log::error(Log::Scope::RENDERER, "failed to initialise the dead list.\nreason: {}", r.unwrap_err().c_str());
-            return;
-        } else
-            dead_list = r.unwrap();
+        dead_list = bank.create_buffer("[Particles] Dead List", BufferUsage::Storage | BufferUsage::TransferDst, MAX_PARTICLES, sizeof(uint32_t)).expect("failed to initialise the dead list.");
 
         uint32_t arr[MAX_PARTICLES] {};
         for (uint32_t i = 0; i < MAX_PARTICLES; i++) {
@@ -72,11 +59,8 @@ void VfxPipeline::init(GPUAdapter& gpu) {
 
     /* Initialize the Particle Buffer */
     {
-        if (const Result r = bank.create_buffer("[Particles] Particle Buffer", BufferUsage::Storage | BufferUsage::TransferDst, MAX_PARTICLES, sizeof(GpuParticle)); r.is_err()) {
-            Log::error(Log::Scope::RENDERER, "failed to initialise the particle buffer.\nreason: {}", r.unwrap_err().c_str());
-            return;
-        } else
-            particle_buffer = r.unwrap();
+        particle_buffer = bank.create_buffer("[Particles] Particle Buffer", BufferUsage::Storage | BufferUsage::TransferDst, MAX_PARTICLES, sizeof(GpuParticle))
+                              .expect("failed to initialise the particle buffer.");
     }
 
     /* Initialise the Indirect Buffers */
@@ -87,11 +71,8 @@ void VfxPipeline::init(GPUAdapter& gpu) {
             uint32_t z;
         };
 
-        if (const Result r = bank.create_buffer("[Particles] Indirect Dispatch Buffer", BufferUsage::Storage | BufferUsage::Indirect, sizeof(IndirectDispatchArgs)); r.is_err()) {
-            Log::error(Log::Scope::RENDERER, "failed to initialise the indirect dispatch args buffer.\nreason: {}", r.unwrap_err().c_str());
-            return;
-        } else
-            dispatch_args_buffer = r.unwrap();
+        dispatch_args_buffer = bank.create_buffer("[Particles] Indirect Dispatch Buffer", BufferUsage::Storage | BufferUsage::Indirect, sizeof(IndirectDispatchArgs))
+                                   .expect("failed to initialise the indirect dispatch args buffer.");
 
         struct IndirectDrawArgs {
             uint32_t vertex_count;
@@ -100,48 +81,37 @@ void VfxPipeline::init(GPUAdapter& gpu) {
             uint32_t first_instance;
         };
 
-        if (const Result r = bank.create_buffer("[Particles] Indirect Draw Buffer", BufferUsage::Storage | BufferUsage::Indirect, sizeof(IndirectDrawArgs)); r.is_err()) {
-            Log::error(Log::Scope::RENDERER, "failed to initialise the indirect draw args buffer.\nreason: {}", r.unwrap_err().c_str());
-            return;
-        } else
-            instanced_draw_args_buffer = r.unwrap();
+        instanced_draw_args_buffer = bank.create_buffer("[Particles] Indirect Draw Buffer", BufferUsage::Storage | BufferUsage::Indirect, sizeof(IndirectDrawArgs))
+                                         .expect("failed to initialise the indirect draw args buffer.");
     }
 
     /* Initialise Emitter Buffer */
     {
-        if (const Result r = bank.create_buffer("[Particles] Emitter Buffer", BufferUsage::Constant | BufferUsage::TransferDst, sizeof(ParticleEmitter)); r.is_err()) {
-            Log::error(Log::Scope::RENDERER, "failed to initialise the particle emitter buffer.\nreason: {}", r.unwrap_err().c_str());
-            return;
-        } else
-            emitter_buffer = r.unwrap();
+        emitter_buffer = bank.create_buffer("[Particles] Emitter Buffer", BufferUsage::Constant | BufferUsage::TransferDst, sizeof(ParticleEmitter))
+                             .expect("failed to initialise the particle emitter buffer.");
     }
 
     /* Initialize the Billboard Vertex Buffer */
-    if (const Result r = bank.create_buffer("[Particles] Billboard Vertex Buffer", BufferUsage::Vertex | BufferUsage::TransferDst, 6, sizeof(GpuQuad)); r.is_err()) {
-        Log::error(Log::Scope::RENDERER, "failed to initialise billboard vertex buffer.\nreason: {}", r.unwrap_err().c_str());
-        return;
-    } else
-        billboard_vertices = r.unwrap();
+    {
+        billboard_vertices = bank.create_buffer("[Particles] Billboard Vertex Buffer", BufferUsage::Vertex | BufferUsage::TransferDst, 6, sizeof(GpuQuad))
+                                 .expect("failed to initialise billboard vertex buffer.");
 
-    /* clang-format off */
-    GpuQuad quads[6] = { {{-0.5f, -0.5f}, {0.0f, 1.0f}},
-                         {{0.5f, -0.5f},  {1.0f, 1.0f}},
-                         {{0.5f, 0.5f},   {1.0f, 0.0f}},
-                         {{-0.5f, -0.5f}, {0.0f, 1.0f}},
-                         {{0.5f, 0.5f},   {1.0f, 0.0f}},
-                         {{-0.5f, 0.5f},  {0.0f, 0.0f}},
-                        };
-    /* clang-format on */
+        /* clang-format off */
+        GpuQuad quads[6] = { {{-0.5f, -0.5f}, {0.0f, 1.0f}},
+                             {{0.5f, -0.5f},  {1.0f, 1.0f}},
+                             {{0.5f, 0.5f},   {1.0f, 0.0f}},
+                             {{-0.5f, -0.5f}, {0.0f, 1.0f}},
+                             {{0.5f, 0.5f},   {1.0f, 0.0f}},
+                             {{-0.5f, 0.5f},  {0.0f, 0.0f}},
+                            };
+        /* clang-format on */
 
-    bank.upload_buffer(billboard_vertices, &quads, 0, sizeof(GpuQuad) * 6);
+        bank.upload_buffer(billboard_vertices, &quads, 0, sizeof(GpuQuad) * 6);
+    }
 
     /* Initialize the Sampler */
     {
-        if (const Result r = bank.create_sampler("[Particles] Linear Sampler"); r.is_err()) {
-            Log::error(Log::Scope::RENDERER, "failed to initialize linear sampler.\nreason: {}", r.unwrap_err().c_str());
-            return;
-        } else
-            linear_sampler = r.unwrap();
+        linear_sampler = bank.create_sampler("[Particles] Linear Sampler").expect("failed to initialize linear sampler.");
     }
 }
 
