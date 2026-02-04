@@ -64,7 +64,7 @@ class IO {
 
     static std::string read_or_create_text_file(const FileLocation& file_location, const std::string& default_contents = "");
 
-    [[nodiscard]] static const std::filesystem::path& get_sub_location_path(const IO::Location sub_location) { return SUB_LOCATIONS[static_cast<uint8_t>(sub_location)]; }
+    [[nodiscard]] static const std::filesystem::path& get_sub_location_path(const IO::Location sub_location) { return sub_locations[static_cast<uint8_t>(sub_location)]; }
 
     static TimeStamp get_file_last_modified_time(const FileLocation& file_location);
 
