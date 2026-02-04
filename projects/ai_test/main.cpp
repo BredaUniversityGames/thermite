@@ -25,64 +25,67 @@
 class Game : public tmt::Application {
    public:
     Game(const tmt::ApplicationSpecs& specs) : Application(specs) {
-        auto& action_reg = tmt::GoapActionRegistry::instance();
-        auto& goal_reg = tmt::GoapGoalRegistry::instance();
+        //auto& ecs = tmt::engine.ecs;
+        //auto& goap = ecs.systems.get<tmt::Goap>();
 
-        // --- Register Actions ---
-        action_reg.register_action(std::make_unique<tmt::PatrolArea>());
-        action_reg.register_action(std::make_unique<tmt::ChasePlayer>());
-        action_reg.register_action(std::make_unique<tmt::KillPlayer>());
+        //auto& action_reg = goap.actions();
+        //auto& goal_reg = goap.goals();
+        //auto& type_reg = goap.agent_types();
+        //
+        //// --- Register Actions ---
+        //action_reg.register_action(std::make_unique<tmt::PatrolArea>());
+        //action_reg.register_action(std::make_unique<tmt::ChasePlayer>());
+        //action_reg.register_action(std::make_unique<tmt::KillPlayer>());
 
-        // --- Register Goals ---
-        {
-            tmt::GoapGoal patrol;
-            patrol.name = "PatrolArea";
-            patrol.desired_state = {{tmt::FactId("area_secure"), tmt::FactValue(true)}};
-            patrol.priority = 1;
-            patrol.valid = true;
+        //// --- Register Goals ---
+        //{
+        //    tmt::GoapGoal patrol;
+        //    patrol.name = "PatrolArea";
+        //    patrol.desired_state = {{tmt::FactId("area_secure"), tmt::FactValue(true)}};
+        //    patrol.priority = 1;
+        //    patrol.valid = true;
 
-            goal_reg.register_goal("PatrolArea", patrol);
-        }
+        //    goal_reg.register_goal("PatrolArea", patrol);
+        //}
 
-        {
-            tmt::GoapGoal kill;
-            kill.name = "KillPlayer";
-            kill.desired_state = {{tmt::FactId("player_alive"), tmt::FactValue(false)}};
-            kill.priority = 10;
-            kill.valid = true;
+        //{
+        //    tmt::GoapGoal kill;
+        //    kill.name = "KillPlayer";
+        //    kill.desired_state = {{tmt::FactId("player_alive"), tmt::FactValue(false)}};
+        //    kill.priority = 10;
+        //    kill.valid = true;
 
-            goal_reg.register_goal("KillPlayer", kill);
-        }
+        //    goal_reg.register_goal("KillPlayer", kill);
+        //}
 
-        // --- Register Agent Types ---
-        auto& type_reg = tmt::GoapAgentTypeRegistry::instance();
+        //// --- Register Agent Types ---
 
-        tmt::GoapAgentType enemy1;
-        enemy1.id = "Enemy 1";
+        //tmt::GoapAgentType enemy1;
+        //enemy1.id = "Enemy 1";
 
-        enemy1.action_ids = {"PatrolArea", "ChasePlayer", "KillPlayer"};
+        //enemy1.action_ids = {"PatrolArea", "ChasePlayer", "KillPlayer"};
 
-        enemy1.goal_ids = {"PatrolArea", "KillPlayer"};
+        //enemy1.goal_ids = {"PatrolArea", "KillPlayer"};
 
-        enemy1.default_world_state = {
-            {std::hash<std::string>()("player_visible"), true},
-            {std::hash<std::string>()("player_in_range"), false},
-            {std::hash<std::string>()("player_alive"), true},
-            {std::hash<std::string>()("area_secure"), false}
-        };
+        //enemy1.default_world_state = {
+        //    {std::hash<std::string>()("player_visible"), true},
+        //    {std::hash<std::string>()("player_in_range"), false},
+        //    {std::hash<std::string>()("player_alive"), true},
+        //    {std::hash<std::string>()("area_secure"), false}
+        //};
 
-        type_reg.register_type(enemy1);
+        //type_reg.register_type(enemy1);
 
-        tmt::GoapAgentType enemy2;
-        enemy2.id = "Enemy 2";
+        //tmt::GoapAgentType enemy2;
+        //enemy2.id = "Enemy 2";
 
-        enemy2.action_ids = {"PatrolArea"};
+        //enemy2.action_ids = {"PatrolArea"};
 
-        enemy2.goal_ids = {"PatrolArea"};
+        //enemy2.goal_ids = {"PatrolArea"};
 
-        enemy2.default_world_state = {{std::hash<std::string>()("area_secure"), false}};
+        //enemy2.default_world_state = {{std::hash<std::string>()("area_secure"), false}};
 
-        type_reg.register_type(enemy2);
+        //type_reg.register_type(enemy2);
     }
 
     float time_passed = 0.0f;
@@ -127,6 +130,69 @@ void AIScene::on_start() {
     }
 
     auto& ecs = tmt::engine.ecs;
+
+    {
+        auto& goap = ecs.systems.get<tmt::Goap>();
+
+        auto& action_reg = goap.actions();
+        auto& goal_reg = goap.goals();
+        auto& type_reg = goap.agent_types();
+
+        // --- Register Actions ---
+        action_reg.register_action(std::make_unique<tmt::PatrolArea>());
+        action_reg.register_action(std::make_unique<tmt::ChasePlayer>());
+        action_reg.register_action(std::make_unique<tmt::KillPlayer>());
+
+        // --- Register Goals ---
+        {
+            tmt::GoapGoal patrol;
+            patrol.name = "PatrolArea";
+            patrol.desired_state = {{tmt::FactId("area_secure"), tmt::FactValue(true)}};
+            patrol.priority = 1;
+            patrol.valid = true;
+
+            goal_reg.register_goal("PatrolArea", patrol);
+        }
+
+        {
+            tmt::GoapGoal kill;
+            kill.name = "KillPlayer";
+            kill.desired_state = {{tmt::FactId("player_alive"), tmt::FactValue(false)}};
+            kill.priority = 10;
+            kill.valid = true;
+
+            goal_reg.register_goal("KillPlayer", kill);
+        }
+
+        // --- Register Agent Types ---
+
+        tmt::GoapAgentType enemy1;
+        enemy1.id = "Enemy 1";
+
+        enemy1.action_ids = {"PatrolArea", "ChasePlayer", "KillPlayer"};
+
+        enemy1.goal_ids = {"PatrolArea", "KillPlayer"};
+
+        enemy1.default_world_state = {
+            {std::hash<std::string>()("player_visible"), true},
+            {std::hash<std::string>()("player_in_range"), false},
+            {std::hash<std::string>()("player_alive"), true},
+            {std::hash<std::string>()("area_secure"), false}
+        };
+
+        type_reg.register_type(enemy1);
+
+        tmt::GoapAgentType enemy2;
+        enemy2.id = "Enemy 2";
+
+        enemy2.action_ids = {"PatrolArea"};
+
+        enemy2.goal_ids = {"PatrolArea"};
+
+        enemy2.default_world_state = {{std::hash<std::string>()("area_secure"), false}};
+
+        type_reg.register_type(enemy2);
+    }
 
     {
         // Spawn agents from type registry via factory

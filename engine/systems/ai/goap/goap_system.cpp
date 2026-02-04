@@ -221,7 +221,8 @@ void Goap::update_plan(Entity entity, GoapAgent& agent, WorldState& ws) {
     }
 
     // Add all initial actions whose preconditions match the current worldstate
-    auto& overrides = GoapActionOverrides::instance();
+    // auto& overrides = GoapActionOverrides::instance();
+    auto& overrides = action_overrides;
 
     for (GoapAction* action : agent.available_actions) {
         if (!action) continue;
