@@ -44,9 +44,6 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     };
     // clang-format on
 
-    /* Register Systems */
-    tmt::engine.ecs.systems.add<tmt::CameraSystem>();
-
     /* Register Scenes */
     tmt::engine.scenes.register_scene<MainGameScene>();
     tmt::engine.scenes.register_scene<MainMenuScene>();

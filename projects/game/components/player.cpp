@@ -33,7 +33,7 @@ void Player::update(const tmt::FrameData& time) {
     front = glm::normalize(front);
     transform.look_at(transform.get_world_position() + front, glm::vec3(0.0f, 1.0f, 0.0f));
 
-    // Calculate desired movement direction
+    // Calculate desired movement direction (unchanged from demo)
     glm::vec3 input_dir = {0.0f, 0.0f, 0.0f};
     if (tmt::engine.input.is_keyboard_button_pressed(tmt::Key::W)) input_dir += transform.get_forward();
     if (tmt::engine.input.is_keyboard_button_pressed(tmt::Key::S)) input_dir -= transform.get_forward();
@@ -41,6 +41,10 @@ void Player::update(const tmt::FrameData& time) {
     if (tmt::engine.input.is_keyboard_button_pressed(tmt::Key::A)) input_dir -= transform.get_right();
     if (tmt::engine.input.is_keyboard_button_pressed(tmt::Key::SPACE)) input_dir += glm::vec3(0.0f, 1.0f, 0.0f);
     if (tmt::engine.input.is_keyboard_button_pressed(tmt::Key::LEFT_SHIFT)) input_dir -= glm::vec3(0.0f, 1.0f, 0.0f);
+
+    // Added button for breaking, port from prototype
+    bool breaking = false;
+    if (tmt::engine.input.is_keyboard_button_pressed(tmt::Key::LEFT_CTRL)) breaking = true;
 
     // Apply acceleration or drag
     if (glm::length(input_dir) > 0.0f) {
@@ -53,6 +57,16 @@ void Player::update(const tmt::FrameData& time) {
         if (current_speed > 0.0f) {
             float drag_force = drag * time.delta_time;
             float new_speed = glm::max(0.0f, current_speed - drag_force);
+            velocity = glm::normalize(velocity) * new_speed;
+        }
+    }
+
+    // Apply breaking force if breaking
+    if (breaking) {
+        float current_speed = glm::length(velocity);
+        if (current_speed > 0.0f) {
+            float break_force = acceleration * 2.0f * time.delta_time;
+            float new_speed = glm::max(0.0f, current_speed - break_force);
             velocity = glm::normalize(velocity) * new_speed;
         }
     }
