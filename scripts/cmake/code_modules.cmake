@@ -37,8 +37,7 @@ function(find_and_add_targets)
 			# Set runtime output directory to its own folder inside /bin/
 			set_target_properties(${target_name} PROPERTIES
 				RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/${target_name}"
-				# Disables the windows console
-				# WIN32_EXECUTABLE TRUE
+				OUTPUT_NAME "${target_name}${BUILD_VERSION}"
 			)
 			# Disables the windows console
 			#if(MSVC)
