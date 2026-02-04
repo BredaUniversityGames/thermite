@@ -10,8 +10,14 @@ using namespace tmt;
 void NavMesh::generate_mesh_over_time() { 
     entered_loop = false;
     if (iteration_nmg == 0) {
+        if (!generating) {
+            generating_lod += lod_level + 2;
+            init();
+            nodes->clear();
+        }
         volume = Volume();
-        nodes->clear();
+        volume.traversed = false;
+        if (generating_nodes) generating_nodes->clear();
         generating = true;
         generate_mesh(100);
     } 
@@ -22,21 +28,26 @@ void NavMesh::generate_mesh_over_time() {
     iteration_nmg++;
 
     if (!entered_loop) {
-        generating = false;
-        generation_complete = true;
         iteration_nmg = 0;
+        if (generating_lod == lod_level) {
+            generating = false;
+        } else {
+            generating_lod--;
+        }
+        std::swap(nodes, generating_nodes);
     }
 }
 
 void NavMesh::generate_mesh(int iterations) {
-    if (!volume.traversed || !generating) {
-        volume.traverse(voxel_volume, lod_level);
+    if (!volume.traversed) {
+        volume.traverse(voxel_volume, generating_lod);
     }
-    if (!generating && nodes) {
+    if (!generating) {
+        generating_lod = lod_level;
+        init();
+        generating_nodes->clear();
         nodes->clear();
-    }
-    if (!generating && !nodes) {
-        nodes = new std::vector<Node>;
+        volume.traverse(voxel_volume, generating_lod);
     }
 
     
@@ -67,9 +78,9 @@ void NavMesh::generate_mesh(int iterations) {
                     glm::vec3 voxel_pos = (glm::vec3(x, y, z) + 0.5f) * float(volume.divisor);
                     glm::vec3 centered = voxel_pos - full_size * 0.5f;
                     node.local_pos = centered * voxel_scale;
-                    node_map[pos_index] = (int)nodes->size();
-                    node_index = (int)nodes->size();
-                    nodes->push_back(node);
+                    node_map[pos_index] = (int)generating_nodes->size();
+                    node_index = (int)generating_nodes->size();
+                    generating_nodes->push_back(node);
                 }
 
                 for (int dz = -1; dz <= 1; dz++) {
@@ -91,17 +102,17 @@ void NavMesh::generate_mesh(int iterations) {
                                 glm::vec3 voxel_pos = (glm::vec3(neighbor.x, neighbor.y, neighbor.z) + 0.5f) * float(volume.divisor);
                                 glm::vec3 centered = voxel_pos - full_size * 0.5f;
                                 node.local_pos = centered * voxel_scale;
-                                node_map[neighbor_pos_index] = (int)nodes->size();
-                                neighbor_node_index = (int)nodes->size();
-                                nodes->push_back(node);
+                                node_map[neighbor_pos_index] = (int)generating_nodes->size();
+                                neighbor_node_index = (int)generating_nodes->size();
+                                generating_nodes->push_back(node);
                             }
 
-                            auto& neighborsA = (*nodes)[node_index].connecting_nodes;
+                            auto& neighborsA = (*generating_nodes)[node_index].connecting_nodes;
                             if (std::find(neighborsA.begin(), neighborsA.end(), neighbor_node_index) == neighborsA.end()) {
                                 neighborsA.push_back(neighbor_node_index);
                             }
 
-                            auto& neighborsB = (*nodes)[neighbor_node_index].connecting_nodes;
+                            auto& neighborsB = (*generating_nodes)[neighbor_node_index].connecting_nodes;
                             if (std::find(neighborsB.begin(), neighborsB.end(), node_index) == neighborsB.end()) {
                                 neighborsB.push_back(node_index);
                             }
@@ -110,6 +121,9 @@ void NavMesh::generate_mesh(int iterations) {
                 }
             }
         }
+    }
+    if (!generating) {
+        std::swap(nodes, generating_nodes);
     }
 }
 

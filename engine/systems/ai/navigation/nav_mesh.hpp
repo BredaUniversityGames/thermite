@@ -7,7 +7,6 @@
 
 namespace tmt {
 
-
 class Volume {
    public:
     glm::uvec3 size;
@@ -70,7 +69,6 @@ class Volume {
     };
 };
 
-
 enum class VoxelType : uint8_t { EMPTY, OUTSIDE, INSIDE };
 
 struct NavVoxel {
@@ -97,23 +95,32 @@ class NavMesh {
     NavMesh() = default;
     ~NavMesh() = default;
 
-    std::vector<Node>* generating_nodes;
     std::vector<Node>* nodes;
     std::vector<int> path;
 
     tmt::ResourceRef<tmt::VoxelVolume> voxel_volume;
     Volume volume;
     int lod_level = 0;
-    
 
     bool generating = false;
+
    private:
     int generating_lod = 0;
     int iteration_nmg = 0;
-    bool generation_complete = false;
     bool entered_loop = false;
-   public:
 
+    void init() {
+        buffer_a = new std::vector<Node>;
+        buffer_b = new std::vector<Node>;
+        nodes = buffer_a;
+        generating_nodes = buffer_b;
+    }
+    std::vector<Node>* buffer_a = nullptr;
+    std::vector<Node>* buffer_b = nullptr;
+
+    std::vector<Node>* generating_nodes = nullptr;
+
+   public:
     void generate_mesh_over_time();
     void generate_mesh(int iterations = 1e34);
     std::vector<int> find_path(const int starting_node_id, const int ending_node_id);
