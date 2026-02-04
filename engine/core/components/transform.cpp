@@ -127,6 +127,9 @@ glm::quat Transform::get_world_rotation() const {
 }
 
 glm::vec3 Transform::get_world_scale() const {
+    if (has_parent() == false) {
+        return local_scale;
+    }
     const glm::mat4& wm = get_world_matrix();
     return glm::vec3(glm::length(glm::vec3(wm[0])), glm::length(glm::vec3(wm[1])), glm::length(glm::vec3(wm[2])));
 }

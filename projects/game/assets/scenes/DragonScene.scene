@@ -1,17 +1,110 @@
 {
     "version": 1,
     "entities": [
-        1048576
+        2,
+        1048576,
+        1048577
     ],
+    "Name": {
+        "2": {
+            "name": "Car"
+        }
+    },
+    "Transform": {
+        "2": {
+            "local_position": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "local_rotation": {
+                "w": 1.0,
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "local_scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "parent": 4294967295,
+            "children": [
+                1048577
+            ]
+        },
+        "1048576": {
+            "diff": [
+                {
+                    "op": "replace",
+                    "path": "/local_position/x",
+                    "value": 1.0
+                },
+                {
+                    "op": "replace",
+                    "path": "/local_rotation/w",
+                    "value": -0.7071067094802856
+                },
+                {
+                    "op": "replace",
+                    "path": "/local_rotation/z",
+                    "value": 0.7071068286895752
+                },
+                {
+                    "op": "replace",
+                    "path": "/local_scale/x",
+                    "value": 0.9999999403953552
+                },
+                {
+                    "op": "replace",
+                    "path": "/local_scale/y",
+                    "value": 0.9999999403953552
+                }
+            ]
+        },
+        "1048577": {
+            "diff": [
+                {
+                    "op": "replace",
+                    "path": "/local_position/x",
+                    "value": -1.0
+                },
+                {
+                    "op": "replace",
+                    "path": "/local_rotation/w",
+                    "value": 0.7071068286895752
+                },
+                {
+                    "op": "replace",
+                    "path": "/local_rotation/z",
+                    "value": 0.7071068286895752
+                },
+                {
+                    "op": "replace",
+                    "path": "/parent",
+                    "value": 2
+                }
+            ]
+        }
+    },
     "Prefab": {
         "1048576": {
             "source_location": {
                 "sub_location": "PROJECT",
-                "relative_path": "Car.prefab"
+                "relative_path": "Wheel.prefab"
             },
-            "source_entity": 1048576,
+            "source_entity": 1048577,
             "root_entity": 1048576,
-            "instance_id": "7802561a-3309-4882-bd36-7e48a431cbce"
+            "instance_id": "4d76ea5f-ad96-41e1-bf71-d0559f7bbc7b"
+        },
+        "1048577": {
+            "source_location": {
+                "sub_location": "PROJECT",
+                "relative_path": "Wheel.prefab"
+            },
+            "source_entity": 1048577,
+            "root_entity": 1048577,
+            "instance_id": "5d07020d-2a8d-4ea3-8c59-c160adb1310f"
         }
     },
     "systems": null

@@ -212,10 +212,10 @@ void serialize_component(SerializeState& state) {
                 const tmt::json prefab_component_json = maybe_value.value();
 
                 state.current_prefab_instance_id = prefab.instance_id;
-                const tmt::json value = tmt::Serializer::serialize(component, state);
+                const tmt::json component_value_json = tmt::Serializer::serialize(component, state);
                 state.current_prefab_instance_id = std::nullopt;
 
-                const tmt::json diff = nlohmann::json::diff(prefab_component_json, value);
+                const tmt::json diff = nlohmann::json::diff(prefab_component_json, component_value_json);
                 if (diff.empty() == false) {
                     tmt::json value = tmt::json::object();
                     value["diff"] = diff;
