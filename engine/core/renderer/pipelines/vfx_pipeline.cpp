@@ -104,6 +104,7 @@ void VfxPipeline::init(GPUAdapter& gpu) {
                              {{0.5f, 0.5f},   {1.0f, 0.0f}},
                              {{-0.5f, 0.5f},  {0.0f, 0.0f}},
                             };
+
         /* clang-format on */
 
         bank.upload_buffer(billboard_vertices, &quads, 0, sizeof(GpuQuad) * 6);
