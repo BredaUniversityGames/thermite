@@ -107,9 +107,9 @@ tmt::json tag_invoke(JsonReflect::serialize_t, const tmt::Ecs& ecs) {
     return result;
 }
 
-void tag_invoke(JsonReflect::deserialize_t, const tmt::json& j, tmt::Ecs& ecs) {
+void tag_invoke(JsonReflect::deserialize_t, const tmt::json& j, tmt::Ecs& ecs, const std::optional<tmt::Prefab> prefab_data) {
     std::set<tmt::Entity> new_entities;
-    tmt::Serializer::deserialize(j, new_entities, ecs);
+    tmt::Serializer::deserialize(j, new_entities, ecs, prefab_data);
 
     if (j.contains("systems")) {
         const tmt::json& systems = j["systems"];
@@ -129,7 +129,16 @@ tmt::json tag_invoke(JsonReflect::serialize_t, const tmt::Entity& entity, const 
     return tmt::Serializer::serialize(entities, ecs);
 }
 
-void tag_invoke(JsonReflect::deserialize_t, const tmt::json&, tmt::Entity&, tmt::Ecs&) {}
+void tag_invoke(JsonReflect::deserialize_t, const tmt::json& j, tmt::Entity& entity, tmt::Ecs& ecs, const std::optional<tmt::Prefab> prefab_data) {
+    std::set<tmt::Entity> new_entities;
+    tmt::Serializer::deserialize(j, new_entities, ecs, prefab_data);
+    if (new_entities.empty()) {
+        tmt::Log::warn(tmt::Log::Scope::ENGINE, "[Serialization] Deserialized entity JSON resulted in no entities.");
+        entity = entt::null;
+    } else {
+        entity = *tmt::EntityHelper::upper_parents(new_entities).begin();
+    }
+}
 
 std::optional<tmt::json> recursive_find_component_json(const tmt::SceneJson& prefab_json, const std::string& component_name, const tmt::Entity& entity_id) {
     /*Check if it's a prefab inside this prefab */
@@ -377,6 +386,7 @@ static void deserialize_scene(std::set<tmt::Entity>& new_entities, tmt::Ecs& ecs
             /* Register scene entities */
             mapping.insert({deserialized_entity_id, created_entity});
             new_to_old.insert({created_entity, deserialized_entity_id});
+            new_entities.insert(created_entity);
         }
     }
 
@@ -400,7 +410,7 @@ static void deserialize_scene(std::set<tmt::Entity>& new_entities, tmt::Ecs& ecs
             /* Special handling for Prefab component */
             tmt::Prefab prefab_comp {};
             tmt::Serializer::deserialize<tmt::Prefab>(prefab_entry.value(), prefab_comp, state);
-            tmt::Prefab prefab_comp_original{};
+            tmt::Prefab prefab_comp_original {};
             tmt::Serializer::deserialize<tmt::Prefab>(prefab_entry.value(), prefab_comp_original);
             prefab_comp.source_entity = prefab_comp_original.source_entity;
 
@@ -440,17 +450,6 @@ static void deserialize_scene(std::set<tmt::Entity>& new_entities, tmt::Ecs& ecs
         }
     }
 
-    if (state.current_prefab_instance_id != tmt::NULL_UUID) {
-        for (const auto& [new_entity, old_entity] : new_to_old) {
-            /* Add new Prefab component since those are not stored in the prefab json */
-            tmt::Prefab& prefab_comp = state.ecs.add_or_get_component<tmt::Prefab>(new_entity);
-            prefab_comp.instance_id = state.current_prefab_instance_id;
-            prefab_comp.root_entity = state.current_root_entity;
-            prefab_comp.source_entity = old_entity;
-            prefab_comp.source_location = state.current_prefab_location;
-        }
-    }
-
     /* Deserialize each component */
     tmt::SerializeComponents::for_each([&state](auto type_tag) {
         using ComponentType = typename decltype(type_tag)::type;
@@ -459,11 +458,38 @@ static void deserialize_scene(std::set<tmt::Entity>& new_entities, tmt::Ecs& ecs
         }
         deserialize_component<ComponentType>(state);
     });
+
+    if (state.current_prefab_instance_id != tmt::NULL_UUID) {
+        for (const auto& [new_entity, old_entity] : new_to_old) {
+            /* Add new Prefab component since those are not stored in the prefab json */
+            tmt::Prefab& prefab_comp = state.ecs.add_or_get_component<tmt::Prefab>(new_entity);
+            prefab_comp.instance_id = state.current_prefab_instance_id;
+            if (state.current_root_entity != entt::null) {
+                prefab_comp.root_entity = state.current_root_entity;
+            } else {
+                const auto roots = tmt::EntityHelper::upper_parents(new_entities);
+                if (roots.size() != 1) {
+                    tmt::Log::warn(
+                        tmt::Log::Scope::ENGINE, "[Serialization] Prefab instance has multiple root entities after deserialization. PrefabInstanceID: {}, Roots count: {}",
+                        state.current_prefab_instance_id, roots.size()
+                    );
+                }
+                prefab_comp.root_entity = *roots.begin();
+            }
+            prefab_comp.source_entity = old_entity;
+            prefab_comp.source_location = state.current_prefab_location;
+        }
+    }
 }
 
-void tag_invoke(JsonReflect::deserialize_t, const tmt::json& j, std::set<tmt::Entity>& new_entities, tmt::Ecs& ecs) {
+void tag_invoke(JsonReflect::deserialize_t, const tmt::json& j, std::set<tmt::Entity>& new_entities, tmt::Ecs& ecs, const std::optional<tmt::Prefab> prefab_data) {
     tmt::DeserializeState state {ecs, tmt::SceneJson(j)};
     state.current_entity_mapping = &state.entity_mapping[tmt::NULL_UUID];
+    if (prefab_data.has_value()) {
+        state.current_prefab_instance_id = prefab_data->instance_id;
+        state.current_root_entity = prefab_data->root_entity;
+        state.current_prefab_location = prefab_data->source_location;
+    }
     deserialize_scene(new_entities, ecs, state);
     state.entity_mapping.print();
 }

@@ -6,6 +6,7 @@ namespace tmt {
 class PrefabHelper {
    public:
     static void create_prefab(const IO::FileLocation& location, const Entity& root);
+    static Entity instantiate_prefab(const IO::FileLocation& location, const Entity& parent = entt::null);
 
     class Config {
        public:

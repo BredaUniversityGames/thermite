@@ -3,6 +3,7 @@
     "entities": [
         0,
         2,
+        3,
         1048577
     ],
     "Name": {
@@ -17,6 +18,9 @@
         },
         "2": {
             "name": "Car"
+        },
+        "3": {
+            "name": "Person"
         }
     },
     "Transform": {
@@ -54,8 +58,29 @@
             "parent": 4294967295,
             "children": [
                 0,
+                3,
                 1048577
             ]
+        },
+        "3": {
+            "local_position": {
+                "x": 0.0,
+                "y": 1.0784046649932861,
+                "z": 0.0
+            },
+            "local_rotation": {
+                "w": 0.6606729030609131,
+                "x": 0.0,
+                "y": 0.7506738901138306,
+                "z": 0.0
+            },
+            "local_scale": {
+                "x": 0.1000000610947609,
+                "y": 0.10000000149011612,
+                "z": 0.10000009834766388
+            },
+            "parent": 2,
+            "children": []
         },
         "1048577": {
             "diff": [
@@ -65,6 +90,23 @@
                     "value": 2
                 }
             ]
+        }
+    },
+    "Voxel Renderer": {
+        "3": {
+            "resource": {
+                "file_location": {
+                    "sub_location": "PROJECT",
+                    "relative_path": "dragon128.vengi"
+                },
+                "data": {
+                    "size": {
+                        "x": 58,
+                        "y": 90,
+                        "z": 128
+                    }
+                }
+            }
         }
     },
     "Prefab": {

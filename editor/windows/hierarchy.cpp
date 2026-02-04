@@ -34,6 +34,7 @@ void Hierarchy::display() {
     top_bar();
     render_hierarchy();
     context_menu(entt::null);
+    file_drag_drop(entt::null);
 
     ImGui::PopStyleVar();
 }
@@ -191,6 +192,26 @@ void Hierarchy::on_editor_update(const FrameData&) {
     }
 }
 
+void Hierarchy::file_drag_drop(const tmt::Entity parent) {
+    if (ImGui::BeginDragDropTarget()) {
+        // Get the current payload to check if its a FileLocation.
+        const ImGuiPayload* payload = ImGui::GetDragDropPayload();
+        if (payload != nullptr && payload->IsDataType("FileLocation")) {
+            const std::string_view json_string {static_cast<char*>(payload->Data), static_cast<size_t>(payload->DataSize)};
+            tmt::IO::FileLocation file_location;
+            tmt::Serializer::deserialize(nlohmann::ordered_json::parse(json_string), file_location);
+
+            const std::string& extension = file_location.relative_path.extension().generic_string();
+            if (extension == PrefabHelper::Config::PREFAB_EXTENSION && ImGui::AcceptDragDropPayload("FileLocation") != nullptr) {
+                PrefabHelper::instantiate_prefab(file_location, parent);
+                OnSceneModified::dispatch();
+            }
+        }
+
+        ImGui::EndDragDropTarget();
+    }
+}
+
 void Hierarchy::top_bar() {
     /*menu bar*/
     if (ImGui::BeginMenuBar()) {
@@ -341,6 +362,7 @@ bool Hierarchy::display_entity(const HierarchyState& state) {
         ImGui::OpenPopup(Config::RIGHT_CLICK_CONTEXT);
     }
     context_menu(state.entity);
+    file_drag_drop(state.entity);
 
     /* If the node is closed, don't display children */
     if (open_node == false) return true;

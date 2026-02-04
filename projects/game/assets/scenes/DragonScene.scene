@@ -1,65 +1,8 @@
 {
     "version": 1,
     "entities": [
-        2,
-        3,
-        4,
-        5
+        2
     ],
-    "Name": {
-        "2": {
-            "diff": [
-                {
-                    "op": "replace",
-                    "path": "/name",
-                    "value": "Car 2"
-                }
-            ]
-        }
-    },
-    "Transform": {
-        "2": {
-            "diff": [
-                {
-                    "op": "replace",
-                    "path": "/local_position/y",
-                    "value": -2.647066593170166
-                }
-            ]
-        },
-        "3": {
-            "diff": [
-                {
-                    "op": "replace",
-                    "path": "/children/0",
-                    "value": 4
-                },
-                {
-                    "op": "replace",
-                    "path": "/children/1",
-                    "value": 5
-                }
-            ]
-        },
-        "4": {
-            "diff": [
-                {
-                    "op": "replace",
-                    "path": "/parent",
-                    "value": 3
-                }
-            ]
-        },
-        "5": {
-            "diff": [
-                {
-                    "op": "replace",
-                    "path": "/parent",
-                    "value": 3
-                }
-            ]
-        }
-    },
     "Prefab": {
         "2": {
             "source_location": {
@@ -68,34 +11,7 @@
             },
             "source_entity": 2,
             "root_entity": 2,
-            "instance_id": "e8cc1aaf-7dd9-471d-a1cc-e493b0d5ee87"
-        },
-        "3": {
-            "source_location": {
-                "sub_location": "PROJECT",
-                "relative_path": "Car.prefab"
-            },
-            "source_entity": 2,
-            "root_entity": 3,
-            "instance_id": "e7cc1aaf-7dd9-471d-a1cc-e493b0d5ee87"
-        },
-        "4": {
-            "source_location": {
-                "sub_location": "PROJECT",
-                "relative_path": "Car.prefab"
-            },
-            "source_entity": 0,
-            "root_entity": 3,
-            "instance_id": "e7cc1aaf-7dd9-471d-a1cc-e493b0d5ee87"
-        },
-        "5": {
-            "source_location": {
-                "sub_location": "PROJECT",
-                "relative_path": "Car.prefab"
-            },
-            "source_entity": 1048577,
-            "root_entity": 3,
-            "instance_id": "e7cc1aaf-7dd9-471d-a1cc-e493b0d5ee87"
+            "instance_id": "c4ace417-e742-4ff4-a8a6-a9f9f209ff62"
         }
     },
     "systems": null

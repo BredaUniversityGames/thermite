@@ -62,6 +62,8 @@ class Hierarchy : public IWindow, public OnGameEnd, public OnPreUnloadScene {
     bool is_entity_selected() const { return !selected_entities.empty(); }
     bool is_entity_selected(const Entity entity) const { return selected_entities.contains(entity); }
 
+    void file_drag_drop(const tmt::Entity parent);
+
    private:
     tmt::InsertionOrderedSet<Entity> selected_entities;
 

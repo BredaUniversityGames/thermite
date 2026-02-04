@@ -8,10 +8,10 @@ namespace tmt {
 using PrefabInstanceID = UUID;
 
 struct Prefab {
-    IO::FileLocation source_location;
-    tmt::Entity source_entity; /* in Prefab */
-    tmt::Entity root_entity;   /* in Scene */
-    PrefabInstanceID instance_id;
+    IO::FileLocation source_location {};
+    tmt::Entity source_entity = entt::null; /* in Prefab */
+    tmt::Entity root_entity = entt::null;   /* in Scene */
+    PrefabInstanceID instance_id {NULL_UUID};
 };
 
 }  // namespace tmt
