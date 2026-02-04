@@ -25,17 +25,17 @@
 class Game : public tmt::Application {
    public:
     Game(const tmt::ApplicationSpecs& specs) : Application(specs) {
-        //auto& ecs = tmt::engine.ecs;
-        //auto& goap = ecs.systems.get<tmt::Goap>();
+        // auto& ecs = tmt::engine.ecs;
+        // auto& goap = ecs.systems.get<tmt::Goap>();
 
-        //auto& action_reg = goap.actions();
-        //auto& goal_reg = goap.goals();
-        //auto& type_reg = goap.agent_types();
+        // auto& action_reg = goap.actions();
+        // auto& goal_reg = goap.goals();
+        // auto& type_reg = goap.agent_types();
         //
         //// --- Register Actions ---
-        //action_reg.register_action(std::make_unique<tmt::PatrolArea>());
-        //action_reg.register_action(std::make_unique<tmt::ChasePlayer>());
-        //action_reg.register_action(std::make_unique<tmt::KillPlayer>());
+        // action_reg.register_action(std::make_unique<tmt::PatrolArea>());
+        // action_reg.register_action(std::make_unique<tmt::ChasePlayer>());
+        // action_reg.register_action(std::make_unique<tmt::KillPlayer>());
 
         //// --- Register Goals ---
         //{
@@ -60,32 +60,32 @@ class Game : public tmt::Application {
 
         //// --- Register Agent Types ---
 
-        //tmt::GoapAgentType enemy1;
-        //enemy1.id = "Enemy 1";
+        // tmt::GoapAgentType enemy1;
+        // enemy1.id = "Enemy 1";
 
-        //enemy1.action_ids = {"PatrolArea", "ChasePlayer", "KillPlayer"};
+        // enemy1.action_ids = {"PatrolArea", "ChasePlayer", "KillPlayer"};
 
-        //enemy1.goal_ids = {"PatrolArea", "KillPlayer"};
+        // enemy1.goal_ids = {"PatrolArea", "KillPlayer"};
 
-        //enemy1.default_world_state = {
-        //    {std::hash<std::string>()("player_visible"), true},
-        //    {std::hash<std::string>()("player_in_range"), false},
-        //    {std::hash<std::string>()("player_alive"), true},
-        //    {std::hash<std::string>()("area_secure"), false}
-        //};
+        // enemy1.default_world_state = {
+        //     {std::hash<std::string>()("player_visible"), true},
+        //     {std::hash<std::string>()("player_in_range"), false},
+        //     {std::hash<std::string>()("player_alive"), true},
+        //     {std::hash<std::string>()("area_secure"), false}
+        // };
 
-        //type_reg.register_type(enemy1);
+        // type_reg.register_type(enemy1);
 
-        //tmt::GoapAgentType enemy2;
-        //enemy2.id = "Enemy 2";
+        // tmt::GoapAgentType enemy2;
+        // enemy2.id = "Enemy 2";
 
-        //enemy2.action_ids = {"PatrolArea"};
+        // enemy2.action_ids = {"PatrolArea"};
 
-        //enemy2.goal_ids = {"PatrolArea"};
+        // enemy2.goal_ids = {"PatrolArea"};
 
-        //enemy2.default_world_state = {{std::hash<std::string>()("area_secure"), false}};
+        // enemy2.default_world_state = {{std::hash<std::string>()("area_secure"), false}};
 
-        //type_reg.register_type(enemy2);
+        // type_reg.register_type(enemy2);
     }
 
     float time_passed = 0.0f;
@@ -173,11 +173,12 @@ void AIScene::on_start() {
 
         enemy1.goal_ids = {"PatrolArea", "KillPlayer"};
 
+        // NOTE: You really shouldn't convert a 64bit hash to 32bits!!!!
         enemy1.default_world_state = {
-            {std::hash<std::string>()("player_visible"), true},
-            {std::hash<std::string>()("player_in_range"), false},
-            {std::hash<std::string>()("player_alive"), true},
-            {std::hash<std::string>()("area_secure"), false}
+            {(uint32_t)std::hash<std::string>()("player_visible"), true},
+            {(uint32_t)std::hash<std::string>()("player_in_range"), false},
+            {(uint32_t)std::hash<std::string>()("player_alive"), true},
+            {(uint32_t)std::hash<std::string>()("area_secure"), false}
         };
 
         type_reg.register_type(enemy1);
@@ -189,7 +190,7 @@ void AIScene::on_start() {
 
         enemy2.goal_ids = {"PatrolArea"};
 
-        enemy2.default_world_state = {{std::hash<std::string>()("area_secure"), false}};
+        enemy2.default_world_state = {{(uint32_t)std::hash<std::string>()("area_secure"), false}};
 
         type_reg.register_type(enemy2);
     }
