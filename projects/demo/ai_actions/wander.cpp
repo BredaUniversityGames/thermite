@@ -10,7 +10,7 @@
 
 #include <cstdlib>
 
-void Wander::on_start(tmt::Entity, tmt::Registry&) {
+void Wander::on_start(tmt::Entity) {
     for (const auto& [camEntity, camera] : tmt::engine.ecs.get_registry().view<tmt::Camera>().each()) {
         player = camEntity;
         break;
@@ -20,7 +20,7 @@ void Wander::on_start(tmt::Entity, tmt::Registry&) {
     has_path = false;
 }
 
-void Wander::on_tick(tmt::Entity walking_entity, tmt::Registry& ecs, float dt) {
+void Wander::on_tick(tmt::Entity walking_entity, float dt) {
     const auto& walking = tmt::engine.ecs.get_component<Walking>(walking_entity);
     auto& nav_mesh = tmt::engine.ecs.get_component<tmt::NavMesh>(walking.walkable_asteroid);
 
@@ -70,4 +70,4 @@ void Wander::on_tick(tmt::Entity walking_entity, tmt::Registry& ecs, float dt) {
     }
 }
 
-bool Wander::is_done(tmt::Entity agent, tmt::Registry& ecs) const { return false; }
+bool Wander::is_done(tmt::Entity agent) const { return false; }

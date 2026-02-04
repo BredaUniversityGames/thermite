@@ -10,7 +10,7 @@
 
 #include <cstdlib>
 
-void ChasePlayer::on_start(tmt::Entity entity, tmt::Registry& registry) {
+void ChasePlayer::on_start(tmt::Entity entity) {
     //
     for (const auto& [CamEntity, camera] : tmt::engine.ecs.get_registry().view<tmt::Camera>().each()) {
         player = CamEntity;
@@ -21,7 +21,7 @@ void ChasePlayer::on_start(tmt::Entity entity, tmt::Registry& registry) {
     has_path = false;
 }
 
-void ChasePlayer::on_tick(tmt::Entity walking_entity, tmt::Registry& ecs, float dt) {
+void ChasePlayer::on_tick(tmt::Entity walking_entity, float dt) {
     const auto& walking = tmt::engine.ecs.get_component<Walking>(walking_entity);
     auto& nav_mesh = tmt::engine.ecs.get_component<tmt::NavMesh>(walking.walkable_asteroid);
 
@@ -60,4 +60,4 @@ void ChasePlayer::on_tick(tmt::Entity walking_entity, tmt::Registry& ecs, float 
     }
 }
 
-bool ChasePlayer::is_done(tmt::Entity, tmt::Registry&) const { return false; }
+bool ChasePlayer::is_done(tmt::Entity) const { return false; }
