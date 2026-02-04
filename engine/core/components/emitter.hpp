@@ -22,4 +22,4 @@ struct ParticleEmitter {
 
 }  // namespace tmt
 
-TMT_COMPONENT(tmt::ParticleEmitter, "ParticleEmitter", (pos, particle_lifetime, dir, cone_angle, min_speed, max_speed, spawn_count, active));
+TMT_COMPONENT(tmt::ParticleEmitter, "ParticleEmitter", (pos, particle_lifetime, dir, cone_angle, min_speed, max_speed, spawn_count, active, texture));
