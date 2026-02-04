@@ -37,6 +37,7 @@
 #include "editor/windows/console.hpp"
 #include "editor/windows/motion_math.hpp"
 #include "editor/windows/debug_lines.hpp"
+#include "editor/windows/rendering.hpp"
 #include "editor/windows/model_viewer.hpp"
 #include "editor/windows/node_hierarchy.hpp"
 #include "editor/windows/palette.hpp"
@@ -77,6 +78,7 @@ void Editor::on_engine_init(const ApplicationSpecs&) {
     windows[Mode::OBJECT].add<ImguiDemo>();
     windows[Mode::OBJECT].add<MotionMathPreview>();
     windows[Mode::OBJECT].add<DebugLines>();
+    windows[Mode::OBJECT].add<Rendering>();
 
     engine.scenes.register_scene<VoxelEditScene>();
     windows[Mode::EDIT].add<ModelViewer>();
