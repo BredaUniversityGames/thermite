@@ -286,8 +286,8 @@ void NodeHierarchy::recurse_display_node(const Entity entity, const Name& name, 
 
     const std::set<Entity>& children = transform.get_children();
 
-    constexpr ImGuiTreeNodeFlags default_flags =
-        ImGuiTreeNodeFlags_FramePadding | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_DrawLinesToNodes | ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick;
+    constexpr ImGuiTreeNodeFlags default_flags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_FramePadding | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_DrawLinesToNodes |
+                                                 ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick;
 
     ImGuiTreeNodeFlags flags = default_flags;
     flags |= (children.empty() ? ImGuiTreeNodeFlags_Leaf : 0);

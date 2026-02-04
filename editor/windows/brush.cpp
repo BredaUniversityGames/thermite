@@ -13,8 +13,7 @@
 namespace tmt {
 
 const std::unordered_map<Brush::Mode, const char*> Brush::mode_icons {
-    {Mode::MULTI_TOOL, ICON_MS_OPEN_WITH}, {Mode::PAINT, ICON_MS_BRUSH},        {Mode::COLOR_PICKER, ICON_MS_COLORIZE},
-    {Mode::ADD, ICON_MS_ADD_BOX},          {Mode::REMOVE, ICON_MS_DESTRUCTION}, {Mode::SHAPE, ICON_MS_SHAPE_LINE},
+    {Mode::MULTI_TOOL, ICON_MS_OPEN_WITH}, {Mode::PAINT, ICON_MS_BRUSH}, {Mode::COLOR_PICKER, ICON_MS_COLORIZE}, {Mode::ADD, ICON_MS_ADD_BOX}, {Mode::REMOVE, ICON_MS_DESTRUCTION},
 };
 
 void Brush::display() {
@@ -57,7 +56,6 @@ void Brush::display() {
         case Mode::COLOR_PICKER:
         case Mode::ADD:
         case Mode::REMOVE:
-        case Mode::SHAPE:
             break;
     }
 }

@@ -225,7 +225,6 @@ void modify_voxels(const Brush::Mode brush_mode, const ResourceRef<VoxelVolume>&
             break;
         }
 
-        case Brush::Mode::SHAPE:
         default:
             break;
     }
@@ -271,8 +270,6 @@ void ModelViewer::on_editor_update(const FrameData& time) {
         const Ray mouse_ray = engine.renderer.render_view.pixel_ray(mouse_position);
         const Hit hit = engine.renderer.trace_ray(mouse_ray);
 
-        if (hit.miss()) return;
-
         editor.windows[Editor::Mode::EDIT].get<NodeHierarchy>().set_selected_entity(hit.entity);
         return;
     }
@@ -288,7 +285,7 @@ void ModelViewer::on_editor_update(const FrameData& time) {
     const Ray mouse_ray = engine.renderer.render_view.pixel_ray(mouse_position);
     Hit hit = engine.renderer.trace_ray(mouse_ray);
 
-    const bool can_hit_face = (brush_mode == Brush::Mode::ADD || brush_mode == Brush::Mode::SHAPE);
+    const bool can_hit_face = (brush_mode == Brush::Mode::ADD);
 
     if (!handle_selection(mouse_ray, hit, can_hit_face, selected_entity, transform, resource)) return;
 
