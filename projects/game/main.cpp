@@ -14,6 +14,8 @@
 #include "engine/core/scenes.hpp"
 #include "engine/core/renderer/voxel_object.hpp"
 
+#include "components/player.hpp"
+
 class Game : public tmt::Application {
    public:
     Game(const tmt::ApplicationSpecs& specs) : Application(specs) {}
@@ -23,22 +25,17 @@ class Game : public tmt::Application {
     void on_end() override {};
 };
 
-class DragonScene : public tmt::Scene<DragonScene> {
-   public:
-    static constexpr std::string_view scene_name() { return "DragonScene"; }
-
+class MainMenuScene : public tmt::Scene<MainMenuScene> {
+public:
+    static constexpr std::string_view scene_name() { return "MainMenuScene"; }
     void on_start() override;
     void on_update(const tmt::FrameData& time) override;
     void on_end() override;
-
-    tmt::Entity voxel {};
-    float elapsed_time = 0.0f;
 };
 
-class TableScene : public tmt::Scene<TableScene> {
-   public:
-    static constexpr std::string_view scene_name() { return "TableScene"; }
-
+class MainGameScene : public tmt::Scene<MainGameScene> {
+public:
+    static constexpr std::string_view scene_name() { return "MainGameScene"; }
     void on_start() override;
     void on_update(const tmt::FrameData& time) override;
     void on_end() override;
@@ -47,9 +44,9 @@ class TableScene : public tmt::Scene<TableScene> {
 std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs& args) {
     // clang-format off
     tmt::ApplicationSpecs specs {
-        .name = "Example Game",
+        .name = "Mining Game",
         .command_args = args,
-        .log_file = "example_game_logs.txt"
+        .log_file = "mining_game_logs.txt"
     };
     // clang-format on
 
@@ -57,11 +54,15 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     tmt::engine.ecs.systems.add<tmt::CameraSystem>();
 
     /* Register Scenes */
-    tmt::engine.scenes.register_scene<DragonScene>();
-    tmt::engine.scenes.register_scene<TableScene>();
+    tmt::engine.scenes.register_scene<MainMenuScene>();
+    tmt::engine.scenes.register_scene<MainGameScene>();
+
+    /* Register Components */
+    tmt::engine.component_registry.register_component<Player>();
 
     return std::make_unique<Game>(specs);
 }
+<<<<<<< Updated upstream
 
 void generate_random_entities(tmt::ResourceRef<tmt::VoxelVolume>& voxel_volume);
 
@@ -171,3 +172,5 @@ void generate_random_entities(tmt::ResourceRef<tmt::VoxelVolume>& voxel_volume) 
         transform.set_world_scale(1.0f + glm::vec3(s, s, s));
     }
 }
+=======
+>>>>>>> Stashed changes
