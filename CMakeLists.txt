@@ -28,6 +28,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # Compilation settings
 option(WARNINGS_AS_ERRORS "Enable warnings as errors" OFF)
 option(THERMITE_EDITOR_BUILD "Build editor configuration" OFF)
+option(THERMITE_DEVELOPER_BUILD "Build for developer use on P4" OFF)
 option(THERMITE_DEBUG_BUILD "Build debug-style config (extra asserts/logging)" OFF)
 option(THERMITE_BUILD_TESTS "Build unit tests" OFF)
 option(THERMITE_CI "Treat the build as CI" OFF)

@@ -57,6 +57,17 @@ function(find_and_add_targets)
 		                "${CMAKE_SOURCE_DIR}/extern/fmod/lib/fmodstudio${FMOD_POSTFIX}.dll"
 		                "${CMAKE_BINARY_DIR}/bin/${target_name}/fmodstudio${FMOD_POSTFIX}.dll"
 			)
+			# Copy over auxialliary assets for developer use
+			if(THERMITE_DEVELOPER_BUILD)
+				copy_directory_to_output(${target_name} 
+					"${CMAKE_SOURCE_DIR}/engine/assets" 
+					"engine/assets"
+				)
+				copy_directory_to_output(${target_name} 
+					"${CMAKE_SOURCE_DIR}/editor/assets" 
+					"editor/assets"
+				)
+			endif()
 
 			# Link with the Thermite Engine
 			target_link_libraries(${target_name} PRIVATE thermite-engine)
@@ -85,4 +96,15 @@ function(find_and_add_targets)
 			# endif()
 		endif()
 	endforeach()
+endfunction()
+
+function(copy_directory_to_output TARGET_NAME SOURCE_DIR OUTPUT_DIR)
+ 
+    add_custom_command(
+        TARGET ${TARGET_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+                "${SOURCE_DIR}"
+                "$<TARGET_FILE_DIR:${TARGET_NAME}>/${OUTPUT_DIR}"
+        COMMENT "Copying ${SOURCE_DIR} to ${TARGET_NAME} output directory"
+    )
 endfunction()
