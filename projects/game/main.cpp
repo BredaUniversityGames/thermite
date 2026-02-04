@@ -94,6 +94,9 @@ void DragonScene::on_start() {
 
     // generate_random_entities(voxel_volume);
 
+    /* Load a Bojan */
+    tmt::ResourceRef<tmt::Texture2D> tex = tmt::engine.resources.load_resource<tmt::Texture2D>({tmt::IO::Location::PROJECT, "bojan.png"}, "Bojan");
+
     /* Particle Emitters */
     {
         emitter1 = tmt::engine.ecs.create_entity("Emitter 1");
@@ -107,6 +110,7 @@ void DragonScene::on_start() {
         p_emitter.particle_lifetime = 3.0f;
         p_emitter.spawn_count = 49000;
         p_emitter.active = false;
+        p_emitter.texture = tex;
 
         emitter2 = tmt::engine.ecs.create_entity("Emitter 2");
         auto& transform2 = tmt::engine.ecs.get_component<tmt::Transform>(emitter2);
@@ -120,10 +124,8 @@ void DragonScene::on_start() {
         p2_emitter.particle_lifetime = 3.0f;
         p2_emitter.spawn_count = 50000;
         p2_emitter.active = false;
+        p2_emitter.texture = tex;
     }
-
-    /* Load a Bojan */
-    tmt::engine.resources.load_resource<tmt::Texture2D>({tmt::IO::Location::PROJECT, "bojan.png"}, "Bojan");
 }
 
 #include "engine/core/renderer/renderer.hpp"

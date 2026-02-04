@@ -6,9 +6,6 @@
 #include <graphite/nodes/raster_node.hh>
 #include <graphite/nodes/compute_node.hh>
 
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
-
 #include "engine.hpp"
 #include "core/ecs.hpp"
 #include "core/logger.hpp"
@@ -67,7 +64,7 @@ void VfxPipeline::init(GPUAdapter& gpu) {
             dead_list = r.unwrap();
 
         uint32_t arr[MAX_PARTICLES] {};
-        for (size_t i = 0; i < MAX_PARTICLES; i++) {
+        for (uint32_t i = 0; i < MAX_PARTICLES; i++) {
             arr[i] = i;
         }
         bank.upload_buffer(dead_list, &arr, 0, sizeof(uint32_t) * MAX_PARTICLES);
@@ -138,39 +135,8 @@ void VfxPipeline::init(GPUAdapter& gpu) {
 
     bank.upload_buffer(billboard_vertices, &quads, 0, sizeof(GpuQuad) * 6);
 
-    /* Initialize the Temp Texture, Image and Sampler */
+    /* Initialize the Sampler */
     {
-        int tex_width = -1;
-        int tex_height = -1;
-        int channels = -1;
-        unsigned char* data = nullptr;
-
-        data = stbi_load("assets/engine/bojan.jpg", &tex_width, &tex_height, &channels, 4);
-        if (!data) {
-            Log::error(Log::Scope::RENDERER, "failed to load bojan.");
-            return;
-        }
-
-        /* Initialise a bojan texture */
-        if (const Result r = bank.create_texture("[Particles] Bojan", TextureUsage::Sampled | TextureUsage::TransferDst, TextureFormat::RGBA8Unorm, {(u32)tex_width, (u32)tex_height, 0});
-            r.is_err()) {
-            Log::error(Log::Scope::RENDERER, "failed to initialise bojan texture.\nreason: {}", r.unwrap_err().c_str());
-            return;
-        } else
-            temp_texture = r.unwrap();
-
-        if (const Result r = bank.upload_texture(temp_texture, data, tex_width * tex_height * 4); r.is_err()) {
-            Log::error(Log::Scope::RENDERER, "failed to upload bojan texture.\nreason: {}", r.unwrap_err().c_str());
-            return;
-        }
-        free(data);
-
-        if (const Result r = bank.create_image("[Particles] Bojan Image", temp_texture); r.is_err()) {
-            Log::error(Log::Scope::RENDERER, "failed to initialize bojan image.\nreason: {}", r.unwrap_err().c_str());
-            return;
-        } else
-            temp_image = r.unwrap();
-
         if (const Result r = bank.create_sampler("[Particles] Linear Sampler"); r.is_err()) {
             Log::error(Log::Scope::RENDERER, "failed to initialize linear sampler.\nreason: {}", r.unwrap_err().c_str());
             return;
@@ -202,7 +168,7 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
         em.min_speed = emitter.min_speed;
         em.particle_lifetime = emitter.particle_lifetime;
         em.spawn_count = emitter.spawn_count;
-        em.tex_index = temp_image.get_index();
+        em.tex_index = emitter.texture.resource->image.get_index();
         
         bank.upload_buffer(emitter_buffer, &em, 0, sizeof(GpuEmitter));
 
@@ -269,8 +235,6 @@ void VfxPipeline::deinit(GPUAdapter& gpu) {
     bank.destroy(billboard_vertices);
 
     bank.destroy(linear_sampler);
-    bank.destroy(temp_texture);
-    bank.destroy(temp_image);
 }
 
 }  // namespace tmt

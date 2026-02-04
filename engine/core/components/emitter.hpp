@@ -1,5 +1,7 @@
 #pragma once
 
+#include "engine/core/resources/texture_2d.hpp"
+
 namespace tmt {
 
 struct ParticleEmitter {
@@ -14,6 +16,8 @@ struct ParticleEmitter {
     uint32_t spawn_count = 8u;
 
     bool active = true;
+
+    ResourceRef<Texture2D> texture;
 };
 
 }  // namespace tmt

@@ -77,7 +77,5 @@ class VfxPipeline {
     Buffer billboard_vertices {};
 
     Sampler linear_sampler {};
-    Texture temp_texture {};
-    Image temp_image {};
 };
 }  // namespace tmt
