@@ -16,8 +16,8 @@ class FontManager;
 class Editor : public OnEngineInit, public OnEngineUpdate, public OnEngineFixedUpdate, public OnEngineEnd {
    public:
     enum class Mode : uint8_t {
-        OBJECT,
-        EDIT,
+        SCENE,
+        VOXEL,
     };
 
     Editor();
@@ -25,7 +25,7 @@ class Editor : public OnEngineInit, public OnEngineUpdate, public OnEngineFixedU
 
     void init();
 
-    Mode editor_mode {Mode::OBJECT};
+    Mode editor_mode {Mode::SCENE};
     std::map<Mode, std::unique_ptr<IEditorMode>> mode_handlers;
     std::map<Mode, Collection<IWindow>> windows;
     ImGuiManager& imgui_manager;

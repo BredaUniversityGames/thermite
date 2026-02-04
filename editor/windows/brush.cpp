@@ -32,7 +32,7 @@ void Brush::display() {
 
     switch (active_mode) {
         case Mode::MULTI_TOOL: {
-            const Entity selected_node = editor.windows[Editor::Mode::EDIT].get<NodeHierarchy>().get_selected_entity();
+            const Entity selected_node = editor.windows[Editor::Mode::VOXEL].get<NodeHierarchy>().get_selected_entity();
             if (!engine.ecs.valid(selected_node)) break;
 
             const char* space_button_icon = (editor.gizmo.space ? ICON_MS_LANGUAGE : ICON_MS_VIEW_IN_AR);

@@ -13,7 +13,7 @@ void Palette::before_begin() { ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, 
 void Palette::end_display() { ImGui::PopStyleVar(); }
 
 void Palette::display() {
-    const auto selected_entity = editor.windows[Editor::Mode::EDIT].get<NodeHierarchy>().get_selected_entity();
+    const auto selected_entity = editor.windows[Editor::Mode::VOXEL].get<NodeHierarchy>().get_selected_entity();
     if (selected_entity == entt::null) return;
 
     const VoxelRenderer* renderer = engine.ecs.try_get_component<VoxelRenderer>(selected_entity);
@@ -70,7 +70,7 @@ void Palette::display_palette(const ResourceRef<VoxelVolume>& resource) {
 
 void Palette::display_material_editor() const {
     /* Doesn't actually work yet but for the idea */
-    const auto selected_entity = editor.windows[Editor::Mode::EDIT].get<NodeHierarchy>().get_selected_entity();
+    const auto selected_entity = editor.windows[Editor::Mode::VOXEL].get<NodeHierarchy>().get_selected_entity();
     if (selected_entity == entt::null) {
         ImGui::TextWrapped("No voxel model selected.");
         return;

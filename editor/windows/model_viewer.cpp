@@ -190,7 +190,7 @@ void modify_voxels(const Brush::Mode brush_mode, const ResourceRef<VoxelVolume>&
         case Brush::Mode::PAINT: {
             if (!engine.input.is_mouse_button_pressed(MouseButton::LEFT)) break;
 
-            const MaterialIndex material_index = editor.windows[Editor::Mode::EDIT].get<Palette>().get_selected_material_index();
+            const MaterialIndex material_index = editor.windows[Editor::Mode::VOXEL].get<Palette>().get_selected_material_index();
             model->blas->set_voxel(hit.coord.x, hit.coord.y, hit.coord.z, material_index);
 
             model->set_dirty();
@@ -203,14 +203,14 @@ void modify_voxels(const Brush::Mode brush_mode, const ResourceRef<VoxelVolume>&
             const Material* picked_material = model->blas->get_voxel(hit.coord.x, hit.coord.y, hit.coord.z);
             if (picked_material == nullptr) break;
 
-            editor.windows[Editor::Mode::EDIT].get<Palette>().set_selected_material_index(static_cast<MaterialIndex>(picked_material - model->blas->palette.entries));
+            editor.windows[Editor::Mode::VOXEL].get<Palette>().set_selected_material_index(static_cast<MaterialIndex>(picked_material - model->blas->palette.entries));
             break;
         }
 
         case Brush::Mode::ADD: {
             if (!engine.input.is_mouse_button_just_pressed(MouseButton::LEFT)) break;
 
-            const MaterialIndex material_index = editor.windows[Editor::Mode::EDIT].get<Palette>().get_selected_material_index();
+            const MaterialIndex material_index = editor.windows[Editor::Mode::VOXEL].get<Palette>().get_selected_material_index();
 
             model->blas->set_voxel(hit.coord.x, hit.coord.y, hit.coord.z, material_index);
             model->set_dirty();
@@ -244,14 +244,14 @@ void ModelViewer::display() {
     engine.renderer.render_view.set_viewport_size(static_cast<uint32_t>(size.x), static_cast<uint32_t>(size.y));
     ImGui::Image(engine.renderer.render_view.imgui_viewport, size);
 
-    const Brush::Mode brush_mode = editor.windows[Editor::Mode::EDIT].get<Brush>().get_active_mode();
+    const Brush::Mode brush_mode = editor.windows[Editor::Mode::VOXEL].get<Brush>().get_active_mode();
     if (brush_mode == Brush::Mode::MULTI_TOOL) {
-        const Entity selected_entity = editor.windows[Editor::Mode::EDIT].get<NodeHierarchy>().get_selected_entity();
+        const Entity selected_entity = editor.windows[Editor::Mode::VOXEL].get<NodeHierarchy>().get_selected_entity();
 
         editor.gizmo.manip(window_pos.x, window_pos.y, size.x, size.y, {&selected_entity, &selected_entity + 1});
     }
 
-    Viewport& viewport = editor.windows[Editor::Mode::OBJECT].get<Viewport>();
+    Viewport& viewport = editor.windows[Editor::Mode::SCENE].get<Viewport>();
 
     viewport.is_hovered = ImGui::IsItemHovered();
     const ImVec2 mouse_pos = ImGui::GetMousePos() - ImGui::GetWindowPos();
@@ -260,9 +260,9 @@ void ModelViewer::display() {
 }
 
 void ModelViewer::on_editor_update(const FrameData& time) {
-    editor.windows[Editor::Mode::OBJECT].get<Viewport>().update_debug_camera(time);
+    editor.windows[Editor::Mode::SCENE].get<Viewport>().update_debug_camera(time);
 
-    const Brush::Mode brush_mode = editor.windows[Editor::Mode::EDIT].get<Brush>().get_active_mode();
+    const Brush::Mode brush_mode = editor.windows[Editor::Mode::VOXEL].get<Brush>().get_active_mode();
 
     if (brush_mode == Brush::Mode::MULTI_TOOL) {
         if (!engine.input.is_mouse_button_just_pressed(MouseButton::LEFT)) return;
@@ -270,11 +270,11 @@ void ModelViewer::on_editor_update(const FrameData& time) {
         const Ray mouse_ray = engine.renderer.render_view.pixel_ray(mouse_position);
         const Hit hit = engine.renderer.trace_ray(mouse_ray);
 
-        editor.windows[Editor::Mode::EDIT].get<NodeHierarchy>().set_selected_entity(hit.entity);
+        editor.windows[Editor::Mode::VOXEL].get<NodeHierarchy>().set_selected_entity(hit.entity);
         return;
     }
 
-    NodeHierarchy& node_hierarchy = editor.windows[Editor::Mode::EDIT].get<NodeHierarchy>();
+    NodeHierarchy& node_hierarchy = editor.windows[Editor::Mode::VOXEL].get<NodeHierarchy>();
     const Entity selected_entity = node_hierarchy.get_selected_entity();
 
     if (!engine.ecs.valid(selected_entity) || !engine.ecs.has_component<VoxelRenderer>(selected_entity)) return;

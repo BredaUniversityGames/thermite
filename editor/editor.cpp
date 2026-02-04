@@ -60,31 +60,31 @@ void Editor::on_engine_init(const ApplicationSpecs&) {
     save_data.load();
     gizmo.init();
 
-    mode_handlers[Mode::OBJECT] = std::make_unique<ObjectMode>();
-    mode_handlers[Mode::EDIT] = std::make_unique<EditMode>();
+    mode_handlers[Mode::SCENE] = std::make_unique<ObjectMode>();
+    mode_handlers[Mode::VOXEL] = std::make_unique<EditMode>();
 
-    windows[Mode::OBJECT].add<Hierarchy>();
-    windows[Mode::OBJECT].add<GameFlow>();
-    windows[Mode::OBJECT].add<Inspector>();
-    windows[Mode::OBJECT].add<Viewport>();
-    windows[Mode::OBJECT].add<Profiler>();
-    windows[Mode::OBJECT].add<GoapDebugger>();
-    windows[Mode::OBJECT].add<GoapActionEditor>();
-    windows[Mode::OBJECT].add<FontControl>();
-    windows[Mode::OBJECT].add<AudioMixer>();
-    windows[Mode::OBJECT].add<ScenesWindow>();
-    windows[Mode::OBJECT].add<AssetBrowser>();
-    windows[Mode::OBJECT].add<Console>();
-    windows[Mode::OBJECT].add<ImguiDemo>();
-    windows[Mode::OBJECT].add<MotionMathPreview>();
-    windows[Mode::OBJECT].add<DebugLines>();
-    windows[Mode::OBJECT].add<Rendering>();
+    windows[Mode::SCENE].add<Hierarchy>();
+    windows[Mode::SCENE].add<GameFlow>();
+    windows[Mode::SCENE].add<Inspector>();
+    windows[Mode::SCENE].add<Viewport>();
+    windows[Mode::SCENE].add<Profiler>();
+    windows[Mode::SCENE].add<GoapDebugger>();
+    windows[Mode::SCENE].add<GoapActionEditor>();
+    windows[Mode::SCENE].add<FontControl>();
+    windows[Mode::SCENE].add<AudioMixer>();
+    windows[Mode::SCENE].add<ScenesWindow>();
+    windows[Mode::SCENE].add<AssetBrowser>();
+    windows[Mode::SCENE].add<Console>();
+    windows[Mode::SCENE].add<ImguiDemo>();
+    windows[Mode::SCENE].add<MotionMathPreview>();
+    windows[Mode::SCENE].add<DebugLines>();
+    windows[Mode::SCENE].add<Rendering>();
 
     engine.scenes.register_scene<VoxelEditScene>();
-    windows[Mode::EDIT].add<ModelViewer>();
-    windows[Mode::EDIT].add<NodeHierarchy>();
-    windows[Mode::EDIT].add<Palette>();
-    windows[Mode::EDIT].add<Brush>();
+    windows[Mode::VOXEL].add<ModelViewer>();
+    windows[Mode::VOXEL].add<NodeHierarchy>();
+    windows[Mode::VOXEL].add<Palette>();
+    windows[Mode::VOXEL].add<Brush>();
 
     for (auto& [mode, collection] : windows) {
         for (const auto& window : collection) {
