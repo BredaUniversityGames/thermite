@@ -248,7 +248,12 @@ void ModelViewer::display() {
     if (brush_mode == Brush::Mode::MULTI_TOOL) {
         const Entity selected_entity = editor.windows[Editor::Mode::VOXEL].get<NodeHierarchy>().get_selected_entity();
 
-        editor.gizmo.manip(window_pos.x, window_pos.y, size.x, size.y, {&selected_entity, &selected_entity + 1});
+        const bool used_gizmo = editor.gizmo.manip(window_pos.x, window_pos.y, size.x, size.y, {&selected_entity, &selected_entity + 1});
+        if (!used_gizmo) {
+            if (clicked_entity.has_value()) editor.windows[Editor::Mode::VOXEL].get<NodeHierarchy>().set_selected_entity(*clicked_entity);
+        } else {
+            clicked_entity.reset();
+        }
     }
 
     Viewport& viewport = editor.windows[Editor::Mode::SCENE].get<Viewport>();
@@ -263,14 +268,13 @@ void ModelViewer::on_editor_update(const FrameData& time) {
     editor.windows[Editor::Mode::SCENE].get<Viewport>().update_debug_camera(time);
 
     const Brush::Mode brush_mode = editor.windows[Editor::Mode::VOXEL].get<Brush>().get_active_mode();
-
     if (brush_mode == Brush::Mode::MULTI_TOOL) {
         if (!engine.input.is_mouse_button_just_pressed(MouseButton::LEFT)) return;
 
         const Ray mouse_ray = engine.renderer.render_view.pixel_ray(mouse_position);
         const Hit hit = engine.renderer.trace_ray(mouse_ray);
 
-        editor.windows[Editor::Mode::VOXEL].get<NodeHierarchy>().set_selected_entity(hit.entity);
+        clicked_entity = hit.entity;
         return;
     }
 
