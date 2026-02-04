@@ -13,17 +13,6 @@ namespace tmt {
 
 namespace {
 
-/* Recursively find the first model inside a voxel model hierarchy. */
-const VoxelSceneNode* first_model(const VoxelSceneNode& parent) {
-    if (parent.tree != nullptr) return &parent;
-
-    for (const VoxelSceneNode& child : parent.children) {
-        const VoxelSceneNode* model = first_model(child);
-        if (model != nullptr) return model;
-    }
-    return nullptr;
-}
-
 const VoxelSceneNode* find_model_by_uuid(const VoxelSceneNode& node, const UUID& uuid) {
     if (node.uuid == uuid) return &node;
 
@@ -36,6 +25,17 @@ const VoxelSceneNode* find_model_by_uuid(const VoxelSceneNode& node, const UUID&
 }
 
 }  // namespace
+
+/* Recursively find the first model inside a voxel model hierarchy. */
+const VoxelSceneNode* first_model(const VoxelSceneNode& parent) {
+    if (parent.tree != nullptr) return &parent;
+
+    for (const VoxelSceneNode& child : parent.children) {
+        const VoxelSceneNode* model = first_model(child);
+        if (model != nullptr) return model;
+    }
+    return nullptr;
+}
 
 VoxelVolume::VoxelVolume(const glm::uvec3& grid_size) : RuntimeResource<VoxelScene>({}) {
     RawVoxels raw_voxels {.w = grid_size.x, .h = grid_size.y, .d = grid_size.z};
