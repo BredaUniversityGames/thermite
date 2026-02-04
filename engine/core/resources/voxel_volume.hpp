@@ -40,7 +40,7 @@ class VoxelVolume : public tmt::RuntimeResource<VoxelScene> {
 
    private:
     void create_gpu_buffers();
-    
+
     uint32_t blas_nodes_capacity = 0u, blas_voxels_capacity = 0u;
     bool is_dirty = false;
 };

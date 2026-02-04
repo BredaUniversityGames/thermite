@@ -13,7 +13,6 @@
 
 #include <imgui.h>
 
-
 namespace tmt {
 
 void EditMode::display_main_menu() {

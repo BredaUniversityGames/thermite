@@ -598,7 +598,7 @@ Svt64& Svt64::operator=(const Svt64& src) {
 void Svt64::set_voxel(const uint32_t x, const uint32_t y, const uint32_t z, const MaterialIndex material) {
     /* Check if the voxel is in bounds */
     const uint32_t width = (uint32_t)powf(4.0f, (float)depth);
-    if (x >= width || y >= width || z >= width) { 
+    if (x >= width || y >= width || z >= width) {
         Log::warn("SVT64 tried to set voxel outside bounds.");
         return;
     }
@@ -609,143 +609,143 @@ void Svt64::set_voxel(const uint32_t x, const uint32_t y, const uint32_t z, cons
         defrag();
     }
 
-	uint32_t node_index = 0u;
-	uint32_t scale = depth * 2u - 2u;
+    uint32_t node_index = 0u;
+    uint32_t scale = depth * 2u - 2u;
 
-	for (;;) {
-		Svt64Node& node = nodes[node_index];
+    for (;;) {
+        Svt64Node& node = nodes[node_index];
 
-		if (node.is_leaf()) break;
+        if (node.is_leaf()) break;
 
-		const uint32_t lx = (x >> scale) & 3u;
-		const uint32_t ly = (y >> scale) & 3u;
-		const uint32_t lz = (z >> scale) & 3u;
-		const uint32_t li = lx + ly * 16u + lz * 4u;
-		const uint64_t lm = 1ull << li;
+        const uint32_t lx = (x >> scale) & 3u;
+        const uint32_t ly = (y >> scale) & 3u;
+        const uint32_t lz = (z >> scale) & 3u;
+        const uint32_t li = lx + ly * 16u + lz * 4u;
+        const uint64_t lm = 1ull << li;
 
-		/* If the child doesn't exist yet, create it */
-		if ((node.child_mask & lm) == 0ull) {
-			const uint32_t prev_child_index = node.abs_ptr();
+        /* If the child doesn't exist yet, create it */
+        if ((node.child_mask & lm) == 0ull) {
+            const uint32_t prev_child_index = node.abs_ptr();
             const uint32_t prev_nodes_count = popcnt_var64(node.child_mask, 64u);
             // if (node_count + prev_nodes_count + 64u >= nodes_capacity) return;
-			nodes_wasted += prev_nodes_count;
-			node = Svt64Node(false, node_count, node.child_mask | lm);
+            nodes_wasted += prev_nodes_count;
+            node = Svt64Node(false, node_count, node.child_mask | lm);
 
-			for (int i = 0, j = 0; i < 64; ++i) {
-				const bool is_new = i == li;
+            for (int i = 0, j = 0; i < 64; ++i) {
+                const bool is_new = i == li;
 
-				if (is_new) {
-					/* Add new node */
-					nodes[node_count++] = Svt64Node(scale <= 2u, 0u, 0ull);
-				} else {
-					/* Copy over old node */
-					if (node.child_mask & (1ull << i)) {
-						nodes[node_count++] = nodes[prev_child_index + j];
-						j++;
-					}
-				}
-			}
-		}
+                if (is_new) {
+                    /* Add new node */
+                    nodes[node_count++] = Svt64Node(scale <= 2u, 0u, 0ull);
+                } else {
+                    /* Copy over old node */
+                    if (node.child_mask & (1ull << i)) {
+                        nodes[node_count++] = nodes[prev_child_index + j];
+                        j++;
+                    }
+                }
+            }
+        }
 
-		scale -= 2u;
-		node_index = node.abs_ptr() + popcnt_var64(node.child_mask, li);
-	}
+        scale -= 2u;
+        node_index = node.abs_ptr() + popcnt_var64(node.child_mask, li);
+    }
 
-	Svt64Node& node = nodes[node_index];
+    Svt64Node& node = nodes[node_index];
 
-	const uint32_t lx = x & 3u;
-	const uint32_t ly = y & 3u;
-	const uint32_t lz = z & 3u;
-	const uint32_t li = lx + ly * 16u + lz * 4u;
-	const uint64_t lm = 1ull << li;
+    const uint32_t lx = x & 3u;
+    const uint32_t ly = y & 3u;
+    const uint32_t lz = z & 3u;
+    const uint32_t li = lx + ly * 16u + lz * 4u;
+    const uint64_t lm = 1ull << li;
 
-	/* If the voxel doesn't exist yet, create it */
-	if ((node.child_mask & lm) == 0ull) {
-		const uint32_t prev_voxel_index = node.abs_ptr();
+    /* If the voxel doesn't exist yet, create it */
+    if ((node.child_mask & lm) == 0ull) {
+        const uint32_t prev_voxel_index = node.abs_ptr();
         const uint32_t prev_voxel_count = popcnt_var64(node.child_mask, 64u);
         // if (voxel_count + prev_voxel_count + 64u >= voxels_capacity) return;
-		voxels_wasted += prev_voxel_count;
+        voxels_wasted += prev_voxel_count;
 
-		node = Svt64Node(true, voxel_count, node.child_mask | lm);
-		for (int i = 0, j = 0; i < 64; ++i) {
-			const bool is_new = i == li;
+        node = Svt64Node(true, voxel_count, node.child_mask | lm);
+        for (int i = 0, j = 0; i < 64; ++i) {
+            const bool is_new = i == li;
 
-			if (is_new) {
-				/* Add new voxel */
-				materials[voxel_count++] = material;
-			} else {
-				/* Copy over old voxel */
-				if (node.child_mask & (1ull << i)) {
-					materials[voxel_count++] = materials[prev_voxel_index + j];
-					j++;
-				}
-			}
-		}
-	} else {
+            if (is_new) {
+                /* Add new voxel */
+                materials[voxel_count++] = material;
+            } else {
+                /* Copy over old voxel */
+                if (node.child_mask & (1ull << i)) {
+                    materials[voxel_count++] = materials[prev_voxel_index + j];
+                    j++;
+                }
+            }
+        }
+    } else {
         const uint32_t voxel_index = node.abs_ptr() + popcnt_var64(node.child_mask, li);
         materials[voxel_index] = material;
     }
 }
 
 void Svt64::defrag() {
-	/* Copy current nodes and voxels */
-	Svt64Node* new_nodes = new Svt64Node[node_count + SVT64_BUFFER_MEMORY];
-	MaterialIndex* new_materials = new MaterialIndex[voxel_count + SVT64_BUFFER_MEMORY];
-	PhysicsVoxel* new_physics_data = new PhysicsVoxel[voxel_count + SVT64_BUFFER_MEMORY];
+    /* Copy current nodes and voxels */
+    Svt64Node* new_nodes = new Svt64Node[node_count + SVT64_BUFFER_MEMORY];
+    MaterialIndex* new_materials = new MaterialIndex[voxel_count + SVT64_BUFFER_MEMORY];
+    PhysicsVoxel* new_physics_data = new PhysicsVoxel[voxel_count + SVT64_BUFFER_MEMORY];
 
-	/* Traverse the tree top down, move all child nodes/voxels into new lists */
+    /* Traverse the tree top down, move all child nodes/voxels into new lists */
     nodes_capacity = node_count + SVT64_BUFFER_MEMORY;
     voxels_capacity = voxel_count + SVT64_BUFFER_MEMORY;
-	node_count = 1u;
-	voxel_count = voxels_wasted = nodes_wasted = 0u;
-	
+    node_count = 1u;
+    voxel_count = voxels_wasted = nodes_wasted = 0u;
+
     /* Non-recursive */
-	uint32_t old_stack[128] {};
-	uint32_t new_stack[128] {};
-	uint32_t stack_ptr = 0u;
-	uint32_t old_node_index = 0u;
-	uint32_t new_node_index = 0u;
+    uint32_t old_stack[128] {};
+    uint32_t new_stack[128] {};
+    uint32_t stack_ptr = 0u;
+    uint32_t old_node_index = 0u;
+    uint32_t new_node_index = 0u;
 
-	for (;;) {
-		const Svt64Node& old_node = nodes[old_node_index];
-		Svt64Node& new_node = new_nodes[new_node_index];
-		const uint32_t child_count = popcnt_var64(old_node.child_mask, 64u);
-		const uint32_t child_ptr = old_node.abs_ptr();
+    for (;;) {
+        const Svt64Node& old_node = nodes[old_node_index];
+        Svt64Node& new_node = new_nodes[new_node_index];
+        const uint32_t child_count = popcnt_var64(old_node.child_mask, 64u);
+        const uint32_t child_ptr = old_node.abs_ptr();
 
-		/* Defrag leaf node */
-		if (old_node.is_leaf()) {
-			new_node = Svt64Node(true, voxel_count, old_node.child_mask);
-			memcpy(new_materials + voxel_count, materials + child_ptr, child_count * sizeof(MaterialIndex));
-			memcpy(new_physics_data + voxel_count, physics_data + child_ptr, child_count * sizeof(PhysicsVoxel));
-			voxel_count += child_count;
-			if (stack_ptr == 0u) break;
-			old_node_index = old_stack[--stack_ptr];
-			new_node_index = new_stack[stack_ptr];
-			continue;
-		}
+        /* Defrag leaf node */
+        if (old_node.is_leaf()) {
+            new_node = Svt64Node(true, voxel_count, old_node.child_mask);
+            memcpy(new_materials + voxel_count, materials + child_ptr, child_count * sizeof(MaterialIndex));
+            memcpy(new_physics_data + voxel_count, physics_data + child_ptr, child_count * sizeof(PhysicsVoxel));
+            voxel_count += child_count;
+            if (stack_ptr == 0u) break;
+            old_node_index = old_stack[--stack_ptr];
+            new_node_index = new_stack[stack_ptr];
+            continue;
+        }
 
-		/* Defrag node */
-		new_node = Svt64Node(false, node_count, old_node.child_mask);
-		memcpy(new_nodes + node_count, nodes + child_ptr, child_count * sizeof(Svt64Node));
-		node_count += child_count;
+        /* Defrag node */
+        new_node = Svt64Node(false, node_count, old_node.child_mask);
+        memcpy(new_nodes + node_count, nodes + child_ptr, child_count * sizeof(Svt64Node));
+        node_count += child_count;
 
-		/* Recurse into child nodes */
-		for (uint32_t i = 0u; i < child_count; ++i) {
-			old_stack[stack_ptr] = child_ptr + i;
-			new_stack[stack_ptr++] = new_node.abs_ptr() + i;
-		}
+        /* Recurse into child nodes */
+        for (uint32_t i = 0u; i < child_count; ++i) {
+            old_stack[stack_ptr] = child_ptr + i;
+            new_stack[stack_ptr++] = new_node.abs_ptr() + i;
+        }
 
-		if (stack_ptr == 0u) break;
-		old_node_index = old_stack[--stack_ptr];
-		new_node_index = new_stack[stack_ptr];
-	}
+        if (stack_ptr == 0u) break;
+        old_node_index = old_stack[--stack_ptr];
+        new_node_index = new_stack[stack_ptr];
+    }
 
-	delete[] nodes;
-	nodes = new_nodes;
-	delete[] materials;
-	materials = new_materials;
-	delete[] physics_data;
-	physics_data = new_physics_data;
+    delete[] nodes;
+    nodes = new_nodes;
+    delete[] materials;
+    materials = new_materials;
+    delete[] physics_data;
+    physics_data = new_physics_data;
 }
 
 }  // namespace tmt

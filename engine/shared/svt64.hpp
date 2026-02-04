@@ -61,7 +61,7 @@ class Stencil;
 class Svt64 {
     /* Recursive tree subdivide function. */
     Svt64Node subdivide(const RawVoxels& raw_data, uint32_t scale, glm::uvec3 index);
-    
+
    public:
     /* List of tree nodes. */
     Svt64Node* nodes = nullptr;
@@ -107,7 +107,7 @@ class Svt64 {
     void build(const RawVoxels& raw_data);
 
     /* Defragment the tree. */
-	void defrag();
+    void defrag();
 
     /* Trace a ray through the tree. */
     Svt64Hit trace(const Ray& ray) const;
