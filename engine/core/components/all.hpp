@@ -11,6 +11,7 @@
 #include "engine/systems/ai/navigation/nav_mesh.hpp"
 #include "engine/core/components/audio_listener.hpp"
 #include "engine/core/components/audio_emitter.hpp"
+#include "engine/core/components/light.hpp"
 #include "engine/core/components/emitter.hpp"
 #include "engine/tools/uuid.hpp"
 
@@ -28,7 +29,8 @@ using SerializeComponents = ComponentRegistry<
 	ComponentCollection,
 	NavMesh,
 	AudioListener,
-	AudioEmitter
+	AudioEmitter,
+	Light
 >;
 // clang-format on
 
@@ -43,6 +45,7 @@ using InspectComponents = ComponentRegistry<
 	NavMesh,
 	AudioListener,
 	AudioEmitter,
+	Light,
 	ParticleEmitter
 >;
 // clang-format on

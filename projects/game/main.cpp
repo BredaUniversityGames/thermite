@@ -68,6 +68,8 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
 
 void generate_random_entities(tmt::ResourceRef<tmt::VoxelVolume>& voxel_volume);
 
+#include "engine/core/resources/texture_2d.hpp"
+
 /* Dragon Scene */
 void DragonScene::on_start() {
     { /* Camera entity */
@@ -119,13 +121,16 @@ void DragonScene::on_start() {
         p2_emitter.spawn_count = 50000;
         p2_emitter.active = false;
     }
+
+    /* Load a Bojan */
+    tmt::engine.resources.load_resource<tmt::Texture2D>({tmt::IO::Location::PROJECT, "bojan.png"}, "Bojan");
 }
 
 #include "engine/core/renderer/renderer.hpp"
 #include "engine/core/renderer/render_view.hpp"
 #include "engine/shared/ray.hpp"
 
-void DragonScene::on_update(const tmt::FrameData&) {
+void DragonScene::on_update(const tmt::FrameData& /*time*/) {
     /* Animate the voxel */
     // elapsed_time += time.delta_time;
     // auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(voxel);
