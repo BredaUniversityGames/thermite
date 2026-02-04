@@ -169,11 +169,19 @@
                 "acceleration": 3.0,
                 "battery": 100.0,
                 "camera_sensitivity": 0.10000000149011612,
-                "drag": 0.4,
+                "drag": 0.4000000059604645,
                 "health": 100.0,
                 "max_battery": 100.0,
                 "max_health": 100.0,
                 "max_speed": 10.0
+            },
+            "Wallet": {
+                "copper": 0.0,
+                "dollars": 0.0,
+                "enemy_cores": 0,
+                "gold": 0.0,
+                "iron": 0.0,
+                "silver": 0.0
             }
         }
     },
