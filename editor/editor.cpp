@@ -38,6 +38,7 @@
 #include "editor/windows/motion_math.hpp"
 #include "editor/windows/debug_lines.hpp"
 #include "editor/windows/ecs.hpp"
+#include "editor/windows/rendering.hpp"
 
 /* Singleton */
 tmt::Editor tmt::editor;
@@ -71,6 +72,7 @@ void Editor::on_engine_init(const ApplicationSpecs&) {
     windows.add<MotionMathPreview>();
     windows.add<DebugLines>();
     windows.add<EcsInspector>();
+    windows.add<Rendering>();
 
     for (auto& window : windows) {
         window->on_editor_start();
