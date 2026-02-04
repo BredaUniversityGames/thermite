@@ -36,7 +36,7 @@ class NodeHierarchy : public IWindow {
     void clear_hierarchy();
 
     void drop_hierarchy();
-    void drop_node(Entity entity, Transform& transform);
+    void drop_node(Entity entity);
 
     void popup_create_node();
     void node_context_menu(Entity node_entity) const;

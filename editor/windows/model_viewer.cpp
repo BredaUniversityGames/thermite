@@ -226,8 +226,6 @@ void modify_voxels(const Brush::Mode brush_mode, const ResourceRef<VoxelVolume>&
         }
 
         case Brush::Mode::SHAPE:
-            break;
-
         default:
             break;
     }

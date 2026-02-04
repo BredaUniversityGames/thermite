@@ -57,7 +57,7 @@ struct NodeCreationData {
     std::string name {"New Node"};
 
     bool has_voxel_grid {false};
-    glm::uvec3 voxel_size {2, 2, 2};
+    glm::uvec3 voxel_size {1, 1, 1};
 };
 std::unique_ptr<NodeCreationData> node_creation_info;
 
@@ -284,7 +284,7 @@ std::vector<char> NodeHierarchy::encode_voxel_scene() {
 void NodeHierarchy::recurse_display_node(const Entity entity, const Name& name, Transform& transform) {
     ImGui::PushID(static_cast<int>(entity));
 
-    const std::set<Entity> children = transform.get_children();
+    const std::set<Entity>& children = transform.get_children();
 
     constexpr ImGuiTreeNodeFlags default_flags =
         ImGuiTreeNodeFlags_FramePadding | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_DrawLinesToNodes | ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick;
@@ -296,8 +296,11 @@ void NodeHierarchy::recurse_display_node(const Entity entity, const Name& name, 
     const bool tree_open = ImGui::TreeNodeEx(name.name.c_str(), flags);
     node_context_menu(entity);
     drag_node(entity, name.name);
-    drop_node(entity, transform);
-    if (ImGui::IsItemClicked()) selected_entity = entity;
+    drop_node(entity);
+
+    const bool popup_clicked_open = (ImGui::IsMouseReleased(ImGuiMouseButton_Right) && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup));
+    // Both left mouse button selects and opening the popup also selects, this makes it clear what node entity you have opened the popup for.
+    if (ImGui::IsItemClicked(ImGuiMouseButton_Left) || popup_clicked_open) selected_entity = entity;
     if (tree_open) {
         for (const Entity child : children) {
             assert(engine.ecs.valid(child));
@@ -332,7 +335,7 @@ void NodeHierarchy::drop_hierarchy() {
     ImGui::EndDragDropTarget();
 }
 
-void NodeHierarchy::drop_node(const Entity entity, Transform& transform) {
+void NodeHierarchy::drop_node(const Entity entity) {
     if (!ImGui::BeginDragDropTarget()) return;
 
     const ImGuiPayload* payload = ImGui::GetDragDropPayload();
@@ -340,7 +343,10 @@ void NodeHierarchy::drop_node(const Entity entity, Transform& transform) {
         const Entity dropped_entity = *static_cast<Entity*>(payload->Data);
 
         if (entity != dropped_entity && ImGui::AcceptDragDropPayload("VoxelNode")) {
+            // We have to get the entity's transform again here, otherwise entt can't find the entity that has the transform, I have no idea why.
+            Transform& transform = engine.ecs.get_component<Transform>(entity);
             transform.add_child(dropped_entity);
+
             if (root_entities.contains(dropped_entity)) root_entities.erase(dropped_entity);
         }
     }
@@ -361,7 +367,7 @@ void NodeHierarchy::popup_create_node() {
     ImGui::Checkbox("Has voxel grid", &has_voxel_grid);
 
     if (has_voxel_grid) {
-        constexpr glm::uvec2 min_max {2, 1024};
+        constexpr glm::uvec2 min_max {1, 1024};
         ImGui::DragScalarN("Size", ImGuiDataType_U32, &node_creation_info->voxel_size.x, 3, 0.25f, &min_max.x, &min_max.y);
     }
 
@@ -399,12 +405,12 @@ void NodeHierarchy::node_context_menu(const Entity node_entity) const {
     constexpr ImGuiPopupFlags flags = ImGuiPopupFlags_NoOpenOverExistingPopup | ImGuiPopupFlags_MouseButtonRight;
     if (!ImGui::BeginPopupContextItem(nullptr, flags)) return;
 
-    if (ImGui::MenuItem("Add node")) {
+    if (ImGui::MenuItem(ICON_MS_ADD "Add node")) {
         node_creation_info = std::make_unique<NodeCreationData>();
         node_creation_info->parent = node_entity;
         ImGui::OpenPopupEx(popup_id);
     }
-    if (ImGui::MenuItem("Delete node")) engine.ecs.destroy_entity(node_entity);
+    if (ImGui::MenuItem(ICON_MS_REMOVE " Delete node")) engine.ecs.destroy_entity(node_entity);
 
     ImGui::EndPopup();
 }

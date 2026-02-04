@@ -1,10 +1,11 @@
 #include "brush.hpp"
 
-#include "editor.hpp"
-#include "editor/windows/node_hierarchy.hpp"
-
 #include <engine/engine.hpp>
 #include <engine/core/ecs.hpp>
+
+#include "editor/imgui/types/all.hpp"
+#include "editor.hpp"
+#include "editor/windows/node_hierarchy.hpp"
 
 #include <imgui.h>
 #include <ImReflect_entry.hpp>
@@ -35,30 +36,29 @@ void Brush::display() {
             const Entity selected_node = editor.windows[Editor::Mode::EDIT].get<NodeHierarchy>().get_selected_entity();
             if (!engine.ecs.valid(selected_node)) break;
 
+            const char* space_button_icon = (editor.gizmo.space ? ICON_MS_LANGUAGE : ICON_MS_VIEW_IN_AR);
+            if (ImGui::Button(space_button_icon)) editor.gizmo.space = static_cast<uint8_t>(!editor.gizmo.space);
+
+            ImGui::SameLine();
+
+            // This button toggles between move and rotate, since scaling in the voxel editor isn't helpful.
+            const char* mode_button_icon = Gizmo::gizmo_op_icons[editor.gizmo.operation];
+            if (ImGui::Button(mode_button_icon)) editor.gizmo.operation = static_cast<uint8_t>(!editor.gizmo.operation);
+
+            ImGui::NewLine();
+
             Transform& transform = engine.ecs.get_component<Transform>(selected_node);
-            // ImReflect::Input("", transform);
+            ImReflect::Input("", transform);
+
             break;
         }
 
-        case Mode::PAINT: {
+        case Mode::PAINT:
+        case Mode::COLOR_PICKER:
+        case Mode::ADD:
+        case Mode::REMOVE:
+        case Mode::SHAPE:
             break;
-        }
-
-        case Mode::COLOR_PICKER: {
-            break;
-        }
-
-        case Mode::ADD: {
-            break;
-        }
-
-        case Mode::REMOVE: {
-            break;
-        }
-
-        case Mode::SHAPE: {
-            break;
-        }
     }
 }
 
