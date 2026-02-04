@@ -1,15 +1,15 @@
 {
     "version": 1,
     "entities": [
-        1048645
+        1048577
     ],
     "Name": {
-        "1048645": {
+        "1048577": {
             "name": "Wheel"
         }
     },
     "Transform": {
-        "1048645": {
+        "1048577": {
             "local_position": {
                 "x": 0.0,
                 "y": 0.0,
@@ -31,7 +31,7 @@
         }
     },
     "Voxel Renderer": {
-        "1048645": {
+        "1048577": {
             "resource": {
                 "file_location": {
                     "sub_location": "PROJECT",

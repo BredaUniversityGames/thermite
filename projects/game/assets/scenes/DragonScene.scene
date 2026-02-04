@@ -7,11 +7,11 @@
         "1048577": {
             "source_location": {
                 "sub_location": "PROJECT",
-                "relative_path": "Car.prefab"
+                "relative_path": "Wheel.prefab"
             },
             "source_entity": 1048577,
             "root_entity": 1048577,
-            "instance_id": "b675a414-7a23-476a-b3fe-f6b11dcca0ef"
+            "instance_id": "751fad6e-7b9d-404b-8828-364bcdfa9787"
         }
     },
     "systems": null

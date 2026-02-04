@@ -1,16 +1,16 @@
 {
     "version": 1,
     "entities": [
-        1048577,
-        1048645
+        123,
+        456
     ],
     "Name": {
-        "1048577": {
+        "123": {
             "name": "Car"
         }
     },
     "Transform": {
-        "1048577": {
+        "123": {
             "local_position": {
                 "x": 0.0,
                 "y": 0.0,
@@ -29,27 +29,27 @@
             },
             "parent": 4294967295,
             "children": [
-                1048645
+                456
             ]
         },
-        "1048645": {
+        "456": {
             "diff": [
                 {
                     "op": "replace",
                     "path": "/parent",
-                    "value": 1048577
+                    "value": 123
                 }
             ]
         }
     },
     "Prefab": {
-        "1048645": {
+        "456": {
             "source_location": {
                 "sub_location": "PROJECT",
                 "relative_path": "Wheel.prefab"
             },
-            "source_entity": 1048645,
-            "root_entity": 1048645,
+            "source_entity": 789,
+            "root_entity": 456,
             "instance_id": "b875182a-c42a-4706-8c90-619ee967744d"
         }
     }

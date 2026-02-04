@@ -397,8 +397,13 @@ static void deserialize_scene(std::set<tmt::Entity>& new_entities, tmt::Ecs& ecs
                 continue;
             }
 
-            tmt::Prefab prefab_comp;
+            /* Special handling for Prefab component */
+            tmt::Prefab prefab_comp {};
             tmt::Serializer::deserialize<tmt::Prefab>(prefab_entry.value(), prefab_comp, state);
+            tmt::Prefab prefab_comp_original{};
+            tmt::Serializer::deserialize<tmt::Prefab>(prefab_entry.value(), prefab_comp_original);
+            prefab_comp.source_entity = prefab_comp_original.source_entity;
+
             const tmt::PrefabInstanceID& instance_id = prefab_comp.instance_id;
             prefab_instance_ids[instance_id] = {
                 prefab_comp.source_location,
