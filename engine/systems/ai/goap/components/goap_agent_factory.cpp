@@ -39,6 +39,7 @@ void GoapAgentFactory::spawn_agent_from_type(const std::string& type_id, Entity 
 
     // --- Required components ---
     ecs.get_component<Transform>(e);  // ensure exists
+    // --- Create the entity ---
     auto& agent = ecs.add_component<GoapAgent>(e);
     auto& ws = ecs.add_component<WorldState>(e);
 
