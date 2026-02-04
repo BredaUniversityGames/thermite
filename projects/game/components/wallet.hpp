@@ -20,7 +20,5 @@ class Wallet : public tmt::GameComponent<Wallet> {
     float copper = 0.0f;
     float iron = 0.0f;
     int enemy_cores = 0;
-
-
 };
 TMT_OBJECT(Wallet, (dollars, gold, silver, copper, iron, enemy_cores));
