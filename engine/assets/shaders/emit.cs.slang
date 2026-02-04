@@ -1,5 +1,8 @@
 import particles;
+import math;
+import view;
 
+ConstantBuffer<RenderView> render_view;
 ConstantBuffer<ParticleEmitter> emitter;
 
 RWStructuredBuffer<Counters> counters;
@@ -8,44 +11,9 @@ RWStructuredBuffer<uint32_t> alive_list_new;
 RWStructuredBuffer<uint32_t> dead_list;
 RWStructuredBuffer<Particle> particles;
 
-uint hash(uint x) {
-    x ^= x >> 16;
-    x *= 0x7feb352d;
-    x ^= x >> 15;
-    x *= 0x846ca68b;
-    x ^= x >> 16;
-    return x;
-}
-
-float rand01(uint seed) {
-    return (hash(seed) & 0x00FFFFFF) / 16777216.0;
-}
-
-float3 random_in_cone(float3 dir, float angle, uint seed) {
-    float u = rand01(seed);
-    float v = rand01(seed + 1);
-
-    float cos_theta = lerp(cos(angle), 1.0f, u);
-    float sin_theta = sqrt(1.0f - cos_theta * cos_theta);
-
-    float phi = v * 6.2831853f;  // 2pi
-
-    // Direction in cone space (around +Z)
-    float3 local_dir = float3(cos(phi) * sin_theta, sin(phi) * sin_theta, cos_theta);
-
-    // Build orthonormal basis for emitter direction
-    float3 w = normalize(dir);
-    float3 up = abs(w.y) < 0.999f ? float3(0, 1, 0) : float3(1, 0, 0);
-    float3 u_axis = normalize(cross(up, w));
-    float3 v_axis = cross(w, u_axis);
-
-    // Rotate local direction into world space
-    return normalize(u_axis * local_dir.x + v_axis * local_dir.y + w * local_dir.z);
-}
-
 [shader("compute")]
 [numthreads(64, 1, 1)]
-void main(uint3 thread_id: SV_DispatchThreadID) {
+void main(uint3 thread_id : SV_DispatchThreadID) {
     if (thread_id.x >= emitter.spawn_count)
         return;
 
@@ -58,9 +26,10 @@ void main(uint3 thread_id: SV_DispatchThreadID) {
     p.lifetime = emitter.lifetime;
     p.tex_index = emitter.tex_index;
 
-    uint seed = thread_id.x + counters[0].alive_count * 1337;
-    float3 dir = random_in_cone(emitter.dir, emitter.cone_angle, seed);
-    float speed = lerp(emitter.min_speed, emitter.max_speed, rand01(seed + 2));
+    uint seed = thread_id.x + render_view.frame_index * 1337;
+
+    float3 dir = sample_cone(emitter.dir, radians(emitter.cone_angle), rand_float2(seed));
+    float speed = lerp(emitter.min_speed, emitter.max_speed, rand_float(seed));
 
     p.velocity = dir * speed;
     p.lifetime = emitter.lifetime;

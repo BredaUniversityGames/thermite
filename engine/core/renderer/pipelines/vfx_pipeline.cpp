@@ -144,6 +144,7 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
         bank.upload_buffer(emitter_buffer, &em, 0, sizeof(GpuEmitter));
 
         render_graph.add_compute_pass("Emit Particles", "emit.cs")
+                    .read(render_view.render_view_buffer)
                     .read(emitter_buffer)
                     .write(counter_buffer)
                     .write(alive_list)
