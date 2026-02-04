@@ -1,35 +1,16 @@
 {
     "version": 1,
     "entities": [
-        0,
-        1,
-        2097154
+        1048577,
+        1048645
     ],
     "Name": {
-        "0": {
+        "1048577": {
             "name": "Car"
-        },
-        "1": {
-            "diff": [
-                {
-                    "op": "replace",
-                    "path": "/name",
-                    "value": "Wheel_Left"
-                }
-            ]
-        },
-        "2097154": {
-            "diff": [
-                {
-                    "op": "replace",
-                    "path": "/name",
-                    "value": "Wheel_Right"
-                }
-            ]
         }
     },
     "Transform": {
-        "0": {
+        "1048577": {
             "local_position": {
                 "x": 0.0,
                 "y": 0.0,
@@ -48,69 +29,28 @@
             },
             "parent": 4294967295,
             "children": [
-                1,
-                2097154
+                1048645
             ]
         },
-        "1": {
+        "1048645": {
             "diff": [
                 {
                     "op": "replace",
                     "path": "/parent",
-                    "value": 0
+                    "value": 1048577
                 }
             ]
-        },
-        "2097154": {
-            "diff": [
-                {
-                    "op": "replace",
-                    "path": "/local_position/x",
-                    "value": 2.6102590560913086
-                },
-                {
-                    "op": "replace",
-                    "path": "/parent",
-                    "value": 0
-                }
-            ]
-        }
-    },
-    "Voxel Renderer": {
-        "0": {
-            "resource": {
-                "file_location": {
-                    "sub_location": "PROJECT",
-                    "relative_path": "dragon128.vengi"
-                },
-                "data": {
-                    "size": {
-                        "x": 58,
-                        "y": 90,
-                        "z": 128
-                    }
-                }
-            }
         }
     },
     "Prefab": {
-        "1": {
+        "1048645": {
             "source_location": {
                 "sub_location": "PROJECT",
                 "relative_path": "Wheel.prefab"
             },
-            "source_entity": 2097154,
-            "root_entity": 2097154,
-            "instance_id": "751fad5e-7b9d-404b-8828-364bcdfa9787"
-        },
-        "2097154": {
-            "source_location": {
-                "sub_location": "PROJECT",
-                "relative_path": "Wheel.prefab"
-            },
-            "source_entity": 2097154,
-            "root_entity": 2097154,
-            "instance_id": "751fad6e-7b9d-404b-8828-364bcdfa9787"
+            "source_entity": 1048645,
+            "root_entity": 1048645,
+            "instance_id": "b875182a-c42a-4706-8c90-619ee967744d"
         }
     }
 }

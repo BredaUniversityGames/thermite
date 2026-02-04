@@ -1,38 +1,17 @@
 {
     "version": 1,
     "entities": [
-        69,
-        420
+        1048577
     ],
-    "Transform": {
-        "420": {
-            "diff": [
-                {
-                    "op": "replace",
-                    "path": "/local_scale/y",
-                    "value": 1.0
-                }
-            ]
-        }
-    },
     "Prefab": {
-        "69": {
+        "1048577": {
             "source_location": {
                 "sub_location": "PROJECT",
                 "relative_path": "Car.prefab"
             },
-            "source_entity": 0,
-            "root_entity": 0,
-            "instance_id": "80ae7362-03fe-4af7-8261-b299563457fd"
-        },
-        "420": {
-            "source_location": {
-                "sub_location": "PROJECT",
-                "relative_path": "Car.prefab"
-            },
-            "source_entity": 2097154,
-            "root_entity": 0,
-            "instance_id": "80ae7362-03fe-4af7-8261-b299563457fd"
+            "source_entity": 1048577,
+            "root_entity": 1048577,
+            "instance_id": "b675a414-7a23-476a-b3fe-f6b11dcca0ef"
         }
     },
     "systems": null

@@ -397,7 +397,6 @@ static void deserialize_scene(std::set<tmt::Entity>& new_entities, tmt::Ecs& ecs
                 continue;
             }
 
-            // const tmt::Prefab& prefab_comp = state.ecs.get_component<tmt::Prefab>(new_entity);
             tmt::Prefab prefab_comp;
             tmt::Serializer::deserialize<tmt::Prefab>(prefab_entry.value(), prefab_comp, state);
             const tmt::PrefabInstanceID& instance_id = prefab_comp.instance_id;
@@ -412,7 +411,8 @@ static void deserialize_scene(std::set<tmt::Entity>& new_entities, tmt::Ecs& ecs
             if (branch.has_value() == false) {
                 branch.set_value({});
             }
-            branch.value().insert({source_entity, new_entity});
+            auto& mapping = branch.value();
+            mapping.insert({source_entity, new_entity});
         }
 
         /* for each prefab instance */
