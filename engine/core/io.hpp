@@ -71,7 +71,7 @@ class IO {
     [[nodiscard]] static FileLocation path_to_file_location(const std::filesystem::path& path);
 
    private:
-    static std::filesystem::path SUB_LOCATIONS[3];
+    static std::filesystem::path sub_locations[3];
 
     static bool stream_open(std::fstream& file_stream, const std::filesystem::path& absolute, std::ios::openmode open_mode);
     static bool create_directories(const std::filesystem::path& absolute);

@@ -3,7 +3,7 @@
 #include <fstream>
 #include "logger.hpp"
 
-#ifndef NOMINMAX 
+#ifndef NOMINMAX
 #define NOMINMAX
 #endif
 
@@ -12,10 +12,9 @@
 #endif
 #include <windows.h>
 
-
 namespace tmt {
 
-std::filesystem::path IO::SUB_LOCATIONS[3] {};
+std::filesystem::path IO::sub_locations[3] {};
 const char* project_relative_dir;
 
 extern "C" const char* TMT_PROJECT_RELATIVE_ASSETS_DIR;
@@ -50,8 +49,7 @@ std::filesystem::path IO::FileLocation::get_relative_path() const {
     return sub_path / relative_path;
 }
 
-void IO::init_mounts()
-{
+void IO::init_mounts() {
     // 0 : PROJECT
     // 1 : ENGINE
     // 2 : EDITOR
@@ -62,23 +60,19 @@ void IO::init_mounts()
     bool packaged_mode = pair.first;
     auto& root_path = pair.second;
 
-    if(packaged_mode)
-    {
-        SUB_LOCATIONS[0] = root_path / "assets/";
-        SUB_LOCATIONS[1] = root_path / "assets/engine";
-        SUB_LOCATIONS[2] = root_path / "assets/editor";
-    }
-    else 
-    {
-        SUB_LOCATIONS[0] = root_path / TMT_PROJECT_RELATIVE_ASSETS_DIR;
-        SUB_LOCATIONS[1] = root_path / "engine/assets";
-        SUB_LOCATIONS[2] = root_path / "editor/assets";
+    if (packaged_mode) {
+        sub_locations[0] = root_path / "assets/";
+        sub_locations[1] = root_path / "assets/engine";
+        sub_locations[2] = root_path / "assets/editor";
+    } else {
+        sub_locations[0] = root_path / TMT_PROJECT_RELATIVE_ASSETS_DIR;
+        sub_locations[1] = root_path / "engine/assets";
+        sub_locations[2] = root_path / "editor/assets";
     }
 }
 
 /* Get the exe file path (win specific) */
-std::filesystem::path IO::get_exec_path()
-{
+std::filesystem::path IO::get_exec_path() {
     std::wstring buf;
     buf.resize(32768);
     DWORD len = GetModuleFileNameW(nullptr, buf.data(), static_cast<DWORD>(buf.size()));
@@ -88,18 +82,15 @@ std::filesystem::path IO::get_exec_path()
     return std::filesystem::path(buf);
 }
 
-std::pair<bool, std::filesystem::path> IO::find_root(const std::filesystem::path& exe_dir)
-{
-    auto has_marker = [](const std::filesystem::path& p) {
-        return (std::filesystem::exists(p / "engine/assets") && std::filesystem::exists(p / "editor/assets"));
-    };
+std::pair<bool, std::filesystem::path> IO::find_root(const std::filesystem::path& exe_dir) {
+    auto has_marker = [](const std::filesystem::path& p) { return (std::filesystem::exists(p / "engine/assets") && std::filesystem::exists(p / "editor/assets")); };
 
-    //iterates backward through parent paths to find signature file structure
+    // iterates backward through parent paths to find signature file structure
     for (auto p = exe_dir; !p.empty(); p = p.parent_path())
         if (has_marker(p)) return std::make_pair(false, p);
 
-    //not found, we might be in packaged mode
-    if(std::filesystem::exists(exe_dir / "assets/engine")) return std::make_pair(true, exe_dir);
+    // not found, we might be in packaged mode
+    if (std::filesystem::exists(exe_dir / "assets/engine")) return std::make_pair(true, exe_dir);
 }
 
 /* Absolute path */
@@ -246,7 +237,7 @@ IO::FileLocation IO::path_to_file_location(const std::filesystem::path& path) {
     }
 
     size_t location_index = 0;
-    for (const std::filesystem::path& sub_location : SUB_LOCATIONS) {
+    for (const std::filesystem::path& sub_location : sub_locations) {
         if (directory_contains_path(sub_location, path)) return {static_cast<Location>(location_index), relative(path, absolute(sub_location))};
         ++location_index;
     }
