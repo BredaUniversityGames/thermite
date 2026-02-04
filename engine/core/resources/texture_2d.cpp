@@ -13,7 +13,6 @@
 namespace tmt {
 
 bool Texture2D::load() {
-
     int tex_width = -1;
     int tex_height = -1;
     int channels = -1;
