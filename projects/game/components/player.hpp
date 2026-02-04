@@ -27,4 +27,4 @@ class Player : public tmt::GameComponent<Player> {
    private:
     glm::vec3 velocity = {0.0f, 0.0f, 0.0f};
 };
-TMT_OBJECT(Player, (camera_sensitivity, acceleration, drag, max_speed, health, batter, max_health, max_battery));
+TMT_OBJECT(Player, (camera_sensitivity, acceleration, drag, max_speed, health, battery, max_health, max_battery));
