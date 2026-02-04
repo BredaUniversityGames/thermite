@@ -1,0 +1,181 @@
+{
+    "version": 1,
+    "entities": [
+        0,
+        1,
+        2,
+        3
+    ],
+    "UUID": {
+        "0": "06673755-7ba9-478d-b29e-254665174d22",
+        "1": "8d6b9f4b-a403-4527-8a31-a878d330acc2",
+        "2": "8456e4c1-1b37-4620-a471-103556d07e8a",
+        "3": "8811d96a-1286-42c3-90c4-11ed5e1720df"
+    },
+    "Name": {
+        "0": {
+            "name": "Entity_Player"
+        },
+        "1": {
+            "name": "Dragon"
+        },
+        "2": {
+            "name": "Dragon2"
+        },
+        "3": {
+            "name": "Dragon3"
+        }
+    },
+    "Transform": {
+        "0": {
+            "local_position": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "local_rotation": {
+                "w": 1.0,
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "local_scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "parent": 4294967295,
+            "children": []
+        },
+        "1": {
+            "local_position": {
+                "x": -23.497236251831055,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "local_rotation": {
+                "w": 1.0,
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "local_scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "parent": 4294967295,
+            "children": []
+        },
+        "2": {
+            "local_position": {
+                "x": 32.571022033691406,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "local_rotation": {
+                "w": 1.0,
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "local_scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "parent": 4294967295,
+            "children": []
+        },
+        "3": {
+            "local_position": {
+                "x": 0.0,
+                "y": 0.428161084651947,
+                "z": 27.51511001586914
+            },
+            "local_rotation": {
+                "w": 1.0,
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "local_scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "parent": 4294967295,
+            "children": []
+        }
+    },
+    "Voxel Renderer": {
+        "1": {
+            "resource": {
+                "file_location": {
+                    "sub_location": "PROJECT",
+                    "relative_path": "dragon128.vengi"
+                },
+                "data": {
+                    "size": {
+                        "x": 58,
+                        "y": 90,
+                        "z": 128
+                    }
+                }
+            }
+        },
+        "2": {
+            "resource": {
+                "file_location": {
+                    "sub_location": "PROJECT",
+                    "relative_path": "dragon128.vengi"
+                },
+                "data": {
+                    "size": {
+                        "x": 58,
+                        "y": 90,
+                        "z": 128
+                    }
+                }
+            }
+        },
+        "3": {
+            "resource": {
+                "file_location": {
+                    "sub_location": "PROJECT",
+                    "relative_path": "dragon128.vengi"
+                },
+                "data": {
+                    "size": {
+                        "x": 58,
+                        "y": 90,
+                        "z": 128
+                    }
+                }
+            }
+        }
+    },
+    "Camera": {
+        "0": {
+            "fov": 80.0,
+            "pitch": 0.0,
+            "yaw": 90.0,
+            "active": true
+        }
+    },
+    "ComponentCollection": {
+        "0": {
+            "Player": {
+                "acceleration": 20.0,
+                "battery": 100.0,
+                "camera_sensitivity": 0.10000000149011612,
+                "drag": 5.0,
+                "health": 100.0,
+                "max_battery": 100.0,
+                "max_health": 100.0,
+                "max_speed": 10.0
+            }
+        }
+    },
+    "systems": null
+}

@@ -28,17 +28,11 @@ class Game : public tmt::Application {
 class MainMenuScene : public tmt::Scene<MainMenuScene> {
 public:
     static constexpr std::string_view scene_name() { return "MainMenuScene"; }
-    void on_start() override;
-    void on_update(const tmt::FrameData& time) override;
-    void on_end() override;
 };
 
 class MainGameScene : public tmt::Scene<MainGameScene> {
 public:
     static constexpr std::string_view scene_name() { return "MainGameScene"; }
-    void on_start() override;
-    void on_update(const tmt::FrameData& time) override;
-    void on_end() override;
 };
 
 std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs& args) {
@@ -54,8 +48,8 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     tmt::engine.ecs.systems.add<tmt::CameraSystem>();
 
     /* Register Scenes */
-    tmt::engine.scenes.register_scene<MainMenuScene>();
     tmt::engine.scenes.register_scene<MainGameScene>();
+    tmt::engine.scenes.register_scene<MainMenuScene>();
 
     /* Register Components */
     tmt::engine.component_registry.register_component<Player>();
