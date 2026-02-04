@@ -74,7 +74,7 @@ void MainScene::on_update(const tmt::FrameData& time) {
         /* Spawn box models with forward force */
         for (int x = -2; x <= 2; x++) {
             for (int y = -2; y <= 2; y++) {
-                auto entity = tmt::engine.ecs.create_entity();
+                auto entity = tmt::engine.ecs.create_entity("Crate");
                 auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
                 auto& renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(entity);
                 renderer.resource = box_model;
