@@ -511,23 +511,3 @@ void tag_invoke(JsonReflect::deserialize_t, const tmt::json& j, std::set<tmt::En
     deserialize_scene(new_entities, ecs, state);
     state.entity_mapping.print();
 }
-
-/* Component specific deserialize functions */
-// void tag_invoke(JsonReflect::deserialize_t, const Json& j, tmt::Entity& component, const tmt::DeserializeState& state) {
-//     component = tmt::UUID::fromStrFactory(j.get<std::string>());
-//     if (state.ecs.has_uuid(component) == false) return;
-//
-//     /* uuid already exists as a component */
-//     const tmt::Entity owner = *state.ecs.get_entity_by_uuid(component);
-//     const tmt::Entity current_entity = state.ecs.get_entity(component);
-//
-//     if (owner == current_entity) return;
-//
-//     /* UUID collision detected */
-//     tmt::Log::warn(tmt::Log::Scope::ENGINE, "[Serialization] UUID collision detected! Entity {} already owns UUID {}. Generating a new UUID for entity {}.", owner, component,
-//     current_entity);
-//
-//     /* Generate a new UUID for the current entity */
-//     component = tmt::UUIDGenerator::generate();
-//     state.ecs.register_uuid(component, current_entity);
-// }
