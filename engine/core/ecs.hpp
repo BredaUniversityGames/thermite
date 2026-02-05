@@ -92,7 +92,7 @@ class Ecs : public OnGameStart, public OnGameUpdate, public OnGameFixedUpdate, p
         if constexpr (COUNT == 1) {
             return EcsComponentTraits<Component...>::add(registry, entity);
         } else {
-            return std::make_tuple(add_component<Component>(entity)...);
+            return std::forward_as_tuple(add_component<Component>(entity)...);
         }
     }
 
@@ -114,7 +114,7 @@ class Ecs : public OnGameStart, public OnGameUpdate, public OnGameFixedUpdate, p
         if constexpr (COUNT == 1) {
             return EcsComponentTraits<Component...>::get(registry, entity);
         } else {
-            return std::make_tuple(get_component<Component>(entity)...);
+            return std::forward_as_tuple(get_component<Component>(entity)...);
         }
     }
 
@@ -125,7 +125,7 @@ class Ecs : public OnGameStart, public OnGameUpdate, public OnGameFixedUpdate, p
         if constexpr (COUNT == 1) {
             return EcsComponentTraits<Component...>::get(registry, entity);
         } else {
-            return std::make_tuple(get_component<Component>(entity)...);
+            return std::forward_as_tuple(get_component<Component>(entity)...);
         }
     }
 
@@ -190,14 +190,14 @@ class Ecs : public OnGameStart, public OnGameUpdate, public OnGameFixedUpdate, p
     }
 
     void destroy_entity(const Entity entity, bool force = false) {
-        auto children = get_component<Transform>(entity).get_all_children();
         if (force) {
             registry.destroy(entity);
         } else {
-            registry.emplace<Delete>(entity);
+            registry.emplace_or_replace<Delete>(entity);
         }
 
-        for (const auto child : children) {
+        auto children = get_component<Transform>(entity).get_children();
+        for (auto child : children) {
             destroy_entity(child, force);
         }
     }
