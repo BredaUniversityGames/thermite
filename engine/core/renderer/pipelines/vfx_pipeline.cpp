@@ -193,6 +193,8 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
                                 .read(particle_buffer, ShaderStages::Vertex)
                                 .read(alive_list, ShaderStages::Vertex)
                                 .read(linear_sampler, ShaderStages::Pixel | ShaderStages::Vertex)
+                                .depth_stencil(render_view.dbuffer.image, true, true)
+                                .load_op_depth(LoadOp::Load)
                                 .load_op_color(LoadOp::Load)
                                 .attach(render_image)
                                 .raster_extent(render_res.x, render_res.y);
