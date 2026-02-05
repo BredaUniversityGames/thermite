@@ -83,6 +83,16 @@ struct DeserializeState {
 }  // namespace tmt
 /* Entity with state */
 tmt::json tag_invoke(JsonReflect::serialize_t, const tmt::Entity& entity, tmt::SerializeState& state) {
+    if (state.current_prefab_instance_id.has_value()) {
+        const bool is_prefab = state.ecs.has_component<tmt::Prefab>(entity);
+        if (is_prefab) {
+            const auto& prefab_comp = state.ecs.get_component<tmt::Prefab>(entity);
+            if (prefab_comp.instance_id == state.current_prefab_instance_id.value()) {
+                return static_cast<std::uint32_t>(prefab_comp.source_entity);
+            }
+        }
+    }
+
     state.referenced_entities_scope.insert(entity);
     return static_cast<std::uint32_t>(entity);
 }
@@ -433,6 +443,11 @@ static void deserialize_scene(std::set<tmt::Entity>& new_entities, tmt::Ecs& ecs
             prefab_comp.source_entity = prefab_comp_original.source_entity;
 
             const tmt::PrefabInstanceID& instance_id = prefab_comp.instance_id;
+
+            if (prefab_instance_ids.contains(instance_id)) {
+                PrefabInfo& info = prefab_instance_ids.at(instance_id);
+            }
+
             prefab_instance_ids[instance_id] = {
                 prefab_comp.source_location,
                 prefab_comp.root_entity,
