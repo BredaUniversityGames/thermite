@@ -6,7 +6,6 @@
 
 using namespace tmt;
 
-// TODO: first generate low LOD, then refine to higher LODs
 void NavMesh::generate_mesh_over_time() {
     entered_loop = false;
     if (iteration_nmg == 0) {
