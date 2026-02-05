@@ -123,7 +123,7 @@ tmt::json tag_invoke(JsonReflect::serialize_t, const tmt::Ecs& ecs) {
     }
     tmt::json result = tmt::Serializer::serialize(entities, ecs);
     tmt::json& systems = result["systems"];
-    const auto size = ecs.systems.size();
+    // const auto size = ecs.systems.size();
     for (const auto& system : ecs.systems) {
         const auto serialized = system->serialize();
         if (serialized.empty() == false) {
