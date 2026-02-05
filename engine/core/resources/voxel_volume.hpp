@@ -37,5 +37,3 @@ class VoxelVolume : public tmt::RuntimeResource<VoxelScene> {
 };
 
 }  // namespace tmt
-
-TMT_OBJECT(tmt::VoxelVolume, (size));
