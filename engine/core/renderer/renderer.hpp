@@ -29,6 +29,7 @@ class Renderer {
     GPUAdapter& gpu;
     RenderGraph& render_graph;
 
+    /* Debug camera */
     Transform debug_transform;
     Camera debug_camera;
 

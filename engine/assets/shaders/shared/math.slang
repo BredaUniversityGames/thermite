@@ -106,7 +106,6 @@ public float2 rand_float2(inout uint state) {
 
 /* Generate a sample direction within a cone around a direction vector. */
 public float3 sample_cone(const float3 dir, const float half_angle, const float2 uv) {
-    // const float cos_theta = 1.0f - uv.x * (1.0f - cos(half_angle));
     const float cos_theta = 1.0f - uv.x * (1.0f - half_angle);
     const float sin_theta = sqrt(1.0f - cos_theta * cos_theta);
     const float phi = 2.0f * 3.14f * uv.y;
