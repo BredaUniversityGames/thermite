@@ -13,10 +13,10 @@ class VoxelEditScene : public Scene<VoxelEditScene> {
     static constexpr std::string_view scene_name() { return "VoxelEditScene"; }
 };
 
-class EditMode : public IEditorMode {
+class VoxelMode : public IEditorMode {
    public:
     // Inherited via IEditorMode.
-    constexpr std::string get_name() override { return "Edit"; }
+    constexpr std::string get_name() override { return "Voxel"; }
     void display_main_menu() override;
     void on_switch_to() override;
     void on_switch_away() override;

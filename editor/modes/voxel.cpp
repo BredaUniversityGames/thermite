@@ -1,4 +1,4 @@
-#include "edit.hpp"
+#include "voxel.hpp"
 
 #include "engine/engine.hpp"
 #include "engine/core/ecs.hpp"
@@ -15,7 +15,7 @@
 
 namespace tmt {
 
-void EditMode::display_main_menu() {
+void VoxelMode::display_main_menu() {
     if (!ImGui::BeginMenu("File")) return;
 
     if (ImGui::MenuItem("New")) editor.windows[Editor::Mode::VOXEL].get<NodeHierarchy>().new_svh();
@@ -43,7 +43,7 @@ void EditMode::display_main_menu() {
     ImGui::EndMenu();
 }
 
-void EditMode::on_switch_to() {
+void VoxelMode::on_switch_to() {
     engine.scenes.load_scene<VoxelEditScene>();
 
     if (!edit_data.empty()) {
@@ -58,7 +58,7 @@ void EditMode::on_switch_to() {
     engine.renderer.get_debug_transform() = cached_editor_transform;
 }
 
-void EditMode::on_switch_away() {
+void VoxelMode::on_switch_away() {
     edit_data = editor.windows[Editor::Mode::VOXEL].get<NodeHierarchy>().encode_voxel_scene();
 
     cached_editor_camera = engine.renderer.get_debug_camera();

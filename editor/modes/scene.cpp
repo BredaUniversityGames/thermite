@@ -1,4 +1,4 @@
-#include "object.hpp"
+#include "scene.hpp"
 
 #include "engine/engine.hpp"
 #include "engine/core/scenes.hpp"
@@ -10,9 +10,9 @@
 
 namespace tmt {
 
-ObjectMode::ObjectMode() : previous_scene_type(engine.scenes.get_active_scene_type()) {}
+SceneMode::SceneMode() : previous_scene_type(engine.scenes.get_active_scene_type()) {}
 
-void ObjectMode::display_main_menu() {
+void SceneMode::display_main_menu() {
     if (ImGui::BeginMenu("Scene")) {
         if (ImGui::MenuItem("Save Scene")) {
             engine.scenes.serialize_active_scene();
@@ -21,7 +21,7 @@ void ObjectMode::display_main_menu() {
     }
 }
 
-void ObjectMode::on_switch_to() {
+void SceneMode::on_switch_to() {
     is_switching_to = true;
     engine.scenes.load_scene(previous_scene_type);
     is_switching_to = false;
@@ -32,7 +32,7 @@ void ObjectMode::on_switch_to() {
     engine.renderer.get_debug_transform() = cached_editor_transform;
 }
 
-void ObjectMode::on_switch_away() {
+void SceneMode::on_switch_away() {
     previous_scene_type = engine.scenes.get_active_scene_type();
     cached_scene = Serializer::serialize(engine.ecs);
 
@@ -40,7 +40,7 @@ void ObjectMode::on_switch_away() {
     cached_editor_transform = engine.renderer.get_debug_transform();
 }
 
-void ObjectMode::on_pre_load_scene(PreLoadSceneEvent& event) {
+void SceneMode::on_pre_load_scene(PreLoadSceneEvent& event) {
     if (!is_switching_to) return;
 
     // Use the cached json to load the object mode scene instead of the default one, this restores the previous working state.
