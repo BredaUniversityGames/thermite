@@ -15,26 +15,26 @@ jobs:
           - Debug-Game
           - Release-Game
     runs-on: windows-latest
+    env:
+      SCCACHE_GHA_ENABLED: "true"
+      # Normalize paths for cache hits across runners
+      SCCACHE_BASEDIRS: ${{ github.workspace }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           submodules: recursive
       
+      - name: Setup sccache
+        uses: mozilla-actions/sccache-action@v0.0.9
+
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1
       
-      - name: Cache build directory
-        uses: actions/cache@v4
-        with:
-          path: build/${{ matrix.preset }}
-          key: build-${{ runner.os }}-${{ matrix.preset }}-${{ hashFiles('**/CMakeLists.txt', 'CMakePresets.json') }}
-          restore-keys: |
-            build-${{ runner.os }}-${{ matrix.preset }}-
       - name: Configure with preset
         shell: pwsh
         run: |
-          cmake --preset ${{ matrix.preset }}
+          cmake --preset ${{ matrix.preset }} -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache -DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT=Embedded
       
       - name: Build with preset
         shell: pwsh
