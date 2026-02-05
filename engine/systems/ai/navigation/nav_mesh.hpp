@@ -94,8 +94,8 @@ class NavMesh {
    public:
     NavMesh() = default;
     ~NavMesh() {
-        if (buffer_a) delete buffer_a;
-        if (buffer_b) delete buffer_b;
+        delete buffer_a;
+        delete buffer_b;
     };
 
     std::vector<Node>* nodes;
@@ -113,8 +113,8 @@ class NavMesh {
     bool entered_loop = false;
 
     void init() {
-        if (buffer_a) delete buffer_a;
-        if (buffer_b) delete buffer_b;
+        delete buffer_a;
+        delete buffer_b;
         buffer_a = new std::vector<Node>;
         buffer_b = new std::vector<Node>;
         nodes = buffer_a;

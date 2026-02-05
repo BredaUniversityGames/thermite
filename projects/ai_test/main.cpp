@@ -102,7 +102,7 @@ class AIScene : public tmt::Scene<AIScene> {
     tmt::ResourceRef<tmt::VoxelVolume> volumes[3];
     int index = 0;
     void on_start() override;
-    void on_update(const tmt::FrameData& time) override {
+    void on_update(const tmt::FrameData&) override {
         auto input = tmt::Input();
         input.init();
         nav_mesh = &tmt::engine.ecs.get_component<tmt::NavMesh>(voxel);
