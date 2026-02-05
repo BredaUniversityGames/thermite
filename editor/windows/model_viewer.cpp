@@ -251,8 +251,6 @@ void ModelViewer::display() {
     engine.renderer.render_view.set_viewport_size(static_cast<uint32_t>(size.x), static_cast<uint32_t>(size.y));
     ImGui::Image(engine.renderer.render_view.imgui_viewport, size);
 
-    if (ImGuizmo::IsOver()) Log::info("is over");
-
     const Brush::Mode brush_mode = editor.windows[Editor::Mode::VOXEL].get<Brush>().get_active_mode();
     if (brush_mode == Brush::Mode::MULTI_TOOL) {
         const Entity selected_entity = editor.windows[Editor::Mode::VOXEL].get<NodeHierarchy>().get_selected_entity();
