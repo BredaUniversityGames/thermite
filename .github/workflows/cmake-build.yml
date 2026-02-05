@@ -40,7 +40,10 @@ jobs:
         shell: pwsh
         run: |
           cmake --build --preset ${{ matrix.preset }} -j
-  
+      - name: Run sccache stat for check
+        shell: bash
+        run: ${SCCACHE_PATH} --show-stats
+        
   cpp-linter-windows:
     name: "Run cpp-linter (Windows)"
     runs-on: windows-latest
@@ -91,23 +94,19 @@ jobs:
         include:
           - preset: Debug-Game
     runs-on: windows-latest
+    env:
+      SCCACHE_GHA_ENABLED: "true"
+      SCCACHE_BASEDIRS: ${{ github.workspace }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           submodules: recursive
-      
+      - name: Setup sccache
+        uses: mozilla-actions/sccache-action@v0.0.9
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1
       
-      - name: Cache build directory
-        uses: actions/cache@v4
-        with:
-          path: build/${{ matrix.preset }}
-          key: build-${{ runner.os }}-${{ matrix.preset }}-tests}}
-          restore-keys: |
-            build-${{ runner.os }}-${{ matrix.preset }}-tests-
-            build-${{ runner.os }}-${{ matrix.preset }}-
       
       - name: Cache FetchContent downloads
         uses: actions/cache@v4
@@ -119,7 +118,8 @@ jobs:
       - name: Configure with tests enabled
         shell: pwsh
         run: |
-          cmake --preset ${{ matrix.preset }} -DTHERMITE_BUILD_TESTS=ON
+          cmake --preset ${{ matrix.preset }} -DTHERMITE_BUILD_TESTS=ON -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache -DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT=Embedded
+      
       
       - name: Build with tests
         shell: pwsh
