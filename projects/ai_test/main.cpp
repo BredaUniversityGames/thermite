@@ -102,22 +102,7 @@ class AIScene : public tmt::Scene<AIScene> {
     tmt::ResourceRef<tmt::VoxelVolume> volumes[3];
     int index = 0;
     void on_start() override;
-    void on_update(const tmt::FrameData&) override {
-        auto input = tmt::Input();
-        input.init();
-        nav_mesh = &tmt::engine.ecs.get_component<tmt::NavMesh>(voxel);
-        if (input.is_keyboard_button_just_pressed(tmt::Key::P)) {
-            nav_mesh->generate_mesh_over_time();
-        }
-        if (input.is_keyboard_button_just_pressed(tmt::Key::O)) {
-            index++;
-            index = index % 3;
-            nav_mesh->voxel_volume = volumes[index];
-            auto& renderer = tmt::engine.ecs.get_component<tmt::VoxelRenderer>(voxel);
-            renderer.resource = volumes[index];
-            nav_mesh->generate_mesh();
-        }
-    };
+    void on_update(const tmt::FrameData&) override {};
     void on_end() override {};
 };
 
@@ -186,6 +171,6 @@ void AIScene::on_start() {
         nav_mesh = &tmt::engine.ecs.add_component<tmt::NavMesh>(voxel);
         nav_mesh->voxel_volume = voxel_volume;
         nav_mesh->lod_level = 1;
-        // nav_mesh->generate_mesh();
+        nav_mesh->generate_mesh_over_time();
     }
 }
