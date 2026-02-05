@@ -2,8 +2,11 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <fstream>
 
 #include "world_state.hpp"
+
+#include "engine/core/reflection.hpp"
 
 namespace tmt {
 
@@ -67,9 +70,30 @@ class GoapAgentTypeRegistry {
     // Get all registered agent types
     const auto& get_all() const { return types; }
 
-   private:
+    // Remove an agent type by ID
+    void remove_type(const std::string& id) { types.erase(id); }
+
     // Internal storage mapping type ID -> GoapAgentType
     std::unordered_map<std::string, GoapAgentType> types;
+
+    void load() {
+        std::ifstream f("goap_agents.json");
+        if (!f.is_open()) return;
+
+        JsonReflect::json j;
+        f >> j;
+        Serializer::deserialize(j, *this);
+    }
+
+    void save() const {
+        tmt::json j = Serializer::serialize(*this);
+        std::ofstream f("goap_agents.json");
+        f << j.dump(2);
+    }
+
+   private:
 };
 
 }  // namespace tmt
+
+TMT_OBJECT(tmt::GoapAgentTypeRegistry, (types));

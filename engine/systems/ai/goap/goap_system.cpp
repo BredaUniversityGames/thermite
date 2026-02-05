@@ -59,7 +59,7 @@ void Goap::on_end() { Log::info("Goap on_end"); }
  *  2. update_plan()   : generate a new plan when needed
  *  3. update_action() : tick the action currently running
  */
-void Goap::process_agent(Entity entity, WorldState& ws, float dt) {
+void Goap::process_agent(Entity entity, WorldState& ws, float /*dt*/) {
     auto& registry = engine.ecs.get_registry();
     auto& agent = registry.get<GoapAgent>(entity);
 
