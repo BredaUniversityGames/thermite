@@ -43,22 +43,12 @@
                 {
                     "op": "replace",
                     "path": "/local_rotation/w",
-                    "value": 0.7071067690849304
+                    "value": 0.7071068286895752
                 },
                 {
                     "op": "replace",
                     "path": "/local_rotation/z",
-                    "value": -0.7071067690849304
-                },
-                {
-                    "op": "replace",
-                    "path": "/local_scale/x",
-                    "value": 0.9999999403953552
-                },
-                {
-                    "op": "replace",
-                    "path": "/local_scale/y",
-                    "value": 0.9999999403953552
+                    "value": -0.7071068286895752
                 },
                 {
                     "op": "replace",
@@ -104,9 +94,9 @@
                 "z": 0.0
             },
             "local_scale": {
-                "x": 0.0999983549118042,
+                "x": 0.10000000149011612,
                 "y": 0.10000000149011612,
-                "z": 0.0999983549118042
+                "z": 0.10000000149011612
             },
             "parent": 1048578,
             "children": []
@@ -116,22 +106,12 @@
                 {
                     "op": "replace",
                     "path": "/local_rotation/w",
-                    "value": 0.7071067690849304
+                    "value": 0.7071068286895752
                 },
                 {
                     "op": "replace",
                     "path": "/local_rotation/z",
-                    "value": 0.7071067690849304
-                },
-                {
-                    "op": "replace",
-                    "path": "/local_scale/x",
-                    "value": 0.9999999403953552
-                },
-                {
-                    "op": "replace",
-                    "path": "/local_scale/y",
-                    "value": 0.9999999403953552
+                    "value": 0.7071068286895752
                 },
                 {
                     "op": "replace",
@@ -177,5 +157,6 @@
             "root_entity": 2097152,
             "instance_id": "863cefd5-cfea-434b-8d26-d39389956632"
         }
-    }
+    },
+    "systems": null
 }
