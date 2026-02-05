@@ -1,9 +1,7 @@
 name: build
-
 on:
   pull_request:
     branches: 'main'
-
 jobs:
   build:
     name: "Build ${{ matrix.preset }}"
@@ -15,6 +13,8 @@ jobs:
           - Debug-Game
           - Release-Game
     runs-on: windows-latest
+    env:
+      SCCACHE_GHA_ENABLED: "on"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -24,8 +24,14 @@ jobs:
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1
       
+      - name: Setup sccache
+        uses: mozilla-actions/sccache-action@v0.0.7
+      
       - name: Configure with preset
         shell: pwsh
+        env:
+          CMAKE_C_COMPILER_LAUNCHER: sccache
+          CMAKE_CXX_COMPILER_LAUNCHER: sccache
         run: |
           cmake --preset ${{ matrix.preset }}
       
@@ -84,6 +90,8 @@ jobs:
         include:
           - preset: Debug-Game
     runs-on: windows-latest
+    env:
+      SCCACHE_GHA_ENABLED: "on"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -92,13 +100,21 @@ jobs:
       
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1
+      
+      - name: Setup sccache
+        uses: mozilla-actions/sccache-action@v0.0.7
+      
       - name: Cache FetchContent downloads
         uses: actions/cache@v4
         with:
-            path: build/${{ matrix.preset }}/_deps
-            key: fetchcontent-${{ runner.os }}-${{ hashFiles('tests/CMakeLists.txt') }}
+          path: build/${{ matrix.preset }}/_deps
+          key: fetchcontent-${{ runner.os }}-${{ hashFiles('tests/CMakeLists.txt') }}
+      
       - name: Configure with tests enabled
         shell: pwsh
+        env:
+          CMAKE_C_COMPILER_LAUNCHER: sccache
+          CMAKE_CXX_COMPILER_LAUNCHER: sccache
         run: |
           cmake --preset ${{ matrix.preset }} -DTHERMITE_BUILD_TESTS=ON
       
