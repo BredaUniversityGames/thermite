@@ -160,7 +160,6 @@ bool Input::is_keyboard_button_released(Key key) const {
 
 bool Input::is_mouse_button_pressed(MouseButton button) const {
     if (!can_use_input_mouse()) return false;
-    printf("Mouse buttons state: %d, checking button: %d\n", mouse_buttons, static_cast<int>(button));
     return mouse_buttons & SDL_BUTTON_MASK(static_cast<int>(button));
 }
 bool Input::is_mouse_button_just_pressed(MouseButton button) const {
