@@ -7,7 +7,7 @@
 using namespace tmt;
 
 // TODO: first generate low LOD, then refine to higher LODs
-void NavMesh::generate_mesh_over_time() { 
+void NavMesh::generate_mesh_over_time() {
     entered_loop = false;
     if (iteration_nmg == 0) {
         if (!generating) {
@@ -20,8 +20,7 @@ void NavMesh::generate_mesh_over_time() {
         if (generating_nodes) generating_nodes->clear();
         generating = true;
         generate_mesh(100);
-    } 
-    else {
+    } else {
         generate_mesh(100);
     }
 
@@ -50,7 +49,6 @@ void NavMesh::generate_mesh(int iterations) {
         volume.traverse(voxel_volume, generating_lod);
     }
 
-    
     std::unordered_map<uint32_t, int> node_map;
     constexpr float voxel_scale = 0.1f;
     glm::vec3 full_size = glm::vec3(voxel_volume->size);
@@ -265,7 +263,7 @@ std::optional<glm::vec3> tmt::NavMesh::follow_path(glm::vec3 start, glm::vec3 en
 }
 
 void tmt::NavMesh::inspect() {
-    //return;
+    // return;
     tmt::engine.polyline.use_color(1.0f, 0.0f, 0.0f);
     tmt::engine.polyline.use_line_width(2, true);
 
