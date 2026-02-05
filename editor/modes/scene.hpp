@@ -9,12 +9,12 @@
 
 namespace tmt {
 
-class ObjectMode : public IEditorMode, public OnPreLoadScene {
+class SceneMode : public IEditorMode, public OnPreLoadScene {
    public:
-    ObjectMode();
+    SceneMode();
 
     // Inherited via IEditorMode.
-    constexpr std::string get_name() override { return "Object"; }
+    constexpr std::string get_name() override { return "Scene"; }
     void display_main_menu() override;
     void on_switch_to() override;
     void on_switch_away() override;

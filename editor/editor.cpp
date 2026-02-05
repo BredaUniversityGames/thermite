@@ -18,8 +18,8 @@
 #include "editor/gizmo.hpp"
 
 /* Modes */
-#include "editor/modes/object.hpp"
-#include "editor/modes/edit.hpp"
+#include "editor/modes/scene.hpp"
+#include "editor/modes/voxel.hpp"
 
 /* Windows */
 #include "editor/windows/hierarchy.hpp"
@@ -60,8 +60,8 @@ void Editor::on_engine_init(const ApplicationSpecs&) {
     save_data.load();
     gizmo.init();
 
-    mode_handlers[Mode::SCENE] = std::make_unique<ObjectMode>();
-    mode_handlers[Mode::VOXEL] = std::make_unique<EditMode>();
+    mode_handlers[Mode::SCENE] = std::make_unique<SceneMode>();
+    mode_handlers[Mode::VOXEL] = std::make_unique<VoxelMode>();
 
     windows[Mode::SCENE].add<Hierarchy>();
     windows[Mode::SCENE].add<GameFlow>();
