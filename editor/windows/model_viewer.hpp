@@ -27,9 +27,6 @@ class ModelViewer : public IWindow {
 
    private:
     glm::vec2 mouse_position {};
-
-    // Pending entity, needs to be stored so we only switch entities if we aren't modifying the gizmo.
-    std::optional<Entity> clicked_entity;
 };
 
 }  // namespace tmt

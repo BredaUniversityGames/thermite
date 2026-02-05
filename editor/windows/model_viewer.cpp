@@ -32,6 +32,7 @@ float intersect_aabb(const Ray& ray, const glm::vec3 box_min, const glm::vec3 bo
     return t_near > t_far ? BIG_F32 : t_far;
 }
 
+// Draw the grid of a bounding box face.
 void draw_face_grid(const glm::vec3& start, const glm::vec3& right, const glm::vec3& up, const float length, const float height) {
     glm::vec3 point_one = start;
     glm::vec3 point_two = start + up * height;
@@ -64,6 +65,7 @@ struct FaceData {
     glm::vec3 face_center {};
 };
 
+// Use the current face index and selection transform to calculate the necessary data for drawing later.
 FaceData calculate_face_info(const int32_t face_index, const Transform& transform, const glm::vec3& half_extent) {
     const std::div_t& result = std::div(face_index, 2);
 
@@ -78,6 +80,7 @@ FaceData calculate_face_info(const int32_t face_index, const Transform& transfor
     return info;
 }
 
+// Draw a single face of a voxel grid bounding box.
 bool draw_face(const FaceData& info, const Transform& transform, const glm::vec3& half_extent) {
     const glm::vec3 camera_position = engine.renderer.get_debug_transform().get_world_position();
     if (glm::dot(info.world_normal, camera_position - info.face_center) >= 0.0f) return false;
@@ -93,6 +96,7 @@ bool draw_face(const FaceData& info, const Transform& transform, const glm::vec3
     return true;
 }
 
+// Do some additional calculations to get the necessary info to draw the grid of the face that was hit/pointed to.
 void draw_selected_face(const FaceData& info, const glm::vec3& half_extent, const Transform& transform) {
     glm::vec3 min = -half_extent;
     min[info.normal_index] = half_extent[info.normal_index] * info.normal_sign;
@@ -154,10 +158,12 @@ bool handle_selection(const Ray& mouse_ray, Hit& hit, const bool can_hit_face, c
         is_valid_hit = (far > 0.0f && hit.distance >= far);
     }
 
+    // Loop over all the grid's outer faces and draw them.
     for (int32_t i = 0; i < 6; i++) {
         FaceData face = calculate_face_info(i, transform, half_extent);
-        if (!draw_face(face, transform, half_extent) || !is_valid_hit) continue;
+        if (!draw_face(face, transform, half_extent) || !is_valid_hit) continue;  // Exit if we didn't draw the face (the face can't be viewed and thus can't be selected).
 
+        // Check if the displayed face was the face that was hit, then update the "hit" variable's members with the new info.
         const glm::vec3 local_hit_position = local_ray.origin + local_ray.dir * far;
         const float extent_axis = half_extent[face.normal_index] * face.normal_sign;
 
@@ -185,6 +191,7 @@ bool handle_selection(const Ray& mouse_ray, Hit& hit, const bool can_hit_face, c
     return true;
 }
 
+// Update the voxels based on the current selected brush.
 void modify_voxels(const Brush::Mode brush_mode, const ResourceRef<VoxelVolume>& model, const Hit& hit) {
     switch (brush_mode) {
         case Brush::Mode::PAINT: {
@@ -244,45 +251,36 @@ void ModelViewer::display() {
     engine.renderer.render_view.set_viewport_size(static_cast<uint32_t>(size.x), static_cast<uint32_t>(size.y));
     ImGui::Image(engine.renderer.render_view.imgui_viewport, size);
 
+    if (ImGuizmo::IsOver()) Log::info("is over");
+
     const Brush::Mode brush_mode = editor.windows[Editor::Mode::VOXEL].get<Brush>().get_active_mode();
     if (brush_mode == Brush::Mode::MULTI_TOOL) {
         const Entity selected_entity = editor.windows[Editor::Mode::VOXEL].get<NodeHierarchy>().get_selected_entity();
 
-        const bool used_gizmo = editor.gizmo.manip(window_pos.x, window_pos.y, size.x, size.y, {&selected_entity, &selected_entity + 1});
-        if (!used_gizmo) {
-            if (clicked_entity.has_value()) editor.windows[Editor::Mode::VOXEL].get<NodeHierarchy>().set_selected_entity(*clicked_entity);
-        } else {
-            clicked_entity.reset();
+        editor.gizmo.manip(window_pos.x, window_pos.y, size.x, size.y, {&selected_entity, &selected_entity + 1});
+
+        if (!ImGuizmo::IsOver() && engine.input.is_mouse_button_just_pressed(MouseButton::LEFT)) {
+            const Ray mouse_ray = engine.renderer.render_view.pixel_ray(mouse_position);
+            const Hit hit = engine.renderer.trace_ray(mouse_ray);
+
+            editor.windows[Editor::Mode::VOXEL].get<NodeHierarchy>().set_selected_entity(hit.entity);
         }
     }
 
+    // Set up the window and mouse variables in the viewport to update the camera movement in the update function later.
     Viewport& viewport = editor.windows[Editor::Mode::SCENE].get<Viewport>();
-
     viewport.is_hovered = ImGui::IsItemHovered();
     const ImVec2 mouse_pos = ImGui::GetMousePos() - ImGui::GetWindowPos();
     mouse_position.x = viewport.mouse_pos.x = mouse_pos.x - content_start.x;
     mouse_position.y = viewport.mouse_pos.y = mouse_pos.y - content_start.y;
-}
 
-void ModelViewer::on_editor_update(const FrameData& time) {
-    editor.windows[Editor::Mode::SCENE].get<Viewport>().update_debug_camera(time);
-
-    const Brush::Mode brush_mode = editor.windows[Editor::Mode::VOXEL].get<Brush>().get_active_mode();
-    if (brush_mode == Brush::Mode::MULTI_TOOL) {
-        if (!engine.input.is_mouse_button_just_pressed(MouseButton::LEFT)) return;
-
-        const Ray mouse_ray = engine.renderer.render_view.pixel_ray(mouse_position);
-        const Hit hit = engine.renderer.trace_ray(mouse_ray);
-
-        clicked_entity = hit.entity;
-        return;
-    }
-
+    // Get the selected entity in the hierarchy and return early if it's invalid.
     NodeHierarchy& node_hierarchy = editor.windows[Editor::Mode::VOXEL].get<NodeHierarchy>();
     const Entity selected_entity = node_hierarchy.get_selected_entity();
 
     if (!engine.ecs.valid(selected_entity) || !engine.ecs.has_component<VoxelRenderer>(selected_entity)) return;
 
+    // Get the necessary values for handling selection (entity transform, voxel resource, ray cast for selection, etc).
     const Transform& transform = engine.ecs.get_component<Transform>(selected_entity);
     const ResourceRef<VoxelVolume>& resource = engine.ecs.get_component<VoxelRenderer>(selected_entity).resource;
 
@@ -291,9 +289,12 @@ void ModelViewer::on_editor_update(const FrameData& time) {
 
     const bool can_hit_face = (brush_mode == Brush::Mode::ADD);
 
-    if (!handle_selection(mouse_ray, hit, can_hit_face, selected_entity, transform, resource)) return;
+    // Handle drawing the selection and calculating the selected voxel position.
+    if (!handle_selection(mouse_ray, hit, can_hit_face, selected_entity, transform, resource)) return;  // Return early if no valid voxel was selected.
 
     modify_voxels(brush_mode, resource, hit);
 }
+
+void ModelViewer::on_editor_update(const FrameData& time) { editor.windows[Editor::Mode::SCENE].get<Viewport>().update_debug_camera(time); }
 
 }  // namespace tmt
