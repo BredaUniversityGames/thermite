@@ -144,6 +144,7 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
         bank.upload_buffer(emitter_buffer, &em, 0, sizeof(GpuEmitter));
 
         render_graph.add_compute_pass("Emit Particles", "emit.cs")
+                    
                     .read(render_view.render_view_buffer)
                     .read(emitter_buffer)
                     .write(counter_buffer)
@@ -160,8 +161,15 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
                 .write(dispatch_args_buffer)
                 .group_size(1, 1, 1)
                 .work_size(1, 1, 1);
+    
+    struct Test {
+        glm::vec4 a;
+    };
+    Test test_pc {};
+    test_pc.a = {1.0f, 0.0f, 0.0f, 1.0f};
 
     render_graph.add_compute_pass("Simulate Particles", "particle_sim.cs")
+                .push_constants(&test_pc, 0, sizeof(Test))
                 .read(render_view.render_view_buffer)
                 .write(particle_buffer)
                 .write(alive_list)
@@ -182,6 +190,7 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
                                 .topology(Topology::TriangleList)
                                 .attribute(AttrFormat::XY32_SFloat)  // Position
                                 .attribute(AttrFormat::XY32_SFloat)  // UVs
+                                .push_constants(&test_pc, 0, sizeof(test_pc), ShaderStages::Pixel)
                                 .read(render_view.render_view_buffer, ShaderStages::Vertex)
                                 .read(particle_buffer, ShaderStages::Vertex)
                                 .read(alive_list, ShaderStages::Vertex)
