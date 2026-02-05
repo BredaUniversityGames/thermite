@@ -14,7 +14,7 @@ jobs:
           - Release-Game
     runs-on: windows-latest
     env:
-      SCCACHE_GHA_ENABLED: "on"
+      SCCACHE_GHA_ENABLED: "true"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -25,20 +25,24 @@ jobs:
         uses: ilammy/msvc-dev-cmd@v1
       
       - name: Setup sccache
-        uses: mozilla-actions/sccache-action@v0.0.7
-      
+        uses: mozilla-actions/sccache-action@v0.0.9
+
+
       - name: Configure with preset
         shell: pwsh
         env:
           CMAKE_C_COMPILER_LAUNCHER: sccache
           CMAKE_CXX_COMPILER_LAUNCHER: sccache
         run: |
-          cmake --preset ${{ matrix.preset }}
+          cmake --preset ${{ matrix.preset }} -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache -DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT=Embedded
       
       - name: Build with preset
         shell: pwsh
         run: |
           cmake --build --preset ${{ matrix.preset }} -j
+      - name: Run sccache stat for check
+        shell: bash
+        run: ${SCCACHE_PATH} --show-stats
   
   cpp-linter-windows:
     name: "Run cpp-linter (Windows)"
@@ -90,8 +94,6 @@ jobs:
         include:
           - preset: Debug-Game
     runs-on: windows-latest
-    env:
-      SCCACHE_GHA_ENABLED: "on"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -112,9 +114,6 @@ jobs:
       
       - name: Configure with tests enabled
         shell: pwsh
-        env:
-          CMAKE_C_COMPILER_LAUNCHER: sccache
-          CMAKE_CXX_COMPILER_LAUNCHER: sccache
         run: |
           cmake --preset ${{ matrix.preset }} -DTHERMITE_BUILD_TESTS=ON
       
