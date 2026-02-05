@@ -203,7 +203,9 @@ void Hierarchy::file_drag_drop(const tmt::Entity parent) {
 
             const std::string& extension = file_location.relative_path.extension().generic_string();
             if (extension == PrefabHelper::Config::PREFAB_EXTENSION && ImGui::AcceptDragDropPayload("FileLocation") != nullptr) {
-                PrefabHelper::instantiate_prefab(file_location, parent);
+                const Entity root = PrefabHelper::instantiate_prefab(file_location, parent);
+                clear_selection();
+                selected_entities.insert(root);
                 OnSceneModified::dispatch();
             }
         }
