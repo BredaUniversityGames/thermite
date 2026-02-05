@@ -1,9 +1,9 @@
 name: build
-
 on:
+  workflow_dispatch:
   pull_request:
-    branches: 'main'
-
+    branches:
+      - main
 jobs:
   build:
     name: "Build ${{ matrix.preset }}"
@@ -24,6 +24,13 @@ jobs:
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1
       
+      - name: Cache build directory
+        uses: actions/cache@v4
+        with:
+          path: build/${{ matrix.preset }}
+          key: build-${{ runner.os }}-${{ matrix.preset }}-${{ hashFiles('**/CMakeLists.txt', 'CMakePresets.json') }}
+          restore-keys: |
+            build-${{ runner.os }}-${{ matrix.preset }}-
       - name: Configure with preset
         shell: pwsh
         run: |
@@ -92,11 +99,23 @@ jobs:
       
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1
+      
+      - name: Cache build directory
+        uses: actions/cache@v4
+        with:
+          path: build/${{ matrix.preset }}
+          key: build-${{ runner.os }}-${{ matrix.preset }}-tests}}
+          restore-keys: |
+            build-${{ runner.os }}-${{ matrix.preset }}-tests-
+            build-${{ runner.os }}-${{ matrix.preset }}-
+      
       - name: Cache FetchContent downloads
         uses: actions/cache@v4
         with:
-            path: build/${{ matrix.preset }}/_deps
-            key: fetchcontent-${{ runner.os }}-${{ hashFiles('tests/CMakeLists.txt') }}
+          path: build/${{ matrix.preset }}
+          key: test-${{ runner.os }}-${{ matrix.preset }}-${{ hashFiles('**/CMakeLists.txt', 'CMakePresets.json') }}
+          restore-keys: |
+            test-${{ runner.os }}-${{ matrix.preset }}-
       - name: Configure with tests enabled
         shell: pwsh
         run: |
