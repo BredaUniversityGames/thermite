@@ -35,7 +35,7 @@ jobs:
           CMAKE_C_COMPILER_LAUNCHER: sccache
           CMAKE_CXX_COMPILER_LAUNCHER: sccache
         run: |
-          cmake --preset ${{ matrix.preset }} -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache 
+          cmake --preset ${{ matrix.preset }} -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache -DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT=Embedded
       
       - name: Build with preset
         shell: pwsh
@@ -121,7 +121,7 @@ jobs:
           CMAKE_C_COMPILER_LAUNCHER: sccache
           CMAKE_CXX_COMPILER_LAUNCHER: sccache
         run: |
-          cmake --preset ${{ matrix.preset }} -DTHERMITE_BUILD_TESTS=ON 
+          cmake --preset ${{ matrix.preset }} -DTHERMITE_BUILD_TESTS=ON -DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT=Embedded
 
       
       - name: Build with tests

@@ -44,6 +44,8 @@ jobs:
     name: Build Developer-Packaging
     needs: version
     runs-on: windows-latest
+    env:
+      SCCACHE_GHA_ENABLED: "true"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -51,9 +53,16 @@ jobs:
           submodules: recursive
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Setup sccache
+        uses: mozilla-actions/sccache-action@v0.0.9
+
       - name: Configure
         shell: pwsh
-        run: cmake --preset Developer-Packaging -DBUILD_VERSION="_editor_${{ needs.version.outputs.new_version }}"
+        env:
+          CMAKE_C_COMPILER_LAUNCHER: sccache
+          CMAKE_CXX_COMPILER_LAUNCHER: sccache
+        run: cmake --preset Developer-Packaging -DBUILD_VERSION="_editor_${{ needs.version.outputs.new_version }} -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache "
       - name: Build
         shell: pwsh
         run: cmake --build --preset Developer-Packaging --target game -j
@@ -67,6 +76,8 @@ jobs:
     name: Build Release-Game
     needs: version
     runs-on: windows-latest
+    env:
+      SCCACHE_GHA_ENABLED: "true"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -74,9 +85,15 @@ jobs:
           submodules: recursive
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1
+      - name: Setup sccache
+        uses: mozilla-actions/sccache-action@v0.0.9
+
       - name: Configure
         shell: pwsh
-        run: cmake --preset Release-Game -DBUILD_VERSION="_${{ needs.version.outputs.new_version }}"
+        env:
+          CMAKE_C_COMPILER_LAUNCHER: sccache
+          CMAKE_CXX_COMPILER_LAUNCHER: sccache
+        run: cmake --preset Release-Game -DBUILD_VERSION="_${{ needs.version.outputs.new_version }} -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache "
       - name: Build
         shell: pwsh
         run: cmake --build --preset Release-Game --target game -j
