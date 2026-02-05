@@ -10,6 +10,7 @@ class RenderGraph;
 namespace tmt {
 
 constexpr uint32_t MAX_PARTICLES = 100'000;
+constexpr uint32_t MAX_EMITTERS = 128;
 
 struct GpuQuad {
     glm::vec2 pos {};

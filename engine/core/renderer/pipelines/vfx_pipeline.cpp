@@ -38,23 +38,23 @@ void VfxPipeline::init(GPUAdapter& gpu) {
         alive_list_new = bank.create_buffer("[Particles] Alive List New", BufferUsage::Storage | BufferUsage::TransferDst, MAX_PARTICLES, sizeof(uint32_t))
                              .expect("failed to initialise the alive list new.");
 
-        uint32_t arr[MAX_PARTICLES] {};
+        uint32_t* arr = new uint32_t[MAX_PARTICLES];
         size_t size = sizeof(uint32_t) * MAX_PARTICLES;
-        memset(&arr, 0, size);
+        memset(arr, 0, size);
 
-        bank.upload_buffer(alive_list, &arr, 0, size);
-        bank.upload_buffer(alive_list_new, &arr, 0, size);
+        bank.upload_buffer(alive_list, arr, 0, size);
+        bank.upload_buffer(alive_list_new, arr, 0, size);
     }
 
     /* Initialize the Dead List */
     {
         dead_list = bank.create_buffer("[Particles] Dead List", BufferUsage::Storage | BufferUsage::TransferDst, MAX_PARTICLES, sizeof(uint32_t)).expect("failed to initialise the dead list.");
 
-        uint32_t arr[MAX_PARTICLES] {};
+        uint32_t* arr = new uint32_t[MAX_PARTICLES];
         for (uint32_t i = 0; i < MAX_PARTICLES; i++) {
             arr[i] = i;
         }
-        bank.upload_buffer(dead_list, &arr, 0, sizeof(uint32_t) * MAX_PARTICLES);
+        bank.upload_buffer(dead_list, arr, 0, sizeof(uint32_t) * MAX_PARTICLES);
     }
 
     /* Initialize the Particle Buffer */
@@ -87,7 +87,7 @@ void VfxPipeline::init(GPUAdapter& gpu) {
 
     /* Initialise Emitter Buffer */
     {
-        emitter_buffer = bank.create_buffer("[Particles] Emitter Buffer", BufferUsage::Constant | BufferUsage::TransferDst, sizeof(ParticleEmitter))
+        emitter_buffer = bank.create_buffer("[Particles] Emitter Buffer", BufferUsage::Storage | BufferUsage::TransferDst, MAX_EMITTERS, sizeof(GpuEmitter))
                              .expect("failed to initialise the particle emitter buffer.");
     }
 
@@ -122,17 +122,18 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
     const BindHandle render_image = render_view.get_render_image();
     std::swap(alive_list, alive_list_new);
 
+    std::vector<GpuEmitter> emitters {};
+
     /* clang-format off */
     const entt::basic_group group = engine.ecs.get_registry().group<ParticleEmitter>(entt::get<Transform>);
     for (auto&& [entity, emitter, transform] : group.each()) {
         /* Skip inactive emitters */
         if (!emitter.active) continue;
 
-        // Temp set active to false to simulate burst behaviour
-        emitter.active = false;
+        if (emitters.size() >= MAX_EMITTERS) break;
 
         GpuEmitter em {};
-        em.pos = emitter.pos;
+        em.pos = transform.get_world_position();
         em.dir = glm::normalize(emitter.dir);
         em.cone_angle = glm::radians(emitter.cone_angle);
         em.max_speed = emitter.max_speed;
@@ -141,19 +142,26 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
         em.spawn_count = emitter.spawn_count;
         em.tex_index = emitter.texture.resource->image.get_index();
         
-        bank.upload_buffer(emitter_buffer, &em, 0, sizeof(GpuEmitter));
+        emitters.push_back(em);
+    }
+
+    render_graph.upload_buffer(emitter_buffer, emitters.data(), 0, sizeof(GpuEmitter) * emitters.size());
+
+    /* Emit Stage */
+    for (uint32_t i = 0; i < emitters.size(); i++) {
+        const GpuEmitter& em = emitters[i];
 
         render_graph.add_compute_pass("Emit Particles", "emit.cs")
-                    
-                    .read(render_view.render_view_buffer)
-                    .read(emitter_buffer)
-                    .write(counter_buffer)
-                    .write(alive_list)
-                    .write(alive_list_new)
-                    .write(dead_list)
-                    .write(particle_buffer)
-                    .group_size(64, 1, 1)
-                    .work_size(emitter.spawn_count, 1, 1);
+                .push_constants(&i, 0, sizeof(i))
+                .read(render_view.render_view_buffer)
+                .read(emitter_buffer)
+                .write(counter_buffer)
+                .write(alive_list)
+                .write(alive_list_new)
+                .write(dead_list)
+                .write(particle_buffer)
+                .group_size(64, 1, 1)
+                .work_size(em.spawn_count, 1, 1);
     }
 
     render_graph.add_compute_pass("Particle Begin Update", "particle_begin_update.cs")
@@ -161,15 +169,8 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
                 .write(dispatch_args_buffer)
                 .group_size(1, 1, 1)
                 .work_size(1, 1, 1);
-    
-    struct Test {
-        glm::vec4 a;
-    };
-    Test test_pc {};
-    test_pc.a = {1.0f, 0.0f, 0.0f, 1.0f};
 
     render_graph.add_compute_pass("Simulate Particles", "particle_sim.cs")
-                .push_constants(&test_pc, 0, sizeof(Test))
                 .read(render_view.render_view_buffer)
                 .write(particle_buffer)
                 .write(alive_list)
@@ -190,7 +191,6 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
                                 .topology(Topology::TriangleList)
                                 .attribute(AttrFormat::XY32_SFloat)  // Position
                                 .attribute(AttrFormat::XY32_SFloat)  // UVs
-                                .push_constants(&test_pc, 0, sizeof(test_pc), ShaderStages::Pixel)
                                 .read(render_view.render_view_buffer, ShaderStages::Vertex)
                                 .read(particle_buffer, ShaderStages::Vertex)
                                 .read(alive_list, ShaderStages::Vertex)

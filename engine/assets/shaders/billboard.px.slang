@@ -6,13 +6,6 @@ struct VertexOutput {
     uint32_t tex_index : TEXINDEX0;
 };
 
-//struct Test {
-//    float4 a;
-//};
-
-[[vk::push_constant]]
-float4 pc;
-
 [[vk::binding(3, 0)]]
 SamplerState linear_sampler;
 
@@ -22,6 +15,5 @@ float4 main(VertexOutput input) : SV_Target0 {
 
     float4 tex_sample = tex.Sample(linear_sampler, input.uv);
 
-    // return float4(tex_sample);
-    return float4(pc);
+    return float4(tex_sample);
 }

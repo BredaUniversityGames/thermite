@@ -108,8 +108,8 @@ void DragonScene::on_start() {
         p_emitter.min_speed = 2.0f;
         p_emitter.max_speed = 7.0f;
         p_emitter.particle_lifetime = 3.0f;
-        p_emitter.spawn_count = 49000;
-        p_emitter.active = false;
+        p_emitter.spawn_count = 4900;
+        p_emitter.active = true;
         p_emitter.texture = tex;
 
         emitter2 = tmt::engine.ecs.create_entity("Emitter 2");
@@ -122,8 +122,8 @@ void DragonScene::on_start() {
         p2_emitter.min_speed = 2.0f;
         p2_emitter.max_speed = 7.0f;
         p2_emitter.particle_lifetime = 3.0f;
-        p2_emitter.spawn_count = 50000;
-        p2_emitter.active = false;
+        p2_emitter.spawn_count = 5000;
+        p2_emitter.active = true;
         p2_emitter.texture = tex;
     }
 }

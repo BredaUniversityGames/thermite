@@ -2,8 +2,11 @@ import particles;
 import math;
 import view;
 
+[[vk::push_constant]]
+uint32_t emitter_index;
+
 ConstantBuffer<RenderView> render_view;
-ConstantBuffer<ParticleEmitter> emitter;
+StructuredBuffer<ParticleEmitter> emitters;
 
 RWStructuredBuffer<Counters> counters;
 RWStructuredBuffer<uint32_t> alive_list;
@@ -13,7 +16,9 @@ RWStructuredBuffer<Particle> particles;
 
 [shader("compute")]
 [numthreads(64, 1, 1)]
-void main(uint3 thread_id : SV_DispatchThreadID) {
+void main(uint3 thread_id: SV_DispatchThreadID) {
+    ParticleEmitter emitter = emitters[emitter_index];
+
     if (thread_id.x >= emitter.spawn_count)
         return;
 

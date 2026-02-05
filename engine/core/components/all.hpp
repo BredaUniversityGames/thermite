@@ -30,7 +30,8 @@ using SerializeComponents = ComponentRegistry<
 	NavMesh,
 	AudioListener,
 	AudioEmitter,
-	Light
+	Light,
+	ParticleEmitter
 >;
 // clang-format on
 

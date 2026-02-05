@@ -9,13 +9,6 @@ RWStructuredBuffer<uint32_t> alive_list_new;
 RWStructuredBuffer<uint32_t> dead_list;
 RWStructuredBuffer<Counters> counters;
 
-struct Test {
-    float4 a;
-};
-
-[[vk::push_constant]]
-Test pc;
-
 [shader("compute")]
 [numthreads(256, 1, 1)]
 void main(uint3 thread_id: SV_DispatchThreadID) {
