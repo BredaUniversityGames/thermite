@@ -419,7 +419,7 @@ void Svt64::build(const RawVoxels& raw_data) {
     nodes[0] = subdivide(raw_data, depth * 2u, glm::uvec3(0u));
 
     /* Reallocate the nodes to save memory */
-    nodes = (Svt64Node*)realloc(nodes, node_count * sizeof(Svt64Node) + SVT64_BUFFER_MEMORY);
+    nodes = (Svt64Node*)realloc(nodes, (node_count + SVT64_BUFFER_MEMORY) * sizeof(Svt64Node));
     nodes_capacity = node_count + SVT64_BUFFER_MEMORY;
 }
 
@@ -567,9 +567,9 @@ Svt64::Svt64(const Svt64& src) {
     nodes_capacity = src.nodes_capacity;
     voxels_capacity = src.voxels_capacity;
     depth = src.depth;
-    nodes = new Svt64Node[node_count + SVT64_BUFFER_MEMORY / sizeof(Svt64Node)];
-    materials = new MaterialIndex[voxel_count + SVT64_BUFFER_MEMORY / sizeof(MaterialIndex)];
-    physics_data = new PhysicsVoxel[voxel_count + SVT64_BUFFER_MEMORY / sizeof(PhysicsVoxel)];
+    nodes = new Svt64Node[node_count + SVT64_BUFFER_MEMORY];
+    materials = new MaterialIndex[voxel_count + SVT64_BUFFER_MEMORY];
+    physics_data = new PhysicsVoxel[voxel_count + SVT64_BUFFER_MEMORY];
     memcpy(nodes, src.nodes, node_count * sizeof(Svt64Node));
     memcpy(materials, src.materials, voxel_count * sizeof(MaterialIndex));
     memcpy(physics_data, src.physics_data, voxel_count * sizeof(PhysicsVoxel));
@@ -585,9 +585,9 @@ Svt64& Svt64::operator=(const Svt64& src) {
     nodes_capacity = src.nodes_capacity;
     voxels_capacity = src.voxels_capacity;
     depth = src.depth;
-    nodes = new Svt64Node[node_count + SVT64_BUFFER_MEMORY / sizeof(Svt64Node)];
-    materials = new MaterialIndex[voxel_count + SVT64_BUFFER_MEMORY / sizeof(MaterialIndex)];
-    physics_data = new PhysicsVoxel[voxel_count + SVT64_BUFFER_MEMORY / sizeof(PhysicsVoxel)];
+    nodes = new Svt64Node[node_count + SVT64_BUFFER_MEMORY];
+    materials = new MaterialIndex[voxel_count + SVT64_BUFFER_MEMORY];
+    physics_data = new PhysicsVoxel[voxel_count + SVT64_BUFFER_MEMORY];
     memcpy(nodes, src.nodes, node_count * sizeof(Svt64Node));
     memcpy(materials, src.materials, voxel_count * sizeof(MaterialIndex));
     memcpy(physics_data, src.physics_data, voxel_count * sizeof(PhysicsVoxel));
@@ -626,12 +626,12 @@ void Svt64::set_voxel(const uint32_t x, const uint32_t y, const uint32_t z, cons
         /* If the child doesn't exist yet, create it */
         if ((node.child_mask & lm) == 0ull) {
             const uint32_t prev_child_index = node.abs_ptr();
-            const uint32_t prev_nodes_count = popcnt_var64(node.child_mask, 64u);
+            const uint32_t prev_nodes_count = popcnt(node.child_mask);
             // if (node_count + prev_nodes_count + 64u >= nodes_capacity) return;
             nodes_wasted += prev_nodes_count;
             node = Svt64Node(false, node_count, node.child_mask | lm);
 
-            for (int i = 0, j = 0; i < 64; ++i) {
+            for (uint32_t i = 0u, j = 0u; i < 64u; ++i) {
                 const bool is_new = i == li;
 
                 if (is_new) {
@@ -662,12 +662,12 @@ void Svt64::set_voxel(const uint32_t x, const uint32_t y, const uint32_t z, cons
     /* If the voxel doesn't exist yet, create it */
     if ((node.child_mask & lm) == 0ull) {
         const uint32_t prev_voxel_index = node.abs_ptr();
-        const uint32_t prev_voxel_count = popcnt_var64(node.child_mask, 64u);
+        const uint32_t prev_voxel_count = popcnt(node.child_mask);
         // if (voxel_count + prev_voxel_count + 64u >= voxels_capacity) return;
         voxels_wasted += prev_voxel_count;
 
         node = Svt64Node(true, voxel_count, node.child_mask | lm);
-        for (int i = 0, j = 0; i < 64; ++i) {
+        for (uint32_t i = 0u, j = 0u; i < 64u; ++i) {
             const bool is_new = i == li;
 
             if (is_new) {
@@ -709,7 +709,7 @@ void Svt64::defrag() {
     for (;;) {
         const Svt64Node& old_node = nodes[old_node_index];
         Svt64Node& new_node = new_nodes[new_node_index];
-        const uint32_t child_count = popcnt_var64(old_node.child_mask, 64u);
+        const uint32_t child_count = popcnt(old_node.child_mask);
         const uint32_t child_ptr = old_node.abs_ptr();
 
         /* Defrag leaf node */
