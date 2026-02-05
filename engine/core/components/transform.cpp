@@ -229,6 +229,7 @@ void Transform::set_parent(Entity new_parent) {
         world_pos = get_world_position();
         world_rot = get_world_rotation();
         world_scale = get_world_scale();
+        world_scale = glm::round(world_scale * 100000.0f) / 100000.0f;  // Avoid floating point precision issues
     }
 
     if (has_parent()) {
