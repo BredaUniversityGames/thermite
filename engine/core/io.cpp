@@ -3,7 +3,42 @@
 #include <fstream>
 #include "logger.hpp"
 
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
+
 namespace tmt {
+
+std::filesystem::path IO::sub_locations[3] {};
+const char* project_relative_dir;
+
+extern "C" const char* TMT_PROJECT_RELATIVE_ASSETS_DIR;
+
+namespace {
+
+// Function from: https://stackoverflow.com/questions/67144806/c-check-if-path-is-outside-a-given-directory
+// Function to check if a file path is below a certain directory/folder in the file hierarchy.
+bool directory_contains_path(const std::filesystem::path& directory, const std::filesystem::path& path) {
+    const std::filesystem::path& cannon_directory = canonical(directory);
+    const std::filesystem::path& cannon_path = (exists(path) ? canonical(path) : path);
+
+    auto directory_iterator = cannon_directory.begin();
+    for (const auto& sub_path : cannon_path) {
+        if (directory_iterator == cannon_directory.end()) break;
+
+        if (*directory_iterator != sub_path) return false;
+        ++directory_iterator;
+    }
+
+    return true;
+}
+
+}  // namespace
 
 /* Relative to working directory */
 std::filesystem::path IO::FileLocation::get_relative_path() const {
@@ -12,6 +47,50 @@ std::filesystem::path IO::FileLocation::get_relative_path() const {
     if (relative_path.empty()) return sub_path;
 
     return sub_path / relative_path;
+}
+
+void IO::init_mounts() {
+    // 0 : PROJECT
+    // 1 : ENGINE
+    // 2 : EDITOR
+
+    auto exe_path = get_exec_path();
+    auto pair = find_root(exe_path);
+
+    bool packaged_mode = pair.first;
+    auto& root_path = pair.second;
+
+    if (packaged_mode) {
+        sub_locations[0] = root_path / "assets/";
+        sub_locations[1] = root_path / "assets/engine";
+        sub_locations[2] = root_path / "assets/editor";
+    } else {
+        sub_locations[0] = root_path / TMT_PROJECT_RELATIVE_ASSETS_DIR;
+        sub_locations[1] = root_path / "engine/assets";
+        sub_locations[2] = root_path / "editor/assets";
+    }
+}
+
+/* Get the exe file path (win specific) */
+std::filesystem::path IO::get_exec_path() {
+    std::wstring buf;
+    buf.resize(32768);
+    DWORD len = GetModuleFileNameW(nullptr, buf.data(), static_cast<DWORD>(buf.size()));
+
+    if (len == 0 || len >= buf.size()) throw std::runtime_error("failed to get module file name!");
+    buf.resize(len);
+    return std::filesystem::path(buf);
+}
+
+std::pair<bool, std::filesystem::path> IO::find_root(const std::filesystem::path& exe_dir) {
+    auto has_marker = [](const std::filesystem::path& p) { return (std::filesystem::exists(p / "engine/assets") && std::filesystem::exists(p / "editor/assets")); };
+
+    // iterates backward through parent paths to find signature file structure
+    for (auto p = exe_dir; !p.empty(); p = p.parent_path())
+        if (has_marker(p)) return std::make_pair(false, p);
+
+    // not found, we might be in packaged mode
+    if (std::filesystem::exists(exe_dir / "assets/engine")) return std::make_pair(true, exe_dir);
 }
 
 /* Absolute path */
@@ -149,6 +228,17 @@ TimeStamp IO::get_file_last_modified_time(const FileLocation& file_location) {
         tmt::Log::error(tmt::Log::Scope::ENGINE, "Exception when getting last modified time for file: {}\nreason: {}", absolute.string(), exception.what());
         return TimeStamp::min();
     }
+}
+
+IO::FileLocation IO::path_to_file_location(const std::filesystem::path& path) {
+    size_t location_index = 0;
+    for (const std::filesystem::path& sub_location : sub_locations) {
+        if (directory_contains_path(sub_location, path)) return {static_cast<Location>(location_index), relative(path, absolute(sub_location))};
+        ++location_index;
+    }
+
+    Log::error("Failed to make FileLocation from path: couldn't create relative path.");
+    return {};
 }
 
 }  // namespace tmt

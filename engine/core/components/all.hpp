@@ -13,12 +13,15 @@
 #include "engine/systems/ai/navigation/nav_mesh.hpp"
 #include "engine/core/components/audio_listener.hpp"
 #include "engine/core/components/audio_emitter.hpp"
+#include "engine/core/components/light.hpp"
+#include "engine/tools/uuid.hpp"
 
 namespace tmt {
 
 // clang-format off
 using SerializeComponents = ComponentRegistry<
 	/* Order in which components are serialized */
+	UUID,
 	Name, 
 	Transform, 
 	VoxelRenderer, 
@@ -29,7 +32,8 @@ using SerializeComponents = ComponentRegistry<
 	AnimConstraints::DampedTransformConstraint,
 	BoneHierarchyRenderer,
 	AudioListener,
-	AudioEmitter
+	AudioEmitter,
+	Light
 >;
 // clang-format on
 
@@ -45,7 +49,8 @@ using InspectComponents = ComponentRegistry<
 	AnimConstraints::DampedTransformConstraint,
 	BoneHierarchyRenderer,
 	AudioListener,
-	AudioEmitter
+	AudioEmitter,
+	Light
 >;
 // clang-format on
 

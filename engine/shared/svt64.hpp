@@ -7,8 +7,10 @@
 
 namespace tmt {
 
+/* TODO: Only apply buffer space in the voxel editor! */
 /* How much space should be reserved for real-time modifications. */
-constexpr uint32_t SVT64_BUFFER_MEMORY = 1000u /* 1 kb */;
+constexpr uint32_t SVT64_BUFFER_MEMORY = 10000u; /* x 14 bytes (140kb) */
+constexpr uint32_t SVT64_DEFRAG_THRESHOLD = 1000u;
 
 /* Raw uniform voxel input data. */
 struct RawVoxels {
@@ -35,6 +37,9 @@ struct Svt64Node {
 
     /* Absolute offset into an array of child nodes / voxels. */
     inline uint32_t abs_ptr() const { return child_ptr & 0x7FFFFFFFu; };
+
+    /* Is a given child node index active? */
+    inline bool child_active(uint32_t child_index) const { return (child_mask >> child_index & 1u) != 0u; }
 };
 #pragma pack(pop)
 
@@ -42,13 +47,15 @@ struct Svt64Node {
 struct Svt64Hit {
     glm::vec3 pos = glm::vec3(1e30f);
     uint32_t index = 0xFFFFFFFFu;
+    glm::vec3 normal {};
     glm::uvec3 coord {};
 
     Svt64Hit() = default;
-    Svt64Hit(glm::vec3 p, uint32_t i, glm::uvec3 c) : pos(p), index(i), coord(c) {};
+    Svt64Hit(glm::vec3 p, uint32_t i, glm::vec3 n, glm::uvec3 c) : pos(p), index(i), normal(n), coord(c) {};
 };
 
 struct Ray;
+class Stencil;
 
 /* 64-wide Sparse Voxel Tree. */
 class Svt64 {
@@ -59,12 +66,16 @@ class Svt64 {
     /* List of tree nodes. */
     Svt64Node* nodes = nullptr;
     uint32_t node_count = 0u;
+    uint32_t nodes_wasted = 0u;
+    uint32_t nodes_capacity = 0u;
 
     /* List of voxel data. */
     MaterialPalette palette {};
     MaterialIndex* materials = nullptr;
     PhysicsVoxel* physics_data = nullptr;
     uint32_t voxel_count = 0u;
+    uint32_t voxels_wasted = 0u;
+    uint32_t voxels_capacity = 0u;
     uint32_t depth = 0u;
 
     Svt64() = default;
@@ -81,12 +92,29 @@ class Svt64 {
     Material* get_voxel(const uint32_t x, const uint32_t y, const uint32_t z);
     /* @returns A pointer to the physics data of a voxel at the given coordinate. (nullptr if the voxel is emtpy) */
     PhysicsVoxel* get_physics_voxel(const uint32_t x, const uint32_t y, const uint32_t z);
+    /* Set a voxel inside the tree. */
+    void set_voxel(const uint32_t x, const uint32_t y, const uint32_t z, const MaterialIndex material);
+
+    /* Removes voxels from this tree based on the solids in the stencil (fragmentizes memory) */
+    void subtract(const Stencil* stencil, glm::ivec3 offset);
+
+    /* Removes a voxel (fragmentizes memory) */
+    void remove_voxel_dirty(const uint32_t x, const uint32_t y, const uint32_t z);
+    /* Removes a voxel. */
+    void remove_voxel(const uint32_t x, const uint32_t y, const uint32_t z);
 
     /* Build the tree. */
     void build(const RawVoxels& raw_data);
 
+    /* Defragment the tree. */
+    void defrag();
+
     /* Trace a ray through the tree. */
     Svt64Hit trace(const Ray& ray) const;
+
+   private:
+    /* Recursive function to remove voxels from the tree */
+    void subtract_recursive(uint32_t node_id, glm::ivec3 node_pos, uint32_t node_scale, const Stencil* stencil, glm::ivec3 offset);
 };
 
 }  // namespace tmt

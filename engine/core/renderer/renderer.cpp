@@ -13,7 +13,7 @@
 #include "core/components/transform.hpp"
 
 #include "engine/engine.hpp"
-
+#include "engine/core/io.hpp"
 #include "pipelines/polyline_pipeline.hpp"
 #include "pipelines/geometry_pipeline.hpp"
 #include "pipelines/di_pipeline.hpp"
@@ -69,7 +69,8 @@ void Renderer::init() {
     }
 
     /* Initialize the Render Graph */
-    render_graph.set_shader_path("assets/engine/shaders/bin");
+    IO::FileLocation shader_location {IO::Location::ENGINE, "shaders/bin"};
+    render_graph.set_shader_path(shader_location.get_relative_path().string().c_str());
     render_graph.set_staging_limit(32000000u /* 32mb */);
     render_graph.set_max_graphs_in_flight(2u); /* Double buffering */
     if (const Result r = render_graph.init(gpu); r.is_err()) {
@@ -83,6 +84,7 @@ void Renderer::init() {
 
     /* Initialize pipelines */
     polyline_pipeline.init(gpu);
+    di_pipeline.init(gpu);
 
     debug_transform.set_local_position({0.0f, 0.0f, -1.0f});
 }
@@ -95,7 +97,7 @@ void Renderer::update() {
 
     /* Update the rendering views */
     render_view.update();
-    scene_view.update(render_graph);
+    scene_view.update(render_graph, render_view);
 
     /* Update the camera view */
     Entity cam_entity = Camera::get_active_camera();
@@ -139,6 +141,7 @@ void Renderer::end() {
 
     /* Pipelines cleanup */
     polyline_pipeline.deinit(gpu);
+    di_pipeline.deinit(gpu);
 
     /* Cleanup the VRAM bank & GPU adapter */
     render_graph.deinit().expect("failed to destroy render graph.");

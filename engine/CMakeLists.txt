@@ -1,13 +1,3 @@
-# Check that we're building for x64
-if(CMAKE_SIZEOF_VOID_P EQUAL 4)
-    message(FATAL_ERROR "Thermite currently only supports x64 architecture")
-endif()
-
-# Check that we're using MSVC as our compiler
-if (NOT MSVC)
-    message(FATAL_ERROR "Thermite currently only supports building with MSVC.")
-endif()
-
 # Collect source files
 file(GLOB_RECURSE THERMITE_SOURCES CONFIGURE_DEPENDS
     ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp
@@ -16,6 +6,10 @@ file(GLOB_RECURSE THERMITE_SOURCES CONFIGURE_DEPENDS
 
 # Add the engine as static library
 add_library(thermite-engine STATIC ${THERMITE_SOURCES})
+
+# Supress SPDLOG warnings
+# "warning C4459: declaration of 'formattable' hides global declaration"
+target_compile_options(thermite-engine PRIVATE /wd4459)
 
 # Add include paths
 target_include_directories(thermite-engine 

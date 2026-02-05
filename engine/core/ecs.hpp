@@ -19,6 +19,8 @@
 
 #include "engine/tools/fmt/helper.hpp"
 
+#include "engine/tools/uuid.hpp"
+
 namespace tmt {
 
 using Registry = entt::registry;
@@ -55,6 +57,8 @@ class Ecs : public OnGameStart, public OnGameUpdate, public OnGameFixedUpdate, p
         /* Enforce Name component */
         registry.emplace<Name>(entity, name.empty() ? "Entity_" + EntityHelper::to_string(entity) : name);
         registry.emplace<Transform>(entity);
+        auto& uuid = registry.emplace<UUID>(entity, UUIDGenerator::generate());
+        uuid_entity_map[uuid] = entity;
         return entity;
     }
 
@@ -88,7 +92,7 @@ class Ecs : public OnGameStart, public OnGameUpdate, public OnGameFixedUpdate, p
         if constexpr (COUNT == 1) {
             return EcsComponentTraits<Component...>::add(registry, entity);
         } else {
-            return std::make_tuple(add_component<Component>(entity)...);
+            return std::forward_as_tuple(add_component<Component>(entity)...);
         }
     }
 
@@ -110,7 +114,7 @@ class Ecs : public OnGameStart, public OnGameUpdate, public OnGameFixedUpdate, p
         if constexpr (COUNT == 1) {
             return EcsComponentTraits<Component...>::get(registry, entity);
         } else {
-            return std::make_tuple(get_component<Component>(entity)...);
+            return std::forward_as_tuple(get_component<Component>(entity)...);
         }
     }
 
@@ -121,7 +125,7 @@ class Ecs : public OnGameStart, public OnGameUpdate, public OnGameFixedUpdate, p
         if constexpr (COUNT == 1) {
             return EcsComponentTraits<Component...>::get(registry, entity);
         } else {
-            return std::make_tuple(get_component<Component>(entity)...);
+            return std::forward_as_tuple(get_component<Component>(entity)...);
         }
     }
 
@@ -173,15 +177,27 @@ class Ecs : public OnGameStart, public OnGameUpdate, public OnGameFixedUpdate, p
         return entt::to_entity(storage, instance);
     }
 
+    std::optional<Entity> get_entity(const UUID& uuid) const {
+        if (uuid_entity_map.contains(uuid)) {
+            return uuid_entity_map.at(uuid);
+        }
+        return std::nullopt;
+    }
+
+    UUID get_uuid(const Entity entity) const {
+        const auto& uuid = get_component<UUID>(entity);
+        return uuid;
+    }
+
     void destroy_entity(const Entity entity, bool force = false) {
-        auto children = get_component<Transform>(entity).get_all_children();
         if (force) {
             registry.destroy(entity);
         } else {
-            registry.emplace<Delete>(entity);
+            registry.emplace_or_replace<Delete>(entity);
         }
 
-        for (const auto child : children) {
+        auto children = get_component<Transform>(entity).get_children();
+        for (auto child : children) {
             destroy_entity(child, force);
         }
     }
@@ -194,6 +210,7 @@ class Ecs : public OnGameStart, public OnGameUpdate, public OnGameFixedUpdate, p
 
    private:
     Registry registry;
+    std::unordered_map<UUID, Entity> uuid_entity_map;
 
     void on_game_start() override;
 

@@ -65,6 +65,8 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
 
 void generate_random_entities(tmt::ResourceRef<tmt::VoxelVolume>& voxel_volume);
 
+#include "engine/core/resources/texture_2d.hpp"
+
 /* Dragon Scene */
 void DragonScene::on_start() {
     { /* Camera entity */
@@ -88,13 +90,16 @@ void DragonScene::on_start() {
     //}
 
     // generate_random_entities(voxel_volume);
+
+    /* Load a Bojan */
+    tmt::engine.resources.load_resource<tmt::Texture2D>({tmt::IO::Location::PROJECT, "bojan.png"}, "Bojan");
 }
 
 #include "engine/core/renderer/renderer.hpp"
 #include "engine/core/renderer/render_view.hpp"
 #include "engine/shared/ray.hpp"
 
-void DragonScene::on_update(const tmt::FrameData& time) {
+void DragonScene::on_update(const tmt::FrameData& /*time*/) {
     /* Animate the voxel */
     // elapsed_time += time.delta_time;
     // auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(voxel);
@@ -112,7 +117,7 @@ void DragonScene::on_update(const tmt::FrameData& time) {
 
         if (hit) {
             // tmt::engine.ecs.destroy_entity(hit.entity);
-            tmt::Log::info("pixel: {}, {} | hit: {}, {}, {}", mouse_pos.x, mouse_pos.y, hit.coord.x, hit.coord.y, hit.coord.z);
+            tmt::Log::info("pixel: {}, {} | hit: {}, {}, {}", mouse_pos.x, mouse_pos.y, hit.normal.x, hit.normal.y, hit.normal.z);
         }
     }
 

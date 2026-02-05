@@ -1,13 +1,3 @@
-# Check that we're building for x64
-if(CMAKE_SIZEOF_VOID_P EQUAL 4)
-    message(FATAL_ERROR "Thermite currently only supports x64 architecture")
-endif()
-
-# Check that we're using MSVC as our compiler
-if (NOT MSVC)
-    message(FATAL_ERROR "Thermite currently only supports building with MSVC.")
-endif()
-
 # Collect source files
 file(GLOB_RECURSE THERMITE_SOURCES CONFIGURE_DEPENDS
     ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp
@@ -18,6 +8,10 @@ file(GLOB_RECURSE THERMITE_SOURCES CONFIGURE_DEPENDS
 add_library(thermite-editor STATIC ${THERMITE_SOURCES})
 # Link editor to engine
 target_link_libraries(thermite-editor PRIVATE thermite-engine)
+
+# Supress SPDLOG warnings
+# "warning C4459: declaration of 'formattable' hides global declaration"
+target_compile_options(thermite-editor PRIVATE /wd4459)
 
 # Add compile definitons
 target_compile_definitions(thermite-engine PRIVATE NOMINMAX) # Makes windows.h not define min and max

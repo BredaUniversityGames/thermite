@@ -84,6 +84,12 @@ target_include_directories(JsonReflect
     ${CMAKE_CURRENT_SOURCE_DIR}/ImReflect/imgui/imgui/misc/cpp
 )
 
+# STB Image
+# https://github.com/nothings/stb
+target_include_directories(thermite-engine
+    PRIVATE "./stb_image"
+)
+
 if (THERMITE_EDITOR_BUILD)
     # ImGUI - immediate mode gui
     # https://github.com/ocornut/imgui
@@ -161,6 +167,12 @@ if (THERMITE_EDITOR_BUILD)
     target_compile_features(imgui-console PUBLIC cxx_std_17)
     target_link_libraries(imgui-console PUBLIC csys)
 
+    # ogt_voxel_meshify - voxel to mesh
+    # https://github.com/jpaver/opengametools
+    target_include_directories(thermite-editor
+        PRIVATE "./ogt"
+    )
+
 endif()
 
 
@@ -194,6 +206,11 @@ add_subdirectory(zlib)
 set(FMOD_POSTFIX "$<$<CONFIG:Debug>:L>")
 target_include_directories(thermite-engine
     PUBLIC "./fmod/include"
+)
+
+# uuid_v4 - uuid parsing/generation
+target_include_directories(thermite-engine
+    PUBLIC "./uuid_v4"
 )
 
 # Link engine libraries publicly
