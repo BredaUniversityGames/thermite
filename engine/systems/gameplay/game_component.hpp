@@ -13,10 +13,10 @@ class ImResponse;
 #endif
 
 /* Forward declare */
-struct SerializeState;
 namespace tmt {
+struct SerializeState;
 struct DeserializeState;
-}
+}  // namespace tmt
 
 namespace tmt {
 

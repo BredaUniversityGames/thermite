@@ -8,7 +8,7 @@ JsonReflect::json tag_invoke(JsonReflect::serialize_lib_t, const tmt::IGameCompo
     if constexpr (sizeof...(Args) > 0) {
         auto tuple = std::forward_as_tuple(args...);
         using FirstArgType = std::decay_t<decltype(std::get<0>(tuple))>;
-        if constexpr (std::is_same_v<FirstArgType, SerializeState>) {
+        if constexpr (std::is_same_v<FirstArgType, tmt::SerializeState>) {
             ctx.set_serialize_state(&std::get<0>(tuple));
         }
     }
@@ -36,7 +36,7 @@ struct DeserializeState;
 
 /* Explicit instantiations */
 template JsonReflect::json tag_invoke<>(JsonReflect::serialize_lib_t, const tmt::IGameComponent&);
-template JsonReflect::json tag_invoke<SerializeState&>(JsonReflect::serialize_lib_t, const tmt::IGameComponent&, SerializeState&);
+template JsonReflect::json tag_invoke<tmt::SerializeState&>(JsonReflect::serialize_lib_t, const tmt::IGameComponent&, tmt::SerializeState&);
 
 template void tag_invoke<>(JsonReflect::deserialize_lib_t, const JsonReflect::json&, tmt::IGameComponent&);
 template void tag_invoke<tmt::DeserializeState&>(JsonReflect::deserialize_lib_t, const JsonReflect::json&, tmt::IGameComponent&, tmt::DeserializeState&);

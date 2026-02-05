@@ -12,7 +12,10 @@
 #include "engine/tools/serializer/all.hpp"
 #include "engine/tools/fmt/nlohmann.hpp"
 #include "engine/tools/profiler.hpp"
-#include "engine/tools/tree_map.hpp"
+#include "engine/tools/types/tree_map.hpp"
+#include "engine/tools/types/scene_json.hpp"
+
+namespace tmt {
 
 struct SerializeState {
     SerializeState(const tmt::Ecs& ecs_ref, const std::set<tmt::Entity>& original_entities_ref, const std::set<tmt::Entity>& all_entities_ref)
@@ -63,8 +66,23 @@ struct SerializeState {
     tmt::SceneJson json;
 };
 
+struct DeserializeState {
+    tmt::Ecs& ecs;
+    const tmt::SceneJson& json;
+
+    tmt::PrefabInstanceID current_prefab_instance_id {tmt::NULL_UUID};
+    tmt::Entity current_root_entity = entt::null;
+    tmt::IO::FileLocation current_prefab_location;
+
+    /* Prefab sequence to entity mapping */
+    using EntityMap = tmt::TreeMap<tmt::PrefabInstanceID, std::unordered_map<tmt::Entity, tmt::Entity>>;
+    EntityMap entity_mapping {tmt::NULL_UUID, {{entt::null, entt::null}}}; /* Default null to null value */
+    EntityMap* current_entity_mapping = nullptr;
+};
+
+}  // namespace tmt
 /* Entity with state */
-tmt::json tag_invoke(JsonReflect::serialize_t, const tmt::Entity& entity, SerializeState& state) {
+tmt::json tag_invoke(JsonReflect::serialize_t, const tmt::Entity& entity, tmt::SerializeState& state) {
     state.referenced_entities_scope.insert(entity);
     return static_cast<std::uint32_t>(entity);
 }
@@ -178,7 +196,7 @@ std::optional<tmt::json> recursive_find_component_json(const tmt::SceneJson& pre
 }
 
 template <typename ComponentType>
-void serialize_component(SerializeState& state) {
+void serialize_component(tmt::SerializeState& state) {
     /* If no component instance exists, continue */
     if (state.ecs.get_registry().view<ComponentType>().size() <= 0) return;
 
@@ -247,7 +265,7 @@ tmt::json tag_invoke(JsonReflect::serialize_t, const std::set<tmt::Entity>& enti
         entities.merge(ecs.get_component<tmt::Transform>(entity).get_all_children());
     }
 
-    SerializeState state {ecs, entities_original, entities};
+    tmt::SerializeState state {ecs, entities_original, entities};
 
     state.json.set_version(tmt::Serializer::Config::VERSION);
 
@@ -323,7 +341,7 @@ void deserialize_component(tmt::DeserializeState& state) {
         /* check if diff */
         if (json_value.is_object() && json_value.contains("diff")) {
             const tmt::json diff = json_value.at("diff");
-            SerializeState temp_state {state.ecs, {}, {}};
+            tmt::SerializeState temp_state {state.ecs, {}, {}};
             tmt::json base = tmt::Serializer::serialize(component_value, temp_state);
             tmt::json patched = base.patch(diff);
             tmt::Serializer::deserialize<ComponentType>(patched, component_value, state);
@@ -492,64 +510,6 @@ void tag_invoke(JsonReflect::deserialize_t, const tmt::json& j, std::set<tmt::En
     }
     deserialize_scene(new_entities, ecs, state);
     state.entity_mapping.print();
-}
-
-std::string tmt::SceneJson::dump() const { return json_value.dump(4); }
-
-bool tmt::SceneJson::has_version() const { return json_value.contains("version"); }
-
-uint64_t tmt::SceneJson::get_version() const {
-    if (json_value.contains("version")) {
-        return json_value.at("version").get<uint64_t>();
-    }
-    tmt::Log::warn(tmt::Log::Scope::ENGINE, "[Serialization] Json does not contain \"version\" number. Json:\n---\n%s\n---", json_value.dump());
-    return 0;
-}
-
-void tmt::SceneJson::set_version(uint64_t version) { json_value["version"] = version; }
-
-bool tmt::SceneJson::has_entities() const { return json_value.contains("entities"); }
-
-tmt::json& tmt::SceneJson::entities() { return json_value["entities"]; }
-
-const tmt::json& tmt::SceneJson::entities() const { return json_value.at("entities"); }
-
-bool tmt::SceneJson::has_components(const std::string& component_name) const { return json_value.contains(component_name); }
-
-tmt::json& tmt::SceneJson::components(const std::string& component_name) { return json_value[component_name]; }
-
-const tmt::json& tmt::SceneJson::components(const std::string& component_name) const { return json_value.at(component_name); }
-
-bool tmt::SceneJson::has_component_entry(const std::string& component_name, const tmt::Entity entity_id) const {
-    if (has_components(component_name) == false) return false;
-
-    const json& component_container = components(component_name);
-
-    return has_entity_entry(component_container, entity_id);
-}
-
-std::optional<tmt::json> tmt::SceneJson::component_value(const std::string& component_name, const tmt::Entity entity_id) const {
-    if (has_components(component_name) == false) return std::nullopt;
-
-    const json& component_container = components(component_name);
-    if (has_entity_entry(component_container, entity_id) == false) return std::nullopt;
-
-    return get_entity_entry(component_container, entity_id);
-}
-
-bool tmt::SceneJson::has_entity_entry(const json& container, const tmt::Entity entity_id) const {
-    const std::string key = tmt::EntityHelper::to_string(entity_id);
-    return container.contains(key);
-}
-
-void tmt::SceneJson::add_entity_entry(tmt::json& container, const tmt::Entity entity_id, const tmt::json& value) const {
-    const std::string key = tmt::EntityHelper::to_string(entity_id);
-    container[key] = value;
-}
-
-const tmt::json& tmt::SceneJson::get_entity_entry(const tmt::json& container, const tmt::Entity entity_id) const {
-    const std::string key = tmt::EntityHelper::to_string(entity_id);
-    return container.at(key);
 }
 
 /* Component specific deserialize functions */
