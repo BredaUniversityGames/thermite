@@ -111,9 +111,7 @@ void VfxPipeline::init(GPUAdapter& gpu) {
     }
 
     /* Initialize the Sampler */
-    {
-        linear_sampler = bank.create_sampler("[Particles] Linear Sampler").expect("failed to initialize linear sampler.");
-    }
+    linear_sampler = bank.create_sampler("[Particles] Linear Sampler").expect("failed to initialize linear sampler.");
 }
 
 void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
