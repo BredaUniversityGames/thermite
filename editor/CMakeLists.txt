@@ -11,7 +11,8 @@ target_link_libraries(thermite-editor PRIVATE thermite-engine)
 
 # Supress SPDLOG warnings
 # "warning C4459: declaration of 'formattable' hides global declaration"
-target_compile_options(thermite-editor PRIVATE /wd4459 /FI${CMAKE_CURRENT_SOURCE_DIR}/shared/pch.hpp)
+target_compile_options(thermite-editor PRIVATE /wd4459)
+
 # Add compile definitons
 target_compile_definitions(thermite-engine PRIVATE NOMINMAX) # Makes windows.h not define min and max
 

@@ -9,7 +9,7 @@ add_library(thermite-engine STATIC ${THERMITE_SOURCES})
 
 # Supress SPDLOG warnings
 # "warning C4459: declaration of 'formattable' hides global declaration"
-target_compile_options(thermite-engine PRIVATE /wd4459 /FI${CMAKE_CURRENT_SOURCE_DIR}/shared/pch.hpp)
+target_compile_options(thermite-engine PRIVATE /wd4459)
 
 # Add include paths
 target_include_directories(thermite-engine 
