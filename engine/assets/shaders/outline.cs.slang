@@ -21,7 +21,8 @@ RWTexture2D<float4> render_target;
     if (any(neighbour >= render_view.resolution || neighbour < 0)) return false;
 
     /* Load the pixel object data and check if it has the outline flag enabled */
-    return (objects[vbuffer[neighbour].y & 0xFFFFu].object_flags & 0b1u) == 0b1u;
+    const uint vy = vbuffer[neighbour].y;
+    return vy != uint::maxValue && (objects[vy & 0xFFFFu].object_flags & 0b1u) == 0b1u;
 }
 
 [shader("compute")]
@@ -31,7 +32,8 @@ void main(int2 thread_id: SV_DispatchThreadID) {
     if (any(thread_id >= render_view.resolution)) return;
 
     /* Only process pixels which do not have the outline flag */
-    if ((objects[vbuffer[thread_id].y & 0xFFFFu].object_flags & 0b1u) == 0b1u) return;
+    const uint vy = vbuffer[thread_id].y;
+    if (vy != uint::maxValue && (objects[vy & 0xFFFFu].object_flags & 0b1u) == 0b1u) return;
 
     /* Check neighbouring pixels to see if this pixel should be an outline */
     bool is_outline = false;
