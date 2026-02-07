@@ -41,7 +41,7 @@ class EntityRef : public tmt::GameComponent<EntityRef> {
     using GameComponent::GameComponent;
 
     tmt::Entity entity_ref = entt::null;
-    std::vector<int> some_data {};
+    std::set<tmt::Entity> entity_set {};
 
     static constexpr std::string_view get_name() { return "EntityRef"; }
 
@@ -53,7 +53,7 @@ class EntityRef : public tmt::GameComponent<EntityRef> {
     void update(const tmt::FrameData& time) override {}
     void end() override {}
 };
-TMT_OBJECT(EntityRef, (entity_ref, some_data));
+TMT_OBJECT(EntityRef, (entity_ref, entity_set));
 
 std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs& args) {
     // clang-format off
