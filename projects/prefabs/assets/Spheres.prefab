@@ -3,7 +3,8 @@
     "entities": [
         1048576,
         1048578,
-        1048580,
+        1048589,
+        1048597,
         3145731
     ],
     "Name": {
@@ -13,8 +14,11 @@
         "1048578": {
             "name": "Spheres"
         },
-        "1048580": {
-            "name": "Entity_1048580"
+        "1048589": {
+            "name": "Dragon"
+        },
+        "1048597": {
+            "name": "Dragon"
         },
         "3145731": {
             "name": "Top"
@@ -61,14 +65,15 @@
             "parent": 4294967295,
             "children": [
                 1048576,
-                1048580,
+                1048589,
+                1048597,
                 3145731
             ]
         },
-        "1048580": {
+        "1048589": {
             "local_position": {
                 "x": 0.0,
-                "y": 0.0,
+                "y": 15.741618156433105,
                 "z": 0.0
             },
             "local_rotation": {
@@ -78,9 +83,29 @@
                 "z": 0.0
             },
             "local_scale": {
-                "x": 1.0,
-                "y": 1.0,
-                "z": 1.0
+                "x": 0.5,
+                "y": 0.5,
+                "z": 0.5
+            },
+            "parent": 1048578,
+            "children": []
+        },
+        "1048597": {
+            "local_position": {
+                "x": 0.0,
+                "y": 4.984559059143066,
+                "z": 0.0
+            },
+            "local_rotation": {
+                "w": 1.0,
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "local_scale": {
+                "x": 0.5,
+                "y": 0.5,
+                "z": 0.5
             },
             "parent": 1048578,
             "children": []
@@ -122,6 +147,36 @@
                 }
             }
         },
+        "1048589": {
+            "resource": {
+                "file_location": {
+                    "sub_location": "PROJECT",
+                    "relative_path": "dragon128.vengi"
+                },
+                "data": {
+                    "size": {
+                        "x": 58,
+                        "y": 90,
+                        "z": 128
+                    }
+                }
+            }
+        },
+        "1048597": {
+            "resource": {
+                "file_location": {
+                    "sub_location": "PROJECT",
+                    "relative_path": "dragon128.vengi"
+                },
+                "data": {
+                    "size": {
+                        "x": 58,
+                        "y": 90,
+                        "z": 128
+                    }
+                }
+            }
+        },
         "3145731": {
             "resource": {
                 "file_location": {
@@ -135,6 +190,14 @@
                         "z": 40
                     }
                 }
+            }
+        }
+    },
+    "ComponentCollection": {
+        "1048578": {
+            "EntityRef": {
+                "entity_ref": 1048576,
+                "some_data": []
             }
         }
     },

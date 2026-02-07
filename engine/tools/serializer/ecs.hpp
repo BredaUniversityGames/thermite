@@ -24,3 +24,12 @@ void tag_invoke(JsonReflect::deserialize_t, const JsonReflect::json& j, tmt::Ent
 /* Set of entity */
 JsonReflect::json tag_invoke(JsonReflect::serialize_t, const std::set<tmt::Entity>& entities, const tmt::Ecs& ecs);
 void tag_invoke(JsonReflect::deserialize_t, const JsonReflect::json& j, std::set<tmt::Entity>& entities, tmt::Ecs& ecs, const std::optional<tmt::Prefab> prefab_data = std::nullopt);
+
+/* Custom implementations */
+/* forward declare */
+namespace tmt {
+struct SerializeState;
+struct DeserializeState;
+}
+
+tmt::json tag_invoke(JsonReflect::serialize_t, const tmt::Entity& entity, tmt::SerializeState& state);

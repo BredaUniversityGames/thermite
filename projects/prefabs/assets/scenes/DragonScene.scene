@@ -1,17 +1,82 @@
 {
     "version": 1,
     "entities": [
-        0
+        1,
+        29,
+        75,
+        1048589
     ],
+    "Name": {
+        "75": {
+            "name": "Entity_75"
+        }
+    },
+    "Transform": {
+        "29": {
+            "diff": [
+                {
+                    "op": "replace",
+                    "path": "/local_position/z",
+                    "value": 6.915128707885742
+                }
+            ]
+        },
+        "75": {
+            "local_position": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "local_rotation": {
+                "w": 1.0,
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "local_scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "parent": 4294967295,
+            "children": []
+        }
+    },
+    "ComponentCollection": {
+        "75": {
+            "EntityRef": {
+                "entity_ref": 1048589,
+                "some_data": []
+            }
+        }
+    },
     "Prefab": {
-        "0": {
+        "1": {
             "source_location": {
                 "sub_location": "PROJECT",
-                "relative_path": "test.prefab"
+                "relative_path": "Spheres.prefab"
             },
-            "source_entity": 0,
-            "root_entity": 0,
-            "instance_id": "304ff571-5933-4bba-a554-f8764d718d5d"
+            "source_entity": 1048578,
+            "root_entity": 1,
+            "instance_id": "cb521285-214d-48ab-8b73-9f8c5efbc1dd"
+        },
+        "29": {
+            "source_location": {
+                "sub_location": "PROJECT",
+                "relative_path": "Spheres.prefab"
+            },
+            "source_entity": 1048578,
+            "root_entity": 29,
+            "instance_id": "d4f3251c-4d2f-457c-a0ad-472f6ee8f999"
+        },
+        "1048589": {
+            "source_location": {
+                "sub_location": "PROJECT",
+                "relative_path": "Spheres.prefab"
+            },
+            "source_entity": 1048589,
+            "root_entity": 29,
+            "instance_id": "d4f3251c-4d2f-457c-a0ad-472f6ee8f999"
         }
     },
     "systems": null

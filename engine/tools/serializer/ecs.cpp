@@ -37,22 +37,33 @@ struct SerializeState {
             return false;
         }
 
-        const bool is_prefab = ecs.has_component<tmt::Prefab>(entity);
-        if (is_prefab) {
-            return false;
-        }
+        //const bool is_prefab = ecs.has_component<tmt::Prefab>(entity);
+        //if (is_prefab) {
+        //    return false;
+        //}
 
         const auto& referencers = reference_to_referencers.at(entity);
         for (const auto& referencer : referencers) {
-            const bool is_referencer_prefab = ecs.has_component<tmt::Prefab>(referencer);
-            if (is_referencer_prefab == false) {
+            const bool has_referencer_prefab = ecs.has_component<tmt::Prefab>(referencer);
+            if (has_referencer_prefab == false) {
                 return true;
             }
 
-            const auto& prefab_comp = ecs.get_component<tmt::Prefab>(referencer);
-            if (prefab_comp.instance_id != current_prefab_instance_id) {
-                return true;
+            const auto& referencer_prefab_comp = ecs.get_component<tmt::Prefab>(referencer);
+            if (current_prefab_instance_id.has_value()) {
+                if (referencer_prefab_comp.instance_id != current_prefab_instance_id) {
+                    return true;
+                }
             }
+            
+            const bool has_self_prefab = ecs.has_component<tmt::Prefab>(entity);
+            if (has_self_prefab) {
+                const auto& self_prefab_comp = ecs.get_component<tmt::Prefab>(entity);
+                if (self_prefab_comp.instance_id != referencer_prefab_comp.instance_id) {
+                    return true;
+                }
+            }
+
         }
         return false;
     }
@@ -97,7 +108,7 @@ tmt::json tag_invoke(JsonReflect::serialize_t, const tmt::Entity& entity, tmt::S
     return static_cast<std::uint32_t>(entity);
 }
 
-static void tag_invoke(JsonReflect::deserialize_t, const JsonReflect::json& j, tmt::Entity& entity, const tmt::DeserializeState& state) {
+void tag_invoke(JsonReflect::deserialize_t, const JsonReflect::json& j, tmt::Entity& entity, const tmt::DeserializeState& state) {
     tmt::Entity deserialized_entity = entt::null;
     tmt::Serializer::deserialize(j, deserialized_entity);
     if (state.current_entity_mapping) {
@@ -113,6 +124,85 @@ static void tag_invoke(JsonReflect::deserialize_t, const JsonReflect::json& j, t
         tmt::Log::warn(tmt::Log::Scope::ENGINE, "[Serialization] No current entity mapping found during deserialization.");
         entity = deserialized_entity;
     }
+}
+
+/*
+Needs sorting after transformation:
+std::set<Entity>
+std::multiset<Entity>
+std::map<Entity, T>
+std::multimap<Entity, T>
+std::priority_queue<Entity>
+*/
+
+// Specialization for std::set
+template <typename T>
+tmt::json tag_invoke(JsonReflect::serialize_t, const std::set<T>& set, tmt::SerializeState& state) {
+    std::vector<tmt::json> elements;
+    for (const auto& item : set) {
+        elements.push_back(tmt::Serializer::serialize(item, state));
+    }
+    std::sort(elements.begin(), elements.end());
+    return elements;
+}
+
+// Specialization for std::multiset
+template <typename T>
+tmt::json tag_invoke(JsonReflect::serialize_t, const std::multiset<T>& set, tmt::SerializeState& state) {
+    std::vector<tmt::json> elements;
+    for (const auto& item : set) {
+        elements.push_back(tmt::Serializer::serialize(item, state));
+    }
+    std::sort(elements.begin(), elements.end());
+    return elements;
+}
+
+// Specialization for std::map
+template <typename K, typename V>
+tmt::json tag_invoke(JsonReflect::serialize_t, const std::map<K, V>& map, tmt::SerializeState& state) {
+    // Transform keys first, then sort
+    std::vector<std::pair<tmt::json, tmt::json>> transformed;
+    for (const auto& [key, value] : map) {
+        transformed.emplace_back(tmt::Serializer::serialize(key, state), tmt::Serializer::serialize(value, state));
+    }
+
+    // Sort by transformed keys
+    std::sort(transformed.begin(), transformed.end(), [](const auto& a, const auto& b) { return a.first < b.first; });
+
+    // Build JSON object
+    tmt::json result = tmt::json::object();
+    for (const auto& [k, v] : transformed) {
+        result[k.dump()] = v;  // nlohmann::json requires string keys
+    }
+    return result;
+}
+
+// Specialization for std::unordered_set (for consistent diffing)
+template <typename T>
+tmt::json tag_invoke(JsonReflect::serialize_t, const std::unordered_set<T>& set, tmt::SerializeState& state) {
+    std::vector<tmt::json> elements;
+    for (const auto& item : set) {
+        elements.push_back(tmt::Serializer::serialize(item, state));
+    }
+    std::sort(elements.begin(), elements.end());  // Sort for deterministic output
+    return elements;
+}
+
+// Specialization for std::unordered_map
+template <typename K, typename V>
+tmt::json tag_invoke(JsonReflect::serialize_t, const std::unordered_map<K, V>& map, tmt::SerializeState& state) {
+    std::vector<std::pair<tmt::json, tmt::json>> transformed;
+    for (const auto& [key, value] : map) {
+        transformed.emplace_back(tmt::Serializer::serialize(key, state), tmt::Serializer::serialize(value, state));
+    }
+
+    std::sort(transformed.begin(), transformed.end(), [](const auto& a, const auto& b) { return a.first < b.first; });
+
+    tmt::json result = tmt::json::object();
+    for (const auto& [k, v] : transformed) {
+        result[k.dump()] = v;
+    }
+    return result;
 }
 
 /* ECS */
