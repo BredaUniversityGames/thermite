@@ -314,6 +314,22 @@ tmt::json tag_invoke(JsonReflect::serialize_t, const std::set<tmt::Entity>& enti
     return state.json.get_json();
 }
 
+static void apply_patch_override(tmt::json& base, const tmt::json& override) {
+    for (const auto& operation : override) {
+        try {
+            nlohmann::json singlePatch = nlohmann::json::array({operation});
+            base = base.patch(singlePatch);
+        } catch (const nlohmann::json::out_of_range& e) {
+            tmt::Log::warn(
+                tmt::Log::Scope::ENGINE, "[Serialization] Failed to apply patch override due to out of range error. This might be caused by a component structure change. Error: {}", e.what()
+            );
+            continue;
+        } catch (const std::exception& e) {
+            tmt::Log::error(tmt::Log::Scope::ENGINE, "[Serialization] Failed to apply patch override. Error: %s", e.what());
+        }
+    }
+}
+
 template <typename ComponentType>
 void deserialize_component(tmt::DeserializeState& state) {
     constexpr auto COMPONENT_NAME = tmt::Component<ComponentType>::get_name();
@@ -353,8 +369,9 @@ void deserialize_component(tmt::DeserializeState& state) {
             const tmt::json diff = json_value.at("diff");
             tmt::SerializeState temp_state {state.ecs, {}, {}};
             tmt::json base = tmt::Serializer::serialize(component_value, temp_state);
-            tmt::json patched = base.patch(diff);
-            tmt::Serializer::deserialize<ComponentType>(patched, component_value, state);
+            // tmt::json patched = base.patch(diff);
+            apply_patch_override(base, diff);
+            tmt::Serializer::deserialize<ComponentType>(base, component_value, state);
         } else {
             if constexpr (std::is_same_v<ComponentType, tmt::Prefab>) {
                 /* Special handling for Prefab component */
@@ -400,7 +417,7 @@ static void deserialize_scene(std::set<tmt::Entity>& new_entities, tmt::Ecs& ecs
             continue;
         }
         if (state.current_entity_mapping->has_value() == false) {
-            state.current_entity_mapping->set_value({});
+            state.current_entity_mapping->set_value({{entt::null, entt::null}});
         }
         auto& mapping = state.current_entity_mapping->value();
 
@@ -457,7 +474,7 @@ static void deserialize_scene(std::set<tmt::Entity>& new_entities, tmt::Ecs& ecs
             const tmt::Entity& source_entity = prefab_comp.source_entity;
             auto& branch = state.current_entity_mapping->get(instance_id);
             if (branch.has_value() == false) {
-                branch.set_value({});
+                branch.set_value({{entt::null, entt::null}});
             }
             auto& mapping = branch.value();
             mapping.insert({source_entity, new_entity});

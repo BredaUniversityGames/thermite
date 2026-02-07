@@ -6,6 +6,8 @@
 
 #include <ImReflect.hpp>
 
+#include "editor/editor.hpp"
+
 #include "engine/engine.hpp"
 #include "engine/core/ecs.hpp"
 #include "engine/core/logger.hpp"
@@ -26,11 +28,16 @@ namespace tmt {
 void Hierarchy::before_begin() {
     /* zero margin */
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+    const bool prefab_mode = editor.editor_mode == Editor::Mode::PREFAB;
+    if (prefab_mode) {
+        /* nice blue-ish background color */
+        ImGui::PushStyleColor(ImGuiCol_WindowBg, colors::to_u32(colors::PREFAB_BACKGROUND));
+    }
+
 }
 
 void Hierarchy::display() {
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8, 8));
-
     top_bar();
     render_hierarchy();
     context_menu(entt::null);
@@ -39,7 +46,13 @@ void Hierarchy::display() {
     ImGui::PopStyleVar();
 }
 
-void Hierarchy::end_display() { ImGui::PopStyleVar(); }
+void Hierarchy::end_display() { 
+    const bool prefab_mode = editor.editor_mode == Editor::Mode::PREFAB;
+    if (prefab_mode) {
+        ImGui::PopStyleColor();
+    }
+    ImGui::PopStyleVar(); 
+}
 
 void Hierarchy::start_section() {
     /* Begin child section for hierarchy */

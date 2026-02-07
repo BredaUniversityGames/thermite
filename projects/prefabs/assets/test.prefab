@@ -1,0 +1,45 @@
+{
+    "version": 1,
+    "entities": [
+        0
+    ],
+    "Name": {
+        "0": {
+            "name": "Entity_0"
+        }
+    },
+    "Transform": {
+        "0": {
+            "local_position": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "local_rotation": {
+                "w": 1.0,
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "local_scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "parent": 4294967295,
+            "children": []
+        }
+    },
+    "ComponentCollection": {
+        "0": {
+            "EntityRef": {
+                "entity_ref": 4294967295,
+                "some_data": [
+                    1,
+                    2
+                ]
+            }
+        }
+    },
+    "systems": null
+}

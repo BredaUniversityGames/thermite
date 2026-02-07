@@ -51,7 +51,7 @@ std::string tmt::Viewport::get_title() const {
 int tmt::Viewport::get_window_flags() const {
     if (engine.game_controller.is_running()) return ImGuiWindowFlags_None;
 
-    const bool is_scene_dirty = editor.windows[Editor::Mode::SCENE].get<ScenesWindow>().is_scene_dirty();
+    const bool is_scene_dirty = editor.windows[editor.editor_mode].get<ScenesWindow>().is_scene_dirty();
     return is_scene_dirty ? ImGuiWindowFlags_UnsavedDocument : 0;
 };
 
@@ -74,7 +74,7 @@ void tmt::Viewport::display() {
     mouse_pos.x = imgui_mouse_pos.x - image_pos.x;
     mouse_pos.y = imgui_mouse_pos.y - image_pos.y;
 
-    const std::vector<Entity>& selected_entities = editor.windows[Editor::Mode::SCENE].get<Hierarchy>().get_selected_entities();
+    const std::vector<Entity>& selected_entities = editor.windows[editor.editor_mode].get<Hierarchy>().get_selected_entities();
 
     const bool gizmo_changed = editor.gizmo.manip(image_pos.x, image_pos.y, width, height, selected_entities);
     if (gizmo_changed) OnSceneModified::dispatch();

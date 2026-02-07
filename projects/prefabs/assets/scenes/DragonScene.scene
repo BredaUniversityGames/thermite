@@ -1,0 +1,18 @@
+{
+    "version": 1,
+    "entities": [
+        0
+    ],
+    "Prefab": {
+        "0": {
+            "source_location": {
+                "sub_location": "PROJECT",
+                "relative_path": "test.prefab"
+            },
+            "source_entity": 0,
+            "root_entity": 0,
+            "instance_id": "304ff571-5933-4bba-a554-f8764d718d5d"
+        }
+    },
+    "systems": null
+}

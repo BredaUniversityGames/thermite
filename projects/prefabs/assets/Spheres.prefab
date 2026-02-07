@@ -1,31 +1,27 @@
 {
     "version": 1,
     "entities": [
-        0,
-        1,
-        2,
-        3,
-        2097159
+        1048576,
+        1048578,
+        1048580,
+        3145731
     ],
     "Name": {
-        "0": {
+        "1048576": {
             "name": "Bottom"
         },
-        "1": {
+        "1048578": {
+            "name": "Spheres"
+        },
+        "1048580": {
+            "name": "Entity_1048580"
+        },
+        "3145731": {
             "name": "Top"
-        },
-        "2": {
-            "name": "Dragon"
-        },
-        "3": {
-            "name": "Statue"
-        },
-        "2097159": {
-            "name": "Table"
         }
     },
     "Transform": {
-        "0": {
+        "1048576": {
             "local_position": {
                 "x": 0.0,
                 "y": 0.0,
@@ -42,50 +38,10 @@
                 "y": 1.0,
                 "z": 1.0
             },
-            "parent": 3,
+            "parent": 1048578,
             "children": []
         },
-        "1": {
-            "local_position": {
-                "x": 0.0,
-                "y": 3.9811155796051025,
-                "z": 0.0
-            },
-            "local_rotation": {
-                "w": 1.0,
-                "x": 0.0,
-                "y": 0.0,
-                "z": 0.0
-            },
-            "local_scale": {
-                "x": 0.5,
-                "y": 0.5,
-                "z": 0.5
-            },
-            "parent": 3,
-            "children": []
-        },
-        "2": {
-            "local_position": {
-                "x": 0.0,
-                "y": 7.150035381317139,
-                "z": 0.0
-            },
-            "local_rotation": {
-                "w": 1.0,
-                "x": 0.0,
-                "y": 0.0,
-                "z": 0.0
-            },
-            "local_scale": {
-                "x": 0.289000004529953,
-                "y": 0.289000004529953,
-                "z": 0.289000004529953
-            },
-            "parent": 3,
-            "children": []
-        },
-        "3": {
+        "1048578": {
             "local_position": {
                 "x": 0.0,
                 "y": 0.0,
@@ -104,16 +60,15 @@
             },
             "parent": 4294967295,
             "children": [
-                0,
-                1,
-                2,
-                2097159
+                1048576,
+                1048580,
+                3145731
             ]
         },
-        "2097159": {
+        "1048580": {
             "local_position": {
                 "x": 0.0,
-                "y": 9.5,
+                "y": 0.0,
                 "z": 0.0
             },
             "local_rotation": {
@@ -127,12 +82,32 @@
                 "y": 1.0,
                 "z": 1.0
             },
-            "parent": 3,
+            "parent": 1048578,
+            "children": []
+        },
+        "3145731": {
+            "local_position": {
+                "x": 0.0,
+                "y": 9.689099311828613,
+                "z": 0.0
+            },
+            "local_rotation": {
+                "w": 1.0,
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "local_scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "parent": 1048578,
             "children": []
         }
     },
     "Voxel Renderer": {
-        "0": {
+        "1048576": {
             "resource": {
                 "file_location": {
                     "sub_location": "PROJECT",
@@ -147,7 +122,7 @@
                 }
             }
         },
-        "1": {
+        "3145731": {
             "resource": {
                 "file_location": {
                     "sub_location": "PROJECT",
@@ -158,36 +133,6 @@
                         "x": 40,
                         "y": 40,
                         "z": 40
-                    }
-                }
-            }
-        },
-        "2": {
-            "resource": {
-                "file_location": {
-                    "sub_location": "PROJECT",
-                    "relative_path": "dragon128.vengi"
-                },
-                "data": {
-                    "size": {
-                        "x": 58,
-                        "y": 90,
-                        "z": 128
-                    }
-                }
-            }
-        },
-        "2097159": {
-            "resource": {
-                "file_location": {
-                    "sub_location": "PROJECT",
-                    "relative_path": "table.vengi"
-                },
-                "data": {
-                    "size": {
-                        "x": 10,
-                        "y": 10,
-                        "z": 10
                     }
                 }
             }
