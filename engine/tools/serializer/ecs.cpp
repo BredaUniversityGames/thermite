@@ -397,7 +397,7 @@ void deserialize_component(tmt::DeserializeState& state) {
 }
 
 /* [Deserialize] */
-static void deserialize_scene(std::set<tmt::Entity>& new_entities, tmt::Ecs& ecs, tmt::DeserializeState& state) {
+static void deserialize_scene(std::set<tmt::Entity>& new_entities, tmt::DeserializeState& state) {
     if (state.json.entities() == false) {
         tmt::Log::error(tmt::Log::Scope::ENGINE, "[Serialization] Json does not contain \"entities\" object. Json:\n---\n%s\n---", state.json.dump());
         return;
@@ -514,7 +514,7 @@ static void deserialize_scene(std::set<tmt::Entity>& new_entities, tmt::Ecs& ecs
 
             /* Deserialize prefab */
             std::set<tmt::Entity> prefab_entities;
-            deserialize_scene(prefab_entities, state.ecs, prefab_state);
+            deserialize_scene(prefab_entities, prefab_state);
 
             /* Merge new entities */
             new_entities.insert(prefab_entities.begin(), prefab_entities.end());
@@ -557,6 +557,7 @@ static void deserialize_scene(std::set<tmt::Entity>& new_entities, tmt::Ecs& ecs
             if (has_prefab == false) {
                 throw std::runtime_error("Expected all entities in prefab instance to have a Prefab component after deserialization.");
             }
+
             /* it's an entity that came f rom a prefab inside the prefab */
             tmt::Prefab& prefab_comp = state.ecs.get_component<tmt::Prefab>(new_entity);
             prefab_comp.instance_id = state.current_prefab_instance_id;
@@ -585,6 +586,6 @@ void tag_invoke(JsonReflect::deserialize_t, const tmt::json& j, std::set<tmt::En
         state.current_root_entity = prefab_data->root_entity;
         state.current_prefab_location = prefab_data->source_location;
     }
-    deserialize_scene(new_entities, ecs, state);
+    deserialize_scene(new_entities, state);
     state.entity_mapping.print();
 }
