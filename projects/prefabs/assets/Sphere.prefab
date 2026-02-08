@@ -2,15 +2,11 @@
     "version": 1,
     "entities": [
         0,
-        1,
         1048578
     ],
     "Name": {
         "0": {
             "name": "Sphere"
-        },
-        "1": {
-            "name": "Dragon"
         }
     },
     "Transform": {
@@ -33,37 +29,25 @@
             },
             "parent": 4294967295,
             "children": [
-                1
-            ]
-        },
-        "1": {
-            "local_position": {
-                "x": 0.0,
-                "y": 4.302000999450684,
-                "z": 0.0
-            },
-            "local_rotation": {
-                "w": 1.0,
-                "x": 0.0,
-                "y": 0.0,
-                "z": 0.0
-            },
-            "local_scale": {
-                "x": 0.5,
-                "y": 0.5,
-                "z": 0.5
-            },
-            "parent": 0,
-            "children": [
-                1048578
+                123
             ]
         },
         "1048578": {
             "diff": [
                 {
                     "op": "replace",
+                    "path": "/local_position/x",
+                    "value": 0.0
+                },
+                {
+                    "op": "replace",
+                    "path": "/local_position/y",
+                    "value": 2.0
+                },
+                {
+                    "op": "replace",
                     "path": "/parent",
-                    "value": 1
+                    "value": 0
                 }
             ]
         }
@@ -83,21 +67,6 @@
                     }
                 }
             }
-        },
-        "1": {
-            "resource": {
-                "file_location": {
-                    "sub_location": "PROJECT",
-                    "relative_path": "dragon128.vengi"
-                },
-                "data": {
-                    "size": {
-                        "x": 58,
-                        "y": 90,
-                        "z": 128
-                    }
-                }
-            }
         }
     },
     "Prefab": {
@@ -106,9 +75,9 @@
                 "sub_location": "PROJECT",
                 "relative_path": "Table.prefab"
             },
-            "source_entity": 1048578,
+            "source_entity": 123,
             "root_entity": 1048578,
-            "instance_id": "d978dcc4-6d39-40a0-b273-893704958bba"
+            "instance_id": "6c794a12-a264-4e80-b00d-f000b31703a7"
         }
     },
     "systems": null

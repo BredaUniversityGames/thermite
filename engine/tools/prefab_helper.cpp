@@ -25,11 +25,21 @@ void PrefabHelper::create_prefab(const IO::FileLocation& location, const Entity&
     const PrefabInstanceID instance_id = UUIDGenerator::generate();
 
     for (const auto& entity : entities) {
-        auto& prefab_comp = engine.ecs.add_or_get_component<Prefab>(entity);
-        prefab_comp.source_location = location;
-        prefab_comp.instance_id = instance_id;
-        prefab_comp.root_entity = root;
-        prefab_comp.source_entity = entity;
+        const bool has_prefab = engine.ecs.has_component<Prefab>(entity);
+        if (has_prefab) {
+            auto& prefab_comp = engine.ecs.get_component<Prefab>(entity);
+            prefab_comp.prefab_chain.push_back({
+                location,
+                entity,
+                instance_id,
+            });
+        } else {
+            auto& prefab_comp = engine.ecs.add_or_get_component<Prefab>(entity);
+            prefab_comp.source_location = location;
+            prefab_comp.instance_id = instance_id;
+            prefab_comp.root_entity = root;
+            prefab_comp.source_entity = entity;
+        }
     }
 }
 
