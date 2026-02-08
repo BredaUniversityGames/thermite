@@ -174,7 +174,7 @@ void Hierarchy::paste_entities(const Entity hovered_entity) {
     }
 
     clear_selection();
-    for (const auto entity : new_entities) {
+    for (const auto entity : parents) {
         selected_entities.insert(entity);
     }
     OnSceneModified::dispatch();

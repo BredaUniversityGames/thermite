@@ -1,151 +1,38 @@
 {
     "version": 1,
     "entities": [
-        1,
-        4,
-        6,
-        29,
-        75,
-        1048576,
-        1048589,
-        3145731
+        1048577,
+        1048582
     ],
-    "Name": {
-        "75": {
-            "name": "Entity_75"
-        }
-    },
     "Transform": {
-        "29": {
+        "1048582": {
             "diff": [
                 {
                     "op": "replace",
-                    "path": "/local_position/z",
-                    "value": 6.915128707885742
+                    "path": "/parent",
+                    "value": 2097156
                 }
             ]
-        },
-        "75": {
-            "local_position": {
-                "x": 0.0,
-                "y": 0.0,
-                "z": 0.0
-            },
-            "local_rotation": {
-                "w": 1.0,
-                "x": 0.0,
-                "y": 0.0,
-                "z": 0.0
-            },
-            "local_scale": {
-                "x": 1.0,
-                "y": 1.0,
-                "z": 1.0
-            },
-            "parent": 4294967295,
-            "children": []
-        }
-    },
-    "ComponentCollection": {
-        "1": {
-            "diff": [
-                {
-                    "op": "remove",
-                    "path": "/EntityRef/some_data"
-                },
-                {
-                    "op": "add",
-                    "path": "/EntityRef/entity_set",
-                    "value": []
-                }
-            ]
-        },
-        "29": {
-            "diff": [
-                {
-                    "op": "remove",
-                    "path": "/EntityRef/some_data"
-                },
-                {
-                    "op": "add",
-                    "path": "/EntityRef/entity_set",
-                    "value": []
-                }
-            ]
-        },
-        "75": {
-            "EntityRef": {
-                "entity_ref": 1048589,
-                "entity_set": [
-                    4,
-                    6
-                ]
-            }
         }
     },
     "Prefab": {
-        "1": {
+        "1048577": {
             "source_location": {
                 "sub_location": "PROJECT",
-                "relative_path": "Spheres.prefab"
+                "relative_path": "Car.prefab"
             },
-            "source_entity": 1048578,
-            "root_entity": 1,
-            "instance_id": "cb521285-214d-48ab-8b73-9f8c5efbc1dd"
+            "source_entity": 1048577,
+            "root_entity": 1048577,
+            "instance_id": "a36ecaba-ee74-4322-9528-40e87e7b1102"
         },
-        "4": {
+        "1048582": {
             "source_location": {
                 "sub_location": "PROJECT",
-                "relative_path": "Spheres.prefab"
+                "relative_path": "Sphere.prefab"
             },
-            "source_entity": 1048576,
-            "root_entity": 29,
-            "instance_id": "d4f3251c-4d2f-457c-a0ad-472f6ee8f999"
-        },
-        "6": {
-            "source_location": {
-                "sub_location": "PROJECT",
-                "relative_path": "Spheres.prefab"
-            },
-            "source_entity": 3145731,
-            "root_entity": 29,
-            "instance_id": "d4f3251c-4d2f-457c-a0ad-472f6ee8f999"
-        },
-        "29": {
-            "source_location": {
-                "sub_location": "PROJECT",
-                "relative_path": "Spheres.prefab"
-            },
-            "source_entity": 1048578,
-            "root_entity": 29,
-            "instance_id": "d4f3251c-4d2f-457c-a0ad-472f6ee8f999"
-        },
-        "1048576": {
-            "source_location": {
-                "sub_location": "PROJECT",
-                "relative_path": "Spheres.prefab"
-            },
-            "source_entity": 1048576,
-            "root_entity": 1,
-            "instance_id": "cb521285-214d-48ab-8b73-9f8c5efbc1dd"
-        },
-        "1048589": {
-            "source_location": {
-                "sub_location": "PROJECT",
-                "relative_path": "Spheres.prefab"
-            },
-            "source_entity": 1048589,
-            "root_entity": 29,
-            "instance_id": "d4f3251c-4d2f-457c-a0ad-472f6ee8f999"
-        },
-        "3145731": {
-            "source_location": {
-                "sub_location": "PROJECT",
-                "relative_path": "Spheres.prefab"
-            },
-            "source_entity": 3145731,
-            "root_entity": 1,
-            "instance_id": "cb521285-214d-48ab-8b73-9f8c5efbc1dd"
+            "source_entity": 1048582,
+            "root_entity": 1048577,
+            "instance_id": "a36ecaba-ee74-4322-9528-40e87e7b1102"
         }
     },
     "systems": null

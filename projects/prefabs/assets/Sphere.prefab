@@ -1,0 +1,92 @@
+{
+    "version": 1,
+    "entities": [
+        0,
+        1048582
+    ],
+    "Name": {
+        "0": {
+            "name": "Sphere"
+        },
+        "1048582": {
+            "name": "Dragon"
+        }
+    },
+    "Transform": {
+        "0": {
+            "local_position": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "local_rotation": {
+                "w": 1.0,
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "local_scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "parent": 4294967295,
+            "children": [
+                1048582
+            ]
+        },
+        "1048582": {
+            "local_position": {
+                "x": 0.0,
+                "y": 4.953568458557129,
+                "z": 0.0
+            },
+            "local_rotation": {
+                "w": 1.0,
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "local_scale": {
+                "x": 0.5,
+                "y": 0.5,
+                "z": 0.5
+            },
+            "parent": 0,
+            "children": []
+        }
+    },
+    "Voxel Renderer": {
+        "0": {
+            "resource": {
+                "file_location": {
+                    "sub_location": "PROJECT",
+                    "relative_path": "small_sphere.vengi"
+                },
+                "data": {
+                    "size": {
+                        "x": 40,
+                        "y": 40,
+                        "z": 40
+                    }
+                }
+            }
+        },
+        "1048582": {
+            "resource": {
+                "file_location": {
+                    "sub_location": "PROJECT",
+                    "relative_path": "dragon128.vengi"
+                },
+                "data": {
+                    "size": {
+                        "x": 58,
+                        "y": 90,
+                        "z": 128
+                    }
+                }
+            }
+        }
+    },
+    "systems": null
+}

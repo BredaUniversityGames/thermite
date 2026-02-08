@@ -37,10 +37,10 @@ struct SerializeState {
             return false;
         }
 
-        //const bool is_prefab = ecs.has_component<tmt::Prefab>(entity);
-        //if (is_prefab) {
-        //    return false;
-        //}
+        // const bool is_prefab = ecs.has_component<tmt::Prefab>(entity);
+        // if (is_prefab) {
+        //     return false;
+        // }
 
         const auto& referencers = reference_to_referencers.at(entity);
         for (const auto& referencer : referencers) {
@@ -55,7 +55,7 @@ struct SerializeState {
                     return true;
                 }
             }
-            
+
             const bool has_self_prefab = ecs.has_component<tmt::Prefab>(entity);
             if (has_self_prefab) {
                 const auto& self_prefab_comp = ecs.get_component<tmt::Prefab>(entity);
@@ -63,7 +63,6 @@ struct SerializeState {
                     return true;
                 }
             }
-
         }
         return false;
     }
@@ -446,16 +445,16 @@ static void deserialize_scene(std::set<tmt::Entity>& new_entities, tmt::Ecs& ecs
         }
     }
 
-    /* TODO: deserialize prefabs */
     {
-        deserialize_component<tmt::Prefab>(state);
+        /* Gather all already existing prefabs in scene */
+        std::unordered_set<tmt::Prefab> existing_prefab_instances;
+        auto view = state.ecs.get_registry().view<tmt::Prefab>();
+        for (const auto&& [entity, prefab_comp] : view.each()) {
+            existing_prefab_instances.insert(prefab_comp);
+        }
 
-        struct PrefabInfo {
-            tmt::IO::FileLocation source_location;
-            tmt::Entity root_entity;
-        };
-
-        std::unordered_map<tmt::PrefabInstanceID, PrefabInfo> prefab_instance_ids;
+        std::unordered_map<tmt::PrefabInstanceID, tmt::Prefab> prefab_instance_ids;
+        std::unordered_map<tmt::PrefabInstanceID, tmt::PrefabInstanceID> instance_id_remapping;
         for (const auto& [new_entity, old_entity] : new_to_old) {
             constexpr auto PREFAB_COMPONENT_NAME = tmt::Component<tmt::Prefab>::get_name();
             auto prefab_entry = state.json.component_value(PREFAB_COMPONENT_NAME, old_entity);
@@ -470,16 +469,24 @@ static void deserialize_scene(std::set<tmt::Entity>& new_entities, tmt::Ecs& ecs
             tmt::Serializer::deserialize<tmt::Prefab>(prefab_entry.value(), prefab_comp_original);
             prefab_comp.source_entity = prefab_comp_original.source_entity;
 
-            const tmt::PrefabInstanceID& instance_id = prefab_comp.instance_id;
+            /* Check if prefab instance already exists in scene, if yes, generate new instance id */
+            if (existing_prefab_instances.contains(prefab_comp_original)) {
+                tmt::PrefabInstanceID new_instance_id = tmt::UUIDGenerator::generate();
 
-            if (prefab_instance_ids.contains(instance_id)) {
-                PrefabInfo& info = prefab_instance_ids.at(instance_id);
+                tmt::Log::info(
+                    tmt::Log::Scope::ENGINE, "[Serialization] Prefab instance already exists in scene, generating new instance ID. Old: {}, New: {}, Source location: {}, Root entity: {}",
+                    prefab_comp_original.instance_id, new_instance_id, prefab_comp_original.source_location, prefab_comp_original.root_entity
+                );
+
+                instance_id_remapping[prefab_comp_original.instance_id] = new_instance_id;
+                prefab_comp.instance_id = new_instance_id;
+            } else {
+                existing_prefab_instances.insert(prefab_comp_original);
             }
 
-            prefab_instance_ids[instance_id] = {
-                prefab_comp.source_location,
-                prefab_comp.root_entity,
-            };
+            const tmt::PrefabInstanceID& instance_id = prefab_comp.instance_id;
+
+            prefab_instance_ids[instance_id] = prefab_comp;
 
             /* add to new mapping absed on instance id */
             const tmt::Entity& source_entity = prefab_comp.source_entity;
@@ -490,6 +497,9 @@ static void deserialize_scene(std::set<tmt::Entity>& new_entities, tmt::Ecs& ecs
             auto& mapping = branch.value();
             mapping.insert({source_entity, new_entity});
         }
+
+        /* Deserialize Prefabs */
+        deserialize_component<tmt::Prefab>(state);
 
         /* for each prefab instance */
         for (const auto& [prefab_instance_id, prefab_info] : prefab_instance_ids) {
@@ -539,6 +549,30 @@ static void deserialize_scene(std::set<tmt::Entity>& new_entities, tmt::Ecs& ecs
             }
             prefab_comp.source_entity = old_entity;
             prefab_comp.source_location = state.current_prefab_location;
+        }
+        /* do the same but for the new entities */
+        for (const auto& new_entity : new_entities) {
+            if (new_to_old.contains(new_entity)) continue;
+            const bool has_prefab = state.ecs.has_component<tmt::Prefab>(new_entity);
+            if (has_prefab == false) {
+                throw std::runtime_error("Expected all entities in prefab instance to have a Prefab component after deserialization.");
+            }
+            /* it's an entity that came f rom a prefab inside the prefab */
+            tmt::Prefab& prefab_comp = state.ecs.get_component<tmt::Prefab>(new_entity);
+            prefab_comp.instance_id = state.current_prefab_instance_id;
+            //prefab_comp.source_location = state.current_prefab_location;
+            if (state.current_root_entity != entt::null) {
+                prefab_comp.root_entity = state.current_root_entity;
+            } else {
+                const auto roots = tmt::EntityHelper::upper_parents(new_entities);
+                if (roots.size() != 1) {
+                    tmt::Log::warn(
+                        tmt::Log::Scope::ENGINE, "[Serialization] Prefab instance has multiple root entities after deserialization. PrefabInstanceID: {}, Roots count: {}",
+                        state.current_prefab_instance_id, roots.size()
+                    );
+                }
+                prefab_comp.root_entity = *roots.begin();
+            }
         }
     }
 }

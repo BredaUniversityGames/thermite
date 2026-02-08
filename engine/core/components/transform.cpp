@@ -223,7 +223,7 @@ void Transform::set_parent(Entity new_parent) {
     glm::quat world_rot;
     glm::vec3 world_scale;
     const bool unparenting = (new_parent == entt::null && has_parent());
-    const bool changing_parent = (new_parent != parent || parent != entt::null);
+    const bool changing_parent = (new_parent != entt::null && parent != entt::null && new_parent != parent);
 
     if (unparenting || changing_parent) {
         world_pos = get_world_position();

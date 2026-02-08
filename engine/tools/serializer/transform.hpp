@@ -7,6 +7,6 @@
 template <typename... Args>
 inline void tag_invoke(JsonReflect::deserialize_t, const JsonReflect::json& j, tmt::Transform& value, Args&&... args) {
     JsonReflect::Detail::from_json_visitable(j, value, std::forward<Args>(args)...);
-    value.set_parent(value.get_parent());  // Re-apply to also update parent
     value.mark_dirty();
+    value.set_parent(value.get_parent());  // Re-apply to also update parent
 }
