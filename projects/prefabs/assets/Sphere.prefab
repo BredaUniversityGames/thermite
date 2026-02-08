@@ -2,13 +2,14 @@
     "version": 1,
     "entities": [
         0,
-        1048582
+        1,
+        1048578
     ],
     "Name": {
         "0": {
             "name": "Sphere"
         },
-        "1048582": {
+        "1": {
             "name": "Dragon"
         }
     },
@@ -32,13 +33,13 @@
             },
             "parent": 4294967295,
             "children": [
-                1048582
+                1
             ]
         },
-        "1048582": {
+        "1": {
             "local_position": {
                 "x": 0.0,
-                "y": 4.953568458557129,
+                "y": 4.302000999450684,
                 "z": 0.0
             },
             "local_rotation": {
@@ -53,7 +54,18 @@
                 "z": 0.5
             },
             "parent": 0,
-            "children": []
+            "children": [
+                1048578
+            ]
+        },
+        "1048578": {
+            "diff": [
+                {
+                    "op": "replace",
+                    "path": "/parent",
+                    "value": 1
+                }
+            ]
         }
     },
     "Voxel Renderer": {
@@ -72,7 +84,7 @@
                 }
             }
         },
-        "1048582": {
+        "1": {
             "resource": {
                 "file_location": {
                     "sub_location": "PROJECT",
@@ -86,6 +98,17 @@
                     }
                 }
             }
+        }
+    },
+    "Prefab": {
+        "1048578": {
+            "source_location": {
+                "sub_location": "PROJECT",
+                "relative_path": "Table.prefab"
+            },
+            "source_entity": 1048578,
+            "root_entity": 1048578,
+            "instance_id": "d978dcc4-6d39-40a0-b273-893704958bba"
         }
     },
     "systems": null
