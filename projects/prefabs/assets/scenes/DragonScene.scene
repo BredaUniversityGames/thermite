@@ -1,0 +1,77 @@
+{
+    "version": 1,
+    "entities": [
+        0,
+        4,
+        9,
+        10
+    ],
+    "Transform": {
+        "4": {
+            "diff": [
+                {
+                    "op": "replace",
+                    "path": "/local_position/z",
+                    "value": 5.0
+                }
+            ]
+        },
+        "9": {
+            "diff": [
+                {
+                    "op": "replace",
+                    "path": "/local_position/z",
+                    "value": 10.005846977233887
+                }
+            ]
+        },
+        "10": {
+            "diff": [
+                {
+                    "op": "replace",
+                    "path": "/local_position/z",
+                    "value": 15.00584602355957
+                }
+            ]
+        }
+    },
+    "Prefab": {
+        "0": {
+            "source_location": {
+                "sub_location": "PROJECT",
+                "relative_path": "Sphere.prefab"
+            },
+            "source_entity": 0,
+            "root_entity": 0,
+            "instance_id": "ac22be71-1f8c-41c5-b6ce-30ca3d4a765e"
+        },
+        "4": {
+            "source_location": {
+                "sub_location": "PROJECT",
+                "relative_path": "Sphere.prefab"
+            },
+            "source_entity": 0,
+            "root_entity": 4,
+            "instance_id": "2d166b89-f8be-45eb-b158-4d00559309e3"
+        },
+        "9": {
+            "source_location": {
+                "sub_location": "PROJECT",
+                "relative_path": "Sphere.prefab"
+            },
+            "source_entity": 0,
+            "root_entity": 9,
+            "instance_id": "e05ff09f-0c73-4016-b8a5-41a115b40976"
+        },
+        "10": {
+            "source_location": {
+                "sub_location": "PROJECT",
+                "relative_path": "Sphere.prefab"
+            },
+            "source_entity": 0,
+            "root_entity": 10,
+            "instance_id": "3363e1ac-d5d5-457b-bcf9-d9472f2ac413"
+        }
+    },
+    "systems": null
+}

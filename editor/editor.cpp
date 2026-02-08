@@ -57,7 +57,7 @@ Editor::~Editor() { delete &imgui_manager; }
 void Editor::init() { Log::info("Thermite Editor initialized."); }
 
 void Editor::switch_mode(Mode new_mode, const std::any& meta_data) {
-    if (editor_mode == new_mode) return;
+    //if (editor_mode == new_mode) return;
 
     mode_handlers[editor_mode]->on_switch_away();
     editor_mode = new_mode;

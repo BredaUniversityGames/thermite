@@ -2,13 +2,21 @@
     "version": 1,
     "entities": [
         123,
-        456
+        456,
+        1048576,
+        2097154
     ],
     "Name": {
         "123": {
             "name": "Table"
         },
         "456": {
+            "name": "Entity_456"
+        },
+        "1048576": {
+            "name": "Entity_456"
+        },
+        "2097154": {
             "name": "Entity_456"
         }
     },
@@ -32,13 +40,55 @@
             },
             "parent": 4294967295,
             "children": [
-                456
+                456,
+                1048576,
+                2097154
             ]
         },
         "456": {
             "local_position": {
                 "x": 0.0,
                 "y": 1.0390102863311768,
+                "z": 0.0
+            },
+            "local_rotation": {
+                "w": 1.0,
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "local_scale": {
+                "x": 0.10000000149011612,
+                "y": 0.10000000149011612,
+                "z": 0.10000000149011612
+            },
+            "parent": 123,
+            "children": []
+        },
+        "1048576": {
+            "local_position": {
+                "x": 0.0,
+                "y": 3.165530204772949,
+                "z": 0.0
+            },
+            "local_rotation": {
+                "w": 1.0,
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "local_scale": {
+                "x": 0.10000000149011612,
+                "y": 0.10000000149011612,
+                "z": 0.10000000149011612
+            },
+            "parent": 123,
+            "children": []
+        },
+        "2097154": {
+            "local_position": {
+                "x": 0.0,
+                "y": 2.0353150367736816,
                 "z": 0.0
             },
             "local_rotation": {
@@ -73,6 +123,36 @@
             }
         },
         "456": {
+            "resource": {
+                "file_location": {
+                    "sub_location": "PROJECT",
+                    "relative_path": "dragon128.vengi"
+                },
+                "data": {
+                    "size": {
+                        "x": 58,
+                        "y": 90,
+                        "z": 128
+                    }
+                }
+            }
+        },
+        "1048576": {
+            "resource": {
+                "file_location": {
+                    "sub_location": "PROJECT",
+                    "relative_path": "dragon128.vengi"
+                },
+                "data": {
+                    "size": {
+                        "x": 58,
+                        "y": 90,
+                        "z": 128
+                    }
+                }
+            }
+        },
+        "2097154": {
             "resource": {
                 "file_location": {
                     "sub_location": "PROJECT",

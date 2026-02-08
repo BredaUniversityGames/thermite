@@ -639,7 +639,11 @@ static void deserialize_scene(std::set<tmt::Entity>& new_entities, tmt::Deserial
                 } else {
                     /* no overrides */
                     //new_entry.source_entity = entt::null;
-                    new_entry.source_entity = new_to_old.at(new_entity);
+                    if (new_to_old.contains(new_entity)) {
+                        new_entry.source_entity = new_to_old.at(new_entity);
+                    } else {
+                        new_entry.source_entity = prefab.source_entity;
+                    }
                 }
                 prefab.prefab_chain.push_back(std::move(new_entry));
             } else {
