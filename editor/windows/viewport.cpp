@@ -74,12 +74,42 @@ void tmt::Viewport::display() {
     mouse_pos.x = imgui_mouse_pos.x - image_pos.x;
     mouse_pos.y = imgui_mouse_pos.y - image_pos.y;
 
-    const std::vector<Entity>& selected_entities = editor.windows[Editor::Mode::SCENE].get<Hierarchy>().get_selected_entities();
+    auto& hierarchy = editor.windows[Editor::Mode::SCENE].get<Hierarchy>();
+
+    const std::vector<Entity>& selected_entities = hierarchy.get_selected_entities();
 
     const bool gizmo_changed = editor.gizmo.manip(image_pos.x, image_pos.y, width, height, selected_entities);
     if (gizmo_changed) OnSceneModified::dispatch();
 
-    toolbar(image_pos);
+    bool toolbar_buttons_hovered = toolbar(image_pos);
+
+    if (ImGui::GetIO().MouseClicked[0] && is_hovered && !editor.gizmo.hovered() && !toolbar_buttons_hovered) {
+        const tmt::Ray selection_ray = tmt::engine.renderer.render_view.pixel_ray({mouse_pos.x, mouse_pos.y});
+        const tmt::Hit hit = tmt::engine.renderer.trace_ray(selection_ray);
+
+        if (!hit.miss()) {
+            if (!ImGui::GetIO().KeyCtrl) hierarchy.clear_selection();
+
+            hierarchy.add_entity_to_selection(hit.entity);
+            Entity first_entity = hierarchy.get_first_selected_entity();
+
+            //only care about opening the first selected
+            if(first_entity == hit.entity)
+            {
+                auto& transform = engine.ecs.get_component<Transform>(hit.entity);
+
+                // we only want to open the tree if the selected entity has a parent
+                if(transform.has_parent())
+                {
+                    Entity parent = transform.get_parent();
+                    force_open_recurse_upwards(parent);
+                }
+            }
+
+        } else {
+            hierarchy.clear_selection();
+        }
+    } 
 
     ImGui::EndChild();
 
@@ -88,7 +118,7 @@ void tmt::Viewport::display() {
     }
 }
 
-void tmt::Viewport::toolbar(const glm::vec2& image_pos) {
+bool tmt::Viewport::toolbar(const glm::vec2& image_pos) {
     ImGuiStyle& style = ImGui::GetStyle();
 
     float btn_w = ImGui::CalcTextSize(ICON_MS_LANGUAGE).x + style.FramePadding.x * 2.0f;
@@ -99,11 +129,14 @@ void tmt::Viewport::toolbar(const glm::vec2& image_pos) {
     float pad = 4.0f;
     ImVec2 btn_pos = ImVec2(image_pos.x + width - total_w - pad, image_pos.y + pad);
 
+    bool any_button_hovered = false;
+
     ImGui::SetCursorScreenPos(btn_pos);
     const char* space_button_icon = editor.gizmo.space ? ICON_MS_LANGUAGE : ICON_MS_VIEW_IN_AR;
     if (ImGui::Button(space_button_icon, ImVec2(btn_w, btn_h))) {
         editor.gizmo.space = static_cast<uint8_t>(!editor.gizmo.space);
     }
+    any_button_hovered |= ImGui::IsItemHovered();
 
     ImGui::SameLine();
     const char* mode_button_icon = Gizmo::gizmo_op_icons[editor.gizmo.operation];
@@ -111,11 +144,29 @@ void tmt::Viewport::toolbar(const glm::vec2& image_pos) {
         ++editor.gizmo.operation;
         if (editor.gizmo.operation == Gizmo::GIZMO_OP_COUNT) editor.gizmo.operation = 0;
     }
+    any_button_hovered |= ImGui::IsItemHovered();
 
     ImGui::SameLine();
     const char* multi_button_icon = editor.gizmo.multiselect_mode ? ICON_MS_FILTER_NONE : ICON_MS_FILTER_1;
     if (ImGui::Button(multi_button_icon, ImVec2(btn_w, btn_h))) {
         editor.gizmo.multiselect_mode = static_cast<uint8_t>(!editor.gizmo.multiselect_mode);
+    }
+    any_button_hovered |= ImGui::IsItemHovered();
+
+    return any_button_hovered;
+}
+
+void tmt::Viewport::force_open_recurse_upwards(Entity entity) 
+{
+    auto& hierarchy = editor.windows[Editor::Mode::SCENE].get<Hierarchy>();
+
+    hierarchy.add_entity_to_forced_open(entity);
+
+    auto& transform = engine.ecs.get_component<Transform>(entity);
+    if(transform.has_parent())
+    {
+        Entity parent = transform.get_parent();
+        force_open_recurse_upwards(parent);
     }
 }
 

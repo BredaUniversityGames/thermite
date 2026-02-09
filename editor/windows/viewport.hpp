@@ -1,6 +1,7 @@
 #pragma once
 #include "editor/core/window.hpp"
 #include "engine/events/input.hpp"
+#include "engine/core/entity.hpp"
 
 namespace tmt {
 class Viewport : public IWindow, public OnRetrieveMouseState {
@@ -29,7 +30,7 @@ class Viewport : public IWindow, public OnRetrieveMouseState {
     friend class ModelViewer;
 
     void update_debug_camera(const tmt::FrameData& frame_data);
-    void toolbar(const glm::vec2& image_pos);
+    bool toolbar(const glm::vec2& image_pos);
 
     float width = -1;
     float height = -1;
@@ -53,6 +54,8 @@ class Viewport : public IWindow, public OnRetrieveMouseState {
         constexpr static const char* UP = "Camera Move Up";
         constexpr static const char* DOWN = "Camera Move Down";
     };
+
+    void force_open_recurse_upwards(tmt::Entity entity);
 
     // Inherited via OnRetrieveMouseState
     void on_retrieve_mouse_state(MouseOverride& event) override;

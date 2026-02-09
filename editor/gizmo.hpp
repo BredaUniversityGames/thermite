@@ -15,6 +15,7 @@ class Gizmo {
     void init();
 
     bool manip(float x, float y, float width, float height, const std::span<const Entity>& selected_entities) const;
+    bool hovered() const;
 
     static constexpr uint8_t GIZMO_OP_COUNT {3};
     static constexpr int OPERATIONS[GIZMO_OP_COUNT] {7, 120, 896};
