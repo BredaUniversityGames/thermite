@@ -36,4 +36,4 @@ struct SaveData {
 }  // namespace tmt
 
 TMT_OBJECT(tmt::SnapValues, (move, rotation, scale));
-TMT_OBJECT(tmt::SaveData, (open_windows, enabled_debug_renderers, snap_values));
+TMT_OBJECT_EX(tmt::SaveData, (open_windows, enabled_debug_renderers, snap_values), (snap_values));
