@@ -24,9 +24,59 @@
 
 class Game : public tmt::Application {
    public:
-    Game(const tmt::ApplicationSpecs& specs) : Application(specs) {
-        auto& action_reg = tmt::GoapActionRegistry::instance();
-        auto& goal_reg = tmt::GoapGoalRegistry::instance();
+    Game(const tmt::ApplicationSpecs& specs) : Application(specs) {}
+
+    float time_passed = 0.0f;
+
+    void on_start() override {};
+    void on_update(const tmt::FrameData& time) override {};
+    void on_end() override {};
+};
+
+class AIScene : public tmt::Scene<AIScene> {
+   public:
+    static constexpr std::string_view scene_name() { return "AIScene"; }
+
+    tmt::Entity voxel {};
+    tmt::NavMesh* nav_mesh;
+    tmt::ResourceRef<tmt::VoxelVolume> volumes[3];
+    int index = 0;
+    void on_start() override;
+    void on_update(const tmt::FrameData&) override {};
+    void on_end() override {};
+};
+
+std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs& args) {
+    // clang-format off
+    tmt::ApplicationSpecs specs {
+        .name = "Example Game",
+        .command_args = args,
+        .log_file = "example_game_logs.txt"
+    };
+    // clang-format on
+
+    tmt::engine.ecs.systems.add<tmt::CameraSystem>();
+    tmt::engine.scenes.register_scene<AIScene>();
+
+    return std::make_unique<Game>(specs);
+}
+
+void AIScene::on_start() {
+    { /* Camera entity */
+        tmt::Entity entity = tmt::engine.ecs.create_entity();
+        auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
+        auto& camera = tmt::engine.ecs.add_component<tmt::Camera>(entity);
+        transform.set_world_position(glm::vec3(0.0f, 0.0f, -2.0f));
+    }
+
+    auto& ecs = tmt::engine.ecs;
+
+    {
+        auto& goap = ecs.systems.get<tmt::Goap>();
+
+        auto& action_reg = goap.actions();
+        auto& goal_reg = goap.goals();
+        auto& type_reg = goap.agent_types();
 
         // --- Register Actions ---
         action_reg.register_action(std::make_unique<tmt::PatrolArea>());
@@ -55,7 +105,6 @@ class Game : public tmt::Application {
         }
 
         // --- Register Agent Types ---
-        auto& type_reg = tmt::GoapAgentTypeRegistry::instance();
 
         tmt::GoapAgentType enemy1;
         enemy1.id = "Enemy 1";
@@ -86,49 +135,6 @@ class Game : public tmt::Application {
         type_reg.register_type(enemy2);
     }
 
-    float time_passed = 0.0f;
-
-    void on_start() override {};
-    void on_update(const tmt::FrameData& time) override {};
-    void on_end() override {};
-};
-
-class AIScene : public tmt::Scene<AIScene> {
-   public:
-    static constexpr std::string_view scene_name() { return "AIScene"; }
-
-    tmt::Entity voxel {};
-    tmt::NavMesh* nav_mesh;
-    void on_start() override;
-    void on_update(const tmt::FrameData& time) override {};
-    void on_end() override {};
-};
-
-std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs& args) {
-    // clang-format off
-    tmt::ApplicationSpecs specs {
-        .name = "Example Game",
-        .command_args = args,
-        .log_file = "example_game_logs.txt"
-    };
-    // clang-format on
-
-    tmt::engine.ecs.systems.add<tmt::CameraSystem>();
-    tmt::engine.scenes.register_scene<AIScene>();
-
-    return std::make_unique<Game>(specs);
-}
-
-void AIScene::on_start() {
-    { /* Camera entity */
-        tmt::Entity entity = tmt::engine.ecs.create_entity();
-        auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
-        auto& camera = tmt::engine.ecs.add_component<tmt::Camera>(entity);
-        transform.set_world_position(glm::vec3(0.0f, 0.0f, -2.0f));
-    }
-
-    auto& ecs = tmt::engine.ecs;
-
     {
         // Spawn agents from type registry via factory
         tmt::Entity ai1 = tmt::engine.ecs.create_entity("AI Agent 1");
@@ -150,8 +156,15 @@ void AIScene::on_start() {
     }
 
     {  // voxel entity with navmesh
-        auto voxel_file = tmt::engine.resources.load_resource<tmt::VoxelScene>({tmt::IO::Location::PROJECT, "test_asteroid_7.vengi"});
+        auto voxel_file = tmt::engine.resources.load_resource<tmt::VoxelScene>({tmt::IO::Location::PROJECT, "test_asteroid_5.vengi"});
         auto voxel_volume = tmt::engine.resources.copy_resource<tmt::VoxelVolume>(voxel_file);
+        volumes[0] = voxel_volume;
+        voxel_file = tmt::engine.resources.load_resource<tmt::VoxelScene>({tmt::IO::Location::PROJECT, "test_asteroid_6.vengi"});
+        voxel_volume = tmt::engine.resources.copy_resource<tmt::VoxelVolume>(voxel_file);
+        volumes[1] = voxel_volume;
+        voxel_file = tmt::engine.resources.load_resource<tmt::VoxelScene>({tmt::IO::Location::PROJECT, "test_asteroid_7.vengi"});
+        voxel_volume = tmt::engine.resources.copy_resource<tmt::VoxelVolume>(voxel_file);
+        volumes[2] = voxel_volume;
         voxel = tmt::engine.ecs.create_entity("Moving Voxel");
         auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(voxel);
         auto& renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(voxel);
@@ -162,6 +175,6 @@ void AIScene::on_start() {
         nav_mesh = &tmt::engine.ecs.add_component<tmt::NavMesh>(voxel);
         nav_mesh->voxel_volume = voxel_volume;
         nav_mesh->lod_level = 1;
-        nav_mesh->generate_mesh();
+        nav_mesh->generate_mesh_over_time();
     }
 }

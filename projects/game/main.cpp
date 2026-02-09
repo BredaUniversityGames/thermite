@@ -3,6 +3,7 @@
 #include "engine/core/resources.hpp"
 #include "engine/core/resources/voxel_volume.hpp"
 #include "engine/core/components/transform.hpp"
+#include "engine/core/components/emitter.hpp"
 #include "engine/core/components/camera.hpp"
 #include "engine/core/components/voxel_renderer.hpp"
 #include "engine/core/input/input.hpp"
