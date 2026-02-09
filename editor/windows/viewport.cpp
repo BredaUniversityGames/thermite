@@ -98,11 +98,11 @@ void tmt::Viewport::display() {
 
     const bool wants_to_capture_keyboard = ImGui::GetIO().WantCaptureKeyboard;
     if (wants_to_capture_keyboard == false && using_debug_camera == false) {
-        if (ImGui::IsKeyPressed(ImGuiKey_Q, false)) {
+        if (ImGui::IsKeyPressed(ImGuiKey_W, false)) {
             editor.gizmo.operation = 0;
-        } else if (ImGui::IsKeyPressed(ImGuiKey_W, false)) {
-            editor.gizmo.operation = 1;
         } else if (ImGui::IsKeyPressed(ImGuiKey_E, false)) {
+            editor.gizmo.operation = 1;
+        } else if (ImGui::IsKeyPressed(ImGuiKey_R, false)) {
             editor.gizmo.operation = 2;
         }
     }
