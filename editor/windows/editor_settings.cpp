@@ -7,8 +7,8 @@
 namespace tmt {
 
 void EditorSettingsWindow::display() {
-	//
+    //
     ImReflect::Input("Editor Settings", editor.save_data);
 }
 
-}
+}  // namespace tmt
