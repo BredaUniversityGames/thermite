@@ -11,15 +11,25 @@
 namespace tmt {
 
 void PrefabHelper::create_prefab(const IO::FileLocation& location, const Entity& root) {
+
+    /* unparent before */
+    auto& root_transform = engine.ecs.get_component<Transform>(root);
+    Entity parent = root_transform.get_parent();
+    if (root_transform.has_parent()) {
+        root_transform.set_parent(entt::null);
+    }
+
     /* Serialize to disk */
     const auto json = Serializer::serialize(root, engine.ecs);
     std::string dump = json.dump(4);
+
+    /* Set parent back again */
+    root_transform.set_parent(parent);
 
     IO::write_text_file(location, dump);
 
     /* Add Prefab components */
     std::set<Entity> entities = {root};
-    const auto& root_transform = engine.ecs.get_component<Transform>(root);
     entities.merge(root_transform.get_all_children());
 
     const PrefabInstanceID instance_id = UUIDGenerator::generate();

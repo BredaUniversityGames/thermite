@@ -36,7 +36,6 @@ void Hierarchy::before_begin() {
         /* nice blue-ish background color */
         ImGui::PushStyleColor(ImGuiCol_WindowBg, colors::to_u32(colors::PREFAB_BACKGROUND));
     }
-
 }
 
 void Hierarchy::display() {
@@ -49,12 +48,12 @@ void Hierarchy::display() {
     ImGui::PopStyleVar();
 }
 
-void Hierarchy::end_display() { 
+void Hierarchy::end_display() {
     const bool prefab_mode = editor.editor_mode == Editor::Mode::PREFAB;
     if (prefab_mode) {
         ImGui::PopStyleColor();
     }
-    ImGui::PopStyleVar(); 
+    ImGui::PopStyleVar();
 }
 
 void Hierarchy::start_section() {
@@ -133,19 +132,31 @@ void Hierarchy::context_menu(const Entity hovered_entity) {
 
     if (ImGui::BeginPopupModal(Config::PREFAB_POP_UP, nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings)) {
         static std::string prefab_name = "NewPrefab";
+        static std::string error_message = "";
         ImGui::InputText("Prefab Name", &prefab_name);
+        ImGui::SameLine();
+        ImGui::Text(".prefab");
         if (ImGui::Button("Create")) {
             const IO::FileLocation temp_location = {IO::Location::PROJECT, prefab_name + ".prefab"};
-            const Entity root_entity = *EntityHelper::upper_parents(selected_entities).begin();
-            PrefabHelper::create_prefab(temp_location, root_entity);
-            prefab_name = "NewPrefab";
-            ImGui::CloseCurrentPopup();
+            if (IO::file_exists(temp_location) == false) {
+                const Entity root_entity = *EntityHelper::upper_parents(selected_entities).begin();
+                PrefabHelper::create_prefab(temp_location, root_entity);
+                prefab_name = "NewPrefab";
+                ImGui::CloseCurrentPopup();
+            } else {
+                error_message = "A prefab with the name \"" + prefab_name + "\" already exists.";
+            }
         }
         ImGui::SameLine();
         if (ImGui::Button("Cancel")) {
             prefab_name = "NewPrefab";
             ImGui::CloseCurrentPopup();
         }
+
+        if (error_message.empty() == false) {
+            ImGui::TextColored(colors::to_imvec4(colors::ERROR), "%s", error_message.c_str());
+        }
+
         ImGui::EndPopup();
     }
 }
@@ -399,7 +410,9 @@ bool Hierarchy::display_entity(const HierarchyState& state) {
     /* Display children */
     if (has_children) {
         uint32_t level_index = state.index() + 1;
-        for (auto child : state.transform.get_children()) {
+        /* copy since the list can change while we loop */
+        auto children = state.transform.get_children();
+        for (const auto child : children) {
             const bool has_components = engine.ecs.has_component<Name, Transform>(child);
             if (!has_components) continue;
 
