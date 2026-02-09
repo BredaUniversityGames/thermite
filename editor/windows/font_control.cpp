@@ -68,7 +68,7 @@ void tmt::FontControl::display() {
                 } else {
                     tmt::editor.imgui_manager.font_manager.queue_reload();
                     // save icon as second
-                    editor.save_data.font_size.icon_size = style.FontSizeBase;
+                    editor.save_data.font_size.icon_size = font.size;
 
                 }  // implicitly reload
             }
