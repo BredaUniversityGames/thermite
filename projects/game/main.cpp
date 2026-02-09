@@ -4,6 +4,8 @@
 #include "engine/core/resources/voxel_volume.hpp"
 #include "engine/core/components/transform.hpp"
 #include "engine/core/components/emitter.hpp"
+#include "engine/core/components/ui_component.hpp"
+#include "engine/core/components/image_renderer.hpp"
 #include "engine/core/components/camera.hpp"
 #include "engine/core/components/voxel_renderer.hpp"
 #include "engine/core/input/input.hpp"
@@ -35,6 +37,7 @@ class DragonScene : public tmt::Scene<DragonScene> {
     tmt::Entity voxel {};
     tmt::Entity emitter1 {};
     tmt::Entity emitter2 {};
+    tmt::Entity ui_entity {};
     float elapsed_time = 0.0f;
 };
 
@@ -96,6 +99,19 @@ void DragonScene::on_start() {
 
     /* Load a Bojan */
     tmt::ResourceRef<tmt::Texture2D> tex = tmt::engine.resources.load_resource<tmt::Texture2D>({tmt::IO::Location::PROJECT, "bojan.png"});
+
+    ui_entity = tmt::engine.ecs.create_entity("Bojan UI");
+    auto& t = tmt::engine.ecs.get_component<tmt::Transform>(ui_entity);
+    auto& ui_comp = tmt::engine.ecs.add_component<tmt::UIComponent>(ui_entity);
+    auto& image_renderer = tmt::engine.ecs.add_component<tmt::ImageRenderer>(ui_entity);
+    image_renderer.texture = tex;
+
+    tmt::Entity child = tmt::engine.ecs.create_entity("Bojan UI - Child");
+    auto& tc = tmt::engine.ecs.get_component<tmt::Transform>(child);
+    auto& ui_compc = tmt::engine.ecs.add_component<tmt::UIComponent>(child);
+    auto& image_rendererc = tmt::engine.ecs.add_component<tmt::ImageRenderer>(child);
+    image_rendererc.texture = tex;
+    tc.set_parent(ui_entity);
 
     /* Particle Emitters */
     {
