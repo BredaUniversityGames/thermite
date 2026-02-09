@@ -13,7 +13,13 @@
 
 namespace tmt {
 
-UndoRedoManager& IUndoRedo::get_manager() { return editor.windows.get<UndoRedoManager>(); }
+UndoRedoManager& IUndoRedo::get_manager() {
+    auto* result = editor.windows[editor.editor_mode].try_get<UndoRedoManager>();
+    if (result == nullptr) {
+        throw std::runtime_error("UndoRedoManager not found in current editor mode");
+    }
+    return *result;
+}
 
 void UndoRedoCollection::commit(const std::string& message) { send_to_manager(std::move(*this), message); }
 
