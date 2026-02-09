@@ -25,20 +25,30 @@ bool Texture2D::load() {
 
     width = (uint32_t)tex_width;
     height = (uint32_t)tex_height;
-    name = file_location.get_relative_path().string();
 
     auto& bank = engine.renderer.vram_bank();
 
     /* Initialise the texture */
     std::string texture_name = name + " Texture";
-    texture = bank.create_texture(texture_name.c_str(), TextureUsage::Sampled | TextureUsage::TransferDst, TextureFormat::RGBA8Unorm, {(u32)tex_width, (u32)tex_height, 0})
-                  .expect("failed to initialise texture.");
+    if (const Result r = bank.create_texture(texture_name.c_str(), TextureUsage::Sampled | TextureUsage::TransferDst, TextureFormat::RGBA8Unorm, {(u32)tex_width, (u32)tex_height, 0});
+        r.is_err()) {
+        Log::error(Log::Scope::RENDERER, "failed to initialise texture.\nreason: {}", r.unwrap_err().c_str());
+        return false;
+    } else
+        texture = r.unwrap();
 
-    bank.upload_texture(texture, data, tex_width * tex_height * 4).expect("failed to upload texture.");
+    if (const Result r = bank.upload_texture(texture, data, tex_width * tex_height * 4); r.is_err()) {
+        Log::error(Log::Scope::RENDERER, "failed to upload texture.\nreason: {}", r.unwrap_err().c_str());
+        return false;
+    }
     free(data);
 
     std::string image_name = name + " Image";
-    image = bank.create_image(image_name.c_str(), texture).expect("failed to initialize image.");
+    if (const Result r = bank.create_image(image_name.c_str(), texture); r.is_err()) {
+        Log::error(Log::Scope::RENDERER, "failed to initialize image.\nreason: {}", r.unwrap_err().c_str());
+        return false;
+    } else
+        image = r.unwrap();
 
     return true;
 }

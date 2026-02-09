@@ -11,9 +11,6 @@ namespace tmt {
 /* Voxel Renderer component used to visualize voxel data. */
 struct VoxelRenderer {
     ResourceRef<VoxelVolume> resource {};
-
-    /* Should this voxel renderer be outlined? */
-    bool outlined = false;
 };
 
 }  // namespace tmt

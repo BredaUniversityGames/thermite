@@ -31,8 +31,6 @@ void main(int2 thread_id: SV_DispatchThreadID) {
         const VisData vis = unpack_visibility(packed);
         const GeoData geo = unpack_geometry(vis, objects, ray);
 
-        /* Calculate some fake shading for the view */
-        const float fake_shading = clamp(dot(-ray.dir, geo.normal), 0.2f, 0.8f);
-        render_target[thread_id] = float4(geo.material.albedo * fake_shading, 1.0f);
+        render_target[thread_id] = float4(geo.material.albedo, 1.0f);
     }
 }

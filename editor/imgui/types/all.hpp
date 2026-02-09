@@ -6,4 +6,3 @@
 #include "editor/imgui/types/tmt.hpp"
 #include "editor/imgui/types/audio.hpp"
 #include "editor/imgui/types/light.hpp"
-#include "editor/imgui/types/voxel_volume.hpp"

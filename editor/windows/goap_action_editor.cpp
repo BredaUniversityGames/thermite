@@ -1,10 +1,6 @@
 #include "goap_action_editor.hpp"
-#include "engine/systems/ai/goap/goap_system.hpp"
 #include "engine/systems/ai/goap/components/goap_action.hpp"
 #include "engine/systems/ai/goap/components/goap_action_registry.hpp"
-
-#include "engine/engine.hpp"
-#include "engine/core/logger.hpp"
 
 #include <imgui.h>
 #include <string>
@@ -16,33 +12,9 @@ static ignode::EditorContext* g_Context = nullptr;  // internal state container 
 
 namespace tmt {
 
-void GoapActionEditor::on_editor_start() {
-    Goap* goap = engine.ecs.systems.try_get<Goap>();
+void GoapActionEditor::on_editor_start() { GoapActionOverrides::instance().load(); }
 
-    if (!goap) {
-        Log::warn("GOAP system not active.");
-        return;
-    }
-
-    auto& overrides = goap->overrides();
-
-    overrides.load();
-    // GoapActionOverrides::instance().load();
-}
-
-void GoapActionEditor::on_editor_end() {
-    Goap* goap = engine.ecs.systems.try_get<Goap>();
-
-    if (!goap) {
-        Log::warn("GOAP system not active.");
-        return;
-    }
-
-    auto& overrides = goap->overrides();
-
-    overrides.save();
-    // GoapActionOverrides::instance().save();
-}
+void GoapActionEditor::on_editor_end() { GoapActionOverrides::instance().save(); }
 
 /**
  * Display the editor UI for editing action overrides.
@@ -55,18 +27,8 @@ void GoapActionEditor::on_editor_end() {
  * All of these can also be reset to their origional value
  */
 void GoapActionEditor::display() {
-    /*auto& registry = GoapActionRegistry::instance();
-    auto& overrides = GoapActionOverrides::instance();*/
-
-    Goap* goap = engine.ecs.systems.try_get<Goap>();
-
-    if (!goap) {
-        Log::warn("GOAP system not active.");
-        return;
-    }
-
-    auto& registry = goap->actions();
-    auto& overrides = goap->overrides();
+    auto& registry = GoapActionRegistry::instance();
+    auto& overrides = GoapActionOverrides::instance();
 
     const auto& actions_map = registry.get_all();
     if (actions_map.empty()) {

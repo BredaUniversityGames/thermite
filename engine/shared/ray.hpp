@@ -19,14 +19,12 @@ struct Hit {
     /* Distance to the object we hit in world-space. */
     float distance = 1e30f;
     /* Entity of the object we hit. */
-    Entity entity {entt::null};
+    Entity entity {};
     /* Voxel coordinate inside the object we hit. */
     glm::uvec3 coord {};
-    /* Normal of the hit in world-space. */
-    glm::vec3 normal {};
 
     Hit() = default;
-    Hit(float distance, Entity entity, glm::uvec3 coord, glm::vec3 normal) : distance(distance), entity(entity), coord(coord), normal(normal) {};
+    Hit(float distance, Entity entity, glm::uvec3 coord) : distance(distance), entity(entity), coord(coord) {};
 
     /* @returns True if this hit was a miss. */
     inline bool miss() const { return distance == 1e30f; };

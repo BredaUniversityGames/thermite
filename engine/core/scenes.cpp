@@ -16,18 +16,6 @@ void Scenes::update() {
     swap_scenes();
 }
 
-void Scenes::end() {
-    if (active_scene_type == NULL_SCENE) return;
-
-    OnPreUnloadScene::dispatch();
-    if (active_scene) active_scene->on_end();
-    active_scene_type = NULL_SCENE;
-    engine.ecs.clear();
-    OnSceneEnd::dispatch();
-    active_scene.reset();
-    next_scene_type = NULL_SCENE;
-}
-
 void Scenes::swap_scenes() {
     if (next_scene_type == NULL_SCENE) {
         Log::error(Log::Scope::ENGINE, "[Scenes] swap_scenes: No scene enqueued");
@@ -121,11 +109,6 @@ void Scenes::enqueue_scene(const SceneIndex& type_id) {
         return;
     }
     next_scene_type = type_id;
-}
-
-void Scenes::load_scene(const SceneIndex& type_id) {
-    enqueue_scene(type_id);
-    swap_scenes();
 }
 
 const SceneInfo& Scenes::get_active_scene_info() const { return get_scene_info(active_scene_type); }

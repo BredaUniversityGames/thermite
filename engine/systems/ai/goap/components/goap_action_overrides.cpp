@@ -6,6 +6,11 @@
 
 namespace tmt {
 
+GoapActionOverrides& GoapActionOverrides::instance() {
+    static GoapActionOverrides inst;
+    return inst;
+}
+
 GoapActionEditorData& GoapActionOverrides::get(const std::string& id) { return data[id]; }
 
 const GoapActionEditorData* GoapActionOverrides::find(const std::string& id) const {

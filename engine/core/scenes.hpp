@@ -19,8 +19,6 @@ class Scenes {
     /* Checks if the scenes need to be switched */
     void update();
 
-    void end();
-
     /* Swaps the active scene with the next scene */
     void swap_scenes();
 
@@ -58,8 +56,6 @@ class Scenes {
         enqueue_scene<T>();
         swap_scenes();
     }
-
-    void load_scene(const SceneIndex& type_id);
 
     bool is_scene_loaded() const { return active_scene_type != NULL_SCENE && active_scene != nullptr; }
 

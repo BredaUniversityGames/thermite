@@ -12,9 +12,6 @@
 
 #include <magic_enum/magic_enum.hpp>
 
-#include "engine/engine.hpp"
-#include "engine/core/resources.hpp"
-
 namespace {
 
 struct FileDropState {
@@ -254,8 +251,8 @@ void AssetBrowser::on_editor_update(const FrameData&) {
 void AssetBrowser::import_asset(const IO::FileLocation& import_file, const IO::FileLocation& location) {
     const std::string& extension = import_file.relative_path.extension().generic_string();
     if (extension == ".vengi") {
-        const auto vengi_scene = engine.resources.load_resource<VoxelScene>(import_file);
-        if (!vengi_scene->load()) {
+        VoxelScene vengi_scene {import_file};
+        if (!vengi_scene.load()) {
             Log::error("Failed to import asset: failed to parse .vengi file.");
             return;
         }
@@ -264,7 +261,7 @@ void AssetBrowser::import_asset(const IO::FileLocation& import_file, const IO::F
         import_file_location.relative_path /= import_file.relative_path.filename().replace_extension(".svh");
         import_file_location = find_unused_file_location(import_file_location);
 
-        const std::vector<char>& data = encode_svh(vengi_scene.resource->root_nodes);
+        const std::vector<char>& data = encode_svh(vengi_scene);
         IO::write_file(import_file_location, data.data(), data.size());
 
         return;

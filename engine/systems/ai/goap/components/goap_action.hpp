@@ -33,14 +33,8 @@ class GoapAction {
     // Used during action execution
     bool is_running = false;
 
-    /**
-     * Set to true if u want to use the fixed update instead of update.
-     * Set it to true in the constructor.
-     * MoveToAction() {
-     *   wants_fixed_update = true;
-     * }
-     */
-    bool wants_fixed_update = false;
+    // readable name
+    // virtual const char* get_name() const = 0;
 
     /**
      * Checks if world state satisfies the action's preconditions.
@@ -58,25 +52,23 @@ class GoapAction {
      *
      * - start:      called once when the action begins.
      * - tick:       called every frame while action is running.
-     * - fixed tick: can als choose to use fixed tick, safe for physics updates etc.
      * - finished:   called only when the action finished normally.
      */
-    virtual void on_start(Entity /*agent*/) {}
-    virtual void on_tick(Entity /*agent*/, float /*dt*/) {}        // variable update
-    virtual void on_fixed_tick(Entity /*agent*/, float /*dt*/) {}  // physics-safe update
-    virtual void on_finished(Entity /*agent*/) {}
+    virtual void on_start(Entity /*agent*/, Registry& /*ecs*/) {}
+    virtual void on_tick(Entity /*agent*/, Registry& /*ecs*/, float /*dt*/) {}
+    virtual void on_finished(Entity /*agent*/, Registry& /*ecs*/) {}
 
     /**
      * Called every tick to determine whether the action is done,
      * but only while the action is actively running.
      * Returns true to advance to the next action, per actions this will be different.
      */
-    virtual bool is_done(Entity /*agent*/) const { return true; }
+    virtual bool is_done(Entity /*agent*/, Registry& /*ecs*/) const { return true; }
 
     /**
      * Called when an action is externally interrupted.
      */
-    virtual void on_interrupt(Entity /*agent*/) {}
+    virtual void on_interrupt(Entity /*agent*/, Registry& /*ecs*/) {}
 
     /**
      * For an implementation of this class, add:
