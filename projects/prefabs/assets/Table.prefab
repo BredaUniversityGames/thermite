@@ -112,13 +112,6 @@
                 "file_location": {
                     "sub_location": "PROJECT",
                     "relative_path": "table.vengi"
-                },
-                "data": {
-                    "size": {
-                        "x": 10,
-                        "y": 10,
-                        "z": 10
-                    }
                 }
             }
         },
@@ -127,13 +120,6 @@
                 "file_location": {
                     "sub_location": "PROJECT",
                     "relative_path": "dragon128.vengi"
-                },
-                "data": {
-                    "size": {
-                        "x": 58,
-                        "y": 90,
-                        "z": 128
-                    }
                 }
             }
         },
@@ -142,13 +128,6 @@
                 "file_location": {
                     "sub_location": "PROJECT",
                     "relative_path": "dragon128.vengi"
-                },
-                "data": {
-                    "size": {
-                        "x": 58,
-                        "y": 90,
-                        "z": 128
-                    }
                 }
             }
         },
@@ -157,13 +136,6 @@
                 "file_location": {
                     "sub_location": "PROJECT",
                     "relative_path": "dragon128.vengi"
-                },
-                "data": {
-                    "size": {
-                        "x": 58,
-                        "y": 90,
-                        "z": 128
-                    }
                 }
             }
         }

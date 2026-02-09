@@ -58,13 +58,6 @@
                 "file_location": {
                     "sub_location": "PROJECT",
                     "relative_path": "small_sphere.vengi"
-                },
-                "data": {
-                    "size": {
-                        "x": 40,
-                        "y": 40,
-                        "z": 40
-                    }
                 }
             }
         }
