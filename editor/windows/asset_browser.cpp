@@ -211,10 +211,7 @@ void AssetBrowser::display() {
     ImGui::SetCursorScreenPos(ImVec2 {ImGui::GetCursorScreenPos().x, ImGui::GetItemRectMax().y});
     ImGui::Separator();
 
-    const float available_width = ImGui::GetContentRegionAvail().x;
     if (!ImGui::BeginTable("AssetBrowserTable", 2, ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_Resizable)) return;
-
-    ImGui::TableSetupColumn("###Default folders", ImGuiTableColumnFlags_WidthFixed, available_width / 6.0f);
 
     ImGui::TableNextColumn();
     if (ImGui::BeginChild("Bookmarks")) {
