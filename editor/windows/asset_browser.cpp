@@ -255,8 +255,8 @@ void AssetBrowser::import_asset(const IO::FileLocation& import_file, const IO::F
     const std::string& extension = import_file.relative_path.extension().generic_string();
     if (extension == ".vengi") {
         const auto vengi_scene = engine.resources.load_resource<VoxelScene>(import_file);
-        if (!vengi_scene->load()) {
-            Log::error("Failed to import asset: failed to parse .vengi file.");
+        if (!vengi_scene) {
+            Log::error("Failed to import asset: failed to load .vengi file.");
             return;
         }
 
