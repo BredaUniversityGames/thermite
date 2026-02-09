@@ -11,7 +11,6 @@
 namespace tmt {
 
 void PrefabHelper::create_prefab(const IO::FileLocation& location, const Entity& root) {
-
     /* unparent before */
     auto& root_transform = engine.ecs.get_component<Transform>(root);
     Entity parent = root_transform.get_parent();
@@ -54,6 +53,18 @@ void PrefabHelper::create_prefab(const IO::FileLocation& location, const Entity&
 }
 
 Entity PrefabHelper::instantiate_prefab(const IO::FileLocation& location, const Entity& parent) {
+    const bool has_prefab = engine.ecs.has_component<Prefab>(parent);
+    /* Check if we create a loop */
+    if (has_prefab) {
+         const auto& parent_prefab_comp = engine.ecs.get_component<Prefab>(parent);
+         for (const auto chain : parent_prefab_comp.prefab_chain) {
+             if (chain.source_location == location) {
+                 Log::error(Log::Scope::ENGINE, "[PrefabHelper] instantiate_prefab: Cannot instantiate prefab at location '{}' under parent entity {} as it would create a loop", location.get_absolute_path().string(), EntityHelper::to_string(parent));
+                 return entt::null;
+             }
+         }
+    }
+
     /* Load prefab json from disk */
     const auto prefab_json_resource = engine.resources.load_resource<Json>(location);
     if (prefab_json_resource == nullptr) {
