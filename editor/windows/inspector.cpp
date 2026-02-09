@@ -138,7 +138,7 @@ void Inspector::display_compile_time_components(const tmt::Inspector::MenuContex
             collection.commit("Edit Component: " + std::string(name));
             component_diff.clear();
         }
-        
+
         if (activated) {
             printf("Activated component editor: %s\n", name);
             for (const Entity& entity : menu_context.selected_entities) {
