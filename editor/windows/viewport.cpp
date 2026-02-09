@@ -68,6 +68,7 @@ void tmt::Viewport::display() {
     engine.renderer.render_view.set_viewport_size(static_cast<uint32_t>(width), static_cast<uint32_t>(height));
 
     ImGui::BeginChild("viewport_render", ImVec2(0, 0), 0, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove);
+
     ImGui::Image((ImTextureRef)engine.renderer.render_view.imgui_viewport, size);
     is_hovered = ImGui::IsItemHovered();
     auto imgui_mouse_pos = ImGui::GetMousePos();
@@ -81,26 +82,53 @@ void tmt::Viewport::display() {
     const bool gizmo_changed = editor.gizmo.manip(image_pos.x, image_pos.y, width, height, selected_entities);
     if (gizmo_changed) OnSceneModified::dispatch();
 
-    bool toolbar_buttons_hovered = toolbar(image_pos);
+    const bool toolbar_buttons_hovered = toolbar(image_pos);
 
-    if (ImGui::GetIO().MouseClicked[0] && is_hovered && !editor.gizmo.hovered() && !toolbar_buttons_hovered) {
+    auto& imgui_io = ImGui::GetIO();
+
+    static ImVec2 first_click_pos;
+    if (imgui_io.MouseDown[0] && !editor.gizmo.hovered()) {
+        if (imgui_io.MouseClicked[0]) first_click_pos = imgui_io.MousePos;
+
+        ImGui::GetWindowDrawList()->AddRectFilled(first_click_pos, imgui_io.MousePos, ImColor(1.f, 1.f, 1.f, 0.2f));
+        ImGui::GetWindowDrawList()->AddRect(first_click_pos, imgui_io.MousePos, ImColor(1.f, 1.f, 1.f, 0.6f));
+        
+        glm::ivec2 a = {first_click_pos.x - image_pos.x, first_click_pos.y - image_pos.y};
+        glm::ivec2 b = {imgui_mouse_pos.x - image_pos.x, imgui_mouse_pos.y - image_pos.y};
+
+        int x0 = std::min(a.x, b.x);
+        int x1 = std::max(a.x, b.x);
+        int y0 = std::min(a.y, b.y);
+        int y1 = std::max(a.y, b.y);
+
+        for (int x = x0; x < x1; x += 5) {
+            for (int y = y0; y < y1; y += 5) {
+                const tmt::Ray selection_ray = tmt::engine.renderer.render_view.pixel_ray({x, y});
+                const tmt::Hit hit = tmt::engine.renderer.trace_ray(selection_ray);
+
+                if (!hit.miss()) {
+                    hierarchy.add_entity_to_selection(hit.entity);
+                }
+            }
+        }
+    }
+
+    if (imgui_io.MouseClicked[0] && is_hovered && !editor.gizmo.hovered() && !toolbar_buttons_hovered) {
         const tmt::Ray selection_ray = tmt::engine.renderer.render_view.pixel_ray({mouse_pos.x, mouse_pos.y});
         const tmt::Hit hit = tmt::engine.renderer.trace_ray(selection_ray);
 
         if (!hit.miss()) {
-            if (!ImGui::GetIO().KeyCtrl) hierarchy.clear_selection();
+            if (!imgui_io.KeyCtrl) hierarchy.clear_selection();
 
             hierarchy.add_entity_to_selection(hit.entity);
             Entity first_entity = hierarchy.get_first_selected_entity();
 
-            //only care about opening the first selected
-            if(first_entity == hit.entity)
-            {
+            // only care about opening the first selected
+            if (first_entity == hit.entity) {
                 auto& transform = engine.ecs.get_component<Transform>(hit.entity);
 
                 // we only want to open the tree if the selected entity has a parent
-                if(transform.has_parent())
-                {
+                if (transform.has_parent()) {
                     Entity parent = transform.get_parent();
                     force_open_recurse_upwards(parent);
                 }
@@ -109,7 +137,7 @@ void tmt::Viewport::display() {
         } else {
             hierarchy.clear_selection();
         }
-    } 
+    }
 
     ImGui::EndChild();
 
@@ -156,15 +184,13 @@ bool tmt::Viewport::toolbar(const glm::vec2& image_pos) {
     return any_button_hovered;
 }
 
-void tmt::Viewport::force_open_recurse_upwards(Entity entity) 
-{
+void tmt::Viewport::force_open_recurse_upwards(Entity entity) {
     auto& hierarchy = editor.windows[Editor::Mode::SCENE].get<Hierarchy>();
 
     hierarchy.add_entity_to_forced_open(entity);
 
     auto& transform = engine.ecs.get_component<Transform>(entity);
-    if(transform.has_parent())
-    {
+    if (transform.has_parent()) {
         Entity parent = transform.get_parent();
         force_open_recurse_upwards(parent);
     }
