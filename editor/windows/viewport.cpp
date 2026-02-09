@@ -1,5 +1,6 @@
 #include "viewport.hpp"
 #include <imgui.h>
+#include <ImGuizmo.h>
 #include "editor/editor.hpp"
 #include "hierarchy.hpp"
 #include "engine/core/components/camera.hpp"
@@ -76,7 +77,26 @@ void tmt::Viewport::display() {
 
     const std::vector<Entity>& selected_entities = editor.windows[Editor::Mode::SCENE].get<Hierarchy>().get_selected_entities();
 
-    const bool gizmo_changed = editor.gizmo.manip(image_pos.x, image_pos.y, width, height, selected_entities);
+    float snap_value = 0.0f;
+    const bool ctrl_held = ImGui::IsKeyDown(ImGuiKey_LeftCtrl) || ImGui::IsKeyDown(ImGuiKey_RightCtrl);
+    if (ctrl_held) {
+        const auto operation = Gizmo::OPERATIONS[editor.gizmo.operation];
+        switch (operation) {
+            case ImGuizmo::OPERATION::TRANSLATE:
+                snap_value = editor.save_data.snap_values.move;
+                break;
+            case ImGuizmo::OPERATION::ROTATE:
+                snap_value = editor.save_data.snap_values.rotation;
+                break;
+            case ImGuizmo::OPERATION::SCALE:
+                snap_value = editor.save_data.snap_values.scale;
+                break;
+            default:
+                break;
+        }
+    }
+
+    const bool gizmo_changed = editor.gizmo.manip(image_pos.x, image_pos.y, width, height, selected_entities, snap_value);
     if (gizmo_changed) OnSceneModified::dispatch();
 
     toolbar(image_pos);

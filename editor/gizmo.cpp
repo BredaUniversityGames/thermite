@@ -23,7 +23,7 @@ void Gizmo::init() {
     setup_style();
 }
 
-bool Gizmo::manip(const float x, const float y, const float width, const float height, const std::span<const Entity>& selected_entities) const {
+bool Gizmo::manip(const float x, const float y, const float width, const float height, const std::span<const Entity>& selected_entities, const float snap) const {
     ImGuizmo::SetRect(x, y, width, height);
     ImGuizmo::SetDrawlist();
 
@@ -51,7 +51,7 @@ bool Gizmo::manip(const float x, const float y, const float width, const float h
 
         glm::mat4 delta;
         changed = ImGuizmo::Manipulate(
-            &view[0][0], &perspective[0][0], static_cast<ImGuizmo::OPERATION>(OPERATIONS[operation]), static_cast<ImGuizmo::MODE>(space), &imguizmo_input_matrix[0][0], &delta[0][0]
+            &view[0][0], &perspective[0][0], static_cast<ImGuizmo::OPERATION>(OPERATIONS[operation]), static_cast<ImGuizmo::MODE>(space), &imguizmo_input_matrix[0][0], &delta[0][0], &snap
         );
         if (changed) {
             selected_transform.set_world_matrix(imguizmo_input_matrix);
