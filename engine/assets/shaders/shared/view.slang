@@ -14,6 +14,14 @@ public struct RenderView {
     public uint2 resolution;
     /* Index of the current frame. */
     public uint frame_index;
+    /* Delta Time in seconds. */
+    public float dt;
+};
+
+/* Holds information about the active scene. */ 
+public struct SceneView {
+    /* Number of lights present in the scene. */
+    public uint light_count;
 };
 
 /* Represents a ray that can be traced. */

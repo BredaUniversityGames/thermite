@@ -39,8 +39,8 @@ class Physics : public ISystem {
     void generate_constraints();
     void generate_constraint(int index, const PhysicsGroup& group);
     void compare_trees(
-        tmt::Svt64* tree_a, const glm::vec3& center_a, const glm::quat& rotation_a, float half_extent_a, 
-        tmt::Svt64* tree_b, const glm::vec3& center_b, const glm::quat& rotation_b, float half_extent_b, Collision& coll
+        tmt::Svt64* tree_a, const glm::vec3& center_a, const glm::quat& rotation_a, float half_extent_a, tmt::Svt64* tree_b, const glm::vec3& center_b, const glm::quat& rotation_b,
+        float half_extent_b, Collision& coll
     );
 
    public:

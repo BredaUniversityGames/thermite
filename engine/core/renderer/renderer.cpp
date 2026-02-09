@@ -5,6 +5,7 @@
 #include <graphite/gpu_adapter.hh>
 #include <graphite/render_graph.hh>
 #include <graphite/nodes/raster_node.hh>
+#include <graphite/nodes/compute_node.hh>
 
 #include "core/window.hpp"
 #include "core/logger.hpp"
@@ -13,8 +14,9 @@
 #include "core/components/transform.hpp"
 
 #include "engine/engine.hpp"
-
+#include "engine/core/io.hpp"
 #include "pipelines/polyline_pipeline.hpp"
+#include "pipelines/vfx_pipeline.hpp"
 #include "pipelines/geometry_pipeline.hpp"
 #include "pipelines/di_pipeline.hpp"
 #include "tools/profiler.hpp"
@@ -22,11 +24,17 @@
 namespace tmt {
 
 Renderer::Renderer()
-    : gpu(*new GPUAdapter()), render_graph(*new RenderGraph()), geometry_pipeline(*new GeometryPipeline()), di_pipeline(*new DiPipeline()), polyline_pipeline(*new PolylinePipeline()) {}
+    : gpu(*new GPUAdapter()),
+      render_graph(*new RenderGraph()),
+      geometry_pipeline(*new GeometryPipeline()),
+      di_pipeline(*new DiPipeline()),
+      polyline_pipeline(*new PolylinePipeline()),
+      vfx_pipeline(*new VfxPipeline()) {}
 
 Renderer::~Renderer() {
     delete &polyline_pipeline;
     delete &di_pipeline;
+    delete &vfx_pipeline;
     delete &geometry_pipeline;
     delete &render_graph;
     delete &gpu;
@@ -69,7 +77,8 @@ void Renderer::init() {
     }
 
     /* Initialize the Render Graph */
-    render_graph.set_shader_path("assets/engine/shaders/bin");
+    IO::FileLocation shader_location {IO::Location::ENGINE, "shaders/bin"};
+    render_graph.set_shader_path(shader_location.get_relative_path().string().c_str());
     render_graph.set_staging_limit(32000000u /* 32mb */);
     render_graph.set_max_graphs_in_flight(2u); /* Double buffering */
     if (const Result r = render_graph.init(gpu); r.is_err()) {
@@ -84,6 +93,7 @@ void Renderer::init() {
     /* Initialize pipelines */
     polyline_pipeline.init(gpu);
     di_pipeline.init(gpu);
+    vfx_pipeline.init(gpu);
 
     debug_transform.set_local_position({0.0f, 0.0f, -1.0f});
 }
@@ -96,7 +106,7 @@ void Renderer::update() {
 
     /* Update the rendering views */
     render_view.update();
-    scene_view.update(render_graph);
+    scene_view.update(render_graph, render_view);
 
     /* Update the camera view */
     Entity cam_entity = Camera::get_active_camera();
@@ -111,7 +121,22 @@ void Renderer::update() {
     /* Enqueue pipelines */
     geometry_pipeline.enqueue(render_graph, render_view, scene_view);
     di_pipeline.enqueue(render_graph, render_view, scene_view);
-    polyline_pipeline.enqueue(render_graph, render_view, scene_view);
+
+    if (scene_view.render_outlines) {
+        /* clang-format on */
+        /* Object outline render pass */
+        render_graph.add_compute_pass("object outline", "outline.cs")
+            .read(render_view.render_view_buffer)
+            .read(scene_view.object_data)
+            .read(render_view.vbuffer.image)
+            .write(render_view.get_render_image())
+            .group_size(16, 8)
+            .work_size(render_view.gpu_view.resolution.x, render_view.gpu_view.resolution.y);
+        /* clang-format off */
+    }
+
+    polyline_pipeline.enqueue(render_graph, render_view);
+    vfx_pipeline.enqueue(render_graph, render_view);
 
 #ifdef THERMITE_EDITOR
     /* Add the immediate mode GUI to the render graph */
@@ -141,6 +166,7 @@ void Renderer::end() {
     /* Pipelines cleanup */
     polyline_pipeline.deinit(gpu);
     di_pipeline.deinit(gpu);
+    vfx_pipeline.deinit(gpu);
 
     /* Cleanup the VRAM bank & GPU adapter */
     render_graph.deinit().expect("failed to destroy render graph.");
