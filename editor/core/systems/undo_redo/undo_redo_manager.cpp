@@ -1,8 +1,4 @@
 #include "undo_redo_manager.hpp"
-#include "undo_redo_manager.hpp"
-#include "undo_redo_manager.hpp"
-#include "undo_redo_manager.hpp"
-#include "undo_redo_manager.hpp"
 
 #include <imgui.h>
 
