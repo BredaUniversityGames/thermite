@@ -8,9 +8,9 @@
 #include "engine.hpp"
 #include "renderer.hpp"
 
-#include "core/logger.hpp"
-#include "core/window.hpp"
 #include "core/ecs.hpp"
+#include "core/window.hpp"
+#include "core/logger.hpp"
 
 #include "core/components/camera.hpp"
 #include "core/components/transform.hpp"
@@ -60,7 +60,7 @@ void RenderView::init() {
     macrofacet_hashset = bank.create_buffer("Macrofacet Hashset Buffer", BufferUsage::Storage, hashset_size, hashkey_size).expect("failed to create macrofacet hashset buffer.");
     macrofacet_shading_commands = bank.create_buffer("Macrofacet Shading Commands Buffer", BufferUsage::Storage | BufferUsage::Indirect, hashset_size, hashkey_size)
                                       .expect("failed to create macrofacet shading commands buffer.");
-    const uint64_t cache_element_size = hashkey_size + sizeof(uint32_t) * 2ull;
+    const uint64_t cache_element_size = hashkey_size + sizeof(uint64_t) * 2ull;
     const uint64_t cache_size = 10'000'000u;
     macrofacet_illuminance_cache =
         bank.create_buffer("Macrofacet Illuminance Cache Buffer", BufferUsage::Storage, cache_size, cache_element_size).expect("failed to create macrofacet illuminance cache buffer.");
@@ -93,12 +93,13 @@ void RenderView::update_gpu_view(RenderGraph& render_graph, const Camera& camera
 
     /* Iterate over all cameras to find an active one to use as render view */
     glm::mat4 p = glm::perspective(glm::radians(camera.fov), aspect_ratio, 0.05f, 1000.0f);
-    const glm::mat4 v = glm::inverse(transform.get_world_matrix());
+    const glm::mat4 world = transform.get_world_matrix();
     p[1][1] *= -1.0f;
-    gpu_view.world_to_clip = p * v;
+    gpu_view.world_to_clip = p * glm::inverse(world);  // p * v
     gpu_view.clip_to_world = glm::inverse(gpu_view.world_to_clip);
     gpu_view.origin = glm::vec4(transform.get_world_position(), 0.0f);
     gpu_view.frame_index = frame_counter;
+    gpu_view.dt = engine.frame_data().delta_time;
 
     /* Upload the active render view */
     render_graph.upload_buffer(render_view_buffer, &gpu_view, 0u, sizeof(GpuView));

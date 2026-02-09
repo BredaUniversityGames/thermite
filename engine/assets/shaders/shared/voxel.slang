@@ -15,6 +15,7 @@ public struct VoxelObject {
     public uint blas_handle;
     public uint voxels_handle;
     public uint palette_handle;
+    public uint object_flags; /* b0 = outlined */
 };
 
 /* Get the face_index of the local-space AABB, in case we instantly hit a voxel in the object. */
@@ -139,11 +140,6 @@ uint jenkins32(uint a) {
     return a;
 }
 
-uint hash_combine(uint lhs, const uint rhs) {
-    lhs ^= rhs + 0x9e3779b9 + (lhs << 6) + (lhs >> 2);
-    return lhs;
-}
-
 public inline uint voxel_hash(const uint voxel_index, const uint object_index, const uint face_index) {
     /* Cut away 3 bits on each axis, 10 bit -> 7 bit */
     const uint voxel_x = voxel_index & 0b1111111u;
@@ -155,5 +151,11 @@ public inline uint voxel_hash(const uint voxel_index, const uint object_index, c
     return jenkins32(voxel21
         | ((object_index & 0b11111111u) << 21u)
         | ((face_index & 0b111u) << 29u));
-    // return hash_combine(hash_combine(jenkins32(voxel_index), jenkins32(object_index)), jenkins32(face_index));
+}
+
+public inline uint voxel_hash(const uint64_t packed) {
+    const uint object_index = (uint)((packed >> 32) & 0xFFFFu);
+    const uint voxel_index = (uint)(packed & 0xFFFFFFFFu);
+    const uint face_index = (uint)(packed >> 48);
+    return voxel_hash(voxel_index, object_index, face_index);
 }

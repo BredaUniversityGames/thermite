@@ -3,14 +3,14 @@
 #include "engine/core/resource.hpp"
 #include "engine/shared/svt64.hpp"
 #include "engine/core/reflection.hpp"
-#include "uuid_v4.h"
+#include "engine/tools/uuid.hpp"
 
 namespace tmt {
 
 /* Voxel scene resource node. */
 struct VoxelSceneNode {
     /* 128 bit unique identifier. */
-    UUIDv4::UUID uuid;
+    UUID uuid {NULL_UUID};
 
     /* Voxel acceleration structure. */
     std::unique_ptr<Svt64> tree {};
@@ -40,7 +40,7 @@ class VoxelScene : public tmt::FileResource {
     inline static const std::set<std::string_view> SUPPORTED_FILE_EXTENSIONS {".vengi", ".svh"};
 
     /* Voxel scene hierarchy. */
-    VoxelSceneNode hierarchy {};
+    std::vector<VoxelSceneNode> root_nodes {};
 };
 
 }  // namespace tmt

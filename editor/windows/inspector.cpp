@@ -28,12 +28,12 @@ namespace tmt {
 
 void Inspector::on_editor_start() {}
 
-void Inspector::on_editor_update(const tmt::FrameData& time) {}
+void Inspector::on_editor_update(const tmt::FrameData&) {}
 
 void Inspector::on_editor_end() {}
 
 void Inspector::display() {
-    const auto& hierarchy = editor.windows.get<Hierarchy>();
+    const auto& hierarchy = editor.windows[Editor::Mode::SCENE].get<Hierarchy>();
 
     const MenuContext menu_context {
         .primary_entity = hierarchy.get_first_selected_entity(),
@@ -138,12 +138,12 @@ void Inspector::display_compile_time_components(const tmt::Inspector::MenuContex
             collection.commit("Edit Component: " + std::string(name));
             component_diff.clear();
         }
-
+        
         if (activated) {
             printf("Activated component editor: %s\n", name);
             for (const Entity& entity : menu_context.selected_entities) {
-                const bool has_comp = engine.ecs.has_component<T>(entity);
-                if (has_comp == false) continue;
+                const bool has_component_2 = tmt::engine.ecs.has_component<T>(entity);
+                if (has_component_2 == false) continue;
 
                 component_diff.emplace(entity, ComponentDiff<T>(entity));
                 component_diff.at(entity).before();
@@ -175,16 +175,16 @@ void Inspector::display_runtime_components(const MenuContext& menu_context) {
         if (context_response.remove_component) {
             UndoRedoCollection collection;
             for (const Entity& entity : menu_context.selected_entities) {
-                const bool has_collection = engine.ecs.has_component<ComponentCollection>(entity);
-                if (has_collection == false) continue;
+                const bool has_collection_2 = engine.ecs.has_component<ComponentCollection>(entity);
+                if (has_collection_2 == false) continue;
 
-                auto& component_collection = engine.ecs.get_component<ComponentCollection>(entity);
-                const bool has_component = component_collection.has_component(component_index);
-                if (has_component == false) continue;
+                auto& component_collection_2 = engine.ecs.get_component<ComponentCollection>(entity);
+                const bool has_component_2 = component_collection_2.has_component(component_index);
+                if (has_component_2 == false) continue;
 
                 RuntimeComponentDiff diff(entity, component_index);
                 diff.before();
-                component_collection.remove_component(component_index);
+                component_collection_2.remove_component(component_index);
                 diff.after();
                 collection.add_action(diff);
             }
@@ -224,12 +224,12 @@ void Inspector::display_runtime_components(const MenuContext& menu_context) {
         for (const Entity& entity : menu_context.selected_entities) {
             if (entity == menu_context.primary_entity) continue;
 
-            const bool has_collection = engine.ecs.has_component<ComponentCollection>(entity);
-            if (has_collection == false) continue;
+            const bool has_collection_2 = engine.ecs.has_component<ComponentCollection>(entity);
+            if (has_collection_2 == false) continue;
 
             auto& other_component_collection = engine.ecs.get_component<ComponentCollection>(entity);
-            const bool has_component = other_component_collection.has_component(component_index);
-            if (has_component == false) continue;
+            const bool has_component_2 = other_component_collection.has_component(component_index);
+            if (has_component_2 == false) continue;
 
             IGameComponent& other_instance = other_component_collection.get_component(component_index);
             json other_json = tmt::Serializer::serialize(other_instance);

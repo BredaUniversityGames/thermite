@@ -11,14 +11,25 @@ namespace tmt {
 /* Voxel volume run-time resource, created from a Voxel model resource. */
 class VoxelVolume : public tmt::RuntimeResource<VoxelScene> {
    public:
+    // Constructor for temporary VoxelVolume's that aren't managed by the resource system (used in the voxel editor).
+    VoxelVolume(const glm::uvec3& grid_size);
+    VoxelVolume(const VoxelSceneNode& node);
+
     VoxelVolume(const std::shared_ptr<VoxelScene>& file_resource) : RuntimeResource<VoxelScene>(file_resource) {}
+    VoxelVolume(const std::shared_ptr<VoxelScene>& file_resource, const UUID& uuid) : RuntimeResource<VoxelScene>(file_resource), uuid {uuid} {}
     ~VoxelVolume() { unload(); }
 
     bool load() override;
     void unload() override;
 
+    /* Updates the GPU buffers of this voxel volume if dirty. (note: this should only be called from the renderer) */
+    void update_if_dirty();
+
+    /* Mark this voxel volume as dirty, meaning it needs to be re-uploaded to the GPU. */
+    inline void set_dirty() { is_dirty = true; };
+
     /* 128 bit unique identifier. */
-    uint64_t uuid[2] {};
+    UUID uuid {NULL_UUID};
 
     /* Voxel acceleration structure. */
     std::unique_ptr<Svt64> blas {};
@@ -26,8 +37,12 @@ class VoxelVolume : public tmt::RuntimeResource<VoxelScene> {
 
     /* Voxel acceleration structure buffers. */
     Buffer blas_nodes {}, blas_voxels {}, blas_palette {};
+
+   private:
+    void create_gpu_buffers();
+
+    uint32_t blas_nodes_capacity = 0u, blas_voxels_capacity = 0u;
+    bool is_dirty = false;
 };
 
 }  // namespace tmt
-
-TMT_OBJECT(tmt::VoxelVolume, (size));

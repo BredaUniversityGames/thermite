@@ -9,6 +9,7 @@
 #include "engine/tools/profiler.hpp"
 #include "engine/tools/timer.hpp"
 #include "engine/tools/svh_format.hpp"
+#include "engine/tools/uuid.hpp"
 
 #include <queue>
 #include <omp.h>
@@ -314,7 +315,9 @@ VoxelSceneNode parse_hierarchy(const vengi::Node* file_node) {
 
     /* Create a new scene node */
     VoxelSceneNode node {};
-    node.uuid = UUIDv4::UUID(file_node->uuid[0], file_node->uuid[1]);
+    node.uuid = UUID(file_node->uuid[0], file_node->uuid[1]);
+    node.name = file_node->name;
+    node.transform = file_node->transform.get_world_matrix();
 
     /* If this node is a voxel model node */
     if (file_node->type == vengi::NodeType::MODEL) {
@@ -350,10 +353,10 @@ bool VoxelScene::load() {
 
     const std::string& file_extension = file_location.relative_path.extension().generic_string();
     if (file_extension == ".svh") {
-        const bool success = decode_svh(IO::read_file(file_location), hierarchy);
-        if (!success) Log::error("Failed to load voxel scene from file: {}", file_location);
+        root_nodes = decode_svh(IO::read_file(file_location));
+        if (root_nodes.empty()) Log::error("Failed to load voxel scene from file: {}", file_location);
 
-        return success;
+        return !root_nodes.empty();
     }
 
     /* Parse the vengi file */
@@ -365,11 +368,11 @@ bool VoxelScene::load() {
     }
 
     /* Traverse & parse the vengi scene */
-    hierarchy = parse_hierarchy(root.get());
+    root_nodes.push_back(parse_hierarchy(root.get()));
 
     return true;
 }
 
-void VoxelScene::unload() { hierarchy = {}; }
+void VoxelScene::unload() { root_nodes.clear(); }
 
 }  // namespace tmt
