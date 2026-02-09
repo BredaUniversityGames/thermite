@@ -96,6 +96,17 @@ void tmt::Viewport::display() {
         }
     }
 
+    const bool wants_to_capture_keyboard = ImGui::GetIO().WantCaptureKeyboard;
+    if (wants_to_capture_keyboard == false && using_debug_camera == false) {
+        if (ImGui::IsKeyPressed(ImGuiKey_Q, false)) {
+            editor.gizmo.operation = 0;
+        } else if (ImGui::IsKeyPressed(ImGuiKey_W, false)) {
+            editor.gizmo.operation = 1;
+        } else if (ImGui::IsKeyPressed(ImGuiKey_E, false)) {
+            editor.gizmo.operation = 2;
+        }
+    }
+
     const bool gizmo_changed = editor.gizmo.manip(image_pos.x, image_pos.y, width, height, selected_entities, snap_value);
     if (gizmo_changed) OnSceneModified::dispatch();
 
@@ -157,8 +168,10 @@ void tmt::Viewport::update_debug_camera(const tmt::FrameData& time) {
         /* Show mouse cursor */
         input.set_mouse_relative_to_window(false);
         input.lock_mouse(false);
+        using_debug_camera = false;
         return;
     }
+    using_debug_camera = true;
     /* Cancel any text fields in editor you may interact with */
     ImGui::SetWindowFocus();
 
