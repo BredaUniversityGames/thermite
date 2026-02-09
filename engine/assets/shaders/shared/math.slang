@@ -4,6 +4,7 @@ module math;
 public static const float BIG_F32 = 1e30f;
 /* PI constant. */
 public static const float PI_F32 = 3.14159265359f;
+public static const float RCP_PI_F32 = 1.0f / PI_F32;
 
 /* Number of voxels per unit in world-space. */
 public static const uint VOXELS_PER_UNIT = 10u;

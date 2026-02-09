@@ -1,4 +1,11 @@
+/**
+ * @name Thermite Material Model.
+ * This file contains the implementation for our material model based on OpenPBR.
+ * Our shading frame is left-handed Y-up positive Z forward.
+ */
 module material;
+
+import math;
 
 /* Voxel material data, used in a palette. */
 public struct Material {
@@ -24,6 +31,20 @@ public struct Material {
     public float transmission;
 };
 
+/* f_layer(ωi,ωo) = f_coat(ωi,ωo) + (1 - E_coat(ωo)) * f_sub(ωi,ωo) */
+/* <https://academysoftwarefoundation.github.io/OpenPBR/#layering> */
+[ForceInline] float3 f_layer(const float3 fsub, const float3 fcoat) {
+    /* Do we need "directional albedo integral" here? (7) */
+    /* <https://pbr-book.org/4ed/Reflection_Models/BSDF_Representation#HemisphericalReflectance> */
+    return fcoat + fsub;
+}
+
+/* f_mix = (1 - w1) * f0 + w1 * f1 = lerp(f0,f1,w1) */
+/* <https://academysoftwarefoundation.github.io/OpenPBR/#mixing> */
+[ForceInline] float3 f_mix(const float3 f0, const float3 f1, const float w1) {
+    return (1.0f - w1) * f0 + w1 * f1;
+}
+
 /*******************************************************************/
 /*                                                                 */
 /*  ~ thermite material model                        emission      */
@@ -31,7 +52,7 @@ public struct Material {
 /*    ambient medium                                    |          */
 /*  +---------------------+---------------------+-------+-------+  */
 /*  |░░░░░░░░░░░░░░░░░░░░░|                     |               |  */
-/*  |░░░░░░░░░░░░░░░░░░░░░|                     |    gloss      |  */
+/*  |░░░░░░░░░░░░░░░░░░░░░|                     |     gloss     |  */
 /*  |░░░░░░░ metal ░░░░░░░|     translucent     |               |  */
 /*  |░░░░░░░░░░░░░░░░░░░░░|        base         +---------------+  */
 /*  |░░░░░░░░░░░░░░░░░░░░░|                     |░░░░░░░░░░░░░░░|  */
@@ -44,7 +65,62 @@ public struct Material {
 /*                                                                 */
 /*******************************************************************/
 
-/* Evaluate opaque material slabs. (metal, diffuse, & gloss) */
-public void opaque_slabs() {
+/* Lambertian BRDF. */
+/* <https://pbr-book.org/4ed/Reflection_Models/Diffuse_Reflection> */
+[ForceInline] float3 diffuse_slab(const float3 albedo) {
+    return albedo * RCP_PI_F32;
+}
 
+float trowbridge_reitz_distribution(const float3 wh, const float alpha_2) {
+    const float costheta_2 = wh.y * wh.y;
+    const float costheta_4 = costheta_2 * costheta_2;
+    const float sintheta_2 = 1.0f - costheta_2;
+    const float tantheta_2 = sintheta_2 / costheta_2;
+    const float e = alpha_2 + tantheta_2;
+    return alpha_2 / (PI_F32 * costheta_4 * e * e);
+}
+
+float trowbridge_reitz_shadowing(const float3 wh, const float alpha_2) {
+
+}
+
+[ForceInline] float3 gloss_slab() {
+    /* F(ωi,h) * D(h) * G(ωi,ωo) */
+}
+
+/* Evaluate opaque base material slab. (diffuse & gloss) */
+[ForceInline] public float3 opaque_base_slab(const float3 p, const float3 wi, const float3 wo) {
+    /* Evaluate the two slabs */
+    const float3 diffuse = 0.0f;
+    const float3 gloss = 0.0f;
+
+    static const float alpha = 0.5f;
+    const float alpha_2 = alpha * alpha;
+
+    /* Halfway vector */
+    const float3 wh = (wi + wo) * 0.5f;
+
+    /* Trowbridge-Reitz normal distribution function */
+    /* <https://www.pbr-book.org/3ed-2018/Reflection_Models/Microfacet_Models> */
+    const float wh_costheta_2 = wh.y * wh.y;
+    const float wh_costheta_4 = wh_costheta_2 * wh_costheta_2;
+    const float wh_sintheta_2 = 1.0f - wh_costheta_2;
+    const float wh_tantheta_2 = wh_sintheta_2 / wh_costheta_2;
+    const float e = alpha_2 + wh_tantheta_2;
+    const float d = alpha_2 / (PI_F32 * wh_costheta_4 * e * e);
+
+    /* Trowbridge-Reitz masking and shadowing function */
+    /* <https://www.pbr-book.org/3ed-2018/Reflection_Models/Microfacet_Models> */
+    /* NOTE: division by zero here */
+    const float wi_tantheta = abs((1.0f - wi.y) / wi.y);
+    const float wi_lambda = (-1.0f + sqrt(1.0f + alpha_2 * wi_tantheta * wi_tantheta)) * 0.5f;
+    const float wo_tantheta = abs((1.0f - wo.y) / wo.y);
+    const float wo_lambda = (-1.0f + sqrt(1.0f + alpha_2 * wo_tantheta * wo_tantheta)) * 0.5f;
+    const float g = 1.0f / (1.0f + wi_lambda + wo_lambda);
+
+    /* TODO: fresnel function */
+
+    /* Layer the two slabs, diffuse = substrate, gloss = coating */
+    const float3 opaque_base = f_layer(diffuse, gloss);
+    return opaque_base;
 }
