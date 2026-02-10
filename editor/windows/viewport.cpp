@@ -118,39 +118,63 @@ void tmt::Viewport::display() {
     auto& imgui_io = ImGui::GetIO();
 
     static ImVec2 first_click_pos;
-    if (imgui_io.MouseDown[0] && !editor.gizmo.hovered()) {
-        if (imgui_io.MouseClicked[0]) first_click_pos = imgui_io.MousePos;
+    static bool using_rect = false;
+    if(imgui_io.MouseReleased[0]) using_rect = false;
+    if (imgui_io.MouseDown[0] && (!editor.gizmo.hovered() || using_rect) ) {
+        if (imgui_io.MouseClicked[0]) 
+        {
+            first_click_pos = imgui_io.MousePos;
+        }
+        ImVec2 delta = imgui_io.MousePos - first_click_pos;
 
-        ImGui::GetWindowDrawList()->AddRectFilled(first_click_pos, imgui_io.MousePos, ImColor(1.f, 1.f, 1.f, 0.2f));
-        ImGui::GetWindowDrawList()->AddRect(first_click_pos, imgui_io.MousePos, ImColor(1.f, 1.f, 1.f, 0.6f));
-        
-        glm::ivec2 a = {first_click_pos.x - image_pos.x, first_click_pos.y - image_pos.y};
-        glm::ivec2 b = {imgui_mouse_pos.x - image_pos.x, imgui_mouse_pos.y - image_pos.y};
+        if(abs(delta.x) + abs(delta.y) > 5)
+        {
+            using_rect = true;
 
-        int x0 = std::min(a.x, b.x);
-        int x1 = std::max(a.x, b.x);
-        int y0 = std::min(a.y, b.y);
-        int y1 = std::max(a.y, b.y);
+            ImGui::GetWindowDrawList()->AddRectFilled(first_click_pos, imgui_io.MousePos, ImColor(1.f, 1.f, 1.f, 0.2f));
+            ImGui::GetWindowDrawList()->AddRect(first_click_pos, imgui_io.MousePos, ImColor(1.f, 1.f, 1.f, 0.6f));
 
-        for (int x = x0; x < x1; x += 5) {
-            for (int y = y0; y < y1; y += 5) {
-                const tmt::Ray selection_ray = tmt::engine.renderer.render_view.pixel_ray({x, y});
-                const tmt::Hit hit = tmt::engine.renderer.trace_ray(selection_ray);
+            glm::ivec2 a = {first_click_pos.x - image_pos.x, first_click_pos.y - image_pos.y};
+            glm::ivec2 b = {imgui_mouse_pos.x - image_pos.x, imgui_mouse_pos.y - image_pos.y};
 
-                if (!hit.miss()) {
-                    hierarchy.add_entity_to_selection(hit.entity);
+            int x0 = std::min(a.x, b.x);
+            int x1 = std::max(a.x, b.x);
+            int y0 = std::min(a.y, b.y);
+            int y1 = std::max(a.y, b.y);
+
+            static std::vector<Entity> tracking_rect_entities;
+            tracking_rect_entities.clear();
+            for (int x = x0; x < x1; x += 5) {
+                for (int y = y0; y < y1; y += 5) {
+                    const tmt::Ray selection_ray = tmt::engine.renderer.render_view.pixel_ray({x, y});
+                    const tmt::Hit hit = tmt::engine.renderer.trace_ray(selection_ray);
+
+                    if (!hit.miss()) {
+                        tracking_rect_entities.push_back(hit.entity);
+                        hierarchy.add_entity_to_selection(hit.entity);
+                    }
+                }
+            }
+
+            if(!imgui_io.KeyCtrl)
+            {
+                for (auto entity : selected_entities) {
+                    if (std::find(tracking_rect_entities.begin(), tracking_rect_entities.end(), entity) == tracking_rect_entities.end()) {
+                        hierarchy.remove_entity_from_selection(entity);
+                    }
                 }
             }
         }
+       
     }
 
     if (imgui_io.MouseClicked[0] && is_hovered && !editor.gizmo.hovered() && !toolbar_buttons_hovered) {
         const tmt::Ray selection_ray = tmt::engine.renderer.render_view.pixel_ray({mouse_pos.x, mouse_pos.y});
         const tmt::Hit hit = tmt::engine.renderer.trace_ray(selection_ray);
 
+        if (!imgui_io.KeyCtrl) hierarchy.clear_selection();
         if (!hit.miss()) {
-            if (!imgui_io.KeyCtrl) hierarchy.clear_selection();
-
+            
             hierarchy.add_entity_to_selection(hit.entity);
             Entity first_entity = hierarchy.get_first_selected_entity();
 
@@ -165,8 +189,6 @@ void tmt::Viewport::display() {
                 }
             }
 
-        } else {
-            hierarchy.clear_selection();
         }
     }
 
