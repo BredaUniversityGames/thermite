@@ -5,15 +5,15 @@
         1
     ],
     "UUID": {
-        "0": "73d3ff54-7349-450f-8e32-70155df39f46",
-        "1": "8c57b1f4-b2f9-4d8c-b50d-5935b9ab5407"
+        "0": "bccbcc97-5733-43e4-b966-ff07cb507b76",
+        "1": "1aff0a7f-20df-475f-ab75-6e4502175707"
     },
     "Name": {
         "0": {
-            "name": "Entity_0"
+            "name": "Parent"
         },
         "1": {
-            "name": "Parent"
+            "name": "Child"
         }
     },
     "Transform": {
@@ -34,14 +34,16 @@
                 "y": 1.0,
                 "z": 1.0
             },
-            "parent": 1,
-            "children": []
+            "parent": 4294967295,
+            "children": [
+                1
+            ]
         },
         "1": {
             "local_position": {
-                "x": -2.3940000534057617,
-                "y": 0.0010337382555007935,
-                "z": 0.0
+                "x": 0.0,
+                "y": 0.0,
+                "z": 1.0
             },
             "local_rotation": {
                 "w": 1.0,
@@ -54,33 +56,12 @@
                 "y": 1.0,
                 "z": 1.0
             },
-            "parent": 4294967295,
-            "children": [
-                0
-            ]
+            "parent": 0,
+            "children": []
         }
     },
     "UIComponent": {
         "0": {
-            "size": {
-                "x": 50.0,
-                "y": 50.0
-            },
-            "pivot": {
-                "x": 0.5,
-                "y": 0.5
-            },
-            "block_raycasts": true,
-            "scale_with_parent_x": false,
-            "scale_with_parent_y": true,
-            "aspect_mode": "Stretch",
-            "aspect_ratio": {
-                "x": 1.0,
-                "y": 1.0
-            },
-            "anchor": "MiddleCenter"
-        },
-        "1": {
             "size": {
                 "x": 300.0,
                 "y": 300.0
@@ -92,39 +73,35 @@
             "block_raycasts": false,
             "scale_with_parent_x": false,
             "scale_with_parent_y": false,
-            "aspect_mode": "Stretch",
+            "aspect_mode": "STRETCH",
             "aspect_ratio": {
                 "x": 1.0,
                 "y": 1.0
             },
-            "anchor": "MiddleCenter"
+            "anchor": "MIDDLE_CENTER"
+        },
+        "1": {
+            "size": {
+                "x": 50.0,
+                "y": 50.0
+            },
+            "pivot": {
+                "x": 0.0,
+                "y": 0.0
+            },
+            "block_raycasts": false,
+            "scale_with_parent_x": false,
+            "scale_with_parent_y": false,
+            "aspect_mode": "STRETCH",
+            "aspect_ratio": {
+                "x": 1.0,
+                "y": 1.0
+            },
+            "anchor": "TOP_LEFT"
         }
     },
     "ImageRenderer": {
         "0": {
-            "texture": {
-                "file_location": {
-                    "sub_location": "PROJECT",
-                    "relative_path": "bojan.png"
-                },
-                "data": {
-                    "dummy": 0
-                }
-            },
-            "color": {
-                "x": 1.0,
-                "y": 7.0,
-                "z": -75.0,
-                "w": 0.0
-            },
-            "multiplier": {
-                "x": -3.5,
-                "y": 2.0,
-                "z": 1.0,
-                "w": 0.0
-            }
-        },
-        "1": {
             "texture": {
                 "file_location": {
                     "sub_location": "PROJECT",
@@ -137,8 +114,19 @@
                 "y": 1.0,
                 "z": 1.0,
                 "w": 1.0
+            }
+        },
+        "1": {
+            "texture": {
+                "file_location": {
+                    "sub_location": "PROJECT",
+                    "relative_path": "bojan.png"
+                },
+                "data": {
+                    "dummy": 0
+                }
             },
-            "multiplier": {
+            "color": {
                 "x": 1.0,
                 "y": 1.0,
                 "z": 1.0,

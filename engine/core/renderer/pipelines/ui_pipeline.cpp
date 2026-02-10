@@ -110,7 +110,7 @@ void UiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view) {
             decompose_matrix(world, image.pos, image.extent, image.angles);
             image.extent = image.extent * ui_component.size;
             image.pivot = ui_component.pivot;
-            image.color = image_renderer.color * image_renderer.multiplier;
+            image.color = image_renderer.color;
             if (image_renderer.texture) image.image_index = image_renderer.texture.resource->image.get_index();
 
             glm::vec2 anchor_offset = AnchorHelper::calculate_anchor_offset(entity);

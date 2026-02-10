@@ -7,7 +7,6 @@ namespace tmt {
 struct ImageRenderer {
     ResourceRef<Texture2D> texture;
     glm::vec4 color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-    glm::vec4 multiplier = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
 
     ImageRenderer() = default;
     ImageRenderer(const ResourceRef<Texture2D> texture);
@@ -16,4 +15,4 @@ struct ImageRenderer {
 
 }  // namespace tmt
 
-TMT_COMPONENT(tmt::ImageRenderer, "ImageRenderer", (texture, color, multiplier));
+TMT_COMPONENT(tmt::ImageRenderer, "ImageRenderer", (texture, color));
