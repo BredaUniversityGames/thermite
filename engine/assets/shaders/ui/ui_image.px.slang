@@ -16,5 +16,5 @@ float4 main(VertexOutput input) : SV_Target {
     const Sampler2D<float4> sampler = bindless::texture_sampled<Sampler2D<float4>>(image_index);
 
     /* Sampler the texture */
-    return sampler.SampleLevel(input.uvs, 0); //* instance.color;
+    return sampler.SampleLevel(input.uvs, 0) * instance.color();
 }
