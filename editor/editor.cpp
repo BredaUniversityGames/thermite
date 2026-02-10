@@ -38,6 +38,11 @@
 #include "editor/windows/motion_math.hpp"
 #include "editor/windows/debug_lines.hpp"
 #include "editor/windows/rendering.hpp"
+#include "editor/windows/model_viewer.hpp"
+#include "editor/windows/node_hierarchy.hpp"
+#include "editor/windows/palette.hpp"
+#include "editor/windows/brush.hpp"
+#include "editor/windows/editor_settings.hpp"
 
 /* Singleton */
 tmt::Editor tmt::editor;
@@ -72,8 +77,35 @@ void Editor::on_engine_init(const ApplicationSpecs&) {
     windows.add<DebugLines>();
     windows.add<Rendering>();
 
-    for (auto& window : windows) {
-        window->on_editor_start();
+    windows[Mode::SCENE].add<Hierarchy>();
+    windows[Mode::SCENE].add<GameFlow>();
+    windows[Mode::SCENE].add<Inspector>();
+    windows[Mode::SCENE].add<Viewport>();
+    windows[Mode::SCENE].add<Profiler>();
+    windows[Mode::SCENE].add<GoapDebugger>();
+    windows[Mode::SCENE].add<GoapActionEditor>();
+    windows[Mode::SCENE].add<FontControl>();
+    windows[Mode::SCENE].add<AudioMixer>();
+    windows[Mode::SCENE].add<ScenesWindow>();
+    windows[Mode::SCENE].add<AssetBrowser>();
+    windows[Mode::SCENE].add<Console>();
+    windows[Mode::SCENE].add<ImguiDemo>();
+    windows[Mode::SCENE].add<MotionMathPreview>();
+    windows[Mode::SCENE].add<DebugLines>();
+    windows[Mode::SCENE].add<Rendering>();
+    windows[Mode::SCENE].add<UndoRedoManager>();
+    windows[Mode::SCENE].add<EditorSettingsWindow>();
+
+    engine.scenes.register_scene<VoxelEditScene>();
+    windows[Mode::VOXEL].add<ModelViewer>();
+    windows[Mode::VOXEL].add<NodeHierarchy>();
+    windows[Mode::VOXEL].add<Palette>();
+    windows[Mode::VOXEL].add<Brush>();
+
+    for (auto& [mode, collection] : windows) {
+        for (const auto& window : collection) {
+            window->on_editor_start();
+        }
     }
 }
 
