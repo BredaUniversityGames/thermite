@@ -85,7 +85,7 @@ bool draw_face(const FaceData& info, const Transform& transform, const glm::vec3
     const glm::vec3 camera_position = engine.renderer.get_debug_transform().get_world_position();
     if (glm::dot(info.world_normal, camera_position - info.face_center) >= 0.0f) return false;
 
-    glm::vec3 box_half_extent = half_extent;
+    glm::vec3 box_half_extent = half_extent * transform.get_local_scale();
     box_half_extent[info.normal_index] = 0.0f;
 
     engine.polyline.use_line_width(2.0f, true);
