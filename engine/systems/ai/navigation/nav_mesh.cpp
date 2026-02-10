@@ -65,8 +65,10 @@ void NavMesh::generate_mesh_over_time() {
         if (!generating) {
             generating_lod += lod_level + 2;
             init();
-            nodes->clear();
+            nodes_mesh->clear();
         }
+        delete node_map;
+        node_map = new std::unordered_map<uint32_t, int>;
         volume = Volume();
         volume.traversed = false;
         if (generating_nodes) generating_nodes->clear();
@@ -85,7 +87,7 @@ void NavMesh::generate_mesh_over_time() {
         } else {
             generating_lod--;
         }
-        std::swap(nodes, generating_nodes);
+        std::swap(nodes_mesh, generating_nodes);
     }
 }
 
@@ -97,11 +99,10 @@ void NavMesh::generate_mesh(int iterations) {
         generating_lod = lod_level;
         init();
         generating_nodes->clear();
-        nodes->clear();
+        nodes_mesh->clear();
         volume.traverse(voxel_volume, generating_lod);
     }
 
-    std::unordered_map<uint32_t, int> node_map;
     constexpr float voxel_scale = 0.1f;
     glm::vec3 full_size = glm::vec3(voxel_volume->size);
 
@@ -121,14 +122,15 @@ void NavMesh::generate_mesh(int iterations) {
                 const uint32_t pos_index = x + volume.size.x * y + volume.size.x * volume.size.y * z;
 
                 int node_index;
-                if (node_map.contains(pos_index)) {
-                    node_index = node_map[pos_index];
+                if (node_map->contains(pos_index)) {
+                    node_index = (*node_map)[pos_index];
                 } else {
-                    Node node;
+                    NavNode node;
                     glm::vec3 voxel_pos = (glm::vec3(x, y, z) + 0.5f) * float(volume.divisor);
                     glm::vec3 centered = voxel_pos - full_size * 0.5f;
                     node.local_pos = centered * voxel_scale;
-                    node_map[pos_index] = (int)generating_nodes->size();
+                    node.iteration = iteration_nmg;
+                    (*node_map)[pos_index] = (int)generating_nodes->size();
                     node_index = (int)generating_nodes->size();
                     generating_nodes->push_back(node);
                 }
@@ -145,14 +147,15 @@ void NavMesh::generate_mesh(int iterations) {
                             const uint32_t neighbor_pos_index = neighbor.x + volume.size.x * neighbor.y + volume.size.x * volume.size.y * neighbor.z;
 
                             int neighbor_node_index;
-                            if (node_map.contains(neighbor_pos_index)) {
-                                neighbor_node_index = node_map[neighbor_pos_index];
+                            if (node_map->contains(neighbor_pos_index)) {
+                                neighbor_node_index = (*node_map)[neighbor_pos_index];
                             } else {
-                                Node node;
+                                NavNode node;
                                 glm::vec3 voxel_pos = (glm::vec3(neighbor.x, neighbor.y, neighbor.z) + 0.5f) * float(volume.divisor);
                                 glm::vec3 centered = voxel_pos - full_size * 0.5f;
                                 node.local_pos = centered * voxel_scale;
-                                node_map[neighbor_pos_index] = (int)generating_nodes->size();
+                                node.iteration = iteration_nmg;
+                                (*node_map)[neighbor_pos_index] = (int)generating_nodes->size();
                                 neighbor_node_index = (int)generating_nodes->size();
                                 generating_nodes->push_back(node);
                             }
@@ -173,16 +176,22 @@ void NavMesh::generate_mesh(int iterations) {
         }
     }
     if (!generating) {
-        std::swap(nodes, generating_nodes);
+        std::swap(nodes_mesh, generating_nodes);
     }
 }
 
 std::vector<int> NavMesh::find_path(const int starting_node_id, const int ending_node_id) {
+    if (starting_node_id == -1 || ending_node_id == -1 || !nodes_mesh) return std::vector<int>();
+    for (int i = 0; i < (int)(*nodes_mesh).size(); i++) {
+        (*nodes_mesh)[i].g = -1.0f;
+        (*nodes_mesh)[i].h = 0.0f;
+        (*nodes_mesh)[i].parent = 0;
+    }
     std::vector<int> open = std::vector<int>();
     std::unordered_set<int> closed;
     open.push_back(starting_node_id);
-    (*nodes)[starting_node_id].g = 0.0f;
-    (*nodes)[starting_node_id].parent = NULL;
+    (*nodes_mesh)[starting_node_id].g = 0.0f;
+    (*nodes_mesh)[starting_node_id].parent = NULL;
     int current = -1;
 
     // A* search
@@ -200,7 +209,7 @@ std::vector<int> NavMesh::find_path(const int starting_node_id, const int ending
                 current = open[i];
             }
             // get a better node if available
-            else if ((*nodes)[open[i]].g + (*nodes)[open[i]].h < (*nodes)[current].g + (*nodes)[current].h) {
+            else if ((*nodes_mesh)[open[i]].g + (*nodes_mesh)[open[i]].h < (*nodes_mesh)[current].g + (*nodes_mesh)[current].h) {
                 current_index = i;
                 current = open[i];
             }
@@ -212,19 +221,19 @@ std::vector<int> NavMesh::find_path(const int starting_node_id, const int ending
 
         // remove current from open list
         open.erase(open.begin() + current_index);
-        closed.insert(current_index);
+        closed.insert(current);
 
         // add all connecting nodes with a better path to open list
-        for (int i = 0; i < (int)(*nodes)[current].connecting_nodes.size(); i++) {
-            int next = (*nodes)[current].connecting_nodes[i];
+        for (int i = 0; i < (int)(*nodes_mesh)[current].connecting_nodes.size(); i++) {
+            int next = (*nodes_mesh)[current].connecting_nodes[i];
             if (closed.count(next)) continue;
-            float edgeCost = glm::distance((*nodes)[next].local_pos, (*nodes)[current].local_pos);
+            float edgeCost = glm::distance((*nodes_mesh)[next].local_pos, (*nodes_mesh)[current].local_pos);
 
             // if g is not set or we found a better path to next node
-            if ((*nodes)[next].g < 0 || (*nodes)[current].g + edgeCost < (*nodes)[next].g) {
-                (*nodes)[next].g = (*nodes)[current].g + edgeCost;
-                (*nodes)[next].h = glm::distance((*nodes)[next].local_pos, (*nodes)[ending_node_id].local_pos);
-                (*nodes)[next].parent = current;
+            if ((*nodes_mesh)[next].g < 0 || (*nodes_mesh)[current].g + edgeCost < (*nodes_mesh)[next].g) {
+                (*nodes_mesh)[next].g = (*nodes_mesh)[current].g + edgeCost;
+                (*nodes_mesh)[next].h = glm::distance((*nodes_mesh)[next].local_pos, (*nodes_mesh)[ending_node_id].local_pos);
+                (*nodes_mesh)[next].parent = current;
 
                 open.push_back(next);
             }
@@ -243,23 +252,18 @@ std::vector<int> NavMesh::find_path(const int starting_node_id, const int ending
     current = ending_node_id;
     while (1) {
         if (current == starting_node_id) {
-            for (int i = 0; i < (int)(*nodes).size(); i++) {
-                (*nodes)[i].g = -1.0f;
-                (*nodes)[i].h = 0.0f;
-                (*nodes)[i].parent = 0;
-            }
             return repath;
         }
-        repath.push_back((*nodes)[current].parent);
-        current = (*nodes)[current].parent;
+        repath.push_back((*nodes_mesh)[current].parent);
+        current = (*nodes_mesh)[current].parent;
     }
 }
 
 int tmt::NavMesh::find_closest_node(const glm::vec3& position) {
     int closest_node = -1;
     float closest_distance = std::numeric_limits<float>::max();
-    for (int i = 0; i < (int)(*nodes).size(); i++) {
-        float distance = glm::distance(position, (*nodes)[i].world_pos);
+    for (int i = 0; i < (int)(*nodes_mesh).size(); i++) {
+        float distance = glm::distance(position, (*nodes_mesh)[i].world_pos);
         if (distance < closest_distance) {
             closest_distance = distance;
             closest_node = i;
@@ -276,16 +280,16 @@ std::optional<glm::vec3> tmt::NavMesh::follow_path(glm::vec3 start, glm::vec3 en
     path = new_path;
     if (new_path.size() < 1) return std::nullopt;
 
-    glm::vec3 target_pos = (*nodes)[new_path[0]].world_pos;
+    glm::vec3 target_pos = (*nodes_mesh)[new_path[0]].world_pos;
     if (path.size() > 2) {
-        float attraction_distance = 1.5f;
+        float attraction_distance = 3.5f;
         int current_node = (int)new_path.size() - 1;
-        glm::vec3 current_pos = (*nodes)[new_path[current_node]].world_pos;
+        glm::vec3 current_pos = (*nodes_mesh)[new_path[current_node]].world_pos;
 
         float travelled_distance = 0.0f;
         while (current_node >= 1) {
             // Get next segment
-            glm::vec3 next_pos = (*nodes)[new_path[current_node - 1]].world_pos;
+            glm::vec3 next_pos = (*nodes_mesh)[new_path[current_node - 1]].world_pos;
             float segment_distance = glm::distance(current_pos, next_pos);
             // Check if we exceed attraction distance
             if (travelled_distance + segment_distance > attraction_distance) {
@@ -298,8 +302,9 @@ std::optional<glm::vec3> tmt::NavMesh::follow_path(glm::vec3 start, glm::vec3 en
                 travelled_distance += segment_distance;
                 current_node--;
                 current_pos = next_pos;
-                if (current_node >= (int)new_path.size() - 1) {
-                    target_pos = (*nodes)[new_path.back()].world_pos;
+                if (current_node <= 0) {
+                //if (current_node >= (int)new_path.size() - 1) {
+                    target_pos = (*nodes_mesh)[new_path.back()].world_pos;
                     break;
                 }
             }
@@ -319,16 +324,25 @@ void tmt::NavMesh::inspect() {
     tmt::engine.polyline.use_color(1.0f, 0.0f, 0.0f);
     tmt::engine.polyline.use_line_width(2, true);
 
-    for (int i = 0; i < (*nodes).size(); i++) {
-        for (int j = 0; j < (*nodes)[i].connecting_nodes.size(); j++) {
-            if (i > (*nodes)[i].connecting_nodes[j]) continue;
-            int conn_idx = (*nodes)[i].connecting_nodes[j];
-            engine.polyline.draw_line((*nodes)[i].world_pos, (*nodes)[conn_idx].world_pos);
+    for (int i = 0; i < (*nodes_mesh).size(); i++) {
+        for (int j = 0; j < (*nodes_mesh)[i].connecting_nodes.size(); j++) {
+            if (i > (*nodes_mesh)[i].connecting_nodes[j]) continue;
+            int conn_idx = (*nodes_mesh)[i].connecting_nodes[j];
+            glm::vec3 color = glm::vec3(
+                (((float)(*nodes_mesh)[i].iteration * 13.0f / 7.0f + 3.5f) * 21.0f),
+                (((float)(*nodes_mesh)[i].iteration * 43.0f / 23.0f + 3.2f) * 17.0f),
+                (((float)(*nodes_mesh)[i].iteration * 97.0f / 67.0f + 3.9f) * 3.0f)
+            );
+            color.x = glm::abs(color.x - std::floor(color.x));
+            color.y = glm::abs(color.y - std::floor(color.y));
+            color.z = glm::abs(color.z - std::floor(color.z));
+            tmt::engine.polyline.use_color(color);
+            engine.polyline.draw_line((*nodes_mesh)[i].world_pos, (*nodes_mesh)[conn_idx].world_pos);
         }
     }
 
     tmt::engine.polyline.use_color(1.0f, 1.0f, 1.0f);
     for (int i = 0; i < (int)path.size() - 1; i++) {
-        tmt::engine.polyline.draw_line((*nodes)[path[i]].world_pos, (*nodes)[path[i + 1]].world_pos);
+        tmt::engine.polyline.draw_line((*nodes_mesh)[path[i]].world_pos, (*nodes_mesh)[path[i + 1]].world_pos);
     }
 }

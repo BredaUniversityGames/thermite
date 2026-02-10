@@ -8,14 +8,23 @@
 #include "engine/engine.hpp"
 
 #include "engine/core/polyline.hpp"
+#include "engine/core/components/voxel_renderer.hpp"
 
 #include <cstdlib>
 
-void ChasePlayer::on_start(tmt::Entity) {
+void ChasePlayer::on_start(tmt::Entity walking_entity) {
     //
     for (const auto& [CamEntity, camera] : tmt::engine.ecs.get_registry().view<tmt::Camera>().each()) {
         player = CamEntity;
         break;
+    }
+
+    const auto& walking = tmt::engine.ecs.get_component<Walking>(walking_entity);
+    auto& nav_mesh = tmt::engine.ecs.get_component<tmt::NavMesh>(walking.walkable_asteroid);
+    if (!nav_mesh.nodes_mesh) {
+        nav_mesh.voxel_volume = tmt::engine.ecs.get_component<tmt::VoxelRenderer>(walking.walkable_asteroid).resource;
+        nav_mesh.lod_level = 1;
+        nav_mesh.generate_mesh_over_time();
     }
 
     done_walking = false;
@@ -52,7 +61,7 @@ void ChasePlayer::on_tick(tmt::Entity walking_entity, float dt) {
         nav_mesh.path.clear();
     }
 
-    auto nm_nodes = nav_mesh.nodes;
+    auto nm_nodes = nav_mesh.nodes_mesh;
     // Debug drawing
     if (nav_mesh.path.size() > 1) {
         for (size_t i = 0; i < nav_mesh.path.size() - 1; ++i) {

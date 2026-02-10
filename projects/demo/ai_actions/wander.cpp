@@ -8,15 +8,24 @@
 #include "engine/engine.hpp"
 
 #include "engine/core/polyline.hpp"
+#include "engine/core/components/voxel_renderer.hpp"
+
 
 #include <cstdlib>
 
-void Wander::on_start(tmt::Entity) {
+void Wander::on_start(tmt::Entity walking_entity) {
     for (const auto& [camEntity, camera] : tmt::engine.ecs.get_registry().view<tmt::Camera>().each()) {
         player = camEntity;
         break;
     }
 
+    const auto& walking = tmt::engine.ecs.get_component<Walking>(walking_entity);
+    auto& nav_mesh = tmt::engine.ecs.get_component<tmt::NavMesh>(walking.walkable_asteroid);
+    if (!nav_mesh.nodes_mesh) {
+        nav_mesh.voxel_volume = tmt::engine.ecs.get_component<tmt::VoxelRenderer>(walking.walkable_asteroid).resource;
+        nav_mesh.lod_level = 1;
+        nav_mesh.generate_mesh_over_time();
+    }
     done_walking = false;
     has_path = false;
 }
@@ -40,13 +49,13 @@ void Wander::on_tick(tmt::Entity walking_entity, float dt) {
         return;
     }
 
-    auto nm_nodes = nav_mesh.nodes;
+    auto nm_nodes = nav_mesh.nodes_mesh;
 
     // generate wander path only once when no path
     if (!has_path) {
         // pick a random node on the nav mesh
-        if (!nav_mesh.nodes->empty()) {
-            int random_node_index = rand() % static_cast<int>(nav_mesh.nodes->size());
+        if (!nav_mesh.nodes_mesh->empty()) {
+            int random_node_index = rand() % static_cast<int>(nav_mesh.nodes_mesh->size());
             wander_target = (*nm_nodes)[random_node_index].world_pos;
             has_path = true;
         }
