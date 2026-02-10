@@ -6,12 +6,12 @@
 
 namespace tmt {
 
-enum class Anchor { TopLeft, TopCenter, TopRight, MiddleLeft, MiddleCenter, MiddleRight, BottomLeft, BottomCenter, BottomRight };
+enum class Anchor { TOP_LEFT, TOP_CENTER, TOP_RIGHT, MIDDLE_LEFT, MIDDLE_CENTER, MIDDLE_RIGHT, BOTTOM_LEFT, BOTTOM_CENTER, BOTTOM_RIGHT };
 
 enum class AspectMode {
-    Fit,     // Maintain aspect ratio, ensuring the entire content is visible
-    Fill,    // Maintain aspect ratio but fill the container completely (cropping may occur)
-    Stretch  // Ignore aspect ratio
+    FIT,     // Maintain aspect ratio, ensuring the entire content is visible
+    FILL,    // Maintain aspect ratio but fill the container completely (cropping may occur)
+    STRETCH  // Ignore aspect ratio
 };
 
 class AnchorHelper {
@@ -28,9 +28,9 @@ struct UIComponent {
     bool block_raycasts = false;
     bool scale_with_parent_x = false;
     bool scale_with_parent_y = false;
-    AspectMode aspect_mode = AspectMode::Stretch;
+    AspectMode aspect_mode = AspectMode::STRETCH;
     glm::vec2 aspect_ratio = glm::vec2(1.0f, 1.0f); /* 1:1 */
-    Anchor anchor = Anchor::MiddleCenter;
+    Anchor anchor = Anchor::MIDDLE_CENTER;
 };
 }  // namespace tmt
 

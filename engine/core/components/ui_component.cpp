@@ -42,23 +42,23 @@ bool contains(const glm::vec2 size, const glm::vec2 point, const glm::vec2 cente
 
 glm::vec2 AnchorHelper::calculate_anchor_offset_in_rect(const glm::vec2 size, const Anchor anchor) {
     switch (anchor) {
-        case Anchor::TopLeft:
+        case Anchor::TOP_LEFT:
             return glm::vec2(0.0f, 0.0f);
-        case Anchor::TopCenter:
+        case Anchor::TOP_CENTER:
             return glm::vec2(size.x / 2.0f, 0.0f);
-        case Anchor::TopRight:
+        case Anchor::TOP_RIGHT:
             return glm::vec2(size.x, 0.0f);
-        case Anchor::MiddleLeft:
+        case Anchor::MIDDLE_LEFT:
             return glm::vec2(0.0f, size.y / 2.0f);
-        case Anchor::MiddleCenter:
+        case Anchor::MIDDLE_CENTER:
             return glm::vec2(size.x / 2.0f, size.y / 2.0f);
-        case Anchor::MiddleRight:
+        case Anchor::MIDDLE_RIGHT:
             return glm::vec2(size.x, size.y / 2.0f);
-        case Anchor::BottomLeft:
+        case Anchor::BOTTOM_LEFT:
             return glm::vec2(0.0f, size.y);
-        case Anchor::BottomCenter:
+        case Anchor::BOTTOM_CENTER:
             return glm::vec2(size.x / 2.0f, size.y);
-        case Anchor::BottomRight:
+        case Anchor::BOTTOM_RIGHT:
             return glm::vec2(size.x, size.y);
         default:
             return glm::vec2(0.0f);
@@ -75,22 +75,22 @@ glm::vec2 AnchorHelper::calculate_anchor_offset(const Entity entity) {
         return offset;
     }
 
-    auto parentEntity = transform->get_parent();
-    auto* parentUI = engine.ecs.get_registry().try_get<UIComponent>(parentEntity);
-    auto* parentTransform = engine.ecs.get_registry().try_get<Transform>(parentEntity);
-    if (!parentUI || !parentTransform) {
+    auto parent_entity = transform->get_parent();
+    auto* parent_ui = engine.ecs.get_registry().try_get<UIComponent>(parent_entity);
+    auto* parent_transform = engine.ecs.get_registry().try_get<Transform>(parent_entity);
+    if (!parent_ui || !parent_transform) {
         glm::vec2 offset = calculate_anchor_offset_in_rect(engine.renderer.render_view.gpu_view.resolution, ui->anchor);
         return offset;
     }
 
-    glm::vec2 localOffset = calculate_anchor_offset_in_rect(parentUI->size, ui->anchor) - parentUI->size * parentUI->pivot;
+    glm::vec2 local_offset = calculate_anchor_offset_in_rect(parent_ui->size, ui->anchor) - parent_ui->size * parent_ui->pivot;
 
-    glm::mat4 parentRS = parentTransform->get_world_matrix();
-    parentRS[3] = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-    glm::vec4 transformed = parentRS * glm::vec4(localOffset, 0.0f, 1.0f);
-    glm::vec2 rsOffset(transformed.x, transformed.y);
+    glm::mat4 parent_rs = parent_transform->get_world_matrix();
+    parent_rs[3] = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+    glm::vec4 transformed = parent_rs * glm::vec4(local_offset, 0.0f, 1.0f);
+    glm::vec2 rs_offset(transformed.x, transformed.y);
 
-    return rsOffset + calculate_anchor_offset(parentEntity);
+    return rs_offset + calculate_anchor_offset(parent_entity);
 }
 
 bool AnchorHelper::is_inside(const Entity entity, const glm::vec2& viewport_point) {
