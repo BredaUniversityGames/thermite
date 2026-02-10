@@ -18,6 +18,9 @@ void PrefabHelper::create_prefab(const IO::FileLocation& location, const Entity&
         root_transform.set_parent(entt::null);
     }
 
+    auto& root_name = engine.ecs.get_component<Name>(root);
+    root_name.name = location.relative_path.stem().generic_string();
+
     /* Serialize to disk */
     const auto json = Serializer::serialize(root, engine.ecs);
     std::string dump = json.dump(4);
