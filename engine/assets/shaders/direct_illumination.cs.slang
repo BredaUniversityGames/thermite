@@ -9,6 +9,7 @@ import voxel;
 import bvh2;
 import cache;
 import lights;
+import material;
 
 struct DiSettings {
     /* 0 = FullRate, 1 = HalfRate, 2 = QuarterRate */
@@ -56,7 +57,7 @@ inline PickedLight pick_light(const float3 point, const float3 normal, inout uin
     return PickedLight(i, w_sum / w_i);
 }
 
-inline float3 direct_illuminance(const float3 point, const float3 normal, inout uint seed) {
+inline float3 direct_illuminance(const float3 point, const float3 normal, const float3 view_dir, inout uint seed) {
     if (scene_view.light_count == 0u) return 0.0f;
 
     /* Fetch a light to sample */
@@ -68,7 +69,8 @@ inline float3 direct_illuminance(const float3 point, const float3 normal, inout 
     const float t = occlusion_bvh2(tlas_nodes, object_indices, objects, custom_ray(point, light_sample.dir), light_sample.tmax);
     if (t < light_sample.tmax) return 0.0f;
 
-    float attenuation = 1.0f;
+    float3 attenuation = 0.0f;
+
     /* Distance based attenuation */
     if (light.type != LightType::SUN_LIGHT) {
         const float relative_dist = saturate(light_sample.tmax / light.attenuation_radius);
@@ -84,7 +86,11 @@ inline float3 direct_illuminance(const float3 point, const float3 normal, inout 
         attenuation *= spot * spot;
     }
 
-    return light.luminance * max(0.0f, dot(normal, light_sample.dir)) * attenuation * picked_light.rcp_pdf * light_sample.rcp_pdf;
+    /* TODO: Investigate weird misalignment with vectors??? */
+    const ShadingFrame sframe = create_shading_frame(normal, view_dir, light_sample.dir);
+    const float3 brdf = pow(dot(normal, normalize(view_dir + normalize(light.origin - point))), 100.0f); // opaque_base_slab(sframe.wi.z, sframe.wo.z, sframe.wh.z, 1.0f, 0.05f, 1.0f / 1.5f);
+
+    return light.luminance * max(0.0f, dot(normal, light_sample.dir)) * brdf * attenuation * picked_light.rcp_pdf * light_sample.rcp_pdf;
 
     /* Calculate the direction and distance to the light */
     // const float3 light_pos = light.origin + sample_hemisphere_uniform(normalize(light.origin - point), rand_float2(seed)) * light.source_radius;
@@ -146,7 +152,7 @@ void main(int2 thread_id: SV_DispatchThreadID) {
     /* Generate a seed for the current pixel */
     uint seed = thread_id.x + thread_id.y * resolution.x + (render_view.frame_index * (resolution.x * resolution.y));
 
-    float3 illuminance = direct_illuminance(hit_point, geo.normal, seed);
+    float3 illuminance = direct_illuminance(hit_point, geo.normal, -ray.dir, seed);
 
     /* Trace light occlusion */
     // const float3 ray_dir = sample_hemisphere_cosine(geo.normal, r2(seed));

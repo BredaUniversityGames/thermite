@@ -17,6 +17,13 @@ public [ForceInline] bool bit_set(const uint x, const uint i) {
     return (x & mask) != 0u;
 }
 
+/* Swap two variables around. */
+public [ForceInline] void swap<T>(inout T a, inout T b) {
+    const T c = a;
+    a = b;
+    b = c;
+}
+
 /* Convert a uint64 into two uint32s. */
 public [ForceInline] uint2 asuint2(const uint64_t i) {
     return uint2((uint)i, (uint)(i >> 32));
@@ -59,8 +66,8 @@ public float3 decode_rgb9e5(const uint p) {
 }
 
 public struct Basis {
-    public float3 a;
-    public float3 b;
+    public float3 a; /* tangent */
+    public float3 b; /* bitangent */
 };
 
 /* Create two orthonormal basis vectors for a given normal vector. */
