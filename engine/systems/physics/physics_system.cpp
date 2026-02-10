@@ -118,14 +118,16 @@ void Physics::on_update(const FrameData&) {
         //     engine.polyline.draw_line(edges[i].start, edges[i].end);
         // }
 
-        // engine.polyline.use_color(1.0f, 0.0f, 0.0f);
-        // engine.polyline.draw_circle(vb.center_of_mass, 0.1f);  // glm::vec3(1.0f, 0.0f, 1.0f), 0.2f);
-        // engine.polyline.use_color(0.0f, 1.0f, 0.0f);
-        // engine.polyline.draw_circle(vb.position, 0.1f);
-        // engine.polyline.use_color(0.0f, 0.0f, 1.0f);
-        // engine.polyline.draw_circle(vb.position + vb.rotation * vb.com_local_offset, 0.1f);
-        //  engine.renderer.draw_cross(vb.position, glm::vec3(1.0f, 0.0f, 0.0f), 0.2f);
-        //  engine.renderer.draw_cross(vb.position + vb.rotation * vb.com_local_offset, glm::vec3(0.0f, 0.0f, 1.0f), 0.2f);
+        //engine.polyline.use_depth_testing(false);
+        //engine.polyline.use_line_width(0.5f);
+        //engine.polyline.use_color(1.0f, 0.0f, 0.0f);
+        //engine.polyline.draw_circle(vb.center_of_mass, 0.2f);  // glm::vec3(1.0f, 0.0f, 1.0f), 0.2f);
+        //engine.polyline.use_color(0.0f, 1.0f, 0.0f);
+        //engine.polyline.draw_circle(vb.position, 0.2f);
+        //engine.polyline.use_color(0.0f, 0.0f, 1.0f);
+        //engine.polyline.draw_circle(vb.position + vb.rotation * vb.com_local_offset, 0.2f);
+         /* engine.renderer.draw_cross(vb.position, glm::vec3(1.0f, 0.0f, 0.0f), 0.2f);
+          engine.renderer.draw_cross(vb.position + vb.rotation * vb.com_local_offset, glm::vec3(0.0f, 0.0f, 1.0f), 0.2f);*/
 
         // // Draw voxel normals
         // glm::uvec3 size = vb.resource.get()->size;
@@ -668,7 +670,7 @@ inline void recurse_mass(
             recurse_mass(tree, child_node_index, current_depth + 1, child_half_extent, child_center, extents_diff, mass_center_sum, voxel_count);
         } else {
             voxel_count++;
-            mass_center_sum += child_center;
+            mass_center_sum += child_center - extents_diff;
         }
 
         // Clear bit
@@ -676,7 +678,7 @@ inline void recurse_mass(
     }
 }
 
-inline glm::vec3 calculate_center_of_mass(VoxelBody& vb) { 
+inline void calculate_center_of_mass(VoxelBody& vb) { 
     // Update voxel body dimensions
     const glm::vec3 size = (glm::vec3)vb.resource->size * UNITS_PER_VOXEL;
     vb.width = size.x;
@@ -692,84 +694,172 @@ inline glm::vec3 calculate_center_of_mass(VoxelBody& vb) {
     // Recurse tree to calculate the center of mass sum and voxel count
     glm::vec3 mass_center_sum = {};
     uint32_t voxel_count = 0;
-    recurse_mass(tree, 0, 0, powf(4.0f, half_extent), half_scale, half_scale - extents_diff, mass_center_sum, voxel_count);
+    const glm::vec3 tree_center = glm::vec3(half_extent);  // Tree is centered here
+    recurse_mass(tree, 0, 0, half_extent, tree_center, half_scale - extents_diff, mass_center_sum, voxel_count);
+
+    // Then after getting the result, offset it to your coordinate system:
+    vb.com_local_offset = (mass_center_sum / (float)voxel_count) - extents_diff;
 
     // Apply results to voxel body
-    vb.com_local_offset = mass_center_sum / (float)voxel_count;
+    //vb.com_local_offset = mass_center_sum / (float)voxel_count;
     const float voxel_mass = std::powf(UNITS_PER_VOXEL, 3) * vb.density;
     vb.inv_mass = 1.0f / (voxel_mass * voxel_count);
+}
+
+inline void recurse_inertia(
+    tmt::Svt64* tree, uint32_t node_index, uint32_t current_depth, float node_half_extent, const glm::vec3& node_center, const glm::vec3& extents_diff, const glm::vec3& com_local,
+    float voxel_mass, glm::mat3& inertia_tensor
+) {
+    const tmt::Svt64Node& node = tree->nodes[node_index];
+    const float child_half_extent = node_half_extent * 0.25f;
+
+    uint64_t mask = node.child_mask;
+    while (mask != 0u) {
+        const uint32_t i = std::countr_zero(mask);
+
+        const uint32_t local_x = (i >> 0u) & 3u;
+        const uint32_t local_y = (i >> 4u) & 3u;
+        const uint32_t local_z = (i >> 2u) & 3u;
+
+        const glm::vec3 local_offset = glm::vec3(
+            (((float)local_x + 0.5f) * 0.25f - 0.5f) * node_half_extent * 2.0f, (((float)local_y + 0.5f) * 0.25f - 0.5f) * node_half_extent * 2.0f,
+            (((float)local_z + 0.5f) * 0.25f - 0.5f) * node_half_extent * 2.0f
+        );
+
+        const glm::vec3 child_center = node_center + local_offset;
+
+        const uint32_t child_node_offset = (uint32_t)__popcnt64(node.child_mask & ((1ull << i) - 1u));
+        const uint32_t child_node_index = node.abs_ptr() + child_node_offset;
+
+        if (current_depth + 1 < tree->depth) {
+            recurse_inertia(tree, child_node_index, current_depth + 1, child_half_extent, child_center, extents_diff, com_local, voxel_mass, inertia_tensor);
+        } else {
+            // Leaf node - accumulate inertia contribution
+            // Convert to local voxel space (same as mass calculation) then subtract COM
+            const glm::vec3 voxel_pos = child_center - extents_diff;
+            const glm::vec3 r = voxel_pos - com_local;
+            const float r2 = glm::dot(r, r);
+
+            inertia_tensor[0][0] += voxel_mass * (r2 - r.x * r.x);
+            inertia_tensor[1][1] += voxel_mass * (r2 - r.y * r.y);
+            inertia_tensor[2][2] += voxel_mass * (r2 - r.z * r.z);
+            inertia_tensor[0][1] -= voxel_mass * r.x * r.y;
+            inertia_tensor[0][2] -= voxel_mass * r.x * r.z;
+            inertia_tensor[1][2] -= voxel_mass * r.y * r.z;
+        }
+
+        mask &= ~(1ull << i);
+    }
+}
+
+inline glm::mat3 calculate_inertia_tensor(VoxelBody& vb) {
+    auto* tree = vb.resource.resource->blas.get();
+    const float half_extent = powf(4.0f, (float)tree->depth) * 0.5f * UNITS_PER_VOXEL;
+    const glm::vec3 extents_diff = half_extent - ((glm::vec3)vb.resource->size * 0.5f * UNITS_PER_VOXEL);
+    const glm::vec3 tree_center = glm::vec3(half_extent);
+
+    const float voxel_mass = std::powf(UNITS_PER_VOXEL, 3) * vb.density;
+
+    glm::mat3 inertia_tensor(0.0f);
+    recurse_inertia(tree, 0, 0, half_extent, tree_center, extents_diff, vb.com_local_offset, voxel_mass, inertia_tensor);
+
+    // Mirror symmetric components
+    inertia_tensor[1][0] = inertia_tensor[0][1];
+    inertia_tensor[2][0] = inertia_tensor[0][2];
+    inertia_tensor[2][1] = inertia_tensor[1][2];
+
+    // Prevent singular matrix
+    if (inertia_tensor[0][0] == 0.0f) inertia_tensor[0][0] = 1.0f;
+    if (inertia_tensor[1][1] == 0.0f) inertia_tensor[1][1] = 1.0f;
+    if (inertia_tensor[2][2] == 0.0f) inertia_tensor[2][2] = 1.0f;
+
+    return inertia_tensor;
 }
 
 void Physics::initialize_voxel_body(VoxelBody& vb) {
     TMT_ZONE_SCOPED
 
-    // Calculate mass and inertia
-    size_t filled_counter = 0;
-    glm::vec3 sum = {};
-    const glm::vec3 size = (glm::vec3)vb.resource->size * UNITS_PER_VOXEL;
-    vb.width = size.x;
-    vb.height = size.y;
-    vb.depth = size.z;
+    //// Calculate mass and inertia
+    //size_t filled_counter = 0;
+    //glm::vec3 sum = {};
+    //const glm::vec3 size = (glm::vec3)vb.resource->size * UNITS_PER_VOXEL;
+    //vb.width = size.x;
+    //vb.height = size.y;
+    //vb.depth = size.z;
 
-    const glm::vec3 half_scale = glm::vec3(vb.width, vb.height, vb.depth) * 0.5f;
+    //const glm::vec3 half_scale = glm::vec3(vb.width, vb.height, vb.depth) * 0.5f;
 
-    const auto& voxels = vb.resource;
+    //const auto& voxels = vb.resource;
 
-    for (size_t z = 0; z < voxels->size.z; z++) {
-        for (size_t y = 0; y < voxels->size.y; y++) {
-            for (size_t x = 0; x < voxels->size.x; x++) {
-                if (voxels->blas.get()->get_voxel((uint32_t)x, (uint32_t)y, (uint32_t)z) == nullptr) continue;
-                // if (vb.voxels.get_voxel(x, y, z).type == PhysicsVoxelType::EMPTY) continue;
+    //for (size_t z = 0; z < voxels->size.z; z++) {
+    //    for (size_t y = 0; y < voxels->size.y; y++) {
+    //        for (size_t x = 0; x < voxels->size.x; x++) {
+    //            if (voxels->blas.get()->get_voxel((uint32_t)x, (uint32_t)y, (uint32_t)z) == nullptr) continue;
+    //            // if (vb.voxels.get_voxel(x, y, z).type == PhysicsVoxelType::EMPTY) continue;
 
-                filled_counter++;
+    //            filled_counter++;
 
-                const glm::vec3 local_pos = glm::vec3(((float)x + 0.5f) * UNITS_PER_VOXEL, ((float)y + 0.5f) * UNITS_PER_VOXEL, ((float)z + 0.5f) * UNITS_PER_VOXEL);
-                sum += local_pos - half_scale;
-            }
-        }
-    }
+    //            const glm::vec3 local_pos = glm::vec3(((float)x + 0.5f) * UNITS_PER_VOXEL, ((float)y + 0.5f) * UNITS_PER_VOXEL, ((float)z + 0.5f) * UNITS_PER_VOXEL);
+    //            sum += local_pos - half_scale;
+    //        }
+    //    }
+    //}
 
-    vb.com_local_offset = sum / (float)filled_counter;
-    const float voxel_mass = std::powf(UNITS_PER_VOXEL, 3) * vb.density;
-    vb.inv_mass = 1.0f / (voxel_mass * filled_counter);
+    //vb.com_local_offset = sum / (float)filled_counter;
+    //const float voxel_mass = std::powf(UNITS_PER_VOXEL, 3) * vb.density;
+    //vb.inv_mass = 1.0f / (voxel_mass * filled_counter);
 
-    glm::mat3 inertia_tensor(0.0f);
-    for (size_t z = 0; z < voxels->size.z; z++) {
-        for (size_t y = 0; y < voxels->size.y; y++) {
-            for (size_t x = 0; x < voxels->size.x; x++) {
-                if (voxels->blas.get()->get_voxel((uint32_t)x, (uint32_t)y, (uint32_t)z) == nullptr) continue;
+    //glm::mat3 inertia_tensor(0.0f);
+    //for (size_t z = 0; z < voxels->size.z; z++) {
+    //    for (size_t y = 0; y < voxels->size.y; y++) {
+    //        for (size_t x = 0; x < voxels->size.x; x++) {
+    //            if (voxels->blas.get()->get_voxel((uint32_t)x, (uint32_t)y, (uint32_t)z) == nullptr) continue;
 
-                const glm::vec3 pos = glm::vec3(x, y, z) * UNITS_PER_VOXEL - half_scale + VOXEL_SIZE_HALF;
-                const glm::vec3 r = pos - vb.com_local_offset;
-                float r2 = glm::dot(r, r);
+    //            const glm::vec3 pos = glm::vec3(x, y, z) * UNITS_PER_VOXEL - half_scale + VOXEL_SIZE_HALF;
+    //            const glm::vec3 r = pos - vb.com_local_offset;
+    //            float r2 = glm::dot(r, r);
 
-                inertia_tensor[0][0] += voxel_mass * (r2 - r.x * r.x);
-                inertia_tensor[1][1] += voxel_mass * (r2 - r.y * r.y);
-                inertia_tensor[2][2] += voxel_mass * (r2 - r.z * r.z);
-                inertia_tensor[0][1] -= voxel_mass * r.x * r.y;
-                inertia_tensor[0][2] -= voxel_mass * r.x * r.z;
-                inertia_tensor[1][2] -= voxel_mass * r.y * r.z;
-            }
-        }
-    }
+    //            inertia_tensor[0][0] += voxel_mass * (r2 - r.x * r.x);
+    //            inertia_tensor[1][1] += voxel_mass * (r2 - r.y * r.y);
+    //            inertia_tensor[2][2] += voxel_mass * (r2 - r.z * r.z);
+    //            inertia_tensor[0][1] -= voxel_mass * r.x * r.y;
+    //            inertia_tensor[0][2] -= voxel_mass * r.x * r.z;
+    //            inertia_tensor[1][2] -= voxel_mass * r.y * r.z;
+    //        }
+    //    }
+    //}
 
-    inertia_tensor[1][0] = inertia_tensor[0][1];
-    inertia_tensor[2][0] = inertia_tensor[0][2];
-    inertia_tensor[2][1] = inertia_tensor[1][2];
+    //inertia_tensor[1][0] = inertia_tensor[0][1];
+    //inertia_tensor[2][0] = inertia_tensor[0][2];
+    //inertia_tensor[2][1] = inertia_tensor[1][2];
 
-    if (inertia_tensor[0][0] == 0) {
-        inertia_tensor[0][0] = 1;
-    }
+    //if (inertia_tensor[0][0] == 0) {
+    //    inertia_tensor[0][0] = 1;
+    //}
 
-    if (inertia_tensor[1][1] == 0) {
-        inertia_tensor[1][1] = 1;
-    }
+    //if (inertia_tensor[1][1] == 0) {
+    //    inertia_tensor[1][1] = 1;
+    //}
 
-    if (inertia_tensor[2][2] == 0) {
-        inertia_tensor[2][2] = 1;
-    }
+    //if (inertia_tensor[2][2] == 0) {
+    //    inertia_tensor[2][2] = 1;
+    //}
 
-    vb.inv_inertia = glm::inverse(inertia_tensor);
+    //vb.inv_inertia = glm::inverse(inertia_tensor);
+    //vb.center_of_mass = vb.position + (vb.rotation * vb.com_local_offset);
+
+    //engine.polyline.use_depth_testing(false);
+    //engine.polyline.use_line_width(0.5f);
+    //engine.polyline.use_color(1.0f, 0.0f, 0.0f);
+    //engine.polyline.draw_circle(vb.center_of_mass, 0.2f, 32u, 10000.0f);
+
+
+    // First calculate mass and COM
+    calculate_center_of_mass(vb);
+
+    // Then calculate inertia (needs COM)
+    vb.inv_inertia = glm::inverse(calculate_inertia_tensor(vb));
+
     vb.center_of_mass = vb.position + (vb.rotation * vb.com_local_offset);
 }
 
