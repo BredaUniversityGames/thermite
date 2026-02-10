@@ -58,25 +58,37 @@ inline PickedLight pick_light(const float3 point, const float3 normal, inout uin
 }
 
 inline float3 direct_illuminance(const float3 point, const float3 normal, const float3 view_dir, inout uint seed) {
-    if (scene_view.light_count == 0u) return 0.0f;
+    float3 illuminance = 0.0f;
+
+    /* Handle the sun light source */
+    if (any(scene_view.sun_luminance > 0.0f)) {
+        /* Generate and trace a sun light sample */
+        const LightSample light_sample = sample_sun(point, scene_view, rand_float2(seed));
+        const float t = occlusion_bvh2(tlas_nodes, object_indices, objects, custom_ray(point, light_sample.dir), light_sample.tmax);
+
+        if (t >= light_sample.tmax) {
+            /* Calculate sun illuminance */
+            const float ndotl = max(0.0f, dot(normal, light_sample.dir));
+            illuminance += scene_view.sun_luminance * ndotl * light_sample.rcp_pdf;
+        }
+    }
+
+    if (scene_view.light_count == 0u) return illuminance;
 
     /* Fetch a light to sample */
     const PickedLight picked_light = pick_light(point, normal, seed);
-    if (picked_light.i == uint::maxValue) return 0.0f;
+    if (picked_light.i == uint::maxValue) return illuminance;
     const Light light = lights[picked_light.i];
 
+    /* Generate a sample for the light we picked */
     const LightSample light_sample = sample_light(point, light, rand_float2(seed));
     const float t = occlusion_bvh2(tlas_nodes, object_indices, objects, custom_ray(point, light_sample.dir), light_sample.tmax);
-    if (t < light_sample.tmax) return 0.0f;
-
-    float3 attenuation = 0.0f;
+    if (t < light_sample.tmax) return illuminance;
 
     /* Distance based attenuation */
-    if (light.type != LightType::SUN_LIGHT) {
-        const float relative_dist = saturate(light_sample.tmax / light.attenuation_radius);
-        const float inverse_dist = 1.0f - relative_dist * relative_dist;
-        attenuation = (inverse_dist * inverse_dist) / (1.0f + 4.0f * relative_dist);
-    }
+    const float relative_dist = saturate(light_sample.tmax / light.attenuation_radius);
+    const float inverse_dist = 1.0f - relative_dist * relative_dist;
+    float attenuation = (inverse_dist * inverse_dist) / (1.0f + 4.0f * relative_dist);
 
     /* Spot based attenuation */
     if (light.type == LightType::SPOT_LIGHT) {
@@ -86,29 +98,10 @@ inline float3 direct_illuminance(const float3 point, const float3 normal, const 
         attenuation *= spot * spot;
     }
 
-    const ShadingFrame sframe = create_shading_frame(normal, view_dir, light_sample.dir);
-    const float3 brdf = opaque_base_slab(sframe.wi.z, sframe.wo.z, sframe.wh.z, 1.0f, 0.25f, 1.0f / 1.5f);
-
-    return light.luminance * max(0.0f, dot(normal, light_sample.dir)) * brdf * attenuation * picked_light.rcp_pdf * light_sample.rcp_pdf;
-
-    /* Calculate the direction and distance to the light */
-    // const float3 light_pos = light.origin + sample_hemisphere_uniform(normalize(light.origin - point), rand_float2(seed)) * light.source_radius;
-    // const float3 light_dir = normalize(light_pos - point);
-    // const float ndotl = max(0.0f, dot(normal, light_dir));
-    // if (ndotl == 0.0f) return 0.0f;
-    // const float light_t = distance(light_pos, point);
-    // if (light_t >= light.attenuation_radius) return 0.0f;
-
-    /* Trace a ray towards the light to check for occlusions */
-    // const float t = occlusion_bvh2(tlas_nodes, object_indices, objects, custom_ray(point, light_dir), light_t);
-    // if (t < light_t) return 0.0f;
-
-    // const float relative_dist = saturate(light_t / light.attenuation_radius);
-    // const float inverse_dist = 1.0f - relative_dist * relative_dist;
-    // const float attenuation = (inverse_dist * inverse_dist) / (1.0f + 4.0f * relative_dist);
-
-    /* Evaluate illuminance if there is no occlusion */
-    // return light.luminance * ndotl * attenuation * light_sample.rcp_pdf;
+    /* Calculate light illuminance */
+    const float ndotl = max(0.0f, dot(normal, light_sample.dir));
+    illuminance += light.luminance * ndotl * attenuation * picked_light.rcp_pdf * light_sample.rcp_pdf;
+    return illuminance;
 }
 
 [shader("compute")]
@@ -151,7 +144,7 @@ void main(int2 thread_id: SV_DispatchThreadID) {
     /* Generate a seed for the current pixel */
     uint seed = thread_id.x + thread_id.y * resolution.x + (render_view.frame_index * (resolution.x * resolution.y));
 
-    float3 illuminance = direct_illuminance(hit_point, geo.normal, -float3(ray.dir.x, ray.dir.y, ray.dir.z), seed);
+    float3 illuminance = direct_illuminance(hit_point, geo.normal, -ray.dir, seed);
 
     /* Trace light occlusion */
     // const float3 ray_dir = sample_hemisphere_cosine(geo.normal, r2(seed));

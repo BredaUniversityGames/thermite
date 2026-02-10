@@ -15,10 +15,11 @@
 
 #include "engine/engine.hpp"
 #include "engine/core/io.hpp"
+#include "pipelines/geometry_pipeline.hpp"
 #include "pipelines/polyline_pipeline.hpp"
 #include "pipelines/vfx_pipeline.hpp"
-#include "pipelines/geometry_pipeline.hpp"
 #include "pipelines/di_pipeline.hpp"
+#include "pipelines/ui_pipeline.hpp"
 #include "tools/profiler.hpp"
 
 namespace tmt {
@@ -29,13 +30,16 @@ Renderer::Renderer()
       geometry_pipeline(*new GeometryPipeline()),
       di_pipeline(*new DiPipeline()),
       polyline_pipeline(*new PolylinePipeline()),
-      vfx_pipeline(*new VfxPipeline()) {}
+      vfx_pipeline(*new VfxPipeline()),
+      ui_pipeline(*new UiPipeline()) {}
 
 Renderer::~Renderer() {
     delete &polyline_pipeline;
     delete &di_pipeline;
     delete &vfx_pipeline;
     delete &geometry_pipeline;
+    delete &ui_pipeline;
+
     delete &render_graph;
     delete &gpu;
 }
@@ -58,7 +62,7 @@ void thermite_logger(const DebugSeverity severity, const char* msg, void*) {
 void Renderer::init() {
     gpu.set_logger(thermite_logger, DebugLevel::Verbose);
     gpu.set_max_render_targets(4u);
-    gpu.set_max_buffers(2048u);
+    gpu.set_max_buffers(4096u);
     gpu.set_max_textures(256u);
     gpu.set_max_images(256u);
     gpu.set_max_samplers(32u);
@@ -94,6 +98,7 @@ void Renderer::init() {
     polyline_pipeline.init(gpu);
     di_pipeline.init(gpu);
     vfx_pipeline.init(gpu);
+    ui_pipeline.init(gpu);
 
     debug_transform.set_local_position({0.0f, 0.0f, -1.0f});
 }
@@ -137,6 +142,7 @@ void Renderer::update() {
 
     polyline_pipeline.enqueue(render_graph, render_view);
     vfx_pipeline.enqueue(render_graph, render_view);
+    ui_pipeline.enqueue(render_graph, render_view);
 
 #ifdef THERMITE_EDITOR
     /* Add the immediate mode GUI to the render graph */
@@ -167,6 +173,7 @@ void Renderer::end() {
     polyline_pipeline.deinit(gpu);
     di_pipeline.deinit(gpu);
     vfx_pipeline.deinit(gpu);
+    ui_pipeline.deinit(gpu);
 
     /* Cleanup the VRAM bank & GPU adapter */
     render_graph.deinit().expect("failed to destroy render graph.");
