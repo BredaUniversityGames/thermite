@@ -17,7 +17,7 @@ jobs:
     runs-on: windows-latest
     env:
       # CMake build directory
-      BUILD_DIR: ${{ runner.temp }}/build
+      BUILD_DIR: ${{ github.workspace }}/build
     steps:
       # Fetch all the repo files
       - name: Checkout repository
