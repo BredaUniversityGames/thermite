@@ -59,13 +59,16 @@ Entity PrefabHelper::instantiate_prefab(const IO::FileLocation& location, const 
     const bool has_prefab = engine.ecs.has_component<Prefab>(parent);
     /* Check if we create a loop */
     if (has_prefab) {
-         const auto& parent_prefab_comp = engine.ecs.get_component<Prefab>(parent);
-         for (const auto chain : parent_prefab_comp.prefab_chain) {
-             if (chain.source_location == location) {
-                 Log::error(Log::Scope::ENGINE, "[PrefabHelper] instantiate_prefab: Cannot instantiate prefab at location '{}' under parent entity {} as it would create a loop", location.get_absolute_path().string(), EntityHelper::to_string(parent));
-                 return entt::null;
-             }
-         }
+        const auto& parent_prefab_comp = engine.ecs.get_component<Prefab>(parent);
+        for (const auto chain : parent_prefab_comp.prefab_chain) {
+            if (chain.source_location == location) {
+                Log::error(
+                    Log::Scope::ENGINE, "[PrefabHelper] instantiate_prefab: Cannot instantiate prefab at location '{}' under parent entity {} as it would create a loop",
+                    location.get_absolute_path().string(), EntityHelper::to_string(parent)
+                );
+                return entt::null;
+            }
+        }
     }
 
     /* Load prefab json from disk */

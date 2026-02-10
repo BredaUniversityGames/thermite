@@ -21,7 +21,7 @@ class Inspector : public IWindow {
         const Entity primary_entity;
         const std::vector<Entity>& selected_entities;
     };
-    
+
     void display_entity_info(const MenuContext& menu_context);
 
     void display_runtime_components(const MenuContext& menu_context);

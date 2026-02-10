@@ -548,9 +548,9 @@ static void deserialize_scene(std::set<tmt::Entity>& new_entities, tmt::Deserial
             if (existing_prefab_instances.contains(prefab_comp_original)) {
                 tmt::PrefabInstanceID new_instance_id = tmt::UUIDGenerator::generate();
 
-                //tmt::Log::info(
-                //    tmt::Log::Scope::ENGINE, "[Serialization] Prefab instance already exists in scene, generating new instance ID. Old: {}, New: {}, Source location: {}, Root entity: {}",
-                //    prefab_comp_original.instance_id, new_instance_id, prefab_comp_original.source_location, prefab_comp_original.root_entity
+                // tmt::Log::info(
+                //     tmt::Log::Scope::ENGINE, "[Serialization] Prefab instance already exists in scene, generating new instance ID. Old: {}, New: {}, Source location: {}, Root entity: {}",
+                //     prefab_comp_original.instance_id, new_instance_id, prefab_comp_original.source_location, prefab_comp_original.root_entity
                 //);
 
                 state.instance_id_mapping[prefab_comp_original.instance_id] = new_instance_id;
@@ -638,7 +638,7 @@ static void deserialize_scene(std::set<tmt::Entity>& new_entities, tmt::Deserial
                     new_entry.source_entity = mapping.at(new_entity);
                 } else {
                     /* no overrides */
-                    //new_entry.source_entity = entt::null;
+                    // new_entry.source_entity = entt::null;
                     if (new_to_old.contains(new_entity)) {
                         new_entry.source_entity = new_to_old.at(new_entity);
                     } else {
@@ -667,5 +667,5 @@ void tag_invoke(JsonReflect::deserialize_t, const tmt::json& j, std::set<tmt::En
         state.current_prefab_location = prefab_data->source_location;
     }
     deserialize_scene(new_entities, state);
-    //state.entity_mapping.print();
+    // state.entity_mapping.print();
 }
