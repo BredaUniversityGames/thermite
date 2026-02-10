@@ -16,9 +16,7 @@ public struct ShadingFrame {
 /* Create a shading frame for the given normal, incident and outgoing directions. */
 public [ForceInline] ShadingFrame create_shading_frame(const float3 n, const float3 wi, const float3 wo) {
     const Basis basis = orthonormal_basis(n);
-    const float3 t = cross(n, float3(0.0f, 1.0f, 0.0f));
-    const float3 b = cross(n, t);
-    const float3x3 world_to_shade = float3x3(t, b, n);
+    const float3x3 world_to_shade = float3x3(basis.a, basis.b, n);
     const float3 wi_shade = mul(world_to_shade, wi);
     const float3 wo_shade = mul(world_to_shade, wo);
     return ShadingFrame(wi_shade, wo_shade, normalize(wi_shade + wo_shade));

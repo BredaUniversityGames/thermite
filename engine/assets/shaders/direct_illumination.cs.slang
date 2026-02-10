@@ -86,9 +86,8 @@ inline float3 direct_illuminance(const float3 point, const float3 normal, const 
         attenuation *= spot * spot;
     }
 
-    /* TODO: Investigate weird misalignment with vectors??? */
     const ShadingFrame sframe = create_shading_frame(normal, view_dir, light_sample.dir);
-    const float3 brdf = pow(dot(normal, normalize(view_dir + normalize(light.origin - point))), 100.0f); // opaque_base_slab(sframe.wi.z, sframe.wo.z, sframe.wh.z, 1.0f, 0.05f, 1.0f / 1.5f);
+    const float3 brdf = opaque_base_slab(sframe.wi.z, sframe.wo.z, sframe.wh.z, 1.0f, 0.25f, 1.0f / 1.5f);
 
     return light.luminance * max(0.0f, dot(normal, light_sample.dir)) * brdf * attenuation * picked_light.rcp_pdf * light_sample.rcp_pdf;
 
@@ -152,7 +151,7 @@ void main(int2 thread_id: SV_DispatchThreadID) {
     /* Generate a seed for the current pixel */
     uint seed = thread_id.x + thread_id.y * resolution.x + (render_view.frame_index * (resolution.x * resolution.y));
 
-    float3 illuminance = direct_illuminance(hit_point, geo.normal, -ray.dir, seed);
+    float3 illuminance = direct_illuminance(hit_point, geo.normal, -float3(ray.dir.x, ray.dir.y, ray.dir.z), seed);
 
     /* Trace light occlusion */
     // const float3 ray_dir = sample_hemisphere_cosine(geo.normal, r2(seed));
