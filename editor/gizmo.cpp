@@ -42,7 +42,11 @@ bool Gizmo::manip(const float x, const float y, const float width, const float h
 
     if (engine.game_controller.is_running()) return false;
 
-    if (selected_entities.empty()) return false;
+    if (selected_entities.empty()) 
+    {
+        ImGuizmo::ResetOperation();
+        return false;
+    }
 
     const Transform& transform = engine.renderer.get_debug_transform();
     const Camera& camera = engine.renderer.get_debug_camera();
