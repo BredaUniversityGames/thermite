@@ -172,7 +172,7 @@ void tmt::Viewport::selection_logic(const ImVec2& imgui_mouse_pos, const ImVec2&
     bool multiple_select_modifier = !imgui_io.KeyCtrl && !imgui_io.KeyShift;
 
     if (imgui_io.MouseReleased[0]) using_rect = false;
-    if (imgui_io.MouseDown[0] && (!editor.gizmo.hovered() || using_rect)) {
+    if (imgui_io.MouseDown[0] && is_hovered &&(!editor.gizmo.hovered() || using_rect)) {
         if (imgui_io.MouseClicked[0]) {
             first_click_pos = imgui_io.MousePos;
         }
