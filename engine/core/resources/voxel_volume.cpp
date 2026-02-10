@@ -36,7 +36,6 @@ bool VoxelVolume::load() {
     blas_nodes = bank.create_buffer("BLAS Nodes Buffer", storage, blas_nodes_capacity, sizeof(Svt64Node)).expect("failed to create tree nodes buffer.");
     blas_voxels = bank.create_buffer("BLAS Voxels Buffer", storage, blas_voxels_capacity, sizeof(MaterialIndex)).expect("failed to create voxel data buffer.");
     blas_palette = bank.create_buffer("BLAS Palette Buffer", storage, sizeof(MaterialPalette)).expect("failed to create material palette buffer.");
-    Log::info("pallete buffer: {} ({})", blas_palette.get_index(), model->name); 
 
     /* Upload the voxel data into the GPU buffers */
     /* TODO: These buffers need to be updated when voxel data is modified at run-time! */

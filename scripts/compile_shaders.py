@@ -64,12 +64,12 @@ def main():
 
     all_outputs = []
 
-    print("[CMD]", end="")
-    for arg in cmd:
-        print(f" {arg}", end="")
-    print("")
+    # print("[CMD]", end="")
+    # for arg in cmd:
+    #     print(f" {arg}", end="")
+    # print("")
     print(f"[Slang] {stage.upper()} -> {output_file}")
-    subprocess.run(cmd, text=True)
+    subprocess.run(cmd, check=True)
 
 if __name__ == "__main__":
     main()
