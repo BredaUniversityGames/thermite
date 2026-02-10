@@ -629,7 +629,80 @@ void Physics::apply_velocities() const {
     }
 }
 
+inline void recurse_mass(
+    tmt::Svt64* tree, uint32_t node_index, uint32_t current_depth, float node_half_extent, const glm::vec3& node_center, const glm::vec3& extents_diff, glm::vec3& mass_center_sum,
+    uint32_t& voxel_count
+) {
+    // Get current node
+    const tmt::Svt64Node& node = tree->nodes[node_index];
+
+    // Calculate new half extent
+    const float child_half_extent = node_half_extent * 0.25f;
+
+    // Copy mask for iteration
+    uint64_t mask = node.child_mask;
+    while (mask != 0u) {
+        // Find index of first set bit
+        const uint32_t i = std::countr_zero(mask);
+
+        // Get local coordinates
+        const uint32_t local_x = (i >> 0u) & 3u;
+        const uint32_t local_y = (i >> 4u) & 3u;
+        const uint32_t local_z = (i >> 2u) & 3u;
+
+        // Calculate local child center
+        const glm::vec3 local_offset = glm::vec3(
+            (((float)local_x + 0.5f) * 0.25f - 0.5f) * node_half_extent * 2.0f, (((float)local_y + 0.5f) * 0.25f - 0.5f) * node_half_extent * 2.0f,
+            (((float)local_z + 0.5f) * 0.25f - 0.5f) * node_half_extent * 2.0f
+        );
+
+        // Calculate world position of child
+        const glm::vec3 child_center = node_center + local_offset;
+
+        // Get child node index
+        const uint32_t child_node_offset = (uint32_t)__popcnt64(node.child_mask & ((1ull << i) - 1u));
+        const uint32_t child_node_index = node.abs_ptr() + child_node_offset;
+
+        // Recursively go deeper if child is not a leaf
+        if (current_depth + 1 < tree->depth) {
+            recurse_mass(tree, child_node_index, current_depth + 1, child_half_extent, child_center, extents_diff, mass_center_sum, voxel_count);
+        } else {
+            voxel_count++;
+            mass_center_sum += child_center;
+        }
+
+        // Clear bit
+        mask &= ~(1ull << i);
+    }
+}
+
+inline glm::vec3 calculate_center_of_mass(VoxelBody& vb) { 
+    // Update voxel body dimensions
+    const glm::vec3 size = (glm::vec3)vb.resource->size * UNITS_PER_VOXEL;
+    vb.width = size.x;
+    vb.height = size.y;
+    vb.depth = size.z;
+    const glm::vec3 half_scale = glm::vec3(vb.width, vb.height, vb.depth) * 0.5f;
+
+    // Calculate half extent
+    auto* tree = vb.resource.resource->blas.get(); 
+    const float half_extent = powf(4.0f, (float)tree->depth) * 0.5f * UNITS_PER_VOXEL;
+    const glm::vec3 extents_diff = half_extent - ((glm::vec3)vb.resource->size * 0.5f * UNITS_PER_VOXEL);
+
+    // Recurse tree to calculate the center of mass sum and voxel count
+    glm::vec3 mass_center_sum = {};
+    uint32_t voxel_count = 0;
+    recurse_mass(tree, 0, 0, powf(4.0f, half_extent), half_scale, half_scale - extents_diff, mass_center_sum, voxel_count);
+
+    // Apply results to voxel body
+    vb.com_local_offset = mass_center_sum / (float)voxel_count;
+    const float voxel_mass = std::powf(UNITS_PER_VOXEL, 3) * vb.density;
+    vb.inv_mass = 1.0f / (voxel_mass * voxel_count);
+}
+
 void Physics::initialize_voxel_body(VoxelBody& vb) {
+    TMT_ZONE_SCOPED
+
     // Calculate mass and inertia
     size_t filled_counter = 0;
     glm::vec3 sum = {};
@@ -723,5 +796,7 @@ void Physics::set_rotation(VoxelBody& vb, const glm::quat& rotation) {
     vb.rotation = rotation;
     vb.center_of_mass = vb.position + (vb.rotation * vb.com_local_offset);
 }
+
+void Physics::recalculate_physics_data(VoxelBody& vb) {}
 
 }  // namespace tmt
