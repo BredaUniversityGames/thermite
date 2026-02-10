@@ -6,7 +6,7 @@ namespace tmt {
 
 class Brush : public IWindow {
    public:
-    enum class Mode : uint8_t { MULTI_TOOL, PAINT, COLOR_PICKER, ADD, REMOVE };
+    enum class Mode : uint8_t { MULTI_TOOL, PAINT, COLOR_PICKER, ADD, REMOVE, SHAPE };
 
     Brush() = default;
 

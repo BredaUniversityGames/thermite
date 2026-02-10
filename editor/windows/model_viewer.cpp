@@ -232,6 +232,46 @@ void modify_voxels(const Brush::Mode brush_mode, const ResourceRef<VoxelVolume>&
             break;
         }
 
+        case Brush::Mode::SHAPE: {
+            if (!engine.input.is_mouse_button_pressed(MouseButton::LEFT) && !engine.input.is_mouse_button_just_released(MouseButton::LEFT)) break;
+
+            static glm::uvec3 start_coord {-1ul};
+            if (engine.input.is_mouse_button_just_pressed(MouseButton::LEFT)) start_coord = hit.coord;
+
+            const glm::uvec3 end_coord = hit.coord;
+
+            const glm::vec3 voxel_middle = (glm::vec3{start_coord + end_coord + glm::uvec3{1ul}}) * VOXEL_SIZE_HALF;
+            const glm::vec3 select_half_extent = (glm::abs(glm::vec3{start_coord} - glm::vec3{end_coord}) + 1.0f) * VOXEL_SIZE_HALF;
+
+            const Transform& transform = engine.ecs.get_component<Transform>(hit.entity);
+            const glm::vec3 half_extent = glm::vec3{model->size} * VOXEL_SIZE_HALF;
+            const glm::vec3 world_position = transform.get_world_matrix() * glm::vec4{voxel_middle - half_extent, 1.0f};
+
+            engine.polyline.draw_obb(world_position, select_half_extent, transform.get_world_rotation());
+
+            if (engine.input.is_mouse_button_just_released(MouseButton::LEFT)) {
+                const MaterialIndex material_index = editor.windows[Editor::Mode::VOXEL].get<Palette>().get_selected_material_index();
+
+                const uint32_t min_x = glm::min(start_coord.x, end_coord.x);
+                const uint32_t min_y = glm::min(start_coord.y, end_coord.y);
+                const uint32_t min_z = glm::min(start_coord.z, end_coord.z);
+                const uint32_t max_x = glm::max(start_coord.x, end_coord.x);
+                const uint32_t max_y = glm::max(start_coord.y, end_coord.y);
+                const uint32_t max_z = glm::max(start_coord.z, end_coord.z);
+
+                for (uint32_t x = min_x; x <= max_x; x++) {
+                    for (uint32_t y = min_y; y <= max_y; y++) {
+                        for (uint32_t z = min_z; z <= max_z; z++) {
+                            model->blas->set_voxel(x, y, z, material_index);
+                        }
+                    }
+                }
+            }
+            model->set_dirty();
+
+            break;
+        }
+
         default:
             break;
     }
@@ -285,7 +325,7 @@ void ModelViewer::display() {
     const Ray mouse_ray = engine.renderer.render_view.pixel_ray(mouse_position);
     Hit hit = engine.renderer.trace_ray(mouse_ray);
 
-    const bool can_hit_face = (brush_mode == Brush::Mode::ADD);
+    const bool can_hit_face = (brush_mode == Brush::Mode::ADD || brush_mode == Brush::Mode::SHAPE);
 
     // Handle drawing the selection and calculating the selected voxel position.
     if (!handle_selection(mouse_ray, hit, can_hit_face, selected_entity, transform, resource)) return;  // Return early if no valid voxel was selected.
