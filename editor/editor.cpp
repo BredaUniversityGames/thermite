@@ -15,6 +15,10 @@
 #include "engine/core/scenes.hpp"
 
 #include "editor/imgui/manager.hpp"
+#include "editor/core/systems/font_manager.hpp"
+#include "editor/core/systems/undo_redo/undo_redo_manager.hpp"
+#include "engine/tools/profiler.hpp"
+#include "engine/tools/file_dialog.hpp"
 #include "editor/gizmo.hpp"
 
 /* Modes */
@@ -42,6 +46,7 @@
 #include "editor/windows/node_hierarchy.hpp"
 #include "editor/windows/palette.hpp"
 #include "editor/windows/brush.hpp"
+#include "editor/windows/editor_settings.hpp"
 
 /* Singleton */
 tmt::Editor tmt::editor;
@@ -79,6 +84,8 @@ void Editor::on_engine_init(const ApplicationSpecs&) {
     windows[Mode::SCENE].add<MotionMathPreview>();
     windows[Mode::SCENE].add<DebugLines>();
     windows[Mode::SCENE].add<Rendering>();
+    windows[Mode::SCENE].add<UndoRedoManager>();
+    windows[Mode::SCENE].add<EditorSettingsWindow>();
 
     engine.scenes.register_scene<VoxelEditScene>();
     windows[Mode::VOXEL].add<ModelViewer>();
