@@ -3,6 +3,8 @@
 #include "engine/events/input.hpp"
 #include "engine/core/entity.hpp"
 
+struct ImVec2;
+
 namespace tmt {
 class Viewport : public IWindow, public OnRetrieveMouseState {
    public:
@@ -30,7 +32,8 @@ class Viewport : public IWindow, public OnRetrieveMouseState {
     friend class ModelViewer;
 
     void update_debug_camera(const tmt::FrameData& frame_data);
-    bool toolbar(const glm::vec2& image_pos);
+    bool toolbar(const ImVec2& image_pos);
+    void selection_logic(const ImVec2& imgui_mouse_pos, const ImVec2& image_pos, bool toolbar_buttons_hovered);
 
     float width = -1;
     float height = -1;
