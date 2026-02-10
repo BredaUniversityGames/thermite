@@ -17,7 +17,7 @@ jobs:
     runs-on: windows-latest
     env:
       # CMake build directory
-      BUILD_DIR: ${{ github.workspace }}/build
+      BUILD_DIR: ${{ github.workspace }}/build/${{ matrix.preset }}
     steps:
       # Fetch all the repo files
       - name: Checkout repository
@@ -39,18 +39,18 @@ jobs:
       # Setup MSVC compiler
       - name: Setup compiler
         uses: ilammy/msvc-dev-cmd@v1
-      
+
       # Configure CMake project
       - name: Configure project
         shell: pwsh
         run: |
-          cmake -B ${{ env.BUILD_DIR }} -S ${{ github.workspace }} --preset ${{ matrix.preset }}
+          cmake -S ${{ github.workspace }} --preset ${{ matrix.preset }}
       
       # Build CMake project
       - name: Build project
         shell: pwsh
         run: |
-          cmake --build ${{ env.BUILD_DIR }} --preset ${{ matrix.preset }} -j
+          cmake --build --preset ${{ matrix.preset }} -j
         
   cpp-linter-windows:
     name: "Run cpp-linter (Windows)"
