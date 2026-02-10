@@ -118,7 +118,8 @@ void Hierarchy::context_menu(const Entity hovered_entity) {
                 ImGui::CloseCurrentPopup();
             }
         }
-        if (selected_entities.empty() == false) {
+        const bool is_playing = engine.game_controller.is_playing();
+        if (selected_entities.size() == 1 && is_playing == false) { /* Make Prefab */
             ImGui::Separator();
             const auto text = "Make Prefab...";
             // TODO: give extra pop-up for name
@@ -133,16 +134,21 @@ void Hierarchy::context_menu(const Entity hovered_entity) {
     if (ImGui::BeginPopupModal(Config::PREFAB_POP_UP, nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings)) {
         static std::string prefab_name = "NewPrefab";
         static std::string error_message = "";
-        ImGui::InputText("Prefab Name", &prefab_name);
+        ImGui::InputText("Prefab Name", &prefab_name, ImGuiInputTextFlags_AlwaysOverwrite);
         ImGui::SameLine();
         ImGui::Text(".prefab");
         if (ImGui::Button("Create")) {
             const IO::FileLocation temp_location = {IO::Location::PROJECT, prefab_name + ".prefab"};
             if (IO::file_exists(temp_location) == false) {
                 const Entity root_entity = *EntityHelper::upper_parents(selected_entities).begin();
-                PrefabHelper::create_prefab(temp_location, root_entity);
-                prefab_name = "NewPrefab";
-                ImGui::CloseCurrentPopup();
+                const bool has_prefab = engine.ecs.has_component<Prefab>(root_entity);
+                if (has_prefab == false) {
+                    PrefabHelper::create_prefab(temp_location, root_entity);
+                    prefab_name = "NewPrefab";
+                    ImGui::CloseCurrentPopup();
+                } else {
+                    error_message = "Selected entity is already part of a prefab, cannot create prefab from it.";
+                }
             } else {
                 error_message = "A prefab with the name \"" + prefab_name + "\" already exists.";
             }
