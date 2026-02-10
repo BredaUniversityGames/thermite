@@ -92,6 +92,8 @@ void Editor::on_engine_init(const ApplicationSpecs&) {
     windows[Mode::VOXEL].add<NodeHierarchy>();
     windows[Mode::VOXEL].add<Palette>();
     windows[Mode::VOXEL].add<Brush>();
+    windows[Mode::VOXEL].add<Console>();
+    windows[Mode::VOXEL].add<UndoRedoManager>();
 
     for (auto& [mode, collection] : windows) {
         for (const auto& window : collection) {
