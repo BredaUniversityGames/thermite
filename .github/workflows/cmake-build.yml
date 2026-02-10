@@ -5,15 +5,20 @@ on:
     branches:
       - main
 jobs:
+  # Build all presets
   build:
     name: "Build ${{ matrix.preset }}"
     strategy:
       matrix:
-        preset: 
-          - Debug-Editor
-          - Release-Editor
-          - Debug-Game
-          - Release-Game
+        include:
+        - preset: Debug-Editor
+          key: de
+        - preset: Release-Editor
+          key: re
+        - preset: Debug-Game
+          key: dg
+        - preset: Release-Game
+          key: rg
     runs-on: windows-latest
     env:
       # CMake build directory
@@ -30,7 +35,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ env.BUILD_DIR }}
-          key: cmake-cache
+          key: cmake-build-${{ matrix.key }}
 
       # Restore the file timestamps for incremental builds
       - name: Restore timestamps
@@ -52,6 +57,7 @@ jobs:
         run: |
           cmake --build --preset ${{ matrix.preset }} -j
         
+  # Run C++ linter
   cpp-linter-windows:
     name: "Run cpp-linter (Windows)"
     runs-on: windows-latest
@@ -95,46 +101,43 @@ jobs:
           thread-comments: true
           tidy-checks: ''
           
+  # Run tests
   test:
-    name: "Test ${{ matrix.preset }}"
-    strategy:
-      matrix:
-        include:
-          - preset: Debug-Game
+    name: "Unit Tests"
     runs-on: windows-latest
-    env:
-      SCCACHE_GHA_ENABLED: "true"
-      SCCACHE_BASEDIRS: ${{ github.workspace }}
     steps:
+      # Fetch all the repo files
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           submodules: recursive
-      - name: Setup sccache
-        uses: mozilla-actions/sccache-action@v0.0.9
-      - name: Setup MSVC
+
+      # Setup MSVC compiler
+      - name: Setup compiler
         uses: ilammy/msvc-dev-cmd@v1
       
-      
-      - name: Cache FetchContent downloads
-        uses: actions/cache@v4
-        with:
-          path: build/${{ matrix.preset }}
-          key: test-${{ runner.os }}-${{ matrix.preset }}-${{ hashFiles('**/CMakeLists.txt', 'CMakePresets.json') }}
-          restore-keys: |
-            test-${{ runner.os }}-${{ matrix.preset }}-
-      - name: Configure with tests enabled
+      # - name: Cache FetchContent downloads
+      #   uses: actions/cache@v4
+      #   with:
+      #     path: build/${{ matrix.preset }}
+      #     key: test-${{ runner.os }}-${{ matrix.preset }}-${{ hashFiles('**/CMakeLists.txt', 'CMakePresets.json') }}
+      #     restore-keys: |
+      #       test-${{ runner.os }}-${{ matrix.preset }}-
+
+      # Configure CMake project
+      - name: Configure project
         shell: pwsh
         run: |
-          cmake --preset ${{ matrix.preset }} -DTHERMITE_BUILD_TESTS=ON -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache -DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT=Embedded
+          cmake --preset Debug-Game -DTHERMITE_BUILD_TESTS=ON
       
-      
-      - name: Build with tests
+      # Build CMake project
+      - name: Build project
         shell: pwsh
         run: |
-          cmake --build --preset ${{ matrix.preset }} -j --target UnitTests
+          cmake --build --preset Debug-Game -j --target UnitTests
       
+      # Run CMake tests
       - name: Run tests
         shell: pwsh
         run: |
-          ./build/${{ matrix.preset }}/bin/UnitTests
+          ./build/Debug-Game/bin/UnitTests
