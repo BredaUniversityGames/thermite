@@ -11,7 +11,7 @@ class SceneJson {
 
    public:
     SceneJson() = default;
-    SceneJson(const json& j) : json_value(j) {}
+    SceneJson(json j) : json_value(std::move(j)) {}
 
     const json& get_json() const { return json_value; }
     std::string dump() const;

@@ -23,7 +23,7 @@ struct Prefab {
 
     std::vector<ChainEntry> prefab_chain;
 
-    const ChainEntry* prefab_chain_contains(PrefabInstanceID id) const {
+    const ChainEntry* prefab_chain_contains(const PrefabInstanceID& id) const {
         for (const auto& entry : prefab_chain) {
             if (entry.instance_id == id) {
                 return &entry;

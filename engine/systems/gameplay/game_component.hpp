@@ -23,7 +23,7 @@ namespace tmt {
 class SerializationContext {
    private:
     void* state_ptr = nullptr;
-    enum class StateType { None, Serialize, Deserialize } type = StateType::None;
+    enum class StateType { NONE, SERIALIZE, DESERIALIZE } type = StateType::NONE;
 
    public:
     SerializationContext() = default;
@@ -31,22 +31,22 @@ class SerializationContext {
     // Type-safe setters
     void set_serialize_state(SerializeState* ptr) {
         state_ptr = ptr;
-        type = StateType::Serialize;
+        type = StateType::SERIALIZE;
     }
 
     void set_deserialize_state(DeserializeState* ptr) {
         state_ptr = ptr;
-        type = StateType::Deserialize;
+        type = StateType::DESERIALIZE;
     }
 
     // Type-safe getters - work with forward declarations
-    SerializeState* get_serialize_state() { return type == StateType::Serialize ? static_cast<SerializeState*>(state_ptr) : nullptr; }
+    SerializeState* get_serialize_state() { return type == StateType::SERIALIZE ? static_cast<SerializeState*>(state_ptr) : nullptr; }
 
-    DeserializeState* get_deserialize_state() { return type == StateType::Deserialize ? static_cast<DeserializeState*>(state_ptr) : nullptr; }
+    DeserializeState* get_deserialize_state() { return type == StateType::DESERIALIZE ? static_cast<DeserializeState*>(state_ptr) : nullptr; }
 
-    const SerializeState* get_serialize_state() const { return type == StateType::Serialize ? static_cast<const SerializeState*>(state_ptr) : nullptr; }
+    const SerializeState* get_serialize_state() const { return type == StateType::SERIALIZE ? static_cast<const SerializeState*>(state_ptr) : nullptr; }
 
-    const DeserializeState* get_deserialize_state() const { return type == StateType::Deserialize ? static_cast<const DeserializeState*>(state_ptr) : nullptr; }
+    const DeserializeState* get_deserialize_state() const { return type == StateType::DESERIALIZE ? static_cast<const DeserializeState*>(state_ptr) : nullptr; }
 };
 
 /* Used by engine to call events */

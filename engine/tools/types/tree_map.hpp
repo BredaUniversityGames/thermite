@@ -13,28 +13,28 @@ class TreeMap {
     using MapType = std::conditional_t<ORDERED, std::map<K, TreeMap>, std::unordered_map<K, TreeMap>>;
 
     std::optional<V> value_;
-    MapType children_;
+    MapType children;
 
    public:
     // ============= CONSTRUCTORS =============
-    TreeMap() : value_(std::nullopt), children_() {}
+    TreeMap() : value_(std::nullopt), children() {}
 
-    TreeMap(const V& val) : value_(val), children_() {}
+    TreeMap(const V& val) : value_(val), children() {}
 
-    TreeMap(const MapType& map) : value_(std::nullopt), children_(map) {}
+    TreeMap(const MapType& map) : value_(std::nullopt), children(map) {}
 
-    TreeMap(const K& key, const V& val) : value_(std::nullopt), children_ {{key, TreeMap(val)}} {}
+    TreeMap(const K& key, const V& val) : value_(std::nullopt), children {{key, TreeMap(val)}} {}
 
     // ============= CHILD ACCESS =============
-    TreeMap& operator[](const K& key) { return children_[key]; }
+    TreeMap& operator[](const K& key) { return children[key]; }
 
-    TreeMap& get(const K& key) { return children_[key]; }
+    TreeMap& get(const K& key) { return children[key]; }
 
-    TreeMap& at(const K& key) { return children_.at(key); }
+    TreeMap& at(const K& key) { return children.at(key); }
 
-    const TreeMap& at(const K& key) const { return children_.at(key); }
+    const TreeMap& at(const K& key) const { return children.at(key); }
 
-    bool contains(const K& key) const { return children_.contains(key); }
+    bool contains(const K& key) const { return children.contains(key); }
 
     // ============= VALUE MANAGEMENT =============
     TreeMap& operator=(const V& val) {
@@ -65,37 +65,37 @@ class TreeMap {
     bool has_value() const { return value_.has_value(); }
 
     // ============= NODE STATE QUERIES =============
-    bool has_children() const { return !children_.empty(); }
+    bool has_children() const { return !children.empty(); }
 
-    size_t child_count() const { return children_.size(); }
+    size_t child_count() const { return children.size(); }
 
     // Legacy compatibility (can now both be true!)
     bool is_leaf() const { return value_.has_value(); }
 
-    bool is_branch() const { return !children_.empty(); }
+    bool is_branch() const { return !children.empty(); }
 
-    bool has_branches() const { return !children_.empty(); }
+    bool has_branches() const { return !children.empty(); }
 
     // ============= ITERATION =============
-    auto begin() { return children_.begin(); }
-    auto end() { return children_.end(); }
-    auto begin() const { return children_.begin(); }
-    auto end() const { return children_.end(); }
+    auto begin() { return children.begin(); }
+    auto end() { return children.end(); }
+    auto begin() const { return children.begin(); }
+    auto end() const { return children.end(); }
 
     // ============= UTILITIES =============
-    void print(const std::string& prefix = "", const K& key = K {}, bool isRoot = true) const {
-        if (!isRoot) {
-            const std::string keyStr = Serializer::serialize(key).dump();
-            std::cout << prefix << "Key: " << keyStr;
+    void print(const std::string& prefix = "", const K& key = K {}, bool is_root = true) const {
+        if (!is_root) {
+            const std::string key_str = Serializer::serialize(key).dump();
+            std::cout << prefix << "Key: " << key_str;
             if (value_.has_value()) {
-                const std::string valueStr = Serializer::serialize(*value_).dump();
-                std::cout << " -> Value: " << valueStr;
+                const std::string value_str = Serializer::serialize(*value_).dump();
+                std::cout << " -> Value: " << value_str;
             }
             std::cout << '\n';
         }
 
-        for (const auto& [childKey, childNode] : children_) {
-            childNode.print(prefix + "  ", childKey, false);
+        for (const auto& [child_key, child_node] : children) {
+            child_node.print(prefix + "  ", child_key, false);
         }
     }
 };
