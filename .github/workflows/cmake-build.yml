@@ -16,36 +16,41 @@ jobs:
           - Release-Game
     runs-on: windows-latest
     env:
-      SCCACHE_GHA_ENABLED: "true"
-      # Normalize paths for cache hits across runners
-      SCCACHE_BASEDIRS: ${{ github.workspace }}
+      # CMake build directory
+      BUILD_DIR: C:/cmake_cache/${{ github.repository }}
     steps:
+      # Fetch all the repo files
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           submodules: recursive
 
-      - name: Setup sccache
-        uses: mozilla-actions/sccache-action@v0.0.9
+      # Setup the builder cache (cache cmake output directory)
+      - name: Builder cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.BUILD_DIR }}
+          key: cmake-cache
 
+      # Restore the file timestamps for incremental builds
       - name: Restore timestamps
         uses: chetan/git-restore-mtime-action@v2
       
-      - name: Setup MSVC
+      # Setup MSVC compiler
+      - name: Setup compiler
         uses: ilammy/msvc-dev-cmd@v1
       
-      - name: Configure with preset
+      # Configure CMake project
+      - name: Configure project
         shell: pwsh
         run: |
-          cmake --preset ${{ matrix.preset }} -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache -DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT=Embedded
+          cmake -B ${{ env.BUILD_DIR }} --preset ${{ matrix.preset }}
       
-      - name: Build with preset
+      # Build CMake project
+      - name: Build project
         shell: pwsh
         run: |
-          cmake --build --preset ${{ matrix.preset }} -j
-      - name: Run sccache stat for check
-        shell: bash
-        run: ${SCCACHE_PATH} --show-stats
+          cmake --build ${{ env.BUILD_DIR }} --preset ${{ matrix.preset }} -j
         
   cpp-linter-windows:
     name: "Run cpp-linter (Windows)"
