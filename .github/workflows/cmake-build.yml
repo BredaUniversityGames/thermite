@@ -44,13 +44,13 @@ jobs:
       - name: Configure project
         shell: pwsh
         run: |
-          cmake -B ${{ env.BUILD_DIR }} --preset ${{ matrix.preset }}
+          cmake -B ${{ env.BUILD_DIR }} -S ${{ github.workspace }} --preset ${{ matrix.preset }}
       
       # Build CMake project
       - name: Build project
         shell: pwsh
         run: |
-          cmake --build ${{ env.BUILD_DIR }} --preset ${{ matrix.preset }} -j
+          cmake --build ${{ env.BUILD_DIR }} -S ${{ github.workspace }} --preset ${{ matrix.preset }} -j
         
   cpp-linter-windows:
     name: "Run cpp-linter (Windows)"
