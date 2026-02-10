@@ -38,7 +38,7 @@ class MainScene : public tmt::Scene<MainScene> {
 std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs& args) {
     // clang-format off
     tmt::ApplicationSpecs specs {
-        .name = "Render Test",
+        .name = "Render Test Project",
         .command_args = args,
         .log_file = "render_test_logs.txt"
     };
