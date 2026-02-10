@@ -85,13 +85,42 @@ bool draw_face(const FaceData& info, const Transform& transform, const glm::vec3
     const glm::vec3 camera_position = engine.renderer.get_debug_transform().get_world_position();
     if (glm::dot(info.world_normal, camera_position - info.face_center) >= 0.0f) return false;
 
-    glm::vec3 box_half_extent = half_extent;
+    glm::vec3 box_half_extent = half_extent * transform.get_world_scale();
     box_half_extent[info.normal_index] = 0.0f;
 
+    // Set up the local points of the face.
+    glm::vec3 p0;
+    const int32_t i0 = info.normal_index;
+    const int32_t i1 = (i0 + 1) % 3;
+    const int32_t i2 = 3 - i0 - i1;
+    p0[i0] = half_extent[i0] * info.normal_sign;
+    p0[i1] = half_extent[i1];
+    p0[i2] = half_extent[i2];
+
+    glm::vec3 p1 = p0;
+    p1[i1] *= -1.0f;
+
+    glm::vec3 p2 = p1;
+    p2[i2] *= -1.0f;
+
+    glm::vec3 p3 = p2;
+    p3[i1] *= -1.0f;
+
+    // Convert the local points to world space.
+    const glm::mat4& world_matrix = transform.get_world_matrix();
+    p0 = world_matrix * glm::vec4 {p0, 1.0f};
+    p1 = world_matrix * glm::vec4 {p1, 1.0f};
+    p2 = world_matrix * glm::vec4 {p2, 1.0f};
+    p3 = world_matrix * glm::vec4 {p3, 1.0f};
+
+    // Draw the lines between the points to make the grid face.
     engine.polyline.use_line_width(2.0f, true);
     engine.polyline.use_color(glm::vec4 {0.8f, 0.8f, 0.8f, 1.0f});
 
-    engine.polyline.draw_obb(info.face_center, box_half_extent, transform.get_world_rotation());
+    engine.polyline.draw_line(p0, p1);
+    engine.polyline.draw_line(p1, p2);
+    engine.polyline.draw_line(p2, p3);
+    engine.polyline.draw_line(p3, p0);
 
     return true;
 }
