@@ -85,7 +85,6 @@ std::vector<char> VengiParser::zlib_decompress_vengi_file(std::vector<char>& com
 }
 
 void VengiParser::compute_parent_transform_offsets(vengi::Node& node, const glm::vec3& parent_offset) {
-
     glm::mat4& local = node.transform;
     local[3][0] -= parent_offset.x;
     local[3][1] -= parent_offset.y;
