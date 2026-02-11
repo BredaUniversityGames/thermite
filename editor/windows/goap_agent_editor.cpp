@@ -33,9 +33,9 @@ void GoapAgentEditor::on_editor_start() {
         return;
     }
 
-    auto& types = goap->agent_types();
+    // auto& types = goap->agent_types();
 
-    types.load();
+    // types.load();
 }
 
 void GoapAgentEditor::on_editor_end() {
@@ -51,9 +51,9 @@ void GoapAgentEditor::on_editor_end() {
         return;
     }
 
-    auto& types = goap->agent_types();
+    // auto& types = goap->agent_types();
 
-    types.load();
+    // types.save();
 }
 
 // Editor-local state used for selection and new agent type creation
@@ -78,6 +78,12 @@ void GoapAgentEditor::display() {
     auto& types = goap->agent_types();
 
     ImGui::Begin("GOAP Agents");
+
+    // --- Save button ---
+    if (ImGui::Button("Save Agent Types")) {
+        types.save();
+        Log::info("GOAP agent types saved");
+    }
 
     // --- Left panel: Agent type list ---
     ImGui::BeginChild("Types", ImVec2(200, 0), true);
@@ -226,13 +232,13 @@ void GoapAgentEditor::draw_world_state_section(GoapAgentType& type) {
 
     // Iterate through all existing facts in the agent type
     for (auto it = type.default_world_state.begin(); it != type.default_world_state.end();) {
-        const std::string& name = FactRegistry::instance().get_name(it->first);  // Get fact name
-
+        const std::string& name = it->first;  // The key is now a string directly
         bool v = it->second.bool_val;
-        ImGui::PushID(it->first);
+
+        ImGui::PushID(name.c_str());  // Use string as ImGui ID
 
         // Display a checkbox for the fact
-        if (ImGui::Checkbox(name.c_str(), &v)) it->second.bool_val = v;  // Update value if changed
+        if (ImGui::Checkbox(name.c_str(), &v)) it->second.bool_val = v;
 
         ImGui::SameLine();
 
@@ -252,11 +258,11 @@ void GoapAgentEditor::draw_world_state_section(GoapAgentType& type) {
     ImGui::SameLine();
     if (ImGui::Button("Add")) {
         if (newFact[0]) {
-            uint32_t id = FactRegistry::instance().register_fact(newFact);  // Create new fact in registry
-            type.default_world_state[id] = FactValue(true);                 // Add to agent type with default true
-            newFact[0] = '\0';                                              // Clear input buffer
+            type.default_world_state[newFact] = FactValue(true);  // key is now string
+            newFact[0] = '\0';                                    // Clear input buffer
         }
     }
 }
+
 
 }  // namespace tmt
