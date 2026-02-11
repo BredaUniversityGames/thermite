@@ -7,6 +7,8 @@
 #include "world_state.hpp"
 
 #include "engine/core/reflection.hpp"
+#include "engine/core/io.hpp"
+#include "engine/core/logger.hpp"
 
 namespace tmt {
 
@@ -78,18 +80,26 @@ class GoapAgentTypeRegistry {
     std::unordered_map<std::string, GoapAgentType> types;
 
     void load() {
-        std::ifstream f("goap_agents.json");
-        if (!f.is_open()) return;
+        const std::string file_data = IO::read_text_file({IO::Location::PROJECT, "ai/goap_agents.json"});
+        if (file_data.empty()) {
+            tmt::Log::warn(tmt::Log::Scope::ENGINE, "No GOAP agent types found at goap_agents.json, starting with empty registry.");
+            return;
+        }
 
-        JsonReflect::json j;
-        f >> j;
+        tmt::json j {};
+        try {
+            j = tmt::json::parse(file_data);
+        } catch (const std::exception& e) {
+            tmt::Log::error(tmt::Log::Scope::ENGINE, "Failed to parse goap_agents.json: {}", e.what());
+            return;
+        }
+
         Serializer::deserialize(j, *this);
     }
 
     void save() const {
         tmt::json j = Serializer::serialize(*this);
-        std::ofstream f("goap_agents.json");
-        f << j.dump(2);
+        IO::write_text_file({IO::Location::PROJECT, "ai/goap_agents.json"}, j.dump(4));
     }
 
    private:
@@ -97,5 +107,5 @@ class GoapAgentTypeRegistry {
 
 }  // namespace tmt
 
-TMT_OBJECT(tmt::GoapAgentType, (id), (action_ids), (goal_ids), (default_world_state));
+TMT_OBJECT(tmt::GoapAgentType, (id, action_ids, goal_ids, default_world_state));
 TMT_OBJECT(tmt::GoapAgentTypeRegistry, (types));

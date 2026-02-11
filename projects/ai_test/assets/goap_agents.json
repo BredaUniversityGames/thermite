@@ -1,0 +1,19 @@
+{
+    "types": {
+        "test": {
+            "id": "test",
+            "action_ids": [
+                "a_ChasePlayer",
+                "a_KillPlayer"
+            ],
+            "goal_ids": [
+                "g_KillPlayer"
+            ],
+            "default_world_state": {
+                "test": {
+                    "value_type": "BOOL_TYPE"
+                }
+            }
+        }
+    }
+}
