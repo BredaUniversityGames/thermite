@@ -10,7 +10,9 @@ namespace tmt {
 
 using Entity = entt::entity;
 
-struct Disable {};
+struct Disable {
+    static constexpr bool disabled = true;
+};
 
 template <typename R, typename T>
 concept TypeRange = std::ranges::range<R> && std::same_as<std::ranges::range_value_t<R>, T>;
@@ -27,4 +29,5 @@ struct EntityHelper {
 
 }  // namespace tmt
 
+TMT_COMPONENT(tmt::Disable, "Disable", (disabled));
 FMT_LOGGING(tmt::Entity, "{}", tmt::EntityHelper::to_string(obj));
