@@ -779,81 +779,6 @@ inline glm::mat3 calculate_inertia_tensor(VoxelBody& vb) {
 void Physics::initialize_voxel_body(VoxelBody& vb) {
     TMT_ZONE_SCOPED
 
-    //// Calculate mass and inertia
-    //size_t filled_counter = 0;
-    //glm::vec3 sum = {};
-    //const glm::vec3 size = (glm::vec3)vb.resource->size * UNITS_PER_VOXEL;
-    //vb.width = size.x;
-    //vb.height = size.y;
-    //vb.depth = size.z;
-
-    //const glm::vec3 half_scale = glm::vec3(vb.width, vb.height, vb.depth) * 0.5f;
-
-    //const auto& voxels = vb.resource;
-
-    //for (size_t z = 0; z < voxels->size.z; z++) {
-    //    for (size_t y = 0; y < voxels->size.y; y++) {
-    //        for (size_t x = 0; x < voxels->size.x; x++) {
-    //            if (voxels->blas.get()->get_voxel((uint32_t)x, (uint32_t)y, (uint32_t)z) == nullptr) continue;
-    //            // if (vb.voxels.get_voxel(x, y, z).type == PhysicsVoxelType::EMPTY) continue;
-
-    //            filled_counter++;
-
-    //            const glm::vec3 local_pos = glm::vec3(((float)x + 0.5f) * UNITS_PER_VOXEL, ((float)y + 0.5f) * UNITS_PER_VOXEL, ((float)z + 0.5f) * UNITS_PER_VOXEL);
-    //            sum += local_pos - half_scale;
-    //        }
-    //    }
-    //}
-
-    //vb.com_local_offset = sum / (float)filled_counter;
-    //const float voxel_mass = std::powf(UNITS_PER_VOXEL, 3) * vb.density;
-    //vb.inv_mass = 1.0f / (voxel_mass * filled_counter);
-
-    //glm::mat3 inertia_tensor(0.0f);
-    //for (size_t z = 0; z < voxels->size.z; z++) {
-    //    for (size_t y = 0; y < voxels->size.y; y++) {
-    //        for (size_t x = 0; x < voxels->size.x; x++) {
-    //            if (voxels->blas.get()->get_voxel((uint32_t)x, (uint32_t)y, (uint32_t)z) == nullptr) continue;
-
-    //            const glm::vec3 pos = glm::vec3(x, y, z) * UNITS_PER_VOXEL - half_scale + VOXEL_SIZE_HALF;
-    //            const glm::vec3 r = pos - vb.com_local_offset;
-    //            float r2 = glm::dot(r, r);
-
-    //            inertia_tensor[0][0] += voxel_mass * (r2 - r.x * r.x);
-    //            inertia_tensor[1][1] += voxel_mass * (r2 - r.y * r.y);
-    //            inertia_tensor[2][2] += voxel_mass * (r2 - r.z * r.z);
-    //            inertia_tensor[0][1] -= voxel_mass * r.x * r.y;
-    //            inertia_tensor[0][2] -= voxel_mass * r.x * r.z;
-    //            inertia_tensor[1][2] -= voxel_mass * r.y * r.z;
-    //        }
-    //    }
-    //}
-
-    //inertia_tensor[1][0] = inertia_tensor[0][1];
-    //inertia_tensor[2][0] = inertia_tensor[0][2];
-    //inertia_tensor[2][1] = inertia_tensor[1][2];
-
-    //if (inertia_tensor[0][0] == 0) {
-    //    inertia_tensor[0][0] = 1;
-    //}
-
-    //if (inertia_tensor[1][1] == 0) {
-    //    inertia_tensor[1][1] = 1;
-    //}
-
-    //if (inertia_tensor[2][2] == 0) {
-    //    inertia_tensor[2][2] = 1;
-    //}
-
-    //vb.inv_inertia = glm::inverse(inertia_tensor);
-    //vb.center_of_mass = vb.position + (vb.rotation * vb.com_local_offset);
-
-    //engine.polyline.use_depth_testing(false);
-    //engine.polyline.use_line_width(0.5f);
-    //engine.polyline.use_color(1.0f, 0.0f, 0.0f);
-    //engine.polyline.draw_circle(vb.center_of_mass, 0.2f, 32u, 10000.0f);
-
-
     // First calculate mass and COM
     calculate_center_of_mass(vb);
 
@@ -887,6 +812,78 @@ void Physics::set_rotation(VoxelBody& vb, const glm::quat& rotation) {
     vb.center_of_mass = vb.position + (vb.rotation * vb.com_local_offset);
 }
 
-void Physics::recalculate_physics_data(VoxelBody& vb) {}
+void Physics::recalculate_physics_data(VoxelBody& vb) { 
+    initialize_voxel_body(vb);
+    recalculate_surface_normals(vb);
+}
+
+// Count number of set bits in variable range [0..width]
+inline uint32_t popcnt_var64(uint64_t mask, uint32_t width) { return (uint32_t)__popcnt64(mask & ((1ull << width) - 1)); }
+
+void Physics::recalculate_surface_normals(VoxelBody& vb) {
+    struct StackEntry {
+        uint32_t node_idx;
+        uint32_t child_iter;
+    };
+
+    // Get tree and see if there are any voxels
+    auto* tree = vb.resource.resource->blas.get();
+    if (tree->nodes[0].child_mask == 0u) return;
+
+    int voxel_count = 0;
+
+    // Create stack and root node
+    tmt::Svt64Node* nodes = tree->nodes;
+    StackEntry stack[7];
+    int32_t stack_ptr = 0;
+    stack[0] = {0, 0};
+
+    while (stack_ptr >= 0) {
+        // Get current stack entry
+        StackEntry& entry = stack[stack_ptr];
+
+        // If all children have been tested, pop stack and continue
+        if (entry.child_iter >= 64u) {
+            stack_ptr--;
+            continue;
+        }
+
+        // Get current node and child mask from stack entry
+        Svt64Node& node = nodes[entry.node_idx];
+        uint64_t remaining = node.child_mask >> entry.child_iter;
+        if (remaining == 0u) {
+            stack_ptr--;
+            continue;
+        }
+
+        // Get index of next set bit and update child iter
+        uint32_t next_bit = std::countr_zero(remaining);
+        uint32_t child_pos = entry.child_iter + next_bit;
+        entry.child_iter = child_pos + 1;
+
+        uint32_t level = (tree->depth - 1u) - stack_ptr;
+
+        // If leaf node, child_pos is a voxel
+        if (level == 0u) {
+            // Increment voxel count
+            voxel_count++;
+            
+            // For all cardinal directions
+            for (size_t i = 0; i < 6; i++) {
+
+            }
+        } else {
+            // Get child node index
+            uint32_t child_ptr = popcnt_var64(node.child_mask, child_pos);
+            uint32_t child_idx = node.abs_ptr() + child_ptr;
+
+            // Push child node to stack
+            stack_ptr++;
+            stack[stack_ptr] = {child_idx, 0};
+        }
+    }
+
+    printf("solid count: %d", voxel_count);
+}
 
 }  // namespace tmt

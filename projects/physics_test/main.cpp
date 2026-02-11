@@ -56,7 +56,7 @@ void Game::on_start() {
         transform.set_world_position(glm::vec3(0.0f, 0.25f, -5.0f));
     }
 
-    auto voxel_file_cube = tmt::engine.resources.load_resource<tmt::VoxelScene>({tmt::IO::Location::PROJECT, "box-10.vengi"});
+    auto voxel_file_cube = tmt::engine.resources.load_resource<tmt::VoxelScene>({tmt::IO::Location::PROJECT, "cube16.vengi"});
     voxel_volume_cube = tmt::engine.resources.copy_resource<tmt::VoxelVolume>(voxel_file_cube);
 
     auto voxel_file_piece = tmt::engine.resources.load_resource<tmt::VoxelScene>({tmt::IO::Location::PROJECT, "piece_1.vengi"});
@@ -87,6 +87,7 @@ void Game::on_start() {
         auto& vb = tmt::engine.ecs.add_component<tmt::VoxelBody>(entity);
         vb.resource = voxel_volume_cube;
         vb.gravity = 0.0f;
+        tmt::Physics::recalculate_physics_data(vb);
     }
 
     // for (size_t z = 0; z < 5; z++) {

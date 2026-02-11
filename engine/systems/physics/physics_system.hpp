@@ -43,6 +43,8 @@ class Physics : public ISystem {
         float half_extent_b, Collision& coll
     );
 
+    static void recalculate_surface_normals(VoxelBody& vb);
+
    public:
     // Static utility functions
     static void initialize_voxel_body(VoxelBody& vb);
@@ -52,6 +54,7 @@ class Physics : public ISystem {
     static void set_position(VoxelBody& vb, const glm::vec3& position);
     static void set_rotation(VoxelBody& vb, const glm::quat& rotation);
     static void recalculate_physics_data(VoxelBody& vb);
+
 };
 
 }  // namespace tmt
