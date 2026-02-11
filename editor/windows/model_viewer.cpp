@@ -295,7 +295,8 @@ void ModelViewer::display() {
 
         editor.gizmo.manip(window_pos.x, window_pos.y, size.x, size.y, { &selected_entity, &selected_entity + 1 });
 
-        if (!ImGuizmo::IsOver() && engine.input.is_mouse_button_just_pressed(MouseButton::LEFT)) {
+        const bool can_select = (ImGui::IsWindowHovered() && !ImGuizmo::IsOver());
+        if (can_select && engine.input.is_mouse_button_just_pressed(MouseButton::LEFT)) {
             const Ray mouse_ray = engine.renderer.render_view.pixel_ray(mouse_position);
             const Hit hit = engine.renderer.trace_ray(mouse_ray);
 
