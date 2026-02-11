@@ -5,13 +5,16 @@
 
 #include "engine/core/ecs.hpp"
 #include "engine/systems/gameplay/types.hpp"
-#include "engine/systems/gameplay/game_component.hpp"
 #include "engine/engine.hpp"
 #include "engine/core/logger.hpp"
 #include "engine/systems/gameplay/game_component_registry.hpp"
 #include "engine/core/reflection.hpp"
 
 namespace tmt {
+
+/* Forward declare */
+class IGameComponent;
+
 /* Attached to an entity */
 class ComponentCollection {
    public:
@@ -26,7 +29,7 @@ class ComponentCollection {
 
     /* Compile time */
     template <typename T>
-        requires std::is_base_of_v<IGameComponent, T>
+    requires std::is_base_of_v<IGameComponent, T>
     T& add_component(Entity entity) {
         const ComponentIndex type_id = typeid(T);
         GameComponentRegistry::is_registered_or_throw(type_id);
@@ -36,7 +39,7 @@ class ComponentCollection {
     }
 
     template <typename T>
-        requires std::is_base_of_v<IGameComponent, T>
+    requires std::is_base_of_v<IGameComponent, T>
     T& get_component() {
         const ComponentIndex type_id = typeid(T);
         GameComponentRegistry::is_registered_or_throw(type_id);
@@ -45,7 +48,7 @@ class ComponentCollection {
     }
 
     template <typename T>
-        requires std::is_base_of_v<IGameComponent, T>
+    requires std::is_base_of_v<IGameComponent, T>
     const T& get_component() const {
         const ComponentIndex type_id = typeid(T);
         GameComponentRegistry::is_registered_or_throw(type_id);
@@ -54,7 +57,7 @@ class ComponentCollection {
     }
 
     template <typename T>
-        requires std::is_base_of_v<IGameComponent, T>
+    requires std::is_base_of_v<IGameComponent, T>
     void remove_component() {
         const ComponentIndex type_id = typeid(T);
         GameComponentRegistry::is_registered_or_throw(type_id);
@@ -63,7 +66,7 @@ class ComponentCollection {
     }
 
     template <typename T>
-        requires std::is_base_of_v<IGameComponent, T>
+    requires std::is_base_of_v<IGameComponent, T>
     bool has_component() const {
         const ComponentIndex type_id = typeid(T);
         GameComponentRegistry::is_registered_or_throw(type_id);
@@ -72,46 +75,17 @@ class ComponentCollection {
     }
 
     /* Runtime */
-    IGameComponent& add_component(const ComponentIndex& type_id, Entity entity) {
-        GameComponentRegistry::is_registered_or_throw(type_id);
+    IGameComponent& add_component(const ComponentIndex& type_id, Entity entity);
 
-        if (has_component(type_id)) {
-            Log::error(Log::Scope::ENGINE, "[ComponentCollection] add_component: Component already exists on entity.");
-            throw std::runtime_error("[ComponentCollection] add_component: Component already exists on entity.");
-        }
+    IGameComponent& get_component(const ComponentIndex& type_id);
 
-        auto info = engine.component_registry.get_component_info(type_id);
-        components[type_id] = info.factory.create(entity);
-        return *components[type_id];
-    }
+    const IGameComponent& get_component(const ComponentIndex& type_id) const;
 
-    IGameComponent& get_component(const ComponentIndex& type_id) {
-        GameComponentRegistry::is_registered_or_throw(type_id);
-        return *components.at(type_id);
-    }
+    IGameComponent& add_or_get_component(const ComponentIndex& type_id, Entity entity);
 
-    const IGameComponent& get_component(const ComponentIndex& type_id) const {
-        GameComponentRegistry::is_registered_or_throw(type_id);
-        return *components.at(type_id);
-    }
+    void remove_component(const ComponentIndex& type_id);
 
-    IGameComponent& add_or_get_component(const ComponentIndex& type_id, Entity entity) {
-        GameComponentRegistry::is_registered_or_throw(type_id);
-        if (!has_component(type_id)) {
-            return add_component(type_id, entity);
-        }
-        return get_component(type_id);
-    }
-
-    void remove_component(const ComponentIndex& type_id) {
-        GameComponentRegistry::is_registered_or_throw(type_id);
-        components.erase(type_id);
-    }
-
-    bool has_component(const ComponentIndex& type_id) const {
-        GameComponentRegistry::is_registered_or_throw(type_id);
-        return components.contains(type_id);
-    }
+    bool has_component(const ComponentIndex& type_id) const;
 
     const std::unordered_map<ComponentIndex, std::unique_ptr<IGameComponent>>& get_all_components() const { return components; }
 
@@ -119,12 +93,14 @@ class ComponentCollection {
     BEFRIEND_VISITABLE();
     std::unordered_map<ComponentIndex, std::unique_ptr<IGameComponent>> components;
 };
+
 }  // namespace tmt
 
 TMT_COMPONENT(tmt::ComponentCollection, "ComponentCollection", (components));
 
 /* Specialization for IGameComponent derived types */
 namespace tmt {
+
 template <typename T>
 struct EcsComponentTraits<T, std::enable_if_t<std::is_base_of_v<IGameComponent, T>>> {
     static T& add(Registry& registry, Entity entity) {
@@ -187,4 +163,5 @@ struct EcsComponentTraits<T, std::enable_if_t<std::is_base_of_v<IGameComponent, 
         return nullptr;
     }
 };
+
 }  // namespace tmt
