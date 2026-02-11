@@ -22,14 +22,14 @@ ResourceRef<VoxelVolume> get_node_model(const UUID& uuid) {
 
 }  // namespace
 
-void VoxelEditDiff::add_change(const glm::uvec3& coord, const MaterialIndex* old_material, const MaterialIndex* new_material) {
-    const bool old_is_empty = (old_material == nullptr);
-    before_change.positions.emplace_back(coord.x, coord.y, coord.z, old_is_empty);
-    if (!old_is_empty) before_change.indices.push_back(*old_material);
+void VoxelEditDiff::add_change(const glm::uvec3& coord, const MaterialIndex* before_material, const MaterialIndex* material_after) {
+    const bool is_empty_before = (before_material == nullptr);
+    before_change.positions.emplace_back(coord.x, coord.y, coord.z, is_empty_before);
+    if (!is_empty_before) before_change.indices.push_back(*before_material);
 
-    const bool new_is_empty = (new_material == nullptr);
-    after_change.positions.emplace_back(coord.x, coord.y, coord.z, new_is_empty);
-    if (!new_is_empty) after_change.indices.push_back(*new_material);
+    const bool is_empty_after = (material_after == nullptr);
+    after_change.positions.emplace_back(coord.x, coord.y, coord.z, is_empty_after);
+    if (!is_empty_after) after_change.indices.push_back(*material_after);
 }
 
 void VoxelEditDiff::commit(const std::string& message) {

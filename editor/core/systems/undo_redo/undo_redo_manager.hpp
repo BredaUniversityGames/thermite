@@ -14,15 +14,14 @@ class IUndoRedo {
 
     virtual void inspect() = 0;
 
-   protected:
     template <typename Derived>
-    void send_to_manager(Derived&& action, const std::string& message) {
+    static void send_to_manager(Derived&& action, const std::string& message) {
         auto shared_action = std::make_shared<std::decay_t<Derived>>(std::forward<Derived>(action));
         get_manager().commit_action(shared_action, message);
-    };
+    }
 
    private:
-    UndoRedoManager& get_manager();
+    static UndoRedoManager& get_manager();
 };
 
 class UndoRedoCollection : public IUndoRedo {

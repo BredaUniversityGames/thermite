@@ -1,5 +1,6 @@
 #pragma once
 
+#include "editor.hpp"
 #include "editor/core/systems/undo_redo/undo_redo_manager.hpp"
 
 #include <engine/core/ecs.hpp>
@@ -12,7 +13,7 @@ class VoxelEditDiff : public IUndoRedo {
     VoxelEditDiff(const UUID& node_uuid) : node_uuid { node_uuid } {}
 
     // Add a change to a voxel, if voxel is/was empty, use `nullptr`.
-    void add_change(const glm::uvec3& coord, const MaterialIndex* old_material, const MaterialIndex* new_material = nullptr);
+    void add_change(const glm::uvec3& coord, const MaterialIndex* before_material, const MaterialIndex* material_after = nullptr);
     void commit(const std::string& message);
 
     // Inherited via IUndoRedo
