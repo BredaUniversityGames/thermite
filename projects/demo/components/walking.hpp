@@ -14,9 +14,12 @@ class Walking : public tmt::GameComponent<Walking> {
 
     tmt::Entity walkable_asteroid = entt::null;
     glm::vec3 velocity = glm::vec3(0, 0, 0);
+    glm::quat rotation = glm::quat(1, 0, 0, 0);
+    float rotation_speed = 2.5f;
+    int ray_count = 100;   
     float walk_speed = 5.0f;
     float attack_range = 20.0f;
     float max_chase_distance = 100.0f;
 };
 
-TMT_OBJECT(Walking, (walkable_asteroid, walk_speed, attack_range, max_chase_distance));
+TMT_OBJECT(Walking, (walkable_asteroid, rotation_speed, ray_count, walk_speed, attack_range, max_chase_distance));
