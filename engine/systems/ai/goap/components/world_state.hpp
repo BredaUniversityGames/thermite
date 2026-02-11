@@ -162,4 +162,4 @@ struct WorldState {
 }  // namespace tmt
 
 // TMT_OBJECT(tmt::FactValue, (value_type));
-TMT_OBJECT(tmt::FactValue, (value_type), (bool_val), (int_val), (float_val));
+TMT_OBJECT(tmt::FactValue, (value_type, bool_val, int_val, float_val));
