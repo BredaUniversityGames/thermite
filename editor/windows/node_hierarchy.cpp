@@ -282,7 +282,7 @@ std::vector<char> NodeHierarchy::encode_voxel_scene() const {
     return encode_svh(root_nodes);
 }
 
-void NodeHierarchy::recurse_display_node(const Entity entity, const Name& name, Transform& transform) {
+void NodeHierarchy::recurse_display_node(const Entity entity, const Name& name, const Transform& transform) {
     ImGui::PushID(static_cast<int>(entity));
 
     const std::set<Entity>& children = transform.get_children();
@@ -304,7 +304,6 @@ void NodeHierarchy::recurse_display_node(const Entity entity, const Name& name, 
     if (ImGui::IsItemClicked(ImGuiMouseButton_Left) || popup_clicked_open) selected_entity = entity;
     if (tree_open) {
         for (const Entity child : children) {
-            assert(engine.ecs.valid(child));
             auto&& [child_name, child_transform] = engine.ecs.get_component<Name, Transform>(child);
             recurse_display_node(child, child_name, child_transform);
         }

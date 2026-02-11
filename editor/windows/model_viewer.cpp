@@ -111,10 +111,10 @@ bool draw_face(const FaceData& info, const Transform& transform, const glm::vec3
 
     // Convert the local points to world space.
     const glm::mat4& world_matrix = transform.get_world_matrix();
-    p0 = world_matrix * glm::vec4 {p0, 1.0f};
-    p1 = world_matrix * glm::vec4 {p1, 1.0f};
-    p2 = world_matrix * glm::vec4 {p2, 1.0f};
-    p3 = world_matrix * glm::vec4 {p3, 1.0f};
+    p0 = world_matrix * glm::vec4 { p0, 1.0f };
+    p1 = world_matrix * glm::vec4 { p1, 1.0f };
+    p2 = world_matrix * glm::vec4 { p2, 1.0f };
+    p3 = world_matrix * glm::vec4 { p3, 1.0f };
 
     // Draw the lines between the points to make the grid face.
     engine.polyline.use_line_width(2.0f, true);
@@ -135,7 +135,7 @@ void draw_selected_face(const FaceData& info, const glm::vec3& half_extent, cons
     min = transform.get_world_matrix() * glm::vec4 { min, 1.0f };
 
     engine.polyline.use_line_width(4.0f, false);
-    engine.polyline.use_color(glm::vec4 {0.8f, 0.8f, 0.8f, 0.4f});
+    engine.polyline.use_color(glm::vec4 { 0.8f, 0.8f, 0.8f, 0.4f });
 
     const glm::vec3 scaled_right = transform.get_right() * transform.get_world_scale();
     const glm::vec3 scaled_up = transform.get_up() * transform.get_world_scale();
@@ -251,7 +251,7 @@ void modify_voxels(const Brush::Mode brush_mode, const ResourceRef<VoxelVolume>&
             const Material* picked_material = model->blas->get_voxel(hit.coord.x, hit.coord.y, hit.coord.z);
             if (picked_material == nullptr) break;
 
-            editor.windows[Editor::Mode::VOXEL].get<Palette>().set_selected_material_index(static_cast<MaterialIndex>(picked_material - model->blas->palette.entries));
+            editor.windows[Editor::Mode::VOXEL].get<Palette>().set_selected_material_index(model->blas->palette.material_to_index(picked_material));
             break;
         }
 
@@ -262,14 +262,30 @@ void modify_voxels(const Brush::Mode brush_mode, const ResourceRef<VoxelVolume>&
 
             model->blas->set_voxel(hit.coord.x, hit.coord.y, hit.coord.z, material_index);
             model->set_dirty();
+
+            VoxelEditDiff diff { model->uuid };
+
+            const Material* voxel_material = model->blas->get_voxel(hit.coord.x, hit.coord.y, hit.coord.z);
+            const MaterialIndex voxel_material_index = model->blas->palette.material_to_index(voxel_material);
+            diff.add_change(hit.coord, nullptr, &voxel_material_index);
+
+            diff.commit("Remove Voxel");
             break;
         }
 
         case Brush::Mode::REMOVE: {
             if (!engine.input.is_mouse_button_just_pressed(MouseButton::LEFT)) break;
 
+            const Material* voxel_material = model->blas->get_voxel(hit.coord.x, hit.coord.y, hit.coord.z);
             model->blas->remove_voxel(hit.coord.x, hit.coord.y, hit.coord.z);
             model->set_dirty();
+
+            VoxelEditDiff diff { model->uuid };
+
+            const MaterialIndex voxel_material_index = model->blas->palette.material_to_index(voxel_material);
+            diff.add_change(hit.coord, &voxel_material_index);
+
+            diff.commit("Remove Voxel");
             break;
         }
 
@@ -303,7 +319,7 @@ void modify_voxels(const Brush::Mode brush_mode, const ResourceRef<VoxelVolume>&
                     for (uint32_t y = min.y; y <= max.y; y++) {
                         for (uint32_t z = min.z; z <= max.z; z++) {
                             const Material* voxel_material = model->blas->get_voxel(x, y, z);
-                            const MaterialIndex voxel_material_index = static_cast<MaterialIndex>(voxel_material - model->blas->palette.entries);
+                            const MaterialIndex voxel_material_index = model->blas->palette.material_to_index(voxel_material);
 
                             const bool is_voxel_empty = (voxel_material == nullptr);
                             if (!is_voxel_empty && voxel_material_index == material_index) continue;
@@ -316,7 +332,7 @@ void modify_voxels(const Brush::Mode brush_mode, const ResourceRef<VoxelVolume>&
                 }
                 model->set_dirty();
 
-                diff.commit("Create Voxel Area");
+                diff.commit("Add Voxel Area");
             }
 
             break;

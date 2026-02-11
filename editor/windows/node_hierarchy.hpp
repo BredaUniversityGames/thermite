@@ -32,7 +32,7 @@ class NodeHierarchy : public IWindow {
     std::vector<char> encode_voxel_scene() const;
 
    private:
-    void recurse_display_node(Entity entity, const Name& name, Transform& transform);
+    void recurse_display_node(Entity entity, const Name& name, const Transform& transform);
     void clear_hierarchy();
 
     void drop_hierarchy();
