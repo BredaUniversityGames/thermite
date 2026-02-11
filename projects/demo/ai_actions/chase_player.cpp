@@ -61,16 +61,6 @@ void ChasePlayer::on_tick(tmt::Entity walking_entity, float dt) {
         // Close enough to consider node reached, force path recompute
         nav_mesh.path.clear();
     }
-
-    auto nm_nodes = nav_mesh.nodes_mesh;
-    // Debug drawing
-    if (nav_mesh.path.size() > 1) {
-        for (size_t i = 0; i < nav_mesh.path.size() - 1; ++i) {
-            glm::vec3 from = (*nm_nodes)[nav_mesh.path[i]].world_pos;
-            glm::vec3 to = (*nm_nodes)[nav_mesh.path[i + 1]].world_pos;
-            tmt::engine.polyline.draw_line(from, to);
-        }
-    }
 }
 
 bool ChasePlayer::is_done(tmt::Entity) const { return false; }

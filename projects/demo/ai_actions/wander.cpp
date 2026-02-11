@@ -73,15 +73,6 @@ void Wander::on_tick(tmt::Entity walking_entity, float dt) {
         auto velocity = glm::vec3(*direction * walking.walk_speed);
         walking.velocity += velocity;
     }
-
-    // Debug drawing
-    if (nav_mesh.path.size() > 1) {
-        for (size_t i = 0; i < nav_mesh.path.size() - 1; ++i) {
-            const glm::vec3 from = (*nm_nodes)[nav_mesh.path[i]].world_pos;
-            const glm::vec3 to = (*nm_nodes)[nav_mesh.path[i + 1]].world_pos;
-            tmt::engine.polyline.draw_line(from, to);
-        }
-    }
 }
 
 bool Wander::is_done(tmt::Entity) const { return false; }
