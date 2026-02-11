@@ -22,9 +22,11 @@ struct GpuView {
     /* Origin of the view in world-space. */
     glm::vec4 origin {};
     /* Resolution of the view in pixels. */
-    glm::uvec2 resolution {1, 1};
+    glm::uvec2 resolution { 1, 1 };
     /* Index of the current frame. */
     glm::uint frame_index = 0u;
+    /* Delta Time in seconds. */
+    glm::float32 dt {};
 };
 
 /* Screen buffer resource. */

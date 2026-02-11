@@ -84,13 +84,14 @@ inline std::vector<T> reserved(const size_t count) {
 
 void SceneView::update_voxel_objects(RenderGraph& render_graph) {
     /* Capture all voxel renderers in the scene */
-    const entt::basic_group group = engine.ecs.get_registry().group<const VoxelRenderer>(entt::get<Transform>);
+    const entt::basic_group group = engine.ecs.get_registry().group<VoxelRenderer>(entt::get<Transform>);
 
     /* Allocate space for all voxel objects */
     const size_t count = std::min(group.size(), (size_t)MAX_VOXEL_OBJECTS);
     std::vector cpu_objects = reserved<VoxelObject>(count);
     std::vector gpu_objects = reserved<GpuVoxelObject>(count);
     entities = reserved<Entity>(count);
+    render_outlines = false;
 
     /* Iterate over all voxel renderers */
     for (auto&& [entity, renderer, transform] : group.each()) {
@@ -119,6 +120,9 @@ void SceneView::update_voxel_objects(RenderGraph& render_graph) {
         gpu_object.blas_handle = renderer.resource->blas_nodes.get_index();
         gpu_object.voxels_handle = renderer.resource->blas_voxels.get_index();
         gpu_object.palette_handle = renderer.resource->blas_palette.get_index();
+        gpu_object.object_flags = renderer.outlined ? 0b1u : 0b0u;
+        if (renderer.outlined) render_outlines = true;
+        renderer.outlined = false; /* Reset outlined flag */
 
         /* Save the entity id */
         entities.push_back(entity);
@@ -140,15 +144,26 @@ void SceneView::update_lights(RenderGraph& render_graph, const RenderView&) {
     /* Allocate space for all lights */
     const size_t count = std::min(group.size(), (size_t)MAX_LIGHTS);
     std::vector gpu_lights = reserved<UniversalLightDesc>(count);
+    GpuSceneView gpu_view {};
 
     /* Iterate over all lights */
     for (auto&& [entity, light, transform] : group.each()) {
+        const glm::vec3 scale = transform.get_world_scale();
+
+        /* We only support 1 sun light in the scene at once */
+        if (light.type == LightType::SUN_LIGHT) {
+            const SunLight sun_light = std::get<SunLight>(light.light);
+            gpu_view.sun_angle = glm::cos(sun_light.source_angle);
+            gpu_view.sun_dir = -transform.get_forward();
+            gpu_view.sun_luminance = light.calculate_luminance(scale);
+            continue;
+        }
+
         /* Create a new universal light descriptor */
         UniversalLightDesc& gpu_light = gpu_lights.emplace_back();
         gpu_light.light_type = light.type;
         gpu_light.origin = transform.get_world_position();
         gpu_light.direction = transform.get_forward();
-        const glm::vec3 scale = transform.get_world_scale();
         gpu_light.luminance = light.calculate_luminance(scale);
 
         switch (light.type) {
@@ -158,12 +173,6 @@ void SceneView::update_lights(RenderGraph& render_graph, const RenderView&) {
                 gpu_light.source_radius = sphere_light.source_radius;
                 gpu_light.attenuation_radius = sphere_light.attenuation_radius;
                 gpu_light.culling_radius = sphere_light.attenuation_radius;
-                break;
-            }
-            /* Sun area light */
-            case LightType::SUN_LIGHT: {
-                const SunLight sun_light = std::get<SunLight>(light.light);
-                gpu_light.source_radius = glm::cos(sun_light.source_angle);
                 break;
             }
             /* Spot light */
@@ -185,10 +194,12 @@ void SceneView::update_lights(RenderGraph& render_graph, const RenderView&) {
                 gpu_light.culling_radius = scale.z * 0.5f + tube_light.attenuation_distance;
                 break;
             }
+            default:
+                break;
         }
     }
 
-    GpuSceneView gpu_view {};
+    /* Set the light count on the GPU view */
     gpu_view.light_count = (uint32_t)gpu_lights.size();
 
     /* Upload the light buffers */

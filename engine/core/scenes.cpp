@@ -10,10 +10,23 @@
 #include "engine/tools/serializer/ecs.hpp"
 
 namespace tmt {
+
 void Scenes::update() {
     if (next_scene_type == NULL_SCENE) return;
 
     swap_scenes();
+}
+
+void Scenes::end() {
+    if (active_scene_type == NULL_SCENE) return;
+
+    OnPreUnloadScene::dispatch();
+    if (active_scene) active_scene->on_end();
+    active_scene_type = NULL_SCENE;
+    engine.ecs.clear();
+    OnSceneEnd::dispatch();
+    active_scene.reset();
+    next_scene_type = NULL_SCENE;
 }
 
 void Scenes::swap_scenes() {
@@ -116,7 +129,9 @@ void Scenes::load_scene(const SceneIndex& type_id) {
     swap_scenes();
 }
 
-const SceneInfo& Scenes::get_active_scene_info() const { return get_scene_info(active_scene_type); }
+const SceneInfo& Scenes::get_active_scene_info() const {
+    return get_scene_info(active_scene_type);
+}
 
 const SceneInfo& Scenes::get_scene_info(const SceneIndex& type_index) const {
     if (registered_scenes.contains(type_index) == false) {

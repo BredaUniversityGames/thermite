@@ -50,7 +50,9 @@ void Goap::on_fixed_update(const FrameData& time) {
     }
 }
 
-void Goap::on_end() { Log::info("Goap on_end"); }
+void Goap::on_end() {
+    Log::info("Goap on_end");
+}
 
 // ------------------------------------------------------
 // Main per-agent update

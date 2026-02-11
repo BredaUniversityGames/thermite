@@ -1,11 +1,13 @@
 #pragma once
 #include <entt/entt.hpp>
+#include <set>
 #include <string>
 #include <ranges>
 #include "engine/tools/fmt/helper.hpp"
 #include "engine/tools/uuid.hpp"
 
 namespace tmt {
+
 using Entity = entt::entity;
 
 template <typename R, typename T>
@@ -17,9 +19,10 @@ struct EntityHelper {
     static inline bool is_valid(Entity entity) { return entity != entt::null; }
 
     template <typename R>
-        requires TypeRange<R, Entity>
+    requires TypeRange<R, Entity>
     static inline std::set<Entity> upper_parents(const R& container);
 };
+
 }  // namespace tmt
 
 FMT_LOGGING(tmt::Entity, "{}", tmt::EntityHelper::to_string(obj));
