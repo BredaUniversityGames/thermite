@@ -43,7 +43,7 @@ void Hierarchy::display() {
     top_bar();
     render_hierarchy();
     context_menu(entt::null);
-    
+
     file_drag_drop(entt::null);
 
     ImGui::PopStyleVar();
@@ -341,7 +341,7 @@ bool Hierarchy::display_entity(const HierarchyState& state) {
         ImGuiStorage* storage = ImGui::GetStateStorage();
         storage->SetBool(tree_node_id, true);
 
-        if(contains) force_open_entities.erase(state.entity);
+        if (contains) force_open_entities.erase(state.entity);
     }
 
     /* Selection logic */
