@@ -186,9 +186,25 @@ class Ecs : public OnGameStart, public OnGameUpdate, public OnGameFixedUpdate, p
         }
     }
 
+    /* Returns a view of given elements, default ignores disabled entities */
+    template <typename... Get, typename... Exclude>
+    auto view(entt::exclude_t<Exclude...> = entt::exclude_t {}) {
+        /* Add Disable to ignore by default */
+        return registry.view<Get...>(entt::exclude<Disable, Exclude...>());
+    }
+
+    /* Returns a group of given elements, default ignores disabled entities */
+    template <typename... Owned, typename... Get, typename... Exclude>
+    auto group(entt::get_t<Get...> = entt::get_t {}, entt::exclude_t<Exclude...> = entt::exclude_t {}) {
+        /* Add Disable to ignore by default */
+        return registry.group<Owned...>(entt::get<Get...>(), entt::exclude<Disable, Exclude...>());
+    }
+
     void clear() { registry.clear(); }
 
     bool valid(const Entity entity) const { return registry.valid(entity); }
+
+    bool enabled(const Entity entity) const { return !has_component<Disable>(entity); }
 
     Collection<ISystem> systems;
 

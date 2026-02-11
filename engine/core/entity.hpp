@@ -10,6 +10,8 @@ namespace tmt {
 
 using Entity = entt::entity;
 
+struct Disable {};
+
 template <typename R, typename T>
 concept TypeRange = std::ranges::range<R> && std::same_as<std::ranges::range_value_t<R>, T>;
 
