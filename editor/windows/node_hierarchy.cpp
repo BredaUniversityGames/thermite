@@ -20,6 +20,9 @@
 
 #include <fstream>
 
+#include "editor.hpp"
+#include "core/systems/undo_redo/undo_redo_manager.hpp"
+
 namespace tmt {
 
 namespace {
@@ -274,7 +277,7 @@ std::vector<char> NodeHierarchy::encode_voxel_scene() const {
         VoxelSceneNode& root_node = root_nodes.emplace_back();
         recurse_parse_scene(entity, transform, root_node);
     }
-
+    
     // Encode those VoxelSceneNodes into the .svh format.
     return encode_svh(root_nodes);
 }
@@ -316,6 +319,9 @@ void NodeHierarchy::clear_hierarchy() {
     selected_entity = entt::null;
     root_entities.clear();
     engine.ecs.clear();
+
+    // Clear the undo/redo stack so the user doesn't try to undo changes to an old file in the newly loaded one.
+    editor.windows[Editor::Mode::VOXEL].get<UndoRedoManager>().clear();
 }
 
 void NodeHierarchy::drop_hierarchy() {

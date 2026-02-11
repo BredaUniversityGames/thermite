@@ -3,6 +3,7 @@
 #include "editor.hpp"
 #include "ImGuizmo.h"
 #include "viewport.hpp"
+#include "core/systems/undo_redo/voxel_edit_diff.hpp"
 #include "engine/engine.hpp"
 #include "engine/core/ecs.hpp"
 #include "engine/core/polyline.hpp"
@@ -160,7 +161,7 @@ void draw_selected_face(const FaceData& info, const glm::vec3& half_extent, cons
 
 void draw_selection(const Hit& hit, const glm::vec3& half_extent, const Transform& transform, const Material& material) {
     engine.polyline.use_line_width(3.0f);
-    engine.polyline.use_color(glm::vec3 {material.albedo_r, material.albedo_g, material.albedo_b});
+    engine.polyline.use_color(glm::vec3 { material.albedo_r, material.albedo_g, material.albedo_b });
 
     const glm::vec3 local_voxel_pos = glm::vec3 { hit.coord } * UNITS_PER_VOXEL - half_extent + VOXEL_SIZE_HALF;
     const glm::vec3 world_voxel_pos = transform.get_world_matrix() * glm::vec4 { local_voxel_pos, 1.0f };
@@ -275,36 +276,48 @@ void modify_voxels(const Brush::Mode brush_mode, const ResourceRef<VoxelVolume>&
         case Brush::Mode::SHAPE: {
             if (!engine.input.is_mouse_button_pressed(MouseButton::LEFT) && !engine.input.is_mouse_button_just_released(MouseButton::LEFT)) break;
 
-            static glm::uvec3 start_coord {-1ul};
+            static glm::uvec3 start_coord { -1ul };
             if (engine.input.is_mouse_button_just_pressed(MouseButton::LEFT)) start_coord = hit.coord;
 
             const glm::uvec3& end_coord = hit.coord;
 
             // Calculate the middle point of the selected volume of voxels.
-            const glm::vec3 selection_middle = glm::vec3 {start_coord + end_coord + 1u} * VOXEL_SIZE_HALF;
+            const glm::vec3 selection_middle = glm::vec3 { start_coord + end_coord + 1u } * VOXEL_SIZE_HALF;
 
             // Calculate the half extent of the selected volume of voxels (requires min and max to correctly account for the start and end voxels).
             const glm::uvec3 min = glm::min(start_coord, end_coord);
             const glm::uvec3 max = glm::max(start_coord, end_coord);
-            const glm::vec3 select_half_extent = (glm::vec3 {min} - glm::vec3 {max} - 1.0f) * VOXEL_SIZE_HALF;
+            const glm::vec3 select_half_extent = (glm::vec3 { min } - glm::vec3 { max } - 1.0f) * VOXEL_SIZE_HALF;
 
             const Transform& transform = engine.ecs.get_component<Transform>(hit.entity);
-            const glm::vec3 half_extent = glm::vec3 {model->size} * VOXEL_SIZE_HALF;
-            const glm::vec3 world_position = transform.get_world_matrix() * glm::vec4 {selection_middle - half_extent, 1.0f};
+            const glm::vec3 half_extent = glm::vec3 { model->size } * VOXEL_SIZE_HALF;
+            const glm::vec3 world_position = transform.get_world_matrix() * glm::vec4 { selection_middle - half_extent, 1.0f };
 
             engine.polyline.draw_obb(world_position, select_half_extent, transform.get_world_rotation());
 
             if (engine.input.is_mouse_button_just_released(MouseButton::LEFT)) {
+                VoxelEditDiff diff { model->uuid };
                 const MaterialIndex material_index = editor.windows[Editor::Mode::VOXEL].get<Palette>().get_selected_material_index();
+
                 for (uint32_t x = min.x; x <= max.x; x++) {
                     for (uint32_t y = min.y; y <= max.y; y++) {
                         for (uint32_t z = min.z; z <= max.z; z++) {
+                            const Material* voxel_material = model->blas->get_voxel(x, y, z);
+                            const MaterialIndex voxel_material_index = static_cast<MaterialIndex>(voxel_material - model->blas->palette.entries);
+
+                            const bool is_voxel_empty = (voxel_material == nullptr);
+                            if (!is_voxel_empty && voxel_material_index == material_index) continue;
+
                             model->blas->set_voxel(x, y, z, material_index);
+
+                            diff.add_change(glm::uvec3 { x, y, z }, (is_voxel_empty ? nullptr : &voxel_material_index), &material_index);
                         }
                     }
                 }
+                model->set_dirty();
+
+                diff.commit("Create Voxel Area");
             }
-            model->set_dirty();
 
             break;
         }

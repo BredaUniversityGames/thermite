@@ -55,6 +55,11 @@ class UndoRedoManager : public IWindow {
 
     void commit_action(const std::shared_ptr<IUndoRedo>& action, const std::string& message);
 
+    void clear() {
+        undo_stack.clear();
+        redo_stack.clear();
+    }
+
    protected:
     // Inherited via IWindow
     std::string get_title() const override { return "Undo Redo Manager"; }

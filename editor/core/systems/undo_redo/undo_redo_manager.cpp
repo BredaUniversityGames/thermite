@@ -52,10 +52,7 @@ void UndoRedoManager::display() {
         redo();
     }
     ImGui::SameLine();
-    if (ImGui::Button("Clear")) {
-        undo_stack.clear();
-        redo_stack.clear();
-    }
+    if (ImGui::Button("Clear")) clear();
 
     ImGui::BeginChild("UndoRedoManager_UndoStack", ImVec2(0, 200), true);
     ImGui::Text("Undo Stack:");
