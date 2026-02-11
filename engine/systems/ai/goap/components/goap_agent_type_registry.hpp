@@ -78,7 +78,6 @@ class GoapAgentTypeRegistry {
     std::unordered_map<std::string, GoapAgentType> types;
 
     void load();
-
     void save() const;
 
    private:

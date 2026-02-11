@@ -11,8 +11,8 @@
 
 namespace tmt {
 
-void Goap::on_start() { 
-    Log::info("Goap on_start"); 
+void Goap::on_start() {
+    Log::info("Goap on_start");
     agent_types().load();
 }
 

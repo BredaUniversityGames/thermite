@@ -188,7 +188,7 @@ void GoapAgentEditor::draw_actions_section(GoapAgentType& type) {
         // Display checkbox for each action
         if (ImGui::Checkbox(id.c_str(), &enabled)) {
             if (enabled)
-                type.action_ids.push_back(id);  // Add to agent type
+                type.action_ids.push_back(id);    // Add to agent type
             else
                 std::erase(type.action_ids, id);  // Remove from agent type
         }
@@ -215,7 +215,7 @@ void GoapAgentEditor::draw_goals_section(GoapAgentType& type) {
         // Display checkbox for each goal
         if (ImGui::Checkbox(id.c_str(), &enabled)) {
             if (enabled)
-                type.goal_ids.push_back(id);  // Add to agent type
+                type.goal_ids.push_back(id);    // Add to agent type
             else
                 std::erase(type.goal_ids, id);  // Remove from agent type
         }
@@ -235,7 +235,7 @@ void GoapAgentEditor::draw_world_state_section(GoapAgentType& type) {
         const std::string& name = it->first;  // The key is now a string directly
         bool v = it->second.bool_val;
 
-        ImGui::PushID(name.c_str());  // Use string as ImGui ID
+        ImGui::PushID(name.c_str());          // Use string as ImGui ID
 
         // Display a checkbox for the fact
         if (ImGui::Checkbox(name.c_str(), &v)) it->second.bool_val = v;
@@ -263,6 +263,5 @@ void GoapAgentEditor::draw_world_state_section(GoapAgentType& type) {
         }
     }
 }
-
 
 }  // namespace tmt
