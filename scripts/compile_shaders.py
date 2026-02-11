@@ -19,6 +19,7 @@ def parse_args():
     parser.add_argument("--output", required=True, help="Output SPIR-V file (.spv)")
     parser.add_argument("--root", required=True, help="Shader root directory")
     parser.add_argument("--depfile", required=False, help="Optional depfile for incremental build")
+    parser.add_argument("--debug", action="store_true", help="Generate debug information or nor")
     return parser.parse_args()
 
 def detect_stage(shader_path: Path):
@@ -54,7 +55,7 @@ def main():
         str(shader_path),
         "-I", f"{str(shader_dir)}/shared",
         "-target", "spirv",
-        "-profile", info["profile"],
+        # "-profile", info["profile"],
         "-entry", "main",
         "-o", str(output_file)
     ]
@@ -62,8 +63,15 @@ def main():
     if args.depfile:
         cmd += ["-depfile", str(args.depfile)]
 
+    if args.debug:
+        cmd += ["-g", "-O0", "-line-directive-mode", "standard"]
+
     all_outputs = []
 
+    # print("[CMD]", end="")
+    # for arg in cmd:
+    #     print(f" {arg}", end="")
+    # print("")
     print(f"[Slang] {stage.upper()} -> {output_file}")
     subprocess.run(cmd, check=True)
 

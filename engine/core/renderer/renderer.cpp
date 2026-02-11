@@ -5,6 +5,7 @@
 #include <graphite/gpu_adapter.hh>
 #include <graphite/render_graph.hh>
 #include <graphite/nodes/raster_node.hh>
+#include <graphite/nodes/compute_node.hh>
 
 #include "core/window.hpp"
 #include "core/logger.hpp"
@@ -14,20 +15,31 @@
 
 #include "engine/engine.hpp"
 #include "engine/core/io.hpp"
-#include "pipelines/polyline_pipeline.hpp"
 #include "pipelines/geometry_pipeline.hpp"
+#include "pipelines/polyline_pipeline.hpp"
+#include "pipelines/vfx_pipeline.hpp"
 #include "pipelines/di_pipeline.hpp"
+#include "pipelines/ui_pipeline.hpp"
 #include "tools/profiler.hpp"
 
 namespace tmt {
 
-Renderer::Renderer()
-    : gpu(*new GPUAdapter()), render_graph(*new RenderGraph()), geometry_pipeline(*new GeometryPipeline()), di_pipeline(*new DiPipeline()), polyline_pipeline(*new PolylinePipeline()) {}
+Renderer::Renderer() :
+    gpu(*new GPUAdapter()),
+    render_graph(*new RenderGraph()),
+    geometry_pipeline(*new GeometryPipeline()),
+    di_pipeline(*new DiPipeline()),
+    polyline_pipeline(*new PolylinePipeline()),
+    vfx_pipeline(*new VfxPipeline()),
+    ui_pipeline(*new UiPipeline()) {}
 
 Renderer::~Renderer() {
     delete &polyline_pipeline;
     delete &di_pipeline;
+    delete &vfx_pipeline;
     delete &geometry_pipeline;
+    delete &ui_pipeline;
+
     delete &render_graph;
     delete &gpu;
 }
@@ -50,7 +62,7 @@ void thermite_logger(const DebugSeverity severity, const char* msg, void*) {
 void Renderer::init() {
     gpu.set_logger(thermite_logger, DebugLevel::Verbose);
     gpu.set_max_render_targets(4u);
-    gpu.set_max_buffers(2048u);
+    gpu.set_max_buffers(4096u);
     gpu.set_max_textures(256u);
     gpu.set_max_images(256u);
     gpu.set_max_samplers(32u);
@@ -69,7 +81,7 @@ void Renderer::init() {
     }
 
     /* Initialize the Render Graph */
-    IO::FileLocation shader_location {IO::Location::ENGINE, "shaders/bin"};
+    IO::FileLocation shader_location { IO::Location::ENGINE, "shaders/bin" };
     render_graph.set_shader_path(shader_location.get_relative_path().string().c_str());
     render_graph.set_staging_limit(32000000u /* 32mb */);
     render_graph.set_max_graphs_in_flight(2u); /* Double buffering */
@@ -85,8 +97,10 @@ void Renderer::init() {
     /* Initialize pipelines */
     polyline_pipeline.init(gpu);
     di_pipeline.init(gpu);
+    vfx_pipeline.init(gpu);
+    ui_pipeline.init(gpu);
 
-    debug_transform.set_local_position({0.0f, 0.0f, -1.0f});
+    debug_transform.set_local_position({ 0.0f, 0.0f, -1.0f });
 }
 
 void Renderer::update() {
@@ -112,7 +126,23 @@ void Renderer::update() {
     /* Enqueue pipelines */
     geometry_pipeline.enqueue(render_graph, render_view, scene_view);
     di_pipeline.enqueue(render_graph, render_view, scene_view);
-    polyline_pipeline.enqueue(render_graph, render_view, scene_view);
+
+    if (scene_view.render_outlines) {
+        /* clang-format on */
+        /* Object outline render pass */
+        render_graph.add_compute_pass("object outline", "outline.cs")
+            .read(render_view.render_view_buffer)
+            .read(scene_view.object_data)
+            .read(render_view.vbuffer.image)
+            .write(render_view.get_render_image())
+            .group_size(16, 8)
+            .work_size(render_view.gpu_view.resolution.x, render_view.gpu_view.resolution.y);
+        /* clang-format off */
+    }
+
+    polyline_pipeline.enqueue(render_graph, render_view);
+    vfx_pipeline.enqueue(render_graph, render_view);
+    ui_pipeline.enqueue(render_graph, render_view);
 
 #ifdef THERMITE_EDITOR
     /* Add the immediate mode GUI to the render graph */
@@ -142,6 +172,8 @@ void Renderer::end() {
     /* Pipelines cleanup */
     polyline_pipeline.deinit(gpu);
     di_pipeline.deinit(gpu);
+    vfx_pipeline.deinit(gpu);
+    ui_pipeline.deinit(gpu);
 
     /* Cleanup the VRAM bank & GPU adapter */
     render_graph.deinit().expect("failed to destroy render graph.");
