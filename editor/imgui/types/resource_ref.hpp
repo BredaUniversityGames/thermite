@@ -8,9 +8,9 @@ template <typename T>
 inline void tag_invoke(ImReflect::ImInput_t, const char* label, tmt::ResourceRef<T>& value, ImSettings& settings, ImResponse& response) {
     ImGui::BeginGroup();
     ImReflect::Input(label, value.file_location, settings, response);
-    
+
     const bool dropped = response.get<tmt::IO::FileLocation>().is_file_dropped();
-    
+
     if (ImGui::Button("Load") || dropped) {
         // TODO: Sven move this if-check to resources.hpp
         if constexpr (std::derived_from<T, tmt::FileResource>) {
@@ -22,7 +22,6 @@ inline void tag_invoke(ImReflect::ImInput_t, const char* label, tmt::ResourceRef
         }
     }
     ImGui::EndGroup();
-
 
     if constexpr (ImReflect::Detail::has_imreflect_input_v<T>) {
         ImReflect::Input(label, value.resource, settings, response);
