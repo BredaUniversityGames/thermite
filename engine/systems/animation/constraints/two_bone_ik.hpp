@@ -55,7 +55,6 @@ struct EffectorWalkCycle {
         glm::vec3 continuous_available_pos;
         bool grounded;
         glm::vec3 up = glm::vec3(0.f, 1.f, 0.f);
-        glm::vec3 entity_velocity;
     };
 
     // returns the output effector
@@ -65,7 +64,7 @@ struct EffectorWalkCycle {
     // adds offset to timer variable to offset step interval
     void set_offset(float offset);
 
-    inline bool is_moving() { return stepping_effector; }
+    inline bool is_moving() const { return stepping_effector; }
 
    private:
     float step_timer = 0.f;
@@ -75,6 +74,7 @@ struct EffectorWalkCycle {
     bool stepping_effector = false;
     bool became_grounded = false;
 
+    glm::vec3 last_continuous_pos;
     glm::vec3 initial_pos;
     glm::vec3 desired_pos;
     // the internally tracked effector

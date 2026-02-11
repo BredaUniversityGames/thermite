@@ -1,6 +1,9 @@
 #include "two_bone_ik.hpp"
 #include "glm/gtx/quaternion.hpp"
 #include "glm/gtx/orthonormalize.hpp"
+#include "engine/core/logger.hpp"
+#include "engine/engine.hpp"
+#include "engine/core/polyline.hpp"
 
 namespace tmt {
 namespace AnimConstraints {
@@ -113,21 +116,25 @@ TwoBoneIKSolverOutput solve_two_bone_ik(const TwoBoneInputData& input_data) {
 glm::vec3 EffectorWalkCycle::do_walk_cycle(float dt, const WalkCycleUpdateVariables& walk_cycle_vars) {
     step_timer += dt;
 
-    if (step_timer >= step_time && !stepping_effector) {
+    glm::vec3 point_velocity = (walk_cycle_vars.continuous_available_pos - last_continuous_pos) / dt;
+
+    if (step_timer >= step_time + cycle_offset && !stepping_effector) {
         step_timer -= step_time;
 
         stepping_effector = true;
 
         initial_pos = effector;
 
+        Log::info("reset cycle with offset: {}", cycle_offset);
+
         // predict based on positional change
-        glm::vec3 prediction_vec = walk_cycle_vars.entity_velocity * step_prediction_strength;
+        glm::vec3 prediction_vec = (point_velocity*dt) * step_prediction_strength;
         glm::vec3 subtraction_vec = prediction_vec * walk_cycle_vars.up;
         prediction_vec -= subtraction_vec;
 
-        if (glm::length(prediction_vec) > 0.5f) {
+       /* if (glm::length(prediction_vec) > 0.5f) {
             prediction_vec = glm::normalize(prediction_vec) * 0.5f;
-        }
+        }*/
 
         desired_pos = walk_cycle_vars.continuous_available_pos + prediction_vec;
     }
@@ -164,12 +171,13 @@ glm::vec3 EffectorWalkCycle::do_walk_cycle(float dt, const WalkCycleUpdateVariab
         became_grounded = false;
     }
 
+    last_continuous_pos = walk_cycle_vars.continuous_available_pos;
+
     return effector;
 }
 
 void EffectorWalkCycle::set_offset(float offset) {
-    // it would not be logical to allow for offsets greater than abs of step_time
-    step_timer += glm::clamp(offset, -step_time, step_time);
+    cycle_offset = offset;
 }
 }
 }  // namespace AnimConstraints
