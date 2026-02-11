@@ -103,7 +103,7 @@ void AIScene::on_start() {
     }
 
 #if 0
-    {
+    { // --- Old example of angent type creation ---
         // --- Register Agent Types ---
 
         tmt::GoapAgentType enemy1;
@@ -143,27 +143,25 @@ void AIScene::on_start() {
         ecs.get_component<tmt::Transform>(ai2).set_world_position({ 5.f, 0.f, 0.f });
     }
 #else
-    {
-        {
-            auto& type_reg = goap.agent_types();
+    {  // --- Spawning agent entities ---
+        auto& type_reg = goap.agent_types();
 
-            // Spawn Enemy 1 if it exists
-            if (type_reg.get("Enemy 1")) {
-                tmt::Entity ai1 = tmt::engine.ecs.create_entity("AI Agent 1");
-                tmt::GoapAgentFactory::spawn_agent_from_type("Enemy 1", ai1);
-                ecs.get_component<tmt::Transform>(ai1).set_world_position({ 0.f, 0.f, 0.f });
-            } else {
-                tmt::Log::warn("Agent type 'Enemy 1' not found. Skipping spawn.");
-            }
+        // Spawn Enemy 1 if it exists
+        if (type_reg.get("Enemy 1")) {
+            tmt::Entity ai1 = tmt::engine.ecs.create_entity("AI Agent 1");
+            tmt::GoapAgentFactory::spawn_agent_from_type("Enemy 1", ai1);
+            ecs.get_component<tmt::Transform>(ai1).set_world_position({ 0.f, 0.f, 0.f });
+        } else {
+            tmt::Log::warn("Agent type 'Enemy 1' not found. Skipping spawn.");
+        }
 
-            // Spawn Enemy 2 if it exists
-            if (type_reg.get("Enemy 2")) {
-                tmt::Entity ai2 = tmt::engine.ecs.create_entity("AI Agent 2");
-                tmt::GoapAgentFactory::spawn_agent_from_type("Enemy 2", ai2);
-                ecs.get_component<tmt::Transform>(ai2).set_world_position({ 5.f, 0.f, 0.f });
-            } else {
-                tmt::Log::warn("Agent type 'Enemy 2' not found. Skipping spawn.");
-            }
+        // Spawn Enemy 2 if it exists
+        if (type_reg.get("Enemy 2")) {
+            tmt::Entity ai2 = tmt::engine.ecs.create_entity("AI Agent 2");
+            tmt::GoapAgentFactory::spawn_agent_from_type("Enemy 2", ai2);
+            ecs.get_component<tmt::Transform>(ai2).set_world_position({ 5.f, 0.f, 0.f });
+        } else {
+            tmt::Log::warn("Agent type 'Enemy 2' not found. Skipping spawn.");
         }
     }
 #endif
