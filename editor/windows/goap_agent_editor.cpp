@@ -32,10 +32,6 @@ void GoapAgentEditor::on_editor_start() {
         Log::warn("GOAP system not active.");
         return;
     }
-
-    // auto& types = goap->agent_types();
-
-    // types.load();
 }
 
 void GoapAgentEditor::on_editor_end() {
@@ -50,10 +46,6 @@ void GoapAgentEditor::on_editor_end() {
         Log::warn("GOAP system not active.");
         return;
     }
-
-    // auto& types = goap->agent_types();
-
-    // types.save();
 }
 
 // Editor-local state used for selection and new agent type creation
