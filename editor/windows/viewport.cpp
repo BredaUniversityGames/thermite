@@ -161,6 +161,8 @@ bool tmt::Viewport::toolbar(const ImVec2& image_pos) {
 }
 
 void tmt::Viewport::selection_logic(const ImVec2& imgui_mouse_pos, const ImVec2& image_pos, bool toolbar_buttons_hovered) {
+    if(!is_hovered) return;
+
     auto& hierarchy = editor.windows[Editor::Mode::SCENE].get<Hierarchy>();
     const std::vector<Entity>& selected_entities = hierarchy.get_selected_entities();
     auto& imgui_io = ImGui::GetIO();
@@ -168,10 +170,10 @@ void tmt::Viewport::selection_logic(const ImVec2& imgui_mouse_pos, const ImVec2&
     static ImVec2 first_click_pos;
     static bool using_rect = false;
 
-    bool multiple_select_modifier = !imgui_io.KeyCtrl && !imgui_io.KeyShift;
+    bool not_multiple_select_modifier = !imgui_io.KeyCtrl && !imgui_io.KeyShift;
 
     if (imgui_io.MouseReleased[0]) using_rect = false;
-    if (imgui_io.MouseDown[0] && is_hovered && (!editor.gizmo.hovered() || using_rect)) {
+    if (imgui_io.MouseDown[0] && (!editor.gizmo.hovered() || using_rect)) {
         if (imgui_io.MouseClicked[0]) {
             first_click_pos = imgui_io.MousePos;
         }
@@ -207,7 +209,7 @@ void tmt::Viewport::selection_logic(const ImVec2& imgui_mouse_pos, const ImVec2&
             }
 
             // cleanup when area shrinks
-            if (multiple_select_modifier) {
+            if (not_multiple_select_modifier) {
                 for (auto entity : selected_entities) {
                     if (std::find(tracking_rect_entities.begin(), tracking_rect_entities.end(), entity) == tracking_rect_entities.end()) {
                         hierarchy.remove_entity_from_selection(entity);
@@ -216,26 +218,32 @@ void tmt::Viewport::selection_logic(const ImVec2& imgui_mouse_pos, const ImVec2&
             }
         }
     }
-
-    if (imgui_io.MouseClicked[0] && is_hovered && !editor.gizmo.hovered() && !toolbar_buttons_hovered) {
+    if (imgui_io.MouseClicked[0] && !editor.gizmo.hovered() && !toolbar_buttons_hovered) {
         const tmt::Ray selection_ray = tmt::engine.renderer.render_view.pixel_ray({mouse_pos.x, mouse_pos.y});
         const tmt::Hit hit = tmt::engine.renderer.trace_ray(selection_ray);
 
-        if (multiple_select_modifier) hierarchy.clear_selection();
+        if (not_multiple_select_modifier) hierarchy.clear_selection();
+
         if (!hit.miss()) {
-            hierarchy.add_entity_to_selection(hit.entity);
-            Entity first_entity = hierarchy.get_first_selected_entity();
 
-            // only care about opening the first selected
-            if (first_entity == hit.entity) {
-                auto& transform = engine.ecs.get_component<Transform>(hit.entity);
+            if(hierarchy.is_entity_selected(hit.entity) && !(not_multiple_select_modifier)) hierarchy.remove_entity_from_selection(hit.entity);
+            else 
+            {
+                hierarchy.add_entity_to_selection(hit.entity);
+                Entity first_entity = hierarchy.get_first_selected_entity();
 
-                // we only want to open the tree if the selected entity has a parent
-                if (transform.has_parent()) {
-                    Entity parent = transform.get_parent();
-                    force_open_recurse_upwards(parent);
+                // only care about opening the first selected
+                if (first_entity == hit.entity) {
+                    auto& transform = engine.ecs.get_component<Transform>(hit.entity);
+
+                    // we only want to open the tree if the selected entity has a parent
+                    if (transform.has_parent()) {
+                        Entity parent = transform.get_parent();
+                        force_open_recurse_upwards(parent);
+                    }
                 }
             }
+            
         }
     }
 }
