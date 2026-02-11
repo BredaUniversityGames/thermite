@@ -282,12 +282,12 @@ std::optional<glm::vec3> tmt::NavMesh::follow_path(glm::vec3 start, glm::vec3 en
 
     glm::vec3 target_pos = (*nodes_mesh)[new_path[0]].world_pos;
     if (path.size() > 2) {
-        float attraction_distance = 3.5f;
+        float attraction_distance = 3.0f;
         int current_node = (int)new_path.size() - 1;
         glm::vec3 current_pos = (*nodes_mesh)[new_path[current_node]].world_pos;
 
         float travelled_distance = 0.0f;
-        while (current_node >= 1) {
+        while (attraction_distance > 0.0f) {
             // Get next segment
             glm::vec3 next_pos = (*nodes_mesh)[new_path[current_node - 1]].world_pos;
             float segment_distance = glm::distance(current_pos, next_pos);
@@ -304,18 +304,20 @@ std::optional<glm::vec3> tmt::NavMesh::follow_path(glm::vec3 start, glm::vec3 en
                 current_pos = next_pos;
                 if (current_node <= 0) {
                 //if (current_node >= (int)new_path.size() - 1) {
-                    target_pos = (*nodes_mesh)[new_path.back()].world_pos;
+                    target_pos = (*nodes_mesh)[new_path[0]].world_pos;
                     break;
                 }
             }
         }
     }
+    tmt::engine.polyline.use_color(0.0f, 1.0f, 0.0f);
+    tmt::engine.polyline.use_line_width(3.0f);
     tmt::engine.polyline.draw_sphere(target_pos, 0.1f);
     tmt::engine.polyline.draw_sphere(start, 0.1f);
 
-    if (glm::distance(target_pos, start) > 0.01f) {
+    //if (glm::distance(target_pos, start) > 0.05f) {
         return glm::normalize(target_pos - start);
-    }
+    //}
     return std::nullopt;
 }
 

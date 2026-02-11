@@ -31,7 +31,7 @@ void Wander::on_start(tmt::Entity walking_entity) {
 }
 
 void Wander::on_tick(tmt::Entity walking_entity, float dt) {
-    const auto& walking = tmt::engine.ecs.get_component<Walking>(walking_entity);
+    auto& walking = tmt::engine.ecs.get_component<Walking>(walking_entity);
     auto& nav_mesh = tmt::engine.ecs.get_component<tmt::NavMesh>(walking.walkable_asteroid);
 
     tmt::Transform& walking_transform = tmt::engine.ecs.get_component<tmt::Transform>(walking_entity);
@@ -70,7 +70,8 @@ void Wander::on_tick(tmt::Entity walking_entity, float dt) {
             return;
         }
 
-        walking_transform.set_world_position(walking_entity_pos + *direction * walking.walk_speed * dt);
+        auto velocity = glm::vec3(*direction * walking.walk_speed);
+        walking.velocity += velocity;
     }
 
     // Debug drawing

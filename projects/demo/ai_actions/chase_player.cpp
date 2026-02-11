@@ -5,12 +5,12 @@
 // todo: make projects not have to use realtive paths
 #include "../components/walking.hpp"
 #include "engine/core/components/camera.hpp"
-#include "engine/engine.hpp"
 
 #include "engine/core/polyline.hpp"
 #include "engine/core/components/voxel_renderer.hpp"
 
 #include <cstdlib>
+
 
 void ChasePlayer::on_start(tmt::Entity walking_entity) {
     //
@@ -32,7 +32,7 @@ void ChasePlayer::on_start(tmt::Entity walking_entity) {
 }
 
 void ChasePlayer::on_tick(tmt::Entity walking_entity, float dt) {
-    const auto& walking = tmt::engine.ecs.get_component<Walking>(walking_entity);
+    auto& walking = tmt::engine.ecs.get_component<Walking>(walking_entity);
     auto& nav_mesh = tmt::engine.ecs.get_component<tmt::NavMesh>(walking.walkable_asteroid);
 
     tmt::Transform& walking_transform = tmt::engine.ecs.get_component<tmt::Transform>(walking_entity);
@@ -55,7 +55,8 @@ void ChasePlayer::on_tick(tmt::Entity walking_entity, float dt) {
 
     // If path has more waypoints, move to next one
     if (direction) {
-        walking_transform.set_world_position(walking_entity_pos + *direction * walking.walk_speed * dt);
+        auto velocity = glm::vec3(*direction * walking.walk_speed);
+        walking.velocity += velocity;
     } else {
         // Close enough to consider node reached, force path recompute
         nav_mesh.path.clear();
