@@ -122,9 +122,9 @@ void draw_selected_face(const FaceData& info, const glm::vec3& half_extent, cons
     }
 }
 
-void draw_selection(const Hit& hit, const glm::vec3& half_extent, const Transform& transform) {
-    engine.polyline.use_line_width(2.0f);
-    engine.polyline.use_color(glm::vec4 {1.0f, 0.5f, 0.5f, 1.0f});
+void draw_selection(const Hit& hit, const glm::vec3& half_extent, const Transform& transform, const Material& material) {
+    engine.polyline.use_line_width(3.0f);
+    engine.polyline.use_color(glm::vec3 {material.albedo_r, material.albedo_g, material.albedo_b});
 
     const glm::vec3 local_voxel_pos = glm::vec3 {hit.coord} * UNITS_PER_VOXEL - half_extent + VOXEL_SIZE_HALF;
     const glm::vec3 world_voxel_pos = transform.get_world_matrix() * glm::vec4 {local_voxel_pos, 1.0f};
@@ -186,7 +186,9 @@ bool handle_selection(const Ray& mouse_ray, Hit& hit, const bool can_hit_face, c
 
     if (hit.entity != entity) return false;
 
-    draw_selection(hit, half_extent, transform);
+    const MaterialIndex material_index = editor.windows[Editor::Mode::VOXEL].get<Palette>().get_selected_material_index();
+    const Material& material = resource->blas->palette.entries[material_index];
+    draw_selection(hit, half_extent, transform, material);
 
     return true;
 }
@@ -238,30 +240,27 @@ void modify_voxels(const Brush::Mode brush_mode, const ResourceRef<VoxelVolume>&
             static glm::uvec3 start_coord {-1ul};
             if (engine.input.is_mouse_button_just_pressed(MouseButton::LEFT)) start_coord = hit.coord;
 
-            const glm::uvec3 end_coord = hit.coord;
+            const glm::uvec3& end_coord = hit.coord;
 
-            const glm::vec3 voxel_middle = (glm::vec3{start_coord + end_coord + glm::uvec3{1ul}}) * VOXEL_SIZE_HALF;
-            const glm::vec3 select_half_extent = (glm::abs(glm::vec3{start_coord} - glm::vec3{end_coord}) + 1.0f) * VOXEL_SIZE_HALF;
+            // Calculate the middle point of the selected volume of voxels.
+            const glm::vec3 selection_middle = glm::vec3 {start_coord + end_coord + 1u} * VOXEL_SIZE_HALF;
+
+            // Calculate the half extent of the selected volume of voxels (requires min and max to correctly account for the start and end voxels).
+            const glm::uvec3 min = glm::min(start_coord, end_coord);
+            const glm::uvec3 max = glm::max(start_coord, end_coord);
+            const glm::vec3 select_half_extent = (glm::vec3 {min} - glm::vec3 {max} - 1.0f) * VOXEL_SIZE_HALF;
 
             const Transform& transform = engine.ecs.get_component<Transform>(hit.entity);
-            const glm::vec3 half_extent = glm::vec3{model->size} * VOXEL_SIZE_HALF;
-            const glm::vec3 world_position = transform.get_world_matrix() * glm::vec4{voxel_middle - half_extent, 1.0f};
+            const glm::vec3 half_extent = glm::vec3 {model->size} * VOXEL_SIZE_HALF;
+            const glm::vec3 world_position = transform.get_world_matrix() * glm::vec4 {selection_middle - half_extent, 1.0f};
 
             engine.polyline.draw_obb(world_position, select_half_extent, transform.get_world_rotation());
 
             if (engine.input.is_mouse_button_just_released(MouseButton::LEFT)) {
                 const MaterialIndex material_index = editor.windows[Editor::Mode::VOXEL].get<Palette>().get_selected_material_index();
-
-                const uint32_t min_x = glm::min(start_coord.x, end_coord.x);
-                const uint32_t min_y = glm::min(start_coord.y, end_coord.y);
-                const uint32_t min_z = glm::min(start_coord.z, end_coord.z);
-                const uint32_t max_x = glm::max(start_coord.x, end_coord.x);
-                const uint32_t max_y = glm::max(start_coord.y, end_coord.y);
-                const uint32_t max_z = glm::max(start_coord.z, end_coord.z);
-
-                for (uint32_t x = min_x; x <= max_x; x++) {
-                    for (uint32_t y = min_y; y <= max_y; y++) {
-                        for (uint32_t z = min_z; z <= max_z; z++) {
+                for (uint32_t x = min.x; x <= max.x; x++) {
+                    for (uint32_t y = min.y; y <= max.y; y++) {
+                        for (uint32_t z = min.z; z <= max.z; z++) {
                             model->blas->set_voxel(x, y, z, material_index);
                         }
                     }
