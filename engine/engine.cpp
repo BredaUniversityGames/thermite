@@ -22,6 +22,7 @@
 #include "systems/gameplay/gameplay.hpp"
 #include "systems/gameplay/game_component_registry.hpp"
 #include "systems/motion_math/motion_math_system.hpp"
+#include "systems/ui/ui.hpp"
 #include "events/engine.hpp"
 #include "events/game.hpp"
 #include "events/scene.hpp"
@@ -83,6 +84,7 @@ void Engine::init(std::unique_ptr<Application> user_app) {
     ecs.systems.add<NavigationSystem>();
     ecs.systems.add<Gameplay>(); /* Should be last */
     ecs.systems.add<MotionMathSystem>();
+    ecs.systems.add<UI>();
 
     OnEngineInit::dispatch(app->specs);
 }
