@@ -85,16 +85,16 @@ struct FactId {
 struct FactValue {
     enum class Type { BOOL_TYPE, INT_TYPE, FLOAT_TYPE } value_type;
 
-    union {
         bool bool_val;
-        int int_val;
-        float float_val;
-    };
+    //union {
+    //    int int_val;
+    //    float float_val;
+    //};
 
     FactValue() : value_type(Type::BOOL_TYPE), bool_val(false) {}
     FactValue(bool b) : value_type(Type::BOOL_TYPE), bool_val(b) {}
-    FactValue(int i) : value_type(Type::INT_TYPE), int_val(i) {}
-    FactValue(float f) : value_type(Type::FLOAT_TYPE), float_val(f) {}
+    //FactValue(int i) : value_type(Type::INT_TYPE), int_val(i) {}
+    //FactValue(float f) : value_type(Type::FLOAT_TYPE), float_val(f) {}
 };
 
 /**
@@ -162,4 +162,4 @@ struct WorldState {
 }  // namespace tmt
 
 // TMT_OBJECT(tmt::FactValue, (value_type));
-TMT_OBJECT(tmt::FactValue, (value_type, bool_val, int_val, float_val));
+TMT_OBJECT(tmt::FactValue, (value_type, bool_val));

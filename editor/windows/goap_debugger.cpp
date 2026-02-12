@@ -190,10 +190,10 @@ void GoapDebugger::draw_details_view(GoapAgent& agent, WorldState& ws) {
                     }
                     break;
                 case FactValue::Type::INT_TYPE:
-                    ImGui::Text("%s = %d", fact_name.c_str(), val.int_val);
+                    //ImGui::Text("%s = %d", fact_name.c_str(), val.int_val);
                     break;
                 case FactValue::Type::FLOAT_TYPE:
-                    ImGui::Text("%s = %.2f", fact_name.c_str(), val.float_val);
+                    //ImGui::Text("%s = %.2f", fact_name.c_str(), val.float_val);
                     break;
             }
 

@@ -62,10 +62,10 @@ void print_world_state(const WorldState& ws) {
                 val_str = val.bool_val ? "true" : "false";
                 break;
             case FactValue::Type::INT_TYPE:
-                val_str = std::to_string(val.int_val);
+                //val_str = std::to_string(val.int_val);
                 break;
             case FactValue::Type::FLOAT_TYPE:
-                val_str = std::to_string(val.float_val);
+                //val_str = std::to_string(val.float_val);
                 break;
         }
         Log::info("  FactID {} = {}", id, val_str);
