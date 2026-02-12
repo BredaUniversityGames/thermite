@@ -135,10 +135,12 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
         em.cone_angle = glm::radians(emitter.cone_angle);
         em.max_speed = emitter.max_speed;
         em.min_speed = emitter.min_speed;
-        em.particle_lifetime = emitter.particle_lifetime;
+        em.lifetime = emitter.particle_lifetime;
         em.spawn_count = emitter.spawn_count;
         em.size = emitter.size;
         em.end_size = emitter.end_size;
+        em.opacity = emitter.opacity;
+        em.end_opacity = emitter.end_opacity;
         em.tex_index = emitter.texture.resource->image.get_index();
         
         emitters.push_back(em);
@@ -195,6 +197,7 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
                                 .read(alive_list, ShaderStages::Vertex)
                                 .read(linear_sampler, ShaderStages::Pixel | ShaderStages::Vertex)
                                 .depth_stencil(render_view.dbuffer.image, true, true)
+                                .alpha_blending(true)
                                 .load_op_depth(LoadOp::Load)
                                 .load_op_color(LoadOp::Load)
                                 .attach(render_image)

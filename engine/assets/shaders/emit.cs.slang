@@ -32,6 +32,10 @@ void main(uint3 thread_id: SV_DispatchThreadID) {
     p.size = emitter.size;
     p.start_size = emitter.size;
     p.end_size = emitter.end_size;
+    p.opacity = emitter.opacity;
+    p.start_opacity = emitter.opacity;
+    p.end_opacity = emitter.end_opacity;
+
     p.tex_index = emitter.tex_index;
 
     uint seed = thread_id.x + render_view.frame_index * 1337;

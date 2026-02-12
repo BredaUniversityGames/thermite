@@ -1,5 +1,12 @@
 module particles;
 
+public struct BillboardVertexOutput {
+    public float4 pos : SV_Position;
+    public float2 uv : TEXCOORD0;
+    public uint32_t tex_index : TEXINDEX0;
+    public float opacity : OPACITY0;
+};
+
 public struct ParticleEmitter {
     public float3 pos;
     public float lifetime;
@@ -14,6 +21,8 @@ public struct ParticleEmitter {
 
     public float size;
     public float end_size;
+    public float opacity;
+    public float end_opacity;
 };
 
 public struct Particle {
@@ -26,7 +35,10 @@ public struct Particle {
     public float size;
     public float start_size;
     public float end_size;
+    public float opacity;
 
+    public float start_opacity;
+    public float end_opacity;
     public uint32_t tex_index;
 };
 

@@ -112,9 +112,11 @@
             "cone_angle": 0.5,
             "min_speed": 1.0,
             "max_speed": 1.0,
-            "spawn_count": 8,
+            "spawn_count": 1000,
             "size": 64.0,
-            "end_size": 0.0,
+            "end_size": 64.0,
+            "opacity": 1.0,
+            "end_opacity": 1.0,
             "active": false,
             "texture": {
                 "file_location": {

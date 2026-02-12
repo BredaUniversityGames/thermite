@@ -19,7 +19,7 @@ struct GpuQuad {
 
 struct GpuEmitter {
     glm::vec3 pos {};
-    float particle_lifetime {};
+    float lifetime {};
 
     glm::vec3 dir {};
     float cone_angle {};
@@ -31,7 +31,8 @@ struct GpuEmitter {
 
     float size {};
     float end_size {};
-    glm::vec2 pad {};
+    float opacity {};
+    float end_opacity {};
 };
 
 struct GpuParticle {
@@ -41,17 +42,22 @@ struct GpuParticle {
     glm::vec3 velocity {};
     float lifetime {};
 
-    uint32_t tex_index {};
     float size {};
     float start_size {};
     float end_size {};
+    float opacity {};
+
+    float start_opacity {};
+    float end_opacity {};
+    uint32_t tex_index {};
+    float pad {};
 };
 
 struct Counters {
     uint32_t alive_count {};
     uint32_t alive_count_after_sim {};
     uint32_t dead_count {};
-    uint32_t draw_count {};  // Amount of particles to be drawed
+    uint32_t draw_count {};  // Amount of particles to be drawn
 };
 
 struct Billboard {

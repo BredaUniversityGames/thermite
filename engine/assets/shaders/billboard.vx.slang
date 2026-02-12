@@ -6,21 +6,13 @@ struct VertexInput {
     float2 uv;
 };
 
-struct VertexOutput {
-    float4 pos : SV_Position;
-    float2 uv : TEXCOORD0;
-    uint32_t tex_index : TEXINDEX0;
-};
-
 ConstantBuffer<RenderView> gpu_view;
 
 StructuredBuffer<Particle> particles;
 StructuredBuffer<uint32_t> alive_list;
 
 [shader("vertex")]
-VertexOutput main(VertexInput input, uint32_t instance_id: SV_InstanceID) {
-    VertexOutput output;
-
+BillboardVertexOutput main(VertexInput input, uint32_t instance_id: SV_InstanceID) {
     Particle particle = particles[alive_list[instance_id]];
 
     /* 1. Transform to clip space  */
@@ -38,10 +30,12 @@ VertexOutput main(VertexInput input, uint32_t instance_id: SV_InstanceID) {
     /* 5. Convert to ndc space */
     float2 ndc_pos = (pixel_pos / gpu_view.resolution) * 2.0f - 1.0f;
 
+    BillboardVertexOutput output;
     /* 6. Convert to clip space */
     output.pos = float4(ndc_pos * clip_pos.w, clip_pos.z, clip_pos.w);
     output.uv = input.uv;
     output.tex_index = particle.tex_index;
+    output.opacity = particle.opacity;
 
     return output;
 }

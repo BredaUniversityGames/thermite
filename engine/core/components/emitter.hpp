@@ -19,6 +19,8 @@ struct ParticleEmitter {
 
     float size = 64.0f;
     float end_size = 64.0f;
+    float opacity = 1.0f;
+    float end_opacity = 1.0f;
 
     bool active = true;
 
@@ -27,4 +29,4 @@ struct ParticleEmitter {
 
 }  // namespace tmt
 
-TMT_COMPONENT(tmt::ParticleEmitter, "ParticleEmitter", (pos, particle_lifetime, dir, cone_angle, min_speed, max_speed, spawn_count, size, end_size, active, texture));
+TMT_COMPONENT(tmt::ParticleEmitter, "ParticleEmitter", (pos, particle_lifetime, dir, cone_angle, min_speed, max_speed, spawn_count, size, end_size, opacity, end_opacity, active, texture));

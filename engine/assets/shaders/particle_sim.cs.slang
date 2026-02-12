@@ -27,7 +27,8 @@ void main(uint3 thread_id: SV_DispatchThreadID) {
 
         float t = p.age / p.lifetime;
 
-        p.size = lerp(p.start_size, p.end_size, t); 
+        p.size = lerp(p.start_size, p.end_size, t);
+        p.opacity = lerp(p.start_opacity, p.end_opacity, t);
 
         particles[particle_index] = p;
 
