@@ -33,22 +33,10 @@
     "WorldsState": {
         "1048576": {
             "facts": {
-                "2232218612": {
-                    "value_type": "BOOL_TYPE",
-                    "bool_val": false
-                },
-                "2627103337": {
-                    "value_type": "BOOL_TYPE",
-                    "bool_val": true
-                },
-                "3240367902": {
-                    "value_type": "BOOL_TYPE",
-                    "bool_val": true
-                },
-                "3469203248": {
-                    "value_type": "BOOL_TYPE",
-                    "bool_val": false
-                }
+                "2232218612": false,
+                "2627103337": true,
+                "3240367902": true,
+                "3469203248": false
             }
         }
     },

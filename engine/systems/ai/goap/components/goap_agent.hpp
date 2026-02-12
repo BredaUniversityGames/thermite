@@ -66,3 +66,5 @@ struct GoapAgent {
 };
 
 }  // namespace tmt
+
+//TMT_OBJECT(tmt::GoapAgent, (available_actions, available_goals));

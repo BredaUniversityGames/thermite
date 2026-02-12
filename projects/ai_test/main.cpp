@@ -76,7 +76,7 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     {
         tmt::GoapGoal patrol;
         patrol.name = "g_PatrolArea";
-        patrol.desired_state = { { tmt::FactId("area_secure"), tmt::FactValue(true) } };
+        patrol.desired_state = { { tmt::FactId("area_secure"), true } };
         patrol.priority = 1;
         patrol.valid = true;
 
@@ -86,7 +86,7 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     {
         tmt::GoapGoal kill;
         kill.name = "g_KillPlayer";
-        kill.desired_state = { { tmt::FactId("player_alive"), tmt::FactValue(false) } };
+        kill.desired_state = { { tmt::FactId("player_alive"), false } };
         kill.priority = 10;
         kill.valid = true;
 
@@ -104,17 +104,17 @@ void AIScene::on_start() {
         transform.set_world_position(glm::vec3(0.0f, 0.0f, -2.0f));
     }
 
-    //auto& ecs = tmt::engine.ecs;
-    //auto& goap = ecs.systems.get<tmt::Goap>();
+    // auto& ecs = tmt::engine.ecs;
+    // auto& goap = ecs.systems.get<tmt::Goap>();
 
-    //auto& action_reg = goap.actions();
-    //auto& goal_reg = goap.goals();
-    //auto& type_reg = goap.agent_types();
+    // auto& action_reg = goap.actions();
+    // auto& goal_reg = goap.goals();
+    // auto& type_reg = goap.agent_types();
 
     //// --- Register Actions ---
-    //action_reg.register_action(std::make_unique<tmt::PatrolArea>());
-    //action_reg.register_action(std::make_unique<tmt::ChasePlayer>());
-    //action_reg.register_action(std::make_unique<tmt::KillPlayer>());
+    // action_reg.register_action(std::make_unique<tmt::PatrolArea>());
+    // action_reg.register_action(std::make_unique<tmt::ChasePlayer>());
+    // action_reg.register_action(std::make_unique<tmt::KillPlayer>());
 
     //// --- Register Goals ---
     //{

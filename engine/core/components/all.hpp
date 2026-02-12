@@ -42,7 +42,7 @@ using SerializeComponents = ComponentRegistry<
 	UIComponent,
 	ImageRenderer,
 	GoapAgentType,
-	FactValue,
+	//FactValue,
 	//GoapAction,
 	GoapGoal,
 	WorldState
@@ -65,7 +65,7 @@ using InspectComponents = ComponentRegistry<
 	UIComponent,
 	ImageRenderer,
 	GoapAgentType,
-	FactValue,
+	//FactValue,
 	//GoapAction,
 	GoapGoal,
 	WorldState

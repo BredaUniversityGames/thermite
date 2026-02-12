@@ -224,12 +224,12 @@ void GoapAgentEditor::draw_world_state_section(GoapAgentType& type) {
     // Iterate through all existing facts in the agent type
     for (auto it = type.default_world_state.begin(); it != type.default_world_state.end();) {
         const std::string& name = it->first;  // The key is now a string directly
-        bool v = it->second.bool_val;
+        bool v = it->second;
 
         ImGui::PushID(name.c_str());          // Use string as ImGui ID
 
         // Display a checkbox for the fact
-        if (ImGui::Checkbox(name.c_str(), &v)) it->second.bool_val = v;
+        if (ImGui::Checkbox(name.c_str(), &v)) it->second = v;
 
         ImGui::SameLine();
 
@@ -249,8 +249,8 @@ void GoapAgentEditor::draw_world_state_section(GoapAgentType& type) {
     ImGui::SameLine();
     if (ImGui::Button("Add")) {
         if (newFact[0]) {
-            type.default_world_state[newFact] = FactValue(true);  // key is now string
-            newFact[0] = '\0';                                    // Clear input buffer
+            type.default_world_state[newFact] = true;  // key is now string
+            newFact[0] = '\0';                         // Clear input buffer
         }
     }
 }

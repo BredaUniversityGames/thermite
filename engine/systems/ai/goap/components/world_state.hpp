@@ -6,6 +6,8 @@
 
 namespace tmt {
 
+    //// UPDATE COMMENTS AFTER REMOVING FACTVALUE
+
 /**
  * Class FactRegistry
  *
@@ -82,20 +84,20 @@ struct FactId {
  * Currently only bool types are supported by GoapAction::check_preconditions.
  * Could be extended to support more complex types.
  */
-struct FactValue {
-    enum class Type { BOOL_TYPE, INT_TYPE, FLOAT_TYPE } value_type;
-
-        bool bool_val;
-    //union {
-    //    int int_val;
-    //    float float_val;
-    //};
-
-    FactValue() : value_type(Type::BOOL_TYPE), bool_val(false) {}
-    FactValue(bool b) : value_type(Type::BOOL_TYPE), bool_val(b) {}
-    //FactValue(int i) : value_type(Type::INT_TYPE), int_val(i) {}
-    //FactValue(float f) : value_type(Type::FLOAT_TYPE), float_val(f) {}
-};
+//struct FactValue {
+//    enum class Type { BOOL_TYPE, INT_TYPE, FLOAT_TYPE } value_type;
+//
+//        bool bool_val;
+//    //union {
+//    //    int int_val;
+//    //    float float_val;
+//    //};
+//
+//    FactValue() : value_type(Type::BOOL_TYPE), bool_val(false) {}
+//    FactValue(bool b) : value_type(Type::BOOL_TYPE), bool_val(b) {}
+//    //FactValue(int i) : value_type(Type::INT_TYPE), int_val(i) {}
+//    //FactValue(float f) : value_type(Type::FLOAT_TYPE), float_val(f) {}
+//};
 
 /**
  * Struct FactPair
@@ -105,7 +107,7 @@ struct FactValue {
  */
 struct FactPair {
     FactId id;
-    FactValue value;
+    bool value;
 };
 
 /**
@@ -119,12 +121,19 @@ struct FactPair {
  *   - dynamic reaction and interrupts.
  */
 struct WorldState {
-    std::unordered_map<uint32_t, FactValue> facts;
+    std::unordered_map<uint32_t, bool> facts;
+    //std::unordered_map<std::string, bool> facts;
 
     /**
      * Applies a collection of effects to the world state.
      * Param: effects, a List of facts to modify.
      */
+    //void apply(const std::vector<FactPair>& effects) {
+    //    for (const auto& e : effects) {
+    //        facts[e.id.id] = e.value;
+    //    }
+    //}
+
     void apply(const std::vector<FactPair>& effects) {
         for (const auto& e : effects) {
             facts[e.id.id] = e.value;
@@ -136,14 +145,23 @@ struct WorldState {
      * Returns true if all conditions are satisfied.
      * Param: conditions, A list of required facts.
      */
+    //bool satisfies(const std::vector<FactPair>& conditions) const {
+    //    for (const auto& cond : conditions) {
+    //        auto it = facts.find(cond.id.id);
+    //        if (it == facts.end()) return false;
+
+    //        const auto& val = it->second;
+
+    //        if (val.value_type == FactValue::Type::BOOL_TYPE && val.bool_val != cond.value.bool_val) return false;
+    //    }
+    //    return true;
+    //}
+
     bool satisfies(const std::vector<FactPair>& conditions) const {
         for (const auto& cond : conditions) {
             auto it = facts.find(cond.id.id);
             if (it == facts.end()) return false;
-
-            const auto& val = it->second;
-
-            if (val.value_type == FactValue::Type::BOOL_TYPE && val.bool_val != cond.value.bool_val) return false;
+            if (it->second != cond.value) return false;
         }
         return true;
     }
@@ -152,17 +170,23 @@ struct WorldState {
      * Retrieves a fact value if it exists.
      * Returns pointer to FactValue or nullptr.
      */
-    const FactValue* try_get(const FactId& id) const {
+    //const FactValue* try_get(const FactId& id) const {
+    //    auto it = facts.find(id.id);
+    //    if (it != facts.end()) return &it->second;
+    //    return nullptr;
+    //}
+
+    const bool* try_get(const FactId& id) const {
         auto it = facts.find(id.id);
-        if (it != facts.end()) return &it->second;
-        return nullptr;
+        return it != facts.end() ? &it->second : nullptr;
     }
 };
+
 
 }  // namespace tmt
 
 // TMT_OBJECT(tmt::FactValue, (value_type));
-TMT_COMPONENT(tmt::FactValue, "FactValue", (value_type, bool_val));
+//TMT_COMPONENT(tmt::FactValue, "FactValue", (value_type, bool_val));
 TMT_OBJECT(tmt::FactId, (id));
 TMT_OBJECT(tmt::FactPair, (id, value));
 TMT_COMPONENT(tmt::WorldState, "WorldsState", (facts));
