@@ -34,32 +34,34 @@ float intersect_aabb(const Ray& ray, const glm::vec3 box_min, const glm::vec3 bo
 
 // Draw the grid of a bounding box face.
 void draw_face_grid(const glm::vec3& start, const glm::vec3& right, const glm::vec3& up, const float length, const float height) {
-    glm::vec3 point_one = start;
-    glm::vec3 point_two = start + up * height;
-    const glm::vec3 right_vector = right / static_cast<float>(VOXELS_PER_UNIT);
+    glm::vec3 p1 = start;
+    glm::vec3 p2 = start + up * height;
+
+    const glm::vec3 right_vector = right * UNITS_PER_VOXEL;
     const size_t x_line_count = static_cast<size_t>(std::ceil(length * static_cast<float>(VOXELS_PER_UNIT))) - 1;
     for (size_t i = 0; i < x_line_count; i++) {
-        point_one += right_vector;
-        point_two += right_vector;
+        p1 += right_vector;
+        p2 += right_vector;
 
-        engine.polyline.draw_line(point_one, point_two);
+        engine.polyline.draw_line(p1, p2);
     }
 
-    point_one = start;
-    point_two = start + right * length;
-    const glm::vec3 up_vector = up / static_cast<float>(VOXELS_PER_UNIT);
+    p1 = start;
+    p2 = start + right * length;
+
+    const glm::vec3 up_vector = up * UNITS_PER_VOXEL;
     const size_t y_line_count = static_cast<size_t>(std::ceil(height * static_cast<float>(VOXELS_PER_UNIT))) - 1;
     for (size_t i = 0; i < y_line_count; i++) {
-        point_one += up_vector;
-        point_two += up_vector;
+        p1 += up_vector;
+        p2 += up_vector;
 
-        engine.polyline.draw_line(point_one, point_two);
+        engine.polyline.draw_line(p1, p2);
     }
 }
 
 struct FaceData {
-    float normal_sign {0.0f};
-    int32_t normal_index {-1};
+    float normal_sign { 0.0f };
+    int32_t normal_index { -1 };
 
     glm::vec3 world_normal {};
     glm::vec3 face_center {};
@@ -73,9 +75,9 @@ FaceData calculate_face_info(const int32_t face_index, const Transform& transfor
     const float sign = (result.rem == 0 ? 1.0f : -1.0f);
     face_normal[result.quot] = sign;
 
-    FaceData info {.normal_sign = sign, .normal_index = result.quot};
-    info.world_normal = transform.get_world_matrix() * glm::vec4 {face_normal, 0.0f};
-    info.face_center = transform.get_world_matrix() * glm::vec4 {face_normal * half_extent, 1.0f};
+    FaceData info { .normal_sign = sign, .normal_index = result.quot };
+    info.world_normal = transform.get_world_matrix() * glm::vec4 { face_normal, 0.0f };
+    info.face_center = transform.get_world_matrix() * glm::vec4 { face_normal * half_extent, 1.0f };
 
     return info;
 }
@@ -85,13 +87,42 @@ bool draw_face(const FaceData& info, const Transform& transform, const glm::vec3
     const glm::vec3 camera_position = engine.renderer.get_debug_transform().get_world_position();
     if (glm::dot(info.world_normal, camera_position - info.face_center) >= 0.0f) return false;
 
-    glm::vec3 box_half_extent = half_extent;
+    glm::vec3 box_half_extent = half_extent * transform.get_world_scale();
     box_half_extent[info.normal_index] = 0.0f;
 
-    engine.polyline.use_line_width(2.0f, true);
-    engine.polyline.use_color(glm::vec4 {0.8f, 0.8f, 0.8f, 1.0f});
+    // Set up the local points of the face.
+    glm::vec3 p0;
+    const int32_t i0 = info.normal_index;
+    const int32_t i1 = (i0 + 1) % 3;
+    const int32_t i2 = 3 - i0 - i1;
+    p0[i0] = half_extent[i0] * info.normal_sign;
+    p0[i1] = half_extent[i1];
+    p0[i2] = half_extent[i2];
 
-    engine.polyline.draw_obb(info.face_center, box_half_extent, transform.get_world_rotation());
+    glm::vec3 p1 = p0;
+    p1[i1] *= -1.0f;
+
+    glm::vec3 p2 = p1;
+    p2[i2] *= -1.0f;
+
+    glm::vec3 p3 = p2;
+    p3[i1] *= -1.0f;
+
+    // Convert the local points to world space.
+    const glm::mat4& world_matrix = transform.get_world_matrix();
+    p0 = world_matrix * glm::vec4 {p0, 1.0f};
+    p1 = world_matrix * glm::vec4 {p1, 1.0f};
+    p2 = world_matrix * glm::vec4 {p2, 1.0f};
+    p3 = world_matrix * glm::vec4 {p3, 1.0f};
+
+    // Draw the lines between the points to make the grid face.
+    engine.polyline.use_line_width(2.0f, true);
+    engine.polyline.use_color(glm::vec4 { 0.8f, 0.8f, 0.8f, 1.0f });
+
+    engine.polyline.draw_line(p0, p1);
+    engine.polyline.draw_line(p1, p2);
+    engine.polyline.draw_line(p2, p3);
+    engine.polyline.draw_line(p3, p0);
 
     return true;
 }
@@ -100,21 +131,26 @@ bool draw_face(const FaceData& info, const Transform& transform, const glm::vec3
 void draw_selected_face(const FaceData& info, const glm::vec3& half_extent, const Transform& transform) {
     glm::vec3 min = -half_extent;
     min[info.normal_index] = half_extent[info.normal_index] * info.normal_sign;
-    min = transform.get_world_matrix() * glm::vec4 {min, 1.0f};
+    min = transform.get_world_matrix() * glm::vec4 { min, 1.0f };
 
     engine.polyline.use_line_width(4.0f, false);
     engine.polyline.use_color(glm::vec4 {0.8f, 0.8f, 0.8f, 0.4f});
+
+    const glm::vec3 scaled_right = transform.get_right() * transform.get_world_scale();
+    const glm::vec3 scaled_up = transform.get_up() * transform.get_world_scale();
+    const glm::vec3 scaled_forward = transform.get_forward() * transform.get_world_scale();
+
     switch (info.normal_index) {
         case 0:
-            draw_face_grid(min, transform.get_forward(), transform.get_up(), half_extent[2] * 2.0f, half_extent[1] * 2.0f);
+            draw_face_grid(min, scaled_forward, scaled_up, half_extent[2] * 2.0f, half_extent[1] * 2.0f);
             break;
 
         case 1:
-            draw_face_grid(min, transform.get_right(), transform.get_forward(), half_extent[0] * 2.0f, half_extent[2] * 2.0f);
+            draw_face_grid(min, scaled_right, scaled_forward, half_extent[0] * 2.0f, half_extent[2] * 2.0f);
             break;
 
         case 2:
-            draw_face_grid(min, transform.get_right(), transform.get_up(), half_extent[0] * 2.0f, half_extent[1] * 2.0f);
+            draw_face_grid(min, scaled_right, scaled_up, half_extent[0] * 2.0f, half_extent[1] * 2.0f);
             break;
 
         default:
@@ -124,16 +160,18 @@ void draw_selected_face(const FaceData& info, const glm::vec3& half_extent, cons
 
 void draw_selection(const Hit& hit, const glm::vec3& half_extent, const Transform& transform) {
     engine.polyline.use_line_width(2.0f);
-    engine.polyline.use_color(glm::vec4 {1.0f, 0.5f, 0.5f, 1.0f});
+    engine.polyline.use_color(glm::vec4 { 1.0f, 0.5f, 0.5f, 1.0f });
 
-    const glm::vec3 local_voxel_pos = glm::vec3 {hit.coord} * UNITS_PER_VOXEL - half_extent + VOXEL_SIZE_HALF;
-    const glm::vec3 world_voxel_pos = transform.get_world_matrix() * glm::vec4 {local_voxel_pos, 1.0f};
+    const glm::vec3 local_voxel_pos = glm::vec3 { hit.coord } * UNITS_PER_VOXEL - half_extent + VOXEL_SIZE_HALF;
+    const glm::vec3 world_voxel_pos = transform.get_world_matrix() * glm::vec4 { local_voxel_pos, 1.0f };
 
-    engine.polyline.draw_obb(world_voxel_pos, glm::vec3 {VOXEL_SIZE_HALF}, transform.get_world_rotation());
+    const glm::vec3 local_scale = transform.get_world_scale();
+
+    engine.polyline.draw_obb(world_voxel_pos, VOXEL_SIZE_HALF * local_scale, transform.get_world_rotation());
 }
 
 bool handle_selection(const Ray& mouse_ray, Hit& hit, const bool can_hit_face, const Entity entity, const Transform& transform, const ResourceRef<VoxelVolume>& resource) {
-    const glm::vec3 half_extent = glm::vec3 {resource->size} * VOXEL_SIZE_HALF;
+    const glm::vec3 half_extent = glm::vec3 { resource->size } * VOXEL_SIZE_HALF;
     const glm::mat4 world_to_local_matrix = glm::inverse(transform.get_world_matrix());
 
     Ray local_ray {};
@@ -141,16 +179,16 @@ bool handle_selection(const Ray& mouse_ray, Hit& hit, const bool can_hit_face, c
     bool is_valid_hit = false;
     if (can_hit_face) {
         // If we can hit a face, that means we want to work on top of the voxel the mouse is pointing at, we get the voxel coord by adjusting it here.
-        const glm::vec3 local_normal = world_to_local_matrix * glm::vec4 {hit.normal, 0.0f};
-        const glm::uvec3 voxel_grid_normal {glm::round(local_normal)};
+        const glm::vec3 local_normal = world_to_local_matrix * glm::vec4 { hit.normal, 0.0f };
+        const glm::uvec3 voxel_grid_normal { glm::round(local_normal) };
         hit.coord += voxel_grid_normal;
 
         if (glm::any(glm::greaterThanEqual(hit.coord, resource->size))) hit.entity = entt::null;
 
         // Create a local version of the ray to simplify the aabb test later.
         local_ray = Ray {
-            world_to_local_matrix * glm::vec4 {mouse_ray.origin, 1.0f},
-            world_to_local_matrix * glm::vec4 {mouse_ray.dir, 0.0f},
+            world_to_local_matrix * glm::vec4 { mouse_ray.origin, 1.0f },
+            world_to_local_matrix * glm::vec4 { mouse_ray.dir, 0.0f },
         };
 
         // Do an aabb test with the bounding box of the voxel object, this tells use if the user is pointing at a face of the grid, and thus we should draw the grid.
@@ -177,7 +215,7 @@ bool handle_selection(const Ray& mouse_ray, Hit& hit, const bool can_hit_face, c
         hit.distance = far;
 
         const glm::vec3 position = (mouse_ray.origin + mouse_ray.dir * hit.distance) - (face.world_normal * VOXEL_SIZE_HALF);
-        const glm::vec3 local_position = glm::inverse(transform.get_world_matrix()) * glm::vec4 {position, 1.0f};
+        const glm::vec3 local_position = glm::inverse(transform.get_world_matrix()) * glm::vec4 { position, 1.0f };
 
         hit.coord = (local_position + half_extent) * static_cast<float>(VOXELS_PER_UNIT);
 
@@ -240,13 +278,13 @@ void modify_voxels(const Brush::Mode brush_mode, const ResourceRef<VoxelVolume>&
 }  // namespace
 
 void ModelViewer::display() {
-    const ImVec2 content_start {0.0f, ImGui::GetFrameHeight()};
+    const ImVec2 content_start { 0.0f, ImGui::GetFrameHeight() };
     ImGui::SetCursorPos(content_start);
 
     const ImVec2 size = ImGui::GetWindowSize() - content_start;
     if (size.x <= 0.0f || size.y <= 0.0f) return;
 
-    const ImVec2 window_pos = ImGui::GetWindowPos() + ImVec2 {0.0f, ImGui::GetFrameHeight()};
+    const ImVec2 window_pos = ImGui::GetWindowPos() + ImVec2 { 0.0f, ImGui::GetFrameHeight() };
 
     engine.renderer.render_view.set_viewport_size(static_cast<uint32_t>(size.x), static_cast<uint32_t>(size.y));
     ImGui::Image(engine.renderer.render_view.imgui_viewport, size);
@@ -255,9 +293,10 @@ void ModelViewer::display() {
     if (brush_mode == Brush::Mode::MULTI_TOOL) {
         const Entity selected_entity = editor.windows[Editor::Mode::VOXEL].get<NodeHierarchy>().get_selected_entity();
 
-        editor.gizmo.manip(window_pos.x, window_pos.y, size.x, size.y, {&selected_entity, &selected_entity + 1});
+        editor.gizmo.manip(window_pos.x, window_pos.y, size.x, size.y, { &selected_entity, &selected_entity + 1 });
 
-        if (!ImGuizmo::IsOver() && engine.input.is_mouse_button_just_pressed(MouseButton::LEFT)) {
+        const bool can_select = (ImGui::IsWindowHovered() && !ImGuizmo::IsOver());
+        if (can_select && engine.input.is_mouse_button_just_pressed(MouseButton::LEFT)) {
             const Ray mouse_ray = engine.renderer.render_view.pixel_ray(mouse_position);
             const Hit hit = engine.renderer.trace_ray(mouse_ray);
 
@@ -293,6 +332,8 @@ void ModelViewer::display() {
     modify_voxels(brush_mode, resource, hit);
 }
 
-void ModelViewer::on_editor_update(const FrameData& time) { editor.windows[Editor::Mode::SCENE].get<Viewport>().update_debug_camera(time); }
+void ModelViewer::on_editor_update(const FrameData& time) {
+    editor.windows[Editor::Mode::SCENE].get<Viewport>().update_debug_camera(time);
+}
 
 }  // namespace tmt

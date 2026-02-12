@@ -13,7 +13,7 @@
 namespace tmt {
 
 const std::unordered_map<Brush::Mode, const char*> Brush::MODE_ICONS {
-    {Mode::MULTI_TOOL, ICON_MS_OPEN_WITH}, {Mode::PAINT, ICON_MS_BRUSH}, {Mode::COLOR_PICKER, ICON_MS_COLORIZE}, {Mode::ADD, ICON_MS_ADD_BOX}, {Mode::REMOVE, ICON_MS_DESTRUCTION},
+    { Mode::MULTI_TOOL, ICON_MS_OPEN_WITH }, { Mode::PAINT, ICON_MS_BRUSH }, { Mode::COLOR_PICKER, ICON_MS_COLORIZE }, { Mode::ADD, ICON_MS_ADD_BOX }, { Mode::REMOVE, ICON_MS_DESTRUCTION },
 };
 
 void Brush::display() {
@@ -42,7 +42,7 @@ void Brush::display() {
 
             // This button toggles between move and rotate, since scaling in the voxel editor isn't helpful.
             const char* mode_button_icon = Gizmo::gizmo_op_icons[editor.gizmo.operation];
-            if (ImGui::Button(mode_button_icon)) editor.gizmo.operation = static_cast<uint8_t>(!editor.gizmo.operation);
+            if (ImGui::Button(mode_button_icon)) editor.gizmo.operation = (editor.gizmo.operation + 1) % Gizmo::GIZMO_OP_COUNT;
 
             ImGui::NewLine();
 

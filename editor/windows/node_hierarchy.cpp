@@ -53,16 +53,16 @@ void drag_node(const Entity entity, const std::string& name) {
 }
 
 struct NodeCreationData {
-    Entity parent {entt::null};
-    std::string name {"New Node"};
+    Entity parent { entt::null };
+    std::string name { "New Node" };
 
-    bool has_voxel_grid {false};
-    glm::uvec3 voxel_size {1, 1, 1};
+    bool has_voxel_grid { false };
+    glm::uvec3 voxel_size { 1, 1, 1 };
 };
 std::unique_ptr<NodeCreationData> node_creation_info;
 
 struct VoxelEditUUID {
-    UUID uuid {NULL_UUID};
+    UUID uuid { NULL_UUID };
 };
 
 Entity recurse_build_scene(const VoxelSceneNode& node, bool assign_new_uuids, const Entity parent_entity = entt::null, const glm::mat4& parent_matrix = glm::identity<glm::mat4>()) {
@@ -79,7 +79,7 @@ Entity recurse_build_scene(const VoxelSceneNode& node, bool assign_new_uuids, co
         VoxelRenderer& renderer = engine.ecs.add_component<VoxelRenderer>(entity);
 
         // Create a fake voxel resource managed by the voxel editor.
-        const ResourceRef volume {{}, std::make_shared<VoxelVolume>(node)};
+        const ResourceRef volume { {}, std::make_shared<VoxelVolume>(node) };
         volume->uuid = uuid_component.uuid;
         renderer.resource = volume;
     }
@@ -114,7 +114,7 @@ void recurse_parse_scene(Entity entity, const Transform& transform, VoxelSceneNo
     }
 }
 
-std::atomic_bool model_load_atomic {true};
+std::atomic_bool model_load_atomic { true };
 
 }  // namespace
 
@@ -137,7 +137,7 @@ void NodeHierarchy::open_svh() {
             model_load_atomic.store(true);
             model_load_atomic.notify_one();
         },
-        {{"Thermite Voxel File", "svh"}}
+        { { "Thermite Voxel File", "svh" } }
     );
 }
 
@@ -155,11 +155,12 @@ void NodeHierarchy::save_svh_as() {
     save_file_dialog(
         [this](const IO::FileLocation& location) {
             loaded_location = location;
+            if (loaded_location.relative_path.extension() != ".svh") loaded_location.relative_path += ".svh"; // Make sure the saved file has the correct extension.
 
             const std::vector<char> scene_data = encode_voxel_scene();
-            IO::write_file(location, scene_data.data(), scene_data.size());
+            IO::write_file(loaded_location, scene_data.data(), scene_data.size());
         },
-        {{"Thermite Voxel File", "svh"}}
+        { { "Thermite Voxel File", "svh" } }
     );
 }
 
@@ -174,7 +175,7 @@ void NodeHierarchy::import_file(const std::string& file_description, const std::
             model_load_atomic.store(true);
             model_load_atomic.notify_one();
         },
-        {{file_description.c_str(), file_extension.c_str()}}
+        { { file_description.c_str(), file_extension.c_str() } }
     );
 }
 
@@ -184,13 +185,16 @@ void NodeHierarchy::export_file(const std::string& file_description, const std::
             const entt::basic_group renderer_group = engine.ecs.get_registry().group<VoxelRenderer>(entt::get<Transform>);
             if (renderer_group.empty()) return;
 
-            const std::filesystem::path obj_path = location.get_relative_path();
-            const std::filesystem::path mtl_path = location.get_relative_path().replace_extension(".mtl");
+            // Make sure all the paths have the correct extension.
+            IO::FileLocation obj_location = location;
+            if (obj_location.relative_path.extension() != ".obj") obj_location.relative_path += ".obj";
+            const std::filesystem::path obj_path = obj_location.get_relative_path();
+            const std::filesystem::path mtl_path = obj_location.get_relative_path().replace_extension(".mtl");
 
-            std::ofstream obj_file {obj_path, std::ios::trunc};
+            std::ofstream obj_file { obj_path, std::ios::trunc };
 
             if (obj_file.is_open()) obj_file << std::format("mtllib {}", mtl_path.filename().generic_string()) << '\n';
-            std::ofstream mtl_file {mtl_path, std::ios::trunc};
+            std::ofstream mtl_file { mtl_path, std::ios::trunc };
 
             uint32_t indices_offset = 0;
             for (const auto&& [entity, renderer, transform] : renderer_group.each()) {
@@ -211,12 +215,12 @@ void NodeHierarchy::export_file(const std::string& file_description, const std::
 
                 if (obj_file.is_open()) {
                     // Start new names object in the wavefront object file.
-                    obj_file << std::format("o {}", name) << '\n';
+                    obj_file << std::format("g {}", name) << '\n';
 
                     // Write all visuals to the file.
                     for (uint32_t i = 0; i < mesh->vertex_count; i++) {
-                        const glm::vec3& local_coord = glm::make_vec3(&mesh->vertices[i].pos.x) - (glm::vec3 {size} * 0.5f);
-                        const glm::vec3& coord = transform.get_world_matrix() * glm::vec4 {local_coord * UNITS_PER_VOXEL, 1.0f};
+                        const glm::vec3& local_coord = glm::make_vec3(&mesh->vertices[i].pos.x) - (glm::vec3 { size } * 0.5f);
+                        const glm::vec3& coord = transform.get_world_matrix() * glm::vec4 { local_coord * UNITS_PER_VOXEL, 1.0f };
 
                         // Invert the X-axis to correctly load it in external programs.
                         obj_file << std::format("v {} {} {}", -coord.x, coord.y, coord.z) << '\n';
@@ -250,7 +254,7 @@ void NodeHierarchy::export_file(const std::string& file_description, const std::
             obj_file.close();
             mtl_file.close();
         },
-        {{file_description.c_str(), file_extension.c_str()}}
+        { { file_description.c_str(), file_extension.c_str() } }
     );
 }
 
@@ -262,7 +266,7 @@ void NodeHierarchy::build_scene(const std::span<VoxelSceneNode>& root_nodes, boo
     }
 }
 
-std::vector<char> NodeHierarchy::encode_voxel_scene() {
+std::vector<char> NodeHierarchy::encode_voxel_scene() const {
     const auto& entities = engine.ecs.get_registry().storage<Transform>();
     if (entities.empty()) return {};  // Return empty scene encoding.
 
@@ -274,8 +278,6 @@ std::vector<char> NodeHierarchy::encode_voxel_scene() {
         VoxelSceneNode& root_node = root_nodes.emplace_back();
         recurse_parse_scene(entity, transform, root_node);
     }
-
-    clear_hierarchy();
 
     // Encode those VoxelSceneNodes into the .svh format.
     return encode_svh(root_nodes);
@@ -321,7 +323,7 @@ void NodeHierarchy::clear_hierarchy() {
 }
 
 void NodeHierarchy::drop_hierarchy() {
-    const ImRect window_rect {ImGui::GetWindowContentRegionMin(), ImGui::GetWindowContentRegionMax()};
+    const ImRect window_rect { ImGui::GetWindowContentRegionMin(), ImGui::GetWindowContentRegionMax() };
     if (!ImGui::BeginDragDropTargetCustom(window_rect, ImGui::GetID("NodeEmptyDropArea"))) return;
 
     const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("VoxelNode");
@@ -367,7 +369,7 @@ void NodeHierarchy::popup_create_node() {
     ImGui::Checkbox("Has voxel grid", &has_voxel_grid);
 
     if (has_voxel_grid) {
-        constexpr glm::uvec2 min_max {1, 1024};
+        constexpr glm::uvec2 min_max { 1, 1024 };
         ImGui::DragScalarN("Size", ImGuiDataType_U32, &node_creation_info->voxel_size.x, 3, 0.25f, &min_max.x, &min_max.y);
     }
 
@@ -382,7 +384,7 @@ void NodeHierarchy::popup_create_node() {
         UUID uuid;
         if (has_voxel_grid) {
             // Create a fake voxel resource managed by the voxel editor.
-            const ResourceRef volume {{}, std::make_shared<VoxelVolume>(node_creation_info->voxel_size)};
+            const ResourceRef volume { {}, std::make_shared<VoxelVolume>(node_creation_info->voxel_size) };
             uuid = volume->uuid;
             engine.ecs.add_component<VoxelRenderer>(new_node_entity).resource = volume;
         }
