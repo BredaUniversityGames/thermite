@@ -9,7 +9,7 @@ public struct BillboardVertexOutput {
     public float opacity : OPACITY0;
 };
 
-public struct ParticleEmitter {
+public struct ParticleEffect {
     public float3 pos;
     public float lifetime;
 
@@ -27,6 +27,12 @@ public struct ParticleEmitter {
     public Range end_opacity;
 
     public Range rotation;
+};
+
+public struct ParticleEmitter {
+    public uint32_t effects_offset;
+    public uint32_t effects_count;
+    public uint32_t total_spawn_count;
 };
 
 public struct Particle {

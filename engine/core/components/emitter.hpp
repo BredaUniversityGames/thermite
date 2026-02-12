@@ -9,9 +9,9 @@ struct Range {
     float max;
 };
 
-struct ParticleEmitter {
-    ParticleEmitter();
-    
+struct ParticleEffect {
+    ParticleEffect();
+
     float particle_lifetime = 1.0f;
 
     glm::vec3 dir = { 0.0f, 1.0f, 0.0f };
@@ -31,8 +31,15 @@ struct ParticleEmitter {
     ResourceRef<Texture2D> texture;
 };
 
+struct ParticleEmitter {
+    std::vector<ParticleEffect> effects;
+
+    bool active = true;
+};
+
 }  // namespace tmt
 
 TMT_OBJECT(tmt::Range, (min, max));
+TMT_OBJECT(tmt::ParticleEffect, (particle_lifetime, dir, cone_angle, spawn_count, speed, start_size, end_size, start_opacity, end_opacity, rotation, active, texture));
 
-TMT_COMPONENT(tmt::ParticleEmitter, "ParticleEmitter", (particle_lifetime, dir, cone_angle, spawn_count, speed, start_size, end_size, start_opacity, end_opacity, rotation, active, texture));
+TMT_COMPONENT(tmt::ParticleEmitter, "ParticleEmitter", (effects, active));

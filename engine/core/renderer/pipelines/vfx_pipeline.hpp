@@ -12,14 +12,15 @@ class RenderGraph;
 namespace tmt {
 
 constexpr uint32_t MAX_PARTICLES = 100'000;
-constexpr uint32_t MAX_EMITTERS = 128;
+constexpr uint32_t MAX_EMITTERS = 64;
+constexpr uint32_t MAX_EFFECTS_PER_EMITTER = 8;
 
 struct GpuQuad {
     glm::vec2 pos {};
     glm::vec2 uvs {};
 };
 
-struct GpuEmitter {
+struct GpuParticleEffect {
     glm::vec3 pos {};
     float lifetime {};
 
@@ -38,6 +39,12 @@ struct GpuEmitter {
 
     Range rotation {};
     glm::vec2 pad {};
+};
+
+struct GpuEmitter {
+    uint32_t effects_offset {};
+    uint32_t effects_count {};
+    uint32_t total_spawn_count {};
 };
 
 struct GpuParticle {
@@ -95,6 +102,7 @@ class VfxPipeline {
     Buffer dispatch_args_buffer {};
     Buffer instanced_draw_args_buffer {};
     Buffer emitter_buffer {};
+    Buffer particle_effects_buffer {};
     Buffer billboard_vertices {};
 
     Sampler linear_sampler {};

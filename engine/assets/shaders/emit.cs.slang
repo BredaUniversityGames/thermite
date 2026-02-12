@@ -7,6 +7,7 @@ uint32_t emitter_index;
 
 ConstantBuffer<RenderView> render_view;
 StructuredBuffer<ParticleEmitter> emitters;
+StructuredBuffer<ParticleEffect> effects;
 
 RWStructuredBuffer<Counters> counters;
 RWStructuredBuffer<uint32_t> alive_list;
@@ -19,43 +20,47 @@ RWStructuredBuffer<Particle> particles;
 void main(uint3 thread_id: SV_DispatchThreadID) {
     ParticleEmitter emitter = emitters[emitter_index];
 
-    if (thread_id.x >= emitter.spawn_count)
+    if (thread_id.x >= emitter.total_spawn_count)
         return;
 
-    if (emitter.spawn_count >= counters[0].dead_count)
+    if (emitter.total_spawn_count >= counters[0].dead_count)
         return;
 
     uint seed = thread_id.x + render_view.frame_index * 1337;
 
-    Particle p;
-    p.pos = emitter.pos;
-    p.age = 0.0f;
-    p.lifetime = emitter.lifetime;
-    p.size = emitter.start_size.min;
-    p.start_size = lerp(emitter.start_size.min, emitter.start_size.max, rand_float(seed));
-    p.end_size = lerp(emitter.end_size.min, emitter.end_size.max, rand_float(seed));
-    p.opacity = 1.0f;
-    p.start_opacity = lerp(emitter.start_opacity.min, emitter.start_opacity.max, rand_float(seed));
-    p.end_opacity = lerp(emitter.end_opacity.min, emitter.end_opacity.max, rand_float(seed));
-    p.rot_speed = lerp(emitter.rotation.min, emitter.rotation.max, rand_float(seed));
-    p.rotation = 0.0f;
+    for (uint32_t i = 0; i < emitter.effects_count; i++) {
+        ParticleEffect effect = effects[emitter.effects_offset + i];
 
-    p.tex_index = emitter.tex_index;
+        Particle p;
+        p.pos = effect.pos;
+        p.age = 0.0f;
+        p.lifetime = effect.lifetime;
+        p.size = effect.start_size.min;
+        p.start_size = lerp(effect.start_size.min, effect.start_size.max, rand_float(seed));
+        p.end_size = lerp(effect.end_size.min, effect.end_size.max, rand_float(seed));
+        p.opacity = 1.0f;
+        p.start_opacity = lerp(effect.start_opacity.min, effect.start_opacity.max, rand_float(seed));
+        p.end_opacity = lerp(effect.end_opacity.min, effect.end_opacity.max, rand_float(seed));
+        p.rot_speed = lerp(effect.rotation.min, effect.rotation.max, rand_float(seed));
+        p.rotation = 0.0f;
 
-    float3 dir = sample_cone(emitter.dir, emitter.cone_angle, rand_float2(seed));
-    float speed = lerp(emitter.speed.min, emitter.speed.max, rand_float(seed));
+        p.tex_index = effect.tex_index;
 
-    p.velocity = dir * speed;
-    p.lifetime = emitter.lifetime;
+        float3 dir = sample_cone(effect.dir, effect.cone_angle, rand_float2(seed));
+        float speed = lerp(effect.speed.min, effect.speed.max, rand_float(seed));
 
-    uint32_t count_dead;
-    InterlockedAdd<uint32_t>(counters[0].dead_count, -1, count_dead);
+        p.velocity = dir * speed;
+        p.lifetime = effect.lifetime;
 
-    uint32_t new_particle_index = dead_list[count_dead - 1];
+        uint32_t count_dead;
+        InterlockedAdd<uint32_t>(counters[0].dead_count, -1, count_dead);
 
-    particles[new_particle_index] = p;
+        uint32_t new_particle_index = dead_list[count_dead - 1];
 
-    uint32_t alive_count;
-    InterlockedAdd<uint32_t>(counters[0].alive_count_after_sim, 1, alive_count);
-    alive_list[alive_count] = new_particle_index;
+        particles[new_particle_index] = p;
+
+        uint32_t alive_count;
+        InterlockedAdd<uint32_t>(counters[0].alive_count_after_sim, 1, alive_count);
+        alive_list[alive_count] = new_particle_index;
+    }
 }
