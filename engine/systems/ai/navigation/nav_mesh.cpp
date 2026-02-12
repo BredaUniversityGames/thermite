@@ -82,12 +82,16 @@ void NavMesh::generate_mesh_over_time() {
 
     if (!entered_loop) {
         iteration_nmg = 0;
+        std::swap(nodes_mesh, generating_nodes);
         if (generating_lod == lod_level) {
             generating = false;
         } else {
             generating_lod--;
+            for (auto& nodes : (*nodes_mesh)) {
+                
+            }
         }
-        std::swap(nodes_mesh, generating_nodes);
+        
     }
 }
 

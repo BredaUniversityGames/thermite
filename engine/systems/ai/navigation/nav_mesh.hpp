@@ -29,6 +29,7 @@ class NavNode {
    public:
     glm::vec3 local_pos;
     glm::vec3 world_pos;
+    glm::vec3 normal;
     int parent = 0;
 
     int iteration = 0;

@@ -4,7 +4,9 @@
 #include "engine/core/renderer/renderer.hpp"
 #include "engine/core/polyline.hpp"
 
-void Walking::start() { tmt::GoapAgentFactory::spawn_agent_from_type("dragon", entity); }
+void Walking::start() {
+    tmt::GoapAgentFactory::spawn_agent_from_type("dragon", entity);
+}
 
 void Walking::update(const tmt::FrameData& time) {
     tmt::Transform& walking_transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
@@ -43,14 +45,22 @@ void Walking::update(const tmt::FrameData& time) {
     }
 
     // height correction
-    tmt::Ray ray;
-    ray.origin = walking_transform.get_world_position() + glm::normalize(dir_to_asteroid) * 2.0f;
-    ray.dir = glm::normalize(-dir_to_asteroid);
-    const tmt::Hit hit = tmt::engine.renderer.trace_ray(ray);
-    if (hit.miss()) return;
+    {
+        tmt::Ray ray;
+        ray.origin = walking_transform.get_world_position() + glm::normalize(dir_to_asteroid) * 2.0f;
+        ray.dir = glm::normalize(-dir_to_asteroid);
+        const tmt::Hit hit = tmt::engine.renderer.trace_ray(ray);
+        if (hit.miss()) return;
+    }
 
-    glm::vec3 move_to = closest_ray.origin + closest_ray.dir * closest_hit.distance;
+    tmt::Ray ray;
+    ray.origin = walking_transform.get_world_position() + glm::normalize(-closest_ray.dir) * 0.5f;
+    ray.dir = glm::normalize(closest_ray.dir);
+    const tmt::Hit hit = tmt::engine.renderer.trace_ray(ray);
+
+    glm::vec3 move_to = ray.origin + ray.dir * hit.distance;
     glm::vec3 desired_velocity = glm::normalize(move_to - walking_transform.get_world_position()) * walk_speed * 1.0f;
+
     velocity += desired_velocity;
 
     tmt::engine.polyline.use_color(0.0f, 0.0f, 1.0f);
@@ -61,7 +71,7 @@ void Walking::update(const tmt::FrameData& time) {
     velocity *= 0.9f;
     walking_transform.set_world_position(walking_transform.get_world_position() + velocity * time.delta_time);
 
-    // rotation    
+    // rotation
     // use velocity to face the direction we are moving
     glm::quat rot_velocity;
     {
@@ -80,7 +90,7 @@ void Walking::update(const tmt::FrameData& time) {
         }
         rot_velocity = glm::normalize(rot_velocity);
     }
-    
+
     // use ground to stay upright
     glm::quat rot_ground;
     {
@@ -108,7 +118,7 @@ void Walking::update(const tmt::FrameData& time) {
     rotation = glm::normalize(rotation);
     walking_transform.set_world_rotation(rotation);
 
-    glm::vec3 half_extent = {0.2f, 0.2f, 0.5f};
+    glm::vec3 half_extent = { 0.2f, 0.2f, 0.5f };
 
     tmt::engine.polyline.use_color(1.0f, 0.0f, 0.0f);
     tmt::engine.polyline.use_line_width(2.0f);
