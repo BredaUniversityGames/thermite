@@ -295,10 +295,10 @@ inline RawVoxels gather_voxels(const vengi::Node* file_node) {
                 const vengi::VoxelInformation& voxel = file_node->voxel_data->voxels[i];
                 if (voxel.is_air) {
                     voxels.materials[i] = AIR_INDEX;
-                    voxels.physics_data[i] = {PhysicsVoxelType::EMPTY, 0};
+                    voxels.physics_data[i] = { PhysicsVoxelType::EMPTY, 0 };
                 } else {
                     voxels.materials[i] = voxel.color_index;
-                    voxels.physics_data[i] = {PhysicsVoxelType::INSIDE, 0};
+                    voxels.physics_data[i] = { PhysicsVoxelType::INSIDE, 0 };
                 }
             }
         }
@@ -317,7 +317,7 @@ VoxelSceneNode parse_hierarchy(const vengi::Node* file_node) {
     VoxelSceneNode node {};
     node.uuid = UUID(file_node->uuid[0], file_node->uuid[1]);
     node.name = file_node->name;
-    node.transform = file_node->transform.get_world_matrix();
+    node.transform = file_node->transform;
 
     /* If this node is a voxel model node */
     if (file_node->type == vengi::NodeType::MODEL) {
@@ -373,6 +373,8 @@ bool VoxelScene::load() {
     return true;
 }
 
-void VoxelScene::unload() { root_nodes.clear(); }
+void VoxelScene::unload() {
+    root_nodes.clear();
+}
 
 }  // namespace tmt

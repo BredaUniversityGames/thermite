@@ -75,4 +75,6 @@ void Wander::on_tick(tmt::Entity walking_entity, float dt) {
     }
 }
 
-bool Wander::is_done(tmt::Entity) const { return false; }
+bool Wander::is_done(tmt::Entity) const {
+    return false;
+}

@@ -29,7 +29,7 @@ class NodeHierarchy : public IWindow {
 
     void build_scene(const std::span<VoxelSceneNode>& root_nodes, bool assign_new_uuids = false);
 
-    std::vector<char> encode_voxel_scene();
+    std::vector<char> encode_voxel_scene() const;
 
    private:
     void recurse_display_node(Entity entity, const Name& name, Transform& transform);
@@ -47,11 +47,11 @@ class NodeHierarchy : public IWindow {
     void on_editor_update(const FrameData&) override {}
     void on_editor_end() override {}
 
-    uint32_t popup_id {0};
+    uint32_t popup_id { 0 };
 
     IO::FileLocation loaded_location {};
 
-    Entity selected_entity {entt::null};
+    Entity selected_entity { entt::null };
     std::set<Entity> root_entities;
 };
 

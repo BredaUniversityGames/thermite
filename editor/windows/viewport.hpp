@@ -1,8 +1,12 @@
 #pragma once
 #include "editor/core/window.hpp"
 #include "engine/events/input.hpp"
+#include "engine/core/entity.hpp"
+
+struct ImVec2;
 
 namespace tmt {
+
 class Viewport : public IWindow, public OnRetrieveMouseState {
    public:
     Viewport() = default;
@@ -29,15 +33,17 @@ class Viewport : public IWindow, public OnRetrieveMouseState {
     friend class ModelViewer;
 
     void update_debug_camera(const tmt::FrameData& frame_data);
-    void toolbar(const glm::vec2& image_pos);
+    bool toolbar(const ImVec2& image_pos);
+    void selection_logic(const ImVec2& imgui_mouse_pos, const ImVec2& image_pos, bool toolbar_buttons_hovered);
 
     float width = -1;
     float height = -1;
 
     bool is_hovered = false;
-    glm::vec2 mouse_pos = {0.0f, 0.0f};
+    glm::vec2 mouse_pos = { 0.0f, 0.0f };
 
     float camera_speed = 4.0f;
+    bool using_debug_camera = false;
 
     struct Config {
         constexpr static float SPEED_CHANGE_FACTOR = 0.5f;
@@ -54,7 +60,10 @@ class Viewport : public IWindow, public OnRetrieveMouseState {
         constexpr static const char* DOWN = "Camera Move Down";
     };
 
+    void force_open_recurse_upwards(tmt::Entity entity);
+
     // Inherited via OnRetrieveMouseState
     void on_retrieve_mouse_state(MouseOverride& event) override;
 };
+
 }  // namespace tmt

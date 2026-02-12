@@ -5,10 +5,12 @@
 namespace tmt {
 
 struct ParticleEmitter {
-    glm::vec3 pos = {0.0f, 0.0f, 0.0f};
+    ParticleEmitter();
+
+    glm::vec3 pos = { 0.0f, 0.0f, 0.0f };
     float particle_lifetime = 1.0f;
 
-    glm::vec3 dir = {0.0f, 1.0f, 0.0f};
+    glm::vec3 dir = { 0.0f, 1.0f, 0.0f };
     float cone_angle = 0.5f;  // In Degrees
 
     float min_speed = 1.0f;
