@@ -16,8 +16,6 @@ std::vector<AsteroidFieldComponent::AsteroidPoissonPoint> AsteroidFieldComponent
 
     SpatialLookupGrid grid(cell_size, region_size);
 
-    // TArray<FVector> spawn_points;
-
     glm::vec3 inside_annulus = get_belt_biased_unit_vector(layer.belt_bias) * (layer.start_r + ((layer.end_r - layer.start_r) * 0.5f));
 
     float max_size_factor = 0.f;
@@ -26,14 +24,8 @@ std::vector<AsteroidFieldComponent::AsteroidPoissonPoint> AsteroidFieldComponent
     }
     float max_radius = layer.spacing_radius * max_size_factor;
 
-    // spawn_points.Add(inside_annulus);
-
-    // spawn_points_debug.Emplace(inside_annulus, FColor::Blue);
     int it = 1;
     while (it > 0) {
-        // int rand_index = FMath::RandRange(0, spawn_points.Num() - 1);
-        // FVector spawn_center = spawn_points[rand_index];
-
         bool found_candidate = false;
         for (int i = 0; i < layer.rejection_samples; i++) {
 
@@ -50,7 +42,6 @@ std::vector<AsteroidFieldComponent::AsteroidPoissonPoint> AsteroidFieldComponent
                 a_p.radius = candidate_radius;
 
                 radii_points.push_back(a_p);
-                // spawn_points.Add(candidate_point);
                 it++;
 
                 candidate_point += region_size * 0.5f;
@@ -69,7 +60,6 @@ std::vector<AsteroidFieldComponent::AsteroidPoissonPoint> AsteroidFieldComponent
 
         if (!found_candidate) {
             it--;
-            // spawn_points.RemoveAt(rand_index);
         }
     }
 
@@ -90,52 +80,40 @@ bool AsteroidFieldComponent::point_valid(
 ) {
     candidate += grid.region_size * 0.5f;
 
-    // bool bound_condition = candidate.X > 0.f && candidate.X < grid.region_size.X && candidate.Y > 0.f && candidate.Y < grid.region_size.Y && candidate.Z > 0.f && candidate.Z <
-    // grid.region_size.Z;
+    int cell_x = static_cast<int>(candidate.x / grid.cell_size);
+    int cell_y = static_cast<int>(candidate.y / grid.cell_size);
+    int cell_z = static_cast<int>(candidate.z / grid.cell_size);
 
-    // float sqr_length = (candidate - grid.region_size*0.5f).SquaredLength();
+    int search_dim =  std::ceil(max_radius / grid.cell_size) + 1;
 
-    // float sqr_start = layer.start_r*layer.start_r;
-    // float sqr_end = layer.end_r*layer.end_r;
+    int start_search_x = std::max(cell_x - search_dim, 0);
+    int end_search_x = std::min(cell_x + search_dim + 1, grid.x_dim);
+    int start_search_y = std::max(cell_y - search_dim, 0);
+    int end_search_y = std::min(cell_y + search_dim + 1, grid.y_dim);
+    int start_search_z = std::max(cell_z - search_dim, 0);
+    int end_search_z = std::min(cell_z + search_dim + 1, grid.z_dim);
 
-    if (true /*bound_condition && sqr_length > sqr_start && sqr_length < sqr_end*/) {
-        int cell_x = static_cast<int>(candidate.x / grid.cell_size);
-        int cell_y = static_cast<int>(candidate.y / grid.cell_size);
-        int cell_z = static_cast<int>(candidate.z / grid.cell_size);
+    for (int x = start_search_x; x < end_search_x; x++) {
+        for (int y = start_search_y; y < end_search_y; y++) {
+            for (int z = start_search_z; z < end_search_z; z++) {
+                int idx = x * grid.z_dim * grid.x_dim + y * grid.x_dim + z;
+                int existing_point_index = grid[idx] - 1;
 
-        int search_dim =  std::ceil(max_radius / grid.cell_size) + 1;
+                if (existing_point_index != -1) {
+                    glm::vec3 temp = (points[existing_point_index].pos) - (candidate - grid.region_size* 0.5f);
+                    float sqr_distance = glm::dot(temp, temp);
 
-        int start_search_x = std::max(cell_x - search_dim, 0);
-        int end_search_x = std::min(cell_x + search_dim + 1, grid.x_dim);
-        int start_search_y = std::max(cell_y - search_dim, 0);
-        int end_search_y = std::min(cell_y + search_dim + 1, grid.y_dim);
-        int start_search_z = std::max(cell_z - search_dim, 0);
-        int end_search_z = std::min(cell_z + search_dim + 1, grid.z_dim);
+                    float min_allowed = candidate_radius + points[existing_point_index].radius;
 
-        for (int x = start_search_x; x < end_search_x; x++) {
-            for (int y = start_search_y; y < end_search_y; y++) {
-                for (int z = start_search_z; z < end_search_z; z++) {
-                    int idx = x * grid.z_dim * grid.x_dim + y * grid.x_dim + z;
-                    int existing_point_index = grid[idx] - 1;
-
-                    if (existing_point_index != -1) {
-                        glm::vec3 temp = (points[existing_point_index].pos) - (candidate - grid.region_size* 0.5f);
-                        float sqr_distance = glm::dot(temp, temp);
-
-                        float min_allowed = candidate_radius + points[existing_point_index].radius;
-
-                        if (sqr_distance < min_allowed * min_allowed) {
-                            return false;
-                        }
+                    if (sqr_distance < min_allowed * min_allowed) {
+                        return false;
                     }
                 }
             }
         }
-
-        return true;
     }
 
-    return false;
+    return true;
 }
 
 void AsteroidFieldComponent::spawn_field() 
@@ -157,8 +135,6 @@ void AsteroidFieldComponent::spawn_field()
 
         layer.start_r = prev_layer.end_r;
         layer.end_r = prev_layer.end_r + field_radius * (layer.space_weight / cum_weight);
-
-        // layer.rad_step = rad_step * (prev_layer.end_r / layer.end_r) * (1.f / layer.density_mult);
     }
 
     // poisson distribution sampling
