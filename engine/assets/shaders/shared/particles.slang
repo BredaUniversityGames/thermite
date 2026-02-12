@@ -1,5 +1,7 @@
 module particles;
 
+import math;
+
 public struct BillboardVertexOutput {
     public float4 pos : SV_Position;
     public float2 uv : TEXCOORD0;
@@ -14,15 +16,17 @@ public struct ParticleEmitter {
     public float3 dir;
     public float cone_angle;
 
-    public float min_speed;
-    public float max_speed;
+    public Range speed;
     public uint32_t spawn_count;
     public uint32_t tex_index;
 
-    public float size;
-    public float end_size;
-    public float opacity;
-    public float end_opacity;
+    public Range start_size;
+    public Range end_size;
+
+    public Range start_opacity;
+    public Range end_opacity;
+
+    public Range rotation;
 };
 
 public struct Particle {
@@ -39,6 +43,9 @@ public struct Particle {
 
     public float start_opacity;
     public float end_opacity;
+    public float rot_speed;
+    public float rotation;
+
     public uint32_t tex_index;
 };
 

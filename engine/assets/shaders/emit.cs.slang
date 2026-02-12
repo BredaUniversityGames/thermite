@@ -25,23 +25,25 @@ void main(uint3 thread_id: SV_DispatchThreadID) {
     if (emitter.spawn_count >= counters[0].dead_count)
         return;
 
+    uint seed = thread_id.x + render_view.frame_index * 1337;
+
     Particle p;
     p.pos = emitter.pos;
     p.age = 0.0f;
     p.lifetime = emitter.lifetime;
-    p.size = emitter.size;
-    p.start_size = emitter.size;
-    p.end_size = emitter.end_size;
-    p.opacity = emitter.opacity;
-    p.start_opacity = emitter.opacity;
-    p.end_opacity = emitter.end_opacity;
+    p.size = emitter.start_size.min;
+    p.start_size = lerp(emitter.start_size.min, emitter.start_size.max, rand_float(seed));
+    p.end_size = lerp(emitter.end_size.min, emitter.end_size.max, rand_float(seed));
+    p.opacity = 1.0f;
+    p.start_opacity = lerp(emitter.start_opacity.min, emitter.start_opacity.max, rand_float(seed));
+    p.end_opacity = lerp(emitter.end_opacity.min, emitter.end_opacity.max, rand_float(seed));
+    p.rot_speed = lerp(emitter.rotation.min, emitter.rotation.max, rand_float(seed));
+    p.rotation = 0.0f;
 
     p.tex_index = emitter.tex_index;
 
-    uint seed = thread_id.x + render_view.frame_index * 1337;
-
     float3 dir = sample_cone(emitter.dir, emitter.cone_angle, rand_float2(seed));
-    float speed = lerp(emitter.min_speed, emitter.max_speed, rand_float(seed));
+    float speed = lerp(emitter.speed.min, emitter.speed.max, rand_float(seed));
 
     p.velocity = dir * speed;
     p.lifetime = emitter.lifetime;

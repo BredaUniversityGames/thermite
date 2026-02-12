@@ -10,6 +10,11 @@ public static const uint VOXELS_PER_UNIT = 10u;
 /* Number of world-space units per voxel. */
 public static const float UNITS_PER_VOXEL = 1.0f / VOXELS_PER_UNIT;
 
+public struct Range {
+    public float min;
+    public float max;
+};
+
 /* Returns true if the given bit `i` in `x` is set. */
 public [ForceInline] bool bit_set(const uint x, const uint i) {
     const uint mask = 1u << i;

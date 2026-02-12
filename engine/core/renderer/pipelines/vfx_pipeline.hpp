@@ -4,6 +4,8 @@
 
 #include "core/renderer/render_view.hpp"
 
+#include "core/components/emitter.hpp"
+
 class GPUAdapter;
 class RenderGraph;
 
@@ -24,15 +26,18 @@ struct GpuEmitter {
     glm::vec3 dir {};
     float cone_angle {};
 
-    float min_speed {};
-    float max_speed {};
+    Range speed {};
     uint32_t spawn_count {};
     uint32_t tex_index {};
 
-    float size {};
-    float end_size {};
-    float opacity {};
-    float end_opacity {};
+    Range start_size {};
+    Range end_size {};
+
+    Range start_opacity {};
+    Range end_opacity {};
+
+    Range rotation {};
+    glm::vec2 pad {};
 };
 
 struct GpuParticle {
@@ -49,8 +54,11 @@ struct GpuParticle {
 
     float start_opacity {};
     float end_opacity {};
+    float rot_speed {};
+    float rotation {};
+
     uint32_t tex_index {};
-    float pad {};
+    glm::vec3 pad {};
 };
 
 struct Counters {

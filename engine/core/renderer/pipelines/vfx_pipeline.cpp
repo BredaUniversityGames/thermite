@@ -133,14 +133,14 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
         em.pos = transform.get_world_position();
         em.dir = glm::normalize(emitter.dir);
         em.cone_angle = glm::radians(emitter.cone_angle);
-        em.max_speed = emitter.max_speed;
-        em.min_speed = emitter.min_speed;
+        em.speed = emitter.speed;
         em.lifetime = emitter.particle_lifetime;
         em.spawn_count = emitter.spawn_count;
-        em.size = emitter.size;
+        em.start_size = emitter.start_size;
         em.end_size = emitter.end_size;
-        em.opacity = emitter.opacity;
+        em.start_opacity = emitter.start_opacity;
         em.end_opacity = emitter.end_opacity;
+        em.rotation = emitter.rotation;
         em.tex_index = emitter.texture.resource->image.get_index();
         
         emitters.push_back(em);

@@ -29,6 +29,7 @@ void main(uint3 thread_id: SV_DispatchThreadID) {
 
         p.size = lerp(p.start_size, p.end_size, t);
         p.opacity = lerp(p.start_opacity, p.end_opacity, t);
+        p.rotation += p.rot_speed * render_view.dt;
 
         particles[particle_index] = p;
 
