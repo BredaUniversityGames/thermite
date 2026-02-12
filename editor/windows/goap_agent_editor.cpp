@@ -26,26 +26,12 @@ void GoapAgentEditor::on_editor_start() {
         config.SettingsFile = "agent_editor.json";
         g_Context = ignode::CreateEditor(&config);
     }
-
-    Goap* goap = engine.ecs.systems.try_get<Goap>();
-
-    if (!goap) {
-        Log::warn("GOAP system not active.");
-        return;
-    }
 }
 
 void GoapAgentEditor::on_editor_end() {
     if (g_Context) {
         ignode::DestroyEditor(g_Context);
         g_Context = nullptr;
-    }
-
-    Goap* goap = engine.ecs.systems.try_get<Goap>();
-
-    if (!goap) {
-        Log::warn("GOAP system not active.");
-        return;
     }
 }
 

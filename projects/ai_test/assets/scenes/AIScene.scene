@@ -1,0 +1,56 @@
+{
+    "version": 1,
+    "entities": [
+        1048576
+    ],
+    "Name": {
+        "1048576": {
+            "name": "Agent_Enemy 1"
+        }
+    },
+    "Transform": {
+        "1048576": {
+            "local_position": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "local_rotation": {
+                "w": 1.0,
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "local_scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "parent": 4294967295,
+            "children": []
+        }
+    },
+    "WorldsState": {
+        "1048576": {
+            "facts": {
+                "2232218612": {
+                    "value_type": "BOOL_TYPE",
+                    "bool_val": false
+                },
+                "2627103337": {
+                    "value_type": "BOOL_TYPE",
+                    "bool_val": true
+                },
+                "3240367902": {
+                    "value_type": "BOOL_TYPE",
+                    "bool_val": true
+                },
+                "3469203248": {
+                    "value_type": "BOOL_TYPE",
+                    "bool_val": false
+                }
+            }
+        }
+    },
+    "systems": null
+}
