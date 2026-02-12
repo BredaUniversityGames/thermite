@@ -1,3 +1,4 @@
+#pragma once
 #include <ImReflect.hpp>
 #include "projects/game/components/asteroid_field_component.hpp"
 

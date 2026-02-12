@@ -19,7 +19,7 @@
 #include "components/player.hpp"
 #include "components/wallet.hpp"
 #include "components/asteroid_field_component.hpp"
-#include "editor/asteroid_field_component.hpp"
+#include "editor/all.hpp"
 
 class Game : public tmt::Application {
    public:

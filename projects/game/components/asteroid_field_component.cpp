@@ -80,18 +80,18 @@ bool AsteroidFieldComponent::point_valid(
 ) {
     candidate += grid.region_size * 0.5f;
 
-    int cell_x = static_cast<int>(candidate.x / grid.cell_size);
-    int cell_y = static_cast<int>(candidate.y / grid.cell_size);
-    int cell_z = static_cast<int>(candidate.z / grid.cell_size);
+    const int cell_x = static_cast<int>(candidate.x / grid.cell_size);
+    const int cell_y = static_cast<int>(candidate.y / grid.cell_size);
+    const int cell_z = static_cast<int>(candidate.z / grid.cell_size);
 
-    int search_dim =  std::ceil(max_radius / grid.cell_size) + 1;
+    const int search_dim =  std::ceil(max_radius / grid.cell_size) + 1;
 
-    int start_search_x = std::max(cell_x - search_dim, 0);
-    int end_search_x = std::min(cell_x + search_dim + 1, grid.x_dim);
-    int start_search_y = std::max(cell_y - search_dim, 0);
-    int end_search_y = std::min(cell_y + search_dim + 1, grid.y_dim);
-    int start_search_z = std::max(cell_z - search_dim, 0);
-    int end_search_z = std::min(cell_z + search_dim + 1, grid.z_dim);
+    const int start_search_x = std::max(cell_x - search_dim, 0);
+    const int end_search_x = std::min(cell_x + search_dim + 1, grid.x_dim);
+    const int start_search_y = std::max(cell_y - search_dim, 0);
+    const int end_search_y = std::min(cell_y + search_dim + 1, grid.y_dim);
+    const int start_search_z = std::max(cell_z - search_dim, 0);
+    const int end_search_z = std::min(cell_z + search_dim + 1, grid.z_dim);
 
     for (int x = start_search_x; x < end_search_x; x++) {
         for (int y = start_search_y; y < end_search_y; y++) {
