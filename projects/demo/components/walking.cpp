@@ -50,8 +50,12 @@ void Walking::update(const tmt::FrameData& time) {
     if (hit.miss()) return;
 
     glm::vec3 move_to = closest_ray.origin + closest_ray.dir * closest_hit.distance;
-    glm::vec3 desired_velocity = glm::normalize(move_to - walking_transform.get_world_position()) * walk_speed * 0.5f;
+    glm::vec3 desired_velocity = glm::normalize(move_to - walking_transform.get_world_position()) * walk_speed * 1.0f;
     velocity += desired_velocity;
+
+    tmt::engine.polyline.use_color(0.0f, 0.0f, 1.0f);
+    tmt::engine.polyline.use_line_width(1.0f);
+    tmt::engine.polyline.draw_sphere(move_to, 0.1f);
 
     // movement
     velocity *= 0.9f;
