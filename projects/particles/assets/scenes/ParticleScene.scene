@@ -5,11 +5,6 @@
         1,
         2
     ],
-    "UUID": {
-        "0": "b223c4c1-475b-4305-873e-2d8374347749",
-        "1": "54861566-8fbe-4061-9666-9f2f1abe9bd0",
-        "2": "64c318b1-6adc-4f96-a173-d91f40699d7c"
-    },
     "Name": {
         "0": {
             "name": "Particle Emitter"
@@ -121,8 +116,8 @@
             "active": true,
             "texture": {
                 "file_location": {
-                    "sub_location": "ENGINE",
-                    "relative_path": "missing.png"
+                    "sub_location": "PROJECT",
+                    "relative_path": "bojan.png"
                 },
                 "data": {
                     "dummy": 0

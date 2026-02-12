@@ -33,7 +33,7 @@ void main(uint3 thread_id: SV_DispatchThreadID) {
 
     uint seed = thread_id.x + render_view.frame_index * 1337;
 
-    float3 dir = sample_cone(emitter.dir, radians(emitter.cone_angle), rand_float2(seed));
+    float3 dir = sample_cone(emitter.dir, emitter.cone_angle, rand_float2(seed));
     float speed = lerp(emitter.min_speed, emitter.max_speed, rand_float(seed));
 
     p.velocity = dir * speed;
