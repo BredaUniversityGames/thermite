@@ -117,6 +117,7 @@ glm::vec3 EffectorWalkCycle::do_walk_cycle(float dt, const WalkCycleUpdateVariab
     step_timer += dt;
 
     glm::vec3 point_velocity = (walk_cycle_vars.continuous_available_pos - last_continuous_pos) / dt;
+    last_continuous_pos = walk_cycle_vars.continuous_available_pos;
 
     if (step_timer >= step_time + cycle_offset && !stepping_effector) {
         step_timer -= step_time;
@@ -124,20 +125,18 @@ glm::vec3 EffectorWalkCycle::do_walk_cycle(float dt, const WalkCycleUpdateVariab
         stepping_effector = true;
 
         initial_pos = effector;
-
-        Log::info("reset cycle with offset: {}", cycle_offset);
-
-        // predict based on positional change
-        glm::vec3 prediction_vec = (point_velocity*dt) * step_prediction_strength;
-        glm::vec3 subtraction_vec = prediction_vec * walk_cycle_vars.up;
-        prediction_vec -= subtraction_vec;
-
-       /* if (glm::length(prediction_vec) > 0.5f) {
-            prediction_vec = glm::normalize(prediction_vec) * 0.5f;
-        }*/
-
-        desired_pos = walk_cycle_vars.continuous_available_pos + prediction_vec;
     }
+
+    // predict based on positional change
+    glm::vec3 prediction_vec = (point_velocity*dt) * step_prediction_strength;
+    glm::vec3 subtraction_vec = prediction_vec * walk_cycle_vars.up;
+    prediction_vec -= subtraction_vec;
+
+    /* if (glm::length(prediction_vec) > 0.5f) {
+        prediction_vec = glm::normalize(prediction_vec) * 0.5f;
+    }*/
+
+    desired_pos = walk_cycle_vars.continuous_available_pos + prediction_vec;
 
     if (walk_cycle_vars.grounded) {
         if (!became_grounded) {
@@ -170,9 +169,6 @@ glm::vec3 EffectorWalkCycle::do_walk_cycle(float dt, const WalkCycleUpdateVariab
         effector = glm::mix(effector, walk_cycle_vars.continuous_available_pos + walk_cycle_vars.up * step_height, 20.f * dt);
         became_grounded = false;
     }
-
-    last_continuous_pos = walk_cycle_vars.continuous_available_pos;
-
     return effector;
 }
 

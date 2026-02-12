@@ -162,6 +162,7 @@ void AnimationScene::on_start() {
             walk_cycles[i].step_time = 0.8f;
             walk_cycles[i].step_height = 0.5f;
             walk_cycles[i].step_duration = 0.5f;
+            walk_cycles[i].step_prediction_strength = 5.f;
             walk_cycles[i].set_offset(i * (0.8f/3.f));
 
             float rad_ang = (i+1) * 2.f/3.f * glm::pi<float>(); 
