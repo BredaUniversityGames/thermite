@@ -118,36 +118,42 @@ void Physics::on_update(const FrameData&) {
         //     engine.polyline.draw_line(edges[i].start, edges[i].end);
         // }
 
-        //engine.polyline.use_depth_testing(false);
-        //engine.polyline.use_line_width(0.5f);
-        //engine.polyline.use_color(1.0f, 0.0f, 0.0f);
-        //engine.polyline.draw_circle(vb.center_of_mass, 0.2f);  // glm::vec3(1.0f, 0.0f, 1.0f), 0.2f);
-        //engine.polyline.use_color(0.0f, 1.0f, 0.0f);
-        //engine.polyline.draw_circle(vb.position, 0.2f);
-        //engine.polyline.use_color(0.0f, 0.0f, 1.0f);
-        //engine.polyline.draw_circle(vb.position + vb.rotation * vb.com_local_offset, 0.2f);
-         /* engine.renderer.draw_cross(vb.position, glm::vec3(1.0f, 0.0f, 0.0f), 0.2f);
-          engine.renderer.draw_cross(vb.position + vb.rotation * vb.com_local_offset, glm::vec3(0.0f, 0.0f, 1.0f), 0.2f);*/
+        // engine.polyline.use_depth_testing(false);
+        // engine.polyline.use_line_width(0.5f);
+        // engine.polyline.use_color(1.0f, 0.0f, 0.0f);
+        // engine.polyline.draw_circle(vb.center_of_mass, 0.2f);  // glm::vec3(1.0f, 0.0f, 1.0f), 0.2f);
+        // engine.polyline.use_color(0.0f, 1.0f, 0.0f);
+        // engine.polyline.draw_circle(vb.position, 0.2f);
+        // engine.polyline.use_color(0.0f, 0.0f, 1.0f);
+        // engine.polyline.draw_circle(vb.position + vb.rotation * vb.com_local_offset, 0.2f);
+        /* engine.renderer.draw_cross(vb.position, glm::vec3(1.0f, 0.0f, 0.0f), 0.2f);
+         engine.renderer.draw_cross(vb.position + vb.rotation * vb.com_local_offset, glm::vec3(0.0f, 0.0f, 1.0f), 0.2f);*/
 
-        // // Draw voxel normals
-        // glm::uvec3 size = vb.resource.get()->size;
-        // auto* tree = vb.resource.get()->blas.get();
-        // for (size_t z = 0; z < size.z; z++) {
-        //     for (size_t y = 0; y < size.y; y++) {
-        //         for (size_t x = 0; x < size.x; x++) {
-        //             const tmt::PhysicsVoxel* voxel = tree->get_physics_voxel(x, y, z);
-        //             if (voxel == nullptr || voxel->normal_index == 0 || voxel->normal_index == 28) continue;
+        // Draw voxel normals
+        engine.polyline.use_depth_testing(false);
+        engine.polyline.use_color(1.0f, 0.0f, 0.0f);
+        ;
+        glm::uvec3 size = vb.resource->size;
+        auto* tree = vb.resource->blas.get();
+        for (size_t z = 0; z < size.z; z++) {
+            for (size_t y = 0; y < size.y; y++) {
+                for (size_t x = 0; x < size.x; x++) {
+                    const tmt::PhysicsVoxel* voxel = tree->get_physics_voxel(x, y, z);
+                    if (voxel == nullptr || voxel->normal_index == 0 || voxel->normal_index == 28) continue;
 
-        //            glm::ivec3 local_normal = voxel->get_normal();
-        //            glm::vec3 normal = vb.rotation * glm::vec3((float)local_normal.x, (float)local_normal.y, (float)local_normal.z);
-        //            glm::vec3 local_pos = glm::vec3(
-        //                ((float)x + 0.5f - (size.x * 0.5f)) * UNITS_PER_VOXEL, ((float)y + 0.5f - (size.y * 0.5f)) * UNITS_PER_VOXEL, ((float)z + 0.5f - (size.z * 0.5f)) * UNITS_PER_VOXEL
-        //            );
-        //            glm::vec3 world_pos = vb.position + (vb.rotation * local_pos);
-        //            tmt::engine.renderer.draw_arrow(world_pos, normal, glm::vec3(0.0f, 0.6f, 0.0f), 0.15f, 0.05f);
-        //        }
-        //    }
-        //}
+                    glm::ivec3 local_normal = voxel->get_normal();
+                    glm::vec3 normal = vb.rotation * glm::vec3((float)local_normal.x, (float)local_normal.y, (float)local_normal.z);
+                    glm::vec3 local_pos = glm::vec3(
+                        ((float)x + 0.5f - (size.x * 0.5f)) * UNITS_PER_VOXEL, ((float)y + 0.5f - (size.y * 0.5f)) * UNITS_PER_VOXEL, ((float)z + 0.5f - (size.z * 0.5f)) * UNITS_PER_VOXEL
+                    );
+                    glm::vec3 world_pos = vb.position + (vb.rotation * local_pos);
+
+                    engine.polyline.draw_line(world_pos, world_pos + normal * 0.05f);
+                    // engine.polyline.draw_arrow(world_pos, normal * 0.1f, 0.15f);
+                    // tmt::engine.renderer.draw_arrow(world_pos, normal, glm::vec3(0.0f, 0.6f, 0.0f), 0.15f, 0.05f);
+                }
+            }
+        }
     }
 
     // if (bvh.nodes) draw_node(bvh, 0u);
@@ -678,7 +684,7 @@ inline void recurse_mass(
     }
 }
 
-inline void calculate_center_of_mass(VoxelBody& vb) { 
+inline void calculate_center_of_mass(VoxelBody& vb) {
     // Update voxel body dimensions
     const glm::vec3 size = (glm::vec3)vb.resource->size * UNITS_PER_VOXEL;
     vb.width = size.x;
@@ -687,7 +693,7 @@ inline void calculate_center_of_mass(VoxelBody& vb) {
     const glm::vec3 half_scale = glm::vec3(vb.width, vb.height, vb.depth) * 0.5f;
 
     // Calculate half extent
-    auto* tree = vb.resource.resource->blas.get(); 
+    auto* tree = vb.resource.resource->blas.get();
     const float half_extent = powf(4.0f, (float)tree->depth) * 0.5f * UNITS_PER_VOXEL;
     const glm::vec3 extents_diff = half_extent - ((glm::vec3)vb.resource->size * 0.5f * UNITS_PER_VOXEL);
 
@@ -701,7 +707,7 @@ inline void calculate_center_of_mass(VoxelBody& vb) {
     vb.com_local_offset = (mass_center_sum / (float)voxel_count) - extents_diff;
 
     // Apply results to voxel body
-    //vb.com_local_offset = mass_center_sum / (float)voxel_count;
+    // vb.com_local_offset = mass_center_sum / (float)voxel_count;
     const float voxel_mass = std::powf(UNITS_PER_VOXEL, 3) * vb.density;
     vb.inv_mass = 1.0f / (voxel_mass * voxel_count);
 }
@@ -812,7 +818,7 @@ void Physics::set_rotation(VoxelBody& vb, const glm::quat& rotation) {
     vb.center_of_mass = vb.position + (vb.rotation * vb.com_local_offset);
 }
 
-void Physics::recalculate_physics_data(VoxelBody& vb) { 
+void Physics::recalculate_physics_data(VoxelBody& vb) {
     initialize_voxel_body(vb);
     recalculate_surface_normals(vb);
 }
@@ -824,6 +830,7 @@ void Physics::recalculate_surface_normals(VoxelBody& vb) {
     struct StackEntry {
         uint32_t node_idx;
         uint32_t child_iter;
+        uint32_t x, y, z;
     };
 
     // Get tree and see if there are any voxels
@@ -836,7 +843,7 @@ void Physics::recalculate_surface_normals(VoxelBody& vb) {
     tmt::Svt64Node* nodes = tree->nodes;
     StackEntry stack[7];
     int32_t stack_ptr = 0;
-    stack[0] = {0, 0};
+    stack[0] = {0, 0, 0, 0, 0};
 
     while (stack_ptr >= 0) {
         // Get current stack entry
@@ -849,38 +856,134 @@ void Physics::recalculate_surface_normals(VoxelBody& vb) {
         }
 
         // Get current node and child mask from stack entry
-        Svt64Node& node = nodes[entry.node_idx];
-        uint64_t remaining = node.child_mask >> entry.child_iter;
+        const Svt64Node& node = nodes[entry.node_idx];
+        const uint64_t remaining = node.child_mask >> entry.child_iter;
         if (remaining == 0u) {
             stack_ptr--;
             continue;
         }
 
         // Get index of next set bit and update child iter
-        uint32_t next_bit = std::countr_zero(remaining);
-        uint32_t child_pos = entry.child_iter + next_bit;
-        entry.child_iter = child_pos + 1;
+        const uint32_t next_bit = std::countr_zero(remaining);
+        const uint32_t child_pos = entry.child_iter + next_bit;
 
-        uint32_t level = (tree->depth - 1u) - stack_ptr;
+        const uint32_t level = (tree->depth - 1u) - stack_ptr;
+
+        // Extract coordinates from child_pos
+        const uint32_t x = child_pos & 3u;
+        const uint32_t z = (child_pos >> 2) & 3u;
+        const uint32_t y = (child_pos >> 4) & 3u;
 
         // If leaf node, child_pos is a voxel
         if (level == 0u) {
             // Increment voxel count
             voxel_count++;
-            
-            // For all cardinal directions
-            for (size_t i = 0; i < 6; i++) {
 
+            PhysicsVoxel& voxel = tree->physics_data[node.abs_ptr() + popcnt_var64(node.child_mask, child_pos)];
+            int empty_sides = 0;
+            glm::ivec3 normal = {};
+
+            // For all cardinal directions
+            {  // -X
+                // (x - 1 < 0) = (x == 0)
+                // Check if voxel in neighboring node in -X direction is empty or exists 
+                if (x == 0u) {
+                    // Keep going up the stack until a node is not on x == 0
+                    // If we run out of stack, it means there is no neighbor and we can count it as empty
+                    // If we find a node that is not on x == 0, we traverse down its +X side to find if there is a voxel there. If we find a voxel, then it's not empty, otherwise it is
+
+                    const StackEntry& parent_entry = stack[stack_ptr - 1u];
+                    if (entry.x != 0u) {
+                        const uint32_t neighbor_pos = parent_entry.x + (parent_entry.z << 2u) + (parent_entry.y << 4u) - 1u;
+                        const Svt64Node& parent_node = nodes[parent_entry.node_idx];
+                        if (!parent_node.child_active(neighbor_pos)) {
+                            const uint32_t neighbor_child_ptr = popcnt_var64(parent_node.child_mask, neighbor_pos);
+                            const uint32_t neighbor_child_pos = 3u + (z << 2u) + (y << 4u);
+                            if (!nodes[parent_node.abs_ptr() + neighbor_child_ptr].child_active(neighbor_child_pos)) {
+                                normal.x -= 1;
+                                empty_sides++;
+                            }
+                        }
+                    }
+                } else if (!node.child_active(child_pos - 1u)) {
+                    normal.x -= 1;
+                    empty_sides++;
+                }
             }
+            {  // +X
+                if (x == 3 || !node.child_active(child_pos + 1u)) {
+                    normal.x += 1;
+                    empty_sides++;
+                }
+            }
+            {  // -Z
+                if (z == 0 || !node.child_active(child_pos - 4u)) {
+                    normal.z -= 1;
+                    empty_sides++;
+                }
+            }
+            {  // +Z
+                if (z == 3 || !node.child_active(child_pos + 4u)) {
+                    normal.z += 1;
+                    empty_sides++;
+                }
+            }
+            {  // -Y
+                if (y == 0 || !node.child_active(child_pos - 16u)) {
+                    normal.y -= 1;
+                    empty_sides++;
+                }
+            }
+            {  // +Y
+                if (y == 3 || !node.child_active(child_pos + 16u)) {
+                    normal.y += 1;
+                    empty_sides++;
+                }
+            }
+
+            voxel.normal_index = 0;
+
+            // Classify voxel type based on empty neighbors
+            if (empty_sides == 0) {
+                voxel.type = PhysicsVoxelType::INSIDE;
+            } else if (empty_sides == 1) {
+                for (size_t i = 1; i < 7; i++) {
+                    if (NORMAL_LUT[i] == normal) {
+                        voxel.normal_index = i;
+                        break;
+                    }
+                }
+                voxel.type = PhysicsVoxelType::FACE;
+            } else if (empty_sides == 2) {
+                for (size_t i = 7; i < 19; i++) {
+                    if (NORMAL_LUT[i] == normal) {
+                        voxel.normal_index = i;
+                        break;
+                    }
+                }
+                voxel.type = PhysicsVoxelType::EDGE;
+            } else {  // empty_sides >= 3
+                for (size_t i = 19; i < 27; i++) {
+                    if (NORMAL_LUT[i] == normal) {
+                        voxel.normal_index = i;
+                        break;
+                    }
+                }
+                voxel.type = PhysicsVoxelType::CORNER;
+            }
+
         } else {
             // Get child node index
-            uint32_t child_ptr = popcnt_var64(node.child_mask, child_pos);
-            uint32_t child_idx = node.abs_ptr() + child_ptr;
+            const uint32_t child_ptr = popcnt_var64(node.child_mask, child_pos);
+            const uint32_t child_idx = node.abs_ptr() + child_ptr;
 
             // Push child node to stack
             stack_ptr++;
-            stack[stack_ptr] = {child_idx, 0};
+            stack[stack_ptr] = {child_idx, 0, x, y, z};
         }
+
+        // Increment child iter for next loop
+        entry.child_iter = child_pos + 1u;
     }
 
     printf("solid count: %d", voxel_count);

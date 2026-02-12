@@ -114,22 +114,22 @@ void Game::on_start() {
     //    }
     //}
 
-    { /* Voxel Physics Entity, Asteroid 3 */
-        auto entity = tmt::engine.ecs.create_entity();
-        auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
-        auto& renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(entity);
-        renderer.resource = voxel_volume_ass3;
-        auto& vb = tmt::engine.ecs.add_component<tmt::VoxelBody>(entity);
-        vb.resource = voxel_volume_ass3;
-        vb.gravity = 0.0f;
-        vb.type = tmt::VoxelBody::DYNAMIC;
-        transform.set_world_position(glm::vec3(0.0f, 50.0f, 110.0f));
+    //{ /* Voxel Physics Entity, Asteroid 3 */
+    //    auto entity = tmt::engine.ecs.create_entity();
+    //    auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
+    //    auto& renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(entity);
+    //    renderer.resource = voxel_volume_ass3;
+    //    auto& vb = tmt::engine.ecs.add_component<tmt::VoxelBody>(entity);
+    //    vb.resource = voxel_volume_ass3;
+    //    vb.gravity = 0.0f;
+    //    vb.type = tmt::VoxelBody::DYNAMIC;
+    //    transform.set_world_position(glm::vec3(0.0f, 50.0f, 110.0f));
 
-        float random_rot_x = ((float)(rand() % 1000) / 1000.0f) * 3.1415f * 2.0f;
-        float random_rot_y = ((float)(rand() % 1000) / 1000.0f) * 3.1415f * 2.0f;
-        float random_rot_z = ((float)(rand() % 1000) / 1000.0f) * 3.1415f * 2.0f;
-        transform.set_world_rotation(glm::vec3(random_rot_x, random_rot_y, random_rot_z));
-    }
+    //    float random_rot_x = ((float)(rand() % 1000) / 1000.0f) * 3.1415f * 2.0f;
+    //    float random_rot_y = ((float)(rand() % 1000) / 1000.0f) * 3.1415f * 2.0f;
+    //    float random_rot_z = ((float)(rand() % 1000) / 1000.0f) * 3.1415f * 2.0f;
+    //    transform.set_world_rotation(glm::vec3(random_rot_x, random_rot_y, random_rot_z));
+    //}
 
     //{ /* Voxel Physics Entity, Asteroid 3 */
     //    auto entity = tmt::engine.ecs.create_entity();
