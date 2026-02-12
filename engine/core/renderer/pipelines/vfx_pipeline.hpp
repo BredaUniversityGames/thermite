@@ -28,6 +28,10 @@ struct GpuEmitter {
     float max_speed {};
     uint32_t spawn_count {};
     uint32_t tex_index {};
+
+    float size {};
+    float end_size {};
+    glm::vec2 pad {};
 };
 
 struct GpuParticle {
@@ -38,7 +42,9 @@ struct GpuParticle {
     float lifetime {};
 
     uint32_t tex_index {};
-    glm::vec3 pad;
+    float size {};
+    float start_size {};
+    float end_size {};
 };
 
 struct Counters {

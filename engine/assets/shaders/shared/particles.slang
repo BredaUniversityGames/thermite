@@ -11,6 +11,9 @@ public struct ParticleEmitter {
     public float max_speed;
     public uint32_t spawn_count;
     public uint32_t tex_index;
+
+    public float size;
+    public float end_size;
 };
 
 public struct Particle {
@@ -19,6 +22,10 @@ public struct Particle {
 
     public float3 velocity;
     public float lifetime;
+
+    public float size;
+    public float start_size;
+    public float end_size;
 
     public uint32_t tex_index;
 };

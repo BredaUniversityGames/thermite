@@ -137,6 +137,8 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
         em.min_speed = emitter.min_speed;
         em.particle_lifetime = emitter.particle_lifetime;
         em.spawn_count = emitter.spawn_count;
+        em.size = emitter.size;
+        em.end_size = emitter.end_size;
         em.tex_index = emitter.texture.resource->image.get_index();
         
         emitters.push_back(em);

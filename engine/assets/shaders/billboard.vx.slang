@@ -30,7 +30,7 @@ VertexOutput main(VertexInput input, uint32_t instance_id: SV_InstanceID) {
     float2 pixel_center = gpu_view.resolution * (0.5f * (clip_pos.xy / clip_pos.w) + 0.5f);
 
     /* 3. Get pixel size */
-    float pixel_size = /* particle.size */ 64.0f / clip_pos.w;
+    float pixel_size = particle.size  / clip_pos.w;
 
     /* 4. Get pixel pos */
     float2 pixel_pos = pixel_center + float2(input.pos.x, -input.pos.y) * pixel_size;

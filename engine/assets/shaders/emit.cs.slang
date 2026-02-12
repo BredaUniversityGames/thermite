@@ -29,6 +29,9 @@ void main(uint3 thread_id: SV_DispatchThreadID) {
     p.pos = emitter.pos;
     p.age = 0.0f;
     p.lifetime = emitter.lifetime;
+    p.size = emitter.size;
+    p.start_size = emitter.size;
+    p.end_size = emitter.end_size;
     p.tex_index = emitter.tex_index;
 
     uint seed = thread_id.x + render_view.frame_index * 1337;

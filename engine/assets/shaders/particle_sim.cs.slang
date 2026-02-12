@@ -25,6 +25,10 @@ void main(uint3 thread_id: SV_DispatchThreadID) {
     if (p.age < p.lifetime) {
         p.pos += p.velocity * render_view.dt;
 
+        float t = p.age / p.lifetime;
+
+        p.size = lerp(p.start_size, p.end_size, t); 
+
         particles[particle_index] = p;
 
         uint32_t new_alive_index;
