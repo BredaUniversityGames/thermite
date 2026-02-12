@@ -103,11 +103,12 @@ public struct Material {
     const float d = alpha_2 / (PI_F32 * wh_costheta_4 * e * e);
 
     /* Trowbridge-Reitz masking and shadowing function */
-    /* NOTE: division by zero here */
-    const float wi_tantheta = abs((1.0f - wi_costheta) / wi_costheta);
-    const float wi_lambda = (-1.0f + sqrt(1.0f + alpha_2 * wi_tantheta * wi_tantheta)) * 0.5f;
-    const float wo_tantheta = abs((1.0f - wo_costheta) / wo_costheta);
-    const float wo_lambda = (-1.0f + sqrt(1.0f + alpha_2 * wo_tantheta * wo_tantheta)) * 0.5f;
+    const float wi_sintheta_2 = 1.0f - wi_costheta * wi_costheta;
+    const float wi_tantheta_2 = wi_sintheta_2 / (wi_costheta * wi_costheta);
+    const float wi_lambda = (-1.0f + sqrt(1.0f + alpha_2 * wi_tantheta_2)) * 0.5f;
+    const float wo_sintheta_2 = 1.0f - wo_costheta * wo_costheta;
+    const float wo_tantheta_2 = wo_sintheta_2 / (wo_costheta * wo_costheta);
+    const float wo_lambda = (-1.0f + sqrt(1.0f + alpha_2 * wo_tantheta_2)) * 0.5f;
     const float g = 1.0f / (1.0f + wi_lambda + wo_lambda);
 
     float i_costheta = wi_costheta;

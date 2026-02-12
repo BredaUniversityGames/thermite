@@ -27,12 +27,21 @@ struct GpuView {
     glm::uint frame_index = 0u;
     /* Delta Time in seconds. */
     glm::float32 dt {};
+    /* Shading rate. (0 = 1/1, 1 = 1/2, 2 = 1/4) */
+    glm::uint shading_rate = 0u;
 };
 
 /* Screen buffer resource. */
 struct ScreenBuffer {
     Texture texture {};
     Image image {};
+};
+
+/* Direct Illumination Shading Rate. */
+enum class ShadingRate : uint32_t {
+    FULL_RATE = 0u,    /* Perform shading for every pixel on screen. */
+    HALF_RATE = 1u,    /* Perform shading for half the pixels on screen. */
+    QUARTER_RATE = 2u, /* Perform shading for 1/4th the pixels on screen. */
 };
 
 struct RenderView {
@@ -43,6 +52,15 @@ struct RenderView {
     void update();
     void update_gpu_view(RenderGraph& render_graph, const Camera& camera, const Transform& transform);
     void deinit();
+
+    /* Get the shading rate. */
+    inline ShadingRate get_shading_rate() const { return shading_rate; };
+    /* Set the shading rate. */
+    inline void set_shading_rate(ShadingRate new_shading_rate) {
+        if (shading_rate == new_shading_rate) return;
+        shading_rate = new_shading_rate;
+        resize_textures();
+    };
 
     /* Returns the viewport image if we're in the editor, or the render target if we're in the game. */
     BindHandle get_render_image() const;
@@ -60,7 +78,8 @@ struct RenderView {
     /* Screen buffers */
     ScreenBuffer vbuffer {}; /* Visibility buffer (WxH, 6->8 bytes) */
     ScreenBuffer dbuffer {}; /* Depth buffer (WxH, 4 bytes) */
-    ScreenBuffer lbuffer {}; /* Luminance buffer (WxH, 4 bytes) */
+    ScreenBuffer lbuffer {}; /* Raw luminance buffer (WxH, 4 bytes) */
+    ScreenBuffer nbuffer {}; /* Denoised luminance buffer (WxH, 4 bytes) */
 
     /* Macrofacet buffers */
     Buffer macrofacet_illuminance_cache {}; /* Macrofacet illuminance hash cache (10.000.000, 16 bytes) */
@@ -78,6 +97,7 @@ struct RenderView {
     glm::uint frame_counter = 0u;
 
    private:
+    ShadingRate shading_rate = ShadingRate::FULL_RATE;
     void resize_textures();
 };
 

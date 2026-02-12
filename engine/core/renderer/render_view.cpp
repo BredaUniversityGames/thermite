@@ -51,9 +51,20 @@ void RenderView::init() {
     dbuffer.texture = bank.create_texture("Depth Buffer Texture", TextureUsage::DepthStencil, TextureFormat::D32Sfloat, view_size).expect("failed to create depth buffer texture.");
     dbuffer.image = bank.create_image("Depth Buffer Image", dbuffer.texture).expect("failed to create depth buffer image.");
 
+    /* Calculate the render size (based on shading rate) */
+    Size3D render_size {view_size.x, view_size.y};
+    if (shading_rate == ShadingRate::HALF_RATE) {
+        render_size.x = render_size.x >> 1;
+    } else if (shading_rate == ShadingRate::QUARTER_RATE) {
+        render_size.x = render_size.x >> 1;
+        render_size.y = render_size.y >> 1;
+    }
+
     /* Create the illuminance buffer */
-    lbuffer.texture = bank.create_texture("Luminance Buffer Texture", TextureUsage::Storage, TextureFormat::RG11B10Ufloat, view_size).expect("failed to create ibuffer texture.");
-    lbuffer.image = bank.create_image("Luminance Buffer Image", vbuffer.texture).expect("failed to create ibuffer image.");
+    lbuffer.texture = bank.create_texture("Luminance Buffer Texture", TextureUsage::Storage | TextureUsage::Sampled, TextureFormat::RG11B10Ufloat, render_size).expect("failed to create ibuffer texture.");
+    lbuffer.image = bank.create_image("Luminance Buffer Image", lbuffer.texture).expect("failed to create ibuffer image.");
+    nbuffer.texture = bank.create_texture("Denoised Luminance Buffer Texture", TextureUsage::Storage | TextureUsage::Sampled, TextureFormat::RG11B10Ufloat, render_size).expect("failed to create nbuffer texture.");
+    nbuffer.image = bank.create_image("Denoised Luminance Buffer Image", nbuffer.texture).expect("failed to create nbuffer image.");
 
     /* Create the macrofacet buffers */
     const uint64_t hashkey_size = sizeof(uint64_t);
@@ -101,6 +112,7 @@ void RenderView::update_gpu_view(RenderGraph& render_graph, const Camera& camera
     gpu_view.origin = glm::vec4(transform.get_world_position(), 0.0f);
     gpu_view.frame_index = frame_counter;
     gpu_view.dt = engine.frame_data().delta_time;
+    gpu_view.shading_rate = (uint32_t)shading_rate;
 
     /* Upload the active render view */
     render_graph.upload_buffer(render_view_buffer, &gpu_view, 0u, sizeof(GpuView));
@@ -124,6 +136,8 @@ void RenderView::deinit() {
     bank.destroy(dbuffer.texture);
     bank.destroy(lbuffer.image);
     bank.destroy(lbuffer.texture);
+    bank.destroy(nbuffer.image);
+    bank.destroy(nbuffer.texture);
     bank.destroy(viewport.texture);
     bank.destroy(viewport.image);
 
@@ -169,11 +183,21 @@ void RenderView::resize_textures() {
     const Size3D view_size {gpu_view.resolution.x, gpu_view.resolution.y};
     VRAMBank& bank = engine.renderer.vram_bank();
 
+    /* Calculate the render size (based on shading rate) */
+    Size3D render_size {view_size.x, view_size.y};
+    if (shading_rate == ShadingRate::HALF_RATE) {
+        render_size.x = render_size.x >> 1;
+    } else if (shading_rate == ShadingRate::QUARTER_RATE) {
+        render_size.x = render_size.x >> 1;
+        render_size.y = render_size.y >> 1;
+    }
+
     /* Resize the screen buffers */
     bank.resize_texture(viewport.texture, view_size).expect("failed to resize viewport texture.");
     bank.resize_texture(vbuffer.texture, view_size).expect("failed to resize vbuffer texture.");
     bank.resize_texture(dbuffer.texture, view_size).expect("failed to resize depth buffer texture.");
-    bank.resize_texture(lbuffer.texture, view_size).expect("failed to resize lbuffer texture.");
+    bank.resize_texture(lbuffer.texture, render_size).expect("failed to resize lbuffer texture.");
+    bank.resize_texture(nbuffer.texture, render_size).expect("failed to resize nbuffer texture.");
 }
 
 }  // namespace tmt

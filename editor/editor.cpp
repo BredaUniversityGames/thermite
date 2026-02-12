@@ -222,11 +222,11 @@ void Editor::main_menu_bar() {
             if (ImGui::BeginMenu(("Shading Rate (" + shading_rate + ")").c_str())) {
                 /* Render all shading rate options */
                 for (uint32_t i = 0u; i < SHADING_RATE_LABELS.size(); ++i) {
-                    const bool selected = engine.renderer.di_pipeline.get_shading_rate() == magic_enum::enum_cast<ShadingRate>(i).value_or(ShadingRate::FULL_RATE);
+                    const bool selected = engine.renderer.render_view.get_shading_rate() == magic_enum::enum_cast<ShadingRate>(i).value_or(ShadingRate::FULL_RATE);
 
                     if (ImGui::MenuItem(SHADING_RATE_LABELS[i].c_str(), nullptr, selected)) {
                         shading_rate_index = i;
-                        engine.renderer.di_pipeline.set_shading_rate(magic_enum::enum_cast<ShadingRate>(i).value_or(ShadingRate::FULL_RATE));
+                        engine.renderer.render_view.set_shading_rate(magic_enum::enum_cast<ShadingRate>(i).value_or(ShadingRate::FULL_RATE));
                     }
                 }
                 ImGui::EndMenu();

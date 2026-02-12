@@ -11,16 +11,9 @@ import cache;
 import lights;
 import material;
 
-struct DiSettings {
-    /* 0 = FullRate, 1 = HalfRate, 2 = QuarterRate */
-    uint shading_rate;
-};
-
 /* Active render & scene view. */
 ConstantBuffer<RenderView> render_view;
 ConstantBuffer<SceneView> scene_view;
-/* Settings buffer. */
-ConstantBuffer<DiSettings> settings;
 /* Voxel objects buffers. */
 StructuredBuffer<float4> tlas_nodes;
 StructuredBuffer<uint> object_indices;
@@ -28,9 +21,11 @@ StructuredBuffer<VoxelObject> objects;
 /* Lights buffer. */
 StructuredBuffer<Light> lights;
 /* Macrofacet illuminance cache buffer. */
-RWStructuredBuffer<cache::Slot> macrofacet_illuminance_cache;
+// RWStructuredBuffer<cache::Slot> macrofacet_illuminance_cache;
 /* Visibility buffer. */
 Texture2D<uint2> vbuffer;
+/* Luminance buffer. */
+RWTexture2D<float3> lbuffer;
 
 struct PickedLight {
     uint i; /* Selected light index. */
@@ -109,14 +104,14 @@ inline float3 direct_illuminance(const float3 point, const float3 normal, const 
 void main(int2 thread_id: SV_DispatchThreadID) {
     int2 pixel_id = thread_id;
     int2 resolution = render_view.resolution;
-    if (settings.shading_rate == 1u) {
+    if (render_view.shading_rate == 1u) {
         /* Half-rate */
         /*  [ XY ]  */
         /*  [ YX ]  */
         const int offset = (pixel_id.y + render_view.frame_index) & 0b1;
         pixel_id.x = (pixel_id.x << 1) + offset;
         resolution.x = resolution.x >> 1;
-    } else if (settings.shading_rate == 2u) {
+    } else if (render_view.shading_rate == 2u) {
         /* Quarter-rate */
         /*  [ XY ]  */
         /*  [ ZW ]  */
@@ -132,7 +127,10 @@ void main(int2 thread_id: SV_DispatchThreadID) {
     const uint64_t facet_key = asuint64(vbuffer[pixel_id]);
 
     /* Exit early if the visibility for this pixel is null */
-    if (null_visibility(facet_key)) return;
+    if (null_visibility(facet_key)) {
+        lbuffer[thread_id] = 0.0f;
+        return;
+    }
 
     /* Generate a ray for our render view */
     const Ray ray = pinhole_ray(render_view, pixel_id);
@@ -158,5 +156,6 @@ void main(int2 thread_id: SV_DispatchThreadID) {
     // }
 
     /* Insert the sample into the illuminance cache */
-    cache::insert(macrofacet_illuminance_cache, facet_key, illuminance);
+    // cache::insert(macrofacet_illuminance_cache, facet_key, illuminance);
+    lbuffer[thread_id] = illuminance;
 }
