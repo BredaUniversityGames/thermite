@@ -232,10 +232,47 @@ bool handle_selection(const Ray& mouse_ray, Hit& hit, const bool can_hit_face, c
     return true;
 }
 
+void set_voxel(const std::unique_ptr<Svt64>& svt, const glm::uvec3& coord, VoxelEditDiff& diff, const MaterialIndex material_index) {
+    const Material* voxel_material = svt->get_voxel(coord.x, coord.y, coord.z);
+    const MaterialIndex voxel_material_index = svt->palette.material_to_index(voxel_material);
+    const bool is_voxel_empty = (voxel_material == nullptr);
+
+    if (!is_voxel_empty && voxel_material_index == material_index) return;
+
+    svt->set_voxel(coord.x, coord.y, coord.z, material_index);
+
+    diff.add_change(coord, (is_voxel_empty ? nullptr : &voxel_material_index), &material_index);
+}
+
+void remove_voxel(const std::unique_ptr<Svt64>& svt, const glm::uvec3& coord, VoxelEditDiff& diff) {
+    const Material* voxel_material = svt->get_voxel(coord.x, coord.y, coord.z);
+    const MaterialIndex voxel_material_index = svt->palette.material_to_index(voxel_material);
+    const bool is_voxel_empty = (voxel_material == nullptr);
+
+    if (is_voxel_empty) return;
+
+    svt->remove_voxel(coord.x, coord.y, coord.z);
+
+    diff.add_change(coord, (is_voxel_empty ? nullptr : &voxel_material_index));
+}
+
+void paint_voxel(const std::unique_ptr<Svt64>& svt, const glm::uvec3& coord, VoxelEditDiff& diff, const MaterialIndex material_index) {
+    const Material* voxel_material = svt->get_voxel(coord.x, coord.y, coord.z);
+    const bool is_voxel_empty = (voxel_material == nullptr);
+    if (is_voxel_empty) return;
+
+    const MaterialIndex voxel_material_index = svt->palette.material_to_index(voxel_material);
+    if (voxel_material_index == material_index) return;
+
+    svt->set_voxel(coord.x, coord.y, coord.z, material_index);
+
+    diff.add_change(coord, &voxel_material_index, &material_index);
+}
+
 // Update the voxels based on the current selected brush.
-void modify_voxels(const Brush::Mode brush_mode, const ResourceRef<VoxelVolume>& model, const Hit& hit) {
-    switch (brush_mode) {
-        case Brush::Mode::PAINT: {
+void handle_tools(const Brush::Tool brush_tool, const Brush::Mode brush_mode, const ResourceRef<VoxelVolume>& model, const Hit& hit) {
+    switch (brush_tool) {
+        case Brush::Tool::COLOR_PICKER: {
             if (!engine.input.is_mouse_button_pressed(MouseButton::LEFT)) break;
 
             const MaterialIndex material_index = editor.windows[Editor::Mode::VOXEL].get<Palette>().get_selected_material_index();
@@ -245,51 +282,34 @@ void modify_voxels(const Brush::Mode brush_mode, const ResourceRef<VoxelVolume>&
             break;
         }
 
-        case Brush::Mode::COLOR_PICKER: {
-            if (!engine.input.is_mouse_button_pressed(MouseButton::LEFT)) break;
-
-            const Material* picked_material = model->blas->get_voxel(hit.coord.x, hit.coord.y, hit.coord.z);
-            if (picked_material == nullptr) break;
-
-            editor.windows[Editor::Mode::VOXEL].get<Palette>().set_selected_material_index(model->blas->palette.material_to_index(picked_material));
-            break;
-        }
-
-        case Brush::Mode::ADD: {
+        case Brush::Tool::SINGLE: {
             if (!engine.input.is_mouse_button_just_pressed(MouseButton::LEFT)) break;
 
             const MaterialIndex material_index = editor.windows[Editor::Mode::VOXEL].get<Palette>().get_selected_material_index();
 
-            model->blas->set_voxel(hit.coord.x, hit.coord.y, hit.coord.z, material_index);
+            VoxelEditDiff diff { model->uuid };
+            switch (brush_mode) {
+                case Brush::Mode::ATTACH:
+                    set_voxel(model->blas, hit.coord, diff, material_index);
+                    diff.commit("Attach Voxel(s)");
+                    break;
+
+                case Brush::Mode::REMOVE:
+                    remove_voxel(model->blas, hit.coord, diff);
+                    diff.commit("Remove Voxel(s)");
+                    break;
+
+                case Brush::Mode::PAINT:
+                    paint_voxel(model->blas, hit.coord, diff, material_index);
+                    diff.commit("Paint Voxel(s)");
+                    break;
+            }
             model->set_dirty();
 
-            VoxelEditDiff diff { model->uuid };
-
-            const Material* voxel_material = model->blas->get_voxel(hit.coord.x, hit.coord.y, hit.coord.z);
-            const MaterialIndex voxel_material_index = model->blas->palette.material_to_index(voxel_material);
-            diff.add_change(hit.coord, nullptr, &voxel_material_index);
-
-            diff.commit("Remove Voxel");
             break;
         }
 
-        case Brush::Mode::REMOVE: {
-            if (!engine.input.is_mouse_button_just_pressed(MouseButton::LEFT)) break;
-
-            const Material* voxel_material = model->blas->get_voxel(hit.coord.x, hit.coord.y, hit.coord.z);
-            model->blas->remove_voxel(hit.coord.x, hit.coord.y, hit.coord.z);
-            model->set_dirty();
-
-            VoxelEditDiff diff { model->uuid };
-
-            const MaterialIndex voxel_material_index = model->blas->palette.material_to_index(voxel_material);
-            diff.add_change(hit.coord, &voxel_material_index);
-
-            diff.commit("Remove Voxel");
-            break;
-        }
-
-        case Brush::Mode::SHAPE: {
+        case Brush::Tool::BOX: {
             if (!engine.input.is_mouse_button_pressed(MouseButton::LEFT) && !engine.input.is_mouse_button_just_released(MouseButton::LEFT)) break;
 
             static glm::uvec3 start_coord { -1ul };
@@ -318,21 +338,38 @@ void modify_voxels(const Brush::Mode brush_mode, const ResourceRef<VoxelVolume>&
                 for (uint32_t x = min.x; x <= max.x; x++) {
                     for (uint32_t y = min.y; y <= max.y; y++) {
                         for (uint32_t z = min.z; z <= max.z; z++) {
-                            const Material* voxel_material = model->blas->get_voxel(x, y, z);
-                            const MaterialIndex voxel_material_index = model->blas->palette.material_to_index(voxel_material);
+                            const glm::uvec3 coord { x, y, z };
+                            switch(brush_mode) {
+                                case Brush::Mode::ATTACH:
+                                    set_voxel(model->blas, coord, diff, material_index);
+                                    break;
 
-                            const bool is_voxel_empty = (voxel_material == nullptr);
-                            if (!is_voxel_empty && voxel_material_index == material_index) continue;
+                                case Brush::Mode::REMOVE:
+                                    remove_voxel(model->blas, coord, diff);
+                                    break;
 
-                            model->blas->set_voxel(x, y, z, material_index);
-
-                            diff.add_change(glm::uvec3 { x, y, z }, (is_voxel_empty ? nullptr : &voxel_material_index), &material_index);
+                                case Brush::Mode::PAINT:
+                                    paint_voxel(model->blas, coord, diff, material_index);
+                                    break;
+                            }
                         }
                     }
                 }
                 model->set_dirty();
 
-                diff.commit("Add Voxel Area");
+                switch (brush_mode) {
+                    case Brush::Mode::ATTACH:
+                        diff.commit("Attach Voxel(s)");
+                        break;
+
+                    case Brush::Mode::REMOVE:
+                        diff.commit("Remove Voxel(s)");
+                        break;
+
+                    case Brush::Mode::PAINT:
+                        diff.commit("Paint Voxel(s)");
+                        break;
+                }
             }
 
             break;
@@ -357,8 +394,8 @@ void ModelViewer::display() {
     engine.renderer.render_view.set_viewport_size(static_cast<uint32_t>(size.x), static_cast<uint32_t>(size.y));
     ImGui::Image(engine.renderer.render_view.imgui_viewport, size);
 
-    const Brush::Mode brush_mode = editor.windows[Editor::Mode::VOXEL].get<Brush>().get_active_mode();
-    if (brush_mode == Brush::Mode::MULTI_TOOL) {
+    const Brush::Tool brush_tool = editor.windows[Editor::Mode::VOXEL].get<Brush>().get_active_tool();
+    if (brush_tool == Brush::Tool::MULTI_TOOL) {
         const Entity selected_entity = editor.windows[Editor::Mode::VOXEL].get<NodeHierarchy>().get_selected_entity();
 
         editor.gizmo.manip(window_pos.x, window_pos.y, size.x, size.y, { &selected_entity, &selected_entity + 1 });
@@ -392,12 +429,13 @@ void ModelViewer::display() {
     const Ray mouse_ray = engine.renderer.render_view.pixel_ray(mouse_position);
     Hit hit = engine.renderer.trace_ray(mouse_ray);
 
-    const bool can_hit_face = (brush_mode == Brush::Mode::ADD || brush_mode == Brush::Mode::SHAPE);
+    const Brush::Mode brush_mode = editor.windows[Editor::Mode::VOXEL].get<Brush>().get_active_mode();
+    const bool can_hit_face = (brush_mode == Brush::Mode::ATTACH);
 
     // Handle drawing the selection and calculating the selected voxel position.
     if (!handle_selection(mouse_ray, hit, can_hit_face, selected_entity, transform, resource)) return;  // Return early if no valid voxel was selected.
 
-    modify_voxels(brush_mode, resource, hit);
+    handle_tools(brush_tool, brush_mode, resource, hit);
 }
 
 void ModelViewer::on_editor_update(const FrameData& time) {

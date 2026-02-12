@@ -12,9 +12,11 @@
 
 namespace tmt {
 
-const std::unordered_map<Brush::Mode, const char*> Brush::MODE_ICONS {
-    {Mode::MULTI_TOOL, ICON_MS_OPEN_WITH}, {Mode::PAINT, ICON_MS_BRUSH},        {Mode::COLOR_PICKER, ICON_MS_COLORIZE},
-    {Mode::ADD, ICON_MS_ADD_BOX},          {Mode::REMOVE, ICON_MS_DESTRUCTION}, {Mode::SHAPE, ICON_MS_SHAPES},
+const std::unordered_map<Brush::Tool, const char*> Brush::MODE_ICONS {
+    { Tool::MULTI_TOOL, ICON_MS_OPEN_WITH },
+    { Tool::COLOR_PICKER, ICON_MS_COLORIZE },
+    { Tool::SINGLE, ICON_MS_DEPLOYED_CODE },
+    { Tool::BOX, ICON_MS_GRID_ON },
 };
 
 void Brush::display() {
@@ -22,17 +24,17 @@ void Brush::display() {
         // Keep everything on the same line (skip ImGui::SameLine on the first element).
         if (mode != MODE_ICONS.begin()->first) ImGui::SameLine();
 
-        ImGui::BeginDisabled(active_mode == mode);
+        ImGui::BeginDisabled(active_tool == mode);
 
-        if (ImGui::Button(icon)) active_mode = mode;
+        if (ImGui::Button(icon)) active_tool = mode;
 
         ImGui::EndDisabled();
     }
 
     ImGui::SeparatorText("Settings");
 
-    switch (active_mode) {
-        case Mode::MULTI_TOOL: {
+    switch (active_tool) {
+        case Tool::MULTI_TOOL: {
             const Entity selected_node = editor.windows[Editor::Mode::VOXEL].get<NodeHierarchy>().get_selected_entity();
             if (!engine.ecs.valid(selected_node)) break;
 
@@ -53,11 +55,32 @@ void Brush::display() {
             break;
         }
 
-        case Mode::PAINT:
-        case Mode::COLOR_PICKER:
-        case Mode::ADD:
-        case Mode::REMOVE:
-        case Mode::SHAPE:
+        case Tool::COLOR_PICKER:
+            break;
+
+        case Tool::SINGLE:
+        case Tool::BOX:
+            const float width = ImGui::GetContentRegionAvail().x;
+            const float button_width = (width - ImGui::GetStyle().FramePadding.x * 2.0f) / 3.0f;
+
+            ImGui::BeginDisabled(active_mode == Mode::ATTACH);
+            if (ImGui::Button(ICON_MS_ADD, ImVec2 { button_width, 0.0f })) active_mode = Mode::ATTACH;
+            ImGui::EndDisabled();
+
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(ImGui::GetItemRectMax().x);
+
+            ImGui::BeginDisabled(active_mode == Mode::REMOVE);
+            if (ImGui::Button(ICON_MS_REMOVE, ImVec2 { button_width, 0.0f })) active_mode = Mode::REMOVE;
+            ImGui::EndDisabled();
+
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(ImGui::GetItemRectMax().x);
+
+            ImGui::BeginDisabled(active_mode == Mode::PAINT);
+            if (ImGui::Button(ICON_MS_BRUSH, ImVec2 { button_width, 0.0f })) active_mode = Mode::PAINT;
+            ImGui::EndDisabled();
+
             break;
     }
 }

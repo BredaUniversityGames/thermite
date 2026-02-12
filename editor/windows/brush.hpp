@@ -6,10 +6,12 @@ namespace tmt {
 
 class Brush : public IWindow {
    public:
-    enum class Mode : uint8_t { MULTI_TOOL, PAINT, COLOR_PICKER, ADD, REMOVE, SHAPE };
+    enum class Tool : uint8_t { MULTI_TOOL, COLOR_PICKER, SINGLE, BOX };
+    enum class Mode : uint8_t { ATTACH, REMOVE, PAINT };
 
     Brush() = default;
 
+    [[nodiscard]] Tool get_active_tool() const { return active_tool; }
     [[nodiscard]] Mode get_active_mode() const { return active_mode; }
 
    private:
@@ -22,7 +24,8 @@ class Brush : public IWindow {
 
     void display() override;
 
-    static const std::unordered_map<Mode, const char*> MODE_ICONS;
+    static const std::unordered_map<Tool, const char*> MODE_ICONS;
+    Tool active_tool;
     Mode active_mode;
 };
 
