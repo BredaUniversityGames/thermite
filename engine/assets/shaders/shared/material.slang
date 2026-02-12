@@ -127,7 +127,7 @@ public struct Material {
     /* Fresnel equation */
     const float r_parl = (eta * i_costheta - t_costheta) / (eta * i_costheta + t_costheta);
     const float r_perp = (i_costheta - eta * t_costheta) / (i_costheta + eta * t_costheta);
-    const float f = 1.0f; // t_int ? 1.0f : ((r_parl * r_parl + r_perp * r_perp) * 0.5f);
+    const float f = t_int ? 1.0f : ((r_parl * r_parl + r_perp * r_perp) * 0.5f);
 
     /* Torrance–Sparrow BRDF */
     return (d * g * f) / (4.0f * wo_costheta * wi_costheta);

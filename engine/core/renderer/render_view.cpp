@@ -7,6 +7,7 @@
 
 #include "engine.hpp"
 #include "renderer.hpp"
+#include "material.hpp"
 
 #include "core/ecs.hpp"
 #include "core/window.hpp"
@@ -51,19 +52,19 @@ void RenderView::init() {
     dbuffer.image = bank.create_image("Depth Buffer Image", dbuffer.texture).expect("failed to create depth buffer image.");
 
     /* Create the illuminance buffer */
-    ibuffer.texture = bank.create_texture("Illuminance Buffer Texture", TextureUsage::Storage, TextureFormat::RG11B10Ufloat, view_size).expect("failed to create ibuffer texture.");
-    ibuffer.image = bank.create_image("Illuminance Buffer Image", vbuffer.texture).expect("failed to create ibuffer image.");
+    lbuffer.texture = bank.create_texture("Luminance Buffer Texture", TextureUsage::Storage, TextureFormat::RG11B10Ufloat, view_size).expect("failed to create ibuffer texture.");
+    lbuffer.image = bank.create_image("Luminance Buffer Image", vbuffer.texture).expect("failed to create ibuffer image.");
 
     /* Create the macrofacet buffers */
     const uint64_t hashkey_size = sizeof(uint64_t);
-    const uint64_t hashset_size = (uint64_t)view_size.x * view_size.y;
-    macrofacet_hashset = bank.create_buffer("Macrofacet Hashset Buffer", BufferUsage::Storage, hashset_size, hashkey_size).expect("failed to create macrofacet hashset buffer.");
-    macrofacet_shading_commands = bank.create_buffer("Macrofacet Shading Commands Buffer", BufferUsage::Storage | BufferUsage::Indirect, hashset_size, hashkey_size)
-                                      .expect("failed to create macrofacet shading commands buffer.");
     const uint64_t cache_element_size = hashkey_size + sizeof(uint64_t) * 2ull;
     const uint64_t cache_size = 10'000'000u;
     macrofacet_illuminance_cache =
         bank.create_buffer("Macrofacet Illuminance Cache Buffer", BufferUsage::Storage, cache_size, cache_element_size).expect("failed to create macrofacet illuminance cache buffer.");
+
+    /* Generate directional albedo LUT */
+    generate_e_lut(diralbedo_lut_texture, 256u);
+    diralbedo_lut = bank.create_image("Directional Albedo LUT Image", diralbedo_lut_texture).expect("failed to create directional albedo lut image.");
 }
 
 void RenderView::update() {
@@ -109,9 +110,11 @@ void RenderView::update_gpu_view(RenderGraph& render_graph, const Camera& camera
 void RenderView::deinit() {
     VRAMBank& bank = engine.renderer.vram_bank();
 
+    /* Destroy directional albedo LUT */
+    bank.destroy(diralbedo_lut);
+    bank.destroy(diralbedo_lut_texture);
+
     /* Destroy macrofacet buffers */
-    bank.destroy(macrofacet_hashset);
-    bank.destroy(macrofacet_shading_commands);
     bank.destroy(macrofacet_illuminance_cache);
 
     /* Destroy screen buffers */
@@ -119,8 +122,8 @@ void RenderView::deinit() {
     bank.destroy(vbuffer.texture);
     bank.destroy(dbuffer.image);
     bank.destroy(dbuffer.texture);
-    bank.destroy(ibuffer.image);
-    bank.destroy(ibuffer.texture);
+    bank.destroy(lbuffer.image);
+    bank.destroy(lbuffer.texture);
     bank.destroy(viewport.texture);
     bank.destroy(viewport.image);
 
@@ -170,13 +173,7 @@ void RenderView::resize_textures() {
     bank.resize_texture(viewport.texture, view_size).expect("failed to resize viewport texture.");
     bank.resize_texture(vbuffer.texture, view_size).expect("failed to resize vbuffer texture.");
     bank.resize_texture(dbuffer.texture, view_size).expect("failed to resize depth buffer texture.");
-    bank.resize_texture(ibuffer.texture, view_size).expect("failed to resize ibuffer texture.");
-
-    /* Resize macrofacet buffers */
-    const uint64_t hashkey_size = sizeof(uint64_t);
-    const uint64_t hashset_size = (uint64_t)view_size.x * view_size.y;
-    bank.resize_buffer(macrofacet_hashset, hashset_size, hashkey_size).expect("failed to resize macrofacet hashset buffer");
-    bank.resize_buffer(macrofacet_shading_commands, hashset_size, hashkey_size).expect("failed to resize macrofacet shading commands buffer");
+    bank.resize_texture(lbuffer.texture, view_size).expect("failed to resize lbuffer texture.");
 }
 
 }  // namespace tmt

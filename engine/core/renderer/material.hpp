@@ -1,5 +1,7 @@
 #pragma once
 
+#include <graphite/resources/handle.hh>
+
 namespace tmt {
 
 /* Voxel material data, used in a palette. */
@@ -21,5 +23,8 @@ struct MaterialPalette {
     static constexpr size_t ENTRY_COUNT = (1u << (sizeof(MaterialIndex) * 8u));
     Material entries[ENTRY_COUNT] {};
 };
+
+/* Generate/precompute directional albedo look-up texture. */
+void generate_e_lut(Texture& out_texture, const uint32_t resolution = 32u);
 
 }  // namespace tmt

@@ -65,6 +65,7 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
         .read(scene_view.object_data) /* Voxel objects buffer */
         .read(scene_view.lights_data) /* Lights data buffer */
         .write(render_view.macrofacet_illuminance_cache) /* Illuminance cache buffer */
+        // .write(render_view.ibuffer.image) /*  */
         .read(render_view.vbuffer.image) /* Visibility buffer */
         .group_size(16, 8)
         .work_size(shading_res.x, shading_res.y);

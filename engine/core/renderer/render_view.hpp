@@ -53,14 +53,16 @@ struct RenderView {
     /* Create a ray from this render view for a given pixel coordinate. */
     Ray pixel_ray(glm::ivec2 pixel) const;
 
+    /* Directional albedo look up texture (32x32) */
+    Texture diralbedo_lut_texture {};
+    Image diralbedo_lut {};
+
     /* Screen buffers */
     ScreenBuffer vbuffer {}; /* Visibility buffer (WxH, 6->8 bytes) */
     ScreenBuffer dbuffer {}; /* Depth buffer (WxH, 4 bytes) */
-    ScreenBuffer ibuffer {}; /* Illuminance buffer (WxH, 4 bytes) */
+    ScreenBuffer lbuffer {}; /* Luminance buffer (WxH, 4 bytes) */
 
     /* Macrofacet buffers */
-    Buffer macrofacet_hashset {};           /* Macrofacet hash set buffer (WxH, 8 bytes) */
-    Buffer macrofacet_shading_commands {};  /* List of (unique) shading commands (WxH, 8 bytes) */
     Buffer macrofacet_illuminance_cache {}; /* Macrofacet illuminance hash cache (10.000.000, 16 bytes) */
 
     /* Renderer output */
