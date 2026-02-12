@@ -162,4 +162,7 @@ struct WorldState {
 }  // namespace tmt
 
 // TMT_OBJECT(tmt::FactValue, (value_type));
-TMT_OBJECT(tmt::FactValue, (value_type, bool_val));
+TMT_COMPONENT(tmt::FactValue, "FactValue", (value_type, bool_val));
+TMT_OBJECT(tmt::FactId, (id));
+TMT_OBJECT(tmt::FactPair, (id, value));
+TMT_COMPONENT(tmt::WorldState, "WorldsState", (facts));

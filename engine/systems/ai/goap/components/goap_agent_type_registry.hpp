@@ -79,5 +79,5 @@ class GoapAgentTypeRegistry {
 
 }  // namespace tmt
 
-TMT_OBJECT(tmt::GoapAgentType, (id, action_ids, goal_ids, default_world_state));
+TMT_COMPONENT(tmt::GoapAgentType, "GoapAgentType", (id, action_ids, goal_ids, default_world_state));
 TMT_OBJECT(tmt::GoapAgentTypeRegistry, (types));

@@ -41,11 +41,11 @@ using SerializeComponents = ComponentRegistry<
 	ParticleEmitter,
 	UIComponent,
 	ImageRenderer,
-	GoapAgentType
-	//FactValue,
+	GoapAgentType,
+	FactValue,
 	//GoapAction,
-	//GoapGoal,
-	//WorldState
+	GoapGoal,
+	WorldState
 >;
 // clang-format on
 
@@ -63,12 +63,12 @@ using InspectComponents = ComponentRegistry<
 	Light,
 	ParticleEmitter,
 	UIComponent,
-	ImageRenderer
-	//GoapAgentType,
-	//FactValue,
+	ImageRenderer,
+	GoapAgentType,
+	FactValue,
 	//GoapAction,
-	//GoapGoal,
-	//WorldState
+	GoapGoal,
+	WorldState
 >;
 // clang-format on
 
