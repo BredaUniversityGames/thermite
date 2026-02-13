@@ -886,25 +886,57 @@ void Physics::recalculate_surface_normals(VoxelBody& vb) {
             // For all cardinal directions
             {  // -X
                 // (x - 1 < 0) = (x == 0)
-                // Check if voxel in neighboring node in -X direction is empty or exists 
+                // Check if voxel in neighboring node in -X direction is empty or exists
                 if (x == 0u) {
-                    // Keep going up the stack until a node is not on x == 0
-                    // If we run out of stack, it means there is no neighbor and we can count it as empty
-                    // If we find a node that is not on x == 0, we traverse down its +X side to find if there is a voxel there. If we find a voxel, then it's not empty, otherwise it is
+                    int32_t search_ptr = stack_ptr;
 
-                    const StackEntry& parent_entry = stack[stack_ptr - 1u];
-                    if (entry.x != 0u) {
-                        const uint32_t neighbor_pos = parent_entry.x + (parent_entry.z << 2u) + (parent_entry.y << 4u) - 1u;
-                        const Svt64Node& parent_node = nodes[parent_entry.node_idx];
-                        if (!parent_node.child_active(neighbor_pos)) {
-                            const uint32_t neighbor_child_ptr = popcnt_var64(parent_node.child_mask, neighbor_pos);
-                            const uint32_t neighbor_child_pos = 3u + (z << 2u) + (y << 4u);
-                            if (!nodes[parent_node.abs_ptr() + neighbor_child_ptr].child_active(neighbor_child_pos)) {
-                                normal.x -= 1;
-                                empty_sides++;
+                    // Search up the stack
+                    while (search_ptr >= 0) {
+                        const StackEntry& parent_entry = stack[search_ptr--];
+                        // If we can't check the neighbor without leaving the node we need to check the next parent
+                        if (parent_entry.x == 0u) continue;
+
+                        // We know we can check the neighbor at this level
+                        // Calculate neighbors position in the parent node
+                        uint32_t neighbor_pos = parent_entry.x + (parent_entry.z << 2u) + (parent_entry.y << 4u) - 1u;
+
+                        // Traverse down to the leaf level
+                        uint32_t current_level = (tree->depth - 1u) - search_ptr;
+                        uint32_t current_node_idx = parent_entry.node_idx;
+
+                        while (current_level > 0) {
+                            const Svt64Node& cn = nodes[current_node_idx];
+                            if (!cn.child_active(neighbor_pos)) {
+                                // If neighbor node doesn't exist, then the side is empty
                             }
+
+                            uint32_t child_ptr = popcnt_var64(cn.child_mask, neighbor_pos);
+                            current_node_idx = cn.abs_ptr() + child_ptr;
+                            current_level--;
+
+                            // At next level, pick opposite edge for movement axis, same coord for others
+                            const StackEntry& same_level_entry = stack[stack_ptr - current_level];
+                            neighbor_pos = 3u + (same_level_entry.z << 2u) + (same_level_entry.y << 4u);
                         }
                     }
+
+                    //// Keep going up the stack until a node is not on x == 0
+                    //// If we run out of stack, it means there is no neighbor and we can count it as empty
+                    //// If we find a node that is not on x == 0, we traverse down its +X side to find if there is a voxel there. If we find a voxel, then it's not empty, otherwise it is
+
+                    // const StackEntry& parent_entry = stack[stack_ptr - 1u];
+                    // if (entry.x != 0u) {
+                    //     const uint32_t neighbor_pos = parent_entry.x + (parent_entry.z << 2u) + (parent_entry.y << 4u) - 1u;
+                    //     const Svt64Node& parent_node = nodes[parent_entry.node_idx];
+                    //     if (!parent_node.child_active(neighbor_pos)) {
+                    //         const uint32_t neighbor_child_ptr = popcnt_var64(parent_node.child_mask, neighbor_pos);
+                    //         const uint32_t neighbor_child_pos = 3u + (z << 2u) + (y << 4u);
+                    //         if (!nodes[parent_node.abs_ptr() + neighbor_child_ptr].child_active(neighbor_child_pos)) {
+                    //             normal.x -= 1;
+                    //             empty_sides++;
+                    //         }
+                    //     }
+                    // }
                 } else if (!node.child_active(child_pos - 1u)) {
                     normal.x -= 1;
                     empty_sides++;
