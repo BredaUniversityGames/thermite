@@ -133,6 +133,7 @@ void BuildPackager::display() {
         ImGui::BulletText("fmodstudio.dll");
         ImGui::BulletText("engine/");
         ImGui::BulletText("projects/");
+        ImGui::BulletText("editor/");
     }
 
     ImGui::Separator();
