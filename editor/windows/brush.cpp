@@ -50,27 +50,42 @@ void Brush::display() {
             const Entity selected_node = editor.windows[Editor::Mode::VOXEL].get<NodeHierarchy>().get_selected_entity();
             if (!engine.ecs.valid(selected_node)) break;
 
+            const auto&& [name, transform] = engine.ecs.get_component<Name, Transform>(selected_node);
+
+            // Edit the name of the node.
+            ImResponse name_response = ImReflect::Input("Name", name);
+            const auto name_type_response = name_response.get<Name>();
+
+            static std::unique_ptr<ComponentDiff<Name>> name_diff;
+            if (name_type_response.is_activated()) {
+                name_diff = std::make_unique<ComponentDiff<Name>>(selected_node);
+                name_diff->before();
+            } else if (name_type_response.is_deactivated_after_edit()) {
+                name_diff->after();
+                name_diff->commit();
+            }
+
+            ImGui::NewLine();
+
+            // Switch between local and world space gizmo.
             const char* space_button_icon = (editor.gizmo.space ? ICON_MS_LANGUAGE : ICON_MS_VIEW_IN_AR);
             if (ImGui::Button(space_button_icon)) editor.gizmo.space = static_cast<uint8_t>(!editor.gizmo.space);
 
             ImGui::SameLine();
 
-            // This button toggles between move and rotate, since scaling in the voxel editor isn't helpful.
+            // Switch between gizmo operations (translation, rotation, scale).
             const char* mode_button_icon = Gizmo::gizmo_op_icons[editor.gizmo.operation];
             if (ImGui::Button(mode_button_icon)) editor.gizmo.operation = (editor.gizmo.operation + 1) % Gizmo::GIZMO_OP_COUNT;
 
-            ImGui::NewLine();
-
-            Transform& transform = engine.ecs.get_component<Transform>(selected_node);
-            ImResponse response = ImReflect::Input("", transform);
-
             // Handle undo/redo of the transform using the component diff.
-            const auto transform_response = response.get<Transform>();
+            ImResponse transform_response = ImReflect::Input("", transform);
+            const auto transform_type_response = transform_response.get<Transform>();
+
             static std::unique_ptr<ComponentDiff<Transform>> transform_diff;
-            if (transform_response.is_activated()) {
+            if (transform_type_response.is_activated()) {
                 transform_diff = std::make_unique<ComponentDiff<Transform>>(selected_node);
                 transform_diff->before();
-            } else if (transform_response.is_deactivated_after_edit()) {
+            } else if (transform_type_response.is_deactivated_after_edit()) {
                 transform_diff->after();
                 transform_diff->commit();
             }
