@@ -12,28 +12,38 @@
 
 namespace tmt {
 
-const std::unordered_map<Brush::Tool, const char*> Brush::MODE_ICONS {
-    { Tool::MULTI_TOOL, ICON_MS_OPEN_WITH },
-    { Tool::COLOR_PICKER, ICON_MS_COLORIZE },
-    { Tool::SINGLE, ICON_MS_DEPLOYED_CODE },
-    { Tool::BOX, ICON_MS_GRID_ON },
+namespace {
+
+const std::vector<std::pair<Brush::Tool, const char*>> TOOL_ICONS {
+    { Brush::Tool::MULTI_TOOL, ICON_MS_OPEN_WITH },
+    { Brush::Tool::COLOR_PICKER, ICON_MS_COLORIZE },
+    { Brush::Tool::SINGLE, ICON_MS_DEPLOYED_CODE },
+    { Brush::Tool::BOX, ICON_MS_GRID_ON },
 };
 
+const std::vector<std::pair<Brush::Mode, const char*>> MODE_ICONS {
+    { Brush::Mode::ATTACH, ICON_MS_ADD },
+    { Brush::Mode::REMOVE, ICON_MS_REMOVE },
+    { Brush::Mode::PAINT, ICON_MS_BRUSH },
+};
+
+}  // namespace
+
 void Brush::display() {
-    for (const auto& [mode, icon] : MODE_ICONS) {
+    for (const auto [tool, icon] : TOOL_ICONS) {
         // Keep everything on the same line (skip ImGui::SameLine on the first element).
-        if (mode != MODE_ICONS.begin()->first) ImGui::SameLine();
+        if (tool != TOOL_ICONS.begin()->first) ImGui::SameLine();
 
-        ImGui::BeginDisabled(active_tool == mode);
+        ImGui::BeginDisabled(state.tool == tool);
 
-        if (ImGui::Button(icon)) active_tool = mode;
+        if (ImGui::Button(icon)) state.tool = tool;
 
         ImGui::EndDisabled();
     }
 
     ImGui::SeparatorText("Settings");
 
-    switch (active_tool) {
+    switch (state.tool) {
         case Tool::MULTI_TOOL: {
             const Entity selected_node = editor.windows[Editor::Mode::VOXEL].get<NodeHierarchy>().get_selected_entity();
             if (!engine.ecs.valid(selected_node)) break;
@@ -63,23 +73,17 @@ void Brush::display() {
             const float width = ImGui::GetContentRegionAvail().x;
             const float button_width = (width - ImGui::GetStyle().FramePadding.x * 2.0f) / 3.0f;
 
-            ImGui::BeginDisabled(active_mode == Mode::ATTACH);
-            if (ImGui::Button(ICON_MS_ADD, ImVec2 { button_width, 0.0f })) active_mode = Mode::ATTACH;
-            ImGui::EndDisabled();
+            for (const auto [mode, icon] : MODE_ICONS) {
+                // Keep everything on the same line (skip ImGui::SameLine on the first element).
+                if (mode != MODE_ICONS.begin()->first) {
+                    ImGui::SameLine();
+                    ImGui::SetCursorPosX(ImGui::GetItemRectMax().x);
+                }
 
-            ImGui::SameLine();
-            ImGui::SetCursorPosX(ImGui::GetItemRectMax().x);
-
-            ImGui::BeginDisabled(active_mode == Mode::REMOVE);
-            if (ImGui::Button(ICON_MS_REMOVE, ImVec2 { button_width, 0.0f })) active_mode = Mode::REMOVE;
-            ImGui::EndDisabled();
-
-            ImGui::SameLine();
-            ImGui::SetCursorPosX(ImGui::GetItemRectMax().x);
-
-            ImGui::BeginDisabled(active_mode == Mode::PAINT);
-            if (ImGui::Button(ICON_MS_BRUSH, ImVec2 { button_width, 0.0f })) active_mode = Mode::PAINT;
-            ImGui::EndDisabled();
+                ImGui::BeginDisabled(state.mode == mode);
+                if (ImGui::Button(icon, ImVec2 { button_width, 0.0f })) state.mode = mode;
+                ImGui::EndDisabled();
+            }
 
             break;
     }

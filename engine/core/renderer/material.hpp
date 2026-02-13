@@ -21,7 +21,7 @@ struct MaterialPalette {
     static constexpr size_t ENTRY_COUNT = (1u << (sizeof(MaterialIndex) * 8u));
     Material entries[ENTRY_COUNT] {};
 
-    MaterialIndex material_to_index(const Material* material) const { return material - entries; }
+    MaterialIndex material_to_index(const Material* material) const { return static_cast<MaterialIndex>(material - entries); }
 };
 
 }  // namespace tmt

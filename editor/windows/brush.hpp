@@ -9,10 +9,14 @@ class Brush : public IWindow {
     enum class Tool : uint8_t { MULTI_TOOL, COLOR_PICKER, SINGLE, BOX };
     enum class Mode : uint8_t { ATTACH, REMOVE, PAINT };
 
+    struct State {
+        Tool tool;
+        Mode mode;
+    };
+
     Brush() = default;
 
-    [[nodiscard]] Tool get_active_tool() const { return active_tool; }
-    [[nodiscard]] Mode get_active_mode() const { return active_mode; }
+    [[nodiscard]] State get_brush_state() const { return state; }
 
    private:
     constexpr std::string get_title() const override { return ICON_MS_BRUSH " Brushes"; }
@@ -24,9 +28,7 @@ class Brush : public IWindow {
 
     void display() override;
 
-    static const std::unordered_map<Tool, const char*> MODE_ICONS;
-    Tool active_tool;
-    Mode active_mode;
+    State state;
 };
 
 }  // namespace tmt

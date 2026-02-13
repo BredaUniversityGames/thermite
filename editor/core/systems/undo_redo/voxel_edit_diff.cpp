@@ -33,6 +33,9 @@ void VoxelEditDiff::add_change(const glm::uvec3& coord, const MaterialIndex* bef
 }
 
 void VoxelEditDiff::commit(const std::string& message) {
+    // Don't commit the diff if there are no changes.
+    if (before_change.positions.empty() && after_change.positions.empty()) return;
+
     send_to_manager(std::move(*this), message);
 }
 
