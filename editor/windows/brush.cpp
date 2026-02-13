@@ -17,7 +17,7 @@ namespace tmt {
 namespace {
 
 const std::vector<std::pair<Brush::Tool, const char*>> TOOL_ICONS {
-    { Brush::Tool::MULTI_TOOL, ICON_MS_OPEN_WITH },
+    { Brush::Tool::GIZMO, ICON_MS_OPEN_WITH },
     { Brush::Tool::COLOR_PICKER, ICON_MS_COLORIZE },
     { Brush::Tool::SINGLE, ICON_MS_DEPLOYED_CODE },
     { Brush::Tool::BOX, ICON_MS_GRID_ON },
@@ -46,7 +46,7 @@ void Brush::display() {
     ImGui::SeparatorText("Settings");
 
     switch (state.tool) {
-        case Tool::MULTI_TOOL: {
+        case Tool::GIZMO: {
             const Entity selected_node = editor.windows[Editor::Mode::VOXEL].get<NodeHierarchy>().get_selected_entity();
             if (!engine.ecs.valid(selected_node)) break;
 

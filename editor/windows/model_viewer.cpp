@@ -171,33 +171,49 @@ void draw_selection(const Hit& hit, const glm::vec3& half_extent, const Transfor
     engine.polyline.draw_obb(world_voxel_pos, VOXEL_SIZE_HALF * local_scale, transform.get_world_rotation());
 }
 
-bool handle_selection(const Brush::State brush_state, const Ray& mouse_ray, Hit& hit, const Entity entity, const Transform& transform, const glm::vec3& half_extent) {
+std::vector<FaceData> draw_valid_faces(const Transform& transform, const glm::vec3& half_extent) {
+    std::vector<FaceData> valid_faces;
+
+    for (int32_t i = 0; i < 6; i++) {
+        FaceData face = calculate_face_info(i, transform, half_extent);
+
+        if (draw_face(face, transform, half_extent)) valid_faces.push_back(face);  // Don't add the face to the vector if `draw_face` returned false aka we can't see it.
+    }
+
+    return valid_faces;
+}
+
+bool handle_selection(
+    const std::vector<FaceData>& valid_faces, const Brush::State brush_state, const Ray& ray, Hit& hit, const Entity entity, const Transform& transform, const glm::vec3& half_extent
+) {
     const glm::mat4 world_to_local_matrix = glm::inverse(transform.get_world_matrix());
 
     // Create a local version of the ray to simplify the aabb test later.
     const Ray local_ray {
-        world_to_local_matrix * glm::vec4 { mouse_ray.origin, 1.0f },
-        world_to_local_matrix * glm::vec4 { mouse_ray.dir, 0.0f },
+        world_to_local_matrix * glm::vec4 { ray.origin, 1.0f },
+        world_to_local_matrix * glm::vec4 { ray.dir, 0.0f },
     };
 
     // Do an aabb test with the bounding box of the voxel object, this tells use if the user is pointing at a face of the grid, and thus we should draw the grid.
     const float far = intersect_aabb(local_ray, -half_extent, half_extent);
     const bool is_face_hit = (far > 0.0f && hit.distance >= far);
 
-    if (!is_face_hit && brush_state.mode == Brush::Mode::ATTACH) {
-        // If we can hit a face, that means we want to work on top of the voxel the mouse is pointing at, we get the voxel coord by adjusting it here.
-        const glm::vec3 local_normal = world_to_local_matrix * glm::vec4 { hit.normal, 0.0f };
-        const glm::uvec3 voxel_grid_normal { glm::round(local_normal) };
-        hit.coord += voxel_grid_normal;
+    if (!is_face_hit) {
+        if (brush_state.mode == Brush::Mode::ATTACH) {
+            // If we can hit a face, that means we want to work on top of the voxel the mouse is pointing at, we get the voxel coord by adjusting it here.
+            const glm::vec3 local_normal = world_to_local_matrix * glm::vec4 { hit.normal, 0.0f };
+            const glm::uvec3 voxel_grid_normal { glm::round(local_normal) };
+            hit.coord += voxel_grid_normal;
+        }
+
+        // If we know we didn't hit a face, we can early return by checking if the hit was on this entity.
+        return hit.entity == entity;
     }
 
-    // Loop over all the grid's outer faces and draw them.
-    for (int32_t i = 0; i < 6; i++) {
-        FaceData face = calculate_face_info(i, transform, half_extent);
-        if (!draw_face(face, transform, half_extent) || !is_face_hit) continue;  // Exit if we didn't draw the face (the face can't be viewed and thus can't be selected).
-
+    // Loop over all the valid grid faces to see which one was hit.
+    const glm::vec3 local_hit_position = local_ray.origin + local_ray.dir * far;
+    for (const FaceData& face : valid_faces) {
         // Check if the displayed face was the face that was hit, then update the "hit" variable's members with the new info.
-        const glm::vec3 local_hit_position = local_ray.origin + local_ray.dir * far;
         const float extent_axis = half_extent[face.normal_index] * face.normal_sign;
 
         constexpr float SMALL_FLOAT = std::numeric_limits<float>::epsilon() * 100.0f;
@@ -209,8 +225,8 @@ bool handle_selection(const Brush::State brush_state, const Ray& mouse_ray, Hit&
         hit.entity = entity;
         hit.distance = far;
 
-        const glm::vec3 position = (mouse_ray.origin + mouse_ray.dir * hit.distance) - (face.world_normal * VOXEL_SIZE_HALF);
-        const glm::vec3 local_position = glm::inverse(transform.get_world_matrix()) * glm::vec4 { position, 1.0f };
+        const glm::vec3 world_hit_position = (ray.origin + ray.dir * hit.distance) - (face.world_normal * VOXEL_SIZE_HALF);
+        const glm::vec3 local_position = world_to_local_matrix * glm::vec4 { world_hit_position, 1.0f };
 
         hit.coord = (local_position + half_extent) * static_cast<float>(VOXELS_PER_UNIT);
 
@@ -218,7 +234,7 @@ bool handle_selection(const Brush::State brush_state, const Ray& mouse_ray, Hit&
     }
 
     const bool can_interact_with_face = (brush_state.mode == Brush::Mode::ATTACH || brush_state.tool == Brush::Tool::BOX);
-    return hit.entity == entity && (!is_face_hit || can_interact_with_face);
+    return hit.entity == entity && can_interact_with_face;
 }
 
 void set_voxel(const std::unique_ptr<Svt64>& svt, const glm::uvec3& coord, VoxelEditDiff& diff, const MaterialIndex material_index) {
@@ -390,7 +406,8 @@ void ModelViewer::display() {
     ImGui::Image(engine.renderer.render_view.imgui_viewport, size);
 
     const Brush::State brush_state = editor.windows[Editor::Mode::VOXEL].get<Brush>().get_brush_state();
-    if (brush_state.tool == Brush::Tool::MULTI_TOOL) {
+    const bool is_tool_gizmo = brush_state.tool == Brush::Tool::GIZMO;
+    if (is_tool_gizmo) {
         const Entity selected_entity = editor.windows[Editor::Mode::VOXEL].get<NodeHierarchy>().get_selected_entity();
 
         editor.gizmo.manip(window_pos.x, window_pos.y, size.x, size.y, { &selected_entity, &selected_entity + 1 });
@@ -424,9 +441,16 @@ void ModelViewer::display() {
 
     const Ray mouse_ray = engine.renderer.render_view.pixel_ray(mouse_position);
     Hit hit = engine.renderer.trace_ray(mouse_ray);
+
     if (glm::any(glm::greaterThanEqual(hit.coord, resource->size))) hit.entity = entt::null;
 
-    if (!handle_selection(brush_state, mouse_ray, hit, selected_entity, transform, half_extent)) return;  // Return early if no valid voxel was selected.
+    const std::vector<FaceData> valid_faces = draw_valid_faces(transform, half_extent);
+
+    // Don't calculate voxel hits when the cursor isn't over the window or using gizmo.
+    if (!ImGui::IsWindowHovered() || is_tool_gizmo) return;
+
+    // Return early if no valid voxel was selected.
+    if (!handle_selection(valid_faces, brush_state, mouse_ray, hit, selected_entity, transform, half_extent)) return;
 
     const MaterialIndex material_index = editor.windows[Editor::Mode::VOXEL].get<Palette>().get_selected_material_index();
     const Material& material = resource->blas->palette.entries[material_index];
