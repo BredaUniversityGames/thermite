@@ -2,10 +2,12 @@
 
 #include <engine/engine.hpp>
 #include <engine/core/ecs.hpp>
+#include <engine/tools/serializer/all.hpp>
 
-#include "editor/imgui/types/all.hpp"
 #include "editor.hpp"
+#include "editor/imgui/types/all.hpp"
 #include "editor/windows/node_hierarchy.hpp"
+#include "editor/core/systems/undo_redo/component_diff.hpp"
 
 #include <imgui.h>
 #include <ImReflect_entry.hpp>
@@ -60,8 +62,18 @@ void Brush::display() {
             ImGui::NewLine();
 
             Transform& transform = engine.ecs.get_component<Transform>(selected_node);
-            ImReflect::Input("", transform);
+            ImResponse response = ImReflect::Input("", transform);
 
+            // Handle undo/redo of the transform using the component diff.
+            const auto transform_response = response.get<Transform>();
+            static std::unique_ptr<ComponentDiff<Transform>> transform_diff;
+            if (transform_response.is_activated()) {
+                transform_diff = std::make_unique<ComponentDiff<Transform>>(selected_node);
+                transform_diff->before();
+            } else if (transform_response.is_deactivated_after_edit()) {
+                transform_diff->after();
+                transform_diff->commit();
+            }
             break;
         }
 
