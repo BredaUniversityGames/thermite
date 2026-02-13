@@ -34,11 +34,6 @@ void Palette::display() {
     if (renderer == nullptr) return;
 
     display_palette(renderer->resource);
-
-    if (ImGui::Begin(ICON_MS_EDIT " Material Editor")) {
-        display_material_editor();
-    }
-    ImGui::End();
 }
 
 void Palette::display_palette(const ResourceRef<VoxelVolume>& resource) {
@@ -80,23 +75,6 @@ void Palette::display_palette(const ResourceRef<VoxelVolume>& resource) {
         draw_list->AddRect(min, max, ImColor(0xFF000000u), 0.0f, 0, 6.0f);
         draw_list->AddRect(min, max, ImColor(0xFFFFFFFFu), 0.0f, 0, 3.0f);
     }
-}
-
-void Palette::display_material_editor() const {
-    /* Doesn't actually work yet but for the idea */
-    const auto selected_entity = editor.windows[Editor::Mode::VOXEL].get<NodeHierarchy>().get_selected_entity();
-    if (selected_entity == entt::null) {
-        ImGui::TextWrapped("No voxel model selected.");
-        return;
-    }
-
-    const VoxelRenderer* renderer = engine.ecs.try_get_component<VoxelRenderer>(selected_entity);
-    if (renderer == nullptr) return;
-
-    Material& material = renderer->resource->blas->palette.entries[selected_material_index];
-    ImGui::Text("Editing Material Index: %u", selected_material_index);
-    ImGui::Separator();
-    if (ImGui::ColorPicker3("Albedo Color", &material.albedo_r)) renderer->resource->set_dirty();
 }
 
 }  // namespace tmt

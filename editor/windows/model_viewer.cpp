@@ -343,7 +343,7 @@ void handle_brush(const Brush::State brush_state, const ResourceRef<VoxelVolume>
         case Brush::Tool::BOX: {
             if (!engine.input.is_mouse_button_pressed(MouseButton::LEFT) && !engine.input.is_mouse_button_just_released(MouseButton::LEFT)) break;
 
-            static glm::uvec3 start_coord { -1ul };
+            static glm::uvec3 start_coord { std::numeric_limits<uint32_t>::max() };
             if (engine.input.is_mouse_button_just_pressed(MouseButton::LEFT)) start_coord = hit.coord;
 
             const glm::uvec3& end_coord = hit.coord;
@@ -426,7 +426,6 @@ void ModelViewer::display() {
     Hit hit = engine.renderer.trace_ray(mouse_ray);
     if (glm::any(glm::greaterThanEqual(hit.coord, resource->size))) hit.entity = entt::null;
 
-    // Handle drawing the selection and calculating the selected voxel position.
     if (!handle_selection(brush_state, mouse_ray, hit, selected_entity, transform, half_extent)) return;  // Return early if no valid voxel was selected.
 
     const MaterialIndex material_index = editor.windows[Editor::Mode::VOXEL].get<Palette>().get_selected_material_index();
