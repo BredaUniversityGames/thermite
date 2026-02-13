@@ -38,11 +38,11 @@ class NodeHierarchy : public IWindow {
    private:
     friend class VoxelNodeDiff;
 
-    void recurse_display_node(Entity entity, const Name& name, const Transform& transform);
+    void recurse_display_node(Entity entity, const Name& name, Transform& transform);
     void clear_hierarchy();
 
     void drop_hierarchy();
-    void drop_node(Entity entity);
+    void drop_node(Entity entity, Transform& transform);
 
     void popup_create_node();
     void node_context_menu(Entity node_entity) const;

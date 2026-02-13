@@ -7,8 +7,10 @@ namespace tmt {
 template <typename Type>
 class TypeDiff : public IUndoRedo {
    public:
-    // Before change is automatically taken from the current value of the variable.
-    TypeDiff(Type* variable, const Type& after) : variable { variable }, before_change { *variable }, after_change { after } {}
+    TypeDiff(Type* variable) : variable { variable } {}
+
+    void before() { before_change = *variable; }
+    void after() { after_change = *variable; }
 
     void undo() override { *variable = before_change; }
     void redo() override { *variable = after_change; }

@@ -13,8 +13,12 @@ namespace tmt {
 void Palette::set_selected_material_index(const MaterialIndex material_index) {
     if (selected_material_index == material_index) return;  // Skip setting the material again and sending the diff to the undo redo system.
 
-    TypeDiff diff { &selected_material_index, material_index };
+    TypeDiff diff { &selected_material_index };
+
+    diff.before();
     selected_material_index = material_index;
+    diff.after();
+
     IUndoRedo::send_to_manager(std::move(diff), "Select Material");
 }
 

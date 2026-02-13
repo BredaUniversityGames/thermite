@@ -9,6 +9,7 @@
 #include "engine/tools/svh_format.hpp"
 #include "engine/shared/colorspace.hpp"
 #include "engine/shared/const.hpp"
+#include "engine/tools/serializer/all.hpp"
 
 #include <imgui.h>
 #include <imgui_stdlib.h>
@@ -21,8 +22,10 @@
 #include <fstream>
 
 #include "editor.hpp"
-#include "core/systems/undo_redo/undo_redo_manager.hpp"
-#include "core/systems/undo_redo/voxel_edit_diff.hpp"
+#include "core/systems/undo_redo/type_diff.hpp"
+#include "editor/core/systems/undo_redo/component_diff.hpp"
+#include "editor/core/systems/undo_redo/undo_redo_manager.hpp"
+#include "editor/core/systems/undo_redo/voxel_edit_diff.hpp"
 
 namespace tmt {
 
@@ -283,7 +286,7 @@ std::vector<char> NodeHierarchy::encode_voxel_scene() const {
     return encode_svh(root_nodes);
 }
 
-void NodeHierarchy::recurse_display_node(const Entity entity, const Name& name, const Transform& transform) {
+void NodeHierarchy::recurse_display_node(const Entity entity, const Name& name, Transform& transform) {
     ImGui::PushID(static_cast<int>(entity));
 
     const std::set<Entity>& children = transform.get_children();
@@ -298,7 +301,7 @@ void NodeHierarchy::recurse_display_node(const Entity entity, const Name& name, 
     const bool tree_open = ImGui::TreeNodeEx(name.name.c_str(), flags);
     node_context_menu(entity);
     drag_node(entity, name.name);
-    drop_node(entity);
+    drop_node(entity, transform);
 
     const bool popup_clicked_open = (ImGui::IsMouseReleased(ImGuiMouseButton_Right) && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup));
     // Both left mouse button selects and opening the popup also selects, this makes it clear what node entity you have opened the popup for.
@@ -331,15 +334,40 @@ void NodeHierarchy::drop_hierarchy() {
     const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("VoxelNode");
     if (payload != nullptr) {
         const Entity dropped_entity = *static_cast<Entity*>(payload->Data);
+        Transform& transform = engine.ecs.get_component<Transform>(dropped_entity);
 
-        engine.ecs.get_component<Transform>(dropped_entity).clear_parent();
-        root_entities.emplace(dropped_entity);
+        if (transform.has_parent()) {
+            // Diffs for parent child relationship undo/redo.
+            ComponentDiff<Transform> parent_diff { transform.get_parent() };
+            ComponentDiff<Transform> dropped_diff { dropped_entity };
+
+            parent_diff.before();
+            dropped_diff.before();
+
+            transform.clear_parent();
+
+            parent_diff.after();
+            dropped_diff.after();
+
+            UndoRedoCollection diff_collection;
+            diff_collection.add_action(std::move(parent_diff));
+            diff_collection.add_action(std::move(dropped_diff));
+
+            TypeDiff root_diff { &root_entities };
+
+            root_diff.before();
+            root_entities.emplace(dropped_entity);
+            root_diff.after();
+
+            diff_collection.add_action(std::move(root_diff));
+            diff_collection.commit("Modified Hierarchy");
+        }
     }
 
     ImGui::EndDragDropTarget();
 }
 
-void NodeHierarchy::drop_node(const Entity entity) {
+void NodeHierarchy::drop_node(const Entity entity, Transform& transform) {
     if (!ImGui::BeginDragDropTarget()) return;
 
     const ImGuiPayload* payload = ImGui::GetDragDropPayload();
@@ -347,11 +375,39 @@ void NodeHierarchy::drop_node(const Entity entity) {
         const Entity dropped_entity = *static_cast<Entity*>(payload->Data);
 
         if (entity != dropped_entity && ImGui::AcceptDragDropPayload("VoxelNode")) {
-            // We have to get the entity's transform again here, otherwise entt can't find the entity that has the transform, I have no idea why.
-            Transform& transform = engine.ecs.get_component<Transform>(entity);
+            const size_t child_count = transform.get_children().size();
+
+            // Diffs for parent child relationship undo/redo.
+            ComponentDiff<Transform> parent_diff { entity };
+            ComponentDiff<Transform> child_diff { dropped_entity };
+
+            parent_diff.before();
+            child_diff.before();
+
             transform.add_child(dropped_entity);
 
-            if (root_entities.contains(dropped_entity)) root_entities.erase(dropped_entity);
+            // Only handle the rest of the diff process if the transform actually got a new child (might not get a new child when trying to parent to child of self).
+            if (child_count != transform.get_children().size()) {
+                parent_diff.after();
+                child_diff.after();
+
+                UndoRedoCollection diff_collection;
+                diff_collection.add_action(std::move(parent_diff));
+                diff_collection.add_action(std::move(child_diff));
+
+                if (root_entities.contains(dropped_entity)) {
+                    // Diff to add entity back in root entities set.
+                    TypeDiff root_diff { &root_entities };
+
+                    root_diff.before();
+                    root_entities.erase(dropped_entity);
+                    root_diff.after();
+
+                    diff_collection.add_action(std::move(root_diff));
+                }
+
+                diff_collection.commit("Modified Hierarchy");
+            }
         }
     }
 
@@ -421,7 +477,7 @@ void NodeHierarchy::node_context_menu(const Entity node_entity) const {
         VoxelNodeDiff diff { node_entity, false };
         engine.ecs.destroy_entity(node_entity);
         VoxelNodeDiff::send_to_manager(std::move(diff), "Deleted Voxel Node");
-    };
+    }
 
     ImGui::EndPopup();
 }
