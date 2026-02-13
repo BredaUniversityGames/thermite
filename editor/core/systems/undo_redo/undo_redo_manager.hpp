@@ -1,4 +1,6 @@
 #pragma once
+#include <engine/events/engine.hpp>
+
 #include "editor/core/window.hpp"
 
 namespace tmt {
@@ -47,7 +49,7 @@ class UndoRedoCollection : public IUndoRedo {
     std::vector<std::shared_ptr<IUndoRedo>> actions;
 };
 
-class UndoRedoManager : public IWindow {
+class UndoRedoManager : public IWindow, public OnEngineEnd {
    public:
     UndoRedoManager() = default;
     ~UndoRedoManager() override = default;
@@ -62,6 +64,9 @@ class UndoRedoManager : public IWindow {
    protected:
     // Inherited via IWindow
     std::string get_title() const override { return "Undo Redo Manager"; }
+
+    // Inherited via OnEngineEnd
+    void on_engine_end() override { clear(); }
 
     void display() override;
 

@@ -1,10 +1,10 @@
 #pragma once
 
-#include "editor.hpp"
-#include "editor/core/systems/undo_redo/undo_redo_manager.hpp"
-
 #include <engine/core/ecs.hpp>
 #include <engine/core/renderer/material.hpp>
+#include <engine/core/resources/voxel_volume.hpp>
+
+#include "editor/core/systems/undo_redo/undo_redo_manager.hpp"
 
 namespace tmt {
 
@@ -38,6 +38,30 @@ class VoxelEditDiff : public IUndoRedo {
 
     VoxelChange before_change;
     VoxelChange after_change;
+};
+
+class VoxelNodeDiff : public IUndoRedo {
+   public:
+    VoxelNodeDiff(Entity node_entity, bool is_add);
+
+    // Inherited via IUndoRedo
+    void undo() override;
+    void redo() override;
+    void inspect() override {}
+
+   private:
+    struct NodeData {
+        Entity entity_id;
+        UUID uuid { NULL_UUID };
+        ResourceRef<VoxelVolume> model { {}, nullptr };
+    };
+
+    void recurse_parse_node_data(Entity entity);
+
+    bool is_add { false };
+
+    json entity_json;
+    std::vector<NodeData> node_data;
 };
 
 }  // namespace tmt

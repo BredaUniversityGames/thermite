@@ -22,6 +22,7 @@
 
 #include "editor.hpp"
 #include "core/systems/undo_redo/undo_redo_manager.hpp"
+#include "core/systems/undo_redo/voxel_edit_diff.hpp"
 
 namespace tmt {
 
@@ -64,10 +65,6 @@ struct NodeCreationData {
 };
 std::unique_ptr<NodeCreationData> node_creation_info;
 
-struct VoxelEditUUID {
-    UUID uuid { NULL_UUID };
-};
-
 Entity recurse_build_scene(const VoxelSceneNode& node, bool assign_new_uuids, const Entity parent_entity = entt::null, const glm::mat4& parent_matrix = glm::identity<glm::mat4>()) {
     const Entity entity = engine.ecs.create_entity(node.name);
 
@@ -75,7 +72,7 @@ Entity recurse_build_scene(const VoxelSceneNode& node, bool assign_new_uuids, co
     transform.set_world_matrix(parent_matrix * node.transform);
     transform.set_parent(parent_entity);
 
-    VoxelEditUUID& uuid_component = engine.ecs.add_component<VoxelEditUUID>(entity);
+    NodeHierarchy::NodeUUID& uuid_component = engine.ecs.add_component<NodeHierarchy::NodeUUID>(entity);
     uuid_component.uuid = (assign_new_uuids ? UUIDGenerator::generate() : node.uuid);
 
     if (node.tree) {
@@ -102,7 +99,7 @@ void recurse_parse_scene(Entity entity, const Transform& transform, VoxelSceneNo
     const glm::mat4 scale = glm::scale(glm::identity<glm::mat4>(), transform.get_local_scale());
     node.transform = translation * rotation * scale;
 
-    node.uuid = engine.ecs.get_component<VoxelEditUUID>(entity).uuid;
+    node.uuid = engine.ecs.get_component<NodeHierarchy::NodeUUID>(entity).uuid;
 
     const VoxelRenderer* renderer = engine.ecs.try_get_component<VoxelRenderer>(entity);
     if (renderer != nullptr) {
@@ -158,7 +155,7 @@ void NodeHierarchy::save_svh_as() {
     save_file_dialog(
         [this](const IO::FileLocation& location) {
             loaded_location = location;
-            if (loaded_location.relative_path.extension() != ".svh") loaded_location.relative_path += ".svh"; // Make sure the saved file has the correct extension.
+            if (loaded_location.relative_path.extension() != ".svh") loaded_location.relative_path += ".svh";  // Make sure the saved file has the correct extension.
 
             const std::vector<char> scene_data = encode_voxel_scene();
             IO::write_file(loaded_location, scene_data.data(), scene_data.size());
@@ -202,7 +199,7 @@ void NodeHierarchy::export_file(const std::string& file_description, const std::
             uint32_t indices_offset = 0;
             for (const auto&& [entity, renderer, transform] : renderer_group.each()) {
                 const std::string& name = engine.ecs.get_component<Name>(entity).name;
-                const std::string& uuid_string = engine.ecs.get_component<VoxelEditUUID>(entity).uuid.str();
+                const std::string& uuid_string = engine.ecs.get_component<NodeUUID>(entity).uuid.str();
 
                 const ResourceRef<VoxelVolume>& resource = renderer.resource;
                 const std::unique_ptr<Svt64>& tree = resource->blas;
@@ -281,7 +278,7 @@ std::vector<char> NodeHierarchy::encode_voxel_scene() const {
         VoxelSceneNode& root_node = root_nodes.emplace_back();
         recurse_parse_scene(entity, transform, root_node);
     }
-    
+
     // Encode those VoxelSceneNodes into the .svh format.
     return encode_svh(root_nodes);
 }
@@ -395,9 +392,12 @@ void NodeHierarchy::popup_create_node() {
         }
 
         if (uuid == NULL_UUID) uuid = UUIDGenerator::generate();
-        engine.ecs.add_component<VoxelEditUUID>(new_node_entity).uuid = uuid;
+        engine.ecs.add_component<NodeUUID>(new_node_entity).uuid = uuid;
 
         ImGui::CloseCurrentPopup();
+        VoxelNodeDiff diff { new_node_entity, true };
+        VoxelNodeDiff::send_to_manager(std::move(diff), "Added Voxel Node");
+
         node_creation_info.reset();
     }
     if (ImGui::Button("Cancel")) {
@@ -417,7 +417,11 @@ void NodeHierarchy::node_context_menu(const Entity node_entity) const {
         node_creation_info->parent = node_entity;
         ImGui::OpenPopupEx(popup_id);
     }
-    if (ImGui::MenuItem(ICON_MS_REMOVE " Delete node")) engine.ecs.destroy_entity(node_entity);
+    if (ImGui::MenuItem(ICON_MS_REMOVE " Delete node")) {
+        VoxelNodeDiff diff { node_entity, false };
+        engine.ecs.destroy_entity(node_entity);
+        VoxelNodeDiff::send_to_manager(std::move(diff), "Deleted Voxel Node");
+    };
 
     ImGui::EndPopup();
 }
@@ -427,7 +431,6 @@ void NodeHierarchy::display() {
 
     popup_create_node();
 
-    std::vector<Entity> test;
     for (const Entity entity : root_entities) {
         auto&& [transform, name] = engine.ecs.get_component<Transform, Name>(entity);
 
@@ -438,7 +441,7 @@ void NodeHierarchy::display() {
 
     constexpr ImGuiPopupFlags flags = ImGuiPopupFlags_NoOpenOverExistingPopup | ImGuiPopupFlags_MouseButtonRight;
     if (ImGui::BeginPopupContextWindow(nullptr, flags)) {
-        if (ImGui::MenuItem("Add node")) {
+        if (ImGui::MenuItem(ICON_MS_ADD " Add node")) {
             node_creation_info = std::make_unique<NodeCreationData>();
             ImGui::OpenPopupEx(popup_id);
         }
