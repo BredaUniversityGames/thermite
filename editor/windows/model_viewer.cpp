@@ -199,7 +199,7 @@ bool handle_selection(
     const bool is_face_hit = (far > 0.0f && hit.distance >= far);
 
     if (!is_face_hit) {
-        if (brush_state.mode == Brush::Mode::ATTACH) {
+        if (brush_state.tool != Brush::Tool::COLOR_PICKER && brush_state.mode == Brush::Mode::ATTACH) {
             // If we can hit a face, that means we want to work on top of the voxel the mouse is pointing at, we get the voxel coord by adjusting it here.
             const glm::vec3 local_normal = world_to_local_matrix * glm::vec4 { hit.normal, 0.0f };
             const glm::uvec3 voxel_grid_normal { glm::round(local_normal) };
@@ -233,7 +233,7 @@ bool handle_selection(
         draw_selected_face(face, half_extent, transform);
     }
 
-    const bool can_interact_with_face = (brush_state.mode == Brush::Mode::ATTACH || brush_state.tool == Brush::Tool::BOX);
+    const bool can_interact_with_face = (brush_state.tool != Brush::Tool::COLOR_PICKER && (brush_state.mode == Brush::Mode::ATTACH || brush_state.tool == Brush::Tool::BOX));
     return hit.entity == entity && can_interact_with_face;
 }
 
