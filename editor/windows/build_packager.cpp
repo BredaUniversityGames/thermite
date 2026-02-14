@@ -1,4 +1,3 @@
-// build_packager.cpp
 #include "build_packager.hpp"
 
 #include "editor/font/icon_lookups.hpp"
@@ -7,6 +6,7 @@
 
 #include <imgui.h>
 #include <imgui_stdlib.h>
+
 namespace tmt {
 
 std::filesystem::path BuildPackager::get_root_folder() const {
@@ -33,6 +33,7 @@ std::filesystem::path BuildPackager::get_unique_zip_path() const {
     zip_path = build_folder / (build_name + "_" + std::to_string(counter) + ".zip");
     return zip_path;
 }
+
 std::filesystem::path BuildPackager::find_game_exe() const {
     std::filesystem::path root = get_root_folder();
 
@@ -46,6 +47,7 @@ std::filesystem::path BuildPackager::find_game_exe() const {
     }
     return {};
 }
+
 bool BuildPackager::create_package() {
     std::filesystem::path root = get_root_folder();
     std::filesystem::path build_folder = get_build_folder();
@@ -83,6 +85,7 @@ bool BuildPackager::create_package() {
     Log::info("Package created: {} and {}", output_folder.string(), zip_path.string());
     return true;
 }
+
 void BuildPackager::play_build() {
     if (last_built_exe.empty() || !std::filesystem::exists(last_built_exe)) {
         status = Status::FAILED;
