@@ -14,13 +14,15 @@ public static const uint INACTIVE_THRESHOLD = 240u;
 /* Number of slots available in the cache. */
 static const uint CAPACITY = 10000000u;
 
-/* Illuminance Cache Slot */
+static const uint TEMPORAL_SAMPLES = 20u;
+
+/* Cache Slot (48 bytes) */
 public struct Slot {
-    public uint64_t key; /* 64-bit hash key */
-    public uint illuminance_r;
-    public uint illuminance_g;
-    public uint illuminance_b;
-    public uint samples; /* sample count & last sampled frame index */
+    public uint64_t key; /* 64-bit hash key. */
+    public uint samples; /* Sample count & last sampled frame index. */
+    public uint temporal;
+    public uint4 diffuse; /* Spatial & temporal diffuse illuminance. */
+    public uint4 specular; /* Spatial & temporal specular luminance. */
 
     /* Samples bits */
     static const uint SAMPLE_COUNT_BITS = 20u;
@@ -42,19 +44,37 @@ public struct Slot {
     static const float QFACTOR = 1e3f;
     static const float RCP_QFACTOR = 1.0f / QFACTOR;
 
-    /* The mean illuminance of the cache slot. */
-    public property float3 illuminance { get {
-        return float3(
-            (float)illuminance_r * RCP_QFACTOR,
-            (float)illuminance_g * RCP_QFACTOR,
-            (float)illuminance_b * RCP_QFACTOR
-        ) / sample_count;
-    }}
+    /* Read diffuse illuminance from the cache slot. */
+    public [ForceInline] float3 read_diffuse() { return decode_rgb9e5(diffuse.w); }
+    /* Read specular luminance from the cache slot. */
+    public [ForceInline] float3 read_specular() { return decode_rgb9e5(specular.w); }
+
+    /* Flush the diffuse and specular accumulators of the cache slot. */
+    /* This resets the spatial accumulators and updates the temporal accumulators. */
+    public [ForceInline] [mutating] void flush_accu() {
+        if (sample_count == 0u) return;
+
+        /* Calculate the mean of both spatial accumulators */
+        const float rcp_sample_count = 1.0f / sample_count;
+        const float3 diffuse_accu = float3(diffuse.rgb) * RCP_QFACTOR * rcp_sample_count;
+        const float3 specular_accu = float3(specular.rgb) * RCP_QFACTOR * rcp_sample_count;
+
+        /* Reset the spatial accumulators */
+        diffuse.rgb = specular.rgb = 0u;
+        samples = last_sampled << SAMPLE_COUNT_BITS;
+
+        /* Update the temporal accumulators */
+        if (temporal < TEMPORAL_SAMPLES) temporal += 1u;
+        const float alpha = 1.0f / temporal;
+        diffuse.w = encode_rgb9e5(lerp(read_diffuse(), diffuse_accu, alpha));
+        specular.w = encode_rgb9e5(lerp(read_specular(), specular_accu, alpha));
+    }
 
     /* Find the inactivity of the cache slot compared to a reference frame index. */
     public [ForceInline] uint inactivity(const uint ref_frame) {
         const uint current_index = ref_frame & LAST_SAMPLED_MASK;
         const uint sampled_index = last_sampled;
+        if (sampled_index == 0u) return 0u; /* <- to avoid instantly marker slot as inactive */
         return ((current_index - sampled_index) << SAMPLE_COUNT_BITS) >> SAMPLE_COUNT_BITS;
     }
 
@@ -64,48 +84,34 @@ public struct Slot {
     }
 
     /* Accumulate into the cache slot. */
-    public [ForceInline] [mutating] void accumulate(const float3 value) {
+    public [ForceInline] [mutating] void accumulate(const float3 diffuse_sample, const float3 specular_sample) {
         /* Avoid accumulating too many samples, we can only handle ~1.000.000 */
         if (sample_count > 100000u) return;
 
         /* Convert to fixed point representation for atomics */
-        const uint3 fxp = uint3(value * QFACTOR);
+        const uint3 diffuse_fxp = uint3(diffuse_sample * QFACTOR);
+        const uint3 specular_fxp = uint3(specular_sample * QFACTOR);
 
         /* Avoid atomics if the value is zero */
-        if (fxp.r > 0u) InterlockedAdd(illuminance_r, fxp.r);
-        if (fxp.g > 0u) InterlockedAdd(illuminance_g, fxp.g);
-        if (fxp.b > 0u) InterlockedAdd(illuminance_b, fxp.b);
+        if (diffuse_fxp.r > 0u) InterlockedAdd(diffuse.r, diffuse_fxp.r);
+        if (diffuse_fxp.g > 0u) InterlockedAdd(diffuse.g, diffuse_fxp.g);
+        if (diffuse_fxp.b > 0u) InterlockedAdd(diffuse.b, diffuse_fxp.b);
+        if (specular_fxp.r > 0u) InterlockedAdd(specular.r, specular_fxp.r);
+        if (specular_fxp.g > 0u) InterlockedAdd(specular.g, specular_fxp.g);
+        if (specular_fxp.b > 0u) InterlockedAdd(specular.b, specular_fxp.b);
         InterlockedAdd(samples, 1u);
     }
 
     /* Reset the cache slot so it can be re-used. */
     public [ForceInline] [mutating] void reset() {
         key = EMPTY_KEY;
-        illuminance_r = illuminance_g = 0u;
-        illuminance_b = samples = 0u;
-    }
-
-    /* How many samples must be accumulated before we normalize illuminance. */
-    static const uint NORM_THRESHOLD = 1u << 9u;
-    /* How many samples do we normalize into. */
-    static const uint NORM_COUNT = 1u << 8u;
-
-    /* Normalize the accumulated illuminance in the cache slot. */
-    public [ForceInline] [mutating] void normalize() {
-        if (sample_count <= NORM_THRESHOLD) return;
-        const uint last_sampled_index = last_sampled;
-
-        /* Reduce sample count back to NORM_COUNT */
-        const uint3 fxp = uint3(illuminance * NORM_COUNT * QFACTOR);
-        illuminance_r = fxp.r;
-        illuminance_g = fxp.g;
-        illuminance_b = fxp.b;
-        samples = NORM_COUNT | (last_sampled_index << SAMPLE_COUNT_BITS);
+        diffuse = specular = 0u;
+        samples = temporal = 0u;
     }
 };
 
 /* Insert illuminance into the illuminance cache. */
-public [ForceInline] void insert(RWStructuredBuffer<cache::Slot> cache, const uint64_t key, const float3 illuminance) {
+public [ForceInline] void insert(RWStructuredBuffer<cache::Slot> cache, const uint64_t key, const uint frame_index, const float3 diffuse, const float3 specular) {
     /* Modulo the hash to fall within the cache capacity */
     uint slot = voxel_hash(key) % CAPACITY;
 
@@ -113,7 +119,7 @@ public [ForceInline] void insert(RWStructuredBuffer<cache::Slot> cache, const ui
     for (uint fuse = 0u; fuse < FUSE_LENGTH; ++fuse) {
         /* Exit if we found a slot which already exists matching our key */
         if (cache[slot].key == key) {
-            cache[slot].accumulate(illuminance);
+            cache[slot].accumulate(diffuse, specular);
             break;
         }
 
@@ -124,7 +130,7 @@ public [ForceInline] void insert(RWStructuredBuffer<cache::Slot> cache, const ui
 
             /* If instead this thread succeeded in claiming the slot */
             if (original_key == EMPTY_KEY) {
-                cache[slot].accumulate(illuminance);
+                cache[slot].accumulate(diffuse, specular);
                 break;
             }
         }
@@ -135,7 +141,7 @@ public [ForceInline] void insert(RWStructuredBuffer<cache::Slot> cache, const ui
 }
 
 /* Sample illuminance from the illuminance cache. (returns BIG_F32 if no sample was found) */
-public [ForceInline] float3 sample(RWStructuredBuffer<cache::Slot> cache, const uint64_t key, const uint frame_index) {
+public [ForceInline] Slot sample(RWStructuredBuffer<cache::Slot> cache, const uint64_t key, const uint frame_index) {
     /* Modulo the hash to fall within the cache capacity */
     uint slot = voxel_hash(key) % CAPACITY;
 
@@ -144,14 +150,14 @@ public [ForceInline] float3 sample(RWStructuredBuffer<cache::Slot> cache, const 
         /* Exit if we found a slot which matches our key */
         if (cache[slot].key == key) {
             cache[slot].activate(frame_index);
-            return cache[slot].illuminance;
+            return cache[slot];
         }
 
         /* Move to the next hash cache slot */
         slot = (slot + 1u) % CAPACITY;
     }
 
-    return 0.0f; /* Couldn't find a sample */
+    return Slot(); /* Couldn't find a sample */
 }
 
 } // cache

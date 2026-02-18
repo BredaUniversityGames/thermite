@@ -6,6 +6,8 @@ public static const float BIG_F32 = 1e30f;
 public static const float PI_F32 = 3.14159265359f;
 public static const float RCP_PI_F32 = 1.0f / PI_F32;
 
+public static const float GOLDEN_RATIO_F32 = 1.61803398875f;
+
 /* Number of voxels per unit in world-space. */
 public static const uint VOXELS_PER_UNIT = 10u;
 /* Number of world-space units per voxel. */
@@ -82,18 +84,25 @@ public [ForceInline] Basis orthonormal_basis(const float3 n) {
     );
 }
 
-/* R1 quasi-random sequence. */
+/* R1 quasi-random sequence. [0, 1) */
 public float r1(const uint n) {
     /* Improved coefficients from <https://www.martysmods.com/a-better-r2-sequence/> */
     /* (1.0 - original coefficients) */
     return frac(n * 0.38196601125010515179366115080745f);
 }
 
-/* R2 quasi-random sequence. */
+/* R2 quasi-random sequence. [0, 1) */
 public float2 r2(const uint n) {
     /* Improved coefficients from <https://www.martysmods.com/a-better-r2-sequence/> */
     /* (1.0 - original coefficients) */
     return frac(n * float2(0.2451223337533073f, 0.4301597090019468f));
+}
+
+/* R2 quasi-random sequence. [0, 1) */
+public float2 r2(const float2 noise, const uint i) {
+    /* Improved coefficients from <https://www.martysmods.com/a-better-r2-sequence/> */
+    /* (1.0 - original coefficients) */
+    return frac(noise + float(i) * float2(0.2451223337533073f, 0.4301597090019468f));
 }
 
 uint pcg(inout uint state) {

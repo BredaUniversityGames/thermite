@@ -12,6 +12,7 @@
 #include "core/ecs.hpp"
 #include "core/window.hpp"
 #include "core/logger.hpp"
+#include "core/resources.hpp"
 
 #include "core/components/camera.hpp"
 #include "core/components/transform.hpp"
@@ -66,16 +67,16 @@ void RenderView::init() {
     nbuffer.texture = bank.create_texture("Denoised Luminance Buffer Texture", TextureUsage::Storage | TextureUsage::Sampled, TextureFormat::RG11B10Ufloat, render_size).expect("failed to create nbuffer texture.");
     nbuffer.image = bank.create_image("Denoised Luminance Buffer Image", nbuffer.texture).expect("failed to create nbuffer image.");
 
-    /* Create the macrofacet buffers */
-    const uint64_t hashkey_size = sizeof(uint64_t);
-    const uint64_t cache_element_size = hashkey_size + sizeof(uint64_t) * 2ull;
-    const uint64_t cache_size = 10'000'000u;
-    macrofacet_illuminance_cache =
-        bank.create_buffer("Macrofacet Illuminance Cache Buffer", BufferUsage::Storage, cache_size, cache_element_size).expect("failed to create macrofacet illuminance cache buffer.");
+    /* Create the macrofacet cache */
+    const uint64_t cache_size = 10'000'000u; /* 480 MB */
+    macrofacet_cache = bank.create_buffer("Macrofacet Cache Buffer", BufferUsage::Storage, cache_size, 48ull/* bytes */).expect("failed to create macrofacet cache buffer.");
 
     /* Generate directional albedo LUT */
-    generate_e_lut(diralbedo_lut_texture, 256u);
-    diralbedo_lut = bank.create_image("Directional Albedo LUT Image", diralbedo_lut_texture).expect("failed to create directional albedo lut image.");
+    // generate_e_lut(diralbedo_lut_texture, 256u);
+    // diralbedo_lut = bank.create_image("Directional Albedo LUT Image", diralbedo_lut_texture).expect("failed to create directional albedo lut image.");
+
+    /* Load blue noise texture */
+    blue_noise = engine.resources.load_resource<Texture2D>({IO::Location::ENGINE, "blue_noise_rg512.png"});
 }
 
 void RenderView::update() {
@@ -123,11 +124,12 @@ void RenderView::deinit() {
     VRAMBank& bank = engine.renderer.vram_bank();
 
     /* Destroy directional albedo LUT */
-    bank.destroy(diralbedo_lut);
-    bank.destroy(diralbedo_lut_texture);
+    // bank.destroy(diralbedo_lut);
+    // bank.destroy(diralbedo_lut_texture);
+    blue_noise = {};
 
     /* Destroy macrofacet buffers */
-    bank.destroy(macrofacet_illuminance_cache);
+    bank.destroy(macrofacet_cache);
 
     /* Destroy screen buffers */
     bank.destroy(vbuffer.image);

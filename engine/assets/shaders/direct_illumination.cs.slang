@@ -14,14 +14,15 @@ import material;
 /* Active render & scene view. */
 ConstantBuffer<RenderView> render_view;
 ConstantBuffer<SceneView> scene_view;
+Texture2D<float4> blue_noise;
 /* Voxel objects buffers. */
 StructuredBuffer<float4> tlas_nodes;
 StructuredBuffer<uint> object_indices;
 StructuredBuffer<VoxelObject> objects;
 /* Lights buffer. */
 StructuredBuffer<Light> lights;
-/* Macrofacet illuminance cache buffer. */
-// RWStructuredBuffer<cache::Slot> macrofacet_illuminance_cache;
+/* Macrofacet cache buffer. */
+RWStructuredBuffer<cache::Slot> macrofacet_cache;
 /* Visibility buffer. */
 Texture2D<uint2> vbuffer;
 /* Luminance buffer. */
@@ -33,10 +34,11 @@ struct PickedLight {
 };
 
 /* Pick a light to sample for a given sample point using reservoir sampling. */
-inline PickedLight pick_light(const float3 point, const float3 normal, inout uint seed) {
+inline PickedLight pick_light(const float3 point, const float3 normal, inout uint seed, const float2 noise) {
     /* Reservoir state */
     uint i = uint::maxValue;
     float w_sum = 0.0f, w_i = BIG_F32;
+    // float r = frac(noise.x + GOLDEN_RATIO_F32);
 
     for (uint l = 0u; l < scene_view.light_count; ++l) {
         /* Calculate light weight */
@@ -47,18 +49,21 @@ inline PickedLight pick_light(const float3 point, const float3 normal, inout uin
             i = l;
             w_i = w;
         }
+
+        /* Move to the next element in the sequence */
+        // r = frac(noise.x + GOLDEN_RATIO_F32);
     }
 
     return PickedLight(i, w_sum / w_i);
 }
 
-inline float3 direct_illuminance(const float3 point, const float3 normal, const float3 view_dir, inout uint seed) {
+inline float3 direct_illuminance(const float3 point, const float3 normal, const float3 view_dir, inout uint seed, const float2 noise) {
     float3 illuminance = 0.0f;
 
     /* Handle the sun light source */
     if (any(scene_view.sun_luminance > 0.0f)) {
         /* Generate and trace a sun light sample */
-        const LightSample light_sample = sample_sun(point, scene_view, rand_float2(seed));
+        const LightSample light_sample = sample_sun(point, scene_view, noise);
         const float t = occlusion_bvh2(tlas_nodes, object_indices, objects, custom_ray(point, light_sample.dir), light_sample.tmax);
 
         if (t >= light_sample.tmax) {
@@ -71,12 +76,12 @@ inline float3 direct_illuminance(const float3 point, const float3 normal, const 
     if (scene_view.light_count == 0u) return illuminance;
 
     /* Fetch a light to sample */
-    const PickedLight picked_light = pick_light(point, normal, seed);
+    const PickedLight picked_light = pick_light(point, normal, seed, noise);
     if (picked_light.i == uint::maxValue) return illuminance;
     const Light light = lights[picked_light.i];
 
     /* Generate a sample for the light we picked */
-    const LightSample light_sample = sample_light(point, light, rand_float2(seed));
+    const LightSample light_sample = sample_light(point, light, noise);
     const float t = occlusion_bvh2(tlas_nodes, object_indices, objects, custom_ray(point, light_sample.dir), light_sample.tmax);
     if (t < light_sample.tmax) return illuminance;
 
@@ -87,8 +92,9 @@ inline float3 direct_illuminance(const float3 point, const float3 normal, const 
 
     /* Spot based attenuation */
     if (light.type == LightType::SPOT_LIGHT) {
-        const float cos_theta = dot(-light_sample.dir, light.direction);
-        const float cos_inner = lerp(light.cos_beam_angle, 1.0f, light.spot_blend);
+        const float3 light_dir = normalize(point - light.origin);
+        const float cos_theta = dot(light_dir, light.direction);
+        const float cos_inner = lerp(light.cos_beam_angle, 1.0f, light.spot_blend * 2.0f);
         const float spot = saturate((cos_theta - light.cos_beam_angle) / (cos_inner - light.cos_beam_angle));
         attenuation *= spot * spot;
     }
@@ -142,7 +148,9 @@ void main(int2 thread_id: SV_DispatchThreadID) {
     /* Generate a seed for the current pixel */
     uint seed = thread_id.x + thread_id.y * resolution.x + (render_view.frame_index * (resolution.x * resolution.y));
 
-    float3 illuminance = direct_illuminance(hit_point, geo.normal, -ray.dir, seed);
+    const float2 noise = r2(blue_noise[pixel_id % 512].rg, render_view.frame_index % 1024u);
+
+    float3 illuminance = direct_illuminance(hit_point, geo.normal, -ray.dir, seed, noise);
 
     /* Trace light occlusion */
     // const float3 ray_dir = sample_hemisphere_cosine(geo.normal, r2(seed));
@@ -156,6 +164,6 @@ void main(int2 thread_id: SV_DispatchThreadID) {
     // }
 
     /* Insert the sample into the illuminance cache */
-    // cache::insert(macrofacet_illuminance_cache, facet_key, illuminance);
+    cache::insert(macrofacet_cache, facet_key, render_view.frame_index, illuminance, 0.0f);
     lbuffer[thread_id] = illuminance;
 }

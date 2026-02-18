@@ -43,13 +43,6 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
     //     settings_dirty = false;
     // }
     
-    /* Cache eviction pass (amortize over 8 frames) */
-    render_graph.add_compute_pass("cache eviction pass", "cache_evict.cs")
-        .read(render_view.render_view_buffer) /* Render view buffer */
-        .write(render_view.macrofacet_illuminance_cache) /* Illuminance cache buffer */
-        .group_size(128)
-        .work_size(div_up(CACHE_SIZE, 8u));
-        
     /* Shading resolution based on shading rate */
     glm::uvec2 shading_res = render_view.gpu_view.resolution;
     if (render_view.get_shading_rate() == ShadingRate::HALF_RATE) shading_res = div_up(render_view.gpu_view.resolution, 2u, 1u);
@@ -59,36 +52,45 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
     render_graph.add_compute_pass("direct illumination pass", "direct_illumination.cs")
         .read(render_view.render_view_buffer) /* Render view buffer */
         .read(scene_view.scene_view) /* Scene view buffer */
+        .read(render_view.blue_noise->image) /* Blue noise texture */
         .read(scene_view.bvh_nodes) /* TLAS nodes buffer */
         .read(scene_view.object_indices) /* Voxel object indices buffer */
         .read(scene_view.object_data) /* Voxel objects buffer */
         .read(scene_view.lights_data) /* Lights data buffer */
-        // .write(render_view.macrofacet_illuminance_cache) /* Illuminance cache buffer */
+        .write(render_view.macrofacet_cache) /* Cache buffer */
         .read(render_view.vbuffer.image) /* Visibility buffer */
         .write(render_view.lbuffer.image) /* Luminance buffer */
         .group_size(16, 8)
         .work_size(shading_res.x, shading_res.y);
     
-    for (uint32_t i = 0u; i < 6u; ++i) {
-        /* Denoising pass */
-        uint32_t step_size = 1u << i;
-        render_graph.add_compute_pass("denoise pass", "wavelet_denoise.cs")
-            .push_constants(&step_size, 0u, sizeof(uint32_t))
-            .read(render_view.render_view_buffer) /* Render view buffer */
-            .read(scene_view.object_data) /* Voxel objects buffer */
-            .read(render_view.vbuffer.image) /* Visibility buffer */
-            .read(((i & 0b1u) == 0u) ? render_view.lbuffer.image : render_view.nbuffer.image) /* Luminance buffer */
-            .write(((i & 0b1u) == 0u) ? render_view.nbuffer.image : render_view.lbuffer.image) /* Luminance buffer */
-            .group_size(16, 8)
-            .work_size(shading_res.x, shading_res.y);
-    }
+    /* Cache eviction pass (amortize over 8 frames) */
+    render_graph.add_compute_pass("cache eviction pass", "cache_evict.cs")
+        .read(render_view.render_view_buffer) /* Render view buffer */
+        .write(render_view.macrofacet_cache) /* Cache buffer */
+        .group_size(128)
+        .work_size(CACHE_SIZE);
+        
+    // for (uint32_t i = 0u; i < 6u; ++i) {
+    //     /* Denoising pass */
+    //     uint32_t step_size = 1u << i;
+    //     render_graph.add_compute_pass("denoise pass", "wavelet_denoise.cs")
+    //         .push_constants(&step_size, 0u, sizeof(uint32_t))
+    //         .read(render_view.render_view_buffer) /* Render view buffer */
+    //         .read(scene_view.object_data) /* Voxel objects buffer */
+    //         .read(render_view.vbuffer.image) /* Visibility buffer */
+    //         .read(((i & 0b1u) == 0u) ? render_view.lbuffer.image : render_view.nbuffer.image) /* Luminance buffer */
+    //         .write(((i & 0b1u) == 0u) ? render_view.nbuffer.image : render_view.lbuffer.image) /* Luminance buffer */
+    //         .group_size(16, 8)
+    //         .work_size(shading_res.x, shading_res.y);
+    // }
     
     /* Debug visualizations */
     if (engine.renderer.display_mode == DisplayMode::ILLUMINANCE) {
         render_graph.add_compute_pass("[debug] illuminance pass", "debug/illuminance.cs")
             .read(render_view.render_view_buffer) /* Render view buffer */
+            .read(render_view.vbuffer.image) /* Visibility buffer */
+            .write(render_view.macrofacet_cache) /* Cache buffer */
             .read(render_view.lbuffer.image) /* Luminance buffer */
-            // .write(render_view.macrofacet_illuminance_cache) /* Illuminance cache buffer */
             .write(render_image) /* Render target */
             .group_size(16, 8)
             .work_size(render_res.x, render_res.y);

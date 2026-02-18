@@ -7,6 +7,7 @@
 #include "engine/core/entity.hpp"
 #include "engine/core/components/camera.hpp"
 #include "engine/core/components/transform.hpp"
+#include "engine/core/resources/texture_2d.hpp"
 #include "engine/shared/ray.hpp"
 
 class RenderGraph;
@@ -74,6 +75,8 @@ struct RenderView {
     /* Directional albedo look up texture (32x32) */
     Texture diralbedo_lut_texture {};
     Image diralbedo_lut {};
+    /* Blue noise texture (512x512) */
+    ResourceRef<Texture2D> blue_noise {};
 
     /* Screen buffers */
     ScreenBuffer vbuffer {}; /* Visibility buffer (WxH, 6->8 bytes) */
@@ -82,7 +85,7 @@ struct RenderView {
     ScreenBuffer nbuffer {}; /* Denoised luminance buffer (WxH, 4 bytes) */
 
     /* Macrofacet buffers */
-    Buffer macrofacet_illuminance_cache {}; /* Macrofacet illuminance hash cache (10.000.000, 16 bytes) */
+    Buffer macrofacet_cache {}; /* Macrofacet hash cache (10.000.000, 48 bytes) */
 
     /* Renderer output */
     ScreenBuffer viewport {}; /* Editor viewport */
