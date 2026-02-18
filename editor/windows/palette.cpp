@@ -47,8 +47,9 @@ void Palette::display_palette(const ResourceRef<VoxelVolume>& resource) {
 
             const uint32_t i = x + y * 8u;
             const Material& material = resource->blas->palette.entries[i];
+            const glm::vec3 albedo = material.albedo.unpack();
 
-            const ImVec4 color = ImVec4(material.albedo_r, material.albedo_g, material.albedo_b, 1.0f);
+            const ImVec4 color = ImVec4(albedo.r, albedo.g, albedo.b, 1.0f);
             draw_list->AddRectFilled(min, max, ImGui::ColorConvertFloat4ToU32(color));
             draw_list->AddRect(min, max, ImColor(0xFF000000u), 0.0f, 0, 3.0f);
 
@@ -86,7 +87,14 @@ void Palette::display_material_editor() const {
     Material& material = renderer->resource->blas->palette.entries[selected_material_index];
     ImGui::Text("Editing Material Index: %u", selected_material_index);
     ImGui::Separator();
-    if (ImGui::ColorPicker3("Albedo Color", &material.albedo_r)) renderer->resource->set_dirty();
+
+    static glm::vec3 albedo;
+    if (ImGui::ColorPicker3("Albedo Color", &albedo.r)){
+        
+        material.albedo = Rgb10(albedo);
+        renderer->resource->set_dirty();
+    }
+    if (ImGui::IsItemActivated()) albedo = material.albedo.unpack();
 }
 
 }  // namespace tmt
