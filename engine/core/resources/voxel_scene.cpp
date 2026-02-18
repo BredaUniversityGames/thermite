@@ -10,6 +10,7 @@
 #include "engine/tools/timer.hpp"
 #include "engine/tools/svh_format.hpp"
 #include "engine/tools/uuid.hpp"
+#include "engine/shared/colorspace.hpp"
 
 #include <queue>
 #include <omp.h>
@@ -338,7 +339,7 @@ VoxelSceneNode parse_hierarchy(const vengi::Node* file_node) {
             color.b = (float)palette[i].color.b * (1.0f / 255.0f);
 
             Material material;
-            material.albedo = color;
+            material.albedo = cs::r709_to_acescg(cs::linearize(color));
 
             node.tree->palette.entries[i] = material;
         }

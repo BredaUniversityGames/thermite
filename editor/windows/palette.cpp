@@ -5,6 +5,7 @@
 #include "engine/core/ecs.hpp"
 #include "editor/windows/node_hierarchy.hpp"
 #include "engine/core/components/voxel_renderer.hpp"
+#include "engine/shared/colorspace.hpp"
 
 namespace tmt {
 
@@ -47,9 +48,10 @@ void Palette::display_palette(const ResourceRef<VoxelVolume>& resource) {
 
             const uint32_t i = x + y * 8u;
             const Material& material = resource->blas->palette.entries[i];
-            const glm::vec3 albedo = material.albedo.unpack();
+            const glm::vec3 linear_srgb = cs::acescg_to_r709(material.albedo.unpack());
+            glm::vec3 nonlinear_srgb = cs::delinearize(linear_srgb);
 
-            const ImVec4 color = ImVec4(albedo.r, albedo.g, albedo.b, 1.0f);
+            const ImVec4 color = ImVec4(nonlinear_srgb.r, nonlinear_srgb.g, nonlinear_srgb.b, 1.0f);
             draw_list->AddRectFilled(min, max, ImGui::ColorConvertFloat4ToU32(color));
             draw_list->AddRect(min, max, ImColor(0xFF000000u), 0.0f, 0, 3.0f);
 
@@ -88,13 +90,13 @@ void Palette::display_material_editor() const {
     ImGui::Text("Editing Material Index: %u", selected_material_index);
     ImGui::Separator();
 
-    static glm::vec3 albedo;
-    if (ImGui::ColorPicker3("Albedo Color", &albedo.r)){
-        
-        material.albedo = Rgb10(albedo);
+    const glm::vec3 linear_srgb = cs::acescg_to_r709(material.albedo.unpack());
+    glm::vec3 nonlinear_srgb = cs::delinearize(linear_srgb);
+
+    if (ImGui::ColorPicker3("Albedo Color", &nonlinear_srgb.r)) {
+        material.albedo = Rgb10(cs::r709_to_acescg(cs::linearize(nonlinear_srgb)));
         renderer->resource->set_dirty();
     }
-    if (ImGui::IsItemActivated()) albedo = material.albedo.unpack();
 }
 
 }  // namespace tmt
