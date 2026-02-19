@@ -14,11 +14,8 @@ class ProjectileSpawner : public tmt::GameComponent<ProjectileSpawner> {
     void update(const tmt::FrameData& time) override;
     void end() override;
 
-    int dummy = 0;
-
    private:
     void on_shoot(const WeaponFiredEvent& e) const;
 };
 
 }  // namespace game
-TMT_OBJECT(game::ProjectileSpawner, (dummy));
