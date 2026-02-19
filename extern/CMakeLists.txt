@@ -202,6 +202,8 @@ set(ZLIB_BUILD_SHARED OFF CACHE BOOL "" FORCE)
 set(ZLIB_BUILD_STATIC ON CACHE BOOL "" FORCE)
 add_subdirectory(zlib)
 
+set_target_properties(zlibstatic PROPERTIES UNITY_BUILD OFF)
+
 # fmod - audio engine
 set(FMOD_POSTFIX "$<$<CONFIG:Debug>:L>")
 target_include_directories(thermite-engine
