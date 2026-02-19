@@ -53,6 +53,7 @@ if (THERMITE_EDITOR_BUILD)
     set(GRAPHITE_IMGUI_DIR "${CMAKE_SOURCE_DIR}/extern/imgui/")
 endif()
 add_subdirectory(graphite)
+set_target_properties(graphite PROPERTIES UNITY_BUILD OFF)
 
 # visit_struct - struct reflection
 # https://github.com/cbeck88/visit_struct
