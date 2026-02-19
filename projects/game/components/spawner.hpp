@@ -10,16 +10,17 @@ class Spawner : public tmt::GameComponent<Spawner> {
     static std::string_view get_name();
 
     void start() override;
-
+    void update(const tmt::FrameData& time) override;
+    void end() override;
     void spawn() const;
     void spawn(const tmt::IO::FileLocation& location, const tmt::Entity& parent = entt::null);
     // core state
     tmt::Entity spawn_parent { entt::null };
+    tmt::Entity entity_trigger { entt::null };
     tmt::IO::FileLocation prefab_location;
     // configurable
     bool use_attached_entity_as_spawn_parent = true;
-
-   private:
 };
 
 }  // namespace game
+TMT_OBJECT(game::Spawner, (spawn_parent, prefab_location, use_attached_entity_as_spawn_parent));

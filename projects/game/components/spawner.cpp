@@ -11,6 +11,8 @@ void Spawner::start() {
         spawn_parent = entity;
     }
 }
+void Spawner::update(const tmt::FrameData& time) {}
+void Spawner::end() {}
 void Spawner::spawn() const {
     tmt::PrefabHelper::instantiate_prefab(prefab_location, spawn_parent);
 }

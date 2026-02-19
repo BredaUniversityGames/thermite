@@ -19,6 +19,8 @@
 #include "components/player.hpp"
 #include "components/wallet.hpp"
 #include "components/animation_player.hpp"
+#include "components/rifle_projectile.hpp"
+#include "components/spawner.hpp"
 #include "components/weapon.hpp"
 
 class Game : public tmt::Application {
@@ -74,6 +76,8 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     /* Register Components */
     tmt::engine.component_registry.register_component<game::Player>();
     tmt::engine.component_registry.register_component<game::Weapon>();
+    tmt::engine.component_registry.register_component<game::Spawner>();
+    tmt::engine.component_registry.register_component<game::RifleProjectile>();
     tmt::engine.component_registry.register_component<Wallet>();
     tmt::engine.component_registry.register_component<AnimationPlayer>();
 
