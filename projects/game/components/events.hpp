@@ -10,6 +10,7 @@ struct ShootEvent {
 struct WeaponFiredEvent {
     entt::entity weapon_entity;
     glm::vec3 origin;
+    glm::vec3 up;
     glm::vec3 direction;
 };
 

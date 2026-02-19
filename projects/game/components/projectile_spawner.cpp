@@ -14,7 +14,7 @@ void ProjectileSpawner::start() {
 }
 void ProjectileSpawner::update(const tmt::FrameData& time) {}
 void ProjectileSpawner::end() {
-    tmt::engine.ecs.get_dispatcher().sink<WeaponFiredEvent>().connect<&ProjectileSpawner::on_shoot>(this);
+    tmt::engine.ecs.get_dispatcher().sink<WeaponFiredEvent>().disconnect<&ProjectileSpawner::on_shoot>(this);
 }
 void ProjectileSpawner::on_shoot(const WeaponFiredEvent& e) const {
     // only trigger if we are on the same entity as the weapon fired
@@ -28,9 +28,10 @@ void ProjectileSpawner::on_shoot(const WeaponFiredEvent& e) const {
 
     auto& rifle_projectile = tmt::engine.ecs.get_component<RifleProjectile>(bullet_entity);
 
-    auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(bullet_entity);
+    auto& bullet_transform = tmt::engine.ecs.get_component<tmt::Transform>(bullet_entity);
 
-    transform.set_world_position(e.origin);
+    bullet_transform.set_world_position(e.origin);
+    bullet_transform.look_at(e.origin + e.direction, e.up);
     rifle_projectile.set_direction(e.direction);
 }
 
