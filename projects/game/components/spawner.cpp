@@ -16,7 +16,7 @@ void Spawner::end() {}
 tmt::Entity Spawner::spawn() const {
     return tmt::PrefabHelper::instantiate_prefab(prefab_location, spawn_parent);
 }
-tmt::Entity Spawner::spawn(const tmt::IO::FileLocation& location, const tmt::Entity& parent) {
+tmt::Entity Spawner::spawn(const tmt::ResourceRef<tmt::Json>& location, const tmt::Entity& parent) {
     return tmt::PrefabHelper::instantiate_prefab(location, parent);
 }
 
