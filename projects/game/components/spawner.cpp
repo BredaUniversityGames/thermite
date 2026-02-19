@@ -13,11 +13,11 @@ void Spawner::start() {
 }
 void Spawner::update(const tmt::FrameData& time) {}
 void Spawner::end() {}
-void Spawner::spawn() const {
-    tmt::PrefabHelper::instantiate_prefab(prefab_location, spawn_parent);
+tmt::Entity Spawner::spawn() const {
+    return tmt::PrefabHelper::instantiate_prefab(prefab_location, spawn_parent);
 }
-void Spawner::spawn(const tmt::IO::FileLocation& location, const tmt::Entity& parent) {
-    tmt::PrefabHelper::instantiate_prefab(location, parent);
+tmt::Entity Spawner::spawn(const tmt::IO::FileLocation& location, const tmt::Entity& parent) {
+    return tmt::PrefabHelper::instantiate_prefab(location, parent);
 }
 
 }  // namespace game

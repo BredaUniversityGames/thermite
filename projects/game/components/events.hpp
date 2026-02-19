@@ -8,7 +8,7 @@ struct ShootEvent {
     tmt::Entity shooting_entity;
 };
 struct WeaponFiredEvent {
-    entt::entity shooter_entity;
+    entt::entity weapon_entity;
     glm::vec3 origin;
     glm::vec3 direction;
 };

@@ -21,5 +21,5 @@ void game::Weapon::on_shoot(const ShootEvent& e) {
 
     const auto& tf = tmt::engine.ecs.get_component<tmt::Transform>(entity);
     tmt::Log::info("{} entity shot from {} to {}", shooting_entity, tf.get_world_position(), tf.get_forward());
-    tmt::engine.ecs.get_dispatcher().trigger(WeaponFiredEvent { .shooter_entity = shooting_entity, .origin = tf.get_world_position(), .direction = tf.get_forward() });
+    tmt::engine.ecs.get_dispatcher().trigger(WeaponFiredEvent { .weapon_entity = entity, .origin = tf.get_world_position(), .direction = tf.get_forward() });
 }
