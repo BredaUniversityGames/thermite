@@ -42,6 +42,9 @@ static void ColorEditRestoreHS(const float* col, float* H, float* S, float* V) {
 
 namespace {
 
+inline float ImLength(const ImVec2& lhs) { return ImSqrt((lhs.x * lhs.x) + (lhs.y * lhs.y)); }
+
+/// Expects linear Rec.709 color as input.
 bool custom_color_wheel(const char* label, glm::vec3& color) {
     ImGuiContext& g = *GImGui;
     ImGuiWindow* window = ImGui::GetCurrentWindow();
@@ -77,55 +80,51 @@ bool custom_color_wheel(const char* label, glm::vec3& color) {
     const float wheel_radius = hs_picker_size * 0.5f;
     const ImVec2 wheel_center(picker_pos.x + hs_picker_size * 0.5f, picker_pos.y + hs_picker_size * 0.5f);
 
-    bool hue_saturation_changed = false;
-    bool value_changed = false;
+    bool hs_cursor_active = false;
+    bool v_cursor_active = false;
 
-    const glm::vec3 backup_initial_color = color;
-    glm::vec3 nonlinear_srgb = tmt::cs::delinearize(tmt::cs::acescg_to_r709(color));
+    // Extract HSV from RGB color.
+    float hue, saturation, value;
+    ImGui::ColorConvertRGBtoHSV(color.r, color.g, color.b, hue, saturation, value);
 
-    float hue;
-    float saturation;
-    float value;
-    ImGui::ColorConvertRGBtoHSV(nonlinear_srgb.r, nonlinear_srgb.g, nonlinear_srgb.b, hue, saturation, value);
-    value = glm::clamp(value, 0.0f, 1.0f);
-    ImGui::ColorEditRestoreHS(&nonlinear_srgb.x, &hue, &saturation, &value);
-
-    // Handle hue/saturation circle behaviour.
+    // Handle hue & saturation circle user input.
     ImGui::InvisibleButton("HueSaturation", ImVec2(hs_picker_size, hs_picker_size));
     if (ImGui::IsItemActive() && !is_readonly) {
-        const ImVec2 mouse_circle_pos = (io.MousePos - wheel_center) / wheel_radius;
-        hue = glm::mod(glm::atan(mouse_circle_pos.y, mouse_circle_pos.x) / glm::tau<float>() + 1.0f, 1.0f);
-        saturation = glm::min(1.0f, glm::sqrt(ImLengthSqr(mouse_circle_pos)));
-
-        hue_saturation_changed = true;
+        // Mouse position inside the circle as normalized device coordinates [-1,1]
+        const ImVec2 circle_ndc = ImClamp((io.MousePos - wheel_center) / wheel_radius, ImVec2(-1.0f, -1.0f), ImVec2(1.0f, 1.0f));
+        // Calculate the saturation of the clicked point on the circle.
+        saturation = ImMin(1.0f, ImLength(circle_ndc));
+        // Calculate the hue of the clicked point on the circle.
+        hue = ImAtan2(-circle_ndc.y, -circle_ndc.x) / (IM_PI * 2.0f) + 0.5f;
+        hs_cursor_active = true;
     }
 
-    // Handle value bar behaviour.
+    // Handle value bar user input.
     ImGui::SetCursorScreenPos(ImVec2(bar_pos_x, picker_pos.y));
     ImGui::InvisibleButton("Value", ImVec2(bars_width, hs_picker_size));
     if (ImGui::IsItemActive() && !is_readonly) {
+        // Calculate the value of the value bar of the clicked point on the bar.
         value = 1.0f - glm::clamp((io.MousePos.y - (picker_pos.y + handle_half_height)) / (hs_picker_size - (handle_half_height * 2.0f) - 1.0f), 0.0f, 1.0f);
-        value = glm::clamp(value, 0.0f, 1.0f);
-
-        ImGui::ColorEditRestoreHS(&nonlinear_srgb.x, &hue, &saturation, &value);
-
-        value_changed = true;
+        v_cursor_active = true;
     }
 
     ImGui::EndGroup();
 
-    if (value_changed) {
-        g.ColorEditSavedHue = hue;
-        g.ColorEditSavedSat = saturation;
-        g.ColorEditSavedID = g.ColorEditCurrentID;
-        g.ColorEditSavedColor = ImGui::ColorConvertFloat4ToU32(ImVec4(nonlinear_srgb.r, nonlinear_srgb.g, nonlinear_srgb.b, 0.0f));
+    // Update the input color.
+    ImGui::ColorConvertHSVtoRGB(hue, saturation, value, color.r, color.g, color.b);
 
-        ImGui::ColorConvertHSVtoRGB(hue, saturation, value, nonlinear_srgb.r, nonlinear_srgb.g, nonlinear_srgb.b);
-        color = tmt::cs::r709_to_acescg(tmt::cs::linearize(nonlinear_srgb));
+    // if (value_changed) {
+    //     g.ColorEditSavedHue = hue;
+    //     g.ColorEditSavedSat = saturation;
+    //     g.ColorEditSavedID = g.ColorEditCurrentID;
+    //     g.ColorEditSavedColor = ImGui::ColorConvertFloat4ToU32(ImVec4(nonlinear_srgb.r, nonlinear_srgb.g, nonlinear_srgb.b, 0.0f));
 
-        // ImGui::ColorConvertRGBtoHSV(nonlinear_srgb.r, nonlinear_srgb.g, nonlinear_srgb.b, hue, saturation, value);
-        // ImGui::ColorEditRestoreHS(&nonlinear_srgb.x, &hue, &saturation, &value);
-    }
+    //     ImGui::ColorConvertHSVtoRGB(hue, saturation, value, nonlinear_srgb.r, nonlinear_srgb.g, nonlinear_srgb.b);
+    //     color = tmt::cs::r709_to_acescg(tmt::cs::linearize(nonlinear_srgb));
+
+    //     // ImGui::ColorConvertRGBtoHSV(nonlinear_srgb.r, nonlinear_srgb.g, nonlinear_srgb.b, hue, saturation, value);
+    //     // ImGui::ColorEditRestoreHS(&nonlinear_srgb.x, &hue, &saturation, &value);
+    // }
 
     // Draw the color wheel in segments.
     const int wheel_segment_count = draw_list->_CalcCircleAutoSegmentCount(wheel_radius);
@@ -155,36 +154,35 @@ bool custom_color_wheel(const char* label, glm::vec3& color) {
         draw_list->PrimVtx(wheel_center + ImVec2(x1, y1), uv_white, color1);
     }
 
+    // Calculate the hue & saturation wheel cursor position.
     ImVec2 hs_cursor_pos(glm::cos(hue * glm::tau<float>()) * saturation * wheel_radius, glm::sin(hue * glm::tau<float>()) * saturation * wheel_radius);
     hs_cursor_pos += wheel_center;
 
-    // Draw cursor/preview circle.
-    const float hs_cursor_radius = (hue_saturation_changed) ? wheel_thickness * 0.55f : wheel_thickness * 0.40f;
+    // Draw hue & saturation wheel cursor/preview circle.
+    const float hs_cursor_radius = hs_cursor_active ? wheel_thickness * 0.55f : wheel_thickness * 0.40f;
     const int hs_cursor_segments = draw_list->_CalcCircleAutoSegmentCount(hs_cursor_radius);  // Lock segment count so the +1 one matches others.
-    draw_list->AddCircleFilled(hs_cursor_pos, hs_cursor_radius, ImGui::ColorConvertFloat4ToU32(ImVec4(nonlinear_srgb.r, nonlinear_srgb.g, nonlinear_srgb.b, 1.0f)), hs_cursor_segments);
+    draw_list->AddCircleFilled(hs_cursor_pos, hs_cursor_radius, ImGui::ColorConvertFloat4ToU32(ImVec4(color.r, color.g, color.b, 1.0f)), hs_cursor_segments);
     draw_list->AddCircle(hs_cursor_pos, hs_cursor_radius + 1, black, hs_cursor_segments);
     draw_list->AddCircle(hs_cursor_pos, hs_cursor_radius, white, hs_cursor_segments);
 
     // Draw value bar.
     draw_list->AddRectFilledMultiColor(ImVec2(bar_pos_x, picker_pos.y), ImVec2(bar_pos_x + bars_width, picker_pos.y + hs_picker_size), white, white, black, black);
 
+    // Draw value bar handle.
     const float value_selection_y = picker_pos.y + handle_half_height + (hs_picker_size - (handle_half_height * 2.0f) - 1.0f) * (1 - value);
     const ImVec2 selection_min(bar_pos_x, value_selection_y - handle_half_height);
     const ImVec2 selection_max(bar_pos_x + bars_width, value_selection_y + handle_half_height);
-
-    // Draw value bar handle.
     draw_list->AddRectFilled(selection_min, selection_max, white);
     draw_list->AddRect(selection_min, selection_max, black);
 
-    bool changed = hue_saturation_changed || value_changed;
-    if (changed && color == backup_initial_color) changed = false;
+    const bool changed = hs_cursor_active || v_cursor_active;
     if (changed && g.LastItemData.ID != 0)  // In case of ID collision, the second EndGroup() won't catch g.ActiveId
         ImGui::MarkItemEdited(g.LastItemData.ID);
 
     if (set_current_color_edit_id) g.ColorEditCurrentID = 0;
     ImGui::PopID();
 
-    if (changed) tmt::Log::info("hsv: {}, {}, {}", hue, saturation, value);
+    // if (changed) tmt::Log::info("hsv: {}, {}, {}", hue, saturation, value);
 
     return changed;
 }
@@ -274,9 +272,11 @@ void Palette::display_material_editor() const {
 
     ImGui::BeginGroup();
 
-    glm::vec3 albedo = material.albedo.unpack();
-    // static glm::vec3 albedo {};
-    if (custom_color_wheel("Albedo", albedo)) material.albedo = Rgb10(albedo);
+    // glm::vec3 albedo_linear_r709 = cs::acescg_to_r709(material.albedo.unpack());
+    static glm::vec3 albedo = glm::vec3(1.0f, 0.0f, 0.0f);
+    if (custom_color_wheel("Albedo", albedo)) { 
+        material.albedo = Rgb10(cs::r709_to_acescg(albedo));
+    }
 
     // glm::vec3 nonlinear_srgb = cs::delinearize(cs::acescg_to_r709(material.albedo.unpack()));
     // if (ImGui::ColorPicker3("Albedo Color", &nonlinear_srgb.r, ImGuiColorEditFlags_NoOptions)) material.albedo = Rgb10(cs::r709_to_acescg(cs::linearize(nonlinear_srgb)));
