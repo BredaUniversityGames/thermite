@@ -33,8 +33,8 @@ class Palette : public IWindow {
     MaterialIndex selected_material_index { 0 };
 
     struct Config {
-        constexpr static inline glm::ivec2 GRID_SIZE { 8, 32 };
-        constexpr static inline ImVec2 OUTSET { 2.0f, 2.0f };
+        constexpr static glm::uvec2 GRID_SIZE { 8, 32 };
+        constexpr static ImVec2 OUTSET { 2.0f, 2.0f };
     };
 };
 
