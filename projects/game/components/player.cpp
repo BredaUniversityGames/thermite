@@ -62,7 +62,7 @@ void Player::start() {
 
 void Player::update(const tmt::FrameData& time) {
     // triggers the event for shooting
-    shoot();
+    trigger_shoot();
     auto& input = tmt::engine.input;
     auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
     auto& camera = tmt::engine.ecs.get_component<tmt::Camera>(entity);
@@ -131,7 +131,7 @@ void Player::update(const tmt::FrameData& time) {
 void Player::end() {
     // Cleanup code for the player component
 }
-void Player::shoot() {
+void Player::trigger_shoot() {
     auto& input = tmt::engine.input;
     // trigger signal
     if (input.is_action_pressed(action::SHOOT)) {

@@ -20,8 +20,7 @@ class Weapon : public tmt::GameComponent<Weapon> {
 
    private:
     void on_shoot(const ShootEvent& e);
-    float lastShotTime = 0.0f;
-    float elapsed_game_time = 0.0f;
+    float last_shot_time = 0.0f;
 };
 
 }  // namespace game
