@@ -43,6 +43,7 @@ static void ColorEditRestoreHS(const float* col, float* H, float* S, float* V) {
 namespace {
 
 inline float ImLength(const ImVec2& lhs) { return ImSqrt((lhs.x * lhs.x) + (lhs.y * lhs.y)); }
+#define IM_TAU (IM_PI * 2.0f)
 
 /// Expects linear Rec.709 color as input.
 bool custom_color_wheel(const char* label, glm::vec3& color) {
@@ -95,7 +96,7 @@ bool custom_color_wheel(const char* label, glm::vec3& color) {
         // Calculate the saturation of the clicked point on the circle.
         saturation = ImMin(1.0f, ImLength(circle_ndc));
         // Calculate the hue of the clicked point on the circle.
-        hue = ImAtan2(-circle_ndc.y, -circle_ndc.x) / (IM_PI * 2.0f) + 0.5f;
+        hue = ImFmod(ImAtan2(-circle_ndc.y, -circle_ndc.x) / IM_TAU + 0.5f + 0.75f, 1.0f);
         hs_cursor_active = true;
     }
 
@@ -130,19 +131,19 @@ bool custom_color_wheel(const char* label, glm::vec3& color) {
     const int wheel_segment_count = draw_list->_CalcCircleAutoSegmentCount(wheel_radius);
     for (int i = 0; i < wheel_segment_count; i++) {
         const float segment1 = static_cast<float>(i) / static_cast<float>(wheel_segment_count - 1);
-        const float x1 = glm::cos(glm::tau<float>() * segment1) * wheel_radius;
-        const float y1 = glm::sin(glm::tau<float>() * segment1) * wheel_radius;
+        const float x1 = ImCos(IM_TAU * segment1) * wheel_radius;
+        const float y1 = ImSin(IM_TAU * segment1) * wheel_radius;
 
         const float segment2 = static_cast<float>((i + 1) % wheel_segment_count) / static_cast<float>(wheel_segment_count - 1);
-        const float x2 = glm::cos(glm::tau<float>() * segment2) * wheel_radius;
-        const float y2 = glm::sin(glm::tau<float>() * segment2) * wheel_radius;
+        const float x2 = ImCos(IM_TAU * segment2) * wheel_radius;
+        const float y2 = ImSin(IM_TAU * segment2) * wheel_radius;
 
         ImVec4 rgb1(0.0f, 0.0f, 0.0f, 1.0f);
-        ImGui::ColorConvertHSVtoRGB(segment1, 1.0f, value, rgb1.x, rgb1.y, rgb1.z);
+        ImGui::ColorConvertHSVtoRGB(ImFmod(segment1 + 0.75f, 1.0f), 1.0f, value, rgb1.x, rgb1.y, rgb1.z);
         const ImU32 color1 = ImGui::ColorConvertFloat4ToU32(rgb1);
 
         ImVec4 rgb2(0.0f, 0.0f, 0.0f, 1.0f);
-        ImGui::ColorConvertHSVtoRGB(segment2, 1.0f, value, rgb2.x, rgb2.y, rgb2.z);
+        ImGui::ColorConvertHSVtoRGB(ImFmod(segment2 + 0.75f, 1.0f), 1.0f, value, rgb2.x, rgb2.y, rgb2.z);
         const ImU32 color2 = ImGui::ColorConvertFloat4ToU32(rgb2);
 
         const ImU32 no_saturation_color = ImGui::ColorConvertFloat4ToU32(ImVec4(value, value, value, 1.0f));
@@ -155,8 +156,9 @@ bool custom_color_wheel(const char* label, glm::vec3& color) {
     }
 
     // Calculate the hue & saturation wheel cursor position.
-    ImVec2 hs_cursor_pos(glm::cos(hue * glm::tau<float>()) * saturation * wheel_radius, glm::sin(hue * glm::tau<float>()) * saturation * wheel_radius);
-    hs_cursor_pos += wheel_center;
+    const float hs_cursor_angle = hue * IM_TAU + (IM_PI * 0.5f);
+    const float hs_cursor_dist = saturation * wheel_radius;
+    const ImVec2 hs_cursor_pos(wheel_center.x + ImCos(hs_cursor_angle) * hs_cursor_dist, wheel_center.y + ImSin(hs_cursor_angle) * hs_cursor_dist);
 
     // Draw hue & saturation wheel cursor/preview circle.
     const float hs_cursor_radius = hs_cursor_active ? wheel_thickness * 0.55f : wheel_thickness * 0.40f;
