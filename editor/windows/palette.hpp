@@ -16,7 +16,10 @@ class Palette : public IWindow {
     constexpr bool default_open() const override { return true; }
 
     [[nodiscard]] MaterialIndex get_selected_material_index() const { return selected_material_index; }
-    void set_selected_material_index(const MaterialIndex material_index) { selected_material_index = material_index; }
+    void set_selected_material_index(const MaterialIndex material_index) {
+        selected_material_index = material_index;
+        update_material_editor = true;
+    }
 
     void before_begin() override;
     void end_display() override;
@@ -28,8 +31,10 @@ class Palette : public IWindow {
 
    private:
     void display_palette(const ResourceRef<VoxelVolume>& resource);
-    void display_material_editor() const;
+    void display_material_editor();
 
+    // Flag used to update the static variable in the material editor when the selected material changes.
+    bool update_material_editor = true;
     MaterialIndex selected_material_index { 0 };
 
     struct Config {
