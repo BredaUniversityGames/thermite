@@ -193,6 +193,7 @@ void Editor::on_engine_end() {
 
 void Editor::main_menu_bar() {
     if (ImGui::BeginMainMenuBar()) {
+        /* Mode-specific menu (Scene, Prefab, etc.) */
         mode_handlers[editor_mode]->display_main_menu();
 
         if (ImGui::BeginMenu("Windows")) {
@@ -243,6 +244,14 @@ void Editor::main_menu_bar() {
                 ImGui::EndMenu();
             }
 
+            ImGui::EndMenu();
+        }
+
+        if (ImGui::BeginMenu("Modeling")) {
+            ImGui::MenuItem("Import Model...");
+            ImGui::MenuItem("Export Model...");
+            ImGui::Separator();
+            ImGui::MenuItem("Mesh Tools");
             ImGui::EndMenu();
         }
 

@@ -27,14 +27,20 @@ class Viewport : public IWindow, public OnRetrieveMouseState {
     constexpr bool is_closable() const override { return false; };
     constexpr bool default_open() const override { return true; }
 
+    // Game flow controls (shared with GameFlow window)
+    void start_game();
+    void end_game();
+    void pause_game();
+    void resume_game();
+
     bool get_is_hovered() const { return is_hovered; }
 
    private:
     friend class ModelViewer;
 
     void update_debug_camera(const tmt::FrameData& frame_data);
-    bool toolbar(const ImVec2& image_pos);
-    void selection_logic(const ImVec2& imgui_mouse_pos, const ImVec2& image_pos, bool toolbar_buttons_hovered);
+    void toolbar();
+    void selection_logic(const ImVec2& imgui_mouse_pos, const ImVec2& image_pos);
 
     float width = -1;
     float height = -1;

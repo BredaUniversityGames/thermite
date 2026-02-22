@@ -1,5 +1,6 @@
 #include "viewport.hpp"
 #include <imgui.h>
+#include <imgui_internal.h>
 #include <ImGuizmo.h>
 #include "editor/editor.hpp"
 #include "hierarchy.hpp"
@@ -54,13 +55,36 @@ std::string tmt::Viewport::get_title() const {
     return scene_name + window_id;
 }
 int tmt::Viewport::get_window_flags() const {
-    if (engine.game_controller.is_running()) return ImGuiWindowFlags_None;
+    int flags = ImGuiWindowFlags_MenuBar;
 
-    const bool is_scene_dirty = editor.windows[editor.editor_mode].get<ScenesWindow>().is_scene_dirty();
-    return is_scene_dirty ? ImGuiWindowFlags_UnsavedDocument : 0;
-};
+    if (!engine.game_controller.is_running()) {
+        const bool is_scene_dirty = editor.windows[editor.editor_mode].get<ScenesWindow>().is_scene_dirty();
+        if (is_scene_dirty) flags |= ImGuiWindowFlags_UnsavedDocument;
+    }
+
+    return flags;
+}
+
+void tmt::Viewport::start_game() {
+    engine.game_controller.start_game();
+}
+
+void tmt::Viewport::end_game() {
+    engine.game_controller.end_game();
+}
+
+void tmt::Viewport::pause_game() {
+    engine.game_controller.pause_game();
+}
+
+void tmt::Viewport::resume_game() {
+    engine.game_controller.resume_game();
+}
 
 void tmt::Viewport::display() {
+    // Menu bar toolbar
+    toolbar();
+
     auto size = ImGui::GetContentRegionAvail();
     size = ImVec2(std::max(size.x, 1.0f), std::max(size.y, 1.0f));
     width = size.x;
@@ -115,9 +139,7 @@ void tmt::Viewport::display() {
     const bool gizmo_changed = editor.gizmo.manip(image_pos.x, image_pos.y, width, height, selected_entities, snap_value);
     if (gizmo_changed) OnSceneModified::dispatch();
 
-    const bool toolbar_buttons_hovered = toolbar(image_pos);
-
-    selection_logic(imgui_mouse_pos, image_pos, toolbar_buttons_hovered);
+    selection_logic(imgui_mouse_pos, image_pos);
 
     ImGui::EndChild();
 
@@ -126,46 +148,156 @@ void tmt::Viewport::display() {
     }
 }
 
-bool tmt::Viewport::toolbar(const ImVec2& image_pos) {
+void tmt::Viewport::toolbar() {
+    if (!ImGui::BeginMenuBar()) return;
+
     ImGuiStyle& style = ImGui::GetStyle();
 
-    float btn_w = ImGui::CalcTextSize(ICON_MS_LANGUAGE).x + style.FramePadding.x * 2.0f;
-    float btn_h = ImGui::GetFrameHeight();
-    float total_w = btn_w * 3.0f + style.ItemSpacing.x;
+    /* ===== Left side: Gizmo controls ===== */
 
-    // Small padding from the image border
-    float pad = 4.0f;
-    ImVec2 btn_pos = ImVec2(image_pos.x + width - total_w - pad, image_pos.y + pad);
-
-    bool any_button_hovered = false;
-
-    ImGui::SetCursorScreenPos(btn_pos);
-    const char* space_button_icon = editor.gizmo.space ? ICON_MS_LANGUAGE : ICON_MS_VIEW_IN_AR;
-    if (ImGui::Button(space_button_icon, ImVec2(btn_w, btn_h))) {
+    /* Gizmo Space Toggle (Global/Local) */
+    const char* space_label = editor.gizmo.space ? ICON_MS_LANGUAGE " Global" : ICON_MS_VIEW_IN_AR " Local";
+    if (ImGui::Button(space_label)) {
         editor.gizmo.space = static_cast<uint8_t>(!editor.gizmo.space);
     }
-    any_button_hovered |= ImGui::IsItemHovered();
 
-    ImGui::SameLine();
-    const char* mode_button_icon = Gizmo::gizmo_op_icons[editor.gizmo.operation];
-    if (ImGui::Button(mode_button_icon, ImVec2(btn_w, btn_h))) {
-        ++editor.gizmo.operation;
-        if (editor.gizmo.operation == Gizmo::GIZMO_OP_COUNT) editor.gizmo.operation = 0;
+    ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
+
+    /* Gizmo Operation Buttons (Translate/Rotate/Scale) */
+    const bool translate_active = (editor.gizmo.operation == 0);
+    const bool rotate_active = (editor.gizmo.operation == 1);
+    const bool scale_active = (editor.gizmo.operation == 2);
+
+    if (translate_active) ImGui::PushStyleColor(ImGuiCol_Button, style.Colors[ImGuiCol_ButtonActive]);
+    if (ImGui::Button(ICON_MS_DRAG_PAN "##Translate")) {
+        editor.gizmo.operation = 0;
     }
-    any_button_hovered |= ImGui::IsItemHovered();
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Translate (W)");
+    if (translate_active) ImGui::PopStyleColor();
 
-    ImGui::SameLine();
-    const char* multi_button_icon = editor.gizmo.multiselect_mode ? ICON_MS_FILTER_NONE : ICON_MS_FILTER_1;
-    if (ImGui::Button(multi_button_icon, ImVec2(btn_w, btn_h))) {
-        editor.gizmo.multiselect_mode = static_cast<uint8_t>(!editor.gizmo.multiselect_mode);
+    if (rotate_active) ImGui::PushStyleColor(ImGuiCol_Button, style.Colors[ImGuiCol_ButtonActive]);
+    if (ImGui::Button(ICON_MS_ROTATE_RIGHT "##Rotate")) {
+        editor.gizmo.operation = 1;
     }
-    any_button_hovered |= ImGui::IsItemHovered();
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Rotate (E)");
+    if (rotate_active) ImGui::PopStyleColor();
 
-    return any_button_hovered;
+    if (scale_active) ImGui::PushStyleColor(ImGuiCol_Button, style.Colors[ImGuiCol_ButtonActive]);
+    if (ImGui::Button(ICON_MS_ZOOM_OUT_MAP "##Scale")) {
+        editor.gizmo.operation = 2;
+    }
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Scale (R)");
+    if (scale_active) ImGui::PopStyleColor();
+
+    ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
+
+    /* View Menu */
+    if (ImGui::BeginMenu("View")) {
+        ImGui::MenuItem("Wireframe");
+        ImGui::MenuItem("Solid");
+        ImGui::MenuItem("Textured");
+        ImGui::Separator();
+        ImGui::MenuItem("Show Grid");
+        ImGui::MenuItem("Show Gizmos");
+        ImGui::EndMenu();
+    }
+
+    /* Add Menu */
+    if (ImGui::BeginMenu("Add")) {
+        ImGui::MenuItem("Empty Entity");
+        ImGui::MenuItem("Cube");
+        ImGui::MenuItem("Sphere");
+        ImGui::Separator();
+        ImGui::MenuItem("Light");
+        ImGui::MenuItem("Camera");
+        ImGui::EndMenu();
+    }
+
+    /* Object Menu */
+    if (ImGui::BeginMenu("Object")) {
+        ImGui::MenuItem("Duplicate");
+        ImGui::MenuItem("Delete");
+        ImGui::Separator();
+        ImGui::MenuItem("Group");
+        ImGui::MenuItem("Ungroup");
+        ImGui::EndMenu();
+    }
+
+    /* ===== Center: Game Flow Controls (icon-only) ===== */
+    float icon_btn_width = ImGui::GetFrameHeight();                    // Square buttons
+    float game_flow_width = icon_btn_width * 2 + style.ItemSpacing.x;  // Play + Pause buttons
+
+    float left_cursor = ImGui::GetCursorPosX();
+    float menu_bar_width = ImGui::GetWindowWidth();
+    float center_pos = (menu_bar_width - game_flow_width) * 0.5f;
+
+    // Only center if there's enough space
+    if (center_pos > left_cursor) {
+        ImGui::SetCursorPosX(center_pos);
+    }
+
+    // Play/Stop button
+    if (engine.game_controller.is_playing()) {
+        if (ImGui::Button(ICON_MS_STOP "##Stop", ImVec2(icon_btn_width, 0))) {
+            end_game();
+        }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Stop");
+    } else {
+        if (ImGui::Button(ICON_MS_PLAY_ARROW "##Play", ImVec2(icon_btn_width, 0))) {
+            start_game();
+        }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Start");
+    }
+
+    // Pause/Resume button (only shown when playing)
+    if (engine.game_controller.is_playing()) {
+        if (engine.game_controller.is_paused()) {
+            if (ImGui::Button(ICON_MS_PLAY_ARROW "##Resume", ImVec2(icon_btn_width, 0))) {
+                resume_game();
+            }
+            if (ImGui::IsItemHovered()) ImGui::SetTooltip("Resume");
+        } else {
+            if (ImGui::Button(ICON_MS_PAUSE "##Pause", ImVec2(icon_btn_width, 0))) {
+                pause_game();
+            }
+            if (ImGui::IsItemHovered()) ImGui::SetTooltip("Pause");
+        }
+    }
+
+    /* ===== Right side: Display info ===== */
+    float right_width = ImGui::CalcTextSize(ICON_MS_ASPECT_RATIO " 0000x0000").x + 100.0f + style.ItemSpacing.x * 3 + style.FramePadding.x * 4;
+
+    float avail = ImGui::GetContentRegionAvail().x;
+    if (avail > right_width) {
+        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + avail - right_width);
+    }
+
+    /* Display mode combo */
+    static const std::vector<std::string> DISPLAY_MODE_LABELS { "Default", "Steps", "Visibility", "Depth", "Normals", "Albedo", "Illuminance" };
+    static uint32_t display_mode_idx = 6u;
+
+    ImGui::SetNextItemWidth(100.0f);
+    if (ImGui::BeginCombo("##DisplayMode", DISPLAY_MODE_LABELS[display_mode_idx].c_str())) {
+        for (uint32_t i = 0; i < DISPLAY_MODE_LABELS.size(); ++i) {
+            const bool is_selected = (display_mode_idx == i);
+            if (ImGui::Selectable(DISPLAY_MODE_LABELS[i].c_str(), is_selected)) {
+                display_mode_idx = i;
+            }
+            if (is_selected) ImGui::SetItemDefaultFocus();
+        }
+        ImGui::EndCombo();
+    }
+
+    /* Resolution display */
+    char res_text[32];
+    snprintf(res_text, sizeof(res_text), ICON_MS_ASPECT_RATIO " %dx%d", static_cast<int>(width), static_cast<int>(height));
+    ImGui::Text("%s", res_text);
+
+    ImGui::EndMenuBar();
 }
 
-void tmt::Viewport::selection_logic(const ImVec2& imgui_mouse_pos, const ImVec2& image_pos, bool toolbar_buttons_hovered) {
-    if(!is_hovered) return;
+void tmt::Viewport::selection_logic(const ImVec2& imgui_mouse_pos, const ImVec2& image_pos) {
+    if (!is_hovered) return;
 
     auto& hierarchy = editor.windows[Editor::Mode::SCENE].get<Hierarchy>();
     const std::vector<Entity>& selected_entities = hierarchy.get_selected_entities();
@@ -190,8 +322,8 @@ void tmt::Viewport::selection_logic(const ImVec2& imgui_mouse_pos, const ImVec2&
             ImGui::GetWindowDrawList()->AddRectFilled(first_click_pos, imgui_io.MousePos, ImColor(1.f, 1.f, 1.f, 0.2f));
             ImGui::GetWindowDrawList()->AddRect(first_click_pos, imgui_io.MousePos, ImColor(1.f, 1.f, 1.f, 0.6f));
 
-            glm::ivec2 a = {first_click_pos.x - image_pos.x, first_click_pos.y - image_pos.y};
-            glm::ivec2 b = {imgui_mouse_pos.x - image_pos.x, imgui_mouse_pos.y - image_pos.y};
+            glm::ivec2 a = { first_click_pos.x - image_pos.x, first_click_pos.y - image_pos.y };
+            glm::ivec2 b = { imgui_mouse_pos.x - image_pos.x, imgui_mouse_pos.y - image_pos.y };
 
             int x0 = std::min(a.x, b.x);
             int x1 = std::max(a.x, b.x);
@@ -202,7 +334,7 @@ void tmt::Viewport::selection_logic(const ImVec2& imgui_mouse_pos, const ImVec2&
             tracking_rect_entities.clear();
             for (int x = x0; x < x1; x += 5) {
                 for (int y = y0; y < y1; y += 5) {
-                    const tmt::Ray selection_ray = tmt::engine.renderer.render_view.pixel_ray({x, y});
+                    const tmt::Ray selection_ray = tmt::engine.renderer.render_view.pixel_ray({ x, y });
                     const tmt::Hit hit = tmt::engine.renderer.trace_ray(selection_ray);
 
                     if (!hit.miss()) {
@@ -222,17 +354,16 @@ void tmt::Viewport::selection_logic(const ImVec2& imgui_mouse_pos, const ImVec2&
             }
         }
     }
-    if (imgui_io.MouseClicked[0] && !editor.gizmo.hovered() && !toolbar_buttons_hovered) {
-        const tmt::Ray selection_ray = tmt::engine.renderer.render_view.pixel_ray({mouse_pos.x, mouse_pos.y});
+    if (imgui_io.MouseClicked[0] && !editor.gizmo.hovered()) {
+        const tmt::Ray selection_ray = tmt::engine.renderer.render_view.pixel_ray({ mouse_pos.x, mouse_pos.y });
         const tmt::Hit hit = tmt::engine.renderer.trace_ray(selection_ray);
 
         if (not_multiple_select_modifier) hierarchy.clear_selection();
 
         if (!hit.miss()) {
-
-            if(hierarchy.is_entity_selected(hit.entity) && !(not_multiple_select_modifier)) hierarchy.remove_entity_from_selection(hit.entity);
-            else 
-            {
+            if (hierarchy.is_entity_selected(hit.entity) && !(not_multiple_select_modifier))
+                hierarchy.remove_entity_from_selection(hit.entity);
+            else {
                 hierarchy.add_entity_to_selection(hit.entity);
                 Entity first_entity = hierarchy.get_first_selected_entity();
 
@@ -247,7 +378,6 @@ void tmt::Viewport::selection_logic(const ImVec2& imgui_mouse_pos, const ImVec2&
                     }
                 }
             }
-            
         }
     }
 }

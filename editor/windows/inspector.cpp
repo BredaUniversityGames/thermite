@@ -316,7 +316,12 @@ void Inspector::add_runtime_component(const tmt::Inspector::MenuContext& menu_co
 }
 
 Inspector::HeaderResponse Inspector::component_header(const std::string name) {
-    const bool open = ImGui::CollapsingHeader(name.c_str(), ImGuiTreeNodeFlags_DefaultOpen);
+    ImGui::Spacing();
+
+    ImGuiTreeNodeFlags flags =
+        ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_AllowOverlap | ImGuiTreeNodeFlags_FramePadding;
+
+    const bool open = ImGui::CollapsingHeader(name.c_str(), flags);
     const bool right_clicked = ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right);
     return { open, right_clicked };
 }
