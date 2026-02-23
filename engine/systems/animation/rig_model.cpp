@@ -33,6 +33,7 @@ void RigModel::init_bones(const Bone& b, Entity p) {
 }
 
 void RigModel::init(const IO::FileLocation& directory, Entity p) {
+    if (directory.relative_path.empty()) return;
     armature_entity = p;
     rig_is_loaded = true;
     data = engine.resources.load_resource<RigData>(directory);

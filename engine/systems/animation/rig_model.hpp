@@ -36,7 +36,6 @@ class RigModel {
     std::vector<Entity> pivot_entities;
     ResourceRef<RigData> data;
     IO::FileLocation file_directory = {};
-    std::unordered_map<std::string, bool> play_animations;
 
     // void attach_voxel_objects(const IO::FileLocation& directory);
 
@@ -72,4 +71,4 @@ class RigModel {
 
 }  // namespace tmt
 
-TMT_COMPONENT(tmt::RigModel, "Animated Rig", (data, vox_path, play_animations));
+TMT_COMPONENT(tmt::RigModel, "Animated Rig", (data, vox_path));

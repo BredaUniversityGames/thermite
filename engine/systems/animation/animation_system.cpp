@@ -15,15 +15,23 @@ std::string tmt::RigModelManager::get_name() {
     return "animation system";
 }
 
+void tmt::RigModelManager::on_game_start() {
+    for (const auto& [entity, rig] : engine.ecs.get_registry().view<RigModel>().each()) {
+        auto& rigmodel = tmt::engine.ecs.get_component<tmt::RigModel>(entity);
+        rigmodel.init(rigmodel.data.file_location, entity);
+    }
+}
+
 void tmt::RigModelManager::on_start() {}
 
 void RigModelManager::on_update(const FrameData& time) {
     inspect(time.delta_time);
     for (const auto& [entity, rig] : engine.ecs.get_registry().view<RigModel>().each()) {
-        for (const auto& [animation_name, should_play] : rig.play_animations) {
-            if (should_play) {
-                rig.play_animation(animation_name, 1.0f, true);
-                rig.play_animations[animation_name] = false;
+        for (auto& [location, animation_name] : rig.data->animation_files) {
+            if (animation_name.second) {
+                rig.data->reload();
+                rig.play_animation(animation_name.first, 1.0f, true);
+                animation_name.second = false;
             }
         }
 

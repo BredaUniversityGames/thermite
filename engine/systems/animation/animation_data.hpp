@@ -69,7 +69,8 @@ struct RigData : public FileResource {
 
     // Hacky way of ding this, this info should not be stored in the resources since it can not be found in the .FBX file itself
     // std::vector<std::pair<FileIO::Directory, std::string>> animation_files;
-    std::vector<IO::FileLocation> animation_files;
+    //std::vector<IO::FileLocation> animation_files;
+    std::unordered_map<IO::FileLocation, std::pair<std::string, bool>> animation_files;
 
    private:
     void load_fbx(const IO::FileLocation& directory);
