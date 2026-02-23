@@ -32,7 +32,6 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
 }
 
 void Game::on_start() {
-    using namespace tmt;
     { /* Camera entity */
         Entity entity = engine.ecs.create_entity("Camera");
         auto& transform = engine.ecs.get_component<Transform>(entity);
