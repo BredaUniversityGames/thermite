@@ -16,6 +16,7 @@
 #include "engine/core/components/emitter.hpp"
 #include "engine/core/components/ui_component.hpp"
 #include "engine/core/components/image_renderer.hpp"
+#include "engine/core/components/button.hpp"
 #include "engine/tools/uuid.hpp"
 
 namespace tmt {
@@ -36,7 +37,8 @@ using SerializeComponents = ComponentRegistry<
 	Light,
 	ParticleEmitter,
 	UIComponent,
-	ImageRenderer
+	ImageRenderer,
+	Button
 >;
 // clang-format on
 
@@ -54,7 +56,8 @@ using InspectComponents = ComponentRegistry<
 	Light,
 	ParticleEmitter,
 	UIComponent,
-	ImageRenderer
+	ImageRenderer,
+	Button
 >;
 // clang-format on
 
