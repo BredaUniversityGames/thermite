@@ -13,6 +13,8 @@
 
 #include "engine/tools/serializer/all.hpp"
 
+#include "engine/core/components/ui_component.hpp"
+
 #include <imgui.h>
 #include <ImGuizmo.h>
 
@@ -45,12 +47,26 @@ bool Gizmo::manip(const float x, const float y, const float width, const float h
         return false;
     }
 
+    bool has_ui = false;
+    for (const Entity e : selected_entities) {
+        if (!engine.ecs.valid(e)) continue;
+        if (engine.ecs.has_component<UIComponent>(e)) {
+            has_ui = true;
+            break;
+        }
+    }
+
     const Transform& cam_transform = engine.renderer.get_debug_transform();
     const Camera& camera = engine.renderer.get_debug_camera();
 
-    const glm::mat4 view = glm::inverse(cam_transform.get_world_matrix());
+    const glm::mat4 scene_view = glm::inverse(cam_transform.get_world_matrix());
+    const glm::mat4 ui_view = glm::mat4(1.f);
+    const glm::mat4 view = has_ui ? ui_view : scene_view;
     const float aspect = width / height;
-    const glm::mat4 perspective = glm::perspective(glm::radians(camera.fov), aspect, 0.05f, 1000.0f);
+
+    const glm::mat4 scene_perspective = glm::perspective(glm::radians(camera.fov), aspect, 0.05f, 1000.0f);
+    const glm::mat4 ui_perspective = glm::ortho(0.0f, width, height, 0.0f, -1000.0f, 1000.0f);
+    const glm::mat4 perspective = has_ui ? ui_perspective : scene_perspective;
 
     const Entity primary = selected_entities.front();
     if (!engine.ecs.valid(primary)) return false;
