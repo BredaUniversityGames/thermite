@@ -1,6 +1,9 @@
 #include "goap_system.hpp"
 #include "core/logger.hpp"
 
+#include "components/goap_agent_factory.hpp"
+#include "components/goap_agent_type_ref.hpp"
+
 #include "engine.hpp"
 #include "core/ecs.hpp"
 
@@ -14,6 +17,18 @@ namespace tmt {
 void Goap::on_start() {
     Log::info("Goap on_start");
     agent_types().load();
+
+    auto& registry = engine.ecs.get_registry();
+
+    // Build runtime agents from serialized scene data
+    for (auto entity : registry.view<GoapAgentTypeRef>()) {
+        auto& type_ref = registry.get<GoapAgentTypeRef>(entity);
+
+        // Avoid double building if already exists
+        if (registry.any_of<GoapAgent>(entity)) continue;
+
+        GoapAgentFactory::spawn_agent_from_type(type_ref.type_id, entity);
+    }
 }
 
 /**

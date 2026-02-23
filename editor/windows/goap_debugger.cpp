@@ -97,7 +97,7 @@ void GoapDebugger::display() {
     }
 
     // --- Draw only selected agent ---
-    if (selected_agent != entt::null && ecs.any_of<GoapAgent, WorldState>(selected_agent)) {
+    if (selected_agent != entt::null && ecs.all_of<GoapAgent, WorldState>(selected_agent)) {
         auto& agent = ecs.get<GoapAgent>(selected_agent);
         auto& ws = ecs.get<WorldState>(selected_agent);
 

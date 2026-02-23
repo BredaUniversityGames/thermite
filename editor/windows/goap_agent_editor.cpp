@@ -8,6 +8,7 @@
 #include "engine/systems/ai/goap/components/world_state.hpp"
 #include "engine/systems/ai/goap/components/goap_action_overrides.hpp"
 #include "engine/systems/ai/goap/components/goap_goal_registry.hpp"
+#include "engine/systems/ai/goap/components/goap_agent_type_ref.hpp"
 #include "engine/systems/ai/goap/components/goap_agent_type_registry.hpp"
 #include "engine/systems/ai/goap/components/goap_action_registry.hpp"
 #include "engine/systems/ai/goap/components/goap_agent_factory.hpp"
@@ -142,13 +143,25 @@ void GoapAgentEditor::draw_agent_type_node(GoapAgentType& type) {
     // --- Button to add agents of this type ---
     ImGui::SeparatorText("Runtime Agents");
 
-    if (ImGui::Button("Spawn Agent")) {
+    /*if (ImGui::Button("Spawn Agent")) {
         auto& ecs = engine.ecs;
 
         tmt::Entity e = ecs.create_entity(("Agent_" + type.id).c_str());
         GoapAgentFactory::spawn_agent_from_type(type.id, e);
 
         Log::info("Spawned GOAP agent of type '{}'", type.id);
+    }*/
+
+    if (ImGui::Button("Spawn Agent")) {
+        auto& ecs = engine.ecs;
+
+        tmt::Entity e = ecs.create_entity(("Agent_" + type.id).c_str());
+
+        // Add serialized type reference
+        auto& type_ref = ecs.add_component<GoapAgentTypeRef>(e);
+        type_ref.type_id = type.id;
+
+        Log::info("Placed GOAP agent of type '{}' in scene", type.id);
     }
 
     ignode::EndNode();
