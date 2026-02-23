@@ -13,6 +13,7 @@ void UI::on_update(const FrameData&) {
 
     auto view = engine.ecs.get_registry().view<UIComponent, const Transform>();
     for (const auto& [entity, ui_component, transform] : view.each()) {
+        if (transform.has_parent()) continue;
         set_size(ui_component, transform, screen_size);
     }
 }
@@ -31,7 +32,6 @@ void UI::set_size(tmt::UIComponent& ui_component, const tmt::Transform& transfor
         /* Use parent UI, but first do parent */
         const Transform& parent_transform = engine.ecs.get_component<Transform>(parent_entity);
         UIComponent& parent_ui = engine.ecs.get_component<UIComponent>(parent_entity);
-        set_size(parent_ui, parent_transform, screen_size);
         if (scale_x) ui_component.size.x = parent_ui.size.x;
         if (scale_y) ui_component.size.y = parent_ui.size.y;
     } else {
@@ -40,26 +40,39 @@ void UI::set_size(tmt::UIComponent& ui_component, const tmt::Transform& transfor
         if (scale_y) ui_component.size.y = static_cast<float>(screen_size.y);
     }
 
-    if (ui_component.aspect_mode == AspectMode::STRETCH) return;
+    if (ui_component.aspect_mode == AspectMode::STRETCH) {
+        const float aspect_ratio = ui_component.aspect_ratio.x / ui_component.aspect_ratio.y;
+        const float current_ratio = ui_component.size.x / ui_component.size.y;
 
-    const float aspect_ratio = ui_component.aspect_ratio.x / ui_component.aspect_ratio.y;
-    const float current_ratio = ui_component.size.x / ui_component.size.y;
-
-    if (ui_component.aspect_mode == AspectMode::FIT) {
-        if (current_ratio > aspect_ratio) {
-            /* Too wide, shrink x */
-            ui_component.size.x = ui_component.size.y * aspect_ratio;
-        } else {
-            /* Too tall, shrink y */
+        // Only one axis is driven, derive the other from it unconditionally.
+        if (scale_x && !scale_y) {
             ui_component.size.y = ui_component.size.x / aspect_ratio;
+        } else if (!scale_x && scale_y) {
+            ui_component.size.x = ui_component.size.y * aspect_ratio;
+        } else if (scale_x && scale_y) {
+            // Both axes are driven, use the aspect mode to decide which wins.
+            if (ui_component.aspect_mode == AspectMode::FIT) {
+                if (current_ratio > aspect_ratio) {
+                    ui_component.size.x = ui_component.size.y * aspect_ratio;
+                } else {
+                    ui_component.size.y = ui_component.size.x / aspect_ratio;
+                }
+            } else if (ui_component.aspect_mode == AspectMode::FILL) {
+                if (current_ratio > aspect_ratio) {
+                    ui_component.size.y = ui_component.size.x / aspect_ratio;
+                } else {
+                    ui_component.size.x = ui_component.size.y * aspect_ratio;
+                }
+            }
         }
-    } else if (ui_component.aspect_mode == AspectMode::FILL) {
-        if (current_ratio > aspect_ratio) {
-            /* Too wide, shrink y */
-            ui_component.size.y = ui_component.size.x / aspect_ratio;
-        } else {
-            /* Too tall, shrink x */
-            ui_component.size.x = ui_component.size.y * aspect_ratio;
+    }
+
+    /* First do parents then children */
+    for (const auto& child_entity : transform.get_children()) {
+        if (engine.ecs.has_component<UIComponent>(child_entity)) {
+            UIComponent& child_ui = engine.ecs.get_component<UIComponent>(child_entity);
+            Transform& child_transform = engine.ecs.get_component<Transform>(child_entity);
+            set_size(child_ui, child_transform, screen_size);
         }
     }
 }
