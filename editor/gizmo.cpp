@@ -30,7 +30,9 @@ void Gizmo::init() {
     setup_style();
 }
 
-bool Gizmo::hovered() const { return ImGuizmo::IsOver(); }
+bool Gizmo::hovered() const {
+    return ImGuizmo::IsOver();
+}
 
 bool Gizmo::manip(const float x, const float y, const float width, const float height, const std::span<const Entity>& selected_entities, const float snap) const {
     ImGuizmo::SetRect(x, y, width, height);
@@ -43,120 +45,80 @@ bool Gizmo::manip(const float x, const float y, const float width, const float h
         return false;
     }
 
-    const Transform& transform = engine.renderer.get_debug_transform();
+    const Transform& cam_transform = engine.renderer.get_debug_transform();
     const Camera& camera = engine.renderer.get_debug_camera();
 
-    const glm::mat4 view = glm::inverse(transform.get_world_matrix());
-    const float aspect_ratio = width / height;
-    auto perspective = glm::perspective(glm::radians(camera.fov), aspect_ratio, 0.05f, 1000.0f);
+    const glm::mat4 view = glm::inverse(cam_transform.get_world_matrix());
+    const float aspect = width / height;
+    const glm::mat4 perspective = glm::perspective(glm::radians(camera.fov), aspect, 0.05f, 1000.0f);
 
-    const Entity selected_entity = selected_entities.front();
-    if (engine.ecs.valid(selected_entity) == false) return false;
+    const Entity primary = selected_entities.front();
+    if (!engine.ecs.valid(primary)) return false;
 
-    bool changed;
+    // --- 1. Build the gizmo matrix ---
+    const bool use_average = (multiselect_mode != 0);
 
-    // relative to first
-    if (multiselect_mode == 0) {
-        Transform& selected_transform = engine.ecs.get_component<Transform>(selected_entity);
-        auto& selected_matrix = selected_transform.get_world_matrix();
-        glm::mat4 imguizmo_input_matrix = selected_matrix;
+    glm::mat4 gizmo_matrix;
 
-        glm::mat4 delta;
-        changed = ImGuizmo::Manipulate(
-            &view[0][0], &perspective[0][0], static_cast<ImGuizmo::OPERATION>(OPERATIONS[operation]), static_cast<ImGuizmo::MODE>(space), &imguizmo_input_matrix[0][0], &delta[0][0],
-            snap == 0.0f ? nullptr : &glm::vec3(snap)[0]
-        );
+    if (!use_average) {
+        gizmo_matrix = engine.ecs.get_component<Transform>(primary).get_world_matrix();
+    } else {
+        const float weight = 1.f / static_cast<float>(selected_entities.size());
+        glm::vec3 avg_translation(0.f);
+        glm::quat avg_rotation(0.f, 0.f, 0.f, 0.f);
 
-        static std::unordered_map<Entity, ComponentDiff<Transform>> component_diffs;
-
-        static bool was_using = false;
-        const bool is_using = ImGuizmo::IsUsing();
-        if (!was_using && is_using) {
-            for (const Entity& entity : selected_entities) {
-                ComponentDiff<Transform> diff(entity);
-                diff.before();
-                component_diffs.emplace(entity, std::move(diff));
-            }
-            was_using = true;
+        for (const Entity e : selected_entities) {
+            const Transform& t = engine.ecs.get_component<Transform>(e);
+            const glm::mat4& wm = t.get_world_matrix();
+            avg_translation += glm::vec3(wm[3]);
+            avg_rotation += weight * t.get_world_rotation();
         }
+        avg_translation /= static_cast<float>(selected_entities.size());
+        avg_rotation = glm::normalize(avg_rotation);
 
-        if (changed) {
-            selected_transform.set_world_matrix(imguizmo_input_matrix);
-
-            for (const Entity entity : selected_entities) {
-                if (entity == selected_entity) continue;
-
-                Transform& multi_select_transform = engine.ecs.get_component<Transform>(entity);
-                auto& multi_matrix = multi_select_transform.get_world_matrix();
-
-                multi_select_transform.set_world_matrix(delta * multi_matrix);
-            }
-
-            OnSceneModified::dispatch();
-        }
-
-        if (!is_using && was_using) {
-            UndoRedoCollection collection;
-            for (auto& [entity, diff] : component_diffs) {
-                diff.after();
-                collection.add_action(std::move(diff));
-            }
-            collection.commit("Edit Gizmo");
-            component_diffs.clear();
-            was_using = false;
-        }
-
-        return changed;
+        gizmo_matrix = glm::translate(glm::mat4(1.f), avg_translation) * glm::mat4_cast(avg_rotation) * glm::scale(glm::mat4(1.f), glm::vec3(1.f));
     }
 
-    const uint32_t amount = static_cast<uint32_t>(selected_entities.size());
-
-    glm::vec3 avg_translation = glm::vec3(0.f);
-    glm::quat avg_rotation = glm::quat();
-    const glm::vec3 scale = glm::vec3(1.f);
-
-    float weight = 1.f / static_cast<float>(amount);
-
-    for (auto entity : selected_entities) {
-        Transform& multi_select_transform = engine.ecs.get_component<Transform>(entity);
-        auto& multi_matrix = multi_select_transform.get_world_matrix();
-
-        avg_translation += glm::vec3(multi_matrix[3]);
-        avg_rotation += weight * multi_select_transform.get_world_rotation();
-    }
-    avg_translation /= static_cast<float>(amount);
-    avg_rotation = glm::normalize(avg_rotation);
-
-    glm::mat4 avg = glm::translate(glm::mat4(1.f), avg_translation) * glm::mat4_cast(avg_rotation) * glm::scale(glm::mat4(1.f), scale);
+    // --- 2. Manipulate ---
     glm::mat4 delta;
-    changed = ImGuizmo::Manipulate(&view[0][0], &perspective[0][0], static_cast<ImGuizmo::OPERATION>(OPERATIONS[operation]), static_cast<ImGuizmo::MODE>(space), &avg[0][0], &delta[0][0]);
+    const bool changed = ImGuizmo::Manipulate(
+        &view[0][0], &perspective[0][0], static_cast<ImGuizmo::OPERATION>(OPERATIONS[operation]), static_cast<ImGuizmo::MODE>(space), &gizmo_matrix[0][0], &delta[0][0],
+        snap == 0.0f ? nullptr : &glm::vec3(snap)[0]
+    );
 
+    // --- 3. Undo/redo bookkeeping ---
     static std::unordered_map<Entity, ComponentDiff<Transform>> component_diffs;
     static bool was_using = false;
+
     const bool is_using = ImGuizmo::IsUsing();
     if (!was_using && is_using) {
-        for (const Entity& entity : selected_entities) {
-            ComponentDiff<Transform> diff(entity);
+        for (const Entity e : selected_entities) {
+            ComponentDiff<Transform> diff(e);
             diff.before();
-            component_diffs.emplace(entity, std::move(diff));
+            component_diffs.emplace(e, std::move(diff));
         }
         was_using = true;
     }
 
+    // --- 4. Apply delta ---
     if (changed) {
-        for (const Entity entity : selected_entities) {
-            Transform& multi_select_transform = engine.ecs.get_component<Transform>(entity);
-            auto& multi_matrix = multi_select_transform.get_world_matrix();
+        for (const Entity e : selected_entities) {
+            Transform& t = engine.ecs.get_component<Transform>(e);
 
-            multi_select_transform.set_world_matrix(delta * multi_matrix);
+            if (!use_average && e == primary) {
+                // Use direct result for the primary to avoid float-point drift accumulation
+                t.set_world_matrix(gizmo_matrix);
+            } else {
+                t.set_world_matrix(delta * t.get_world_matrix());
+            }
         }
-
         OnSceneModified::dispatch();
     }
 
+    // --- 5. Commit undo/redo ---
     if (!is_using && was_using) {
         UndoRedoCollection collection;
-        for (auto& [entity, diff] : component_diffs) {
+        for (auto& [e, diff] : component_diffs) {
             diff.after();
             collection.add_action(std::move(diff));
         }
