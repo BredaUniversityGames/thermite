@@ -87,7 +87,6 @@ void Game::on_start() {
         auto& vb = tmt::engine.ecs.add_component<tmt::VoxelBody>(entity);
         vb.resource = voxel_volume_cube;
         vb.gravity = 0.0f;
-        tmt::Physics::recalculate_physics_data(vb);
     }
 
     // for (size_t z = 0; z < 5; z++) {
