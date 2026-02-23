@@ -30,7 +30,6 @@ void UI::set_size(tmt::UIComponent& ui_component, const tmt::Transform& transfor
 
     if (has_parent_ui) {
         /* Use parent UI, but first do parent */
-        const Transform& parent_transform = engine.ecs.get_component<Transform>(parent_entity);
         UIComponent& parent_ui = engine.ecs.get_component<UIComponent>(parent_entity);
         if (scale_x) ui_component.size.x = parent_ui.size.x;
         if (scale_y) ui_component.size.y = parent_ui.size.y;
@@ -40,7 +39,7 @@ void UI::set_size(tmt::UIComponent& ui_component, const tmt::Transform& transfor
         if (scale_y) ui_component.size.y = static_cast<float>(screen_size.y);
     }
 
-    if (ui_component.aspect_mode == AspectMode::STRETCH) {
+    if (ui_component.aspect_mode != AspectMode::STRETCH) {
         const float aspect_ratio = ui_component.aspect_ratio.x / ui_component.aspect_ratio.y;
         const float current_ratio = ui_component.size.x / ui_component.size.y;
 

@@ -52,6 +52,7 @@
 #include "editor/windows/palette.hpp"
 #include "editor/windows/brush.hpp"
 #include "editor/windows/editor_settings.hpp"
+#include "editor/windows/ui.hpp"
 
 /* Singleton */
 tmt::Editor tmt::editor;
@@ -107,6 +108,7 @@ void Editor::on_engine_init(const ApplicationSpecs&) {
     windows[Mode::SCENE].add<UndoRedoManager>();
     windows[Mode::SCENE].add<EditorSettingsWindow>();
     windows[Mode::SCENE].add<BuildPackager>();
+    windows[Mode::SCENE].add<UIEditor>();
 
     engine.scenes.register_scene<VoxelEditScene>();
     windows[Mode::VOXEL].add<ModelViewer>();
@@ -124,6 +126,7 @@ void Editor::on_engine_init(const ApplicationSpecs&) {
     windows[Mode::PREFAB].add<Console>();
     windows[Mode::PREFAB].add<ScenesWindow>();
     windows[Mode::PREFAB].add<UndoRedoManager>();
+    windows[Mode::PREFAB].add<UIEditor>();
 
     for (auto& [mode, collection] : windows) {
         for (const auto& window : collection) {

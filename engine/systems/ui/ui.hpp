@@ -9,6 +9,7 @@ struct UIComponent;
 struct Transform;
 
 class UI : public ISystem {
+   public:
     // Inherited via ISystem
     std::string get_name() override { return "UI"; }
 
