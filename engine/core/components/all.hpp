@@ -18,6 +18,11 @@
 #include "engine/core/components/image_renderer.hpp"
 #include "engine/systems/animation/rig_model.hpp"
 #include "engine/tools/uuid.hpp"
+#include "engine/systems/ai/goap/components/goap_agent_type_ref.hpp"
+#include "engine/systems/ai/goap/components/goap_agent_type_registry.hpp"
+#include "engine/systems/ai/goap/components/goap_goal.hpp"
+#include "engine/systems/ai/goap/components/goap_action.hpp"
+#include "engine/systems/ai/goap/components/world_state.hpp"
 
 namespace tmt {
 
@@ -39,6 +44,9 @@ using SerializeComponents = ComponentRegistry<
 	UIComponent,
 	ImageRenderer,
 	RigModel
+	GoapAgentType,
+	GoapAgentTypeRef,
+	WorldState
 >;
 // clang-format on
 
@@ -58,6 +66,9 @@ using InspectComponents = ComponentRegistry<
 	UIComponent,
 	ImageRenderer,
 	RigModel
+	GoapAgentType,
+	GoapAgentTypeRef,
+	WorldState
 >;
 // clang-format on
 
