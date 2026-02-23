@@ -156,6 +156,8 @@ class Input {
     /// <returns>Vertical movement in pixels.</returns>
     float get_mouse_delta_y() const;
 
+    glm::vec2 get_mouse_delta() const;
+
     /// <summary>
     /// Enables or disables relative mouse mode (cursor hidden, infinite movement).
     /// </summary>

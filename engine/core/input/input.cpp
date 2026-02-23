@@ -324,6 +324,10 @@ float Input::get_mouse_delta_y() const {
     if (!can_use_input_mouse()) return 0.0f;
     return mouse_dy;
 }
+glm::vec2 Input::get_mouse_delta() const {
+    if (!can_use_input_mouse()) return {};
+    return { mouse_dx, mouse_dy };
+}
 void Input::set_mouse_relative_to_window(bool value) {
     SDL_SetWindowRelativeMouseMode(engine.window.window, value);
 }

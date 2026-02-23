@@ -4,7 +4,16 @@
 
 namespace tmt {
 
-enum class ButtonState { Idle, OnSelect, Selected, OnDeselect, Disabled, OnClick, OnHold, OnRelease };
+enum class ButtonState : uint8_t {
+    IDLE = 0,
+    ON_SELECT = 1,
+    SELECTED = 2,
+    ON_DESELECT = 3,
+    DISABLED = 4,
+    ON_CLICK = 5,
+    ON_HOLD = 6,
+    ON_RELEASE = 7,
+};
 // enum class Direction { NorthWest, North, NorthEast, East, SouthEast, South, SouthWest, West };
 
 template <typename... Args>
@@ -32,7 +41,7 @@ struct ButtonCallback {
 
 struct Button {
    public:
-    ButtonState state = ButtonState::Idle;
+    ButtonState state = ButtonState::IDLE;
     ButtonCallback<> on_select = {};
     ButtonCallback<> on_selected = {};
     ButtonCallback<> on_deselect = {};
