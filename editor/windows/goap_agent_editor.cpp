@@ -16,22 +16,22 @@
 
 #include <extern/imgui-node-editor/imgui_node_editor.h>
 namespace ignode = ax::NodeEditor;
-static ignode::EditorContext* g_Context = nullptr;  // Internal editor state container for imgui-node-editor
+static ignode::EditorContext* g_ContextAgentEditor = nullptr;  // Internal editor state container for imgui-node-editor
 
 namespace tmt {
 
 void GoapAgentEditor::on_editor_start() {
-    if (!g_Context) {
+    if (!g_ContextAgentEditor) {
         ignode::Config config;
         config.SettingsFile = "agent_editor.json";
-        g_Context = ignode::CreateEditor(&config);
+        g_ContextAgentEditor = ignode::CreateEditor(&config);
     }
 }
 
 void GoapAgentEditor::on_editor_end() {
-    if (g_Context) {
-        ignode::DestroyEditor(g_Context);
-        g_Context = nullptr;
+    if (g_ContextAgentEditor) {
+        ignode::DestroyEditor(g_ContextAgentEditor);
+        g_ContextAgentEditor = nullptr;
     }
 }
 
@@ -123,7 +123,7 @@ void GoapAgentEditor::display() {
  *   - Sections for actions, goals, and default world state
  */
 void GoapAgentEditor::draw_agent_type_node(GoapAgentType& type) {
-    ignode::SetCurrentEditor(g_Context);
+    ignode::SetCurrentEditor(g_ContextAgentEditor);
     ignode::Begin("AgentTypeEditor");
 
     // Generate a stable node ID from the type's string ID
