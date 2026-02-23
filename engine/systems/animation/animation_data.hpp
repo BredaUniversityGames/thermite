@@ -8,6 +8,7 @@
 #include "engine/core/resources.hpp"
 
 #include <unordered_map>
+#include "engine/core/reflection.hpp"
 
 struct FBX;
 struct ufbx_scene;
@@ -77,3 +78,5 @@ struct RigData : public FileResource {
 };
 
 }  // namespace tmt
+
+TMT_OBJECT(tmt::RigData, (animation_files));

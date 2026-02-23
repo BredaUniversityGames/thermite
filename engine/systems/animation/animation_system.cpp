@@ -4,6 +4,7 @@
 
 #include "engine.hpp"
 #include "rig_model.hpp"
+#include "animation_data.hpp"
 #include "engine/core/polyline.hpp"
 
 #define CONDITION(comparison) [](const Variant& parameter, const Variant& value) -> bool { return parameter comparison value; }
@@ -19,6 +20,13 @@ void tmt::RigModelManager::on_start() {}
 void RigModelManager::on_update(const FrameData& time) {
     inspect(time.delta_time);
     for (const auto& [entity, rig] : engine.ecs.get_registry().view<RigModel>().each()) {
+        for (const auto& [animation_name, should_play] : rig.play_animations) {
+            if (should_play) {
+                rig.play_animation(animation_name, 1.0f, true);
+                rig.play_animations[animation_name] = false;
+            }
+        }
+
         if (rig.state != RigModel::State::STATIONARY && !rig.is_transferring()) rig.time += rig.animation_speed * time.delta_time;
 
         if (rig.is_transferring()) rig.transfer_time += time.delta_time * rig.animation_speed;
