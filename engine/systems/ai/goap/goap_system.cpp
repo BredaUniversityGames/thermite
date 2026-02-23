@@ -13,6 +13,7 @@ namespace tmt {
 
 void Goap::on_start() {
     Log::info("Goap on_start");
+    agent_types().load();
 }
 
 /**
@@ -63,7 +64,7 @@ void Goap::on_end() {
  *  2. update_plan()   : generate a new plan when needed
  *  3. update_action() : tick the action currently running
  */
-void Goap::process_agent(Entity entity, WorldState& ws, float dt) {
+void Goap::process_agent(Entity entity, WorldState& ws, float /*dt*/) {
     auto& registry = engine.ecs.get_registry();
     auto& agent = registry.get<GoapAgent>(entity);
 
@@ -121,26 +122,6 @@ void Goap::update_goal(Entity entity, GoapAgent& agent, WorldState& ws) {
     }
 }
 
-// ------------------------------------------------------
-// A* GOAP Planner
-// ------------------------------------------------------
-/**
- * Internal search node used for A*.
- *
- * A node represents choosing 1 action in the action graph.
- * Links backwards to parent to build the full plan.
- */
-struct Node {
-    GoapAction* action;
-    float cost_so_far;
-    float heuristic;
-    Node* parent;
-
-    Node(GoapAction* a, float cost, float h, Node* p) : action(a), cost_so_far(cost), heuristic(h), parent(p) {}
-
-    float total_cost() const { return cost_so_far + heuristic; }
-};
-
 /**
  * Builds the runtime-effective version of a GOAP action.
  *
@@ -191,6 +172,26 @@ EffectiveGoapAction build_effective_action(const GoapAction& base, const GoapAct
  *   - If goal satisfied -> reconstruct plan
  */
 void Goap::update_plan(Entity entity, GoapAgent& agent, WorldState& ws) {
+    // This has to be inside to allow for Unity Builds
+    // ------------------------------------------------------
+    // A* GOAP Planner
+    // ------------------------------------------------------
+    /**
+     * Internal search node used for A*.
+     *
+     * A node represents choosing 1 action in the action graph.
+     * Links backwards to parent to build the full plan.
+     */
+    struct Node {
+        GoapAction* action;
+        float cost_so_far;
+        float heuristic;
+        Node* parent;
+
+        Node(GoapAction* a, float cost, float h, Node* p) : action(a), cost_so_far(cost), heuristic(h), parent(p) {}
+
+        float total_cost() const { return cost_so_far + heuristic; }
+    };
     // Stop any running action before replanning
     if (agent.current_action) {
         agent.current_action->on_interrupt(entity);

@@ -18,6 +18,11 @@
 // Game Components
 #include "components/player.hpp"
 #include "components/wallet.hpp"
+#include "components/animation_player.hpp"
+#include "components/projectile_spawner.hpp"
+#include "components/rifle_projectile.hpp"
+#include "components/spawner.hpp"
+#include "components/weapon.hpp"
 
 class Game : public tmt::Application {
    public:
@@ -70,8 +75,13 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     tmt::engine.scenes.register_scene<MainMenuScene>();
 
     /* Register Components */
-    tmt::engine.component_registry.register_component<Player>();
+    tmt::engine.component_registry.register_component<game::Player>();
+    tmt::engine.component_registry.register_component<game::Weapon>();
+    tmt::engine.component_registry.register_component<game::Spawner>();
+    tmt::engine.component_registry.register_component<game::RifleProjectile>();
+    tmt::engine.component_registry.register_component<game::ProjectileSpawner>();
     tmt::engine.component_registry.register_component<Wallet>();
+    tmt::engine.component_registry.register_component<AnimationPlayer>();
 
     /* Register Game Components */
     tmt::engine.component_registry.register_component<EntityRef>();
