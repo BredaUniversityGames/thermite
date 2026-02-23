@@ -2,6 +2,7 @@
 
 #include "imgui.h"
 #include "imgui_internal.h"
+#include "engine/shared/colorspace.hpp"
 
 #ifndef IM_CUSTOM_COLORSPACE_MATRIX
     // Matrix to convert from a color in the default (srgb rec709) colorspace to the user's custom colorspace.
@@ -51,8 +52,7 @@ inline void ConvertColorSpace(const ImMat3& m, float color[3]) {
 enum ImGuiColorWheelFlags : uint8_t {
     ImGuiColorWheelFlags_None = 0,
     ImGuiColorWheelFlags_CustomColorSpace = (1 << 1),
-    ImGuiColorWheelFlags_NoInput = (1 << 2),
-    ImGuiColorWheelFlags_HexCustomColorSpace = (1 << 3),  // The hexadecimal input will be interpreted as being in the custom color space as well.
+    ImGuiColorWheelFlags_NoInputs = (1 << 2),
 };
 
 using ImGuiColorWheelFlags_ = uint8_t;
@@ -109,11 +109,16 @@ inline bool ColorWheel3(const char* label, float color[3], ImGuiColorWheelFlags 
     bool v_cursor_active = false;
 
     // Convert the custom color space to rec709 to work with in ImGui.
-    if (flags & ImGuiColorWheelFlags_CustomColorSpace) ConvertColorSpace(INV_CUSTOM_COLOR_MATRIX, color);
+    float srgb_color[3]; // Store the color separately to use for the color selection circle later.
+    std::memcpy(srgb_color, color, sizeof(srgb_color));
+    if (flags & ImGuiColorWheelFlags_CustomColorSpace) ConvertColorSpace(INV_CUSTOM_COLOR_MATRIX, srgb_color);
 
     // Extract HSV from RGB color.
     float hue, saturation, value;
-    ColorConvertRGBtoHSV(color[0], color[1], color[2], hue, saturation, value);
+    ColorConvertRGBtoHSV(srgb_color[0], srgb_color[1], srgb_color[2], hue, saturation, value);
+    hue = ImClamp(hue, 0.0f, 1.0f);
+    saturation = ImClamp(saturation, 0.0f, 1.0f);
+    value = ImClamp(value, 0.0f, 1.0f);
 
     // Handle hue & saturation circle user input.
     InvisibleButton("HueSaturation", ImVec2(hs_picker_size, hs_picker_size));
@@ -136,16 +141,22 @@ inline bool ColorWheel3(const char* label, float color[3], ImGuiColorWheelFlags 
         v_cursor_active = true;
     }
 
-    EndGroup();
-
-    // Oly update the color with the new HSV values if the values changed.
-    if (hs_cursor_active || v_cursor_active) {
+    // Only update the color with the new HSV values if the values changed.
+    bool changed = hs_cursor_active || v_cursor_active;
+    if (changed) {
         // Update the input color.
-        ColorConvertHSVtoRGB(hue, saturation, value, color[0], color[1], color[2]);
+        ColorConvertHSVtoRGB(hue, saturation, value, srgb_color[0], srgb_color[1], srgb_color[2]);
+
+        std::memcpy(color, srgb_color, sizeof(srgb_color));
+
+        // If the value changed, and we are using a custom color space, we have to convert the rec709 back to the custom colorspace.
+        if (flags & ImGuiColorWheelFlags_CustomColorSpace) ConvertColorSpace(CUSTOM_COLOR_MATRIX, color);
     }
 
-    // Always convert back from color space, since we always convert to rec709 when the CustomColorSpace flag is set.
-    if (flags & ImGuiColorWheelFlags_CustomColorSpace) ConvertColorSpace(CUSTOM_COLOR_MATRIX, color);
+    // If we do want the manual input colors we add the drag float after converting back, this ensures that the colorspace is always right.
+    if (!(flags & ImGuiColorWheelFlags_NoInputs)) changed |= DragFloat3("RGB", color, 0.1f, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp | ImGuiSliderFlags_ColorMarkers);
+
+    EndGroup();
 
     // Draw the color wheel in segments.
     const int wheel_segment_count = draw_list->_CalcCircleAutoSegmentCount(wheel_radius);
@@ -183,7 +194,7 @@ inline bool ColorWheel3(const char* label, float color[3], ImGuiColorWheelFlags 
     // Draw hue & saturation wheel cursor/preview circle.
     const float hs_cursor_radius = hs_cursor_active ? wheel_thickness * 0.55f : wheel_thickness * 0.40f;
     const int hs_cursor_segments = draw_list->_CalcCircleAutoSegmentCount(hs_cursor_radius);  // Lock segment count so the +1 one matches others.
-    draw_list->AddCircleFilled(hs_cursor_pos, hs_cursor_radius, ColorConvertFloat4ToU32(ImVec4(color[0], color[1], color[2], 1.0f)), hs_cursor_segments);
+    draw_list->AddCircleFilled(hs_cursor_pos, hs_cursor_radius, ColorConvertFloat4ToU32(ImVec4(srgb_color[0], srgb_color[1], srgb_color[2], 1.0f)), hs_cursor_segments);
     draw_list->AddCircle(hs_cursor_pos, hs_cursor_radius + 1, black, hs_cursor_segments);
     draw_list->AddCircle(hs_cursor_pos, hs_cursor_radius, white, hs_cursor_segments);
 
@@ -197,7 +208,6 @@ inline bool ColorWheel3(const char* label, float color[3], ImGuiColorWheelFlags 
     draw_list->AddRectFilled(selection_min, selection_max, white);
     draw_list->AddRect(selection_min, selection_max, black);
 
-    const bool changed = hs_cursor_active || v_cursor_active;
     if (changed && g.LastItemData.ID != 0)  // In case of ID collision, the second EndGroup() won't catch g.ActiveId
         MarkItemEdited(g.LastItemData.ID);
 

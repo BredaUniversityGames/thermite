@@ -102,7 +102,7 @@ void Palette::display_material_editor() {
         albedo = material.albedo.unpack();
         update_material_editor = false;
     }
-    if (ImGui::ColorWheel("Albedo", &albedo.x, ImGuiColorWheelFlags_ColorSpaceCustom)) material.albedo = Rgb10(albedo);
+    if (ImGui::ColorWheel3("Albedo", &albedo.x, ImGuiColorWheelFlags_CustomColorSpace)) material.albedo = Rgb10(albedo);
 
     float roughness = static_cast<float>(material.roughness) / 255.0f;
     if (ImGui::SliderFloat("Roughness", &roughness, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_ClampOnInput)) material.roughness = static_cast<uint8_t>(roughness * 255.0f);
