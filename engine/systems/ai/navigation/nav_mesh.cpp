@@ -83,13 +83,19 @@ void NavMesh::generate_mesh_over_time() {
     if (!entered_loop) {
         iteration_nmg = 0;
         std::swap(nodes_mesh, generating_nodes);
+        for (auto& node : (*nodes_mesh)) {
+            NavNode node1 = (*nodes_mesh)[node.connecting_nodes[0]];
+            NavNode node2 = (*nodes_mesh)[node.connecting_nodes[1]];
+
+            glm::vec3 dir1 = glm::normalize(node1.local_pos - node.local_pos);
+            glm::vec3 dir2 = glm::normalize(node2.local_pos - node.local_pos);
+
+            node.normal = glm::normalize(glm::cross(dir1, dir2));
+        }
         if (generating_lod == lod_level) {
             generating = false;
         } else {
             generating_lod--;
-            for (auto& nodes : (*nodes_mesh)) {
-                
-            }
         }
         
     }
@@ -321,7 +327,7 @@ std::optional<glm::vec3> tmt::NavMesh::follow_path(glm::vec3 start, glm::vec3 en
 }
 
 void tmt::NavMesh::inspect() {
-    return;
+    //return;
     tmt::engine.polyline.use_color(1.0f, 0.0f, 0.0f);
     tmt::engine.polyline.use_line_width(2, true);
 
@@ -339,6 +345,10 @@ void tmt::NavMesh::inspect() {
             color.z = glm::abs(color.z - std::floor(color.z));
             tmt::engine.polyline.use_color(color);
             engine.polyline.draw_line((*nodes_mesh)[i].world_pos, (*nodes_mesh)[conn_idx].world_pos);
+
+            //draw normal
+            tmt::engine.polyline.use_color(1.0f, 1.0f, 1.0f);
+            engine.polyline.draw_line((*nodes_mesh)[i].world_pos, (*nodes_mesh)[i].world_pos + (*nodes_mesh)[i].normal * 0.5f);
         }
     }
 
