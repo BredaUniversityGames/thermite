@@ -837,8 +837,6 @@ void Physics::recalculate_surface_normals(VoxelBody& vb) {
     auto* tree = vb.resource.resource->blas.get();
     if (tree->nodes[0].child_mask == 0u) return;
 
-    int voxel_count = 0;
-
     // Create stack and root node
     tmt::Svt64Node* nodes = tree->nodes;
     StackEntry stack[7];
@@ -876,9 +874,6 @@ void Physics::recalculate_surface_normals(VoxelBody& vb) {
 
         // If leaf node, child_pos is a voxel
         if (level == 0u) {
-            // Increment voxel count
-            voxel_count++;
-
             PhysicsVoxel& voxel = tree->physics_data[node.abs_ptr() + popcnt_var64(node.child_mask, child_pos)];
             int empty_sides = 0;
             glm::ivec3 normal = {};
@@ -889,7 +884,7 @@ void Physics::recalculate_surface_normals(VoxelBody& vb) {
                 // Check if voxel in neighboring node in -X direction is empty or exists
                 if (x == 0u) {
                     int32_t search_ptr = stack_ptr;
-
+                    bool done_searching = false;
                     // Search up the stack
                     while (search_ptr >= 0) {
                         const StackEntry& parent_entry = stack[search_ptr--];
@@ -901,73 +896,325 @@ void Physics::recalculate_surface_normals(VoxelBody& vb) {
                         uint32_t neighbor_pos = parent_entry.x + (parent_entry.z << 2u) + (parent_entry.y << 4u) - 1u;
 
                         // Traverse down to the leaf level
-                        uint32_t current_level = (tree->depth - 1u) - search_ptr;
-                        uint32_t current_node_idx = parent_entry.node_idx;
+                        //uint32_t current_level = tree->depth - search_ptr;
+                        uint32_t current_depth = search_ptr;
+                        uint32_t current_node_idx = stack[search_ptr].node_idx;
 
-                        while (current_level > 0) {
+                        while (current_depth < tree->depth) {
                             const Svt64Node& cn = nodes[current_node_idx];
                             if (!cn.child_active(neighbor_pos)) {
                                 // If neighbor node doesn't exist, then the side is empty
+                                normal.x -= 1;
+                                empty_sides++;
+                                done_searching = true;
+                                break;
                             }
 
+                            // Can be an invalid node index
+                            //const uint32_t child_ptr = (uint32_t)__popcnt64(cn.child_mask & ((1ull << neighbor_pos) - 1u));
                             uint32_t child_ptr = popcnt_var64(cn.child_mask, neighbor_pos);
                             current_node_idx = cn.abs_ptr() + child_ptr;
-                            current_level--;
+                            current_depth++;
 
-                            // At next level, pick opposite edge for movement axis, same coord for others
-                            const StackEntry& same_level_entry = stack[stack_ptr - current_level];
-                            neighbor_pos = 3u + (same_level_entry.z << 2u) + (same_level_entry.y << 4u);
+                            if (current_depth == tree->depth - 1u) {
+                                neighbor_pos = 3u + (z << 2u) + (y << 4u);
+                            } else {
+                                // At next level, pick opposite edge for movement axis, same coord for others
+                                const StackEntry& same_level_entry = stack[current_depth];
+                                neighbor_pos = 3u + (same_level_entry.z << 2u) + (same_level_entry.y << 4u);
+                            }
                         }
+
+                        if (done_searching || current_depth <= tree->depth) break;
                     }
 
-                    //// Keep going up the stack until a node is not on x == 0
-                    //// If we run out of stack, it means there is no neighbor and we can count it as empty
-                    //// If we find a node that is not on x == 0, we traverse down its +X side to find if there is a voxel there. If we find a voxel, then it's not empty, otherwise it is
-
-                    // const StackEntry& parent_entry = stack[stack_ptr - 1u];
-                    // if (entry.x != 0u) {
-                    //     const uint32_t neighbor_pos = parent_entry.x + (parent_entry.z << 2u) + (parent_entry.y << 4u) - 1u;
-                    //     const Svt64Node& parent_node = nodes[parent_entry.node_idx];
-                    //     if (!parent_node.child_active(neighbor_pos)) {
-                    //         const uint32_t neighbor_child_ptr = popcnt_var64(parent_node.child_mask, neighbor_pos);
-                    //         const uint32_t neighbor_child_pos = 3u + (z << 2u) + (y << 4u);
-                    //         if (!nodes[parent_node.abs_ptr() + neighbor_child_ptr].child_active(neighbor_child_pos)) {
-                    //             normal.x -= 1;
-                    //             empty_sides++;
-                    //         }
-                    //     }
-                    // }
+                    if (search_ptr < 0) {
+                        // If we ran out of stack, it means there is no neighbor and we can count it as empty
+                        normal.x -= 1;
+                        empty_sides++;
+                    }
                 } else if (!node.child_active(child_pos - 1u)) {
                     normal.x -= 1;
                     empty_sides++;
                 }
             }
             {  // +X
-                if (x == 3 || !node.child_active(child_pos + 1u)) {
+                if (x == 3) {
+                    int32_t search_ptr = stack_ptr;
+                    bool done_searching = false;
+                    // Search up the stack
+                    while (search_ptr >= 0) {
+                        const StackEntry& parent_entry = stack[search_ptr--];
+                        // If we can't check the neighbor without leaving the node we need to check the next parent
+                        if (parent_entry.x == 3u) continue;
+
+                        // We know we can check the neighbor at this level
+                        // Calculate neighbors position in the parent node
+                        uint32_t neighbor_pos = parent_entry.x + (parent_entry.z << 2u) + (parent_entry.y << 4u) + 1u;
+
+                        // Traverse down to the leaf level
+                        // uint32_t current_level = tree->depth - search_ptr;
+                        uint32_t current_depth = search_ptr;
+                        uint32_t current_node_idx = stack[search_ptr].node_idx;
+
+                        while (current_depth < tree->depth) {
+                            const Svt64Node& cn = nodes[current_node_idx];
+                            if (!cn.child_active(neighbor_pos)) {
+                                // If neighbor node doesn't exist, then the side is empty
+                                normal.x += 1;
+                                empty_sides++;
+                                done_searching = true;
+                                break;
+                            }
+
+                            uint32_t child_ptr = popcnt_var64(cn.child_mask, neighbor_pos);
+                            current_node_idx = cn.abs_ptr() + child_ptr;
+                            // current_level--;
+                            current_depth++;
+
+                            if (current_depth == tree->depth - 1u) {
+                                neighbor_pos = 0u + (z << 2u) + (y << 4u);
+                            } else {
+                                // At next level, pick opposite edge for movement axis, same coord for others
+                                const StackEntry& same_level_entry = stack[current_depth];
+                                neighbor_pos = 0u + (same_level_entry.z << 2u) + (same_level_entry.y << 4u);
+                            }
+                        }
+
+                        if (done_searching || current_depth <= tree->depth) break;
+                    }
+
+                    if (search_ptr < 0) {
+                        // If we ran out of stack, it means there is no neighbor and we can count it as empty
+                        normal.x += 1;
+                        empty_sides++;
+                    }
+                }
+                else if (!node.child_active(child_pos + 1u)) {
                     normal.x += 1;
                     empty_sides++;
                 }
             }
             {  // -Z
-                if (z == 0 || !node.child_active(child_pos - 4u)) {
+                if (z == 0u) {
+                    int32_t search_ptr = stack_ptr;
+                    bool done_searching = false;
+                    // Search up the stack
+                    while (search_ptr >= 0) {
+                        const StackEntry& parent_entry = stack[search_ptr--];
+                        // If we can't check the neighbor without leaving the node we need to check the next parent
+                        if (parent_entry.z == 0u) continue;
+
+                        // We know we can check the neighbor at this level
+                        // Calculate neighbors position in the parent node
+                        uint32_t neighbor_pos = parent_entry.x + (parent_entry.z << 2u) + (parent_entry.y << 4u) - 4u;
+
+                        // Traverse down to the leaf level
+                        // uint32_t current_level = tree->depth - search_ptr;
+                        uint32_t current_depth = search_ptr;
+                        uint32_t current_node_idx = stack[search_ptr].node_idx;
+
+                        while (current_depth < tree->depth) {
+                            const Svt64Node& cn = nodes[current_node_idx];
+                            if (!cn.child_active(neighbor_pos)) {
+                                // If neighbor node doesn't exist, then the side is empty
+                                normal.z -= 1;
+                                empty_sides++;
+                                done_searching = true;
+                                break;
+                            }
+
+                            uint32_t child_ptr = popcnt_var64(cn.child_mask, neighbor_pos);
+                            current_node_idx = cn.abs_ptr() + child_ptr;
+                            // current_level--;
+                            current_depth++;
+
+                            if (current_depth == tree->depth - 1u) {
+                                neighbor_pos = x + (3u << 2u) + (y << 4u);
+                            } else {
+                                // At next level, pick opposite edge for movement axis, same coord for others
+                                const StackEntry& same_level_entry = stack[current_depth];
+                                neighbor_pos = same_level_entry.x + (3u << 2u) + (same_level_entry.y << 4u);
+                            }
+                        }
+
+                        if (done_searching || current_depth <= tree->depth) break;
+                    }
+
+                    if (search_ptr < 0) {
+                        // If we ran out of stack, it means there is no neighbor and we can count it as empty
+                        normal.z -= 1;
+                        empty_sides++;
+                    }
+                } else if (!node.child_active(child_pos - 4u)) {
                     normal.z -= 1;
                     empty_sides++;
                 }
             }
             {  // +Z
-                if (z == 3 || !node.child_active(child_pos + 4u)) {
+                if (z == 3) {
+                    int32_t search_ptr = stack_ptr;
+                    bool done_searching = false;
+                    // Search up the stack
+                    while (search_ptr >= 0) {
+                        const StackEntry& parent_entry = stack[search_ptr--];
+                        // If we can't check the neighbor without leaving the node we need to check the next parent
+                        if (parent_entry.z == 3u) continue;
+
+                        // We know we can check the neighbor at this level
+                        // Calculate neighbors position in the parent node
+                        uint32_t neighbor_pos = parent_entry.x + (parent_entry.z << 2u) + (parent_entry.y << 4u) + 4u;
+
+                        // Traverse down to the leaf level
+                        // uint32_t current_level = tree->depth - search_ptr;
+                        uint32_t current_depth = search_ptr;
+                        uint32_t current_node_idx = stack[search_ptr].node_idx;
+
+                        while (current_depth < tree->depth) {
+                            const Svt64Node& cn = nodes[current_node_idx];
+                            if (!cn.child_active(neighbor_pos)) {
+                                // If neighbor node doesn't exist, then the side is empty
+                                normal.z += 1;
+                                empty_sides++;
+                                done_searching = true;
+                                break;
+                            }
+
+                            uint32_t child_ptr = popcnt_var64(cn.child_mask, neighbor_pos);
+                            current_node_idx = cn.abs_ptr() + child_ptr;
+                            // current_level--;
+                            current_depth++;
+
+                            if (current_depth == tree->depth - 1u) {
+                                neighbor_pos = x + (0u << 2u) + (y << 4u);
+                            } else {
+                                // At next level, pick opposite edge for movement axis, same coord for others
+                                const StackEntry& same_level_entry = stack[current_depth];
+                                neighbor_pos = same_level_entry.x + (0u << 2u) + (same_level_entry.y << 4u);
+                            }
+                        }
+
+                        if (done_searching || current_depth <= tree->depth) break;
+                    }
+
+                    if (search_ptr < 0) {
+                        // If we ran out of stack, it means there is no neighbor and we can count it as empty
+                        normal.z += 1;
+                        empty_sides++;
+                    }
+                } else if (!node.child_active(child_pos + 4u)) {
                     normal.z += 1;
                     empty_sides++;
                 }
             }
             {  // -Y
-                if (y == 0 || !node.child_active(child_pos - 16u)) {
+                if (y == 0u) {
+                    int32_t search_ptr = stack_ptr;
+                    bool done_searching = false;
+                    // Search up the stack
+                    while (search_ptr >= 0) {
+                        const StackEntry& parent_entry = stack[search_ptr--];
+                        // If we can't check the neighbor without leaving the node we need to check the next parent
+                        if (parent_entry.y == 0u) continue;
+
+                        // We know we can check the neighbor at this level
+                        // Calculate neighbors position in the parent node
+                        uint32_t neighbor_pos = parent_entry.x + (parent_entry.z << 2u) + (parent_entry.y << 4u) - 16u;
+
+                        // Traverse down to the leaf level
+                        // uint32_t current_level = tree->depth - search_ptr;
+                        uint32_t current_depth = search_ptr;
+                        uint32_t current_node_idx = stack[search_ptr].node_idx;
+
+                        while (current_depth < tree->depth) {
+                            const Svt64Node& cn = nodes[current_node_idx];
+                            if (!cn.child_active(neighbor_pos)) {
+                                // If neighbor node doesn't exist, then the side is empty
+                                normal.y -= 1;
+                                empty_sides++;
+                                done_searching = true;
+                                break;
+                            }
+
+                            uint32_t child_ptr = popcnt_var64(cn.child_mask, neighbor_pos);
+                            current_node_idx = cn.abs_ptr() + child_ptr;
+                            // current_level--;
+                            current_depth++;
+
+                            if (current_depth == tree->depth - 1u) {
+                                neighbor_pos = x + (z << 2u) + (3u << 4u);
+                            } else {
+                                // At next level, pick opposite edge for movement axis, same coord for others
+                                const StackEntry& same_level_entry = stack[current_depth];
+                                neighbor_pos = same_level_entry.x + (same_level_entry.z << 2u) + (3u << 4u);
+                            }
+                        }
+
+                        if (done_searching || current_depth <= tree->depth) break;
+                    }
+
+                    if (search_ptr < 0) {
+                        // If we ran out of stack, it means there is no neighbor and we can count it as empty
+                        normal.y -= 1;
+                        empty_sides++;
+                    }
+                } else if (!node.child_active(child_pos - 16u)) {
                     normal.y -= 1;
                     empty_sides++;
                 }
             }
             {  // +Y
-                if (y == 3 || !node.child_active(child_pos + 16u)) {
+                if (y == 3) {
+                    int32_t search_ptr = stack_ptr;
+                    bool done_searching = false;
+                    // Search up the stack
+                    while (search_ptr >= 0) {
+                        const StackEntry& parent_entry = stack[search_ptr--];
+                        // If we can't check the neighbor without leaving the node we need to check the next parent
+                        if (parent_entry.y == 3u) continue;
+
+                        // We know we can check the neighbor at this level
+                        // Calculate neighbors position in the parent node
+                        uint32_t neighbor_pos = parent_entry.x + (parent_entry.z << 2u) + (parent_entry.y << 4u) + 16u;
+
+                        // Traverse down to the leaf level
+                        // uint32_t current_level = tree->depth - search_ptr;
+                        uint32_t current_depth = search_ptr;
+                        uint32_t current_node_idx = stack[search_ptr].node_idx;
+
+                        while (current_depth < tree->depth) {
+                            const Svt64Node& cn = nodes[current_node_idx];
+                            if (!cn.child_active(neighbor_pos)) {
+                                // If neighbor node doesn't exist, then the side is empty
+                                normal.y += 1;
+                                empty_sides++;
+                                done_searching = true;
+                                break;
+                            }
+
+                            uint32_t child_ptr = popcnt_var64(cn.child_mask, neighbor_pos);
+                            current_node_idx = cn.abs_ptr() + child_ptr;
+                            // current_level--;
+                            current_depth++;
+
+                            if (current_depth == tree->depth - 1u) {
+                                neighbor_pos = x + (z << 2u) + (0u << 4u);
+                            } else {
+                                // At next level, pick opposite edge for movement axis, same coord for others
+                                const StackEntry& same_level_entry = stack[current_depth];
+                                neighbor_pos = same_level_entry.x + (same_level_entry.z << 2u) + (0u << 4u);
+                            }
+                        }
+
+                        if (done_searching || current_depth <= tree->depth) break;
+                    }
+
+                    if (search_ptr < 0) {
+                        // If we ran out of stack, it means there is no neighbor and we can count it as empty
+                        normal.y += 1;
+                        empty_sides++;
+                    }
+                } else if (!node.child_active(child_pos + 16u)) {
                     normal.y += 1;
                     empty_sides++;
                 }
@@ -1017,8 +1264,6 @@ void Physics::recalculate_surface_normals(VoxelBody& vb) {
         // Increment child iter for next loop
         entry.child_iter = child_pos + 1u;
     }
-
-    printf("solid count: %d", voxel_count);
 }
 
 }  // namespace tmt
