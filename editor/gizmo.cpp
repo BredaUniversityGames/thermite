@@ -77,7 +77,11 @@ bool Gizmo::manip(const float x, const float y, const float width, const float h
     glm::mat4 gizmo_matrix;
 
     if (!use_average) {
-        gizmo_matrix = engine.ecs.get_component<Transform>(primary).get_world_matrix();
+        const auto wm = engine.ecs.get_component<Transform>(primary).get_world_matrix();
+        const auto ui_offset = has_ui ? AnchorHelper::calculate_anchor_offset(primary) : glm::vec2(0.f);
+
+        gizmo_matrix = wm;
+        gizmo_matrix[3] += glm::vec4(ui_offset, 0.f, 0.f);
     } else {
         const float weight = 1.f / static_cast<float>(selected_entities.size());
         glm::vec3 avg_translation(0.f);
@@ -86,7 +90,9 @@ bool Gizmo::manip(const float x, const float y, const float width, const float h
         for (const Entity e : selected_entities) {
             const Transform& t = engine.ecs.get_component<Transform>(e);
             const glm::mat4& wm = t.get_world_matrix();
-            avg_translation += glm::vec3(wm[3]);
+            const auto ui_offset = has_ui ? AnchorHelper::calculate_anchor_offset(e) : glm::vec2(0.f);
+
+            avg_translation += glm::vec3(wm[3]) + glm::vec3(ui_offset, 0.f);
             avg_rotation += weight * t.get_world_rotation();
         }
         avg_translation /= static_cast<float>(selected_entities.size());
@@ -96,7 +102,10 @@ bool Gizmo::manip(const float x, const float y, const float width, const float h
     }
 
     // --- 2. Manipulate ---
+    glm::mat4 gizmo_matrix_before = gizmo_matrix;  // snapshot BEFORE manipulation
+
     glm::mat4 delta;
+    ImGuizmo::SetOrthographic(has_ui);
     const bool changed = ImGuizmo::Manipulate(
         &view[0][0], &perspective[0][0], static_cast<ImGuizmo::OPERATION>(OPERATIONS[operation]), static_cast<ImGuizmo::MODE>(space), &gizmo_matrix[0][0], &delta[0][0],
         snap == 0.0f ? nullptr : &glm::vec3(snap)[0]
@@ -105,10 +114,17 @@ bool Gizmo::manip(const float x, const float y, const float width, const float h
     // --- 3. Undo/redo bookkeeping ---
     static std::unordered_map<Entity, ComponentDiff<Transform>> component_diffs;
     static bool was_using = false;
-
     const bool is_using = ImGuizmo::IsUsing();
+
+    static glm::mat4 gizmo_start_matrix;
+    static std::unordered_map<Entity, glm::mat4> entity_start_matrices;
+
     if (!was_using && is_using) {
+        gizmo_start_matrix = gizmo_matrix_before;  // frozen gizmo reference
         for (const Entity e : selected_entities) {
+            if (!engine.ecs.valid(e)) continue;
+            entity_start_matrices[e] = engine.ecs.get_component<Transform>(e).get_world_matrix();
+
             ComponentDiff<Transform> diff(e);
             diff.before();
             component_diffs.emplace(e, std::move(diff));
@@ -118,14 +134,26 @@ bool Gizmo::manip(const float x, const float y, const float width, const float h
 
     // --- 4. Apply delta ---
     if (changed) {
+        // Delta from drag START, not from last frame
+        const glm::mat4 own_delta = gizmo_matrix * glm::inverse(gizmo_start_matrix);
+
         for (const Entity e : selected_entities) {
             Transform& t = engine.ecs.get_component<Transform>(e);
+            const glm::vec2 ui_offset = has_ui ? AnchorHelper::calculate_anchor_offset(e) : glm::vec2(0.f);
 
             if (!use_average && e == primary) {
-                // Use direct result for the primary to avoid float-point drift accumulation
-                t.set_world_matrix(gizmo_matrix);
+                // Direct assignment is still cleanest for the primary
+                glm::mat4 new_world = gizmo_matrix;
+                new_world[3] -= glm::vec4(ui_offset, 0.f, 0.f);
+                t.set_world_matrix(new_world);
             } else {
-                t.set_world_matrix(delta * t.get_world_matrix());
+                // Apply delta to INITIAL world matrix, not current
+                glm::mat4 effective_start = entity_start_matrices.count(e) ? entity_start_matrices[e] : t.get_world_matrix();
+
+                effective_start[3] += glm::vec4(ui_offset, 0.f, 0.f);
+                glm::mat4 new_effective = own_delta * effective_start;
+                new_effective[3] -= glm::vec4(ui_offset, 0.f, 0.f);
+                t.set_world_matrix(new_effective);
             }
         }
         OnSceneModified::dispatch();
@@ -140,6 +168,7 @@ bool Gizmo::manip(const float x, const float y, const float width, const float h
         }
         collection.commit("Edit Gizmo");
         component_diffs.clear();
+        entity_start_matrices.clear();
         was_using = false;
     }
 
