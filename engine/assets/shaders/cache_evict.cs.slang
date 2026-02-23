@@ -39,5 +39,5 @@ void main(int thread_id: SV_DispatchThreadID) {
     }
 
     /* Flush the spatial accumulator in the cache slot */
-    macrofacet_cache[slot_id].flush_accu();
+    macrofacet_cache[slot_id].flush_accu(inactivity);
 }

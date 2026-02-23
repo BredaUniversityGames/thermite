@@ -31,7 +31,7 @@ void DiPipeline::init(GPUAdapter& gpu) {
 
 void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, SceneView& scene_view) {
     /* TEMP: For now just don't do anything unless illuminance is visible */
-    if (engine.renderer.display_mode != DisplayMode::ILLUMINANCE) return;
+    if (engine.renderer.display_mode != DisplayMode::ILLUMINANCE && engine.renderer.display_mode != DisplayMode::DEFAULT) return;
 
     /* Get Render Image */
     const BindHandle render_image = render_view.get_render_image();
@@ -62,13 +62,20 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
         .write(render_view.lbuffer.image) /* Luminance buffer */
         .group_size(16, 8)
         .work_size(shading_res.x, shading_res.y);
-    
-    /* Cache eviction pass (amortize over 8 frames) */
-    render_graph.add_compute_pass("cache eviction pass", "cache_evict.cs")
+        
+    /* Direct illumination pass */
+    render_graph.add_compute_pass("global illumination pass", "global_illumination.cs")
         .read(render_view.render_view_buffer) /* Render view buffer */
+        .read(scene_view.scene_view) /* Scene view buffer */
+        .read(render_view.blue_noise->image) /* Blue noise texture */
+        .read(scene_view.bvh_nodes) /* TLAS nodes buffer */
+        .read(scene_view.object_indices) /* Voxel object indices buffer */
+        .read(scene_view.object_data) /* Voxel objects buffer */
         .write(render_view.macrofacet_cache) /* Cache buffer */
-        .group_size(128)
-        .work_size(CACHE_SIZE);
+        .read(render_view.vbuffer.image) /* Visibility buffer */
+        .write(render_view.lbuffer.image) /* Luminance buffer */
+        .group_size(16, 8)
+        .work_size(shading_res.x, shading_res.y);
         
     // for (uint32_t i = 0u; i < 6u; ++i) {
     //     /* Denoising pass */
@@ -83,6 +90,26 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
     //         .group_size(16, 8)
     //         .work_size(shading_res.x, shading_res.y);
     // }
+    
+    /* Cache eviction pass (amortize over 8 frames) */
+    render_graph.add_compute_pass("cache eviction pass", "cache_evict.cs")
+        .read(render_view.render_view_buffer) /* Render view buffer */
+        .write(render_view.macrofacet_cache) /* Cache buffer */
+        .group_size(128)
+        .work_size(CACHE_SIZE);
+    
+    /* Debug visualizations */
+    if (engine.renderer.display_mode == DisplayMode::DEFAULT) {
+        render_graph.add_compute_pass("composite pass", "composite.cs")
+            .read(render_view.render_view_buffer) /* Render view buffer */
+            .read(scene_view.object_data) /* Voxel objects buffer */
+            .read(render_view.vbuffer.image) /* Visibility buffer */
+            .write(render_view.macrofacet_cache) /* Cache buffer */
+            .read(render_view.lbuffer.image) /* Luminance buffer */
+            .write(render_image) /* Render target */
+            .group_size(16, 8)
+            .work_size(render_res.x, render_res.y);
+    }
     
     /* Debug visualizations */
     if (engine.renderer.display_mode == DisplayMode::ILLUMINANCE) {
@@ -100,7 +127,7 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
 /* clang-format on */
 
 void DiPipeline::deinit(GPUAdapter& gpu) {
-    VRAMBank& bank = gpu.get_vram_bank();
+    // VRAMBank& bank = gpu.get_vram_bank();
     // bank.destroy(settings_buffer);
 }
 

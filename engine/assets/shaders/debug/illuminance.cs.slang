@@ -37,9 +37,24 @@ void main(int2 thread_id: SV_DispatchThreadID) {
     /* Bounds check */
     if (any(pixel_id >= render_view.resolution)) return;
 
-    const cache::Slot slot = cache::sample(macrofacet_cache, asuint64(vbuffer[pixel_id]), render_view.frame_index);
+    /* Load visibility buffer data */
+    const uint64_t packed = asuint64(vbuffer[thread_id]);
 
+    if (null_visibility(packed)) {
+        render_target[thread_id] = float4(0.075f, 0.075f, 0.075f, 1.0f);
+    } else {
+        const cache::Slot slot = cache::sample(macrofacet_cache, packed, render_view.frame_index);
+
+        if (slot.key == cache::EMPTY_KEY) {
+            render_target[pixel_id] = float4(1.0f, 0.0f, 1.0f, 1.0f);
+        } else {
+            render_target[pixel_id] = float4(cs::delinearize(cs::acescg_to_r709(cs::aces_filmic_tonemapping(slot.read_diffuse()))), 1.0f);
+        }
+    }
+
+
+    
     /* Render luminance to the screen */
     // render_target[thread_id] = float4(cs::delinearize(cs::acescg_to_r709(cs::aces_filmic_tonemapping(lbuffer[pixel_id]))), 1.0f); /* TEMP: Remove tonemapping! */
-    render_target[pixel_id] = float4(cs::delinearize(cs::acescg_to_r709(cs::aces_filmic_tonemapping(slot.read_diffuse()))), 1.0f);
+    // render_target[pixel_id] = float4(cs::delinearize(cs::acescg_to_r709(cs::aces_filmic_tonemapping(slot.read_diffuse()))), 1.0f);
 }

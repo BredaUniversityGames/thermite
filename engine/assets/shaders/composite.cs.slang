@@ -1,46 +1,64 @@
-// import view;
-// import voxel;
-// import visibility;
-// import colorspace;
-// import cache;
-// import math;
+import view;
+import visibility;
+import math;
+import voxel;
+import cache;
+import colorspace;
 
-// /* Active render view. */
-// ConstantBuffer<RenderView> render_view;
-// /* Object buffers. */
-// StructuredBuffer<VoxelObject> objects;
-// /* Visibility buffer. */
-// Texture2D<uint2> vbuffer;
-// /* Macrofacet illuminance cache buffer. */
-// RWStructuredBuffer<cache::Slot> macrofacet_illuminance_cache;
-// /* Render target. */
-// RWTexture2D<float4> render_target;
+/* Active render view */
+ConstantBuffer<RenderView> render_view;
+/* Object buffers. */
+StructuredBuffer<VoxelObject> objects;
+/* Visibility buffer */
+Texture2D<uint2> vbuffer;
+/* Macrofacet illuminance cache buffer. */
+RWStructuredBuffer<cache::Slot> macrofacet_cache;
+/* Luminance buffer. */
+Texture2D<float3> lbuffer;
+/* Render target. (Output) */
+RWTexture2D<float4> render_target;
 
 [shader("compute")]
 [numthreads(16, 8, 1)]
 void main(int2 thread_id: SV_DispatchThreadID) {
-//     /* Bounds check */ 
-//     if (any(thread_id >= render_view.resolution)) return;
+    int2 pixel_id = thread_id;
+    // if (render_view.shading_rate == 1u) {
+    //     /* Half-rate */
+    //     /*  [ XY ]  */
+    //     /*  [ YX ]  */
+    //     const int offset = (pixel_id.y + render_view.frame_index) & 0b1;
+    //     pixel_id.x = (pixel_id.x + offset) >> 1;
+    // } else if (render_view.shading_rate == 2u) {
+    //     /* Quarter-rate */
+    //     /*  [ XY ]  */
+    //     /*  [ ZW ]  */
+    //     const int2 offset = int2(render_view.frame_index & 0b1, (render_view.frame_index >> 1) & 0b1);
+    //     pixel_id = (pixel_id + offset) >> 1;
+    // }
 
-//     /* Load visibility buffer data */
-//     const uint64_t facet_key = asuint64(vbuffer[thread_id]);
+    /* Bounds check */
+    if (any(pixel_id >= render_view.resolution)) return;
 
-//     if (null_visibility(facet_key)) {
-//         render_target[thread_id] = float4(0.075f, 0.075f, 0.075f, 1.0f);
-//     } else {
-//         /* Generate a ray for our render view */
-//         const Ray ray = pinhole_ray(render_view, thread_id);
+    /* Load visibility buffer data */
+    const uint64_t packed = asuint64(vbuffer[thread_id]);
 
-//         /* Unpack visibility buffer data */
-//         const VisData vis = unpack_visibility(facet_key);
-//         const GeoData geo = unpack_geometry(vis, objects, ray);
+    if (null_visibility(packed)) {
+        render_target[thread_id] = float4(0.075f, 0.075f, 0.075f, 1.0f);
+    } else {
+        const cache::Slot slot = cache::sample(macrofacet_cache, packed, render_view.frame_index);
 
-//         /* Sample the illuminance cache */
-//         const float3 illuminance = cache::sample(macrofacet_illuminance_cache, facet_key, render_view.frame_index);
-//         render_target[thread_id] = float4(cs::delinearize(cs::acescg_to_r709(cs::aces_filmic_tonemapping(illuminance))), 1.0f); /* TEMP: Remove tonemapping! */
+        if (slot.key == cache::EMPTY_KEY) {
+            render_target[pixel_id] = float4(1.0f, 0.0f, 1.0f, 1.0f);
+        } else {
+            /* Generate a ray for our render view */
+            const Ray ray = pinhole_ray(render_view, thread_id);
 
-//         /* Calculate some fake shading for the view */
-//         const float fake_shading = clamp(dot(-ray.dir, geo.normal), 0.2f, 0.8f);
-//         render_target[thread_id] = float4(geo.material.albedo * fake_shading, 1.0f);
-//     }
+            /* Unpack visibility buffer data */
+            const VisData vis = unpack_visibility(packed);
+            const GeoData geo = unpack_geometry(vis, objects, ray);
+
+            const float3 illuminance = slot.read_diffuse() * geo.material.albedo;
+            render_target[pixel_id] = float4(cs::delinearize(cs::acescg_to_r709(cs::aces_filmic_tonemapping(illuminance))), 1.0f);
+        }
+    }
 }

@@ -8,9 +8,9 @@ namespace cache {
 /* Fuse length for the cache read/write operations. */
 public static const uint FUSE_LENGTH = 16u;
 /* Empty slot key. */
-public static const uint64_t EMPTY_KEY = 0ull;
+public static const uint64_t EMPTY_KEY = 0xFFFFFFFFFFFFFFFFull;
 /* Number of inactive frames after which to free a slot. */
-public static const uint INACTIVE_THRESHOLD = 240u;
+public static const uint INACTIVE_THRESHOLD = 60u;
 /* Number of slots available in the cache. */
 static const uint CAPACITY = 10000000u;
 
@@ -51,7 +51,7 @@ public struct Slot {
 
     /* Flush the diffuse and specular accumulators of the cache slot. */
     /* This resets the spatial accumulators and updates the temporal accumulators. */
-    public [ForceInline] [mutating] void flush_accu() {
+    public [ForceInline] [mutating] void flush_accu(const uint age) {
         if (sample_count == 0u) return;
 
         /* Calculate the mean of both spatial accumulators */
@@ -65,16 +65,18 @@ public struct Slot {
 
         /* Update the temporal accumulators */
         if (temporal < TEMPORAL_SAMPLES) temporal += 1u;
-        const float alpha = 1.0f / temporal;
-        diffuse.w = encode_rgb9e5(lerp(read_diffuse(), diffuse_accu, alpha));
-        specular.w = encode_rgb9e5(lerp(read_specular(), specular_accu, alpha));
+        const float age_c = 1.0f - (float)age / INACTIVE_THRESHOLD;
+        const float confidence = age_c * age_c * age_c * age_c;
+        const float alpha = saturate(confidence * (1.0f - 1.0f / temporal));
+        diffuse.w = encode_rgb9e5(lerp(diffuse_accu, read_diffuse(), alpha));
+        specular.w = encode_rgb9e5(lerp(specular_accu, read_specular(), alpha));
     }
 
     /* Find the inactivity of the cache slot compared to a reference frame index. */
     public [ForceInline] uint inactivity(const uint ref_frame) {
         const uint current_index = ref_frame & LAST_SAMPLED_MASK;
         const uint sampled_index = last_sampled;
-        if (sampled_index == 0u) return 0u; /* <- to avoid instantly marker slot as inactive */
+        // if (sampled_index == 0u) return 0u; /* <- to avoid instantly marker slot as inactive */
         return ((current_index - sampled_index) << SAMPLE_COUNT_BITS) >> SAMPLE_COUNT_BITS;
     }
 
@@ -130,6 +132,7 @@ public [ForceInline] void insert(RWStructuredBuffer<cache::Slot> cache, const ui
 
             /* If instead this thread succeeded in claiming the slot */
             if (original_key == EMPTY_KEY) {
+                cache[slot].activate(frame_index);
                 cache[slot].accumulate(diffuse, specular);
                 break;
             }
