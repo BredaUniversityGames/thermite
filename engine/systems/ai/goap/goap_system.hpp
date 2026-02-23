@@ -65,9 +65,6 @@ class Goap : public ISystem {
     // in on_update() and on_fixed_update().
     void update_action(Entity entity, GoapAgent& agent, WorldState& ws);
 
-    ///virtual json serialize() const {  }
-    //virtual void deserialize(const json& value) { (void)value; }
-
     // Registries & overrides
     GoapActionRegistry action_registry;
     GoapActionOverrides action_overrides;

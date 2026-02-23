@@ -17,7 +17,7 @@ namespace tmt {
  *   - Keeps the runtime GOAP planner fast by still using hashed IDs.
  *   - WorldState and planner logic never depend on strings.
  *
- * Important:
+ * Note:
  *   - Hash collisions are theoretically possible but unlikely
  *     when using short gameplay fact names.
  */
@@ -102,7 +102,6 @@ struct FactPair {
  */
 struct WorldState {
     std::unordered_map<uint32_t, bool> facts;
-    // std::unordered_map<std::string, bool> facts;
 
     /**
      * Applies a list of fact assignments (effects) to the world state.

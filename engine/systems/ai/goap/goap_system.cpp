@@ -240,32 +240,6 @@ void Goap::update_plan(Entity entity, GoapAgent& agent, WorldState& ws) {
         }
     }
 
-    // Add all initial actions whose preconditions match the current worldstate
-    // for (GoapAction* action : agent.available_actions) {
-    //    if (!action) continue;
-
-    //    const auto* override = action_overrides.find(action->get_id());
-    //    EffectiveGoapAction effective = build_effective_action(*action, override);
-
-    //    // Check preconditions against current worldstate
-    //    bool satisfied = true;
-    //    for (auto& [fact, val] : effective.preconditions) {
-    //        auto it = ws.facts.find((uint32_t)std::hash<std::string>()(fact));
-    //        if (it == ws.facts.end() || it->second.bool_val != val) {
-    //            satisfied = false;
-    //            break;
-    //        }
-    //    }
-
-    //    if (satisfied) {
-    //        nodes.emplace_back(action, effective.cost, 0.f, nullptr);
-    //        open_list.push(&nodes.back());
-    //        if (show_logging) Log::info("GOAP: Starting action '{}' satisfies preconditions, added to open list", action->get_id());
-    //    } else {
-    //        if (show_logging) Log::info("GOAP: Action '{}' does not satisfy preconditions", action->get_id());
-    //    }
-    //}
-
     for (GoapAction* action : agent.available_actions) {
         if (!action) continue;
 

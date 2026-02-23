@@ -143,15 +143,6 @@ void GoapAgentEditor::draw_agent_type_node(GoapAgentType& type) {
     // --- Button to add agents of this type ---
     ImGui::SeparatorText("Runtime Agents");
 
-    /*if (ImGui::Button("Spawn Agent")) {
-        auto& ecs = engine.ecs;
-
-        tmt::Entity e = ecs.create_entity(("Agent_" + type.id).c_str());
-        GoapAgentFactory::spawn_agent_from_type(type.id, e);
-
-        Log::info("Spawned GOAP agent of type '{}'", type.id);
-    }*/
-
     if (ImGui::Button("Spawn Agent")) {
         auto& ecs = engine.ecs;
 
