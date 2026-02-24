@@ -114,6 +114,7 @@ namespace tmt {
 
 template <typename T>
 struct EcsComponentTraits<T, std::enable_if_t<std::is_base_of_v<IGameComponent, T>>> {
+    static constexpr bool is_game_component = true;
     static T& add(Registry& registry, Entity entity) {
         auto& collection = registry.get_or_emplace<ComponentCollection>(entity);
         return collection.add_component<T>(entity);
@@ -173,9 +174,50 @@ struct EcsComponentTraits<T, std::enable_if_t<std::is_base_of_v<IGameComponent, 
         }
         return nullptr;
     }
-    static auto view(const Registry&) {
-        const ComponentIndex type_id = typeid(T);
-        return get_gameplay_system()->get_component_instances(type_id);
+
+    template <typename... Rest, typename... Excludes, typename Reg>
+    static auto view_with_impl(Reg& registry, entt::exclude_t<Excludes...> excludes) {
+        const auto& instances = get_gameplay_system()->get_component_instances(typeid(T));
+
+        std::vector<std::tuple<Entity, T&, Rest&...>> result;
+        for (const auto& weak : instances) {
+            auto component = weak.lock();
+            if (!component) continue;
+
+            Entity e = static_cast<T*>(component.get())->entity;
+            if (!registry.all_of<ComponentCollection>(e)) continue;
+            auto& collection = registry.get<ComponentCollection>(e);
+
+            // Check includes
+            if (!(collection.has_component<Rest>() && ...)) continue;
+
+            // Check excludes - game components via collection, native via registry
+            bool excluded = false;
+            auto check_exclude = [&]<typename E>() {
+                if constexpr (EcsComponentTraits<E>::is_game_component) {
+                    if (collection.has_component<E>()) excluded = true;
+                } else {
+                    if (registry.all_of<E>(e)) excluded = true;
+                }
+            };
+            (check_exclude.template operator()<Excludes>(), ...);
+            if (excluded) continue;
+
+            result.emplace_back(e, static_cast<T&>(*component), collection.get_component<Rest>()...);
+        }
+        return result;
+    }
+
+    /* non-const */
+    template <typename... Rest, typename... Excludes>
+    static auto view_with(Registry& registry, entt::exclude_t<Excludes...> = entt::exclude_t {}) {
+        return view_with_impl<Rest...>(registry, entt::exclude_t<Excludes...> {});
+    }
+
+    /* const */
+    template <typename... Rest, typename... Excludes>
+    static auto view_with(const Registry& registry, entt::exclude_t<Excludes...> = entt::exclude_t {}) {
+        return view_with_impl<Rest...>(registry, entt::exclude_t<Excludes...> {});
     }
 
    private:

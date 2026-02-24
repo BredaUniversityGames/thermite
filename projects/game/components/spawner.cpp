@@ -12,7 +12,7 @@ void Spawner::start() {
     }
 
     auto view = tmt::engine.ecs.view<Spawner>();
-    for (const auto& entity : view) {
+    for (const auto& [entity, spawner] : view) {
         printf("Spawner");
     }
 }
