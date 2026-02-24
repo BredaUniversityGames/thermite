@@ -129,31 +129,31 @@ void Physics::on_update(const FrameData&) {
         /* engine.renderer.draw_cross(vb.position, glm::vec3(1.0f, 0.0f, 0.0f), 0.2f);
          engine.renderer.draw_cross(vb.position + vb.rotation * vb.com_local_offset, glm::vec3(0.0f, 0.0f, 1.0f), 0.2f);*/
 
-        // Draw voxel normals
-        engine.polyline.use_depth_testing(false);
-        engine.polyline.use_color(1.0f, 0.0f, 0.0f);
-        ;
-        glm::uvec3 size = vb.resource->size;
-        auto* tree = vb.resource->blas.get();
-        for (size_t z = 0; z < size.z; z++) {
-            for (size_t y = 0; y < size.y; y++) {
-                for (size_t x = 0; x < size.x; x++) {
-                    const tmt::PhysicsVoxel* voxel = tree->get_physics_voxel(x, y, z);
-                    if (voxel == nullptr || voxel->normal_index == 0 || voxel->normal_index == 28) continue;
+        //// Draw voxel normals
+        //engine.polyline.use_depth_testing(false);
+        //engine.polyline.use_color(1.0f, 0.0f, 0.0f);
+        //
+        //glm::uvec3 size = vb.resource->size;
+        //auto* tree = vb.resource->blas.get();
+        //for (size_t z = 0; z < size.z; z++) {
+        //    for (size_t y = 0; y < size.y; y++) {
+        //        for (size_t x = 0; x < size.x; x++) {
+        //            const tmt::PhysicsVoxel* voxel = tree->get_physics_voxel(x, y, z);
+        //            if (voxel == nullptr || voxel->normal_index == 0 || voxel->normal_index == 28) continue;
 
-                    glm::ivec3 local_normal = voxel->get_normal();
-                    glm::vec3 normal = vb.rotation * glm::vec3((float)local_normal.x, (float)local_normal.y, (float)local_normal.z);
-                    glm::vec3 local_pos = glm::vec3(
-                        ((float)x + 0.5f - (size.x * 0.5f)) * UNITS_PER_VOXEL, ((float)y + 0.5f - (size.y * 0.5f)) * UNITS_PER_VOXEL, ((float)z + 0.5f - (size.z * 0.5f)) * UNITS_PER_VOXEL
-                    );
-                    glm::vec3 world_pos = vb.position + (vb.rotation * local_pos);
+        //            glm::ivec3 local_normal = voxel->get_normal();
+        //            glm::vec3 normal = vb.rotation * glm::vec3((float)local_normal.x, (float)local_normal.y, (float)local_normal.z);
+        //            glm::vec3 local_pos = glm::vec3(
+        //                ((float)x + 0.5f - (size.x * 0.5f)) * UNITS_PER_VOXEL, ((float)y + 0.5f - (size.y * 0.5f)) * UNITS_PER_VOXEL, ((float)z + 0.5f - (size.z * 0.5f)) * UNITS_PER_VOXEL
+        //            );
+        //            glm::vec3 world_pos = vb.position + (vb.rotation * local_pos);
 
-                    engine.polyline.draw_line(world_pos, world_pos + normal * 0.05f);
-                    // engine.polyline.draw_arrow(world_pos, normal * 0.1f, 0.15f);
-                    // tmt::engine.renderer.draw_arrow(world_pos, normal, glm::vec3(0.0f, 0.6f, 0.0f), 0.15f, 0.05f);
-                }
-            }
-        }
+        //            engine.polyline.draw_line(world_pos, world_pos + normal * 0.05f);
+        //            // engine.polyline.draw_arrow(world_pos, normal * 0.1f, 0.15f);
+        //            // tmt::engine.renderer.draw_arrow(world_pos, normal, glm::vec3(0.0f, 0.6f, 0.0f), 0.15f, 0.05f);
+        //        }
+        //    }
+        //}
     }
 
     // if (bvh.nodes) draw_node(bvh, 0u);
