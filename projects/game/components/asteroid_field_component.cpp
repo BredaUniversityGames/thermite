@@ -3,20 +3,19 @@
 #include "engine/tools/prefab_helper.hpp"
 
 #include "engine/engine.hpp"
+#include "engine/core/polyline.hpp"
 #include "engine/core/ecs.hpp"
 
-std::vector<AsteroidFieldComponent::AsteroidPoissonPoint> AsteroidFieldComponent::get_poisson_points(const FAsteroidFieldLayer& layer) {
+std::vector<AsteroidPoissonPoint> AsteroidFieldComponent::get_poisson_points(const FAsteroidFieldLayer& layer) {
     std::vector<AsteroidPoissonPoint> radii_points;
 
     if (layer.layer_entries.empty()) return radii_points;
 
     float cell_size = layer.spacing_radius / sqrtf(3.f);
 
-    glm::vec3 region_size = glm::vec3(layer.end_r * 2.f, layer.end_r * 2.f, layer.end_r * 2.f);
+    glm::vec3 region_size = glm::vec3(layer_width, layer_height, layer.layer_depth);
 
     SpatialLookupGrid grid(cell_size, region_size);
-
-    glm::vec3 inside_annulus = get_belt_biased_unit_vector(layer.belt_bias) * (layer.start_r + ((layer.end_r - layer.start_r) * 0.5f));
 
     float max_size_factor = 0.f;
     for (auto& layer : layer.layer_entries) {
@@ -24,16 +23,76 @@ std::vector<AsteroidFieldComponent::AsteroidPoissonPoint> AsteroidFieldComponent
     }
     float max_radius = layer.spacing_radius * max_size_factor;
 
-    int it = 1;
-    while (it > 0) {
+    // assign initial point in this layer
+    float x0 = Random::rand_range(0.f, grid.region_size.x);
+    float y0 = Random::rand_range(0.f, grid.region_size.y);
+    float z0 = Random::rand_range(0.f, grid.region_size.z);
+
+    int x = x0 / grid.cell_size;
+    int y = y0 / grid.cell_size;
+    int z = z0 / grid.cell_size;
+
+    int init_idx = x * grid.z_dim * grid.x_dim + y * grid.x_dim + z;
+
+    int init_entry_idx = Random::rand_range(0, layer.layer_entries.size() - 1);
+
+    AsteroidPoissonPoint init_point;
+    init_point.radius = layer.spacing_radius * layer.layer_entries[init_entry_idx].radius_factor;
+    init_point.pos = { x0, y0, z0 };
+    init_point.entry_idx = init_entry_idx;
+    radii_points.push_back(init_point);
+
+    grid.grid[init_idx] = 0;
+
+    // Robert-Bridson disc sampling
+    std::vector<int> active_spawn_list;
+    active_spawn_list.push_back(0);
+
+    float cum_spawn_weight = 0.f;
+    float cum_belt_weight = 0.f;
+    std::for_each(layer.layer_entries.begin(), layer.layer_entries.end(), [&cum_belt_weight, &cum_spawn_weight](const FAsteroidLayerEntry& entry) {
+        cum_belt_weight += entry.belt_weight;
+        cum_spawn_weight += entry.spawn_weight;
+    });
+
+    while (!active_spawn_list.empty()) {
         bool found_candidate = false;
+
+        int idx = Random::rand_range(0, active_spawn_list.size() - 1);
+        glm::vec3 selected_p = radii_points[active_spawn_list[idx]].pos;
+
         for (int i = 0; i < layer.rejection_samples; i++) {
+            float selected_spacing_radius = radii_points[active_spawn_list[idx]].radius;
 
-            int entry_idx = Random::rand_range(0, layer.layer_entries.size() - 1);
+            glm::vec3 rand_unit_vec = Random::rand_unit_vec();
+            glm::vec3 guidance_point = selected_p + rand_unit_vec * selected_spacing_radius;
 
-            glm::vec3 candidate_point = get_belt_biased_unit_vector(layer.belt_bias) * Random::rand_range(layer.start_r + layer.layer_spacing, layer.end_r - layer.layer_spacing);
+            float belt_tendency = abs((guidance_point.y / layer_height * 0.5f) - 1.f);
+
+            std::vector<float> effective_weights;
+            effective_weights.reserve(layer.layer_entries.size());
+            float cum_effective_weights = 0.f;
+            for (auto& e : layer.layer_entries) {
+                float bn = (e.belt_weight / cum_belt_weight) * belt_tendency;
+                float eff = e.spawn_weight + bn;
+                effective_weights.push_back(eff);
+                cum_effective_weights += eff;
+            }
+
+            float rand_weight = Random::rand_range(0.f, cum_effective_weights);
+            float acc = 0.f;
+            int entry_idx = std::numeric_limits<int>::max();
+            for (int i = 0; i < layer.layer_entries.size(); i++) {
+                acc += effective_weights[i];
+
+                if (rand_weight < acc) {
+                    entry_idx = i;
+                    break;
+                }
+            }
 
             float candidate_radius = layer.layer_entries[entry_idx].radius_factor * layer.spacing_radius;
+            glm::vec3 candidate_point = selected_p + rand_unit_vec * Random::rand_range(selected_spacing_radius + candidate_radius, 2.f * (selected_spacing_radius + candidate_radius));
 
             if (point_valid(candidate_point, candidate_radius, max_radius, grid, layer, radii_points)) {
                 AsteroidPoissonPoint a_p;
@@ -42,16 +101,16 @@ std::vector<AsteroidFieldComponent::AsteroidPoissonPoint> AsteroidFieldComponent
                 a_p.radius = candidate_radius;
 
                 radii_points.push_back(a_p);
-                it++;
+                active_spawn_list.push_back(radii_points.size() - 1);
 
-                candidate_point += region_size * 0.5f;
+                // candidate_point += region_size * 0.5f;
 
                 int cell_x = static_cast<int>(candidate_point.x / cell_size);
                 int cell_y = static_cast<int>(candidate_point.y / cell_size);
                 int cell_z = static_cast<int>(candidate_point.z / cell_size);
 
                 int idx = cell_x * grid.z_dim * grid.x_dim + cell_y * grid.x_dim + cell_z;
-                grid[idx] = radii_points.size();
+                grid[idx] = radii_points.size() - 1;
 
                 found_candidate = true;
                 break;
@@ -59,7 +118,7 @@ std::vector<AsteroidFieldComponent::AsteroidPoissonPoint> AsteroidFieldComponent
         }
 
         if (!found_candidate) {
-            it--;
+            active_spawn_list.erase(active_spawn_list.begin() + idx);
         }
     }
 
@@ -71,20 +130,24 @@ glm::vec3 AsteroidFieldComponent::get_belt_biased_unit_vector(float bias) {
     glm::vec3 up_vec = glm::vec3(0.f, 1.f, 0.f);
 
     glm::vec3 xy_vec = glm::normalize(unit_vec - up_vec * (glm::dot(unit_vec, up_vec)));
-   
+
     return glm::normalize(glm::mix(unit_vec, xy_vec, bias));
 }
 
 bool AsteroidFieldComponent::point_valid(
-   glm::vec3 candidate, float candidate_radius, float max_radius, const SpatialLookupGrid& grid, const FAsteroidFieldLayer& layer, const std::vector<AsteroidPoissonPoint>& points
+    glm::vec3 candidate, float candidate_radius, float max_radius, const SpatialLookupGrid& grid, const FAsteroidFieldLayer& layer, const std::vector<AsteroidPoissonPoint>& points
 ) {
-    candidate += grid.region_size * 0.5f;
+    // candidate += grid.region_size * 0.5f;
+
+    if (candidate.x < 0.f || candidate.x > grid.region_size.x || candidate.y < 0.f || candidate.y > grid.region_size.y || candidate.z < 0.f || candidate.z > grid.region_size.z) {
+        return false;
+    }
 
     const int cell_x = static_cast<int>(candidate.x / grid.cell_size);
     const int cell_y = static_cast<int>(candidate.y / grid.cell_size);
     const int cell_z = static_cast<int>(candidate.z / grid.cell_size);
 
-    const int search_dim =  std::ceil(max_radius / grid.cell_size) + 1;
+    const int search_dim = std::ceil(max_radius / grid.cell_size);
 
     const int start_search_x = std::max(cell_x - search_dim, 0);
     const int end_search_x = std::min(cell_x + search_dim + 1, grid.x_dim);
@@ -97,10 +160,10 @@ bool AsteroidFieldComponent::point_valid(
         for (int y = start_search_y; y < end_search_y; y++) {
             for (int z = start_search_z; z < end_search_z; z++) {
                 int idx = x * grid.z_dim * grid.x_dim + y * grid.x_dim + z;
-                int existing_point_index = grid[idx] - 1;
+                int existing_point_index = grid[idx];
 
                 if (existing_point_index != -1) {
-                    glm::vec3 temp = (points[existing_point_index].pos) - (candidate - grid.region_size* 0.5f);
+                    glm::vec3 temp = points[existing_point_index].pos - candidate;
                     float sqr_distance = glm::dot(temp, temp);
 
                     float min_allowed = candidate_radius + points[existing_point_index].radius;
@@ -116,8 +179,7 @@ bool AsteroidFieldComponent::point_valid(
     return true;
 }
 
-void AsteroidFieldComponent::spawn_field() 
-{
+void AsteroidFieldComponent::spawn_field() {
     if (asteroid_layers.empty()) return;
 
     float cum_weight = 0.f;
@@ -125,24 +187,17 @@ void AsteroidFieldComponent::spawn_field()
         cum_weight += asteroid_layers[i].space_weight;
     }
 
-    auto& zero_layer = asteroid_layers[0];
-    zero_layer.start_r = 0.f;
-    zero_layer.end_r = field_radius * (zero_layer.space_weight / cum_weight);
-
-    for (int i = 1; i < asteroid_layers.size(); i++) {
-        auto& layer = asteroid_layers[i];
-        auto& prev_layer = asteroid_layers[i - 1];
-
-        layer.start_r = prev_layer.end_r;
-        layer.end_r = prev_layer.end_r + field_radius * (layer.space_weight / cum_weight);
+    for (int i = 0; i < asteroid_layers.size(); i++) {
+        auto& zero_layer = asteroid_layers[i];
+        zero_layer.layer_depth = field_depth * (zero_layer.space_weight / cum_weight);
     }
 
     // poisson distribution sampling
     for (auto& layer : asteroid_layers) {
         std::vector<AsteroidPoissonPoint> radii_points = get_poisson_points(layer);
+        layer.points = radii_points;
 
         for (auto& point : radii_points) {
-
             auto spawn_obj = layer.layer_entries[point.entry_idx].spawnable;
             float size_factor = layer.layer_entries[point.entry_idx].radius_factor;
 
@@ -153,19 +208,19 @@ void AsteroidFieldComponent::spawn_field()
             auto instantiated = tmt::PrefabHelper::instantiate_prefab(spawn_obj->file_location, entity);
 
             auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(instantiated);
-            
+
             transform.set_local_position(point.pos);
             transform.set_local_rotation(glm::vec3(pitch, yaw, roll));
+            glm::vec3 s = transform.get_local_scale();
+            transform.set_local_scale(s * size_factor);
         }
     }
 }
 
-void AsteroidFieldComponent::clear_children() 
-{
+void AsteroidFieldComponent::clear_children() {
     auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
 
-    for(auto child : transform.get_all_children())
-    {
+    for (auto child : transform.get_all_children()) {
         tmt::engine.ecs.destroy_entity(child);
     }
 }
@@ -176,8 +231,27 @@ void AsteroidFieldComponent::update(const tmt::FrameData& time) {}
 
 void AsteroidFieldComponent::end() {}
 
-AsteroidFieldComponent::SpatialLookupGrid::SpatialLookupGrid(float _cell_size, glm::vec3 _region_size) 
-{
+void AsteroidFieldComponent::on_engine_update(const tmt::FrameData& time) {
+    if (!draw_debug) return;
+
+    auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
+    glm::vec3 min = transform.get_world_position();
+    glm::vec3 max = min + glm::vec3(layer_width, layer_height, field_depth);
+    tmt::engine.polyline.use_color({ 1.f, 1.f, 1.f, 1.f });
+    tmt::engine.polyline.draw_aabb(min, max);
+
+    for (auto& layer : asteroid_layers) {
+        glm::vec3 layer_min = { min.x, min.y, min.z + layer.layer_depth };
+        glm::vec3 layer_max = { max.x, max.y, min.z + layer.layer_depth };
+        glm::vec3 layer_bmin = { min.x, max.y, min.z + layer.layer_depth };
+        glm::vec3 layer_bmax = { max.x, min.y, min.z + layer.layer_depth };
+
+        tmt::engine.polyline.draw_line(layer_min, layer_max);
+        tmt::engine.polyline.draw_line(layer_bmin, layer_bmax);
+    }
+}
+
+AsteroidFieldComponent::SpatialLookupGrid::SpatialLookupGrid(float _cell_size, glm::vec3 _region_size) {
     region_size = _region_size;
     cell_size = _cell_size;
 
@@ -186,5 +260,5 @@ AsteroidFieldComponent::SpatialLookupGrid::SpatialLookupGrid(float _cell_size, g
     z_dim = std::ceil(region_size.z / cell_size);
 
     int num_grid = x_dim * y_dim * z_dim;
-    grid = std::vector<int>(num_grid);
+    grid = std::vector<int>(num_grid, -1);
 }
