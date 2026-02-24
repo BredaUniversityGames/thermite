@@ -15,10 +15,11 @@ class Gizmo {
     void init();
 
     bool hovered() const;
-    bool manip(float x, float y, float width, float height, const std::span<const Entity>& selected_entities, const float snap = 0.0f) const;
+    bool manip(float x, float y, float width, float height, const std::span<const Entity>& selected_entities, float snap) const;
 
-    static constexpr uint8_t GIZMO_OP_COUNT { 3 };
-    static constexpr int OPERATIONS[GIZMO_OP_COUNT] { 7, 120, 896 };
+    static constexpr uint8_t GIZMO_OP_COUNT { 4 };
+    // Translate=7, Rotate=120, Scale=896, Bounds=1024
+    static constexpr int OPERATIONS[GIZMO_OP_COUNT] { 7, 120, 896, 1024 };
     static const char* gizmo_op_icons[GIZMO_OP_COUNT];
 
     int space { 1 };

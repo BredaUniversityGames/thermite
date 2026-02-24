@@ -17,6 +17,7 @@
 
 #include <imgui.h>
 #include <ImGuizmo.h>
+#include <cstring>
 
 namespace tmt {
 
@@ -24,6 +25,7 @@ const char* Gizmo::gizmo_op_icons[GIZMO_OP_COUNT] {
     ICON_MS_DRAG_PAN,
     ICON_MS_ROTATE_RIGHT,
     ICON_MS_ZOOM_OUT_MAP,
+    ICON_MS_CROP_FREE,
 };
 
 void Gizmo::init() {
@@ -76,6 +78,15 @@ bool Gizmo::manip(const float x, const float y, const float width, const float h
 
     glm::mat4 gizmo_matrix;
 
+    // For UI bounds manipulation, we need the UI size to build the bounds
+    glm::vec2 ui_size(0.f);
+    glm::vec2 ui_pivot(0.5f);
+    if (has_ui && selected_entities.size() == 1) {
+        const UIComponent& ui = engine.ecs.get_component<UIComponent>(primary);
+        ui_size = ui.size;
+        ui_pivot = ui.pivot;
+    }
+
     if (!use_average) {
         const auto wm = engine.ecs.get_component<Transform>(primary).get_world_matrix();
         const auto ui_offset = has_ui ? AnchorHelper::calculate_anchor_offset(primary) : glm::vec2(0.f);
@@ -106,54 +117,118 @@ bool Gizmo::manip(const float x, const float y, const float width, const float h
 
     glm::mat4 delta;
     ImGuizmo::SetOrthographic(has_ui);
+
+    // Check if we're in bounds-only mode (operation == 3)
+    const bool is_bounds_mode = (operation == 3);
+
+    // Only use bounds when in bounds mode AND we have a UI element
+    // localBounds format: { min.x, min.y, min.z, max.x, max.y, max.z }
+    float local_bounds[6] = { 0 };
+    const bool use_bounds = is_bounds_mode && has_ui && selected_entities.size() == 1 && ui_size.x > 0.f && ui_size.y > 0.f;
+    if (use_bounds) {
+        // Build bounds centered on pivot
+        // pivot (0.5, 0.5) means center, so min = -size/2, max = +size/2
+        // pivot (0, 0) means top-left, so min = 0, max = size
+        local_bounds[0] = -ui_size.x * ui_pivot.x;         // min.x
+        local_bounds[1] = -ui_size.y * ui_pivot.y;         // min.y
+        local_bounds[2] = -0.5f;                           // min.z (thin in Z)
+        local_bounds[3] = ui_size.x * (1.f - ui_pivot.x);  // max.x
+        local_bounds[4] = ui_size.y * (1.f - ui_pivot.y);  // max.y
+        local_bounds[5] = 0.5f;                            // max.z
+    }
+
+    // Determine the operation to use
+    ImGuizmo::OPERATION effective_operation;
+    if (is_bounds_mode) {
+        // In bounds mode, only show bounds gizmo (no translate/rotate/scale handles)
+        effective_operation = use_bounds ? ImGuizmo::BOUNDS : ImGuizmo::NONE;
+    } else {
+        // Normal mode without bounds overlay
+        effective_operation = static_cast<ImGuizmo::OPERATION>(OPERATIONS[operation]);
+    }
+
     const bool changed = ImGuizmo::Manipulate(
-        &view[0][0], &perspective[0][0], static_cast<ImGuizmo::OPERATION>(OPERATIONS[operation]), static_cast<ImGuizmo::MODE>(space), &gizmo_matrix[0][0], &delta[0][0],
-        snap == 0.0f ? nullptr : &glm::vec3(snap)[0]
+        &view[0][0], &perspective[0][0], effective_operation, static_cast<ImGuizmo::MODE>(space), &gizmo_matrix[0][0], &delta[0][0], snap != 0.0f ? &glm::vec3(snap)[0] : nullptr,
+        use_bounds ? local_bounds : nullptr,
+        snap != 0.0f ? &glm::vec3(snap)[0] : nullptr  // bounds snap
     );
 
     // --- 3. Undo/redo bookkeeping ---
+    static std::unordered_map<Entity, ComponentDiff<Transform, UIComponent>> ui_component_diffs;
     static std::unordered_map<Entity, ComponentDiff<Transform>> component_diffs;
     static bool was_using = false;
     const bool is_using = ImGuizmo::IsUsing();
 
     static glm::mat4 gizmo_start_matrix;
     static std::unordered_map<Entity, glm::mat4> entity_start_matrices;
+    static glm::vec2 start_ui_size;                // Store original UI size at drag start
 
     if (!was_using && is_using) {
         gizmo_start_matrix = gizmo_matrix_before;  // frozen gizmo reference
+        if (use_bounds) {
+            start_ui_size = ui_size;               // Capture original size at drag start
+        }
         for (const Entity e : selected_entities) {
             if (!engine.ecs.valid(e)) continue;
             entity_start_matrices[e] = engine.ecs.get_component<Transform>(e).get_world_matrix();
 
-            ComponentDiff<Transform> diff(e);
-            diff.before();
-            component_diffs.emplace(e, std::move(diff));
+            if (has_ui && engine.ecs.has_component<UIComponent>(e)) {
+                ComponentDiff<Transform, UIComponent> diff(e);
+                diff.before();
+                ui_component_diffs.emplace(e, std::move(diff));
+            } else {
+                ComponentDiff<Transform> diff(e);
+                diff.before();
+                component_diffs.emplace(e, std::move(diff));
+            }
         }
         was_using = true;
     }
 
     // --- 4. Apply delta ---
     if (changed) {
-        // Delta from drag START, not from last frame
-        const glm::mat4 own_delta = gizmo_matrix * glm::inverse(gizmo_start_matrix);
+        // For UI bounds mode, only modify UIComponent::size, not the transform
+        if (use_bounds) {
+            UIComponent& ui = engine.ecs.get_component<UIComponent>(primary);
 
-        for (const Entity e : selected_entities) {
-            Transform& t = engine.ecs.get_component<Transform>(e);
-            const glm::vec2 ui_offset = has_ui ? AnchorHelper::calculate_anchor_offset(e) : glm::vec2(0.f);
+            // ImGuizmo bounds manipulation modifies the MATRIX with scale, not the bounds array
+            // Extract the scale from the manipulated matrix relative to the start matrix
+            const glm::vec3 start_scale =
+                glm::vec3(glm::length(glm::vec3(gizmo_start_matrix[0])), glm::length(glm::vec3(gizmo_start_matrix[1])), glm::length(glm::vec3(gizmo_start_matrix[2])));
+            const glm::vec3 current_scale = glm::vec3(glm::length(glm::vec3(gizmo_matrix[0])), glm::length(glm::vec3(gizmo_matrix[1])), glm::length(glm::vec3(gizmo_matrix[2])));
 
-            if (!use_average && e == primary) {
-                // Direct assignment is still cleanest for the primary
-                glm::mat4 new_world = gizmo_matrix;
-                new_world[3] -= glm::vec4(ui_offset, 0.f, 0.f);
-                t.set_world_matrix(new_world);
-            } else {
-                // Apply delta to INITIAL world matrix, not current
-                glm::mat4 effective_start = entity_start_matrices.count(e) ? entity_start_matrices[e] : t.get_world_matrix();
+            // Calculate scale ratio
+            const glm::vec3 scale_ratio = current_scale / start_scale;
 
-                effective_start[3] += glm::vec4(ui_offset, 0.f, 0.f);
-                glm::mat4 new_effective = own_delta * effective_start;
-                new_effective[3] -= glm::vec4(ui_offset, 0.f, 0.f);
-                t.set_world_matrix(new_effective);
+            // Apply scale to the ORIGINAL UI size (captured at drag start)
+            const float new_width = start_ui_size.x * scale_ratio.x;
+            const float new_height = start_ui_size.y * scale_ratio.y;
+
+            if (new_width > 0.f && new_height > 0.f) {
+                ui.size = glm::vec2(new_width, new_height);
+            }
+        } else {
+            // Normal gizmo mode: modify transforms
+            const glm::mat4 own_delta = gizmo_matrix * glm::inverse(gizmo_start_matrix);
+
+            for (const Entity e : selected_entities) {
+                Transform& t = engine.ecs.get_component<Transform>(e);
+                const glm::vec2 ui_offset = has_ui ? AnchorHelper::calculate_anchor_offset(e) : glm::vec2(0.f);
+
+                if (!use_average && e == primary) {
+                    // Direct assignment is still cleanest for the primary
+                    glm::mat4 new_world = gizmo_matrix;
+                    new_world[3] -= glm::vec4(ui_offset, 0.f, 0.f);
+                    t.set_world_matrix(new_world);
+                } else {
+                    // Apply delta to INITIAL world matrix, not current
+                    glm::mat4 effective_start = entity_start_matrices.count(e) ? entity_start_matrices[e] : t.get_world_matrix();
+
+                    effective_start[3] += glm::vec4(ui_offset, 0.f, 0.f);
+                    glm::mat4 new_effective = own_delta * effective_start;
+                    new_effective[3] -= glm::vec4(ui_offset, 0.f, 0.f);
+                    t.set_world_matrix(new_effective);
+                }
             }
         }
         OnSceneModified::dispatch();
@@ -162,11 +237,16 @@ bool Gizmo::manip(const float x, const float y, const float width, const float h
     // --- 5. Commit undo/redo ---
     if (!is_using && was_using) {
         UndoRedoCollection collection;
+        for (auto& [e, diff] : ui_component_diffs) {
+            diff.after();
+            collection.add_action(std::move(diff));
+        }
         for (auto& [e, diff] : component_diffs) {
             diff.after();
             collection.add_action(std::move(diff));
         }
         collection.commit("Edit Gizmo");
+        ui_component_diffs.clear();
         component_diffs.clear();
         entity_start_matrices.clear();
         was_using = false;
