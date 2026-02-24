@@ -20,11 +20,11 @@
 template <>
 struct ImReflect::type_response<entt::entity> : ImReflect::Detail::required_response<entt::entity> {
    private:
-    bool _is_dropped = false;
+    bool is_dropped = false;
 
    public:
-    void dropped() { _is_dropped = true; }
-    bool is_entity_dropped() const { return _is_dropped; }
+    void dropped() { is_dropped = true; }
+    bool is_entity_dropped() const { return is_dropped; }
 };
 
 namespace ImReflect::Detail {
@@ -78,7 +78,7 @@ inline void display_entity_recursive(entt::entity entity, entt::entity& selected
         }
     }
 
-    const uint32_t entity_id = static_cast<uint32_t>(entity);
+    const auto entity_id = static_cast<uint32_t>(entity);
     const bool is_selected = (entity == selected_value);
 
     /* Display entity with ID */
@@ -147,7 +147,7 @@ inline bool entity_drag_drop_target(entt::entity& value, type_response<entt::ent
     const ImGuiPayload* payload = ImGui::GetDragDropPayload();
     if (payload != nullptr && payload->IsDataType("HIERARCHY_ENTITY")) {
         if (ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY") != nullptr) {
-            const tmt::Hierarchy::DragNDropPayload* payload_data = static_cast<const tmt::Hierarchy::DragNDropPayload*>(payload->Data);
+            const auto* payload_data = static_cast<const tmt::Hierarchy::DragNDropPayload*>(payload->Data);
             value = payload_data->entity;
             response.dropped();
             response.changed();
@@ -165,7 +165,7 @@ inline bool entity_drag_drop_target(entt::entity& value, type_response<entt::ent
 /* Main input implementation for mutable entity reference */
 inline void tag_invoke(ImReflect::ImInput_t, const char* label, entt::entity& value, ImSettings& settings, ImResponse& response) {
     auto& entity_response = response.get<entt::entity>();
-    const uint32_t entity_id = static_cast<uint32_t>(value);
+    const auto entity_id = static_cast<uint32_t>(value);
     const bool is_null = (value == entt::null);
     const bool is_valid = is_null || tmt::engine.ecs.valid(value);
 
@@ -271,7 +271,7 @@ inline void tag_invoke(ImReflect::ImInput_t, const char* label, entt::entity& va
 /* Const version - read only display */
 inline void tag_invoke(ImReflect::ImInput_t, const char* label, const entt::entity& value, ImSettings& settings, ImResponse& response) {
     auto& entity_response = response.get<entt::entity>();
-    const uint32_t entity_id = static_cast<uint32_t>(value);
+    const auto entity_id = static_cast<uint32_t>(value);
     const bool is_null = (value == entt::null);
     const bool is_valid = is_null || tmt::engine.ecs.valid(value);
 
