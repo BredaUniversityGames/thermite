@@ -16,13 +16,14 @@ void game::OreCollector::draw_debug_lines() const {
     tmt::engine.polyline.use_line_width(line_width);
 
     auto* collisionTrigger = tmt::engine.ecs.try_get_component<CollisionTrigger>(entity);
+    auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
     if (collisionTrigger == nullptr) {
         return;
     }
-    const auto& shape = collisionTrigger->collision_shape;
+    const auto& shape = collisionTrigger->collision_shape.calculate_aabb(transform.get_world_position());
 
-    auto min_aabb = shape.aabb.min_bounds;
-    auto max_aabb = shape.aabb.max_bounds;
+    auto min_aabb = shape.min_bounds;
+    auto max_aabb = shape.max_bounds;
     tmt::engine.polyline.draw_aabb(min_aabb, max_aabb);
 }
 

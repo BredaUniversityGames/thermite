@@ -15,11 +15,10 @@ class CollisionTrigger : public tmt::GameComponent<CollisionTrigger> {
     void fixed_update(const tmt::FrameData& time) override;
     void end() override;
 
-
     AABBShape collision_shape;
+    tmt::Aabb get_aabb() const;
 
    private:
-    tmt::Aabb get_aabb() const;
     void on_transform_updated(entt::registry& reg, entt::entity e);
 };
 
