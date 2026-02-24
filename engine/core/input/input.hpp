@@ -19,6 +19,7 @@ struct GamepadState {
     std::array<bool, static_cast<int32_t>(GamepadButton::COUNT)> buttons {};
     std::array<bool, static_cast<int32_t>(GamepadButton::COUNT)> prev_buttons {};
     std::array<float, static_cast<int32_t>(GamepadAxis::COUNT)> axes {};
+    std::array<float, static_cast<int32_t>(GamepadAxis::COUNT)> prev_axes {};
 };
 
 class Input {
