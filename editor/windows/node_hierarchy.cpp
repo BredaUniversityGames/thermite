@@ -26,11 +26,34 @@
 #include "editor/core/systems/undo_redo/component_diff.hpp"
 #include "editor/core/systems/undo_redo/undo_redo_manager.hpp"
 #include "editor/core/systems/undo_redo/voxel_edit_diff.hpp"
+#include "engine/core/polyline.hpp"
 
 namespace {
 
 void drag3_uint32(const char* label, uint32_t values[3], const float speed = 0.1f, const uint32_t& min = 0u, const uint32_t& max = 0u) {
-    ImGui::DragScalarN(label, ImGuiDataType_U32, values, 3, speed, &min, &max, nullptr, ImGuiSliderFlags_AlwaysClamp);
+    ImGui::DragScalarN(label, ImGuiDataType_U32, values, 3, speed, &min, &max, nullptr, ImGuiSliderFlags_ClampOnInput);
+}
+
+void slider3_uint32(const char* label, uint32_t values[3], const glm::uvec3& min, const glm::uvec3& max) {
+    ImGui::PushID(label);
+    ImGui::BeginGroup();
+
+    ImGui::Text("%s", label);
+    ImGui::SameLine();
+
+    const float full_width = ImGui::CalcItemWidth();
+
+    ImGui::SetNextItemWidth(full_width / 3.0f);
+    ImGui::SliderScalarN("##X", ImGuiDataType_U32, &values[0], 1, &min[0], &max[0], nullptr, ImGuiSliderFlags_ClampOnInput);
+    ImGui::SameLine();
+    ImGui::SetNextItemWidth(full_width / 3.0f);
+    ImGui::SliderScalarN("##Y", ImGuiDataType_U32, &values[1], 1, &min[1], &max[1], nullptr, ImGuiSliderFlags_ClampOnInput);
+    ImGui::SameLine();
+    ImGui::SetNextItemWidth(full_width / 3.0f);
+    ImGui::SliderScalarN("##Z", ImGuiDataType_U32, &values[2], 1, &min[2], &max[2], nullptr, ImGuiSliderFlags_ClampOnInput);
+
+    ImGui::EndGroup();
+    ImGui::PopID();
 }
 
 std::vector<uint8_t> create_uniform_voxels(const std::unique_ptr<tmt::Svt64>& tree, const glm::uvec3& size) {
@@ -73,6 +96,7 @@ std::unique_ptr<NodeCreationData> node_creation_info;
 struct NodeResizeData {
     tmt::Entity entity;
     glm::uvec3 size;
+    glm::uvec3 offset;
 };
 std::unique_ptr<NodeResizeData> node_resize_info;
 
@@ -477,7 +501,7 @@ void NodeHierarchy::popup_resize_node() {
     // Store the popup id so other functions can use it to open the popup.
     if (resize_popup_id == 0) resize_popup_id = ImGui::GetCurrentWindow()->GetID("Resize Node");
 
-    constexpr ImGuiWindowFlags flags = ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove;
+    constexpr ImGuiWindowFlags flags = ImGuiWindowFlags_AlwaysAutoResize;
     if (!ImGui::BeginPopupModal("Resize Node", nullptr, flags)) return;
 
     auto&& [name, transform] = engine.ecs.get_component<Name, Transform>(node_resize_info->entity);
@@ -494,32 +518,58 @@ void NodeHierarchy::popup_resize_node() {
 
     drag3_uint32("New Size", &node_resize_info->size.x, 0.1f, 0, 1024);
 
+    constexpr glm::uvec3 min_offset { 0u };
+    const glm::uvec3 max_offset { glm::abs(glm::i64vec3 { current_grid_size } - glm::i64vec3 { node_resize_info->size }) };
+    slider3_uint32("Offset", &node_resize_info->offset.x, min_offset, max_offset);
+    node_resize_info->offset = glm::clamp(node_resize_info->offset, min_offset, max_offset);
+
     ImGui::BeginDisabled(current_grid_size == node_resize_info->size);
-    if (ImGui::Button("Apply")) {
+    if (ImGui::Button("Resize")) {
         // Only rescale the volume if the new scale isn't 0 on any axis.
         if (node_resize_info->size.x != 0 && node_resize_info->size.y != 0 && node_resize_info->size.z != 0) {
             const auto new_volume = std::make_shared<VoxelVolume>(node_resize_info->size);
 
             // If the node already has a renderer (aka: has a grid), copy over its data.
             if (renderer != nullptr) {
-                const glm::uvec3 minimum = glm::min(new_volume->size, renderer->resource->size);
+                // For each axis check if the current size is greater than the new size.
+                const glm::bvec3 result = glm::greaterThan(current_grid_size, node_resize_info->size);
+
+                // Using the greater than results we decided the min and max for each axis, these different depending on if we are decreasing or increasing the grid size.
+                const glm::uvec3 min = glm::mix(glm::zero<glm::uvec3>(), node_resize_info->offset, result);
+                const glm::uvec3 max = glm::mix(current_grid_size, node_resize_info->offset + node_resize_info->size, result);
 
                 // Copy the pallet to the new volume.
                 new_volume->blas->palette = renderer->resource->blas->palette;
 
                 // Iterate over the voxels remaining in the model and set them in the new volume.
-                for (uint32_t x = 0; x < minimum.x; x++) {
-                    for (uint32_t y = 0; y < minimum.y; y++) {
-                        for (uint32_t z = 0; z < minimum.z; z++) {
+                for (uint32_t x = min.x; x < max.x; x++) {
+                    for (uint32_t y = min.y; y < max.y; y++) {
+                        for (uint32_t z = min.z; z < max.z; z++) {
                             const Material* material = renderer->resource->blas->get_voxel(x, y, z);
+
                             if (material == nullptr) continue;
 
                             const MaterialIndex index = static_cast<MaterialIndex>(material - renderer->resource->blas->palette.entries);
-                            new_volume->blas->set_voxel(x, y, z, index);
+                            new_volume->blas->set_voxel(node_resize_info->offset.x + x, node_resize_info->offset.y + y, node_resize_info->offset.z + z, index);
                         }
                     }
                 }
                 new_volume->set_dirty();
+
+                // Apply offsets to the entity and its children to match the visualization.
+                const glm::vec3 half_extent = glm::vec3 { current_grid_size } * VOXEL_SIZE_HALF;
+                const glm::vec3 resize_half_extent = glm::vec3 { node_resize_info->size } * VOXEL_SIZE_HALF;
+
+                // Sign multiplication since we have to invert the offset when increasing the grid size.
+                const glm::vec3 local_offset = glm::vec3 { node_resize_info->offset } * glm::sign(half_extent - resize_half_extent) * UNITS_PER_VOXEL;
+                const glm::vec3 offset = (resize_half_extent - half_extent) + local_offset;
+
+                transform.set_local_position(transform.get_local_position() + offset);
+
+                for (const Entity child : transform.get_children()) {
+                    Transform& child_transform = engine.ecs.get_component<Transform>(child);
+                    child_transform.set_local_position(child_transform.get_local_position() + offset);
+                }
 
             } else {
                 // If the node doesn't already have a renderer (aka: doesn't have a grid), add it.
@@ -600,6 +650,26 @@ void NodeHierarchy::display() {
     }
 
     drop_hierarchy();
+}
+
+void NodeHierarchy::on_editor_update(const FrameData&) {
+    // If we aren't resizing we don't draw anything on update.
+    if (node_resize_info == nullptr) return;
+
+    glm::vec3 current_grid_size { 0u };
+    const VoxelRenderer* renderer = engine.ecs.try_get_component<VoxelRenderer>(node_resize_info->entity);
+    if (renderer != nullptr) current_grid_size = renderer->resource->size;
+
+    const glm::vec3 half_extent = current_grid_size * VOXEL_SIZE_HALF;
+    const glm::vec3 resize_half_extent = glm::vec3 { node_resize_info->size } * VOXEL_SIZE_HALF;
+
+    const Transform& transform = engine.ecs.get_component<Transform>(node_resize_info->entity);
+
+    // Sign multiplication since we have to invert the offset when increasing the grid size.
+    const glm::vec3 local_offset = glm::vec3 { node_resize_info->offset } * glm::sign(half_extent - resize_half_extent) * UNITS_PER_VOXEL;
+
+    engine.polyline.use_color(glm::vec3 { 1.0f, 0.0f, 0.0f });
+    engine.polyline.draw_obb(transform.get_world_matrix() * glm::vec4 { (resize_half_extent - half_extent) + local_offset, 1.0f }, resize_half_extent, transform.get_world_rotation());
 }
 
 }  // namespace tmt

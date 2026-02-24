@@ -51,7 +51,7 @@ class NodeHierarchy : public IWindow {
     void display() override;
 
     void on_editor_start() override {}
-    void on_editor_update(const FrameData&) override {}
+    void on_editor_update(const FrameData&) override;
     void on_editor_end() override {}
     
     // Popup ids, will be set when the popups are first created, allows us to open them from anywhere in imgui (hacky workaround).
