@@ -14,7 +14,7 @@ public static const uint INACTIVE_THRESHOLD = 60u;
 /* Number of slots available in the cache. */
 static const uint CAPACITY = 10000000u;
 
-static const uint TEMPORAL_SAMPLES = 20u;
+static const uint TEMPORAL_SAMPLES = 32u;
 
 /* Cache Slot (48 bytes) */
 public struct Slot {
@@ -67,7 +67,7 @@ public struct Slot {
         if (temporal < TEMPORAL_SAMPLES) temporal += 1u;
         const float age_c = 1.0f - (float)age / INACTIVE_THRESHOLD;
         const float confidence = age_c * age_c * age_c * age_c;
-        const float alpha = saturate(confidence * (1.0f - 1.0f / temporal));
+        const float alpha = saturate(confidence * (1.0f - 1.0f / (float)temporal));
         diffuse.w = encode_rgb9e5(lerp(diffuse_accu, read_diffuse(), alpha));
         specular.w = encode_rgb9e5(lerp(specular_accu, read_specular(), alpha));
     }

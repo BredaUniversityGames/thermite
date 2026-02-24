@@ -28,8 +28,10 @@ struct GpuView {
     glm::uint frame_index = 0u;
     /* Delta Time in seconds. */
     glm::float32 dt {};
-    /* Shading rate. (0 = 1/1, 1 = 1/2, 2 = 1/4) */
-    glm::uint shading_rate = 0u;
+    /* Shading rate DI. (0 = 1/1, 1 = 1/2, 2 = 1/4) */
+    glm::uint shading_rate_di = 0u;
+    /* Shading rate GI. (0 = 1/1, 1 = 1/2, 2 = 1/4) */
+    glm::uint shading_rate_gi = 2u;
 };
 
 /* Screen buffer resource. */
@@ -55,11 +57,12 @@ struct RenderView {
     void deinit();
 
     /* Get the shading rate. */
-    inline ShadingRate get_shading_rate() const { return shading_rate; };
+    inline ShadingRate get_shading_rate_di() const { return shading_rate_di; };
+    inline ShadingRate get_shading_rate_gi() const { return shading_rate_gi; };
     /* Set the shading rate. */
-    inline void set_shading_rate(ShadingRate new_shading_rate) {
-        if (shading_rate == new_shading_rate) return;
-        shading_rate = new_shading_rate;
+    inline void set_shading_rate_di(ShadingRate new_shading_rate) {
+        if (shading_rate_di == new_shading_rate) return;
+        shading_rate_di = new_shading_rate;
         resize_textures();
     };
 
@@ -100,7 +103,8 @@ struct RenderView {
     glm::uint frame_counter = 0u;
 
    private:
-    ShadingRate shading_rate = ShadingRate::FULL_RATE;
+    ShadingRate shading_rate_di = ShadingRate::FULL_RATE;
+    ShadingRate shading_rate_gi = ShadingRate::QUARTER_RATE;
     void resize_textures();
 };
 

@@ -38,14 +38,14 @@ inline float ambient_occlusion(const float3 point, const float3 normal, const fl
 void main(int2 thread_id: SV_DispatchThreadID) {
     int2 pixel_id = thread_id;
     int2 resolution = render_view.resolution;
-    if (render_view.shading_rate == 1u) {
+    if (render_view.shading_rate_gi == 1u) {
         /* Half-rate */
         /*  [ XY ]  */
         /*  [ YX ]  */
         const int offset = (pixel_id.y + render_view.frame_index) & 0b1;
         pixel_id.x = (pixel_id.x << 1) + offset;
         resolution.x = resolution.x >> 1;
-    } else if (render_view.shading_rate == 2u) {
+    } else if (render_view.shading_rate_gi == 2u) {
         /* Quarter-rate */
         /*  [ XY ]  */
         /*  [ ZW ]  */
@@ -78,6 +78,6 @@ void main(int2 thread_id: SV_DispatchThreadID) {
     const float3 illuminance = ambient_occlusion(hit_point, geo.normal, noise) * 0.15f;
 
     /* Insert the sample into the illuminance cache */
-    cache::insert(macrofacet_cache, facet_key, render_view.frame_index, illuminance * 2.0f, 0.0f);
+    cache::insert(macrofacet_cache, facet_key, render_view.frame_index, illuminance * 8.0f, 0.0f);
     lbuffer[thread_id] = illuminance;
 }

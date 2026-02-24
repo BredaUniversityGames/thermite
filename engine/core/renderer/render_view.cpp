@@ -54,9 +54,9 @@ void RenderView::init() {
 
     /* Calculate the render size (based on shading rate) */
     Size3D render_size {view_size.x, view_size.y};
-    if (shading_rate == ShadingRate::HALF_RATE) {
+    if (shading_rate_di == ShadingRate::HALF_RATE) {
         render_size.x = render_size.x >> 1;
-    } else if (shading_rate == ShadingRate::QUARTER_RATE) {
+    } else if (shading_rate_di == ShadingRate::QUARTER_RATE) {
         render_size.x = render_size.x >> 1;
         render_size.y = render_size.y >> 1;
     }
@@ -113,7 +113,8 @@ void RenderView::update_gpu_view(RenderGraph& render_graph, const Camera& camera
     gpu_view.origin = glm::vec4(transform.get_world_position(), 0.0f);
     gpu_view.frame_index = frame_counter;
     gpu_view.dt = engine.frame_data().delta_time;
-    gpu_view.shading_rate = (uint32_t)shading_rate;
+    gpu_view.shading_rate_di = (uint32_t)shading_rate_di;
+    gpu_view.shading_rate_gi = (uint32_t)shading_rate_gi;
 
     /* Upload the active render view */
     render_graph.upload_buffer(render_view_buffer, &gpu_view, 0u, sizeof(GpuView));
@@ -187,9 +188,9 @@ void RenderView::resize_textures() {
 
     /* Calculate the render size (based on shading rate) */
     Size3D render_size {view_size.x, view_size.y};
-    if (shading_rate == ShadingRate::HALF_RATE) {
+    if (shading_rate_di == ShadingRate::HALF_RATE) {
         render_size.x = render_size.x >> 1;
-    } else if (shading_rate == ShadingRate::QUARTER_RATE) {
+    } else if (shading_rate_di == ShadingRate::QUARTER_RATE) {
         render_size.x = render_size.x >> 1;
         render_size.y = render_size.y >> 1;
     }

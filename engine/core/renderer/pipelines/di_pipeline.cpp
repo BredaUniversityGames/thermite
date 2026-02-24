@@ -43,39 +43,45 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
     //     settings_dirty = false;
     // }
     
-    /* Shading resolution based on shading rate */
-    glm::uvec2 shading_res = render_view.gpu_view.resolution;
-    if (render_view.get_shading_rate() == ShadingRate::HALF_RATE) shading_res = div_up(render_view.gpu_view.resolution, 2u, 1u);
-    if (render_view.get_shading_rate() == ShadingRate::QUARTER_RATE) shading_res = div_up(render_view.gpu_view.resolution, 2u, 2u);
+    { /* Shading resolution based on shading rate */
+        glm::uvec2 shading_res = render_view.gpu_view.resolution;
+        if (render_view.get_shading_rate_di() == ShadingRate::HALF_RATE) shading_res = div_up(render_view.gpu_view.resolution, 2u, 1u);
+        if (render_view.get_shading_rate_di() == ShadingRate::QUARTER_RATE) shading_res = div_up(render_view.gpu_view.resolution, 2u, 2u);
 
-    /* Direct illumination pass */
-    render_graph.add_compute_pass("direct illumination pass", "direct_illumination.cs")
-        .read(render_view.render_view_buffer) /* Render view buffer */
-        .read(scene_view.scene_view) /* Scene view buffer */
-        .read(render_view.blue_noise->image) /* Blue noise texture */
-        .read(scene_view.bvh_nodes) /* TLAS nodes buffer */
-        .read(scene_view.object_indices) /* Voxel object indices buffer */
-        .read(scene_view.object_data) /* Voxel objects buffer */
-        .read(scene_view.lights_data) /* Lights data buffer */
-        .write(render_view.macrofacet_cache) /* Cache buffer */
-        .read(render_view.vbuffer.image) /* Visibility buffer */
-        .write(render_view.lbuffer.image) /* Luminance buffer */
-        .group_size(16, 8)
-        .work_size(shading_res.x, shading_res.y);
+        /* Direct illumination pass */
+        render_graph.add_compute_pass("direct illumination pass", "direct_illumination.cs")
+            .read(render_view.render_view_buffer) /* Render view buffer */
+            .read(scene_view.scene_view) /* Scene view buffer */
+            .read(render_view.blue_noise->image) /* Blue noise texture */
+            .read(scene_view.bvh_nodes) /* TLAS nodes buffer */
+            .read(scene_view.object_indices) /* Voxel object indices buffer */
+            .read(scene_view.object_data) /* Voxel objects buffer */
+            .read(scene_view.lights_data) /* Lights data buffer */
+            .write(render_view.macrofacet_cache) /* Cache buffer */
+            .read(render_view.vbuffer.image) /* Visibility buffer */
+            .write(render_view.lbuffer.image) /* Luminance buffer */
+            .group_size(16, 8)
+            .work_size(shading_res.x, shading_res.y);
+    }
         
-    /* Direct illumination pass */
-    render_graph.add_compute_pass("global illumination pass", "global_illumination.cs")
-        .read(render_view.render_view_buffer) /* Render view buffer */
-        .read(scene_view.scene_view) /* Scene view buffer */
-        .read(render_view.blue_noise->image) /* Blue noise texture */
-        .read(scene_view.bvh_nodes) /* TLAS nodes buffer */
-        .read(scene_view.object_indices) /* Voxel object indices buffer */
-        .read(scene_view.object_data) /* Voxel objects buffer */
-        .write(render_view.macrofacet_cache) /* Cache buffer */
-        .read(render_view.vbuffer.image) /* Visibility buffer */
-        .write(render_view.lbuffer.image) /* Luminance buffer */
-        .group_size(16, 8)
-        .work_size(shading_res.x, shading_res.y);
+    { /* Global illumination pass */
+        glm::uvec2 shading_res = render_view.gpu_view.resolution;
+        if (render_view.get_shading_rate_gi() == ShadingRate::HALF_RATE) shading_res = div_up(render_view.gpu_view.resolution, 2u, 1u);
+        if (render_view.get_shading_rate_gi() == ShadingRate::QUARTER_RATE) shading_res = div_up(render_view.gpu_view.resolution, 2u, 2u);
+
+        render_graph.add_compute_pass("global illumination pass", "global_illumination.cs")
+            .read(render_view.render_view_buffer) /* Render view buffer */
+            .read(scene_view.scene_view) /* Scene view buffer */
+            .read(render_view.blue_noise->image) /* Blue noise texture */
+            .read(scene_view.bvh_nodes) /* TLAS nodes buffer */
+            .read(scene_view.object_indices) /* Voxel object indices buffer */
+            .read(scene_view.object_data) /* Voxel objects buffer */
+            .write(render_view.macrofacet_cache) /* Cache buffer */
+            .read(render_view.vbuffer.image) /* Visibility buffer */
+            .write(render_view.lbuffer.image) /* Luminance buffer */
+            .group_size(16, 8)
+            .work_size(shading_res.x, shading_res.y);
+    }
         
     // for (uint32_t i = 0u; i < 6u; ++i) {
     //     /* Denoising pass */

@@ -213,23 +213,24 @@ void Editor::main_menu_bar() {
                 ImGui::EndMenu();
             }
 
-            /* List of shading rate labels */
-            static const std::vector<std::string> SHADING_RATE_LABELS {"Full-Rate", "Half-Rate (1:2)", "Quarter-Rate (1:4)"};
+            { /* List of shading rate labels */
+                static const std::vector<std::string> SHADING_RATE_LABELS {"Full-Rate", "Half-Rate (1:2)", "Quarter-Rate (1:4)"};
 
-            static uint32_t shading_rate_index = 0u;
-            const std::string& shading_rate = SHADING_RATE_LABELS[shading_rate_index];
+                static uint32_t shading_rate_index = 0u;
+                const std::string& shading_rate = SHADING_RATE_LABELS[shading_rate_index];
 
-            if (ImGui::BeginMenu(("Shading Rate (" + shading_rate + ")").c_str())) {
-                /* Render all shading rate options */
-                for (uint32_t i = 0u; i < SHADING_RATE_LABELS.size(); ++i) {
-                    const bool selected = engine.renderer.render_view.get_shading_rate() == magic_enum::enum_cast<ShadingRate>(i).value_or(ShadingRate::FULL_RATE);
+                if (ImGui::BeginMenu(("DI Shading Rate (" + shading_rate + ")").c_str())) {
+                    /* Render all shading rate options */
+                    for (uint32_t i = 0u; i < SHADING_RATE_LABELS.size(); ++i) {
+                        const bool selected = engine.renderer.render_view.get_shading_rate_di() == magic_enum::enum_cast<ShadingRate>(i).value_or(ShadingRate::FULL_RATE);
 
-                    if (ImGui::MenuItem(SHADING_RATE_LABELS[i].c_str(), nullptr, selected)) {
-                        shading_rate_index = i;
-                        engine.renderer.render_view.set_shading_rate(magic_enum::enum_cast<ShadingRate>(i).value_or(ShadingRate::FULL_RATE));
+                        if (ImGui::MenuItem(SHADING_RATE_LABELS[i].c_str(), nullptr, selected)) {
+                            shading_rate_index = i;
+                            engine.renderer.render_view.set_shading_rate_di(magic_enum::enum_cast<ShadingRate>(i).value_or(ShadingRate::FULL_RATE));
+                        }
                     }
+                    ImGui::EndMenu();
                 }
-                ImGui::EndMenu();
             }
 
             ImGui::EndMenu();

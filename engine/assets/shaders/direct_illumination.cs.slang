@@ -110,14 +110,14 @@ inline float3 direct_illuminance(const float3 point, const float3 normal, const 
 void main(int2 thread_id: SV_DispatchThreadID) {
     int2 pixel_id = thread_id;
     int2 resolution = render_view.resolution;
-    if (render_view.shading_rate == 1u) {
+    if (render_view.shading_rate_di == 1u) {
         /* Half-rate */
         /*  [ XY ]  */
         /*  [ YX ]  */
         const int offset = (pixel_id.y + render_view.frame_index) & 0b1;
         pixel_id.x = (pixel_id.x << 1) + offset;
         resolution.x = resolution.x >> 1;
-    } else if (render_view.shading_rate == 2u) {
+    } else if (render_view.shading_rate_di == 2u) {
         /* Quarter-rate */
         /*  [ XY ]  */
         /*  [ ZW ]  */

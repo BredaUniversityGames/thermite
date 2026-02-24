@@ -76,13 +76,13 @@ Sample fetch_sample(const int2 vpixel, const int2 lpixel) {
 void main(int2 thread_id: SV_DispatchThreadID) {
     int2 offset = 0;
     int2 shift = 0;
-    if (render_view.shading_rate == 1u) {
+    if (render_view.shading_rate_di == 1u) {
         /* Half-rate */
         /*  [ XY ]  */
         /*  [ YX ]  */
         offset.x = (thread_id.y + render_view.frame_index) & 0b1;
         shift.x = 1;
-    } else if (render_view.shading_rate == 2u) {
+    } else if (render_view.shading_rate_di == 2u) {
         /* Quarter-rate */
         /*  [ XY ]  */
         /*  [ ZW ]  */
