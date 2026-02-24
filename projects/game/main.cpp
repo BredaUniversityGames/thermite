@@ -20,6 +20,7 @@
 #include "components/wallet.hpp"
 #include "components/mining_component.hpp"
 #include "components/animation_player.hpp"
+#include "components/gravity_manipulation_component.hpp"
 #include "components/projectile_spawner.hpp"
 #include "components/rifle_projectile.hpp"
 #include "components/spawner.hpp"
@@ -66,6 +67,7 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     tmt::engine.component_registry.register_component<game::Wallet>();
     tmt::engine.component_registry.register_component<game::MiningComponent>();
     tmt::engine.component_registry.register_component<game::AnimationPlayer>();
+    tmt::engine.component_registry.register_component<game::GravityManipulationComponent>();
 
     return std::make_unique<Game>(specs);
 }
