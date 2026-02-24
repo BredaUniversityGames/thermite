@@ -38,7 +38,10 @@ struct GpuParticleEffect {
     Range end_opacity {};
 
     Range rotation {};
-    glm::vec2 pad {};
+    Range pos_jitter {};
+
+    float jitter_speed {};
+    glm::vec3 pad {};
 };
 
 struct GpuEmitter {
@@ -64,8 +67,10 @@ struct GpuParticle {
     float rot_speed {};
     float rotation {};
 
+    float pos_jitter {};
+
     uint32_t tex_index {};
-    glm::vec3 pad {};
+    glm::vec2 pad {};
 };
 
 struct Counters {

@@ -25,6 +25,8 @@ struct ParticleEffect {
     Range start_opacity { 1.0f, 1.0f };
     Range end_opacity { 1.0f, 1.0f };
     Range rotation { 0.0f, 0.0f };
+    Range pos_jitter { 0.0f, 0.0f };
+    float jitter_speed = 1.0f;
 
     bool active = true;
 
@@ -40,6 +42,6 @@ struct ParticleEmitter {
 }  // namespace tmt
 
 TMT_OBJECT(tmt::Range, (min, max));
-TMT_OBJECT(tmt::ParticleEffect, (particle_lifetime, dir, cone_angle, spawn_count, speed, start_size, end_size, start_opacity, end_opacity, rotation, active, texture));
+TMT_OBJECT(tmt::ParticleEffect, (particle_lifetime, dir, cone_angle, spawn_count, speed, start_size, end_size, start_opacity, end_opacity, rotation, pos_jitter, jitter_speed, active, texture));
 
 TMT_COMPONENT(tmt::ParticleEmitter, "ParticleEmitter", (effects, active));

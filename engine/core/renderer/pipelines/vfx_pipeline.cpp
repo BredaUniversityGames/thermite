@@ -156,6 +156,8 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
             eff.start_opacity = effect.start_opacity;
             eff.end_opacity = effect.end_opacity;
             eff.rotation = effect.rotation;
+            eff.pos_jitter = effect.pos_jitter;
+            eff.jitter_speed = effect.jitter_speed;
             eff.tex_index = effect.texture.resource->image.get_index();
 
             em.total_spawn_count += eff.spawn_count;

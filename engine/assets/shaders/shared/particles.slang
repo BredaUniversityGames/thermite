@@ -27,6 +27,9 @@ public struct ParticleEffect {
     public Range end_opacity;
 
     public Range rotation;
+    public Range pos_jitter;
+
+    public float jitter_speed;
 };
 
 public struct ParticleEmitter {
@@ -51,6 +54,8 @@ public struct Particle {
     public float end_opacity;
     public float rot_speed;
     public float rotation;
+
+    public float pos_jitter;
 
     public uint32_t tex_index;
 };

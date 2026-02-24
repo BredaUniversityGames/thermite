@@ -54,7 +54,8 @@ void main(uint3 thread_id: SV_DispatchThreadID) {
     p.end_opacity = lerp(effect.end_opacity.min, effect.end_opacity.max, rand_float(seed));
     p.rot_speed = lerp(effect.rotation.min, effect.rotation.max, rand_float(seed));
     p.rotation = 0.0f;
-
+    p.pos_jitter = lerp(effect.pos_jitter.min, effect.pos_jitter.max, rand_float(seed)) * effect.jitter_speed;
+    
     p.tex_index = effect.tex_index;
 
     float3 dir = sample_cone(effect.dir, effect.cone_angle, rand_float2(seed));

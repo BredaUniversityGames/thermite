@@ -1,5 +1,6 @@
 import view;
 import particles;
+import math;
 
 ConstantBuffer<RenderView> render_view;
 
@@ -30,6 +31,10 @@ void main(uint3 thread_id: SV_DispatchThreadID) {
         p.size = lerp(p.start_size, p.end_size, t);
         p.opacity = lerp(p.start_opacity, p.end_opacity, t);
         p.rotation += p.rot_speed * render_view.dt;
+
+        uint32_t seed = particle_index + render_view.frame_index * 1337;
+        float3 new_jitter = (float3(rand_float(seed), rand_float(seed), rand_float(seed)) * 2.0f - 1.0f) * p.pos_jitter;
+        p.pos += new_jitter * render_view.dt;
 
         particles[particle_index] = p;
 
