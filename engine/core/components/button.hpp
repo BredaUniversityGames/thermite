@@ -71,8 +71,16 @@ struct Button {
     ButtonCallback<> on_release = {};
 
     /* Color for each state */
-    std::array<RGBA, 8> colors = { RGBA(glm::vec4(1.0f)), RGBA(glm::vec4(0.8f)), RGBA(glm::vec4(0.6f)), RGBA(glm::vec4(0.8f)),
-                                   RGBA(glm::vec4(0.5f)), RGBA(glm::vec4(1.0f)), RGBA(glm::vec4(1.0f)), RGBA(glm::vec4(1.0f)) };
+    std::array<RGBA, 8> colors = {
+        RGBA(glm::vec4(1.0f)), 
+        RGBA(glm::vec4(0.8f, 0.8f, 0.8f, 1.0f)), 
+        RGBA(glm::vec4(0.6f, 0.6f, 0.6f, 1.0f)),
+        RGBA(glm::vec4(0.8f, 0.8f, 0.8f, 1.0f)),
+        RGBA(glm::vec4(0.2f, 0.2f, 0.2f, 1.0f)),
+        RGBA(glm::vec4(0.5f, 0.5f, 0.5f, 1.0f)),
+        RGBA(glm::vec4(0.5f, 0.5f, 0.5f, 1.0f)),
+        RGBA(glm::vec4(0.5f, 0.5f, 0.5f, 1.0f)),
+    };
 
     /* Navigation: which button to move to for each direction (indexed by Direction enum: NORTH, NORTH_EAST, EAST, ...) */
     std::array<Entity, 8> flow_direction = { entt::null, entt::null, entt::null, entt::null, entt::null, entt::null, entt::null, entt::null };
@@ -80,4 +88,4 @@ struct Button {
 
 }  // namespace tmt
 
-TMT_COMPONENT(tmt::Button, "Button", (colors));
+TMT_COMPONENT(tmt::Button, "Button", (colors, flow_direction));
