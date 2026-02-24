@@ -35,11 +35,12 @@ class AssetBrowser : public internal::OnSdlEvent, public IWindow {
     };
 
     struct Bookmark {
+        std::string display_name;
         Directory directory;
         DirectoryWatcher location_watcher;
     };
 
-    std::optional<IO::FileLocation> pending_viewing_location {viewing_location};
+    std::optional<IO::FileLocation> pending_viewing_location { viewing_location };
     IO::FileLocation viewing_location {};
     DirectoryWatcher viewing_location_watcher {};
     std::vector<IO::FileLocation> viewing_locations;
@@ -63,7 +64,7 @@ class AssetBrowser : public internal::OnSdlEvent, public IWindow {
     void update_viewing_locations();
 
     void move_location_stacks(std::stack<IO::FileLocation>& from, std::stack<IO::FileLocation>& to);
-    ImGuiID recurse_display_bookmark_dirs(const Directory& directory);
+    ImGuiID recurse_display_bookmark_dirs(const Directory& directory, const std::string& display_name = {});
 
     void location_context_menu(const IO::FileLocation& location, bool allow_bookmark);
     void viewing_context_menu() const;
@@ -72,4 +73,5 @@ class AssetBrowser : public internal::OnSdlEvent, public IWindow {
     void display_bookmarks();
     void display_viewing_location();
 };
+
 }  // namespace tmt

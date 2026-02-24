@@ -6,7 +6,7 @@
 #include "engine/core/ecs.hpp"
 #include "engine/core/resources.hpp"
 
-using namespace tmt;
+namespace tmt {
 
 void RigModel::init_bones(const Bone& b, Entity p) {
     Log::info("init bones got called!");
@@ -53,7 +53,7 @@ void RigModel::init(const IO::FileLocation& directory, Entity p) {
         auto& compn = engine.ecs.get_component<Name>(p);
         compn.name = name;
         auto trans = compt.get_local_position();
-        compt.set_local_position({trans.x, trans.y, trans.z});
+        compt.set_local_position({ trans.x, trans.y, trans.z });
     }
 }
 
@@ -107,7 +107,9 @@ void RigModel::stop_loop(float transfer_time_t) {
     transfer_time = 0.0f;
 }
 
-void tmt::RigModel::set_animation_speed(float s) { animation_speed = s; }
+void tmt::RigModel::set_animation_speed(float s) {
+    animation_speed = s;
+}
 
 void RigModel::animate_translation(Transform& t, Bone& b) {
     auto& keyframes = b.animations[get_current_animation()].keyframes_pos;
@@ -190,3 +192,5 @@ void RigModel::animate_scale(Transform& t, Bone& b) {
         t.set_local_scale(new_scale);
     }
 }
+
+}  // namespace tmt

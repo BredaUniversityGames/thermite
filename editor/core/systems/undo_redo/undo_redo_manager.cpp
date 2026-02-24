@@ -17,7 +17,9 @@ UndoRedoManager& IUndoRedo::get_manager() {
     return *result;
 }
 
-void UndoRedoCollection::commit(const std::string& message) { send_to_manager(std::move(*this), message); }
+void UndoRedoCollection::commit(const std::string& message) {
+    send_to_manager(std::move(*this), message);
+}
 
 void UndoRedoCollection::undo() {
     for (auto& action : actions) {
@@ -31,10 +33,12 @@ void UndoRedoCollection::redo() {
     }
 }
 
-void UndoRedoCollection::inspect() { ImGui::Text("UndoRedoCollection with %zu actions", actions.size()); }
+void UndoRedoCollection::inspect() {
+    ImGui::Text("UndoRedoCollection with %zu actions", actions.size());
+}
 
 void UndoRedoManager::commit_action(const std::shared_ptr<IUndoRedo>& action, const std::string& message) {
-    CommitAction entry {message, action};
+    CommitAction entry { message, action };
     undo_stack.push_back(entry);
     redo_stack.clear();
 }
@@ -48,10 +52,7 @@ void UndoRedoManager::display() {
         redo();
     }
     ImGui::SameLine();
-    if (ImGui::Button("Clear")) {
-        undo_stack.clear();
-        redo_stack.clear();
-    }
+    if (ImGui::Button("Clear")) clear();
 
     ImGui::BeginChild("UndoRedoManager_UndoStack", ImVec2(0, 200), true);
     ImGui::Text("Undo Stack:");
@@ -72,7 +73,7 @@ void UndoRedoManager::display() {
 
 void UndoRedoManager::on_editor_start() {}
 
-void UndoRedoManager::on_editor_update(const FrameData& time) {
+void UndoRedoManager::on_editor_update(const FrameData&) {
     if (engine.game_controller.is_running()) return;
 
     const bool ctrl_down = engine.input.is_keyboard_button_pressed(Key::LEFT_CTRL);
@@ -117,4 +118,5 @@ void UndoRedoManager::redo() {
     entry.action->redo();
     undo_stack.push_back(std::move(entry));
 }
+
 }  // namespace tmt

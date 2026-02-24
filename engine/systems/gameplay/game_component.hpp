@@ -3,17 +3,54 @@
 #include "engine/core/frame_data.hpp"
 #include "engine/tools/serializer.hpp"
 #include "engine/tools/serializer/all.hpp"
-#include "engine/core/components/component_collection.hpp"
 #if defined(THERMITE_EDITOR) && !defined(THERMITE_ENGINE)
-#include <ImReflect.hpp>
-#include "editor/imgui/types/all.hpp"
-#include "editor/imgui/components/all.hpp"
+    #include <ImReflect.hpp>
+    #include "editor/imgui/types/all.hpp"
+    #include "editor/imgui/components/all.hpp"
 #else
 class ImSettings;
 class ImResponse;
 #endif
 
+/* Forward declare */
 namespace tmt {
+
+struct SerializeState;
+struct DeserializeState;
+
+}  // namespace tmt
+
+namespace tmt {
+
+class SerializationContext {
+   private:
+    void* state_ptr = nullptr;
+    enum class StateType { NONE, SERIALIZE, DESERIALIZE } type = StateType::NONE;
+
+   public:
+    SerializationContext() = default;
+
+    // Type-safe setters
+    void set_serialize_state(SerializeState* ptr) {
+        state_ptr = ptr;
+        type = StateType::SERIALIZE;
+    }
+
+    void set_deserialize_state(DeserializeState* ptr) {
+        state_ptr = ptr;
+        type = StateType::DESERIALIZE;
+    }
+
+    // Type-safe getters - work with forward declarations
+    SerializeState* get_serialize_state() { return type == StateType::SERIALIZE ? static_cast<SerializeState*>(state_ptr) : nullptr; }
+
+    DeserializeState* get_deserialize_state() { return type == StateType::DESERIALIZE ? static_cast<DeserializeState*>(state_ptr) : nullptr; }
+
+    const SerializeState* get_serialize_state() const { return type == StateType::SERIALIZE ? static_cast<const SerializeState*>(state_ptr) : nullptr; }
+
+    const DeserializeState* get_deserialize_state() const { return type == StateType::DESERIALIZE ? static_cast<const DeserializeState*>(state_ptr) : nullptr; }
+};
+
 /* Used by engine to call events */
 class IGameComponent {
    public:
@@ -35,8 +72,8 @@ class IGameComponent {
     virtual void draw_debug_lines() const {};
 
     /* [ Auto ] Helpers for engine */
-    virtual nlohmann::json serialize() const = 0;
-    virtual void deserialize(const nlohmann::json& value) = 0;
+    virtual nlohmann::json serialize(SerializationContext& ctx) const = 0;
+    virtual void deserialize(const nlohmann::json& value, SerializationContext& ctx) = 0;
     virtual void inspect(ImSettings& settings, ImResponse& response) = 0;
 };
 
@@ -46,10 +83,26 @@ class GameComponent : public IGameComponent {
    public:
     using IGameComponent::IGameComponent;
     /* [ Auto ] Implemented by default in-engine so user don't have to */
-    nlohmann::json serialize() const override { return Serializer::serialize(static_cast<const Derived&>(*this)); }
+    nlohmann::json serialize(SerializationContext& ctx) const override {
+        constexpr bool VISITABLE = visit_struct::traits::is_visitable<Derived, JsonReflect::serialize_lib_t>::value;
+        if constexpr (VISITABLE == false) return tmt::json::object();
 
-    /* [ Auto ] Implemented by default in-engine so user don't have to */
-    void deserialize(const nlohmann::json& value) override { Serializer::deserialize(value, static_cast<Derived&>(*this)); }
+        if (auto* state = ctx.get_serialize_state()) {
+            return Serializer::serialize(static_cast<const Derived&>(*this), *state);
+        }
+        return Serializer::serialize(static_cast<const Derived&>(*this));
+    }
+
+    void deserialize(const nlohmann::json& value, SerializationContext& ctx) override {
+        constexpr bool VISITABLE = visit_struct::traits::is_visitable<Derived, JsonReflect::deserialize_lib_t>::value;
+        if constexpr (VISITABLE == false) return;
+
+        if (auto* state = ctx.get_deserialize_state()) {
+            Serializer::deserialize(value, static_cast<Derived&>(*this), *state);
+        } else {
+            Serializer::deserialize(value, static_cast<Derived&>(*this));
+        }
+    }
 
     static std::string_view name() { return Derived::get_name(); }
 
@@ -61,6 +114,9 @@ class GameComponent : public IGameComponent {
     /* [ Auto ] Implemented by default in-engine so user don't have to */
     void inspect(ImSettings& settings, ImResponse& response) override {
 #if defined(THERMITE_EDITOR) && !defined(THERMITE_ENGINE)
+        constexpr bool VISITABLE = visit_struct::traits::is_visitable<Derived, ImReflect::Detail::ImContext>::value;
+        if constexpr (VISITABLE == false) return;
+
         ImReflect::Input("", static_cast<Derived&>(*this), settings, response);
         on_inspect(response);
 #else
@@ -70,4 +126,5 @@ class GameComponent : public IGameComponent {
 #endif
     }
 };
+
 }  // namespace tmt

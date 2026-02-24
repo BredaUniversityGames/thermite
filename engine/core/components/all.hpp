@@ -11,16 +11,24 @@
 #include "engine/systems/ai/navigation/nav_mesh.hpp"
 #include "engine/core/components/audio_listener.hpp"
 #include "engine/core/components/audio_emitter.hpp"
+#include "engine/core/components/prefab.hpp"
 #include "engine/core/components/light.hpp"
 #include "engine/core/components/emitter.hpp"
+#include "engine/core/components/ui_component.hpp"
+#include "engine/core/components/image_renderer.hpp"
 #include "engine/tools/uuid.hpp"
+#include "engine/systems/ai/goap/components/goap_agent_type_ref.hpp"
+#include "engine/systems/ai/goap/components/goap_agent_type_registry.hpp"
+#include "engine/systems/ai/goap/components/goap_goal.hpp"
+#include "engine/systems/ai/goap/components/goap_action.hpp"
+#include "engine/systems/ai/goap/components/world_state.hpp"
 
 namespace tmt {
 
 // clang-format off
 using SerializeComponents = ComponentRegistry<
 	/* Order in which components are serialized */
-	UUID,
+	Prefab,
 	Name, 
 	Transform, 
 	VoxelRenderer, 
@@ -31,7 +39,12 @@ using SerializeComponents = ComponentRegistry<
 	AudioListener,
 	AudioEmitter,
 	Light,
-	ParticleEmitter
+	ParticleEmitter,
+	UIComponent,
+	ImageRenderer,
+	GoapAgentType,
+	GoapAgentTypeRef,
+	WorldState
 >;
 // clang-format on
 
@@ -47,7 +60,12 @@ using InspectComponents = ComponentRegistry<
 	AudioListener,
 	AudioEmitter,
 	Light,
-	ParticleEmitter
+	ParticleEmitter,
+	UIComponent,
+	ImageRenderer,
+	GoapAgentType,
+	GoapAgentTypeRef,
+	WorldState
 >;
 // clang-format on
 

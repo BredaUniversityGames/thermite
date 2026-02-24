@@ -18,7 +18,12 @@
 
 #define TMT_OBJECT_EX(Type, JsonFields, ImguiFields) TMT_REFLECTION_IMPL(Type, ImguiFields, JsonFields)
 
+#define TMT_OBJECT_SERIALIZE(Type, Fields) JSON_REFLECT(Type, Fields)
+
+#define TMT_OBJECT_INSPECT(Type, Fields) IMGUI_REFLECT(Type, Fields)
+
 namespace tmt {
+
 template <typename T>
 struct Component {
     static constexpr const char* NAME = "Unknown";
@@ -26,15 +31,18 @@ struct Component {
     // Optional: helper function
     static constexpr const char* get_name() { return NAME; }
 };
+
 }  // namespace tmt
 
 #define TMT_COMPONENT_NAME(Type, Name)                           \
     namespace tmt {                                              \
+                                                                 \
     template <>                                                  \
     struct Component<Type> {                                     \
         static constexpr const char* NAME = Name;                \
         static constexpr const char* get_name() { return NAME; } \
     };                                                           \
+                                                                 \
     }
 
 /* Used to reflect components */
@@ -45,3 +53,7 @@ struct Component {
 #define TMT_COMPONENT(Type, Name, Fields) TMT_COMPONENT_IMPL(Type, Name, Fields, Fields)
 
 #define TMT_COMPONENT_EX(Type, Name, JsonFields, ImguiFields) TMT_COMPONENT_IMPL(Type, Name, ImguiFields, JsonFields)
+
+#define TMT_COMPONENT_SERIALIZE(Type, Fields) JSON_REFLECT(Type, EXPAND Fields)
+
+#define TMT_COMPONENT_INSPECT(Type, Fields) IMGUI_REFLECT(Type, EXPAND Fields)

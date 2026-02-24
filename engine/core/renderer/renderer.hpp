@@ -46,6 +46,7 @@ class Renderer {
     class DiPipeline& di_pipeline;
     class PolylinePipeline& polyline_pipeline;
     class VfxPipeline& vfx_pipeline;
+    class UiPipeline& ui_pipeline;
 
 #ifdef THERMITE_EDITOR
     ImGUI* imgui = nullptr;
@@ -72,6 +73,8 @@ class Renderer {
 
     Transform& get_debug_transform() { return debug_transform; }
     Camera& get_debug_camera() { return debug_camera; }
+
+    glm::uvec2 viewport_size() const { return render_view.gpu_view.resolution; }
 
 #ifdef THERMITE_EDITOR
     void set_imgui(ImGUI* imgui);

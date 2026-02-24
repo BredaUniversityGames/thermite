@@ -19,11 +19,10 @@
 
 #include "engine/tools/fmt/helper.hpp"
 
-#include "engine/tools/uuid.hpp"
-
 namespace tmt {
 
 using Registry = entt::registry;
+using Dispatcher = entt::dispatcher;
 
 struct Delete {};
 
@@ -51,14 +50,16 @@ class Ecs : public OnGameStart, public OnGameUpdate, public OnGameFixedUpdate, p
     Registry& get_registry() { return registry; }
     const Registry& get_registry() const { return registry; }
 
+    // TODO this does not handle queued events for now
+    Dispatcher& get_dispatcher() { return dispatcher; }
+    const Dispatcher& get_dispatcher() const { return dispatcher; }
+
     /* Enforce Name component */
     Entity create_entity(const std::string& name = "", const Entity hint = entt::null) {
         Entity entity = registry.create(hint);
         /* Enforce Name component */
         registry.emplace<Name>(entity, name.empty() ? "Entity_" + EntityHelper::to_string(entity) : name);
         registry.emplace<Transform>(entity);
-        auto& uuid = registry.emplace<UUID>(entity, UUIDGenerator::generate());
-        uuid_entity_map[uuid] = entity;
         return entity;
     }
 
@@ -177,18 +178,6 @@ class Ecs : public OnGameStart, public OnGameUpdate, public OnGameFixedUpdate, p
         return entt::to_entity(storage, instance);
     }
 
-    std::optional<Entity> get_entity(const UUID& uuid) const {
-        if (uuid_entity_map.contains(uuid)) {
-            return uuid_entity_map.at(uuid);
-        }
-        return std::nullopt;
-    }
-
-    UUID get_uuid(const Entity entity) const {
-        const auto& uuid = get_component<UUID>(entity);
-        return uuid;
-    }
-
     void destroy_entity(const Entity entity, bool force = false) {
         if (force) {
             registry.destroy(entity);
@@ -210,7 +199,7 @@ class Ecs : public OnGameStart, public OnGameUpdate, public OnGameFixedUpdate, p
 
    private:
     Registry registry;
-    std::unordered_map<UUID, Entity> uuid_entity_map;
+    Dispatcher dispatcher;
 
     void on_game_start() override;
 

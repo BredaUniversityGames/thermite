@@ -1,3 +1,5 @@
+#pragma once
+
 #include "engine/core/ecs.hpp"
 
 #include "engine/core/resources.hpp"
@@ -83,6 +85,7 @@ class NavMesh {
     std::optional<glm::vec3> follow_path(glm::vec3 start, glm::vec3 end);
     void inspect();
 };
+
 }  // namespace tmt
 
 TMT_COMPONENT(tmt::NavMesh, "Navigation Mesh", (voxel_volume, lod_level));

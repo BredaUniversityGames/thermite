@@ -16,7 +16,7 @@ class SceneMode : public IEditorMode, public OnPreLoadScene {
     // Inherited via IEditorMode.
     constexpr std::string get_name() override { return "Scene"; }
     void display_main_menu() override;
-    void on_switch_to() override;
+    void on_switch_to(const std::any& meta_data = {}) override;
     void on_switch_away() override;
 
    private:
@@ -30,7 +30,7 @@ class SceneMode : public IEditorMode, public OnPreLoadScene {
     Transform cached_editor_transform;
 
     // Used as a flag for the on_pre_load_scene function call.
-    bool is_switching_to {false};
+    bool is_switching_to { false };
 };
 
 }  // namespace tmt
