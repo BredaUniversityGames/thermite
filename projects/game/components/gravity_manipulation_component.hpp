@@ -14,8 +14,14 @@ class GravityManipulationComponent : public tmt::GameComponent<GravityManipulati
     void update(const tmt::FrameData& time) override;
     void end() override;
 
+    float range;
+    float forward_offset;
+    float vertical_offset;
+
    private:
+    void grav_point();
+    void grav_shoot();
 };
 
 }  // namespace game
-TMT_OBJECT(game::GravityManipulationComponent, ());
+TMT_OBJECT(game::GravityManipulationComponent, (range, forward_offset, vertical_offset));
