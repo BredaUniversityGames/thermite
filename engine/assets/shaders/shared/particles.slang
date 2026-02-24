@@ -22,9 +22,11 @@ public struct ParticleEffect {
 
     public Range start_size;
     public Range end_size;
+    public BezierCurve size_curve;
 
     public Range start_opacity;
     public Range end_opacity;
+    public BezierCurve opacity_curve;
 
     public Range rotation;
     public Range pos_jitter;
@@ -58,6 +60,7 @@ public struct Particle {
     public float pos_jitter;
 
     public uint32_t tex_index;
+    public uint32_t effect_index;
 };
 
 public struct Counters {

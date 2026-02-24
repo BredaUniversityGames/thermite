@@ -153,8 +153,10 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
             eff.spawn_count = effect.spawn_count;
             eff.start_size = effect.start_size;
             eff.end_size = effect.end_size;
+            eff.size_curve.points = effect.size_curve.get_vec4();
             eff.start_opacity = effect.start_opacity;
             eff.end_opacity = effect.end_opacity;
+            eff.opacity_curve.points = effect.opacity_curve.get_vec4();
             eff.rotation = effect.rotation;
             eff.pos_jitter = effect.pos_jitter;
             eff.jitter_speed = effect.jitter_speed;
@@ -196,6 +198,7 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
 
     render_graph.add_compute_pass("Simulate Particles", "particle_sim.cs")
                 .read(render_view.render_view_buffer)
+                .read(particle_effects_buffer)
                 .write(particle_buffer)
                 .write(alive_list)
                 .write(alive_list_new)

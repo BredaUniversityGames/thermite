@@ -5,7 +5,10 @@
 namespace tmt {
 
 struct BezierCurve {
-    std::vector<float> values { 0.390f, 0.575f, 0.565f, 1.000f, 0.0f };
+    // Linear by default
+    std::vector<float> values { 0.0f, 0.0f, 1.0f, 1.0f, 0.0f };
+
+    inline glm::vec4 get_vec4() const { return glm::vec4(values[0], values[1], values[2], values[3]); }
 };
 
 }  // namespace tmt

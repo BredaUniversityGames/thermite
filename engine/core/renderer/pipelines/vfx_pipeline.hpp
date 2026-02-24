@@ -20,6 +20,10 @@ struct GpuQuad {
     glm::vec2 uvs {};
 };
 
+struct GpuBezierCurve {
+    glm::vec4 points {};
+};
+
 struct GpuParticleEffect {
     glm::vec3 pos {};
     float lifetime {};
@@ -33,9 +37,11 @@ struct GpuParticleEffect {
 
     Range start_size {};
     Range end_size {};
+    GpuBezierCurve size_curve {};
 
     Range start_opacity {};
     Range end_opacity {};
+    GpuBezierCurve opacity_curve {};
 
     Range rotation {};
     Range pos_jitter {};
@@ -70,7 +76,8 @@ struct GpuParticle {
     float pos_jitter {};
 
     uint32_t tex_index {};
-    glm::vec2 pad {};
+    uint32_t effect_index {};
+    float pad {};
 };
 
 struct Counters {
