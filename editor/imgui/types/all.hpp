@@ -11,3 +11,4 @@
 #include "editor/imgui/types/io.hpp"
 #include "editor/imgui/types/color.hpp"
 #include "editor/imgui/types/named_type.hpp"
+#include "editor/imgui/types/button.hpp"

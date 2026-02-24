@@ -16,6 +16,14 @@ enum class ButtonState : uint8_t {
 };
 // enum class Direction { NorthWest, North, NorthEast, East, SouthEast, South, SouthWest, West };
 
+template <typename T, typename... Args>
+concept MatchingMemberFn = requires(T* obj, void (T::*fn)(Args...)) {
+    { (obj->*fn)(std::declval<Args>()...) } -> std::same_as<void>;
+};
+
+template <typename F, typename... Args>
+concept MatchingCallable = std::invocable<F, Args...> && std::same_as<std::invoke_result_t<F, Args...>, void>;
+
 template <typename... Args>
 struct ButtonCallback {
     std::vector<std::function<void(Args...)>> callbacks;
@@ -35,7 +43,18 @@ struct ButtonCallback {
         callbacks.push_back(callback);
     }
 
-    void add(std::function<void(Args...)> callback) { callbacks.push_back(callback); }
+    template <typename T>
+    requires MatchingMemberFn<T, Args...>
+    void add(T* obj, void (T::*fn)(Args...)) {
+        callbacks.push_back([obj, fn](Args... args) { (obj->*fn)(args...); });
+    }
+
+    template <typename F>
+    requires MatchingCallable<F, Args...>
+    void add(F&& fn) {
+        callbacks.push_back(std::forward<F>(fn));
+    }
+
     void clear() { callbacks.clear(); }
 };
 
