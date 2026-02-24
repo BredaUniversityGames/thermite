@@ -8,6 +8,7 @@
 #include "engine/engine.hpp"
 #include "engine/core/logger.hpp"
 #include "engine/systems/gameplay/game_component_registry.hpp"
+#include "engine/systems/gameplay/gameplay.hpp"
 #include "engine/core/reflection.hpp"
 
 namespace tmt {
@@ -35,6 +36,7 @@ class ComponentCollection {
         GameComponentRegistry::is_registered_or_throw(type_id);
 
         components[type_id] = std::make_unique<T>(entity);
+        get_gameplay_system()->register_component_instance(type_id, components[type_id]);
         return static_cast<T&>(*components[type_id]);
     }
 
@@ -87,11 +89,20 @@ class ComponentCollection {
 
     bool has_component(const ComponentIndex& type_id) const;
 
-    const std::unordered_map<ComponentIndex, std::unique_ptr<IGameComponent>>& get_all_components() const { return components; }
+    const std::unordered_map<ComponentIndex, std::shared_ptr<IGameComponent>>& get_all_components() const { return components; }
 
    private:
     BEFRIEND_VISITABLE();
-    std::unordered_map<ComponentIndex, std::unique_ptr<IGameComponent>> components;
+    std::unordered_map<ComponentIndex, std::shared_ptr<IGameComponent>> components;
+
+    static Gameplay* get_gameplay_system() {
+        auto* game_play_system = engine.ecs.systems.try_get<Gameplay>();
+        if (game_play_system == nullptr) {
+            Log::error(Log::Scope::ENGINE, "[EcsComponentTraits] view: Gameplay system not found.");
+            throw std::runtime_error("[EcsComponentTraits] view: Gameplay system not found.");
+        }
+        return game_play_system;
+    }
 };
 
 }  // namespace tmt
@@ -161,6 +172,20 @@ struct EcsComponentTraits<T, std::enable_if_t<std::is_base_of_v<IGameComponent, 
             return &collection.get_component<T>();
         }
         return nullptr;
+    }
+    static auto view(const Registry&) {
+        const ComponentIndex type_id = typeid(T);
+        return get_gameplay_system()->get_component_instances(type_id);
+    }
+
+   private:
+    static Gameplay* get_gameplay_system() {
+        auto* game_play_system = engine.ecs.systems.try_get<Gameplay>();
+        if (game_play_system == nullptr) {
+            Log::error(Log::Scope::ENGINE, "[EcsComponentTraits] view: Gameplay system not found.");
+            throw std::runtime_error("[EcsComponentTraits] view: Gameplay system not found.");
+        }
+        return game_play_system;
     }
 };
 

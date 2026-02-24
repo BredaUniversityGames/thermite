@@ -39,6 +39,7 @@ struct EcsComponentTraits {
     static T& add_or_get(Registry& registry, Entity entity) { return registry.get_or_emplace<T>(entity); }
     static T* try_get(Registry& registry, Entity entity) { return registry.try_get<T>(entity); }
     static const T* try_get(const Registry& registry, Entity entity) { return registry.try_get<T>(entity); }
+    static auto view(const Registry& registry) { return registry.view<T>(); }
 };
 
 class Ecs : public OnGameStart, public OnGameUpdate, public OnGameFixedUpdate, public OnGameEnd, public OnEndFrame {
@@ -189,6 +190,12 @@ class Ecs : public OnGameStart, public OnGameUpdate, public OnGameFixedUpdate, p
         for (auto child : children) {
             destroy_entity(child, force);
         }
+    }
+
+    /* Returns a view of given elements */
+    template <typename Component>
+    auto view() {
+        return EcsComponentTraits<Component>::view(registry);
     }
 
     void clear() { registry.clear(); }

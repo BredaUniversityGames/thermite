@@ -60,4 +60,16 @@ void Gameplay::on_fixed_update(const tmt::FrameData& time) {
     });
 }
 
+void Gameplay::register_component_instance(const ComponentIndex& index, std::weak_ptr<IGameComponent> component) {
+    component_instances[index].push_back(component);
+}
+
+const std::vector<std::weak_ptr<IGameComponent>>& Gameplay::get_component_instances(const ComponentIndex& index) const {
+    static const std::vector<std::weak_ptr<IGameComponent>> empty_vector {};
+    if (component_instances.contains(index) == false) {
+        return empty_vector;
+    }
+    return component_instances.at(index);
+}
+
 }  // namespace tmt
