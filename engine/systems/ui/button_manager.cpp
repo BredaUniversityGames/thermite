@@ -1,4 +1,9 @@
 #include "button_manager.hpp"
+#include "button_manager.hpp"
+#include "button_manager.hpp"
+#include "button_manager.hpp"
+#include "button_manager.hpp"
+#include "button_manager.hpp"
 #include "engine/engine.hpp"
 #include "engine/core/ecs.hpp"
 #include "engine/core/input/input.hpp"
@@ -84,5 +89,15 @@ void ButtonManager::select_button(const Entity button) {
         new_button.state = ButtonState::ON_SELECT;
     }
 }
+
+void ButtonManager::on_mouse_move(MouseMoveEvent& event) {}
+
+void ButtonManager::on_mouse_button(MouseButtonEvent& event) {}
+
+void ButtonManager::on_keyboard(KeyboardEvent& event) {}
+
+void ButtonManager::on_gamepad_button(GamepadButtonEvent& event) {}
+
+void ButtonManager::on_gamepad_axis(GamepadAxisEvent& event) {}
 
 }  // namespace tmt

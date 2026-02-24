@@ -6,14 +6,6 @@
 namespace tmt {
 
 // ============================================================================
-// Base Input Event
-// ============================================================================
-
-struct InputEventBase : public EventBase {
-    // Common base for all input events
-};
-
-// ============================================================================
 // Mouse Override Event (existing)
 // ============================================================================
 
@@ -34,7 +26,7 @@ class OnRetrieveMouseState : public EventListenerBase<OnRetrieveMouseState, Mous
 // Mouse Move Event
 // ============================================================================
 
-struct MouseMoveEvent : public InputEventBase {
+struct MouseMoveEvent : public EventBase {
     float x;        // Current X position
     float y;        // Current Y position
     float delta_x;  // Movement delta X since last frame
@@ -59,7 +51,7 @@ enum class MouseButtonState {
     JUST_RELEASED  // Button was just released this frame
 };
 
-struct MouseButtonEvent : public InputEventBase {
+struct MouseButtonEvent : public EventBase {
     MouseButton button;
     MouseButtonState state;
     float x;  // Mouse position when event occurred
@@ -78,7 +70,7 @@ class OnMouseButton : public EventListenerBase<OnMouseButton, MouseButtonEvent> 
 // Mouse Scroll Event
 // ============================================================================
 
-struct MouseScrollEvent : public InputEventBase {
+struct MouseScrollEvent : public EventBase {
     float delta_x;  // Horizontal scroll
     float delta_y;  // Vertical scroll
     float mouse_x;  // Mouse position when event occurred
@@ -103,7 +95,7 @@ enum class KeyState {
     JUST_RELEASED  // Key was just released this frame
 };
 
-struct KeyboardEvent : public InputEventBase {
+struct KeyboardEvent : public EventBase {
     Key key;
     KeyState state;
     bool shift;  // Modifier states at time of event
@@ -129,7 +121,7 @@ enum class GamepadButtonState {
     JUST_RELEASED  // Button was just released this frame
 };
 
-struct GamepadButtonEvent : public InputEventBase {
+struct GamepadButtonEvent : public EventBase {
     GamepadButton button;
     GamepadButtonState state;
     int32_t device_id;
@@ -147,7 +139,7 @@ class OnGamepadButton : public EventListenerBase<OnGamepadButton, GamepadButtonE
 // Gamepad Axis Events
 // ============================================================================
 
-struct GamepadAxisEvent : public InputEventBase {
+struct GamepadAxisEvent : public EventBase {
     GamepadAxis axis;
     float value;       // Current value (-1.0 to 1.0 for sticks, 0.0 to 1.0 for triggers)
     float prev_value;  // Previous frame's value
@@ -166,7 +158,7 @@ class OnGamepadAxis : public EventListenerBase<OnGamepadAxis, GamepadAxisEvent> 
 // Gamepad Connection Events
 // ============================================================================
 
-struct GamepadConnectedEvent : public InputEventBase {
+struct GamepadConnectedEvent : public EventBase {
     int32_t device_id;
     const char* name;
 };
@@ -179,7 +171,7 @@ class OnGamepadConnected : public EventListenerBase<OnGamepadConnected, GamepadC
     void on_event(const GamepadConnectedEvent& event) final override { (void)event; }
 };
 
-struct GamepadDisconnectedEvent : public InputEventBase {
+struct GamepadDisconnectedEvent : public EventBase {
     int32_t device_id;
     const char* name;
 };
@@ -198,7 +190,7 @@ class OnGamepadDisconnected : public EventListenerBase<OnGamepadDisconnected, Ga
 
 enum class InputType { MOUSE_MOVE, MOUSE_BUTTON, MOUSE_SCROLL, KEYBOARD, GAMEPAD_BUTTON, GAMEPAD_AXIS, GAMEPAD_CONNECTED, GAMEPAD_DISCONNECTED };
 
-struct AnyInputEvent : public InputEventBase {
+struct AnyInputEvent : public EventBase {
     InputType type;
     union {
         struct {
