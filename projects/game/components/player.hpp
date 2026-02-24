@@ -34,4 +34,4 @@ class Player : public tmt::GameComponent<Player> {
 };
 
 }  // namespace game
-TMT_OBJECT(game::Player, (camera_sensitivity, acceleration, drag, max_speed, health, battery, max_health, max_battery));
+TMT_OBJECT(game::Player, (camera_sensitivity, acceleration, deceleration, drag, max_speed, health, battery, max_health, max_battery));
