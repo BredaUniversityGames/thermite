@@ -2,6 +2,8 @@
 
 #include "engine/core/resources/texture_2d.hpp"
 
+#include "engine/tools/types/bezier_curve.hpp"
+
 namespace tmt {
 
 struct Range {
@@ -30,6 +32,8 @@ struct ParticleEffect {
 
     bool active = true;
 
+    BezierCurve test;
+
     ResourceRef<Texture2D> texture;
 };
 
@@ -42,6 +46,6 @@ struct ParticleEmitter {
 }  // namespace tmt
 
 TMT_OBJECT(tmt::Range, (min, max));
-TMT_OBJECT(tmt::ParticleEffect, (particle_lifetime, dir, cone_angle, spawn_count, speed, start_size, end_size, start_opacity, end_opacity, rotation, pos_jitter, jitter_speed, active, texture));
+TMT_OBJECT(tmt::ParticleEffect, (particle_lifetime, dir, cone_angle, spawn_count, speed, start_size, end_size, start_opacity, end_opacity, rotation, pos_jitter, jitter_speed, active, test, texture));
 
 TMT_COMPONENT(tmt::ParticleEmitter, "ParticleEmitter", (effects, active));
