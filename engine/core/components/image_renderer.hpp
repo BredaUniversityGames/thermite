@@ -7,7 +7,7 @@ namespace tmt {
 
 struct ImageRenderer {
     ResourceRef<Texture2D> texture;
-    RGBA color = RGBA(glm::vec4(1, 0, 0, 1));
+    RGBA color = RGBA(glm::vec4(1, 1, 1, 1));
 
     ImageRenderer() = default;
     ImageRenderer(const ResourceRef<Texture2D> texture);

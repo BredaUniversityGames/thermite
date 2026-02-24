@@ -3,8 +3,15 @@
 #include "engine/events/input.hpp"
 #include "engine/core/entity.hpp"
 #include "engine/tools/types/direction.hpp"
+#include "engine/core/components/button.hpp"
 
 namespace tmt {
+
+enum class MoveState {
+    IDLE,
+    INITIAL_MOVE,
+    REPEAT_MOVE,
+};
 
 class ButtonManager : public ISystem, public OnMouseMove, public OnMouseButton, public OnKeyboard, public OnGamepadButton, public OnGamepadAxis {
    public:
@@ -17,8 +24,22 @@ class ButtonManager : public ISystem, public OnMouseMove, public OnMouseButton, 
     void select_button(const Entity button);
 
    private:
-    float hold_time = 0.0f;
+    void next_button(Direction direction);
+    void set_default_button();
+    void set_state(ButtonState state);
+    void update_move_state(float dt);
+
     Entity selected_button = entt::null;
+    Entity previous_button = entt::null;
+    float hold_time = 0.0f;
+
+    MoveState move_state = MoveState::IDLE;
+    float hold_move_duration = 0.0f;
+
+    /* Settings */
+    static constexpr float initial_delay = 0.5f;
+    static constexpr float repeat_delay = 0.1f;
+    static constexpr float min_axis_value = 0.3f;
 
     // Inherited via OnMouseMove
     void on_mouse_move(MouseMoveEvent& event) override;

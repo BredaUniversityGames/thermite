@@ -1,6 +1,8 @@
 #pragma once
 #include "engine/tools/types/color.hpp"
 #include "engine/core/reflection.hpp"
+#include "engine/core/entity.hpp"
+#include "engine/tools/types/direction.hpp"
 
 namespace tmt {
 
@@ -71,6 +73,9 @@ struct Button {
     /* Color for each state */
     std::array<RGBA, 8> colors = { RGBA(glm::vec4(1.0f)), RGBA(glm::vec4(0.8f)), RGBA(glm::vec4(0.6f)), RGBA(glm::vec4(0.8f)),
                                    RGBA(glm::vec4(0.5f)), RGBA(glm::vec4(1.0f)), RGBA(glm::vec4(1.0f)), RGBA(glm::vec4(1.0f)) };
+
+    /* Navigation: which button to move to for each direction (indexed by Direction enum: NORTH, NORTH_EAST, EAST, ...) */
+    std::array<Entity, 8> flow_direction = { entt::null, entt::null, entt::null, entt::null, entt::null, entt::null, entt::null, entt::null };
 };
 
 }  // namespace tmt

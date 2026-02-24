@@ -43,7 +43,7 @@ using SerializeComponents = ComponentRegistry<
 	ParticleEmitter,
 	UIComponent,
 	ImageRenderer,
-	Button
+	Button,
 	GoapAgentType,
 	GoapAgentTypeRef,
 	WorldState
@@ -65,7 +65,7 @@ using InspectComponents = ComponentRegistry<
 	ParticleEmitter,
 	UIComponent,
 	ImageRenderer,
-	Button
+	Button,
 	GoapAgentType,
 	GoapAgentTypeRef,
 	WorldState
