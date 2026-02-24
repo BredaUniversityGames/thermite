@@ -209,6 +209,8 @@ void Bvh2<T>::build(const T* input_prims, const uint32_t input_count) {
 template <typename T>
 std::vector<uint32_t> Bvh2<T>::overlap(const Aabb& aabb) const {
     /* Traversal state */
+    // TODO check with Milan
+
     std::vector<uint32_t> hits {};
     uint32_t stack[32] {}, stack_ptr = 0u, node_index = 0u;
 

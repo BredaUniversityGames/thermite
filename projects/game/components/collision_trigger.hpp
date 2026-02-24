@@ -11,16 +11,20 @@ class CollisionTrigger : public tmt::GameComponent<CollisionTrigger> {
     static std::string_view get_name() { return "CollisionTrigger"; }
 
     void start() override;
-    void update(const tmt::FrameData& time) override {}
+    void update(const tmt::FrameData& time) override {};
     void fixed_update(const tmt::FrameData& time) override;
     void end() override;
+    void draw_debug_lines() const override;
 
-    AABBShape collision_shape;
+    // TODO callable from debug lines
+    mutable AABBShape collision_shape;
     tmt::Aabb get_aabb() const;
+    glm::vec4 color { 1.0f };
+    float line_width = 1.0f;
 
    private:
     void on_transform_updated(entt::registry& reg, entt::entity e);
 };
 
 }  // namespace game
-TMT_OBJECT(game::CollisionTrigger, (collision_shape));
+TMT_OBJECT(game::CollisionTrigger, (collision_shape, color, line_width));

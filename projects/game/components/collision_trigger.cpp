@@ -1,6 +1,7 @@
 #include "collision_trigger.hpp"
 
 #include "events.hpp"
+#include "engine/core/polyline.hpp"
 #include "engine/systems/physics/physics_system.hpp"
 
 void game::CollisionTrigger::fixed_update(const tmt::FrameData& time) {
@@ -19,13 +20,13 @@ void game::CollisionTrigger::fixed_update(const tmt::FrameData& time) {
     }
 }
 void game::CollisionTrigger::start() {
-    constexpr glm::vec3 BIG_CONST_VEC3 { BIG_F32 };
-    if (glm::all(glm::equal(collision_shape.aabb.max_bounds, -BIG_CONST_VEC3)) || glm::all(glm::equal(collision_shape.aabb.min_bounds, BIG_CONST_VEC3))) {
-        tmt::Log::warn("Defaulting collision trigger entity {} ", entity);
-        collision_shape.calculate_aabb(tmt::engine.ecs.get_component<tmt::Transform>(entity).get_world_position());
-    }
+    /* constexpr glm::vec3 BIG_CONST_VEC3 { BIG_F32 };
+     if (glm::all(glm::equal(collision_shape.aabb.max_bounds, -BIG_CONST_VEC3)) || glm::all(glm::equal(collision_shape.aabb.min_bounds, BIG_CONST_VEC3))) {
+         tmt::Log::warn("Defaulting collision trigger entity {} ", entity);
+         collision_shape.calculate_aabb(tmt::engine.ecs.get_component<tmt::Transform>(entity).get_world_position());
+     }      */
 
-    tmt::engine.ecs.get_registry().on_update<tmt::Transform>().connect<&CollisionTrigger::on_transform_updated>(this);
+    // tmt::engine.ecs.get_registry().on_update<tmt::Transform>().connect<&CollisionTrigger::on_transform_updated>(this);
 }
 
 tmt::Aabb game::CollisionTrigger::get_aabb() const {
@@ -39,5 +40,14 @@ void game::CollisionTrigger::on_transform_updated(entt::registry& reg, tmt::Enti
 }
 
 void game::CollisionTrigger::end() {
-    tmt::engine.ecs.get_registry().on_update<tmt::Transform>().disconnect<&CollisionTrigger::on_transform_updated>(this);
+    // tmt::engine.ecs.get_registry().on_update<tmt::Transform>().disconnect<&CollisionTrigger::on_transform_updated>(this);
+}
+void game::CollisionTrigger::draw_debug_lines() const {
+    tmt::engine.polyline.use_color(color);
+    tmt::engine.polyline.use_line_width(line_width);
+
+    collision_shape.calculate_aabb(tmt::engine.ecs.get_component<tmt::Transform>(entity).get_world_position());
+    auto min_aabb = collision_shape.aabb.min_bounds;
+    auto max_aabb = collision_shape.aabb.max_bounds;
+    tmt::engine.polyline.draw_aabb(min_aabb, max_aabb);
 }
