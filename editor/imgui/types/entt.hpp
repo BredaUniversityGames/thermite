@@ -180,12 +180,6 @@ inline void tag_invoke(ImReflect::ImInput_t, const char* label, entt::entity& va
 
     ImGui::PushID(label);
 
-    /* Label */
-    if (label && label[0] != '\0') {
-        ImReflect::Detail::text_label(label);
-        ImGui::SameLine();
-    }
-
     /* Error styling for invalid entities */
     if (!is_valid) {
         ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.5f, 0.1f, 0.1f, 1.0f));
@@ -251,6 +245,12 @@ inline void tag_invoke(ImReflect::ImInput_t, const char* label, entt::entity& va
     }
     if (ImGui::IsItemHovered()) {
         ImGui::SetTooltip("Select entity from list");
+    }
+
+    /* Label */
+    if (label && label[0] != '\0') {
+        ImGui::SameLine();
+        ImReflect::Detail::text_label(label);
     }
 
     /* Entity selector popup */
