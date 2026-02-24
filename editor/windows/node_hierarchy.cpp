@@ -1,15 +1,22 @@
 #include "node_hierarchy.hpp"
 
+#include "editor.hpp"
+#include "editor/core/systems/undo_redo/type_diff.hpp"
+#include "editor/core/systems/undo_redo/component_diff.hpp"
+#include "editor/core/systems/undo_redo/voxel_edit_diff.hpp"
+#include "editor/core/systems/undo_redo/undo_redo_manager.hpp"
+
 #include "engine/engine.hpp"
 #include "engine/core/ecs.hpp"
+#include "engine/shared/const.hpp"
+#include "engine/core/polyline.hpp"
 #include "engine/core/resources.hpp"
-#include "engine/core/components/transform.hpp"
-#include "engine/core/components/voxel_renderer.hpp"
-#include "engine/tools/file_dialog.hpp"
 #include "engine/tools/svh_format.hpp"
 #include "engine/shared/colorspace.hpp"
-#include "engine/shared/const.hpp"
+#include "engine/tools/file_dialog.hpp"
 #include "engine/tools/serializer/all.hpp"
+#include "engine/core/components/transform.hpp"
+#include "engine/core/components/voxel_renderer.hpp"
 
 #include <imgui.h>
 #include <imgui_stdlib.h>
@@ -20,13 +27,6 @@
 #include <ogt_voxel_meshify.h>
 
 #include <fstream>
-
-#include "editor.hpp"
-#include "core/systems/undo_redo/type_diff.hpp"
-#include "editor/core/systems/undo_redo/component_diff.hpp"
-#include "editor/core/systems/undo_redo/undo_redo_manager.hpp"
-#include "editor/core/systems/undo_redo/voxel_edit_diff.hpp"
-#include "engine/core/polyline.hpp"
 
 namespace {
 
@@ -528,6 +528,7 @@ void NodeHierarchy::popup_resize_node() {
         // Only rescale the volume if the new scale isn't 0 on any axis.
         if (node_resize_info->size.x != 0 && node_resize_info->size.y != 0 && node_resize_info->size.z != 0) {
             const auto new_volume = std::make_shared<VoxelVolume>(node_resize_info->size);
+            const ResourceRef grid_resource { {}, new_volume };
 
             // If the node already has a renderer (aka: has a grid), copy over its data.
             if (renderer != nullptr) {
@@ -550,7 +551,10 @@ void NodeHierarchy::popup_resize_node() {
                             if (material == nullptr) continue;
 
                             const MaterialIndex index = static_cast<MaterialIndex>(material - renderer->resource->blas->palette.entries);
-                            new_volume->blas->set_voxel(node_resize_info->offset.x + x, node_resize_info->offset.y + y, node_resize_info->offset.z + z, index);
+
+                            // Kind scuffed because we are taking the negative of an unsigned value, but this gets the start position in the new voxel grid.
+                            const glm::uvec3 new_min = glm::mix(node_resize_info->offset, -min, result);
+                            new_volume->blas->set_voxel(x + new_min.x, y + new_min.y, z + new_min.z, index);
                         }
                     }
                 }
@@ -571,12 +575,21 @@ void NodeHierarchy::popup_resize_node() {
                     child_transform.set_local_position(child_transform.get_local_position() + offset);
                 }
 
+                GridResizeDiff diff { node_resize_info->entity, offset, renderer->resource, grid_resource };
+                GridResizeDiff::send_to_manager(std::move(diff), "Resize Grid");
             } else {
                 // If the node doesn't already have a renderer (aka: doesn't have a grid), add it.
                 renderer = &engine.ecs.add_component<VoxelRenderer>(node_resize_info->entity);
+
+                GridResizeDiff diff { node_resize_info->entity, glm::zero<glm::vec3>(), {}, grid_resource };
+                GridResizeDiff::send_to_manager(std::move(diff), "Resize Grid");
             }
-            renderer->resource = ResourceRef { {}, new_volume };
+            renderer->resource = grid_resource;
         } else {
+            renderer = &engine.ecs.get_component<VoxelRenderer>(node_resize_info->entity);
+            GridResizeDiff diff { node_resize_info->entity, glm::zero<glm::vec3>(), renderer->resource, {} };
+            GridResizeDiff::send_to_manager(std::move(diff), "Resize Grid");
+
             // Remove the VoxelRenderer component if the new grid size of 0 on any axis, this removes the grid from the entity entirely.
             engine.ecs.remove_component<VoxelRenderer>(node_resize_info->entity);
         }
