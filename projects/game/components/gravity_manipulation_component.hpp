@@ -17,6 +17,7 @@ class GravityManipulationComponent : public tmt::GameComponent<GravityManipulati
     float range;
     float forward_offset;
     float vertical_offset;
+    float max_mass;
 
    private:
     void grav_point();
