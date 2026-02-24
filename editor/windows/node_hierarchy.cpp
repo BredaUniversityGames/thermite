@@ -572,7 +572,7 @@ void NodeHierarchy::popup_resize_node() {
 
                 for (const Entity child : transform.get_children()) {
                     Transform& child_transform = engine.ecs.get_component<Transform>(child);
-                    child_transform.set_local_position(child_transform.get_local_position() + offset);
+                    child_transform.set_local_position(child_transform.get_local_position() - offset);
                 }
 
                 GridResizeDiff diff { node_resize_info->entity, offset, renderer->resource, grid_resource };
@@ -581,7 +581,19 @@ void NodeHierarchy::popup_resize_node() {
                 // If the node doesn't already have a renderer (aka: doesn't have a grid), add it.
                 renderer = &engine.ecs.add_component<VoxelRenderer>(node_resize_info->entity);
 
-                GridResizeDiff diff { node_resize_info->entity, glm::zero<glm::vec3>(), {}, grid_resource };
+                const glm::vec3 resize_half_extent = glm::vec3 { node_resize_info->size } * VOXEL_SIZE_HALF;
+
+                const glm::vec3 local_offset = -glm::vec3 { node_resize_info->offset } * UNITS_PER_VOXEL;
+                const glm::vec3 offset = resize_half_extent + local_offset;
+
+                transform.set_local_position(transform.get_local_position() + offset);
+
+                for (const Entity child : transform.get_children()) {
+                    Transform& child_transform = engine.ecs.get_component<Transform>(child);
+                    child_transform.set_local_position(child_transform.get_local_position() - offset);
+                }
+
+                GridResizeDiff diff { node_resize_info->entity, offset, {}, grid_resource };
                 GridResizeDiff::send_to_manager(std::move(diff), "Resize Grid");
             }
             renderer->resource = grid_resource;
