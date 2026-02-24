@@ -41,29 +41,19 @@ void Game::on_start() {
         transform.set_world_position(glm::vec3(0.0f, 0.0f, -16.0f));
     }
 
-    { /* Animation entity */
-        auto rig_ent = tmt::engine.ecs.create_entity();
-        auto& rig_ent_rig_model_comp = tmt::engine.ecs.add_component<tmt::RigModel>(rig_ent);
+    //{ /* Animation entity */
+    //    auto rig_ent = tmt::engine.ecs.create_entity();
+    //    auto& rig_ent_rig_model_comp = tmt::engine.ecs.add_component<tmt::RigModel>(rig_ent);
 
-        tmt::IO::FileLocation location { tmt::IO::Location::PROJECT, "Victory_animation.fbx" };
-        rig_ent_rig_model_comp.init(location, rig_ent);
-        //rig_ent_rig_model_comp.data->animation_files.push_back(location);
-        //rig_ent_rig_model_comp.data->reload();
+    //    tmt::IO::FileLocation location { tmt::IO::Location::PROJECT, "Victory_animation.fbx" };
+    //    rig_ent_rig_model_comp.init(location, rig_ent);
+    //    //rig_ent_rig_model_comp.data->animation_files.push_back(location);
+    //    //rig_ent_rig_model_comp.data->reload();
 
-        rig_ent_rig_model_comp.set_current_animation("Victory_animation");
-        rig_ent_rig_model_comp.state = tmt::RigModel::State::ANIMATE_LOOP;
-        rig_ent_rig_model_comp.time = 0.0f;
-    }
-
-    { /* Voxel entity */
-        voxel = tmt::engine.ecs.create_entity("Moving Voxel");
-        auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(voxel);
-        auto& renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(voxel);
-        // renderer.size = glm::uvec3(64u, 64u, 64u);
-        transform.set_world_position(glm::vec3(2.0f, 2.0f, 0.0f));
-        transform.set_world_rotation(glm::vec3(glm::radians(45.0f), glm::radians(45.0f), 0.0f));
-        transform.set_world_scale(glm::vec3(1.0f, 1.0f, 1.0f));
-    }
+    //    rig_ent_rig_model_comp.set_current_animation("Victory_animation");
+    //    rig_ent_rig_model_comp.state = tmt::RigModel::State::ANIMATE_LOOP;
+    //    rig_ent_rig_model_comp.time = 0.0f;
+    //}
 }
 
 void Game::on_update(const tmt::FrameData& time) {}

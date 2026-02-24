@@ -1,0 +1,62 @@
+{
+    "version": 1,
+    "entities": [
+        0
+    ],
+    "Name": {
+        "0": {
+            "name": "Entity_0"
+        }
+    },
+    "Transform": {
+        "0": {
+            "local_position": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "local_rotation": {
+                "w": 1.0,
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "local_scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "parent": 4294967295,
+            "children": []
+        }
+    },
+    "Animated Rig": {
+        "0": {
+            "data": {
+                "file_location": {
+                    "sub_location": "PROJECT",
+                    "relative_path": "SmallEnemy_test.fbx"
+                },
+                "data": {
+                    "animation_files": [
+                        [
+                            {
+                                "sub_location": "PROJECT",
+                                "relative_path": "Smallenemy_test.fbx"
+                            },
+                            [
+                                "SmallEnemy_test",
+                                false
+                            ]
+                        ]
+                    ]
+                }
+            },
+            "vox_path": {
+                "sub_location": "PROJECT",
+                "relative_path": ""
+            }
+        }
+    },
+    "systems": null
+}

@@ -23,8 +23,7 @@ class RigModel {
 
     bool rig_is_loaded = false;
     bool vox_is_loaded = false;
-    std::string rig_path;
-    std::string vox_path;
+    IO::FileLocation vox_path = {};
 
     float time = 0.05f;
     float animation_speed = 1.0f;
@@ -35,9 +34,8 @@ class RigModel {
     std::vector<Entity> voxel_entities;
     std::vector<Entity> pivot_entities;
     ResourceRef<RigData> data;
-    IO::FileLocation file_directory = {};
 
-    // void attach_voxel_objects(const IO::FileLocation& directory);
+    void attach_voxel_objects();
 
     [[nodiscard]] bool is_transferring() const {
         if (state == State::TRANSFERRING_TO_LOOP || state == State::TRANSFERRING_TO_ONCE || state == State::TRANSFERRING_TO_STOP) return true;
