@@ -67,14 +67,19 @@ std::vector<AsteroidPoissonPoint> AsteroidFieldComponent::get_poisson_points(con
             glm::vec3 rand_unit_vec = Random::rand_unit_vec();
             glm::vec3 guidance_point = selected_p + rand_unit_vec * selected_spacing_radius;
 
-            float belt_tendency = abs((guidance_point.y / layer_height * 0.5f) - 1.f);
+            if (guidance_point.x < 0.f || guidance_point.x > grid.region_size.x || guidance_point.y < 0.f || guidance_point.y > grid.region_size.y || guidance_point.z < 0.f ||
+                guidance_point.z > grid.region_size.z) {
+                continue;
+            }
+
+            float linear_relation = abs((guidance_point.y / (layer_height * 0.5f)) - 1.f);
+            float belt_tendency = linear_relation*linear_relation*linear_relation;
 
             std::vector<float> effective_weights;
             effective_weights.reserve(layer.layer_entries.size());
             float cum_effective_weights = 0.f;
             for (auto& e : layer.layer_entries) {
-                float bn = (e.belt_weight / cum_belt_weight) * belt_tendency;
-                float eff = e.spawn_weight + bn;
+                float eff = e.spawn_weight * (1.f + e.belt_weight/(1.f - belt_tendency));
                 effective_weights.push_back(eff);
                 cum_effective_weights += eff;
             }
@@ -123,15 +128,6 @@ std::vector<AsteroidPoissonPoint> AsteroidFieldComponent::get_poisson_points(con
     }
 
     return radii_points;
-}
-
-glm::vec3 AsteroidFieldComponent::get_belt_biased_unit_vector(float bias) {
-    glm::vec3 unit_vec = Random::rand_unit_vec();
-    glm::vec3 up_vec = glm::vec3(0.f, 1.f, 0.f);
-
-    glm::vec3 xy_vec = glm::normalize(unit_vec - up_vec * (glm::dot(unit_vec, up_vec)));
-
-    return glm::normalize(glm::mix(unit_vec, xy_vec, bias));
 }
 
 bool AsteroidFieldComponent::point_valid(

@@ -53,7 +53,6 @@ struct AsteroidFieldComponent : public tmt::GameComponent<AsteroidFieldComponent
 
    private:
     std::vector<AsteroidPoissonPoint> get_poisson_points(const FAsteroidFieldLayer& layer);
-    glm::vec3 get_belt_biased_unit_vector(float bias);
 
     struct SpatialLookupGrid {
         SpatialLookupGrid(float cell_size, glm::vec3 region_size);

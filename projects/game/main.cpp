@@ -85,7 +85,6 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     tmt::engine.component_registry.register_component<AsteroidFieldComponent>();
 
     /* Register Game Components */
-    tmt::engine.component_registry.register_component<EntityRef>();
     tmt::engine.component_registry.register_component<game::Wallet>();
     tmt::engine.component_registry.register_component<game::MiningComponent>();
     tmt::engine.component_registry.register_component<game::AnimationPlayer>();
