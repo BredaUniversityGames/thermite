@@ -19,6 +19,7 @@ class Player : public tmt::GameComponent<Player> {
 
     // Movement parameters
     float acceleration = 20.0f;
+    float deceleration = 40.0f;
     float drag = 5.0f;
     float max_speed = 10.0f;
 
