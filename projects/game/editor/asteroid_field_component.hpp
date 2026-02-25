@@ -3,6 +3,10 @@
 #include "projects/game/components/asteroid_field_component.hpp"
 
 inline void tag_invoke(ImReflect::ImInput_t, const char* name, AsteroidFieldComponent& value, ImSettings& settings, ImResponse& response) {
+    
+    settings.push_member<&FAsteroidLayerEntry::radius_factor>().min(1.f).clamp(true);
+    settings.push_member<&FAsteroidLayerEntry::belt_bias>().min(0.f).clamp(true);
+
     ImReflect::Detail::imgui_input_visit_field(name, value, settings, response);
 
     auto& type_resp = response.get<AsteroidFieldComponent>();
