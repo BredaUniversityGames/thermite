@@ -22,6 +22,7 @@
 namespace tmt {
 
 using Registry = entt::registry;
+using Dispatcher = entt::dispatcher;
 
 struct Delete {};
 
@@ -30,6 +31,7 @@ concept System = std::is_base_of_v<ISystem, T>;
 
 template <typename T, typename = void>
 struct EcsComponentTraits {
+    static constexpr bool IS_GAME_COMPONENT = false;
     static T& add(Registry& registry, Entity entity) { return registry.emplace<T>(entity); }
     static void remove(Registry& registry, Entity entity) { registry.remove<T>(entity); }
     static T& get(Registry& registry, Entity entity) { return registry.get<T>(entity); }
@@ -38,6 +40,18 @@ struct EcsComponentTraits {
     static T& add_or_get(Registry& registry, Entity entity) { return registry.get_or_emplace<T>(entity); }
     static T* try_get(Registry& registry, Entity entity) { return registry.try_get<T>(entity); }
     static const T* try_get(const Registry& registry, Entity entity) { return registry.try_get<T>(entity); }
+
+    /* view - non const */
+    template <typename... Rest, typename... Excludes>
+    static auto view_with(Registry& registry, entt::exclude_t<Excludes...> = entt::exclude_t {}) {
+        return registry.view<T, Rest...>(entt::exclude_t<Excludes...> {});
+    }
+
+    /* view - const */
+    template <typename... Rest, typename... Excludes>
+    static auto view_with(const Registry& registry, entt::exclude_t<Excludes...> = entt::exclude_t {}) {
+        return registry.view<T, Rest...>(entt::exclude_t<Excludes...> {});
+    }
 };
 
 class Ecs : public OnGameStart, public OnGameUpdate, public OnGameFixedUpdate, public OnGameEnd, public OnEndFrame {
@@ -48,6 +62,10 @@ class Ecs : public OnGameStart, public OnGameUpdate, public OnGameFixedUpdate, p
     /* Entities / Components */
     Registry& get_registry() { return registry; }
     const Registry& get_registry() const { return registry; }
+
+    // TODO this does not handle queued events for now
+    Dispatcher& get_dispatcher() { return dispatcher; }
+    const Dispatcher& get_dispatcher() const { return dispatcher; }
 
     /* Enforce Name component */
     Entity create_entity(const std::string& name = "", const Entity hint = entt::null) {
@@ -186,6 +204,29 @@ class Ecs : public OnGameStart, public OnGameUpdate, public OnGameFixedUpdate, p
         }
     }
 
+    /* Returns a view of given elements const */
+    template <typename First, typename... Rest, typename... Excludes>
+    auto view(entt::exclude_t<Excludes...> = entt::exclude_t {}) const {
+        constexpr bool ALL_NATIVE = (!EcsComponentTraits<First>::IS_GAME_COMPONENT && (!EcsComponentTraits<Rest>::IS_GAME_COMPONENT && ...));
+        constexpr bool ALL_GAME = (EcsComponentTraits<First>::IS_GAME_COMPONENT && (EcsComponentTraits<Rest>::IS_GAME_COMPONENT && ...));
+
+        static_assert(ALL_NATIVE || ALL_GAME, "Cannot mix native ECS components and IGameComponent-derived types in a single view.");
+        static_assert(ALL_GAME || (!EcsComponentTraits<Excludes>::IS_GAME_COMPONENT && ...), "Cannot exclude game components from a native component view.");
+        return EcsComponentTraits<First>::template view_with<Rest...>(registry, entt::exclude_t<Excludes...> {});
+    }
+
+    /* Returns a view of given elements */
+    template <typename First, typename... Rest, typename... Excludes>
+    auto view(entt::exclude_t<Excludes...> = entt::exclude_t {}) {
+        constexpr bool ALL_NATIVE = (!EcsComponentTraits<First>::IS_GAME_COMPONENT && (!EcsComponentTraits<Rest>::IS_GAME_COMPONENT && ...));
+        constexpr bool ALL_GAME = (EcsComponentTraits<First>::IS_GAME_COMPONENT && (EcsComponentTraits<Rest>::IS_GAME_COMPONENT && ...));
+
+        static_assert(ALL_NATIVE || ALL_GAME, "Cannot mix native ECS components and IGameComponent-derived types in a single view.");
+        static_assert(ALL_GAME || (!EcsComponentTraits<Excludes>::IS_GAME_COMPONENT && ...), "Cannot exclude game components from a native component view.");
+
+        return EcsComponentTraits<First>::template view_with<Rest...>(registry, entt::exclude_t<Excludes...> {});
+    }
+
     void clear() { registry.clear(); }
 
     bool valid(const Entity entity) const { return registry.valid(entity); }
@@ -194,6 +235,7 @@ class Ecs : public OnGameStart, public OnGameUpdate, public OnGameFixedUpdate, p
 
    private:
     Registry registry;
+    Dispatcher dispatcher;
 
     void on_game_start() override;
 

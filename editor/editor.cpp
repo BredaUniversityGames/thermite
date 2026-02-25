@@ -1,8 +1,9 @@
+#include "windows/build_packager.hpp"
 #if THERMITE_EDITOR
-#pragma message(" THERMITE_EDITOR=1 ")
+    #pragma message(" THERMITE_EDITOR=1 ")
 #else
-/* Shouldn't happen */
-#error THERMITE_EDITOR must be defined to 1 in editor builds
+    /* Shouldn't happen */
+    #error THERMITE_EDITOR must be defined to 1 in editor builds
 #endif
 
 #include "editor/editor.hpp"
@@ -34,6 +35,7 @@
 #include "editor/windows/inspector.hpp"
 #include "editor/windows/goap_debugger.hpp"
 #include "editor/windows/goap_action_editor.hpp"
+#include "editor/windows/goap_agent_editor.hpp"
 #include "editor/windows/font_control.hpp"
 #include "editor/windows/profiler_tracy.hpp"
 #include "editor/windows/audio_mixer.hpp"
@@ -48,6 +50,7 @@
 #include "editor/windows/model_viewer.hpp"
 #include "editor/windows/node_hierarchy.hpp"
 #include "editor/windows/palette.hpp"
+#include "editor/windows/material_editor.hpp"
 #include "editor/windows/brush.hpp"
 #include "editor/windows/editor_settings.hpp"
 
@@ -58,9 +61,13 @@ namespace tmt {
 
 Editor::Editor() : imgui_manager(*new ImGuiManager()) {}
 
-Editor::~Editor() { delete &imgui_manager; }
+Editor::~Editor() {
+    delete &imgui_manager;
+}
 
-void Editor::init() { Log::info("Thermite Editor initialized."); }
+void Editor::init() {
+    Log::info("Thermite Editor initialized.");
+}
 
 void Editor::switch_mode(Mode new_mode, const std::any& meta_data) {
     // if (editor_mode == new_mode) return;
@@ -87,6 +94,7 @@ void Editor::on_engine_init(const ApplicationSpecs&) {
     windows[Mode::SCENE].add<Profiler>();
     windows[Mode::SCENE].add<GoapDebugger>();
     windows[Mode::SCENE].add<GoapActionEditor>();
+    windows[Mode::SCENE].add<GoapAgentEditor>();
     windows[Mode::SCENE].add<FontControl>();
     windows[Mode::SCENE].add<AudioMixer>();
     windows[Mode::SCENE].add<ScenesWindow>();
@@ -99,12 +107,16 @@ void Editor::on_engine_init(const ApplicationSpecs&) {
     windows[Mode::SCENE].add<Rendering>();
     windows[Mode::SCENE].add<UndoRedoManager>();
     windows[Mode::SCENE].add<EditorSettingsWindow>();
+    windows[Mode::SCENE].add<BuildPackager>();
 
     engine.scenes.register_scene<VoxelEditScene>();
     windows[Mode::VOXEL].add<ModelViewer>();
     windows[Mode::VOXEL].add<NodeHierarchy>();
     windows[Mode::VOXEL].add<Palette>();
+    windows[Mode::VOXEL].add<MaterialEditor>();
     windows[Mode::VOXEL].add<Brush>();
+    windows[Mode::VOXEL].add<Console>();
+    windows[Mode::VOXEL].add<UndoRedoManager>();
 
     engine.scenes.register_scene<PrefabEditScene>();
     windows[Mode::PREFAB].add<Hierarchy>();
@@ -113,6 +125,7 @@ void Editor::on_engine_init(const ApplicationSpecs&) {
     windows[Mode::PREFAB].add<AssetBrowser>();
     windows[Mode::PREFAB].add<Console>();
     windows[Mode::PREFAB].add<ScenesWindow>();
+    windows[Mode::PREFAB].add<UndoRedoManager>();
 
     for (auto& [mode, collection] : windows) {
         for (const auto& window : collection) {
@@ -195,7 +208,7 @@ void Editor::main_menu_bar() {
 
         if (ImGui::BeginMenu("Renderer")) {
             /* List of display mode labels */
-            static const std::vector<std::string> DISPLAY_MODE_LABELS {"Default", "Steps (0..128)", "Visibility", "Depth (0..100)", "Normals", "Albedo", "Illuminance"};
+            static const std::vector<std::string> DISPLAY_MODE_LABELS { "Default", "Steps (0..128)", "Visibility", "Depth (0..100)", "Normals", "Albedo", "Illuminance" };
 
             static uint32_t display_mode_index = 0u;
             const std::string& display_mode = DISPLAY_MODE_LABELS[display_mode_index];
@@ -213,24 +226,23 @@ void Editor::main_menu_bar() {
                 ImGui::EndMenu();
             }
 
-            { /* List of shading rate labels */
-                static const std::vector<std::string> SHADING_RATE_LABELS {"Full-Rate", "Half-Rate (1:2)", "Quarter-Rate (1:4)"};
+            /* List of shading rate labels */
+            static const std::vector<std::string> SHADING_RATE_LABELS { "Full-Rate", "Half-Rate (1:2)", "Quarter-Rate (1:4)" };
 
-                static uint32_t shading_rate_index = 0u;
-                const std::string& shading_rate = SHADING_RATE_LABELS[shading_rate_index];
+            static uint32_t shading_rate_index = 0u;
+            const std::string& shading_rate = SHADING_RATE_LABELS[shading_rate_index];
 
-                if (ImGui::BeginMenu(("DI Shading Rate (" + shading_rate + ")").c_str())) {
-                    /* Render all shading rate options */
-                    for (uint32_t i = 0u; i < SHADING_RATE_LABELS.size(); ++i) {
-                        const bool selected = engine.renderer.render_view.get_shading_rate_di() == magic_enum::enum_cast<ShadingRate>(i).value_or(ShadingRate::FULL_RATE);
+            if (ImGui::BeginMenu(("DI Shading Rate (" + shading_rate + ")").c_str())) {
+                /* Render all shading rate options */
+                for (uint32_t i = 0u; i < SHADING_RATE_LABELS.size(); ++i) {
+                    const bool selected = engine.renderer.render_view.get_shading_rate_di() == magic_enum::enum_cast<ShadingRate>(i).value_or(ShadingRate::FULL_RATE);
 
-                        if (ImGui::MenuItem(SHADING_RATE_LABELS[i].c_str(), nullptr, selected)) {
-                            shading_rate_index = i;
-                            engine.renderer.render_view.set_shading_rate_di(magic_enum::enum_cast<ShadingRate>(i).value_or(ShadingRate::FULL_RATE));
-                        }
+                    if (ImGui::MenuItem(SHADING_RATE_LABELS[i].c_str(), nullptr, selected)) {
+                        shading_rate_index = i;
+                        engine.renderer.render_view.set_shading_rate_di(magic_enum::enum_cast<ShadingRate>(i).value_or(ShadingRate::FULL_RATE));
                     }
-                    ImGui::EndMenu();
                 }
+                ImGui::EndMenu();
             }
 
             ImGui::EndMenu();

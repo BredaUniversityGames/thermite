@@ -31,7 +31,7 @@ void PrefabHelper::create_prefab(const IO::FileLocation& location, const Entity&
     IO::write_text_file(location, dump);
 
     /* Add Prefab components */
-    std::set<Entity> entities = {root};
+    std::set<Entity> entities = { root };
     entities.merge(root_transform.get_all_children());
 
     const PrefabInstanceID instance_id = UUIDGenerator::generate();
@@ -40,11 +40,13 @@ void PrefabHelper::create_prefab(const IO::FileLocation& location, const Entity&
         const bool has_prefab = engine.ecs.has_component<Prefab>(entity);
         if (has_prefab) {
             auto& prefab_comp = engine.ecs.get_component<Prefab>(entity);
-            prefab_comp.prefab_chain.push_back({
-                location,
-                entity,
-                instance_id,
-            });
+            prefab_comp.prefab_chain.push_back(
+                {
+                    location,
+                    entity,
+                    instance_id,
+                }
+            );
         } else {
             auto& prefab_comp = engine.ecs.add_or_get_component<Prefab>(entity);
             prefab_comp.source_location = location;
@@ -56,6 +58,26 @@ void PrefabHelper::create_prefab(const IO::FileLocation& location, const Entity&
 }
 
 Entity PrefabHelper::instantiate_prefab(const IO::FileLocation& location, const Entity& parent) {
+    /* Load prefab json from disk */
+    const auto prefab_json_resource = engine.resources.load_resource<Json>(location);
+    if (prefab_json_resource == nullptr) {
+        Log::error(Log::Scope::ENGINE, "[PrefabHelper] instantiate_prefab: Failed to load prefab json at location '{}'", location.get_absolute_path().string());
+        return entt::null;
+    }
+
+    return instantiate_prefab(prefab_json_resource->get_parsed_json(), location, parent);
+}
+
+Entity PrefabHelper::instantiate_prefab(const ResourceRef<Json>& prefab_json, const Entity& parent) {
+    if (prefab_json == nullptr) {
+        Log::error(Log::Scope::ENGINE, "[PrefabHelper] instantiate_prefab: Prefab json resource is nullptr");
+        return entt::null;
+    }
+
+    return instantiate_prefab(prefab_json->get_parsed_json(), prefab_json->file_location, parent);
+}
+
+Entity PrefabHelper::instantiate_prefab(const tmt::json& parsed_json, const IO::FileLocation& location, const Entity& parent) {
     const bool has_prefab = engine.ecs.has_component<Prefab>(parent);
     /* Check if we create a loop */
     if (has_prefab) {
@@ -71,13 +93,6 @@ Entity PrefabHelper::instantiate_prefab(const IO::FileLocation& location, const 
         }
     }
 
-    /* Load prefab json from disk */
-    const auto prefab_json_resource = engine.resources.load_resource<Json>(location);
-    if (prefab_json_resource == nullptr) {
-        Log::error(Log::Scope::ENGINE, "[PrefabHelper] instantiate_prefab: Failed to load prefab json at location '{}'", location.get_absolute_path().string());
-        return entt::null;
-    }
-
     /* New prefab */
     Prefab prefab_data {};
     prefab_data.source_location = location;
@@ -85,7 +100,7 @@ Entity PrefabHelper::instantiate_prefab(const IO::FileLocation& location, const 
 
     /* Deserialize entities */
     std::set<Entity> new_entities;
-    Serializer::deserialize(prefab_json_resource->get_parsed_json(), new_entities, engine.ecs, prefab_data);
+    Serializer::deserialize(parsed_json, new_entities, engine.ecs, prefab_data);
     if (new_entities.empty()) {
         Log::error(Log::Scope::ENGINE, "[PrefabHelper] instantiate_prefab: No entities deserialized from prefab at location '{}'", location.get_absolute_path().string());
         return entt::null;
@@ -95,7 +110,7 @@ Entity PrefabHelper::instantiate_prefab(const IO::FileLocation& location, const 
     const Entity root_entity = *EntityHelper::upper_parents(new_entities).begin();
     auto& root_transform = engine.ecs.get_component<Transform>(root_entity);
     root_transform.set_parent(parent);
-    return parent == entt::null ? root_entity : parent;
+    return root_entity;
 }
 
 }  // namespace tmt

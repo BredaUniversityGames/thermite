@@ -11,8 +11,6 @@
 #include <vector>
 
 #include <extern/imgui-node-editor/imgui_node_editor.h>
-namespace ignode = ax::NodeEditor;
-static ignode::EditorContext* g_Context = nullptr;  // internal state container for imgui-node-editor.
 
 namespace tmt {
 
@@ -27,7 +25,6 @@ void GoapActionEditor::on_editor_start() {
     auto& overrides = goap->overrides();
 
     overrides.load();
-    // GoapActionOverrides::instance().load();
 }
 
 void GoapActionEditor::on_editor_end() {
@@ -41,7 +38,6 @@ void GoapActionEditor::on_editor_end() {
     auto& overrides = goap->overrides();
 
     overrides.save();
-    // GoapActionOverrides::instance().save();
 }
 
 /**
@@ -55,9 +51,6 @@ void GoapActionEditor::on_editor_end() {
  * All of these can also be reset to their origional value
  */
 void GoapActionEditor::display() {
-    /*auto& registry = GoapActionRegistry::instance();
-    auto& overrides = GoapActionOverrides::instance();*/
-
     Goap* goap = engine.ecs.systems.try_get<Goap>();
 
     if (!goap) {

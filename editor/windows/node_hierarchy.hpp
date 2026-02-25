@@ -14,6 +14,10 @@ class VoxelVolume;
 
 class NodeHierarchy : public IWindow {
    public:
+    struct NodeUUID {
+        UUID uuid { NULL_UUID };
+    };
+
     constexpr std::string get_title() const override { return ICON_MS_FLOWCHART " Node hierarchy"; }
     constexpr bool default_open() const override { return true; }
 
@@ -29,29 +33,34 @@ class NodeHierarchy : public IWindow {
 
     void build_scene(const std::span<VoxelSceneNode>& root_nodes, bool assign_new_uuids = false);
 
-    std::vector<char> encode_voxel_scene();
+    std::vector<char> encode_voxel_scene() const;
 
    private:
+    friend class VoxelNodeDiff;
+
     void recurse_display_node(Entity entity, const Name& name, Transform& transform);
     void clear_hierarchy();
 
     void drop_hierarchy();
-    void drop_node(Entity entity);
+    void drop_node(Entity entity, Transform& transform);
 
     void popup_create_node();
+    void popup_resize_node();
     void node_context_menu(Entity node_entity) const;
 
     void display() override;
 
     void on_editor_start() override {}
-    void on_editor_update(const FrameData&) override {}
+    void on_editor_update(const FrameData&) override;
     void on_editor_end() override {}
-
-    uint32_t popup_id {0};
+    
+    // Popup ids, will be set when the popups are first created, allows us to open them from anywhere in imgui (hacky workaround).
+    uint32_t creation_popup_id { 0 };
+    uint32_t resize_popup_id { 0 };
 
     IO::FileLocation loaded_location {};
 
-    Entity selected_entity {entt::null};
+    Entity selected_entity { entt::null };
     std::set<Entity> root_entities;
 };
 

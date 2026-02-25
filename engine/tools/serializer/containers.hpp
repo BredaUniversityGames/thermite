@@ -1,3 +1,5 @@
+#pragma once
+
 #include <set>
 #include <map>
 #include <unordered_set>
@@ -5,8 +7,10 @@
 #include "engine/tools/serializer.hpp"
 
 namespace tmt {
+
 struct SerializeState;
 struct DeserializeState;
+
 }  // namespace tmt
 
 // Specialization for std::set

@@ -53,8 +53,13 @@ void Inspector::display_entity_info(const MenuContext& menu_context) {
     if (menu_context.primary_entity == entt::null) {
         return;
     }
-    const tmt::Entity& entity = menu_context.primary_entity;
-    ImGui::Text("Entity: %s", tmt::EntityHelper::to_string(entity).c_str());
+    auto entity_str = tmt::EntityHelper::to_string(menu_context.primary_entity);
+    if (ImGui::Selectable(("Entity: " + entity_str).c_str())) {
+        ImGui::SetClipboardText(entity_str.c_str());
+    }
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("Click to copy Entity ID");
+    }
 }
 
 void Inspector::display_compile_time_components(const tmt::Inspector::MenuContext& menu_context) {
@@ -67,7 +72,7 @@ void Inspector::display_compile_time_components(const tmt::Inspector::MenuContex
         T& component_instance = tmt::engine.ecs.get_component<T>(menu_context.primary_entity);
 
         const auto& name = tmt::Component<T>::get_name();
-        ImReflect::Detail::scope_id scope_id {name};
+        ImReflect::Detail::scope_id scope_id { name };
 
         const HeaderResponse header_response = component_header(name);
 
@@ -176,7 +181,7 @@ void Inspector::display_runtime_components(const MenuContext& menu_context) {
         IGameComponent& component_instance = component_collection.get_component(component_index);
 
         const auto& name = component_info.name;
-        ImReflect::Detail::scope_id scope_id {name.c_str()};
+        ImReflect::Detail::scope_id scope_id { name.c_str() };
 
         const HeaderResponse header_response = component_header(name);
 
@@ -318,7 +323,7 @@ void Inspector::add_runtime_component(const tmt::Inspector::MenuContext& menu_co
 Inspector::HeaderResponse Inspector::component_header(const std::string name) {
     const bool open = ImGui::CollapsingHeader(name.c_str(), ImGuiTreeNodeFlags_DefaultOpen);
     const bool right_clicked = ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right);
-    return {open, right_clicked};
+    return { open, right_clicked };
 }
 
 Inspector::ContextMenuResponse Inspector::context_menu(const std::string& name, const bool open) {

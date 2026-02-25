@@ -4,9 +4,9 @@
 #include "engine/tools/serializer.hpp"
 #include "engine/tools/serializer/all.hpp"
 #if defined(THERMITE_EDITOR) && !defined(THERMITE_ENGINE)
-#include <ImReflect.hpp>
-#include "editor/imgui/types/all.hpp"
-#include "editor/imgui/components/all.hpp"
+    #include <ImReflect.hpp>
+    #include "editor/imgui/types/all.hpp"
+    #include "editor/imgui/components/all.hpp"
 #else
 class ImSettings;
 class ImResponse;
@@ -14,8 +14,10 @@ class ImResponse;
 
 /* Forward declare */
 namespace tmt {
+
 struct SerializeState;
 struct DeserializeState;
+
 }  // namespace tmt
 
 namespace tmt {
@@ -82,6 +84,9 @@ class GameComponent : public IGameComponent {
     using IGameComponent::IGameComponent;
     /* [ Auto ] Implemented by default in-engine so user don't have to */
     nlohmann::json serialize(SerializationContext& ctx) const override {
+        constexpr bool VISITABLE = visit_struct::traits::is_visitable<Derived, JsonReflect::serialize_lib_t>::value;
+        if constexpr (VISITABLE == false) return tmt::json::object();
+
         if (auto* state = ctx.get_serialize_state()) {
             return Serializer::serialize(static_cast<const Derived&>(*this), *state);
         }
@@ -89,6 +94,9 @@ class GameComponent : public IGameComponent {
     }
 
     void deserialize(const nlohmann::json& value, SerializationContext& ctx) override {
+        constexpr bool VISITABLE = visit_struct::traits::is_visitable<Derived, JsonReflect::deserialize_lib_t>::value;
+        if constexpr (VISITABLE == false) return;
+
         if (auto* state = ctx.get_deserialize_state()) {
             Serializer::deserialize(value, static_cast<Derived&>(*this), *state);
         } else {
@@ -106,6 +114,9 @@ class GameComponent : public IGameComponent {
     /* [ Auto ] Implemented by default in-engine so user don't have to */
     void inspect(ImSettings& settings, ImResponse& response) override {
 #if defined(THERMITE_EDITOR) && !defined(THERMITE_ENGINE)
+        constexpr bool VISITABLE = visit_struct::traits::is_visitable<Derived, ImReflect::Detail::ImContext>::value;
+        if constexpr (VISITABLE == false) return;
+
         ImReflect::Input("", static_cast<Derived&>(*this), settings, response);
         on_inspect(response);
 #else
@@ -115,4 +126,5 @@ class GameComponent : public IGameComponent {
 #endif
     }
 };
+
 }  // namespace tmt
