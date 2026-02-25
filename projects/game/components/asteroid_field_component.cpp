@@ -198,8 +198,8 @@ void AsteroidFieldComponent::spawn_field() {
 
             transform.set_local_position(point.pos);
             transform.set_local_rotation(glm::vec3(pitch, yaw, roll));
-            glm::vec3 s = transform.get_local_scale();
-            transform.set_local_scale(s * size_factor);
+            //glm::vec3 s = transform.get_local_scale();
+            //transform.set_local_scale(s * size_factor);
         }
     }
 }
