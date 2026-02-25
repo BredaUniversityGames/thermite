@@ -4,6 +4,21 @@
 
 namespace tmt {
 
+/**
+ * Class PhysicsLayersEditor
+ *
+ * Editor window for managing physics layers in the engine.
+ *
+ * Responsibilities:
+ *   - Display existing layers and allow renaming
+ *   - Add new layers with names
+ *   - Remove layers safely without shifting indices
+ *   - Display and edit collision matrix
+ *   - Load layers when editor opens and save on close
+ *
+ * Notes:
+ *   - Removing a layer clears its name and disables collisions but preserves its index to maintain consistency with in-game references.
+ */
 class PhysicsLayersEditor : public IWindow {
    public:
     constexpr std::string get_title() const override { return "Physics Layers"; }

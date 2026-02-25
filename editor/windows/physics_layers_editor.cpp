@@ -17,21 +17,29 @@ void PhysicsLayersEditor::on_editor_start() {
 }
 
 void PhysicsLayersEditor::on_editor_end() {
-    // Optional: save on close
+    // Save on close
     auto* physics = engine.ecs.systems.try_get<Physics>();
     if (physics) {
         physics->layers().save();
     }
 }
 
+// Editor-local state for selection and adding/renaming layers
 struct PhysicsLayerEditorState {
-    char new_layer_name[64] {};
-    char rename_buffer[64] {};
-    int selected_layer = -1;
+    char new_layer_name[64] {};  // Buffer for creating new layer
+    char rename_buffer[64] {};   // Buffer for renaming selected layer
+    int selected_layer = -1;     // Currently selected layer index
 };
 
 static PhysicsLayerEditorState g_state;
 
+/**
+ * Main ImGui display function for the Physics Layers editor.
+ *
+ * Responsibilities:
+ *   - Split UI into left panel (layer list) and right panel (collision matrix)
+ *   - Render interactive controls for creating, renaming, and removing layers
+ */
 void PhysicsLayersEditor::display() {
     auto* physics = engine.ecs.systems.try_get<Physics>();
     if (!physics) return;
@@ -53,6 +61,15 @@ void PhysicsLayersEditor::display() {
     ImGui::End();
 }
 
+/**
+ * Draws the list of physics layers in the left panel.
+ *
+ * Responsibilities:
+ *   - Render selectable list of layers
+ *   - Enable renaming of selected layer
+ *   - Enable safe removal of selected layer (does not shift indices)
+ *   - Add new layers
+ */
 void PhysicsLayersEditor::draw_layer_list(PhysicsLayers& layers) {
     ImGui::Text("Layers");
     ImGui::Separator();
@@ -101,6 +118,15 @@ void PhysicsLayersEditor::draw_layer_list(PhysicsLayers& layers) {
     }
 }
 
+/**
+ * Draws the collision matrix for all physics layers.
+ *
+ * Responsibilities:
+ *   - Render table of layer collisions
+ *   - Prevent editing self-collisions
+ *   - Only draw upper triangle to avoid duplicate checkboxes
+ *   - Update PhysicsLayers matrix when checkboxes are toggled
+ */
 void PhysicsLayersEditor::draw_collision_matrix(PhysicsLayers& layers) {
     uint32_t count = layers.get_layer_count();
 

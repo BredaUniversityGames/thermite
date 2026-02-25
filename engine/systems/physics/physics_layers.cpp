@@ -5,6 +5,13 @@
 
 namespace tmt {
 
+/**
+ * Constructor for PhysicsLayers
+ *
+ * Responsibilities:
+ *   - Initialize all collisions to false
+ *   - Sets layer count to 0
+ */
 PhysicsLayers::PhysicsLayers() {
     // Initialize collision matrix to false
     for (uint32_t i = 0; i < MAX_LAYERS; ++i) {
@@ -14,6 +21,13 @@ PhysicsLayers::PhysicsLayers() {
     }
 }
 
+/**
+ * Enable or disable collision between two layers
+ *
+ * Notes:
+ *   - Symmetric: changing a -> b also changes b -> s
+ *   - Ignores invalid indices
+ */
 void PhysicsLayers::enable_collision(uint32_t a, uint32_t b, bool enable) {
     if (a >= MAX_LAYERS || b >= MAX_LAYERS) return;
 
@@ -21,19 +35,41 @@ void PhysicsLayers::enable_collision(uint32_t a, uint32_t b, bool enable) {
     collision_matrix[b][a] = enable;  // enforce symmetry
 }
 
+/**
+ * Check if two layers can collide
+ *
+ * Returns:
+ *   - true if collision enabled, false otherwise
+ */
 bool PhysicsLayers::can_collide(uint32_t a, uint32_t b) const {
     if (a >= MAX_LAYERS || b >= MAX_LAYERS) return false;
 
     return collision_matrix[a][b];
 }
 
+/**
+ * Add a new physics layer
+ *
+ * Responsibilities:
+ *   - Assign new layer name
+ *   - Default collision with all existing layers
+ * Safety:
+ *   - Will not exceed MAX_LAYERS
+ * Returns:
+ *   - Index of the new layer on success
+ *   - UINT32_MAX if max layers reached (layer not added)
+ */
 uint32_t PhysicsLayers::add_layer(const std::string& name) {
-    if (layer_count >= MAX_LAYERS) throw std::runtime_error("Max physics layers reached");
+    // Safety check: prevent exceeding MAX_LAYERS
+    if (layer_count >= MAX_LAYERS) {
+        Log::warn("Cannot add new physics layer '{}': maximum of {} reached", name, MAX_LAYERS);
+        return UINT32_MAX;  // sentinel value
+    }
 
     uint32_t new_layer = layer_count;
     layer_names[new_layer] = name;
 
-    // By default, new layer collides with all existing layers
+    // Default collisions with existing layers
     for (uint32_t i = 0; i <= new_layer; ++i) {
         collision_matrix[new_layer][i] = true;
         collision_matrix[i][new_layer] = true;
@@ -43,6 +79,14 @@ uint32_t PhysicsLayers::add_layer(const std::string& name) {
     return new_layer;
 }
 
+/**
+ * Remove a physics layer safely
+ *
+ * Responsibilities:
+ *   - Clears all collisions involving this layer
+ *   - Clears its name
+ *   - Does NOT shift other indices to prevent invalid references
+ */
 void PhysicsLayers::remove_layer(uint32_t layer) {
     if (layer >= layer_count) return;
 
@@ -55,17 +99,34 @@ void PhysicsLayers::remove_layer(uint32_t layer) {
     layer_names[layer].clear();
 }
 
+/**
+ * Get layer name by index
+ *
+ * Throws out_of_range if invalid
+ */
 const std::string& PhysicsLayers::get_layer_name(uint32_t layer) const {
     if (layer >= MAX_LAYERS) throw std::out_of_range("Invalid physics layer");
 
     return layer_names[layer];
 }
 
+/**
+ * Set layer name by index
+ *
+ * Ignores invalid indices
+ */
 void PhysicsLayers::set_layer_name(uint32_t layer, const std::string& name) {
     if (layer >= MAX_LAYERS) return;
     layer_names[layer] = name;
 }
 
+/**
+ * Load physics layers from JSON file
+ *
+ * Responsibilities:
+ *   - Load layer_count, names, and collision matrix
+ *   - Safely handle missing or null values
+ */
 void PhysicsLayers::load() {
     const std::string file_data = IO::read_text_file({ IO::Location::PROJECT, "physics_layers.json" });
     if (file_data.empty()) return;
@@ -106,6 +167,13 @@ void PhysicsLayers::load() {
     }
 }
 
+/**
+ * Save physics layers to JSON file
+ *
+ * Responsibilities:
+ *   - Write layer_count, names, and collision matrix (upper triangle)
+ *   - Make sure there is persistent storage between sessions
+ */
 void PhysicsLayers::save() const {
     nlohmann::json j;
 
