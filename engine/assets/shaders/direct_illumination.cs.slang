@@ -45,7 +45,7 @@ inline PickedLight pick_light(const float3 point, const float3 normal, inout uin
         const float w = evaluate_weight(point, normal, lights[l]);
 
         w_sum += w; /* Update the reservoir */
-        if (rand_float(seed) * w_sum < w) {
+        if (rand_float(seed) * w_sum <= w) {
             i = l;
             w_i = w;
         }
@@ -57,7 +57,7 @@ inline PickedLight pick_light(const float3 point, const float3 normal, inout uin
     return PickedLight(i, w_sum / w_i);
 }
 
-inline float3 direct_illuminance(const float3 point, const float3 normal, const float3 view_dir, inout uint seed, const float2 noise) {
+inline float3 direct_illuminance(const float3 point, const float3 normal, const float3 view_dir, const Material mat, inout uint seed, const float2 noise) {
     float3 illuminance = 0.0f;
 
     /* Handle the sun light source */
@@ -99,9 +99,12 @@ inline float3 direct_illuminance(const float3 point, const float3 normal, const 
         attenuation *= spot * spot;
     }
 
+    const ShadingFrame sf = create_shading_frame(normal, light_sample.dir, view_dir);
+    const float3 brdf = opaque_base_slab(sf.wi.z, sf.wo.z, sf.wh.z, mat);
+
     /* Calculate light illuminance */
     const float ndotl = max(0.0f, dot(normal, light_sample.dir));
-    illuminance += light.luminance * ndotl * attenuation * picked_light.rcp_pdf * light_sample.rcp_pdf;
+    illuminance += light.luminance * ndotl * attenuation * brdf * picked_light.rcp_pdf * light_sample.rcp_pdf;
     return illuminance;
 }
 
@@ -150,18 +153,7 @@ void main(int2 thread_id: SV_DispatchThreadID) {
 
     const float2 noise = r2(blue_noise[pixel_id % 512].rg, render_view.frame_index % 1024u);
 
-    float3 illuminance = direct_illuminance(hit_point, geo.normal, -ray.dir, seed, noise);
-
-    /* Trace light occlusion */
-    // const float3 ray_dir = sample_hemisphere_cosine(geo.normal, r2(seed));
-    // const Ray gi_ray = custom_ray(hit_point, ray_dir);
-    // const Hit hit = trace_bvh2<false>(tlas_nodes, object_indices, objects, gi_ray, 32.0f);
-    // if (hit.t < 32.0f) {
-    //     // const uint64_t hit_key = pack_visibility(hit);
-    //     // illuminance += cache::sample(macrofacet_illuminance_cache, hit_key, render_view.frame_index);
-    // } else {
-    //     illuminance += 0.05f;
-    // }
+    float3 illuminance = direct_illuminance(hit_point, geo.normal, -ray.dir, geo.material, seed, noise);
 
     /* Insert the sample into the illuminance cache */
     cache::insert(macrofacet_cache, facet_key, render_view.frame_index, illuminance * 2.0f, 0.0f);

@@ -31,14 +31,10 @@ public struct Slot {
     static const uint LAST_SAMPLED_MASK = (1u << LAST_SAMPLED_BITS) - 1u;
 
     /* Number of accumulated samples in the cache slot. */
-    public property uint sample_count { get {
-        return samples & SAMPLE_COUNT_MASK;
-    }}
+    public [ForceInline] uint sample_count() { return samples & SAMPLE_COUNT_MASK; };
 
     /* Last frame index this cache slot was sampled. */
-    public property uint last_sampled { get {
-        return samples >> SAMPLE_COUNT_BITS;
-    }}
+    public [ForceInline] uint last_sampled() { return samples >> SAMPLE_COUNT_BITS; };
 
     /* Quantization factor */
     static const float QFACTOR = 1e3f;
@@ -52,43 +48,52 @@ public struct Slot {
     /* Flush the diffuse and specular accumulators of the cache slot. */
     /* This resets the spatial accumulators and updates the temporal accumulators. */
     public [ForceInline] [mutating] void flush_accu(const uint age) {
-        if (sample_count == 0u) return;
+        const uint spatial_samples = sample_count();
+        if (spatial_samples == 0u) return;
 
         /* Calculate the mean of both spatial accumulators */
-        const float rcp_sample_count = 1.0f / sample_count;
+        const float rcp_sample_count = 1.0f / spatial_samples;
         const float3 diffuse_accu = float3(diffuse.rgb) * RCP_QFACTOR * rcp_sample_count;
         const float3 specular_accu = float3(specular.rgb) * RCP_QFACTOR * rcp_sample_count;
 
         /* Reset the spatial accumulators */
         diffuse.rgb = specular.rgb = 0u;
-        samples = last_sampled << SAMPLE_COUNT_BITS;
+        samples = last_sampled() << SAMPLE_COUNT_BITS;
 
-        /* Update the temporal accumulators */
+        /* Accumulator warmup factor */
         if (temporal < TEMPORAL_SAMPLES) temporal += 1u;
-        const float age_c = 1.0f - (float)age / INACTIVE_THRESHOLD;
-        const float confidence = age_c * age_c * age_c * age_c;
-        const float alpha = saturate(confidence * (1.0f - 1.0f / (float)temporal));
-        diffuse.w = encode_rgb9e5(lerp(diffuse_accu, read_diffuse(), alpha));
-        specular.w = encode_rgb9e5(lerp(specular_accu, read_specular(), alpha));
+        const float warmup_factor = 1.0f / (float)temporal;
+
+        /* Calculate a confidence factor based on spatial samples taken */
+        const float temporal_factor = saturate((float)spatial_samples / 128.0f);
+
+        /* Calculate a confidence factor based on staleness */
+        const float staleness = 1.0f - exp(-(float)(age / 60.0f) * 3.5f);
+
+        /* Merge factors to create EMA alpha */
+        const float alpha = lerp(warmup_factor * temporal_factor, 1.0f, staleness);
+
+        diffuse.w = encode_rgb9e5(lerp(read_diffuse(), diffuse_accu, alpha));
+        specular.w = encode_rgb9e5(lerp(read_specular(), specular_accu, alpha));
     }
 
     /* Find the inactivity of the cache slot compared to a reference frame index. */
     public [ForceInline] uint inactivity(const uint ref_frame) {
         const uint current_index = ref_frame & LAST_SAMPLED_MASK;
-        const uint sampled_index = last_sampled;
+        const uint sampled_index = last_sampled();
         // if (sampled_index == 0u) return 0u; /* <- to avoid instantly marker slot as inactive */
         return ((current_index - sampled_index) << SAMPLE_COUNT_BITS) >> SAMPLE_COUNT_BITS;
     }
 
     /* Activate the cache slot for the given frame index. */
     public [ForceInline] [mutating] void activate(const uint frame_index) {
-        samples = sample_count | (frame_index << SAMPLE_COUNT_BITS);
+        samples = sample_count() | (frame_index << SAMPLE_COUNT_BITS);
     }
 
     /* Accumulate into the cache slot. */
     public [ForceInline] [mutating] void accumulate(const float3 diffuse_sample, const float3 specular_sample) {
         /* Avoid accumulating too many samples, we can only handle ~1.000.000 */
-        if (sample_count > 100000u) return;
+        if (sample_count() > 100000u) return;
 
         /* Convert to fixed point representation for atomics */
         const uint3 diffuse_fxp = uint3(diffuse_sample * QFACTOR);

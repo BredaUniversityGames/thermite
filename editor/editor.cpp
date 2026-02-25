@@ -210,7 +210,7 @@ void Editor::main_menu_bar() {
             /* List of display mode labels */
             static const std::vector<std::string> DISPLAY_MODE_LABELS { "Default", "Steps (0..128)", "Visibility", "Depth (0..100)", "Normals", "Albedo", "Illuminance" };
 
-            static uint32_t display_mode_index = 0u;
+            const uint32_t display_mode_index = (uint32_t)magic_enum::enum_index<DisplayMode>(engine.renderer.display_mode).value_or(0u);
             const std::string& display_mode = DISPLAY_MODE_LABELS[display_mode_index];
 
             if (ImGui::BeginMenu(("Display Mode (" + display_mode + ")").c_str())) {
@@ -219,7 +219,6 @@ void Editor::main_menu_bar() {
                     const bool selected = engine.renderer.display_mode == magic_enum::enum_cast<DisplayMode>(i).value_or(DisplayMode::DEFAULT);
 
                     if (ImGui::MenuItem(DISPLAY_MODE_LABELS[i].c_str(), nullptr, selected)) {
-                        display_mode_index = i;
                         engine.renderer.display_mode = magic_enum::enum_cast<DisplayMode>(i).value_or(DisplayMode::DEFAULT);
                     }
                 }

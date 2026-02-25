@@ -21,23 +21,8 @@ RWTexture2D<float4> render_target;
 [shader("compute")]
 [numthreads(16, 8, 1)]
 void main(int2 thread_id: SV_DispatchThreadID) {
-    int2 pixel_id = thread_id;
-    // if (render_view.shading_rate == 1u) {
-    //     /* Half-rate */
-    //     /*  [ XY ]  */
-    //     /*  [ YX ]  */
-    //     const int offset = (pixel_id.y + render_view.frame_index) & 0b1;
-    //     pixel_id.x = (pixel_id.x + offset) >> 1;
-    // } else if (render_view.shading_rate == 2u) {
-    //     /* Quarter-rate */
-    //     /*  [ XY ]  */
-    //     /*  [ ZW ]  */
-    //     const int2 offset = int2(render_view.frame_index & 0b1, (render_view.frame_index >> 1) & 0b1);
-    //     pixel_id = (pixel_id + offset) >> 1;
-    // }
-
     /* Bounds check */
-    if (any(pixel_id >= render_view.resolution)) return;
+    if (any(thread_id >= render_view.resolution)) return;
 
     /* Load visibility buffer data */
     const uint64_t packed = asuint64(vbuffer[thread_id]);
@@ -48,7 +33,7 @@ void main(int2 thread_id: SV_DispatchThreadID) {
         const cache::Slot slot = cache::sample(macrofacet_cache, packed, render_view.frame_index);
 
         if (slot.key == cache::EMPTY_KEY) {
-            render_target[pixel_id] = float4(1.0f, 0.0f, 1.0f, 1.0f);
+            render_target[thread_id] = float4(1.0f, 0.0f, 1.0f, 1.0f);
         } else {
             /* Generate a ray for our render view */
             const Ray ray = pinhole_ray(render_view, thread_id);
@@ -58,7 +43,7 @@ void main(int2 thread_id: SV_DispatchThreadID) {
             const GeoData geo = unpack_geometry(vis, objects, ray);
 
             const float3 illuminance = slot.read_diffuse() * geo.material.albedo();
-            render_target[pixel_id] = float4(cs::delinearize(cs::acescg_to_r709(cs::aces_filmic_tonemapping(illuminance))), 1.0f);
+            render_target[thread_id] = float4(cs::delinearize(cs::acescg_to_r709(cs::aces_filmic_tonemapping(illuminance))), 1.0f);
         }
     }
 }

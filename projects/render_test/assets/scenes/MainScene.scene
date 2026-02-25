@@ -467,7 +467,7 @@
             "resource": {
                 "file_location": {
                     "sub_location": "PROJECT",
-                    "relative_path": "wall.vengi"
+                    "relative_path": "wall.svh"
                 }
             }
         },
@@ -771,7 +771,7 @@
                 "y": 1.0,
                 "z": 1.0
             },
-            "temperature": 3000.0,
+            "temperature": 6000.0,
             "type": "SPHERE_LIGHT",
             "light": {
                 "index": 0,

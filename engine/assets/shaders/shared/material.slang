@@ -31,7 +31,7 @@ public struct Material {
     /* Material base color (ACEScg) */
     public [ForceInline] float3 albedo() { return decode_rgb10(packed_albedo); };
     /* Material index of refraction [1,3] */
-    public [ForceInline] float ior() { return f16tof32(ior_emission); };
+    public [ForceInline] float ior() { return unpackHalf2x16ToFloat(ior_emission).x; };
     /* Material microfacet roughness [0,1] */
     public [ForceInline] float roughness() { return float(roughness_metallic_transmission & 0xFFu) * (1.0f / 0xFFu); };
 };
@@ -130,7 +130,7 @@ public struct Material {
     const float wh_costheta, const Material mat,
 ) {
     /* Evaluate the two slabs */
-    const float3 diffuse = diffuse_slab(mat.albedo());
+    const float3 diffuse = 1.0f; // diffuse_slab(mat.albedo());
     const float roughness = mat.roughness();
     const float alpha = roughness * roughness;
     const float eta = mat.ior() / 1.0f;

@@ -67,7 +67,7 @@ public [ForceInline] float evaluate_weight(const float3 p, const float3 n, const
 
     /* Calculate the weight based on the perceived brightness of the light */
     const float luminance = cs::acescg_luminance(light.luminance);
-    return 1.0f + luminance * distance_attenuation(src_dist, light.culling_radius);
+    return 1.0f; // + luminance * distance_attenuation(src_dist, light.culling_radius);
 }
 
 /* Light source sample. */
