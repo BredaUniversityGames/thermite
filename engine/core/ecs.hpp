@@ -168,7 +168,7 @@ class Ecs : public OnGameStart, public OnGameUpdate, public OnGameFixedUpdate, p
     decltype(auto) try_get_component(const Entity entity) {
         constexpr size_t COUNT = sizeof...(Component);
         if constexpr (COUNT == 1) {
-            return registry.try_get<Component...>(entity);
+            return EcsComponentTraits<Component...>::try_get(registry, entity);
         } else {
             return std::make_tuple(try_get_component<Component>(entity)...);
         }
@@ -179,7 +179,7 @@ class Ecs : public OnGameStart, public OnGameUpdate, public OnGameFixedUpdate, p
     decltype(auto) try_get_component(const Entity entity) const {
         constexpr size_t COUNT = sizeof...(Component);
         if constexpr (COUNT == 1) {
-            return registry.try_get<Component...>(entity);
+            return EcsComponentTraits<Component...>::try_get(registry, entity);
         } else {
             return std::make_tuple(try_get_component<Component>(entity)...);
         }
