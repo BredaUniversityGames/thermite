@@ -10,8 +10,8 @@ bool Ecs::is_disabled(const Entity entity) const {
     return has_component<Disable>(entity);
 }
 
-void Ecs::enable(const Entity entity) {
-    remove_component<DisableFlag>(entity);  // clear explicit intent
+void Ecs::enable(const Entity entity, const bool mark) {
+    if (mark) remove_component<DisableFlag>(entity);  // clear explicit intent
 
     /* Only become effectively enabled if parent isn't disabled */
     const Entity parent = get_component<Transform>(entity).get_parent();
@@ -34,8 +34,8 @@ void Ecs::propagate_enable(const Entity entity) {
     }
 }
 
-void Ecs::disable(const Entity entity) {
-    add_or_get_component<DisableFlag>(entity);
+void Ecs::disable(const Entity entity, const bool mark) {
+    if (mark) add_or_get_component<DisableFlag>(entity);
     add_or_get_component<Disable>(entity);
 
     const auto children = get_component<Transform>(entity).get_all_children();

@@ -292,7 +292,7 @@ class Ecs : public OnGameStart, public OnGameUpdate, public OnGameFixedUpdate, p
         static_assert(EXCLUDE_ALL_NATIVE, "Only native ECS components can be excluded from a group.");
 
         /* Add Disable to ignore by default */
-        return registry.group<Owned...>(entt::get<Get...>(), entt::exclude<Disable, Exclude...>());
+        return registry.group<Owned...>(entt::get_t<Get...>(), entt::exclude_t<Disable, Exclude...>());
     }
 
     /* Returns a group of given elements, default ignores disabled entities (const) */
@@ -309,7 +309,7 @@ class Ecs : public OnGameStart, public OnGameUpdate, public OnGameFixedUpdate, p
         static_assert(EXCLUDE_ALL_NATIVE, "Only native ECS components can be excluded from a group.");
 
         /* Add Disable to ignore by default */
-        return registry.group<Owned...>(entt::get<Get...>(), entt::exclude<Disable, Exclude...>());
+        return registry.group<Owned...>(entt::get_t<Get...>(), entt::exclude_t<Disable, Exclude...>());
     }
 
     void clear() { registry.clear(); }
@@ -320,9 +320,9 @@ class Ecs : public OnGameStart, public OnGameUpdate, public OnGameFixedUpdate, p
 
     bool is_disabled(const Entity entity) const;
 
-    void enable(const Entity entity);
+    void enable(const Entity entity, const bool mark = true);
 
-    void disable(const Entity entity);
+    void disable(const Entity entity, const bool mark = true);
 
     Collection<ISystem> systems;
 
