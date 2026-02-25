@@ -5,20 +5,63 @@
 #include "engine.hpp"
 #include "rig_model.hpp"
 #include "engine/core/polyline.hpp"
+#include "engine/core/components/rig_controller.hpp"
 
 #define CONDITION(comparison) [](const Variant& parameter, const Variant& value) -> bool { return parameter comparison value; }
 
 namespace tmt {
 
-std::string tmt::RigModelManager::get_name() {
+std::string RigModelManager::get_name() {
     return "animation system";
 }
 
-void tmt::RigModelManager::on_start() {}
+void RigModelManager::on_start() {}
 
 void RigModelManager::on_update(const FrameData& time) {
     inspect(time.delta_time);
-    for (const auto& [entity, rig] : engine.ecs.get_registry().view<RigModel>().each()) {
+
+    for (const auto&& [entity, rig, controller] : engine.ecs.get_registry().view<RigModel, RigController>().each()) {
+        const std::string& current_state = controller.current_state;
+        if (current_state.empty()) {
+            const auto& name = engine.ecs.get_component<Name>(entity);
+            Log::error("Trying to animate \"{}\" without a state!", name.name);
+            continue;
+        }
+
+        for (auto& transition : controller.transitions) {
+            if (transition.from != current_state) continue;
+
+            std::vector<Trigger*> satisfied_triggers;
+            const bool should_transition = controller.check_transition_conditions(transition, satisfied_triggers);
+            if (!should_transition) continue;
+
+            const AnimationState& from_state = controller.states[transition.from];
+            if (from_state.transition_on_finish) {
+                const auto& animations = rig.data->bones.back().animations;
+                const auto& iterator = animations.find(from_state.animation);
+
+                if (iterator != animations.end() && rig.time < (iterator->second.keyframes_pos.back().time - transition.transition_time)) continue;
+            }
+
+            // If the transition is successful we reset all the trigger parameters
+            std::ranges::for_each(satisfied_triggers, [](Trigger* trigger) { *trigger = Trigger { false }; });
+
+            const std::string& state_name = controller.current_state = transition.to;
+            const AnimationState& state = controller.states[state_name];
+
+            rig.set_animation_speed(state.animation_speed);
+
+            if (state.animation.empty()) {
+                if (rig.state == RigModel::State::ANIMATE_LOOP) rig.stop_loop(transition.transition_time);
+                break;
+            }
+
+            rig.play_animation(state.animation, transition.transition_time, state.repeat);
+            break;
+        }
+    }
+
+    for (const auto&& [entity, rig] : engine.ecs.get_registry().view<RigModel>().each()) {
         if (rig.state != RigModel::State::STATIONARY && !rig.is_transferring()) rig.time += rig.animation_speed * time.delta_time;
 
         if (rig.is_transferring()) rig.transfer_time += time.delta_time * rig.animation_speed;
@@ -48,7 +91,7 @@ void RigModelManager::on_update(const FrameData& time) {
 
         const Bone& last_bone = rig.data->bones.back();
         const std::string& current_animation = rig.get_current_animation();
-        if (last_bone.animations.find(current_animation) == last_bone.animations.end()) {
+        if (!last_bone.animations.contains(current_animation)) {
             Log::warn(R"(Animation "{}" isn't a valid animation!)", current_animation);
             continue;
         }
@@ -76,13 +119,13 @@ void RigModelManager::on_update(const FrameData& time) {
     }
 }
 
-void tmt::RigModelManager::on_end() {}
+void RigModelManager::on_end() {}
 
 void RigModelManager::inspect(float) {
     int lines_drawn = 0;
     engine.polyline.use_color(1.0f, 0.3f, 0.3f);
     engine.polyline.use_line_width(0.25f);
-    for (const auto& [entity, transform, rig] : engine.ecs.get_registry().view<Transform, RigModel>().each()) {
+    for (const auto&& [entity, transform, rig] : engine.ecs.get_registry().view<Transform, RigModel>().each()) {
         for (const Entity bone_entity : rig.bone_entities) {
             auto& bone_transform = engine.ecs.get_component<Transform>(bone_entity);
             // auto& bone_name = engine.ecs.get_component<Name>(bone_entity);

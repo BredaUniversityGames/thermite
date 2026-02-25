@@ -10,3 +10,4 @@
 #include "engine/tools/serializer/audio.hpp"
 #include "engine/tools/serializer/uuid.hpp"
 #include "engine/tools/serializer/containers.hpp"
+#include "engine/tools/serializer/rig_controller.hpp"
