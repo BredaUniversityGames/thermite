@@ -9,10 +9,13 @@
 #include "engine/core/window.hpp"
 #include "engine/core/scenes.hpp"
 #include "engine/core/renderer/renderer.hpp"
+
+#include "engine/core/renderer/pipelines/ui_pipeline.hpp"
 #include "engine/core/input/input.hpp"
 #include "engine/core/input/input_map.hpp"
 #include "editor/events/scene.hpp"
 #include "editor/windows/scenes.hpp"
+#include "engine/core/components/ui_component.hpp"
 
 void tmt::Viewport::on_editor_start() {
     // Setup Input Actions
@@ -212,6 +215,7 @@ void tmt::Viewport::selection_logic(const ImVec2& imgui_mouse_pos, const ImVec2&
             int y0 = std::min(a.y, b.y);
             int y1 = std::max(a.y, b.y);
 
+            auto view = engine.ecs.get_registry().view<UIComponent>();
             static std::vector<Entity> tracking_rect_entities;
             tracking_rect_entities.clear();
             for (int x = x0; x < x1; x += 5) {
@@ -241,6 +245,17 @@ void tmt::Viewport::selection_logic(const ImVec2& imgui_mouse_pos, const ImVec2&
         const tmt::Hit hit = tmt::engine.renderer.trace_ray(selection_ray);
 
         if (not_multiple_select_modifier) hierarchy.clear_selection();
+
+        if(engine.renderer.ui_pipeline.render_ui_pipeline)
+        {
+            auto view = engine.ecs.get_registry().view<UIComponent>();
+            for (auto [entity, ui_comp] : view.each()) {
+                if (AnchorHelper::is_inside(entity, { mouse_pos.x, mouse_pos.y })) {
+                    hierarchy.add_entity_to_selection(entity);
+                    return;
+                }
+            }
+        }
 
         if (!hit.miss()) {
             if (hierarchy.is_entity_selected(hit.entity) && !(not_multiple_select_modifier))
