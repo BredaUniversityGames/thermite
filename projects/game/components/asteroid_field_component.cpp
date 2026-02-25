@@ -120,7 +120,7 @@ std::vector<AsteroidPoissonPoint> AsteroidFieldComponent::get_poisson_points(con
 }
 
 bool AsteroidFieldComponent::point_valid(
-    glm::vec3 candidate, float candidate_radius, float max_radius, const SpatialLookupGrid& grid, const FAsteroidFieldLayer& layer, const std::vector<AsteroidPoissonPoint>& points
+    glm::vec3 candidate, float candidate_radius, float max_radius, const SpatialLookupGrid& grid, const std::vector<AsteroidPoissonPoint>& points
 ) {
     // candidate += grid.region_size * 0.5f;
 
