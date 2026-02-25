@@ -16,6 +16,7 @@
 #include "engine/core/components/emitter.hpp"
 #include "engine/core/components/ui_component.hpp"
 #include "engine/core/components/image_renderer.hpp"
+#include "engine/systems/animation/rig_model.hpp"
 #include "engine/tools/uuid.hpp"
 #include "engine/systems/ai/goap/components/goap_agent_type_ref.hpp"
 #include "engine/systems/ai/goap/components/goap_agent_type_registry.hpp"
@@ -42,6 +43,7 @@ using SerializeComponents = ComponentRegistry<
 	ParticleEmitter,
 	UIComponent,
 	ImageRenderer,
+	RigModel,
 	GoapAgentType,
 	GoapAgentTypeRef,
 	WorldState
@@ -51,6 +53,7 @@ using SerializeComponents = ComponentRegistry<
 // clang-format off
 using InspectComponents = ComponentRegistry<
 	/* Order in which components are displayed in the editor */
+	Prefab,
 	Name, 
 	Transform,
 	VoxelRenderer, 
@@ -63,6 +66,7 @@ using InspectComponents = ComponentRegistry<
 	ParticleEmitter,
 	UIComponent,
 	ImageRenderer,
+	RigModel,
 	GoapAgentType,
 	GoapAgentTypeRef,
 	WorldState
