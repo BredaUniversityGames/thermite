@@ -15,9 +15,9 @@ struct FAsteroidLayerEntry {
 
     float radius_factor = 1.f;
     float spawn_weight = 1.f;
-    float belt_weight = 1.f;
+    float belt_bias = 1.f;
 };
-TMT_OBJECT(FAsteroidLayerEntry, (spawnable, radius_factor, spawn_weight, belt_weight));
+TMT_OBJECT(FAsteroidLayerEntry, (spawnable, radius_factor, spawn_weight, belt_bias));
 
 struct FAsteroidFieldLayer {
     std::vector<FAsteroidLayerEntry> layer_entries;
@@ -39,6 +39,7 @@ TMT_OBJECT(FAsteroidFieldLayer, (layer_entries, rejection_samples, spacing_radiu
 struct AsteroidFieldComponent : public tmt::GameComponent<AsteroidFieldComponent>, tmt::OnEngineUpdate {
     using GameComponent::GameComponent;
 
+    unsigned int seed = 42;
     float field_depth = 1000.f;
     float layer_width = 100.f;
     float layer_height = 100.f;
@@ -79,4 +80,4 @@ struct AsteroidFieldComponent : public tmt::GameComponent<AsteroidFieldComponent
     // Inherited via OnEngineUpdate
     void on_engine_update(const tmt::FrameData& time) override;
 };
-TMT_OBJECT(AsteroidFieldComponent, (field_depth, layer_width, layer_height, asteroid_layers, draw_debug));
+TMT_OBJECT(AsteroidFieldComponent, (seed, field_depth, layer_width, layer_height, asteroid_layers, draw_debug));

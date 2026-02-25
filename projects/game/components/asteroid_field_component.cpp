@@ -51,7 +51,7 @@ std::vector<AsteroidPoissonPoint> AsteroidFieldComponent::get_poisson_points(con
     float cum_spawn_weight = 0.f;
     float cum_belt_weight = 0.f;
     std::for_each(layer.layer_entries.begin(), layer.layer_entries.end(), [&cum_belt_weight, &cum_spawn_weight](const FAsteroidLayerEntry& entry) {
-        cum_belt_weight += entry.belt_weight;
+        cum_belt_weight += entry.belt_bias;
         cum_spawn_weight += entry.spawn_weight;
     });
 
@@ -62,33 +62,11 @@ std::vector<AsteroidPoissonPoint> AsteroidFieldComponent::get_poisson_points(con
         glm::vec3 selected_p = radii_points[active_spawn_list[idx]].pos;
 
         for (int i = 0; i < layer.rejection_samples; i++) {
-            float selected_spacing_radius = radii_points[active_spawn_list[idx]].radius;
-
-            glm::vec3 rand_unit_vec = Random::rand_unit_vec();
-            glm::vec3 guidance_point = selected_p + rand_unit_vec * selected_spacing_radius;
-
-            if (guidance_point.x < 0.f || guidance_point.x > grid.region_size.x || guidance_point.y < 0.f || guidance_point.y > grid.region_size.y || guidance_point.z < 0.f ||
-                guidance_point.z > grid.region_size.z) {
-                continue;
-            }
-
-            float linear_relation = abs((guidance_point.y / (layer_height * 0.5f)) - 1.f);
-            float belt_tendency = linear_relation*linear_relation*linear_relation;
-
-            std::vector<float> effective_weights;
-            effective_weights.reserve(layer.layer_entries.size());
-            float cum_effective_weights = 0.f;
-            for (auto& e : layer.layer_entries) {
-                float eff = e.spawn_weight * (1.f + e.belt_weight/(1.f - belt_tendency));
-                effective_weights.push_back(eff);
-                cum_effective_weights += eff;
-            }
-
-            float rand_weight = Random::rand_range(0.f, cum_effective_weights);
+            float rand_weight = Random::rand_range(0.f, cum_spawn_weight);
             float acc = 0.f;
             int entry_idx = std::numeric_limits<int>::max();
             for (int i = 0; i < layer.layer_entries.size(); i++) {
-                acc += effective_weights[i];
+                acc += layer.layer_entries[i].spawn_weight;
 
                 if (rand_weight < acc) {
                     entry_idx = i;
@@ -96,6 +74,15 @@ std::vector<AsteroidPoissonPoint> AsteroidFieldComponent::get_poisson_points(con
                 }
             }
 
+            glm::vec3 rand_unit_vec = Random::rand_unit_vec();
+
+            float linear_relation = (selected_p.y / (layer_height * 0.5f)) - 1.f;
+            float belt_tendency = linear_relation;
+
+            rand_unit_vec.y += -belt_tendency * layer.layer_entries[entry_idx].belt_bias;
+            rand_unit_vec = glm::normalize(rand_unit_vec);
+
+            float selected_spacing_radius = radii_points[active_spawn_list[idx]].radius;
             float candidate_radius = layer.layer_entries[entry_idx].radius_factor * layer.spacing_radius;
             glm::vec3 candidate_point = selected_p + rand_unit_vec * Random::rand_range(selected_spacing_radius + candidate_radius, 2.f * (selected_spacing_radius + candidate_radius));
 
@@ -177,6 +164,8 @@ bool AsteroidFieldComponent::point_valid(
 
 void AsteroidFieldComponent::spawn_field() {
     if (asteroid_layers.empty()) return;
+
+    Random::set_seed(seed);
 
     float cum_weight = 0.f;
     for (int i = 0; i < asteroid_layers.size(); i++) {
