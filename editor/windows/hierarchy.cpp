@@ -250,7 +250,6 @@ void Hierarchy::on_editor_update(const FrameData&) {
         }
     }
 
-    // Handle copy/paste/duplicate shortcuts when playing and not using debug camera
     const bool is_playing = engine.game_controller.is_running();
     const bool using_debug_cam = editor.windows[editor.editor_mode].get<Viewport>().is_using_debug_camera();
     const bool wants_keyboard = ImGui::GetIO().WantCaptureKeyboard;
