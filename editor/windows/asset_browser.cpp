@@ -466,11 +466,6 @@ void AssetBrowser::location_context_menu(const IO::FileLocation& location, const
     if (ext == ".svh") {
         if (ImGui::MenuItem(ICON_MS_OPEN_JAM " Open in Voxel Editor")) {
             editor.switch_mode(Editor::Mode::VOXEL, location);
-            // editor.switch_mode(Editor::Mode::VOXEL);
-            // editor.windows[Editor::Mode::VOXEL].get<NodeHierarchy>().open_svh(location);
-            // const ResourceRef<VoxelScene> resource = engine.resources.load_resource<VoxelScene>(location);
-            // engine.renderer.get_debug_transform().set_world_position(glm::vec3(0.0f, 0.0f, -16.0f));
-            // engine.renderer.get_debug_transform().set_world_rotation(glm::identity<glm::quat>());
         }
     }
 
@@ -576,10 +571,6 @@ void AssetBrowser::display_viewing_location() {
                 editor.switch_mode(Editor::Mode::PREFAB, location);
             } else if (location.get_relative_path().extension() == ".svh") {
                 editor.switch_mode(Editor::Mode::VOXEL, location);
-                // editor.windows[Editor::Mode::VOXEL].get<NodeHierarchy>().open_svh(location);
-                // const ResourceRef<VoxelScene> resource = engine.resources.load_resource<VoxelScene>(location);
-                // engine.renderer.get_debug_transform().set_world_position(glm::vec3(0.0f, 0.0f, -16.0f));
-                // engine.renderer.get_debug_transform().set_world_rotation(glm::identity<glm::quat>());
             } else {
                 const std::string open_file_command = std::format(R"(start "" "{}")", location.get_relative_path().generic_string());
                 if (system(open_file_command.c_str()) != 0) Log::warn(Log::Scope::ENGINE, "Couldn't open file.");
