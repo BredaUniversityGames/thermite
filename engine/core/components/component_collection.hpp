@@ -112,6 +112,54 @@ TMT_COMPONENT(tmt::ComponentCollection, "ComponentCollection", (components));
 /* Specialization for IGameComponent derived types */
 namespace tmt {
 
+template <typename... Types>
+struct ViewElement {
+    const Entity entity;
+    std::tuple<Types&...> components;
+
+    ViewElement(Entity entity, Types&... components) : entity(std::move(entity)), components(components...) {}
+
+    template <typename T>
+    requires(std::is_same_v<T, Types> || ...)
+    T& get() {
+        return std::get<T&>(components);
+    }
+
+    template <typename T>
+    requires(std::is_same_v<T, Types> || ...)
+    const T& get() const {
+        return std::get<T&>(components);
+    }
+
+    template <typename T>
+    requires(std::is_same_v<T, Types> || ...)
+    operator T&() {
+        return get<T>();
+    }
+
+    template <typename T>
+    requires(std::is_same_v<T, Types> || ...)
+    operator const T&() const {
+        return get<T>();
+    }
+
+    template <std::size_t N>
+    decltype(auto) get() {
+        if constexpr (N == 0)
+            return entity;
+        else
+            return std::get<N - 1>(components);
+    }
+
+    template <std::size_t N>
+    decltype(auto) get() const {
+        if constexpr (N == 0)
+            return entity;
+        else
+            return std::get<N - 1>(components);
+    }
+};
+
 template <typename T>
 struct EcsComponentTraits<T, std::enable_if_t<std::is_base_of_v<IGameComponent, T>>> {
     static constexpr bool is_game_component = true;
@@ -179,7 +227,7 @@ struct EcsComponentTraits<T, std::enable_if_t<std::is_base_of_v<IGameComponent, 
     static auto view_with_impl(Reg& registry, entt::exclude_t<Excludes...> excludes) {
         const auto& instances = get_gameplay_system()->get_component_instances(typeid(T));
 
-        std::vector<std::tuple<Entity, T&, Rest&...>> result;
+        std::vector<ViewElement<T, Rest...>> result;
         for (const auto& weak : instances) {
             auto component = weak.lock();
             if (!component) continue;
@@ -232,3 +280,18 @@ struct EcsComponentTraits<T, std::enable_if_t<std::is_base_of_v<IGameComponent, 
 };
 
 }  // namespace tmt
+
+template <typename... Types>
+struct std::tuple_size<tmt::ViewElement<Types...>> : std::integral_constant<std::size_t, sizeof...(Types) + 1> {};
+
+// Index 0 = Entity
+template <typename... Types>
+struct std::tuple_element<0, tmt::ViewElement<Types...>> {
+    using type = tmt::Entity;
+};
+
+// Index N = Nth component type
+template <std::size_t N, typename... Types>
+struct std::tuple_element<N, tmt::ViewElement<Types...>> {
+    using type = std::tuple_element_t<N - 1, std::tuple<Types&...>>;
+};

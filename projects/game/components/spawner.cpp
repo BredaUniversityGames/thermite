@@ -10,11 +10,6 @@ void Spawner::start() {
     if (use_attached_entity_as_spawn_parent) {
         spawn_parent = entity;
     }
-
-    auto view = tmt::engine.ecs.view<Spawner>();
-    for (const auto& [entity, spawner] : view) {
-        printf("Spawner");
-    }
 }
 void Spawner::update(const tmt::FrameData& time) {}
 void Spawner::end() {}
