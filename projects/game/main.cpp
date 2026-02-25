@@ -58,6 +58,11 @@ class DanielTestScene : public tmt::Scene<DanielTestScene> {
     static constexpr std::string_view scene_name() { return "DanielTestScene"; }
 };
 
+class MikaTestScene : public tmt::Scene<MikaTestScene> {
+   public:
+    static constexpr std::string_view scene_name() { return "MikaTestScene"; }
+};
+
 std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs& args) {
     // clang-format off
     tmt::ApplicationSpecs specs {
@@ -68,6 +73,7 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     // clang-format on
 
     /* Register Scenes */
+    tmt::engine.scenes.register_scene<MikaTestScene>();
     tmt::engine.scenes.register_scene<DanielTestScene>();
     tmt::engine.scenes.register_scene<MainGameScene>();
     tmt::engine.scenes.register_scene<MainMenuScene>();

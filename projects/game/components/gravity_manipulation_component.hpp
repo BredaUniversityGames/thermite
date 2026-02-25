@@ -21,6 +21,7 @@ class GravityManipulationComponent : public tmt::GameComponent<GravityManipulati
     float max_mass = 200.0f;
     float pull_strength = 20.0f;
     float push_strength = 40.0f;
+    float attraction_acceleration = 0.1f;
 
    private:
     std::vector<entt::entity> currently_manipulated_entities;
@@ -32,4 +33,4 @@ class GravityManipulationComponent : public tmt::GameComponent<GravityManipulati
 };
 
 }  // namespace game
-TMT_OBJECT(game::GravityManipulationComponent, (range, forward_offset, vertical_offset, max_mass, pull_strength, push_strength));
+TMT_OBJECT(game::GravityManipulationComponent, (range, forward_offset, vertical_offset, max_mass, pull_strength, push_strength, attraction_acceleration));

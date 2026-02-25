@@ -46,12 +46,12 @@ void GravityManipulationComponent::grav_point_check() {
 }
 
 void GravityManipulationComponent::calculate_attract_point() {
-    auto player_view = tmt::engine.ecs.get_registry().view<Player>();
+    auto player_view = tmt::engine.ecs.view<Player>();
     if (player_view.begin() == player_view.end()) {
         tmt::Log::error("No Player found.");
         return;
     }
-    entt::entity player_entity = player_view.front();
+    entt::entity player_entity = player_view.front().entity;
     game::Player player_component = tmt::engine.ecs.get_component<game::Player>(player_entity);
 
     attract_point = player_component.get_transform().get_world_position();
@@ -72,17 +72,29 @@ void GravityManipulationComponent::calculate_attract_point() {
 void GravityManipulationComponent::grav_attract() {
     for (auto manip_entity : currently_manipulated_entities) {
         auto& curr_vb = tmt::engine.ecs.get_component<tmt::VoxelBody>(manip_entity);
-        curr_vb.velocity += glm::normalize(attract_point - curr_vb.position) * pull_strength;
+
+        // Distance and direction calc
+        float distance = glm::length(attract_point - curr_vb.position);
+        glm::vec3 direction = glm::normalize(attract_point - curr_vb.position);
+
+        // Distance factor to slow down when near attract point
+        float dist_factor = glm::clamp(distance/range, 0.0f, 1.0f);
+        dist_factor *= dist_factor;
+        // Calculate target velocity
+        glm::vec3 target_velocity = direction * pull_strength * dist_factor;
+
+        // Lerp towards the target velocity
+        curr_vb.velocity = glm::mix(curr_vb.velocity, target_velocity, attraction_acceleration);
     }
 }
 
 void GravityManipulationComponent::grav_shoot() {
-    auto player_view = tmt::engine.ecs.get_registry().view<game::Player>();
+    auto player_view = tmt::engine.ecs.view<Player>();
     if (player_view.begin() == player_view.end()) {
-        tmt::Log::error("No Player found in scene!");
+        tmt::Log::error("No Player found.");
         return;
     }
-    entt::entity player_entity = player_view.front();
+    entt::entity player_entity = player_view.front().entity;
     game::Player player_component = tmt::engine.ecs.get_component<game::Player>(player_entity);
     auto pitch = player_component.get_camera().pitch;
     auto yaw = player_component.get_camera().yaw;
