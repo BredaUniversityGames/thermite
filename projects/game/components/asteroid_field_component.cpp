@@ -6,6 +6,8 @@
 #include "engine/core/polyline.hpp"
 #include "engine/core/ecs.hpp"
 
+namespace game {
+
 std::vector<AsteroidPoissonPoint> AsteroidFieldComponent::get_poisson_points(const FAsteroidFieldLayer& layer) {
     std::vector<AsteroidPoissonPoint> radii_points;
 
@@ -247,3 +249,5 @@ AsteroidFieldComponent::SpatialLookupGrid::SpatialLookupGrid(float _cell_size, g
     int num_grid = x_dim * y_dim * z_dim;
     grid = std::vector<int>(num_grid, -1);
 }
+
+}  // namespace game

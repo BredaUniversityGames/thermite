@@ -2,8 +2,8 @@
 #include <ImReflect.hpp>
 #include "projects/game/components/asteroid_field_component.hpp"
 
-inline void tag_invoke(ImReflect::ImInput_t, const char* name, AsteroidFieldComponent& value, ImSettings& settings, ImResponse& response) {
-    
+inline void tag_invoke(ImReflect::ImInput_t, const char* name, game::AsteroidFieldComponent& value, ImSettings& settings, ImResponse& response) {
+    using namespace game;
     settings.push_member<&FAsteroidLayerEntry::radius_factor>().min(1.f).clamp(true);
     settings.push_member<&FAsteroidLayerEntry::belt_bias>().min(0.f).clamp(true);
 

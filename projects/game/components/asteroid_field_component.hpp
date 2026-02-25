@@ -4,6 +4,8 @@
 
 #include "engine/events/engine.hpp"
 
+namespace game {
+
 struct AsteroidPoissonPoint {
     glm::vec3 pos;
     int entry_idx;
@@ -17,7 +19,6 @@ struct FAsteroidLayerEntry {
     float spawn_weight = 1.f;
     float belt_bias = 1.f;
 };
-TMT_OBJECT(FAsteroidLayerEntry, (spawnable, radius_factor, spawn_weight, belt_bias));
 
 struct FAsteroidFieldLayer {
     std::vector<FAsteroidLayerEntry> layer_entries;
@@ -34,7 +35,6 @@ struct FAsteroidFieldLayer {
 
     std::vector<AsteroidPoissonPoint> points;
 };
-TMT_OBJECT(FAsteroidFieldLayer, (layer_entries, rejection_samples, spacing_radius, space_weight, layer_spacing));
 
 struct AsteroidFieldComponent : public tmt::GameComponent<AsteroidFieldComponent>, tmt::OnEngineUpdate {
     using GameComponent::GameComponent;
@@ -80,4 +80,8 @@ struct AsteroidFieldComponent : public tmt::GameComponent<AsteroidFieldComponent
     // Inherited via OnEngineUpdate
     void on_engine_update(const tmt::FrameData& time) override;
 };
-TMT_OBJECT(AsteroidFieldComponent, (seed, field_depth, layer_width, layer_height, asteroid_layers, draw_debug));
+
+}  // namespace game
+TMT_OBJECT(game::FAsteroidLayerEntry, (spawnable, radius_factor, spawn_weight, belt_bias));
+TMT_OBJECT(game::FAsteroidFieldLayer, (layer_entries, rejection_samples, spacing_radius, space_weight, layer_spacing));
+TMT_OBJECT(game::AsteroidFieldComponent, (seed, field_depth, layer_width, layer_height, asteroid_layers, draw_debug));
