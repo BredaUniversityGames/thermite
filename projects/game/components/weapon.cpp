@@ -2,13 +2,9 @@
 
 #include "engine/tools/fmt/glm.hpp"
 
-void game::Weapon::start() {
-    tmt::engine.ecs.get_dispatcher().sink<ShootEvent>().connect<&Weapon::on_shoot>(this);
-}
+void game::Weapon::start() {}
 void game::Weapon::update(const tmt::FrameData& time) {}
-void game::Weapon::end() {
-    tmt::engine.ecs.get_dispatcher().sink<ShootEvent>().disconnect<&Weapon::on_shoot>(this);
-}
+void game::Weapon::end() {}
 void game::Weapon::on_shoot(const ShootEvent& e) {
     if (e.shooting_entity != shooting_entity) return;
 

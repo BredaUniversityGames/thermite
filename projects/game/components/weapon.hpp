@@ -20,6 +20,7 @@ class Weapon : public tmt::GameComponent<Weapon> {
     tmt::Entity spawn_location_entity = entt::null;
 
    private:
+    friend class WeaponManager;
     void on_shoot(const ShootEvent& e);
     float last_shot_time = 0.0f;
 };
