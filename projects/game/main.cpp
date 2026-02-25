@@ -30,6 +30,7 @@
 #include "components/projectile_spawner.hpp"
 #include "components/rifle_projectile.hpp"
 #include "components/spawner.hpp"
+#include "components/text_component.hpp"
 #include "components/weapon.hpp"
 
 class Game : public tmt::Application {
@@ -99,6 +100,7 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     tmt::engine.component_registry.register_component<game::GravityManipulationComponent>();
     tmt::engine.component_registry.register_component<game::OreCollector>();
     tmt::engine.component_registry.register_component<game::CollisionTrigger>();
+    tmt::engine.component_registry.register_component<game::TextComponent>();
 
     return std::make_unique<Game>(specs);
 }
