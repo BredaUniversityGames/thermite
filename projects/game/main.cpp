@@ -44,6 +44,19 @@ class MainGameScene : public tmt::Scene<MainGameScene> {
    public:
     static constexpr std::string_view scene_name() { return "MainGameScene"; }
 };
+class Zoo : public tmt::Scene<Zoo> {
+   public:
+    static constexpr std::string_view scene_name() { return "Zoo"; }
+};
+class Gym : public tmt::Scene<Gym> {
+   public:
+    static constexpr std::string_view scene_name() { return "Gym"; }
+};
+
+class DanielTestScene : public tmt::Scene<DanielTestScene> {
+   public:
+    static constexpr std::string_view scene_name() { return "DanielTestScene"; }
+};
 
 std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs& args) {
     // clang-format off
@@ -55,8 +68,11 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     // clang-format on
 
     /* Register Scenes */
+    tmt::engine.scenes.register_scene<DanielTestScene>();
     tmt::engine.scenes.register_scene<MainGameScene>();
     tmt::engine.scenes.register_scene<MainMenuScene>();
+    tmt::engine.scenes.register_scene<Gym>();
+    tmt::engine.scenes.register_scene<Zoo>();
 
     /* Register Components */
     tmt::engine.component_registry.register_component<game::Player>();
