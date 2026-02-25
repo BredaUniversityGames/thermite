@@ -2,7 +2,6 @@
 
 #include "imgui.h"
 #include "imgui_internal.h"
-#include "engine/shared/colorspace.hpp"
 
 #ifndef IM_CUSTOM_COLORSPACE_MATRIX
     // Matrix to convert from a color in the default (srgb rec709) colorspace to the user's custom colorspace.

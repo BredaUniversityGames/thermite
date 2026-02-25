@@ -8,6 +8,8 @@
 #include <engine/core/ecs.hpp>
 #include <engine/core/components/voxel_renderer.hpp>
 
+#include "engine/shared/colorspace.hpp"
+
 namespace tmt {
 
 void Palette::set_selected_material_index(const MaterialIndex material_index) {
@@ -17,9 +19,18 @@ void Palette::set_selected_material_index(const MaterialIndex material_index) {
 
     diff.before();
     selected_material_index = material_index;
+    update_material_editor = true;
     diff.after();
 
-    IUndoRedo::send_to_manager(std::move(diff), "Select Material");
+    // We set the value to its current value before and after (setting them both to true) because the value always has to be set to true when undo/redo is done (very hacky workaround).
+    TypeDiff update_diff { &update_material_editor };
+    update_diff.before();
+    update_diff.after();
+
+    UndoRedoCollection collection;
+    collection.add_action(std::move(diff));
+    collection.add_action(std::move(update_diff));
+    UndoRedoCollection::send_to_manager(std::move(collection), "Select Material");
 }
 
 void Palette::before_begin() {
@@ -66,7 +77,7 @@ void Palette::display_palette(const ResourceRef<VoxelVolume>& resource) {
             ImGui::SetCursorScreenPos(min);
             const std::string button_id = "##palette_entry_" + std::to_string(i);
             if (ImGui::InvisibleButton(button_id.c_str(), ImVec2(entry_width, entry_height))) {
-                selected_material_index = static_cast<MaterialIndex>(i);
+                set_selected_material_index(static_cast<MaterialIndex>(i));
             }
         }
     }
