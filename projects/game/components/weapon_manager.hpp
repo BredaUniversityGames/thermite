@@ -19,11 +19,13 @@ class WeaponManager : public tmt::GameComponent<WeaponManager> {
     void unsubscribe_weapon(WeaponType slot);
 
     std::unordered_map<WeaponType, tmt::Entity> weapons;
-    WeaponType starting_slot;
+    WeaponType starting_weapon { WeaponType::RIFLE };
+
+    tmt::Entity shooting_entity;
 
    private:
     WeaponType current_weapon;
 };
 
 }  // namespace game
-TMT_OBJECT(game::WeaponManager, (weapons, starting_slot));
+TMT_OBJECT(game::WeaponManager, (weapons, starting_weapon, shooting_entity));

@@ -14,15 +14,17 @@ class GravityManipulationComponent : public tmt::GameComponent<GravityManipulati
     void start() override;
     void update(const tmt::FrameData& time) override;
     void end() override;
+    void draw_debug_lines() const override;
+    void on_weapon_fired(const WeaponFiredEvent& e);
 
-    float range = 2.0f;             // size of the gravity zone
-    float max_mass = 200.0f;        // max mass that will be able to be manipulated
-    float pull_strength = 8.0f;    // the speed of the objects affected by the gravity zone
-    float push_strength = 10.0f;     // how fast objects should be pushed away
-    float attraction_acceleration = 0.5f;   //how quickly objects accelerate when they enter the gravity zone
-    float push_cooldown = 1.0f;     // how long it takes to push objects away again in seconds
-    entt::entity attraction_point_entity;   // point of attraction
-    bool active = true;         // self-explanatory
+    float range = 2.0f;                       // size of the gravity zone
+    float max_mass = 200.0f;                  // max mass that will be able to be manipulated
+    float pull_strength = 8.0f;               // the speed of the objects affected by the gravity zone
+    float push_strength = 10.0f;              // how fast objects should be pushed away
+    float attraction_acceleration = 0.5f;     // how quickly objects accelerate when they enter the gravity zone
+    float push_cooldown = 1.0f;               // how long it takes to push objects away again in seconds
+    entt::entity attraction_point_entity;     // point of attraction
+    bool active = true;                       // self-explanatory
     bool input_active_on_non_player = false;  // if needs to be active on player input but is not on player entity
 
    private:
