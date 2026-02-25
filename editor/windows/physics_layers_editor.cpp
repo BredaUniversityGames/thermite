@@ -138,43 +138,47 @@ void PhysicsLayersEditor::draw_collision_matrix(PhysicsLayers& layers) {
     ImGui::Text("Collision Matrix");
     ImGui::Separator();
 
-    // Table with an extra column/row for indices
     if (ImGui::BeginTable("CollisionTable", count + 2, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingStretchSame)) {
-        // --- Top-left cell empty ---
+        // --- header row ---
         ImGui::TableNextRow();
-        ImGui::TableNextColumn();
-        ImGui::Text(" ");  // top-left corner empty
+
+        // --- Index header ---
         ImGui::TableNextColumn();
         ImGui::Text("Index");
 
-        // --- Header row: indices ---
+        // --- Name header ---
+        ImGui::TableNextColumn();
+        ImGui::Text("Name");
+
+        // Layer name headers
         for (uint32_t col = 0; col < count; ++col) {
             ImGui::TableNextColumn();
-            ImGui::Text("%u", col);
+            ImGui::Text("%s", layers.get_layer_name(col).c_str());
         }
 
-        // --- Each row ---
+        // --- data rows ---
         for (uint32_t row = 0; row < count; ++row) {
             ImGui::TableNextRow();
 
-            // --- Row header: layer name ---
-            ImGui::TableNextColumn();
-            ImGui::Text("%s", layers.get_layer_name(row).c_str());
-
-            // --- Row index column ---
+            // --- Index column ---
             ImGui::TableNextColumn();
             ImGui::Text("%u", row);
 
+            // --- Name column ---
+            ImGui::TableNextColumn();
+            ImGui::Text("%s", layers.get_layer_name(row).c_str());
+
+            // --- Collision cells ---
             for (uint32_t col = 0; col < count; ++col) {
                 ImGui::TableNextColumn();
 
-                // Self collision: always enabled, not editable
+                // Self-collision
                 if (row == col) {
                     ImGui::Text("X");
                     continue;
                 }
 
-                // Lower triangle: don't duplicate UI
+                // Lower triangle (avoid duplicate editing)
                 if (col < row) {
                     ImGui::Text("-");
                     continue;
