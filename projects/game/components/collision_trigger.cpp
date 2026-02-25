@@ -13,7 +13,7 @@ void game::CollisionTrigger::fixed_update(const tmt::FrameData& time) {
 
     auto overlap_hits = bvh.overlap({ world_aabb.min_bounds, world_aabb.max_bounds });
     if (!overlap_hits.empty()) {
-        auto group = tmt::engine.ecs.get_registry().group<tmt::VoxelBody>(entt::get<tmt::Transform>);
+        auto group = tmt::engine.ecs.group<tmt::VoxelBody>(entt::get<tmt::Transform>);
         for (uint32_t hit : overlap_hits) {
             tmt::Entity other_entity = group[hit];
             // do stuff with the entity
@@ -29,8 +29,7 @@ game::AABB game::CollisionTrigger::get_aabb_world() const {
     return collision_shape.world_aabb(tmt::engine.ecs.get_component<tmt::Transform>(entity).get_world_position());
 }
 void game::CollisionTrigger::draw_debug_lines() const {
-    tmt::engine.polyline.use_color(color);
-    tmt::engine.polyline.use_line_width(line_width);
+    line_config.set_values();
 
     auto world_abb = get_aabb_world();
     auto min_aabb = world_abb.min_bounds;

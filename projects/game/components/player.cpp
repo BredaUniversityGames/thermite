@@ -50,6 +50,8 @@ void setup_inputs(tmt::InputMap& input_map) {
     input_map.add_key_to_action(action::SWITCH_GRAVITY, tmt::Key::NUM_2);
     input_map.add_action(action::SWITCH_MINING);
     input_map.add_key_to_action(action::SWITCH_MINING, tmt::Key::NUM_3);
+    input_map.add_action(action::SECONDARY_TOOL_USE);
+    input_map.add_action_mouse(action::SECONDARY_TOOL_USE, tmt::MouseButton::RIGHT);
 }
 
 void Player::start() {

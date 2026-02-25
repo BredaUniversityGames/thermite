@@ -14,6 +14,8 @@ constexpr auto SHOOT = "shoot";
 constexpr auto SWITCH_RIFLE = "rifle";
 constexpr auto SWITCH_MINING = "mining";
 constexpr auto SWITCH_GRAVITY = "gravity";
+constexpr auto SECONDARY_TOOL_USE = "secondary_tool_use";
+
 
 }  // namespace action
 }  // namespace game
