@@ -27,11 +27,11 @@ void tmt::RigModelManager::on_start() {}
 void RigModelManager::on_update(const FrameData& time) {
     inspect(time.delta_time);
     for (const auto& [entity, rig] : engine.ecs.get_registry().view<RigModel>().each()) {
-        for (auto& [location, animation_name] : rig.data->animation_files) {
-            if (animation_name.second) {
+        for (auto& [location, animation_data] : rig.data->animation_files) {
+            if (animation_data.second) {
                 rig.data->reload();
-                rig.play_animation(animation_name.first, 1.0f, true);
-                animation_name.second = false;
+                rig.play_animation(animation_data.first, 1.0f, true);
+                animation_data.second = false;
             }
         }
 

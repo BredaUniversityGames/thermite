@@ -67,9 +67,7 @@ struct RigData : public FileResource {
     std::vector<Bone> bones;
     std::string name;
 
-    // Hacky way of ding this, this info should not be stored in the resources since it can not be found in the .FBX file itself
-    // std::vector<std::pair<FileIO::Directory, std::string>> animation_files;
-    //std::vector<IO::FileLocation> animation_files;
+    // Map of animation file locations to pair of (animation name, flag for starting animation)
     std::unordered_map<IO::FileLocation, std::pair<std::string, bool>> animation_files;
 
    private:
