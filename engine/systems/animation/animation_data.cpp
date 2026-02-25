@@ -7,53 +7,17 @@ namespace tmt {
 tmt::RigData::RigData(const IO::FileLocation& directory) : FileResource(directory) {}
 
 bool tmt::RigData::load() {
-    load_fbx(file_location);
-    return true;
-}
+    const std::vector<char>& rig = IO::read_file(file_location);
 
-void tmt::RigData::unload() {}
-
-bool tmt::RigData::reload() {
-    bones.clear();
-    load_fbx(file_location);
-    return true;
-}
-
-// from tools.cpp in kudzu
-// Courtesy of: http://stackoverflow.com/questions/5878775/how-to-find-and-replace-string
-std::string string_replace(const std::string& subject, const std::string& search, const std::string& replace) {
-    std::string result(subject);
-    size_t pos = 0;
-
-    while ((pos = subject.find(search, pos)) != std::string::npos) {
-        result.replace(pos, search.length(), replace);
-        pos += search.length();
-    }
-
-    return result;
-}
-
-// Check if a rig node is equal to and animation node.
-bool check_correct_bone(std::string_view rig_bone, std::string_view animation_bone) {
-    if (const size_t pos = rig_bone.find_last_of(':'); pos != std::string_view::npos) {
-        rig_bone = rig_bone.substr(pos + 1);
-    }
-    if (const size_t pos = animation_bone.find_last_of(':'); pos != std::string_view::npos) {
-        animation_bone = animation_bone.substr(pos + 1);
-    }
-
-    return rig_bone == animation_bone;
-}
-
-void RigData::load_fbx(const IO::FileLocation& directory) {
-    const std::vector<char>& rig = IO::read_file(directory);
-    // todo: invalid file error handling
     ufbx_error error;
     ufbx_load_opts opts = {};
     opts.evaluate_skinning = true;
     ufbx_scene* rig_fbx = ufbx_load_memory(rig.data(), rig.size(), &opts, &error);
 
-    if (error.type != UFBX_ERROR_NONE) Log::error("Failed to load FBX rig: {}\n", error.description.data);
+    if (error.type != UFBX_ERROR_NONE) {
+        Log::error("Failed to load FBX rig: {}\n", error.description.data);
+        return false;
+    }
 
     name = "Armature";
 
@@ -88,6 +52,42 @@ void RigData::load_fbx(const IO::FileLocation& directory) {
     }
 
     ufbx_free_scene(rig_fbx);
+
+    return true;
+}
+
+void tmt::RigData::unload() {}
+
+bool tmt::RigData::reload() {
+    bones.clear();
+
+    return load();
+}
+
+// from tools.cpp in kudzu
+// Courtesy of: http://stackoverflow.com/questions/5878775/how-to-find-and-replace-string
+std::string string_replace(const std::string& subject, const std::string& search, const std::string& replace) {
+    std::string result(subject);
+    size_t pos = 0;
+
+    while ((pos = subject.find(search, pos)) != std::string::npos) {
+        result.replace(pos, search.length(), replace);
+        pos += search.length();
+    }
+
+    return result;
+}
+
+// Check if a rig node is equal to and animation node.
+bool check_correct_bone(std::string_view rig_bone, std::string_view animation_bone) {
+    if (const size_t pos = rig_bone.find_last_of(':'); pos != std::string_view::npos) {
+        rig_bone = rig_bone.substr(pos + 1);
+    }
+    if (const size_t pos = animation_bone.find_last_of(':'); pos != std::string_view::npos) {
+        animation_bone = animation_bone.substr(pos + 1);
+    }
+
+    return rig_bone == animation_bone;
 }
 
 void RigData::extract_bone_keyframes_fbx(const ufbx_scene* animation_fbx, const ufbx_scene* rig_fbx, const std::map<const ufbx_node*, const ufbx_node*>& mesh_connections) {

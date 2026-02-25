@@ -32,6 +32,8 @@ void RigModelManager::on_update(const FrameData& time) {
             rig.attach_voxel_objects();
         }
 
+        if (rig.data == nullptr) continue;
+
         if (rig.state != RigModel::State::STATIONARY && !rig.is_transferring()) rig.time += rig.animation_speed * time.delta_time;
 
         if (rig.is_transferring()) rig.transfer_time += time.delta_time * rig.animation_speed;
