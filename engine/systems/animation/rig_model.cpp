@@ -7,6 +7,12 @@
 #include "engine/core/resources.hpp"
 #include "engine/core/components/voxel_renderer.hpp"
 
+namespace {
+
+
+
+}
+
 namespace tmt {
 
 void RigModel::init_bones(const Bone& b, Entity p) {
@@ -59,60 +65,59 @@ void RigModel::init(const IO::FileLocation& directory, Entity p) {
     }
 }
 
+void RigModel::recurse(const tmt::VoxelSceneNode& node, tmt::Entity parent_entity, const glm::mat4& parent_matrix, glm::vec3 armature_pos) {
+    glm::mat4 matrix = glm::identity<glm::mat4>();
+    tmt::Entity voxel_entity = entt::null;
+    for (int j = 0; j < bone_entities.size(); j++) {
+        auto& bone_name = engine.ecs.get_component<Name>(bone_entities[j]);
+        auto& bone_transf = engine.ecs.get_component<Transform>(bone_entities[j]);
+        if (bone_name.name == node.name) {
+            
+            voxel_entity = tmt::engine.ecs.create_entity(node.name);
+            auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(voxel_entity);
+            transform.set_world_matrix(parent_matrix * node.transform);
+            transform.set_parent(parent_entity);
+            matrix = transform.get_world_matrix();
+
+            auto& voxel_name = engine.ecs.get_component<Name>(voxel_entity);
+            auto& voxel_transf = engine.ecs.get_component<Transform>(voxel_entity);
+
+            BoneComp& bone_comp_id = engine.ecs.get_registry().get<BoneComp>(bone_entities[j]);
+            Bone& b = data->bones[bone_comp_id.id];
+
+            pivot_entities.push_back(engine.ecs.create_entity());
+            auto& pivot_transf = engine.ecs.get_component<Transform>(pivot_entities.back());
+            auto& pivot_name = engine.ecs.get_component<Name>(pivot_entities.back());
+            pivot_transf.set_parent(bone_entities[j]);
+
+            voxel_transf.set_parent(pivot_entities.back());
+            voxel_transf.set_local_position(b.mesh_offset - (bone_transf.get_world_position() - armature_pos));
+            pivot_transf.set_local_rotation(glm::inverse(glm::quat_cast(bone_transf.get_world_matrix())));
+            pivot_name.name = "pivot";
+            break;
+        }
+    }
+
+    if (node.tree && engine.ecs.valid(voxel_entity)) {
+        tmt::VoxelRenderer& renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(voxel_entity);
+        const tmt::ResourceRef volume { {}, std::make_shared<tmt::VoxelVolume>(node) };
+        renderer.resource = volume;
+    }
+
+    for (const tmt::VoxelSceneNode& child : node.children) {
+        recurse(child, voxel_entity, matrix, armature_pos);
+    }
+};
+
 void tmt::RigModel::attach_voxel_objects() {
     vox_is_loaded = true;
 
-    std::vector<Entity> entities;
-
     // Load the voxel scene and populate entities by recursing through nodes
     auto voxel_file = engine.resources.load_resource<VoxelScene>(vox_path);
-
-    std::function<void(const VoxelSceneNode&, Entity, const glm::mat4&)> recurse = [&](const VoxelSceneNode& node, Entity parent_entity, const glm::mat4& parent_matrix) {
-        const Entity entity = engine.ecs.create_entity(node.name);
-        Transform& transform = engine.ecs.get_component<Transform>(entity);
-        transform.set_world_matrix(parent_matrix * node.transform);
-        transform.set_parent(parent_entity);
-
-        if (node.tree) {
-            VoxelRenderer& renderer = engine.ecs.add_component<VoxelRenderer>(entity);
-            const ResourceRef volume { {}, std::make_shared<VoxelVolume>(node) };
-            renderer.resource = volume;
-            entities.push_back(entity);
-        }
-
-        for (const VoxelSceneNode& child : node.children) {
-            recurse(child, entity, transform.get_world_matrix());
-        }
-    };
-
-    for (const VoxelSceneNode& root_node : voxel_file->root_nodes) {
-        recurse(root_node, entt::null, glm::identity<glm::mat4>());
-    }
-
-
     glm::vec3 armature_pos = engine.ecs.get_component<Transform>(armature_entity).get_world_position();
 
-    for (int i = 0; i < entities.size(); i++) {
-        auto& name = engine.ecs.get_component<Name>(entities[i]);
-        auto& transf = engine.ecs.get_component<Transform>(entities[i]);
-        for (int j = 0; j < bone_entities.size(); j++) {
-            auto* rig_name = engine.ecs.get_registry().try_get<Name>(bone_entities[j]);
-            auto* rig_transf = engine.ecs.get_registry().try_get<Transform>(bone_entities[j]);
-            if (rig_name->name == name.name) {
-                BoneComp& bone_comp_id = engine.ecs.get_registry().get<BoneComp>(bone_entities[j]);
-                Bone& b = data->bones[bone_comp_id.id];
-
-                pivot_entities.push_back(engine.ecs.create_entity());
-                auto& pivot_transf = engine.ecs.get_component<Transform>(pivot_entities.back());
-                auto& pivot_name = engine.ecs.get_component<Name>(pivot_entities.back());
-                pivot_transf.set_parent(bone_entities[j]);
-
-                transf.set_parent(pivot_entities.back());
-                transf.set_local_position(b.mesh_offset - (rig_transf->get_world_position() - armature_pos));
-                pivot_transf.set_local_rotation(glm::inverse(glm::quat_cast(rig_transf->get_world_matrix())));
-                pivot_name.name = "pivot";
-            }
-        }
+    for (const VoxelSceneNode& root_node : voxel_file->root_nodes) {
+        recurse(root_node, entt::null, glm::identity<glm::mat4>(), armature_pos);
     }
 }
 

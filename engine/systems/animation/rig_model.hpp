@@ -35,6 +35,7 @@ class RigModel {
     std::vector<Entity> pivot_entities;
     ResourceRef<RigData> data;
 
+    void recurse(const tmt::VoxelSceneNode& node, tmt::Entity parent_entity, const glm::mat4& parent_matrix, glm::vec3 armature_pos);
     void attach_voxel_objects();
 
     [[nodiscard]] bool is_transferring() const {
