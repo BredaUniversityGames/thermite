@@ -138,23 +138,32 @@ void PhysicsLayersEditor::draw_collision_matrix(PhysicsLayers& layers) {
     ImGui::Text("Collision Matrix");
     ImGui::Separator();
 
-    if (ImGui::BeginTable("CollisionTable", count + 1, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingStretchSame)) {
-        // Header row
+    // Table with an extra column/row for indices
+    if (ImGui::BeginTable("CollisionTable", count + 2, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingStretchSame)) {
+        // --- Top-left cell empty ---
         ImGui::TableNextRow();
         ImGui::TableNextColumn();
-        ImGui::Text(" ");
+        ImGui::Text(" ");  // top-left corner empty
+        ImGui::TableNextColumn();
+        ImGui::Text("Index");
 
+        // --- Header row: indices ---
         for (uint32_t col = 0; col < count; ++col) {
             ImGui::TableNextColumn();
-            ImGui::Text("%s", layers.get_layer_name(col).c_str());
+            ImGui::Text("%u", col);
         }
 
+        // --- Each row ---
         for (uint32_t row = 0; row < count; ++row) {
             ImGui::TableNextRow();
 
-            // Row header
+            // --- Row header: layer name ---
             ImGui::TableNextColumn();
             ImGui::Text("%s", layers.get_layer_name(row).c_str());
+
+            // --- Row index column ---
+            ImGui::TableNextColumn();
+            ImGui::Text("%u", row);
 
             for (uint32_t col = 0; col < count; ++col) {
                 ImGui::TableNextColumn();
@@ -174,11 +183,9 @@ void PhysicsLayersEditor::draw_collision_matrix(PhysicsLayers& layers) {
                 bool canCollide = layers.can_collide(row, col);
 
                 ImGui::PushID(row * 100 + col);
-
                 if (ImGui::Checkbox("", &canCollide)) {
                     layers.enable_collision(row, col, canCollide);
                 }
-
                 ImGui::PopID();
             }
         }
