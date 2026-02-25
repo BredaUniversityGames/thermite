@@ -217,6 +217,9 @@ std::vector<uint32_t> Bvh2<T>::overlap(const Aabb& aabb) const {
     for (;;) {
         const Bvh2Node& node = nodes[node_index];
 
+        /* Avoid an infinite loop when the BVH has nothing inside it */
+        if (nodes[0].left_first == 0u && nodes[0].prim_count == 0u) return hits;
+
         /* Leaf node */
         if (node.is_leaf()) {
             /* Intersect all primitives */
