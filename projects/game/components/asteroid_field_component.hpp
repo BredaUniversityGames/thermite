@@ -32,8 +32,6 @@ struct FAsteroidFieldLayer {
     float layer_spacing = 0.f;
 
     float layer_depth;
-
-    std::vector<AsteroidPoissonPoint> points;
 };
 
 struct AsteroidFieldComponent : public tmt::GameComponent<AsteroidFieldComponent>, tmt::OnEngineUpdate {

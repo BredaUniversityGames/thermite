@@ -180,9 +180,9 @@ void AsteroidFieldComponent::spawn_field() {
     }
 
     // poisson distribution sampling
+    unsigned int it = 0;
     for (auto& layer : asteroid_layers) {
         std::vector<AsteroidPoissonPoint> radii_points = get_poisson_points(layer);
-        layer.points = radii_points;
 
         for (auto& point : radii_points) {
             auto spawn_obj = layer.layer_entries[point.entry_idx].spawnable;
@@ -196,11 +196,12 @@ void AsteroidFieldComponent::spawn_field() {
 
             auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(instantiated);
 
-            transform.set_local_position(point.pos);
+            transform.set_local_position(point.pos + glm::vec3(0.f, 0.f, it * layer.layer_depth));
             transform.set_local_rotation(glm::vec3(pitch, yaw, roll));
-            //glm::vec3 s = transform.get_local_scale();
-            //transform.set_local_scale(s * size_factor);
+            glm::vec3 s = transform.get_local_scale();
+            transform.set_local_scale(s * size_factor);
         }
+        ++it;
     }
 }
 
@@ -227,14 +228,17 @@ void AsteroidFieldComponent::on_engine_update(const tmt::FrameData& time) {
     tmt::engine.polyline.use_color({ 1.f, 1.f, 1.f, 1.f });
     tmt::engine.polyline.draw_aabb(min, max);
 
+    unsigned int it = 1;
     for (auto& layer : asteroid_layers) {
-        glm::vec3 layer_min = { min.x, min.y, min.z + layer.layer_depth };
-        glm::vec3 layer_max = { max.x, max.y, min.z + layer.layer_depth };
-        glm::vec3 layer_bmin = { min.x, max.y, min.z + layer.layer_depth };
-        glm::vec3 layer_bmax = { max.x, min.y, min.z + layer.layer_depth };
+        glm::vec3 layer_min = { min.x, min.y, min.z + it * layer.layer_depth };
+        glm::vec3 layer_max = { max.x, max.y, min.z + it * layer.layer_depth };
+        glm::vec3 layer_bmin = { min.x, max.y, min.z + it * layer.layer_depth };
+        glm::vec3 layer_bmax = { max.x, min.y, min.z + it * layer.layer_depth };
 
         tmt::engine.polyline.draw_line(layer_min, layer_max);
         tmt::engine.polyline.draw_line(layer_bmin, layer_bmax);
+
+        ++it;
     }
 }
 
