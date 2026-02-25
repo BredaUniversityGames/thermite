@@ -14,6 +14,7 @@
 #include "engine/core/logger.hpp"
 #include "engine/core/renderer/renderer.hpp"
 #include "engine/core/renderer/pipelines/di_pipeline.hpp"
+#include "engine/core/renderer/pipelines/ui_pipeline.hpp"
 #include "engine/core/scenes.hpp"
 
 #include "editor/imgui/manager.hpp"
@@ -246,6 +247,11 @@ void Editor::main_menu_bar() {
                     }
                 }
                 ImGui::EndMenu();
+            }
+            
+            if(ImGui::MenuItem("Enable UI Pipeline", nullptr, engine.renderer.ui_pipeline.render_ui_pipeline))
+            {
+                engine.renderer.ui_pipeline.render_ui_pipeline = !engine.renderer.ui_pipeline.render_ui_pipeline;            
             }
 
             ImGui::EndMenu();
