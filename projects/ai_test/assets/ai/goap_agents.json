@@ -1,0 +1,22 @@
+{
+    "types": {
+        "Enemy 1": {
+            "id": "Enemy 1",
+            "action_ids": [
+                "a_PatrolArea",
+                "a_ChasePlayer",
+                "a_KillPlayer"
+            ],
+            "goal_ids": [
+                "g_PatrolArea",
+                "g_KillPlayer"
+            ],
+            "default_world_state": {
+                "player_visible": true,
+                "player_in_range": false,
+                "player_alive": true,
+                "area_secure": false
+            }
+        }
+    }
+}

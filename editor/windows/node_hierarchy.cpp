@@ -1,14 +1,22 @@
 #include "node_hierarchy.hpp"
 
+#include "editor.hpp"
+#include "editor/core/systems/undo_redo/type_diff.hpp"
+#include "editor/core/systems/undo_redo/component_diff.hpp"
+#include "editor/core/systems/undo_redo/voxel_edit_diff.hpp"
+#include "editor/core/systems/undo_redo/undo_redo_manager.hpp"
+
 #include "engine/engine.hpp"
 #include "engine/core/ecs.hpp"
+#include "engine/shared/const.hpp"
+#include "engine/core/polyline.hpp"
 #include "engine/core/resources.hpp"
-#include "engine/core/components/transform.hpp"
-#include "engine/core/components/voxel_renderer.hpp"
-#include "engine/tools/file_dialog.hpp"
 #include "engine/tools/svh_format.hpp"
 #include "engine/shared/colorspace.hpp"
-#include "engine/shared/const.hpp"
+#include "engine/tools/file_dialog.hpp"
+#include "engine/tools/serializer/all.hpp"
+#include "engine/core/components/transform.hpp"
+#include "engine/core/components/voxel_renderer.hpp"
 
 #include <imgui.h>
 #include <imgui_stdlib.h>
@@ -20,18 +28,42 @@
 
 #include <fstream>
 
-namespace tmt {
-
 namespace {
 
-std::vector<uint8_t> create_uniform_voxels(const std::unique_ptr<Svt64>& tree, const glm::uvec3& size) {
+void drag3_uint32(const char* label, uint32_t values[3], const float speed = 0.1f, const uint32_t& min = 0u, const uint32_t& max = 0u) {
+    ImGui::DragScalarN(label, ImGuiDataType_U32, values, 3, speed, &min, &max, nullptr, ImGuiSliderFlags_ClampOnInput);
+}
+
+void slider3_uint32(const char* label, uint32_t values[3], const glm::uvec3& min, const glm::uvec3& max) {
+    ImGui::PushID(label);
+    ImGui::BeginGroup();
+
+    ImGui::Text("%s", label);
+    ImGui::SameLine();
+
+    const float full_width = ImGui::CalcItemWidth();
+
+    ImGui::SetNextItemWidth(full_width / 3.0f);
+    ImGui::SliderScalarN("##X", ImGuiDataType_U32, &values[0], 1, &min[0], &max[0], nullptr, ImGuiSliderFlags_ClampOnInput);
+    ImGui::SameLine();
+    ImGui::SetNextItemWidth(full_width / 3.0f);
+    ImGui::SliderScalarN("##Y", ImGuiDataType_U32, &values[1], 1, &min[1], &max[1], nullptr, ImGuiSliderFlags_ClampOnInput);
+    ImGui::SameLine();
+    ImGui::SetNextItemWidth(full_width / 3.0f);
+    ImGui::SliderScalarN("##Z", ImGuiDataType_U32, &values[2], 1, &min[2], &max[2], nullptr, ImGuiSliderFlags_ClampOnInput);
+
+    ImGui::EndGroup();
+    ImGui::PopID();
+}
+
+std::vector<uint8_t> create_uniform_voxels(const std::unique_ptr<tmt::Svt64>& tree, const glm::uvec3& size) {
     const uint32_t voxel_count = size.x * size.y * size.z;
     std::vector<uint8_t> voxels(voxel_count, 0);
 
     for (uint32_t x = 0; x < size.x; x++) {
         for (uint32_t y = 0; y < size.y; y++) {
             for (uint32_t z = 0; z < size.z; z++) {
-                const Material* material = tree->get_voxel(x, y, z);
+                const tmt::Material* material = tree->get_voxel(x, y, z);
                 if (material == nullptr) continue;
 
                 const uint8_t palette_index = static_cast<uint8_t>(material - tree->palette.entries);
@@ -43,7 +75,7 @@ std::vector<uint8_t> create_uniform_voxels(const std::unique_ptr<Svt64>& tree, c
     return voxels;
 }
 
-void drag_node(const Entity entity, const std::string& name) {
+void drag_node(const tmt::Entity entity, const std::string& name) {
     if (!ImGui::BeginDragDropSource()) return;
 
     ImGui::SetDragDropPayload("VoxelNode", &entity, sizeof(entity));
@@ -53,7 +85,7 @@ void drag_node(const Entity entity, const std::string& name) {
 }
 
 struct NodeCreationData {
-    Entity parent { entt::null };
+    tmt::Entity parent { entt::null };
     std::string name { "New Node" };
 
     bool has_voxel_grid { false };
@@ -61,55 +93,60 @@ struct NodeCreationData {
 };
 std::unique_ptr<NodeCreationData> node_creation_info;
 
-struct VoxelEditUUID {
-    UUID uuid { NULL_UUID };
+struct NodeResizeData {
+    tmt::Entity entity;
+    glm::uvec3 size;
+    glm::uvec3 offset;
 };
+std::unique_ptr<NodeResizeData> node_resize_info;
 
-Entity recurse_build_scene(const VoxelSceneNode& node, bool assign_new_uuids, const Entity parent_entity = entt::null, const glm::mat4& parent_matrix = glm::identity<glm::mat4>()) {
-    const Entity entity = engine.ecs.create_entity(node.name);
+tmt::Entity recurse_build_scene(
+    const tmt::VoxelSceneNode& node, bool assign_new_uuids, const tmt::Entity parent_entity = entt::null, const glm::mat4& parent_matrix = glm::identity<glm::mat4>()
+) {
+    const tmt::Entity entity = tmt::engine.ecs.create_entity(node.name);
 
-    Transform& transform = engine.ecs.get_component<Transform>(entity);
+    tmt::Transform& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
     transform.set_world_matrix(parent_matrix * node.transform);
     transform.set_parent(parent_entity);
 
-    VoxelEditUUID& uuid_component = engine.ecs.add_component<VoxelEditUUID>(entity);
-    uuid_component.uuid = (assign_new_uuids ? UUIDGenerator::generate() : node.uuid);
+    tmt::NodeHierarchy::NodeUUID& uuid_component = tmt::engine.ecs.add_component<tmt::NodeHierarchy::NodeUUID>(entity);
+    uuid_component.uuid = (assign_new_uuids ? tmt::UUIDGenerator::generate() : node.uuid);
 
     if (node.tree) {
-        VoxelRenderer& renderer = engine.ecs.add_component<VoxelRenderer>(entity);
+        tmt::VoxelRenderer& renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(entity);
 
         // Create a fake voxel resource managed by the voxel editor.
-        const ResourceRef volume { {}, std::make_shared<VoxelVolume>(node) };
+        const tmt::ResourceRef volume { {}, std::make_shared<tmt::VoxelVolume>(node) };
         volume->uuid = uuid_component.uuid;
         renderer.resource = volume;
     }
 
-    for (const VoxelSceneNode& child : node.children) {
+    for (const tmt::VoxelSceneNode& child : node.children) {
         recurse_build_scene(child, assign_new_uuids, entity, transform.get_world_matrix());
     }
 
     return entity;
 }
 
-void recurse_parse_scene(Entity entity, const Transform& transform, VoxelSceneNode& node) {
-    node.name = engine.ecs.get_component<Name>(entity).name;
+void recurse_parse_scene(tmt::Entity entity, const tmt::Transform& transform, tmt::VoxelSceneNode& node) {
+    node.name = tmt::engine.ecs.get_component<tmt::Name>(entity).name;
 
     const glm::mat4 translation = glm::translate(glm::identity<glm::mat4>(), transform.get_local_position());
     const glm::mat4 rotation = glm::toMat4(transform.get_local_rotation());
     const glm::mat4 scale = glm::scale(glm::identity<glm::mat4>(), transform.get_local_scale());
     node.transform = translation * rotation * scale;
 
-    node.uuid = engine.ecs.get_component<VoxelEditUUID>(entity).uuid;
+    node.uuid = tmt::engine.ecs.get_component<tmt::NodeHierarchy::NodeUUID>(entity).uuid;
 
-    const VoxelRenderer* renderer = engine.ecs.try_get_component<VoxelRenderer>(entity);
+    const tmt::VoxelRenderer* renderer = tmt::engine.ecs.try_get_component<tmt::VoxelRenderer>(entity);
     if (renderer != nullptr) {
         node.uuid = renderer->resource->uuid;
         node.size = renderer->resource->size;
-        node.tree = std::make_unique<Svt64>(*renderer->resource->blas);
+        node.tree = std::make_unique<tmt::Svt64>(*renderer->resource->blas);
     }
 
-    for (const Entity child : transform.get_children()) {
-        const Transform& child_transform = engine.ecs.get_component<Transform>(child);
+    for (const tmt::Entity child : transform.get_children()) {
+        const tmt::Transform& child_transform = tmt::engine.ecs.get_component<tmt::Transform>(child);
         recurse_parse_scene(child, child_transform, node.children.emplace_back());
     }
 }
@@ -117,6 +154,8 @@ void recurse_parse_scene(Entity entity, const Transform& transform, VoxelSceneNo
 std::atomic_bool model_load_atomic { true };
 
 }  // namespace
+
+namespace tmt {
 
 void NodeHierarchy::new_svh() {
     clear_hierarchy();
@@ -155,9 +194,10 @@ void NodeHierarchy::save_svh_as() {
     save_file_dialog(
         [this](const IO::FileLocation& location) {
             loaded_location = location;
+            if (loaded_location.relative_path.extension() != ".svh") loaded_location.relative_path += ".svh";  // Make sure the saved file has the correct extension.
 
             const std::vector<char> scene_data = encode_voxel_scene();
-            IO::write_file(location, scene_data.data(), scene_data.size());
+            IO::write_file(loaded_location, scene_data.data(), scene_data.size());
         },
         { { "Thermite Voxel File", "svh" } }
     );
@@ -184,8 +224,11 @@ void NodeHierarchy::export_file(const std::string& file_description, const std::
             const entt::basic_group renderer_group = engine.ecs.get_registry().group<VoxelRenderer>(entt::get<Transform>);
             if (renderer_group.empty()) return;
 
-            const std::filesystem::path obj_path = location.get_relative_path();
-            const std::filesystem::path mtl_path = location.get_relative_path().replace_extension(".mtl");
+            // Make sure all the paths have the correct extension.
+            IO::FileLocation obj_location = location;
+            if (obj_location.relative_path.extension() != ".obj") obj_location.relative_path += ".obj";
+            const std::filesystem::path obj_path = obj_location.get_relative_path();
+            const std::filesystem::path mtl_path = obj_location.get_relative_path().replace_extension(".mtl");
 
             std::ofstream obj_file { obj_path, std::ios::trunc };
 
@@ -195,7 +238,7 @@ void NodeHierarchy::export_file(const std::string& file_description, const std::
             uint32_t indices_offset = 0;
             for (const auto&& [entity, renderer, transform] : renderer_group.each()) {
                 const std::string& name = engine.ecs.get_component<Name>(entity).name;
-                const std::string& uuid_string = engine.ecs.get_component<VoxelEditUUID>(entity).uuid.str();
+                const std::string& uuid_string = engine.ecs.get_component<NodeUUID>(entity).uuid.str();
 
                 const ResourceRef<VoxelVolume>& resource = renderer.resource;
                 const std::unique_ptr<Svt64>& tree = resource->blas;
@@ -211,7 +254,7 @@ void NodeHierarchy::export_file(const std::string& file_description, const std::
 
                 if (obj_file.is_open()) {
                     // Start new names object in the wavefront object file.
-                    obj_file << std::format("o {}", name) << '\n';
+                    obj_file << std::format("g {}", name) << '\n';
 
                     // Write all visuals to the file.
                     for (uint32_t i = 0; i < mesh->vertex_count; i++) {
@@ -262,7 +305,7 @@ void NodeHierarchy::build_scene(const std::span<VoxelSceneNode>& root_nodes, boo
     }
 }
 
-std::vector<char> NodeHierarchy::encode_voxel_scene() {
+std::vector<char> NodeHierarchy::encode_voxel_scene() const {
     const auto& entities = engine.ecs.get_registry().storage<Transform>();
     if (entities.empty()) return {};  // Return empty scene encoding.
 
@@ -274,8 +317,6 @@ std::vector<char> NodeHierarchy::encode_voxel_scene() {
         VoxelSceneNode& root_node = root_nodes.emplace_back();
         recurse_parse_scene(entity, transform, root_node);
     }
-
-    clear_hierarchy();
 
     // Encode those VoxelSceneNodes into the .svh format.
     return encode_svh(root_nodes);
@@ -296,14 +337,13 @@ void NodeHierarchy::recurse_display_node(const Entity entity, const Name& name, 
     const bool tree_open = ImGui::TreeNodeEx(name.name.c_str(), flags);
     node_context_menu(entity);
     drag_node(entity, name.name);
-    drop_node(entity);
+    drop_node(entity, transform);
 
     const bool popup_clicked_open = (ImGui::IsMouseReleased(ImGuiMouseButton_Right) && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup));
     // Both left mouse button selects and opening the popup also selects, this makes it clear what node entity you have opened the popup for.
     if (ImGui::IsItemClicked(ImGuiMouseButton_Left) || popup_clicked_open) selected_entity = entity;
     if (tree_open) {
         for (const Entity child : children) {
-            assert(engine.ecs.valid(child));
             auto&& [child_name, child_transform] = engine.ecs.get_component<Name, Transform>(child);
             recurse_display_node(child, child_name, child_transform);
         }
@@ -318,6 +358,9 @@ void NodeHierarchy::clear_hierarchy() {
     selected_entity = entt::null;
     root_entities.clear();
     engine.ecs.clear();
+
+    // Clear the undo/redo stack so the user doesn't try to undo changes to an old file in the newly loaded one.
+    editor.windows[Editor::Mode::VOXEL].get<UndoRedoManager>().clear();
 }
 
 void NodeHierarchy::drop_hierarchy() {
@@ -327,15 +370,40 @@ void NodeHierarchy::drop_hierarchy() {
     const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("VoxelNode");
     if (payload != nullptr) {
         const Entity dropped_entity = *static_cast<Entity*>(payload->Data);
+        Transform& transform = engine.ecs.get_component<Transform>(dropped_entity);
 
-        engine.ecs.get_component<Transform>(dropped_entity).clear_parent();
-        root_entities.emplace(dropped_entity);
+        if (transform.has_parent()) {
+            // Diffs for parent child relationship undo/redo.
+            ComponentDiff<Transform> parent_diff { transform.get_parent() };
+            ComponentDiff<Transform> dropped_diff { dropped_entity };
+
+            parent_diff.before();
+            dropped_diff.before();
+
+            transform.clear_parent();
+
+            parent_diff.after();
+            dropped_diff.after();
+
+            UndoRedoCollection diff_collection;
+            diff_collection.add_action(std::move(parent_diff));
+            diff_collection.add_action(std::move(dropped_diff));
+
+            TypeDiff root_diff { &root_entities };
+
+            root_diff.before();
+            root_entities.emplace(dropped_entity);
+            root_diff.after();
+
+            diff_collection.add_action(std::move(root_diff));
+            diff_collection.commit("Modified Hierarchy");
+        }
     }
 
     ImGui::EndDragDropTarget();
 }
 
-void NodeHierarchy::drop_node(const Entity entity) {
+void NodeHierarchy::drop_node(const Entity entity, Transform& transform) {
     if (!ImGui::BeginDragDropTarget()) return;
 
     const ImGuiPayload* payload = ImGui::GetDragDropPayload();
@@ -343,11 +411,39 @@ void NodeHierarchy::drop_node(const Entity entity) {
         const Entity dropped_entity = *static_cast<Entity*>(payload->Data);
 
         if (entity != dropped_entity && ImGui::AcceptDragDropPayload("VoxelNode")) {
-            // We have to get the entity's transform again here, otherwise entt can't find the entity that has the transform, I have no idea why.
-            Transform& transform = engine.ecs.get_component<Transform>(entity);
+            const size_t child_count = transform.get_children().size();
+
+            // Diffs for parent child relationship undo/redo.
+            ComponentDiff<Transform> parent_diff { entity };
+            ComponentDiff<Transform> child_diff { dropped_entity };
+
+            parent_diff.before();
+            child_diff.before();
+
             transform.add_child(dropped_entity);
 
-            if (root_entities.contains(dropped_entity)) root_entities.erase(dropped_entity);
+            // Only handle the rest of the diff process if the transform actually got a new child (might not get a new child when trying to parent to child of self).
+            if (child_count != transform.get_children().size()) {
+                parent_diff.after();
+                child_diff.after();
+
+                UndoRedoCollection diff_collection;
+                diff_collection.add_action(std::move(parent_diff));
+                diff_collection.add_action(std::move(child_diff));
+
+                if (root_entities.contains(dropped_entity)) {
+                    // Diff to add entity back in root entities set.
+                    TypeDiff root_diff { &root_entities };
+
+                    root_diff.before();
+                    root_entities.erase(dropped_entity);
+                    root_diff.after();
+
+                    diff_collection.add_action(std::move(root_diff));
+                }
+
+                diff_collection.commit("Modified Hierarchy");
+            }
         }
     }
 
@@ -356,7 +452,7 @@ void NodeHierarchy::drop_node(const Entity entity) {
 
 void NodeHierarchy::popup_create_node() {
     // Store the popup id so other functions can use it to open the popup.
-    if (popup_id == 0) popup_id = ImGui::GetCurrentWindow()->GetID("Create New Node");
+    if (creation_popup_id == 0) creation_popup_id = ImGui::GetCurrentWindow()->GetID("Create New Node");
 
     constexpr ImGuiWindowFlags flags = ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove;
     if (!ImGui::BeginPopupModal("Create New Node", nullptr, flags)) return;
@@ -366,10 +462,7 @@ void NodeHierarchy::popup_create_node() {
     bool& has_voxel_grid = node_creation_info->has_voxel_grid;
     ImGui::Checkbox("Has voxel grid", &has_voxel_grid);
 
-    if (has_voxel_grid) {
-        constexpr glm::uvec2 min_max { 1, 1024 };
-        ImGui::DragScalarN("Size", ImGuiDataType_U32, &node_creation_info->voxel_size.x, 3, 0.25f, &min_max.x, &min_max.y);
-    }
+    if (has_voxel_grid) drag3_uint32("Size", &node_creation_info->voxel_size.x, 0.25f, 1, 1024);
 
     if (ImGui::Button("Create")) {
         const Entity new_node_entity = engine.ecs.create_entity(node_creation_info->name);
@@ -388,9 +481,12 @@ void NodeHierarchy::popup_create_node() {
         }
 
         if (uuid == NULL_UUID) uuid = UUIDGenerator::generate();
-        engine.ecs.add_component<VoxelEditUUID>(new_node_entity).uuid = uuid;
+        engine.ecs.add_component<NodeUUID>(new_node_entity).uuid = uuid;
 
         ImGui::CloseCurrentPopup();
+        VoxelNodeDiff diff { new_node_entity, true };
+        VoxelNodeDiff::send_to_manager(std::move(diff), "Added Voxel Node");
+
         node_creation_info.reset();
     }
     if (ImGui::Button("Cancel")) {
@@ -401,16 +497,156 @@ void NodeHierarchy::popup_create_node() {
     ImGui::EndPopup();
 }
 
+void NodeHierarchy::popup_resize_node() {
+    // Store the popup id so other functions can use it to open the popup.
+    if (resize_popup_id == 0) resize_popup_id = ImGui::GetCurrentWindow()->GetID("Resize Node");
+
+    constexpr ImGuiWindowFlags flags = ImGuiWindowFlags_AlwaysAutoResize;
+    if (!ImGui::BeginPopupModal("Resize Node", nullptr, flags)) return;
+
+    auto&& [name, transform] = engine.ecs.get_component<Name, Transform>(node_resize_info->entity);
+    VoxelRenderer* renderer = engine.ecs.try_get_component<VoxelRenderer>(node_resize_info->entity);
+
+    glm::uvec3 current_grid_size { 0u, 0u, 0u };
+    if (renderer != nullptr) current_grid_size = renderer->resource->size;
+
+    ImGui::Text("Node Name: %s", name.name.c_str());
+
+    ImGui::BeginDisabled(true);
+    drag3_uint32("Size", &current_grid_size.x);
+    ImGui::EndDisabled();
+
+    drag3_uint32("New Size", &node_resize_info->size.x, 0.1f, 0, 1024);
+
+    constexpr glm::uvec3 min_offset { 0u };
+    const glm::uvec3 max_offset { glm::abs(glm::i64vec3 { current_grid_size } - glm::i64vec3 { node_resize_info->size }) };
+    slider3_uint32("Offset", &node_resize_info->offset.x, min_offset, max_offset);
+    node_resize_info->offset = glm::clamp(node_resize_info->offset, min_offset, max_offset);
+
+    ImGui::BeginDisabled(current_grid_size == node_resize_info->size);
+    if (ImGui::Button("Resize")) {
+        // Only rescale the volume if the new scale isn't 0 on any axis.
+        if (node_resize_info->size.x != 0 && node_resize_info->size.y != 0 && node_resize_info->size.z != 0) {
+            const auto new_volume = std::make_shared<VoxelVolume>(node_resize_info->size);
+            const ResourceRef grid_resource { {}, new_volume };
+
+            // If the node already has a renderer (aka: has a grid), copy over its data.
+            if (renderer != nullptr) {
+                // For each axis check if the current size is greater than the new size.
+                const glm::bvec3 result = glm::greaterThan(current_grid_size, node_resize_info->size);
+
+                // Using the greater than results we decided the min and max for each axis, these different depending on if we are decreasing or increasing the grid size.
+                const glm::uvec3 min = glm::mix(glm::zero<glm::uvec3>(), node_resize_info->offset, result);
+                const glm::uvec3 max = glm::mix(current_grid_size, node_resize_info->offset + node_resize_info->size, result);
+
+                // Copy the pallet to the new volume.
+                new_volume->blas->palette = renderer->resource->blas->palette;
+
+                // Iterate over the voxels remaining in the model and set them in the new volume.
+                for (uint32_t x = min.x; x < max.x; x++) {
+                    for (uint32_t y = min.y; y < max.y; y++) {
+                        for (uint32_t z = min.z; z < max.z; z++) {
+                            const Material* material = renderer->resource->blas->get_voxel(x, y, z);
+
+                            if (material == nullptr) continue;
+
+                            const MaterialIndex index = static_cast<MaterialIndex>(material - renderer->resource->blas->palette.entries);
+
+                            // Kind scuffed because we are taking the negative of an unsigned value, but this gets the start position in the new voxel grid.
+                            const glm::uvec3 new_min = glm::mix(node_resize_info->offset, -min, result);
+                            new_volume->blas->set_voxel(x + new_min.x, y + new_min.y, z + new_min.z, index);
+                        }
+                    }
+                }
+                new_volume->set_dirty();
+
+                // Apply offsets to the entity and its children to match the visualization.
+                const glm::vec3 half_extent = glm::vec3 { current_grid_size } * VOXEL_SIZE_HALF;
+                const glm::vec3 resize_half_extent = glm::vec3 { node_resize_info->size } * VOXEL_SIZE_HALF;
+
+                // Sign multiplication since we have to invert the offset when increasing the grid size.
+                const glm::vec3 local_offset = glm::vec3 { node_resize_info->offset } * glm::sign(half_extent - resize_half_extent) * UNITS_PER_VOXEL;
+                const glm::vec3 offset = (resize_half_extent - half_extent) + local_offset;
+
+                transform.set_local_position(transform.get_local_position() + offset);
+
+                for (const Entity child : transform.get_children()) {
+                    Transform& child_transform = engine.ecs.get_component<Transform>(child);
+                    child_transform.set_local_position(child_transform.get_local_position() - offset);
+                }
+
+                GridResizeDiff diff { node_resize_info->entity, offset, renderer->resource, grid_resource };
+                GridResizeDiff::send_to_manager(std::move(diff), "Resize Grid");
+            } else {
+                // If the node doesn't already have a renderer (aka: doesn't have a grid), add it.
+                renderer = &engine.ecs.add_component<VoxelRenderer>(node_resize_info->entity);
+
+                const glm::vec3 resize_half_extent = glm::vec3 { node_resize_info->size } * VOXEL_SIZE_HALF;
+
+                const glm::vec3 local_offset = -glm::vec3 { node_resize_info->offset } * UNITS_PER_VOXEL;
+                const glm::vec3 offset = resize_half_extent + local_offset;
+
+                transform.set_local_position(transform.get_local_position() + offset);
+
+                for (const Entity child : transform.get_children()) {
+                    Transform& child_transform = engine.ecs.get_component<Transform>(child);
+                    child_transform.set_local_position(child_transform.get_local_position() - offset);
+                }
+
+                GridResizeDiff diff { node_resize_info->entity, offset, {}, grid_resource };
+                GridResizeDiff::send_to_manager(std::move(diff), "Resize Grid");
+            }
+            renderer->resource = grid_resource;
+        } else {
+            renderer = &engine.ecs.get_component<VoxelRenderer>(node_resize_info->entity);
+            GridResizeDiff diff { node_resize_info->entity, glm::zero<glm::vec3>(), renderer->resource, {} };
+            GridResizeDiff::send_to_manager(std::move(diff), "Resize Grid");
+
+            // Remove the VoxelRenderer component if the new grid size of 0 on any axis, this removes the grid from the entity entirely.
+            engine.ecs.remove_component<VoxelRenderer>(node_resize_info->entity);
+        }
+
+        ImGui::CloseCurrentPopup();
+        node_resize_info.reset();
+    }
+    ImGui::EndDisabled();
+
+    ImGui::SameLine();
+
+    if (ImGui::Button("Cancel")) {
+        ImGui::CloseCurrentPopup();
+        node_resize_info.reset();
+    }
+
+    ImGui::EndPopup();
+}
+
 void NodeHierarchy::node_context_menu(const Entity node_entity) const {
     constexpr ImGuiPopupFlags flags = ImGuiPopupFlags_NoOpenOverExistingPopup | ImGuiPopupFlags_MouseButtonRight;
     if (!ImGui::BeginPopupContextItem(nullptr, flags)) return;
 
-    if (ImGui::MenuItem(ICON_MS_ADD "Add node")) {
+    if (ImGui::MenuItem(ICON_MS_ADD " Add node")) {
         node_creation_info = std::make_unique<NodeCreationData>();
         node_creation_info->parent = node_entity;
-        ImGui::OpenPopupEx(popup_id);
+        ImGui::OpenPopupEx(creation_popup_id);
     }
-    if (ImGui::MenuItem(ICON_MS_REMOVE " Delete node")) engine.ecs.destroy_entity(node_entity);
+    if (ImGui::MenuItem(ICON_MS_REMOVE " Delete node")) {
+        VoxelNodeDiff diff { node_entity, false };
+        engine.ecs.destroy_entity(node_entity);
+        VoxelNodeDiff::send_to_manager(std::move(diff), "Deleted Voxel Node");
+    }
+
+    ImGui::Separator();
+
+    if (ImGui::MenuItem(ICON_MS_ZOOM_OUT_MAP " Resize Grid")) {
+        node_resize_info = std::make_unique<NodeResizeData>();
+        node_resize_info->entity = node_entity;
+
+        const VoxelRenderer* renderer = engine.ecs.try_get_component<VoxelRenderer>(node_entity);
+        if (renderer != nullptr) node_resize_info->size = renderer->resource->size;
+
+        ImGui::OpenPopupEx(resize_popup_id);
+    }
 
     ImGui::EndPopup();
 }
@@ -419,8 +655,8 @@ void NodeHierarchy::display() {
     model_load_atomic.wait(false);
 
     popup_create_node();
+    popup_resize_node();
 
-    std::vector<Entity> test;
     for (const Entity entity : root_entities) {
         auto&& [transform, name] = engine.ecs.get_component<Transform, Name>(entity);
 
@@ -431,14 +667,34 @@ void NodeHierarchy::display() {
 
     constexpr ImGuiPopupFlags flags = ImGuiPopupFlags_NoOpenOverExistingPopup | ImGuiPopupFlags_MouseButtonRight;
     if (ImGui::BeginPopupContextWindow(nullptr, flags)) {
-        if (ImGui::MenuItem("Add node")) {
+        if (ImGui::MenuItem(ICON_MS_ADD " Add node")) {
             node_creation_info = std::make_unique<NodeCreationData>();
-            ImGui::OpenPopupEx(popup_id);
+            ImGui::OpenPopupEx(creation_popup_id);
         }
         ImGui::EndPopup();
     }
 
     drop_hierarchy();
+}
+
+void NodeHierarchy::on_editor_update(const FrameData&) {
+    // If we aren't resizing we don't draw anything on update.
+    if (node_resize_info == nullptr) return;
+
+    glm::vec3 current_grid_size { 0u };
+    const VoxelRenderer* renderer = engine.ecs.try_get_component<VoxelRenderer>(node_resize_info->entity);
+    if (renderer != nullptr) current_grid_size = renderer->resource->size;
+
+    const glm::vec3 half_extent = current_grid_size * VOXEL_SIZE_HALF;
+    const glm::vec3 resize_half_extent = glm::vec3 { node_resize_info->size } * VOXEL_SIZE_HALF;
+
+    const Transform& transform = engine.ecs.get_component<Transform>(node_resize_info->entity);
+
+    // Sign multiplication since we have to invert the offset when increasing the grid size.
+    const glm::vec3 local_offset = glm::vec3 { node_resize_info->offset } * glm::sign(half_extent - resize_half_extent) * UNITS_PER_VOXEL;
+
+    engine.polyline.use_color(glm::vec3 { 1.0f, 0.0f, 0.0f });
+    engine.polyline.draw_obb(transform.get_world_matrix() * glm::vec4 { (resize_half_extent - half_extent) + local_offset, 1.0f }, resize_half_extent, transform.get_world_rotation());
 }
 
 }  // namespace tmt
