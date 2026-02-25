@@ -35,6 +35,7 @@ struct ParticleEffect {
     float jitter_speed = 1.0f;
 
     bool active = true;
+    bool should_burst = false;
 
     ResourceRef<Texture2D> texture;
 
@@ -45,6 +46,7 @@ struct ParticleEmitter {
     std::vector<ParticleEffect> effects;
 
     bool active = true;
+    bool should_burst = false;
 };
 
 }  // namespace tmt

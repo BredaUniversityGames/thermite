@@ -41,6 +41,10 @@ inline void tag_invoke(ImReflect::ImInput_t, const char* label, tmt::ParticleEmi
 
     ImReflect::Input("Emitter Active", value.active, type_settings, type_response);
 
+    if (ImGui::Button("Emitter Burst")) {
+        value.should_burst = true;
+    }
+
     ImGui::Spacing();
     ImGui::Separator();
     ImGui::Spacing();
@@ -58,7 +62,7 @@ inline void tag_invoke(ImReflect::ImInput_t, const char* label, tmt::ParticleEmi
     int move_up_idx = -1;
     int move_down_idx = -1;
 
-    for (int i = 0; i < static_cast<int>(value.effects.size()); i++) {
+    for (int i = 0; i < value.effects.size(); i++) {
         auto& effect = value.effects[i];
         ImGui::PushID(i);
 
@@ -73,7 +77,7 @@ inline void tag_invoke(ImReflect::ImInput_t, const char* label, tmt::ParticleEmi
         ImGui::SameLine(ImGui::GetContentRegionAvail().x - total_width + ImGui::GetStyle().ItemSpacing.x);
 
         bool can_move_up = i > 0;
-        bool can_move_down = i < static_cast<int>(value.effects.size()) - 1;
+        bool can_move_down = i < value.effects.size() - 1;
 
         ImGui::BeginDisabled(!can_move_up);
         if (ImGui::ArrowButton("##up", ImGuiDir_Up)) {
@@ -111,6 +115,10 @@ inline void tag_invoke(ImReflect::ImInput_t, const char* label, tmt::ParticleEmi
 
             ImGui::Spacing();
 
+            if (ImGui::Button("Effect Burst")) {
+                value.should_burst = true;
+                effect.should_burst = true;
+            }
             ImReflect::Input("##effect", effect, type_settings, type_response);
 
             ImGui::Unindent();
@@ -126,7 +134,7 @@ inline void tag_invoke(ImReflect::ImInput_t, const char* label, tmt::ParticleEmi
     if (move_up_idx > 0) {
         std::swap(value.effects[move_up_idx], value.effects[move_up_idx - 1]);
     }
-    if (move_down_idx >= 0 && move_down_idx < static_cast<int>(value.effects.size()) - 1) {
+    if (move_down_idx >= 0 && move_down_idx < value.effects.size() - 1) {
         std::swap(value.effects[move_down_idx], value.effects[move_down_idx + 1]);
     }
 }

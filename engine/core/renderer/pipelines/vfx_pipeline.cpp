@@ -132,18 +132,22 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
     const entt::basic_group group = engine.ecs.get_registry().group<ParticleEmitter>(entt::get<Transform>);
     for (auto&& [entity, emitter, transform] : group.each()) {
         /* Skip inactive emitters */
-        if (!emitter.active) continue;
+        if (!emitter.active && !emitter.should_burst) continue;
 
         if (emitters.size() >= MAX_EMITTERS) break;
 
         if (effects.size() >= MAX_EMITTERS * MAX_EFFECTS_PER_EMITTER) break;
 
+        emitter.should_burst = !emitter.should_burst;
+
         GpuEmitter em {};
         em.effects_count = emitter.effects.size();
         em.effects_offset = emitters.size();
 
-        for (const auto& effect : emitter.effects) {
-            if (!effect.active) continue;
+        for (auto& effect : emitter.effects) {
+            if (!effect.active && !effect.should_burst) continue;
+
+            effect.should_burst = !effect.should_burst;
 
             GpuParticleEffect eff {};
 
