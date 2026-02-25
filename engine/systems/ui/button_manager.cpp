@@ -220,13 +220,13 @@ void ButtonManager::on_keyboard(KeyboardEvent& event) {
 
         bool call_next_button = false;
         if (move_state == MoveState::INITIAL_MOVE) {
-            if (hold_move_duration > initial_delay) {
+            if (hold_move_duration > INITIAL_DELAY) {
                 move_state = MoveState::REPEAT_MOVE;
                 hold_move_duration = 0.0f;
                 call_next_button = true;
             }
         } else if (move_state == MoveState::REPEAT_MOVE) {
-            if (hold_move_duration > repeat_delay) {
+            if (hold_move_duration > REPEAT_DELAY) {
                 hold_move_duration = 0.0f;
                 call_next_button = true;
             }
@@ -305,13 +305,13 @@ void ButtonManager::on_gamepad_button(GamepadButtonEvent& event) {
 
         bool call_next_button = false;
         if (move_state == MoveState::INITIAL_MOVE) {
-            if (hold_move_duration > initial_delay) {
+            if (hold_move_duration > INITIAL_DELAY) {
                 move_state = MoveState::REPEAT_MOVE;
                 hold_move_duration = 0.0f;
                 call_next_button = true;
             }
         } else if (move_state == MoveState::REPEAT_MOVE) {
-            if (hold_move_duration > repeat_delay) {
+            if (hold_move_duration > REPEAT_DELAY) {
                 hold_move_duration = 0.0f;
                 call_next_button = true;
             }
@@ -365,7 +365,7 @@ void ButtonManager::on_gamepad_axis(GamepadAxisEvent& event) {
     float y_value = (event.axis == GamepadAxis::LEFT_Y) ? event.value : 0.0f;
 
     float distance = std::sqrt(x_value * x_value + y_value * y_value);
-    if (std::abs(distance) < min_axis_value) {
+    if (std::abs(distance) < MIN_AXIS_VALUE) {
         move_state = MoveState::IDLE;
         return;
     }
@@ -377,13 +377,13 @@ void ButtonManager::on_gamepad_axis(GamepadAxisEvent& event) {
         call_next_button = true;
     }
     if (move_state == MoveState::INITIAL_MOVE) {
-        if (hold_move_duration > initial_delay) {
+        if (hold_move_duration > INITIAL_DELAY) {
             move_state = MoveState::REPEAT_MOVE;
             hold_move_duration = 0.0f;
             call_next_button = true;
         }
     } else if (move_state == MoveState::REPEAT_MOVE) {
-        if (hold_move_duration > repeat_delay) {
+        if (hold_move_duration > REPEAT_DELAY) {
             hold_move_duration = 0.0f;
             call_next_button = true;
         }
@@ -392,15 +392,15 @@ void ButtonManager::on_gamepad_axis(GamepadAxisEvent& event) {
     if (call_next_button) {
         bool is_horizontal = std::abs(x_value) > std::abs(y_value);
         if (is_horizontal) {
-            if (x_value > min_axis_value) {
+            if (x_value > MIN_AXIS_VALUE) {
                 next_button(Direction::EAST);
-            } else if (x_value < -min_axis_value) {
+            } else if (x_value < -MIN_AXIS_VALUE) {
                 next_button(Direction::WEST);
             }
         } else {
-            if (y_value > min_axis_value) {
+            if (y_value > MIN_AXIS_VALUE) {
                 next_button(Direction::SOUTH);
-            } else if (y_value < -min_axis_value) {
+            } else if (y_value < -MIN_AXIS_VALUE) {
                 next_button(Direction::NORTH);
             }
         }

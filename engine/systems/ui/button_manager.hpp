@@ -37,9 +37,9 @@ class ButtonManager : public ISystem, public OnMouseMove, public OnMouseButton, 
     float hold_move_duration = 0.0f;
 
     /* Settings */
-    static constexpr float initial_delay = 0.5f;
-    static constexpr float repeat_delay = 0.1f;
-    static constexpr float min_axis_value = 0.3f;
+    static constexpr float INITIAL_DELAY = 0.5f;
+    static constexpr float REPEAT_DELAY = 0.1f;
+    static constexpr float MIN_AXIS_VALUE = 0.3f;
 
     // Inherited via OnMouseMove
     void on_mouse_move(MouseMoveEvent& event) override;

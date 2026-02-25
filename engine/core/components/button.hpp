@@ -40,9 +40,10 @@ struct ButtonCallback {
     };
 
     void operator+=(std::function<void(Args...)> callback) { callbacks.push_back(callback); }
-    void operator=(std::function<void(Args...)> callback) {
+    ButtonCallback& operator=(std::function<void(Args...)> callback) {
         callbacks.clear();
         callbacks.push_back(callback);
+        return *this;
     }
 
     template <typename T>
