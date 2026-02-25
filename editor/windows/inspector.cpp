@@ -57,9 +57,13 @@ void Inspector::display_entity_info(const MenuContext& menu_context) {
     bool marked_disabled = !engine.ecs.has_component<DisableFlag>(menu_context.primary_entity);
     if (ImGui::Checkbox("##Disabled", &marked_disabled)) {
         if (marked_disabled) {
-            engine.ecs.enable(menu_context.primary_entity);
+            for (const Entity& entity : menu_context.selected_entities) {
+                engine.ecs.enable(entity);
+            }
         } else {
-            engine.ecs.disable(menu_context.primary_entity);
+            for (const Entity& entity : menu_context.selected_entities) {
+                engine.ecs.disable(entity);
+            }
         }
     }
 

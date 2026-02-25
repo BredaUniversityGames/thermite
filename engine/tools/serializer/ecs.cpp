@@ -712,4 +712,12 @@ void tag_invoke(JsonReflect::deserialize_t, const tmt::json& j, std::set<tmt::En
     }
     deserialize_scene(new_entities, state);
     // state.entity_mapping.print();
+
+    for (const auto new_entity : new_entities) {
+        const bool has_disabled = ecs.has_component<tmt::DisableFlag>(new_entity);
+        if (has_disabled == false) continue;
+
+        /* If entity is disabled, disable it */
+        ecs.disable(new_entity, true);
+    }
 }
