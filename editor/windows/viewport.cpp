@@ -126,6 +126,7 @@ bool tmt::Viewport::toolbar(const ImVec2& image_pos) {
     // Small padding from the image border
     float pad = style.ItemSpacing.x;
     ImVec2 btn_pos = ImVec2(image_pos.x + width - total_w - pad, image_pos.y + pad);
+    const float prev_rounding = style.FrameRounding;
     style.FrameRounding = 4.0f;
 
     bool any_button_hovered = false;
@@ -155,6 +156,7 @@ bool tmt::Viewport::toolbar(const ImVec2& image_pos) {
     tooltip("Gizmo Multiselect Mode", "Switch between the two gizmo multiselect modes:\nRelative to First, Relative to All.");
     any_button_hovered |= ImGui::IsItemHovered();
 
+    style.FrameRounding = prev_rounding;
     return any_button_hovered;
 }
 
