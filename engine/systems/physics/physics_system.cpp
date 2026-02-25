@@ -17,7 +17,6 @@
 namespace tmt {
 
 void Physics::on_start() {
-    Log::info("Physics on_start");
     for (const auto& [entity, vb, transform] : engine.ecs.get_registry().view<VoxelBody, Transform>().each()) {
         vb.position = transform.get_world_position();
         vb.rotation = transform.get_world_rotation();
@@ -307,9 +306,8 @@ void Physics::generate_constraint(int index, const PhysicsGroup& group) {
         solver.collisions[solver.contact_index.fetch_add(1)] = coll;
     }
 }
-void Physics::on_end() {
-    Log::info("Physics on_end");
-}
+
+void Physics::on_end() {}
 
 void Physics::compare_trees(
     tmt::Svt64* tree_a, const glm::vec3& center_a, const glm::quat& rotation_a, float half_extent_a, tmt::Svt64* tree_b, const glm::vec3& center_b, const glm::quat& rotation_b,
