@@ -12,6 +12,7 @@
 #include "engine/core/input/input_map.hpp"
 #include "editor/events/scene.hpp"
 #include "editor/windows/scenes.hpp"
+#include "editor/imgui/extra.hpp"
 
 void tmt::Viewport::on_editor_start() {
     // Setup Input Actions
@@ -101,18 +102,7 @@ void tmt::Viewport::display() {
         }
     }
 
-    const bool wants_to_capture_keyboard = ImGui::GetIO().WantCaptureKeyboard;
-    if (wants_to_capture_keyboard == false && using_debug_camera == false) {
-        if (ImGui::IsKeyPressed(ImGuiKey_W, false)) {
-            editor.gizmo.operation = 0;
-        } else if (ImGui::IsKeyPressed(ImGuiKey_E, false)) {
-            editor.gizmo.operation = 1;
-        } else if (ImGui::IsKeyPressed(ImGuiKey_R, false)) {
-            editor.gizmo.operation = 2;
-        }
-    }
-
-    const bool gizmo_changed = editor.gizmo.manip(image_pos.x, image_pos.y, width, height, selected_entities, snap_value);
+    const bool gizmo_changed = editor.gizmo.manip(image_pos.x, image_pos.y, width, height, selected_entities, using_debug_camera == false, snap_value);
     if (gizmo_changed) OnSceneModified::dispatch();
 
     const bool toolbar_buttons_hovered = toolbar(image_pos);
@@ -129,13 +119,14 @@ void tmt::Viewport::display() {
 bool tmt::Viewport::toolbar(const ImVec2& image_pos) {
     ImGuiStyle& style = ImGui::GetStyle();
 
-    float btn_w = ImGui::CalcTextSize(ICON_MS_LANGUAGE).x + style.FramePadding.x * 2.0f;
-    float btn_h = ImGui::GetFrameHeight();
-    float total_w = btn_w * 3.0f + style.ItemSpacing.x;
+    float btn_w = ImGui::CalcTextSize(ICON_MS_LANGUAGE).x + style.FramePadding.x * 2.5f;
+    float btn_h = btn_w;
+    float total_w = btn_w * 3.0f + style.ItemSpacing.x * 2.0f;
 
     // Small padding from the image border
-    float pad = 4.0f;
+    float pad = style.ItemSpacing.x;
     ImVec2 btn_pos = ImVec2(image_pos.x + width - total_w - pad, image_pos.y + pad);
+    style.FrameRounding = 4.0f;
 
     bool any_button_hovered = false;
 
@@ -144,6 +135,7 @@ bool tmt::Viewport::toolbar(const ImVec2& image_pos) {
     if (ImGui::Button(space_button_icon, ImVec2(btn_w, btn_h))) {
         editor.gizmo.space = static_cast<uint8_t>(!editor.gizmo.space);
     }
+    tooltip("Gizmo Operating Space", "Switch between the two gizmo operating spaces:\nRelative to World (Global), Relative to Object (Local).");
     any_button_hovered |= ImGui::IsItemHovered();
 
     ImGui::SameLine();
@@ -152,6 +144,7 @@ bool tmt::Viewport::toolbar(const ImVec2& image_pos) {
         ++editor.gizmo.operation;
         if (editor.gizmo.operation == Gizmo::GIZMO_OP_COUNT) editor.gizmo.operation = 0;
     }
+    tooltip("Gizmo Operation", "Cycle through the 3 gizmo operations:\nTranslate [G], Rotate [R], Scale [S].");
     any_button_hovered |= ImGui::IsItemHovered();
 
     ImGui::SameLine();
@@ -159,6 +152,7 @@ bool tmt::Viewport::toolbar(const ImVec2& image_pos) {
     if (ImGui::Button(multi_button_icon, ImVec2(btn_w, btn_h))) {
         editor.gizmo.multiselect_mode = static_cast<uint8_t>(!editor.gizmo.multiselect_mode);
     }
+    tooltip("Gizmo Multiselect Mode", "Switch between the two gizmo multiselect modes:\nRelative to First, Relative to All.");
     any_button_hovered |= ImGui::IsItemHovered();
 
     return any_button_hovered;

@@ -4,6 +4,8 @@
 #include "engine/core/logger.hpp"
 #include "engine/core/components/camera.hpp"
 #include "engine/core/renderer/renderer.hpp"
+#include "engine/core/input/input_map.hpp"
+#include "engine/core/input/input.hpp"
 
 #include "editor/windows/hierarchy.hpp"
 
@@ -24,15 +26,23 @@ const char* Gizmo::gizmo_op_icons[GIZMO_OP_COUNT] {
     ICON_MS_ZOOM_OUT_MAP,
 };
 
+constexpr const char* SELECT_TRANSLATE = "Select Translate Gizmo";
+constexpr const char* SELECT_ROTATION = "Select Rotation Gizmo";
+constexpr const char* SELECT_SCALE = "Select Scale Gizmo";
+
 void Gizmo::init() {
     ImGuizmo::AllowAxisFlip(false);
+    
+    engine.input_map.add_action_keys(SELECT_TRANSLATE, Key::G);
+    engine.input_map.add_action_keys(SELECT_ROTATION, Key::R);
+    engine.input_map.add_action_keys(SELECT_SCALE, Key::S);
 
     setup_style();
 }
 
 bool Gizmo::hovered() const { return ImGuizmo::IsOver(); }
 
-bool Gizmo::manip(const float x, const float y, const float width, const float height, const std::span<const Entity>& selected_entities, const float snap) const {
+bool Gizmo::manip(const float x, const float y, const float width, const float height, const std::span<const Entity>& selected_entities, const bool enable_hotkeys, const float snap) {
     ImGuizmo::SetRect(x, y, width, height);
     ImGuizmo::SetDrawlist();
 
@@ -52,6 +62,18 @@ bool Gizmo::manip(const float x, const float y, const float width, const float h
 
     const Entity selected_entity = selected_entities.front();
     if (engine.ecs.valid(selected_entity) == false) return false;
+
+    /* Hotkeys */
+    const bool wants_to_capture_keyboard = ImGui::GetIO().WantCaptureKeyboard;
+    if (wants_to_capture_keyboard == false && enable_hotkeys) {
+        if (engine.input.is_action_pressed(SELECT_TRANSLATE)) {
+            operation = 0; /* Translate */
+        } else if (engine.input.is_action_pressed(SELECT_ROTATION)) {
+            operation = 1; /* Rotate */
+        } else if (engine.input.is_action_pressed(SELECT_SCALE)) {
+            operation = 2; /* Scale */
+        }
+    }
 
     bool changed;
 
