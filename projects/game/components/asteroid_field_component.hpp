@@ -2,8 +2,6 @@
 #include "engine/systems/gameplay/game_component.hpp"
 #include "engine/core/resources/voxel_volume.hpp"
 
-#include "engine/events/engine.hpp"
-
 namespace game {
 
 struct AsteroidPoissonPoint {
@@ -34,7 +32,7 @@ struct FAsteroidFieldLayer {
     float layer_depth;
 };
 
-struct AsteroidFieldComponent : public tmt::GameComponent<AsteroidFieldComponent>, tmt::OnEngineUpdate {
+struct AsteroidFieldComponent : public tmt::GameComponent<AsteroidFieldComponent> {
     using GameComponent::GameComponent;
 
     unsigned int seed = 42;
@@ -76,7 +74,7 @@ struct AsteroidFieldComponent : public tmt::GameComponent<AsteroidFieldComponent
     void end() override;
 
     // Inherited via OnEngineUpdate
-    void on_engine_update(const tmt::FrameData& time) override;
+    void draw_debug_lines() const override;
 };
 
 }  // namespace game

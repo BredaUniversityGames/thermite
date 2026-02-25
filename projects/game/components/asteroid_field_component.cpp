@@ -217,7 +217,7 @@ void AsteroidFieldComponent::update(const tmt::FrameData& time) {}
 
 void AsteroidFieldComponent::end() {}
 
-void AsteroidFieldComponent::on_engine_update(const tmt::FrameData& time) {
+void AsteroidFieldComponent::draw_debug_lines() const {
     if (!draw_debug) return;
 
     auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
