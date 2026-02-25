@@ -1,10 +1,11 @@
 #pragma once
 #include "engine/core/system.hpp"
 #include "engine/systems/gameplay/types.hpp"
+#include "engine/events/scene.hpp"
 
 namespace tmt {
 
-class Gameplay : public ISystem {
+class Gameplay : public ISystem, OnPreUnloadScene {
    public:
     constexpr virtual std::string get_name() override { return "Gameplay"; };
 
@@ -22,6 +23,11 @@ class Gameplay : public ISystem {
 
    private:
     std::unordered_map<ComponentIndex, std::vector<std::weak_ptr<IGameComponent>>> component_instances;
+
+    void clear_component_instances() { component_instances.clear(); }
+
+    // Inherited via OnPreUnloadScene
+    void on_pre_unload_scene() override;
 };
 
 }  // namespace tmt

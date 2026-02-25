@@ -50,6 +50,8 @@ void Gameplay::on_end() {
         /* end */
         component.end();
     });
+
+    clear_component_instances();
 }
 
 void Gameplay::on_fixed_update(const tmt::FrameData& time) {
@@ -70,6 +72,10 @@ const std::vector<std::weak_ptr<IGameComponent>>& Gameplay::get_component_instan
         return empty_vector;
     }
     return component_instances.at(index);
+}
+
+void Gameplay::on_pre_unload_scene() {
+    clear_component_instances();
 }
 
 }  // namespace tmt
