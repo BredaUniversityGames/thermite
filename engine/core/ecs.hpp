@@ -255,7 +255,19 @@ class Ecs : public OnGameStart, public OnGameUpdate, public OnGameFixedUpdate, p
         }
     }
 
-    /* Returns a view of given elements const */
+    /* Returns a view of given elements */
+    template <typename First, typename... Rest, typename... Excludes>
+    auto view(entt::exclude_t<Excludes...> = entt::exclude_t {}) {
+        constexpr bool ALL_NATIVE = (!EcsComponentTraits<First>::IS_GAME_COMPONENT && (!EcsComponentTraits<Rest>::IS_GAME_COMPONENT && ...));
+        constexpr bool ALL_GAME = (EcsComponentTraits<First>::IS_GAME_COMPONENT && (EcsComponentTraits<Rest>::IS_GAME_COMPONENT && ...));
+
+        static_assert(ALL_NATIVE || ALL_GAME, "Cannot mix native ECS components and IGameComponent-derived types in a single view.");
+        static_assert(ALL_GAME || (!EcsComponentTraits<Excludes>::IS_GAME_COMPONENT && ...), "Cannot exclude game components from a native component view.");
+
+        return EcsComponentTraits<First>::template view_with<Rest...>(registry, entt::exclude_t<Disable, Excludes...> {});
+    }
+
+    /* Returns a view of given elements (const) */
     template <typename First, typename... Rest, typename... Excludes>
     auto view(entt::exclude_t<Excludes...> = entt::exclude_t {}) const {
         constexpr bool ALL_NATIVE = (!EcsComponentTraits<First>::IS_GAME_COMPONENT && (!EcsComponentTraits<Rest>::IS_GAME_COMPONENT && ...));
@@ -266,16 +278,38 @@ class Ecs : public OnGameStart, public OnGameUpdate, public OnGameFixedUpdate, p
         return EcsComponentTraits<First>::template view_with<Rest...>(registry, entt::exclude_t<Excludes...> {});
     }
 
-    /* Returns a view of given elements */
-    template <typename First, typename... Rest, typename... Excludes>
-    auto view(entt::exclude_t<Excludes...> = entt::exclude_t {}) {
-        constexpr bool ALL_NATIVE = (!EcsComponentTraits<First>::IS_GAME_COMPONENT && (!EcsComponentTraits<Rest>::IS_GAME_COMPONENT && ...));
-        constexpr bool ALL_GAME = (EcsComponentTraits<First>::IS_GAME_COMPONENT && (EcsComponentTraits<Rest>::IS_GAME_COMPONENT && ...));
+    /* Returns a group of given elements, default ignores disabled entities */
+    /* Only supports native ecs components */
+    template <typename... Owned, typename... Get, typename... Exclude>
+    auto group(entt::get_t<Get...> = entt::get_t {}, entt::exclude_t<Exclude...> = entt::exclude_t {}) {
+        constexpr bool OWNED_ALL_NATIVE = (!EcsComponentTraits<Owned>::IS_GAME_COMPONENT && ...);
+        static_assert(OWNED_ALL_NATIVE, "Only native ECS components can be owned by a group.");
 
-        static_assert(ALL_NATIVE || ALL_GAME, "Cannot mix native ECS components and IGameComponent-derived types in a single view.");
-        static_assert(ALL_GAME || (!EcsComponentTraits<Excludes>::IS_GAME_COMPONENT && ...), "Cannot exclude game components from a native component view.");
+        constexpr bool GET_ALL_NATIVE = (!EcsComponentTraits<Get>::IS_GAME_COMPONENT && ...);
+        static_assert(GET_ALL_NATIVE, "Only native ECS components can be observed by a group.");
 
-        return EcsComponentTraits<First>::template view_with<Rest...>(registry, entt::exclude_t<Excludes...> {});
+        constexpr bool EXCLUDE_ALL_NATIVE = (!EcsComponentTraits<Exclude>::IS_GAME_COMPONENT && ...);
+        static_assert(EXCLUDE_ALL_NATIVE, "Only native ECS components can be excluded from a group.");
+
+        /* Add Disable to ignore by default */
+        return registry.group<Owned...>(entt::get<Get...>(), entt::exclude<Disable, Exclude...>());
+    }
+
+    /* Returns a group of given elements, default ignores disabled entities (const) */
+    /* Only supports native ecs components */
+    template <typename... Owned, typename... Get, typename... Exclude>
+    auto group(entt::get_t<Get...> = entt::get_t {}, entt::exclude_t<Exclude...> = entt::exclude_t {}) const {
+        constexpr bool OWNED_ALL_NATIVE = (!EcsComponentTraits<Owned>::IS_GAME_COMPONENT && ...);
+        static_assert(OWNED_ALL_NATIVE, "Only native ECS components can be owned by a group.");
+
+        constexpr bool GET_ALL_NATIVE = (!EcsComponentTraits<Get>::IS_GAME_COMPONENT && ...);
+        static_assert(GET_ALL_NATIVE, "Only native ECS components can be observed by a group.");
+
+        constexpr bool EXCLUDE_ALL_NATIVE = (!EcsComponentTraits<Exclude>::IS_GAME_COMPONENT && ...);
+        static_assert(EXCLUDE_ALL_NATIVE, "Only native ECS components can be excluded from a group.");
+
+        /* Add Disable to ignore by default */
+        return registry.group<Owned...>(entt::get<Get...>(), entt::exclude<Disable, Exclude...>());
     }
 
     void clear() { registry.clear(); }
