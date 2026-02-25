@@ -162,7 +162,7 @@ struct ViewElement {
 
 template <typename T>
 struct EcsComponentTraits<T, std::enable_if_t<std::is_base_of_v<IGameComponent, T>>> {
-    static constexpr bool is_game_component = true;
+    static constexpr bool IS_GAME_COMPONENT = true;
     static T& add(Registry& registry, Entity entity) {
         auto& collection = registry.get_or_emplace<ComponentCollection>(entity);
         return collection.add_component<T>(entity);
@@ -224,7 +224,7 @@ struct EcsComponentTraits<T, std::enable_if_t<std::is_base_of_v<IGameComponent, 
     }
 
     template <typename... Rest, typename... Excludes, typename Reg>
-    static auto view_with_impl(Reg& registry, entt::exclude_t<Excludes...> excludes) {
+    static auto view_with_impl(Reg& registry, entt::exclude_t<Excludes...>) {
         const auto& instances = get_gameplay_system()->get_component_instances(typeid(T));
 
         std::vector<ViewElement<T, Rest...>> result;
@@ -242,7 +242,7 @@ struct EcsComponentTraits<T, std::enable_if_t<std::is_base_of_v<IGameComponent, 
             // Check excludes - game components via collection, native via registry
             bool excluded = false;
             auto check_exclude = [&]<typename E>() {
-                if constexpr (EcsComponentTraits<E>::is_game_component) {
+                if constexpr (EcsComponentTraits<E>::IS_GAME_COMPONENT) {
                     if (collection.has_component<E>()) excluded = true;
                 } else {
                     if (registry.all_of<E>(e)) excluded = true;
