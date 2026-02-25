@@ -17,13 +17,16 @@ class RigStateController : public IWindow {
     void end_display() override {}
     void display() override;
 
-    void on_editor_start() override {}
+    void on_editor_start() override;
     void on_editor_update(const FrameData&) override {}
-    void on_editor_end() override {}
+    void on_editor_end() override;
 
    private:
-    void list_animations(const RigModel& model);
-    void list_parameters(const Entity entity, RigController& controller);
+    static void rig_controller_creation(entt::registry& registry, Entity entity);
+    static void rig_controller_destruction(entt::registry& registry, Entity entity);
+
+    static void list_animations(const RigModel& model);
+    static void list_parameters(Entity entity, RigController& controller);
 
     void draw_transitions(const RigController& controller);
     void draw_transition(ImVec2 start, ImVec2 middle, int transition_index) const;

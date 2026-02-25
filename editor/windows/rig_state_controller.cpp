@@ -73,7 +73,7 @@ void RigStateController::display() {
     const bool has_selection = selected_item && valid_controller;
 
     ImGui::BeginDisabled(engine.game_controller.is_playing());
-    if (ImGui::BeginTable("Rig controller table", 2, ImGuiTableFlags_Resizable, ImVec2 { 0.0f, ImGui::GetContentRegionAvail().y })) {
+    if (ImGui::BeginTable("Rig controller table", 3, ImGuiTableFlags_Resizable, ImVec2 { 0.0f, ImGui::GetContentRegionAvail().y })) {
         ImGui::TableNextRow();
         ImGui::TableSetColumnIndex(0);
 
@@ -128,32 +128,52 @@ void RigStateController::display() {
             grid_rect.Max = grid_rect.Min + ImGui::GetContentRegionAvail();
 
             // ImNodes::BeginNodeEditor();
+            ax::NodeEditor::Begin("NodeEditor");
             draw_transitions(*controller);
             draw_states(selected, *controller);
+            ax::NodeEditor::End();
             // ImNodes::EndNodeEditor();
-
-            ax::NodeEditor::SetCurrentEditor(nullptr);
 
             context_popups(selected, *controller);
+        }
 
-        } else {
-            // ImNodes::EditorContextSet(ImNodes::GetCurrentContext()->DefaultEditorCtx);  // Set the context to the default so the other contexts don't get messed up.
-            // ImNodes::BeginNodeEditor();
-            // ImNodes::EndNodeEditor();
+        ax::NodeEditor::SetCurrentEditor(nullptr);
+
+        ImGui::TableSetColumnIndex(2);
+
+        if (has_selection) {
+            if (!selected_state.empty())
+                inspect_state(selected, *controller);
+            else if (selected_transition != -1)
+                inspect_transition(selected, *controller);
         }
 
         ImGui::EndTable();
     }
 
-    if (ImGui::Begin("Controller inspector") && has_selection) {
-        if (!selected_state.empty())
-            inspect_state(selected, *controller);
-        else if (selected_transition != -1)
-            inspect_transition(selected, *controller);
-    }
-    ImGui::End();
-
     ImGui::EndDisabled();
+}
+
+void RigStateController::rig_controller_creation(entt::registry& registry, const Entity entity) {
+    RigController& controller = registry.get<RigController>(entity);
+
+    controller.editor_context = ax::NodeEditor::CreateEditor();
+}
+
+void RigStateController::rig_controller_destruction(entt::registry& registry, const Entity entity) {
+    const RigController& controller = registry.get<RigController>(entity);
+
+    ax::NodeEditor::DestroyEditor(controller.editor_context);
+}
+
+void RigStateController::on_editor_start() {
+    engine.ecs.get_registry().on_construct<RigController>().connect<&rig_controller_creation>();
+    engine.ecs.get_registry().on_destroy<RigController>().connect<&rig_controller_destruction>();
+}
+
+void RigStateController::on_editor_end() {
+    engine.ecs.get_registry().on_destroy<RigController>().disconnect<&rig_controller_destruction>();
+    engine.ecs.get_registry().on_construct<RigController>().disconnect<&rig_controller_creation>();
 }
 
 void RigStateController::list_animations(const RigModel& model) {
@@ -439,8 +459,12 @@ void RigStateController::context_popups(const Entity entity, RigController& cont
             const std::string state_name = make_unique_name(controller.states, "New state");
             const int hash = static_cast<int>(std::hash<std::string> {}(state_name));
             controller.states[state_name];
-            // ImNodes::SetNodeScreenSpacePos(hash, ImGui::GetMousePos());
+
+            // ax::NodeEditor::BeginNode(hash);
+            //  ImNodes::SetNodeScreenSpacePos(hash, ImGui::GetMousePos());
             ax::NodeEditor::SetNodePosition(hash, ImGui::GetMousePos());
+            // ax::NodeEditor::EndNode();
+
             diff_util.after();
             IUndoRedo::send_to_manager(std::move(diff_util), "Create state");
             ImGui::CloseCurrentPopup();

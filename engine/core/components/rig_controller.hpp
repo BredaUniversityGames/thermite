@@ -71,12 +71,6 @@ struct Transition {
 
 class RigController {
    public:
-#ifdef THERMITE_EDITOR
-    RigController();
-
-    static void on_destroy(entt::registry& registry, Entity entity);
-#endif  // THERMITE_EDITOR
-
     void set_parameter_float(const std::string& name, float value);
     void set_parameter_int(const std::string& name, int value);
     void set_parameter_bool(const std::string& name, bool value);
@@ -115,3 +109,4 @@ JSON_REFLECT(tmt::Trigger, value);
 JSON_REFLECT(tmt::AnimationState, animation, animation_speed, repeat, transition_on_finish);
 JSON_REFLECT(tmt::Transition, from, to, transition_time, conditions);
 JSON_REFLECT(tmt::Condition, parameter_name, compare_value, compare_type);
+TMT_COMPONENT_NAME(tmt::RigController, "Rig Controller");

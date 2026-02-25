@@ -53,6 +53,7 @@
 #include "editor/windows/material_editor.hpp"
 #include "editor/windows/brush.hpp"
 #include "editor/windows/editor_settings.hpp"
+#include "editor/windows/rig_state_controller.hpp"
 
 /* Singleton */
 tmt::Editor tmt::editor;
@@ -108,6 +109,7 @@ void Editor::on_engine_init(const ApplicationSpecs&) {
     windows[Mode::SCENE].add<UndoRedoManager>();
     windows[Mode::SCENE].add<EditorSettingsWindow>();
     windows[Mode::SCENE].add<BuildPackager>();
+    windows[Mode::SCENE].add<RigStateController>();
 
     engine.scenes.register_scene<VoxelEditScene>();
     windows[Mode::VOXEL].add<ModelViewer>();

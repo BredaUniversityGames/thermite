@@ -23,6 +23,7 @@
 #include "engine/systems/ai/goap/components/goap_goal.hpp"
 #include "engine/systems/ai/goap/components/goap_action.hpp"
 #include "engine/systems/ai/goap/components/world_state.hpp"
+#include "engine/core/components/rig_controller.hpp"
 
 namespace tmt {
 
@@ -47,7 +48,8 @@ using SerializeComponents = ComponentRegistry<
 	RigModel,
 	GoapAgentType,
 	GoapAgentTypeRef,
-	WorldState
+	WorldState,
+	RigController
 >;
 // clang-format on
 
@@ -70,7 +72,8 @@ using InspectComponents = ComponentRegistry<
 	RigModel,
 	GoapAgentType,
 	GoapAgentTypeRef,
-	WorldState
+	WorldState,
+	RigController
 >;
 // clang-format on
 

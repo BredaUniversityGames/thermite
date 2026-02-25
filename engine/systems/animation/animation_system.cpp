@@ -8,8 +8,6 @@
 #include "engine/core/polyline.hpp"
 #include "engine/core/components/rig_controller.hpp"
 
-#define CONDITION(comparison) [](const Variant& parameter, const Variant& value) -> bool { return parameter comparison value; }
-
 namespace tmt {
 
 std::string RigModelManager::get_name() {

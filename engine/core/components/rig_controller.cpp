@@ -4,29 +4,16 @@
 #include "engine/core/ecs.hpp"
 #include "engine/core/logger.hpp"
 
-#ifdef THERMITE_EDITOR
-    #include <extern/imgui-node-editor/imgui_node_editor.h>
-#endif  // THERMITE_EDITOR
+#define CONDITION(comparison) [](const Variant& parameter, const Variant& value) -> bool { return parameter comparison value; }
 
 namespace tmt {
 
-#ifdef THERMITE_EDITOR
-
-RigController::RigController() {
-    if (editor_context == nullptr) editor_context = ax::NodeEditor::CreateEditor();
-
-    // Destroying components is WEIRD, sometimes the destructor gets called 2 times because a second object is created, and
-    // if you have a pointer which needs to be freed this causes problems This is the awful solution
-    const bool not_connected = engine.ecs.get_registry().on_destroy<RigController>().empty();
-    if (not_connected) engine.ecs.get_registry().on_destroy<RigController>().connect<&on_destroy>();
-}
-
-void RigController::on_destroy(entt::registry& registry, const Entity entity) {
-    const auto& controller = registry.get<RigController>(entity);
-    ax::NodeEditor::DestroyEditor(controller.editor_context);
-}
-
-#endif  // THERMITE_EDITOR
+const Condition::CompareFunctionMap Condition::COMPARE_MAP {
+    { CompareType::EQUAL, CONDITION(==) },
+    { CompareType::NOT_EQUAL, CONDITION(!=) },
+    { CompareType::GREATER, CONDITION(>) },
+    { CompareType::LESS, CONDITION(<) },
+};
 
 void RigController::set_parameter_float(const std::string& name, const float value) {
     if (!parameters.contains(name)) {
