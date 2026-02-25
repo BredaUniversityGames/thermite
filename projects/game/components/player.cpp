@@ -44,6 +44,9 @@ void setup_inputs(tmt::InputMap& input_map) {
     input_map.add_action(action::SHOOT);
     input_map.add_action_mouse(action::SHOOT, tmt::MouseButton::LEFT);
 
+    input_map.add_action(action::SECONDARY_TOOL_USE);
+    input_map.add_action_mouse(action::SECONDARY_TOOL_USE, tmt::MouseButton::RIGHT);
+
     input_map.add_action(action::SWITCH_WEAPON_1);
     input_map.add_key_to_action(action::SWITCH_WEAPON_1, tmt::Key::NUM_1);
     input_map.add_action(action::SWITCH_WEAPON_2);
@@ -112,7 +115,7 @@ void Player::update(const tmt::FrameData& time) {
     if (breaking) {
         float current_speed = glm::length(velocity);
         if (current_speed > 0.0f) {
-            float break_force = acceleration * 2.0f * time.delta_time;
+            float break_force = deceleration * time.delta_time;
             float new_speed = glm::max(0.0f, current_speed - break_force);
             velocity = glm::normalize(velocity) * new_speed;
         }
