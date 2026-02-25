@@ -15,11 +15,11 @@ class GravityManipulationComponent : public tmt::GameComponent<GravityManipulati
     void update(const tmt::FrameData& time) override;
     void end() override;
 
-    float range = 5.0f;             // size of the gravity zone
+    float range = 2.0f;             // size of the gravity zone
     float max_mass = 200.0f;        // max mass that will be able to be manipulated
-    float pull_strength = 20.0f;    // the speed of the objects affected by the gravity zone
-    float push_strength = 4.0f;     // how fast objects should be pushed away
-    float attraction_acceleration = 0.1f;   //how quickly objects accelerate when they enter the gravity zone
+    float pull_strength = 8.0f;    // the speed of the objects affected by the gravity zone
+    float push_strength = 10.0f;     // how fast objects should be pushed away
+    float attraction_acceleration = 0.5f;   //how quickly objects accelerate when they enter the gravity zone
     float push_cooldown = 1.0f;     // how long it takes to push objects away again in seconds
     entt::entity attraction_point_entity;   // point of attraction
     bool active = true;         // self-explanatory
