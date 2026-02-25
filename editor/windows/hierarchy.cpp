@@ -7,6 +7,7 @@
 #include <ImReflect.hpp>
 
 #include "editor/editor.hpp"
+#include "editor/windows/viewport.hpp"
 
 #include "engine/engine.hpp"
 #include "engine/core/ecs.hpp"
@@ -201,6 +202,22 @@ void Hierarchy::paste_entities(const Entity hovered_entity) {
     OnSceneModified::dispatch();
 }
 
+void Hierarchy::duplicate_selection() {
+    if (selected_entities.empty()) return;
+
+    copy_selection();
+    paste_entities(entt::null);
+}
+
+void Hierarchy::delete_selection() {
+    if (selected_entities.empty()) return;
+
+    for (const auto selected : selected_entities) {
+        tmt::engine.ecs.destroy_entity(selected);
+    }
+    clear_selection();
+}
+
 void Hierarchy::clear_selection() {
     selected_entities.clear();
     selection_parent = entt::null;
@@ -230,6 +247,28 @@ void Hierarchy::on_editor_update(const FrameData&) {
         if (engine.ecs.valid(entity) == false) {
             selected_entities.erase(entity);
             break;
+        }
+    }
+
+    // Handle copy/paste/duplicate shortcuts when playing and not using debug camera
+    const bool is_playing = engine.game_controller.is_running();
+    const bool using_debug_cam = editor.windows[editor.editor_mode].get<Viewport>().is_using_debug_camera();
+    const bool wants_keyboard = ImGui::GetIO().WantCaptureKeyboard;
+
+    if (!is_playing && !using_debug_cam && !wants_keyboard && !selected_entities.empty()) {
+        const bool ctrl_held = ImGui::IsKeyDown(ImGuiKey_LeftCtrl) || ImGui::IsKeyDown(ImGuiKey_RightCtrl);
+        if (ctrl_held) {
+            if (ImGui::IsKeyPressed(ImGuiKey_C, false)) {
+                copy_selection();
+            } else if (ImGui::IsKeyPressed(ImGuiKey_V, false)) {
+                paste_entities(entt::null);
+            } else if (ImGui::IsKeyPressed(ImGuiKey_D, false)) {
+                duplicate_selection();
+            }
+        }
+
+        if (ImGui::IsKeyPressed(ImGuiKey_Delete, false)) {
+            delete_selection();
         }
     }
 }
