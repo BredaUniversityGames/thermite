@@ -41,6 +41,8 @@ BillboardVertexOutput main(VertexInput input, uint32_t instance_id: SV_InstanceI
     output.uv = input.uv;
     output.tex_index = particle.tex_index;
     output.opacity = particle.opacity;
+    output.flipbook_frames = particle.flipbook_frames;
+    output.current_frame = particle.current_frame;
 
     return output;
 }

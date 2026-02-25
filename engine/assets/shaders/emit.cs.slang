@@ -55,8 +55,10 @@ void main(uint3 thread_id: SV_DispatchThreadID) {
     p.rot_speed = lerp(effect.rotation.min, effect.rotation.max, rand_float(seed));
     p.rotation = 0.0f;
     p.pos_jitter = lerp(effect.pos_jitter.min, effect.pos_jitter.max, rand_float(seed)) * effect.jitter_speed;
-    
+
     p.tex_index = effect.tex_index;
+    p.flipbook_frames = effect.flipbook_frames;
+    p.current_frame = 0;
 
     float3 dir = sample_cone(effect.dir, effect.cone_angle, rand_float2(seed));
     float speed = lerp(effect.speed.min, effect.speed.max, rand_float(seed));

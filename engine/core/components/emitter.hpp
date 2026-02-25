@@ -37,6 +37,8 @@ struct ParticleEffect {
     bool active = true;
 
     ResourceRef<Texture2D> texture;
+
+    std::string name = "Particle Effect";
 };
 
 struct ParticleEmitter {
@@ -49,8 +51,8 @@ struct ParticleEmitter {
 
 TMT_OBJECT(tmt::Range, (min, max));
 TMT_OBJECT(
-    tmt::ParticleEffect,
-    (particle_lifetime, dir, cone_angle, spawn_count, speed, start_size, end_size, size_curve, start_opacity, end_opacity, opacity_curve, rotation, pos_jitter, jitter_speed, active, texture)
+    tmt::ParticleEffect, (particle_lifetime, dir, cone_angle, spawn_count, speed, start_size, end_size, size_curve, start_opacity, end_opacity, opacity_curve, rotation, pos_jitter,
+                          jitter_speed, active, texture, name)
 );
 
 TMT_COMPONENT(tmt::ParticleEmitter, "ParticleEmitter", (effects, active));

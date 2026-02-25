@@ -118,7 +118,7 @@ void VfxPipeline::init(GPUAdapter& gpu) {
     }
 
     /* Initialize the Sampler */
-    linear_sampler = bank.create_sampler("[Particles] Linear Sampler").expect("failed to initialize linear sampler.");
+    point_sampler = bank.create_sampler("[Particles] Linear Sampler", Filter::Nearest).expect("failed to initialize linear sampler.");
 }
 
 void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
@@ -143,6 +143,8 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
         em.effects_offset = emitters.size();
 
         for (const auto& effect : emitter.effects) {
+            if (!effect.active) continue;
+
             GpuParticleEffect eff {};
 
             eff.pos = transform.get_world_position();
@@ -161,6 +163,7 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
             eff.pos_jitter = effect.pos_jitter;
             eff.jitter_speed = effect.jitter_speed;
             eff.tex_index = effect.texture.resource->image.get_index();
+            eff.flipbook_frames = effect.texture.resource->flipbook_frames;
 
             em.total_spawn_count += eff.spawn_count;
 
@@ -221,7 +224,7 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
                                 .read(render_view.render_view_buffer, ShaderStages::Vertex)
                                 .read(particle_buffer, ShaderStages::Vertex)
                                 .read(alive_list, ShaderStages::Vertex)
-                                .read(linear_sampler, ShaderStages::Pixel | ShaderStages::Vertex)
+                                .read(point_sampler, ShaderStages::Pixel | ShaderStages::Vertex)
                                 .depth_stencil(render_view.dbuffer.image, true, true)
                                 .alpha_blending(true)
                                 .load_op_depth(LoadOp::Load)
@@ -246,7 +249,7 @@ void VfxPipeline::deinit(GPUAdapter& gpu) {
     bank.destroy(particle_effects_buffer);
     bank.destroy(billboard_vertices);
 
-    bank.destroy(linear_sampler);
+    bank.destroy(point_sampler);
 }
 
 }  // namespace tmt

@@ -34,6 +34,7 @@ void main(uint3 thread_id: SV_DispatchThreadID) {
         p.size = lerp(p.start_size, p.end_size, effect.size_curve.evaluate(t));
         p.opacity = lerp(p.start_opacity, p.end_opacity, effect.opacity_curve.evaluate(t));
         p.rotation += p.rot_speed * render_view.dt;
+        p.current_frame = (uint32_t)lerp(0, p.flipbook_frames, t);
 
         uint32_t seed = particle_index + render_view.frame_index * 1337;
         float3 new_jitter = (float3(rand_float(seed), rand_float(seed), rand_float(seed)) * 2.0f - 1.0f) * p.pos_jitter;
