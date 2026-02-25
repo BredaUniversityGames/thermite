@@ -8,7 +8,7 @@ void tag_invoke(ImReflect::ImInput_t, const char*, tmt::UIComponent& value, ImSe
 
     ImReflect::Input("Size", value.size, type_settings, type_response);
     {
-        bool changed = ImGui::SliderFloat2("Pivot", &value.pivot.x, -1.0f, 1.0f);
+        bool changed = ImGui::SliderFloat2("Pivot", &value.pivot.x, 0.0f, 1.0f);
         if (changed) {
             type_response.changed();
         }
