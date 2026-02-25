@@ -8,7 +8,6 @@
 
 #include "engine/engine.hpp"
 #include "engine/core/ecs.hpp"
-#include "engine/shared/colorspace.hpp"
 #include "engine/core/components/voxel_renderer.hpp"
 
 #include <glm/gtc/packing.hpp>
@@ -37,7 +36,8 @@ void MaterialEditor::display() {
         albedo = material.albedo.unpack();
         palette.update_material_editor = false;
     }
-    if (ImGui::ColorWheel3("Albedo", &albedo.x, ImGuiColorWheelFlags_CustomColorSpace)) material.albedo = Rgb10 { albedo };
+    // We make sure to clamp the Rgb10 color to the range 0.0f-1.0f
+    if (ImGui::ColorWheel3("Albedo", &albedo.x, ImGuiColorWheelFlags_CustomColorSpace)) material.albedo = Rgb10 { glm::clamp(albedo, glm::zero<glm::vec3>(), glm::one<glm::vec3>()) };
 
     float roughness = static_cast<float>(material.roughness) / 255.0f;
     if (ImGui::SliderFloat("Roughness", &roughness, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_ClampOnInput)) material.roughness = static_cast<uint8_t>(roughness * 255.0f);
