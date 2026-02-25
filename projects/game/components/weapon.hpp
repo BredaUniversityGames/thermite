@@ -1,7 +1,7 @@
 #pragma once
 #include "events.hpp"
 #include "engine/systems/gameplay/game_component.hpp"
-
+#include "weapon_manager.hpp"
 namespace game {
 
 class Weapon : public tmt::GameComponent<Weapon> {

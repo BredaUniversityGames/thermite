@@ -1,6 +1,8 @@
 #include "weapon_manager.hpp"
 
+#include "game_input.hpp"
 #include "weapon.hpp"
+#include "engine/core/input/input.hpp"
 void game::WeaponManager::switch_to(WeaponType weapon_slot) {
     unsubscribe_weapon(current_weapon);
     current_weapon = weapon_slot;
@@ -9,7 +11,22 @@ void game::WeaponManager::switch_to(WeaponType weapon_slot) {
 void game::WeaponManager::start() {
     subscribe_weapon(starting_slot);
 }
-void game::WeaponManager::update(const tmt::FrameData& time) {}
+void game::WeaponManager::update(const tmt::FrameData& time) {
+    // TODO move to internal state, you should only be able to shoot while in the idle state
+    auto& input = tmt::engine.input;
+    // trigger signal
+    if (input.is_action_pressed(action::SHOOT)) {
+        tmt::engine.ecs.get_dispatcher().trigger(ShootEvent { entity });
+    }
+    // TODO should be done inside the state we are currently in
+    if (input.is_action_pressed(action::SWITCH_RIFLE)) {
+        switch_to(WeaponType::RIFLE);
+    } else if (input.is_action_pressed(action::SWITCH_MINING)) {
+        switch_to(WeaponType::MINING);
+    } else if (input.is_action_pressed(action::SWITCH_GRAVITY)) {
+        switch_to(WeaponType::GRAVITY);
+    }
+}
 void game::WeaponManager::end() {}
 // TODO this will be replaced by active disabled tags per weapon entity
 void game::WeaponManager::subscribe_weapon(WeaponType slot) {

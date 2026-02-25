@@ -7,11 +7,10 @@ namespace game {
 class CollisionTrigger : public tmt::GameComponent<CollisionTrigger> {
    public:
     using GameComponent::GameComponent;
-
     static std::string_view get_name() { return "CollisionTrigger"; }
 
     void start() override;
-    void update(const tmt::FrameData& time) override {};
+    void update(const tmt::FrameData& time) override {}
     void fixed_update(const tmt::FrameData& time) override;
     void end() override;
     game::AABB get_aabb_world() const;
@@ -23,7 +22,6 @@ class CollisionTrigger : public tmt::GameComponent<CollisionTrigger> {
     float line_width = 1.0f;
 
    private:
-    void on_transform_updated(entt::registry& reg, entt::entity e);
 };
 
 }  // namespace game
