@@ -8,13 +8,17 @@ void tag_invoke(ImReflect::ImInput_t, const char*, tmt::UIComponent& value, ImSe
 
     ImReflect::Input("Size", value.size, type_settings, type_response);
     {
-        //type_settings.push<glm::vec2>().min({ -1.0f, -1.0f }).max({ 1.0f, 1.0f }).clamp();
-        ImReflect::Input("Pivot", value.pivot, type_settings, type_response);
+        bool changed = ImGui::SliderFloat2("Pivot", &value.pivot.x, -1.0f, 1.0f);
+        if (changed) {
+            type_response.changed();
+        }
+        ImReflect::Detail::check_input_states(type_response);
     }
 
     ImReflect::Input("Block Raycasts", value.block_raycasts, type_settings, type_response);
-    ImReflect::Input("Scale With Parent X", value.scale_with_parent_x, type_settings, type_response);
-    ImReflect::Input("Scale With Parent Y", value.scale_with_parent_y, type_settings, type_response);
+    ImReflect::Input("Fill X", value.scale_with_parent_x, type_settings, type_response);
+    ImGui::SameLine();
+    ImReflect::Input("Fill Y", value.scale_with_parent_y, type_settings, type_response);
     ImReflect::Input("Aspect Mode", value.aspect_mode, type_settings, type_response);
     ImReflect::Input("Aspect Ratio", value.aspect_ratio, type_settings, type_response);
     ImResponse anchor_response = ImReflect::Input("Anchor", value.anchor);
