@@ -19,20 +19,21 @@ namespace {
 
 struct ButtonInfo {
     const char* icon;
-    std::string_view tooltip;
+    std::string_view title;
+    std::string_view desc;
 };
 
 const std::vector<std::pair<Brush::Tool, ButtonInfo>> TOOL_INFOS {
-    { Brush::Tool::GIZMO, { ICON_MS_OPEN_WITH, "Selection Gizmo" } },
-    { Brush::Tool::COLOR_PICKER, { ICON_MS_COLORIZE, "Eye Dropper" } },
-    { Brush::Tool::SINGLE, { ICON_MS_DEPLOYED_CODE, "Modify Single Voxel" } },
-    { Brush::Tool::BOX, { ICON_MS_GRID_ON, "Modify Voxel Box" } },
+    { Brush::Tool::GIZMO, { ICON_MS_OPEN_WITH, "Selection Gizmo", "Select, translate, rotate, and scale objects." } },
+    { Brush::Tool::COLOR_PICKER, { ICON_MS_COLORIZE, "Eye Dropper", "Select the palette entry of a voxel." } },
+    { Brush::Tool::SINGLE, { ICON_MS_DEPLOYED_CODE, "Modify Single Voxel", "Add, remove, or paint individual voxels." } },
+    { Brush::Tool::BOX, { ICON_MS_GRID_ON, "Modify Voxel Box", "Add, remove, or paint a 3D area (box) of voxels." } },
 };
 
 const std::vector<std::pair<Brush::Mode, ButtonInfo>> MODE_INFOS {
-    { Brush::Mode::ATTACH, { ICON_MS_ADD, "Add" } },
-    { Brush::Mode::REMOVE, { ICON_MS_REMOVE, "Remove" } },
-    { Brush::Mode::PAINT, { ICON_MS_BRUSH, "Paint" } },
+    { Brush::Mode::ATTACH, { ICON_MS_ADD, "Add", "Add (or replace) voxels." } },
+    { Brush::Mode::REMOVE, { ICON_MS_REMOVE, "Remove", "Remove voxels." } },
+    { Brush::Mode::PAINT, { ICON_MS_BRUSH, "Paint", "Set palette entry of voxels." } },
 };
 
 }  // namespace
@@ -45,7 +46,7 @@ void Brush::display() {
         ImGui::BeginDisabled(state.tool == tool);
 
         if (ImGui::Button(info.icon)) state.tool = tool;
-        tooltip(info.tooltip.data());
+        tooltip(info.title.data(), info.desc.data());
 
         ImGui::EndDisabled();
     }
@@ -116,7 +117,7 @@ void Brush::display() {
 
                 ImGui::BeginDisabled(state.mode == mode);
                 if (ImGui::Button(info.icon, ImVec2 { button_width, 0.0f })) state.mode = mode;
-                tooltip(info.tooltip.data());
+                tooltip(info.title.data(), info.desc.data());
                 ImGui::EndDisabled();
             }
 
