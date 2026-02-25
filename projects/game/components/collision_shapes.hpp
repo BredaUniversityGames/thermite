@@ -8,8 +8,8 @@ namespace game {
 
 // TODO had to duplicate this because min and max were not allowing serialization
 struct AABB {
-    glm::vec3 min_bounds = glm::vec3(BIG_F32);
-    glm::vec3 max_bounds = glm::vec3(-BIG_F32);
+    glm::vec3 min_bounds = glm::vec3(-1.0f);
+    glm::vec3 max_bounds = glm::vec3(1.0f);
     AABB() = default;
     AABB(const glm::vec3& min_bounds, const glm::vec3& max_bounds) : min_bounds(min_bounds), max_bounds(max_bounds) {}
 
@@ -21,15 +21,12 @@ struct AABB {
 
 struct AABBShape {
     AABB aabb;
-    float radius = 1.0f;
+    float scale = 1.0f;
 
-    const AABB& calculate_aabb(const glm::vec3& position) {
-        aabb = AABB { position - radius, position + radius };
-        return aabb;
-    }
+    AABB world_aabb(const glm::vec3& position) const { return AABB { position + aabb.min_bounds * scale, position + aabb.max_bounds * scale }; }
 };
 
 }  // namespace game
 
 TMT_OBJECT(game::AABB, (min_bounds, max_bounds));
-TMT_OBJECT(game::AABBShape, (aabb, radius));
+TMT_OBJECT(game::AABBShape, (aabb, scale));
