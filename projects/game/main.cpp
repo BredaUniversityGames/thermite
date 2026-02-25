@@ -18,7 +18,12 @@
 // Game Components
 #include "components/player.hpp"
 #include "components/wallet.hpp"
+#include "components/mining_component.hpp"
 #include "components/animation_player.hpp"
+#include "components/projectile_spawner.hpp"
+#include "components/rifle_projectile.hpp"
+#include "components/spawner.hpp"
+#include "components/weapon.hpp"
 
 class Game : public tmt::Application {
    public:
@@ -38,24 +43,19 @@ class MainGameScene : public tmt::Scene<MainGameScene> {
    public:
     static constexpr std::string_view scene_name() { return "MainGameScene"; }
 };
-
-class EntityRef : public tmt::GameComponent<EntityRef> {
+class Zoo : public tmt::Scene<Zoo> {
    public:
-    using GameComponent::GameComponent;
-
-    tmt::Entity entity_ref = entt::null;
-
-    static constexpr std::string_view get_name() { return "EntityRef"; }
-
-    // Inherited via GameComponent
-    void start() override {
-        const auto& name = tmt::engine.ecs.get_component<tmt::Name>(entity_ref);
-        tmt::Log::info("EntityRef Component started! Referenced entity name: {}", name.name);
-    }
-    void update(const tmt::FrameData& time) override {}
-    void end() override {}
+    static constexpr std::string_view scene_name() { return "Zoo"; }
 };
-TMT_OBJECT(EntityRef, (entity_ref));
+class Gym : public tmt::Scene<Gym> {
+   public:
+    static constexpr std::string_view scene_name() { return "Gym"; }
+};
+
+class DanielTestScene : public tmt::Scene<DanielTestScene> {
+   public:
+    static constexpr std::string_view scene_name() { return "DanielTestScene"; }
+};
 
 std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs& args) {
     // clang-format off
@@ -67,16 +67,21 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     // clang-format on
 
     /* Register Scenes */
+    tmt::engine.scenes.register_scene<DanielTestScene>();
     tmt::engine.scenes.register_scene<MainGameScene>();
     tmt::engine.scenes.register_scene<MainMenuScene>();
+    tmt::engine.scenes.register_scene<Gym>();
+    tmt::engine.scenes.register_scene<Zoo>();
 
     /* Register Components */
-    tmt::engine.component_registry.register_component<Player>();
-    tmt::engine.component_registry.register_component<Wallet>();
-    tmt::engine.component_registry.register_component<AnimationPlayer>();
-
-    /* Register Game Components */
-    tmt::engine.component_registry.register_component<EntityRef>();
+    tmt::engine.component_registry.register_component<game::Player>();
+    tmt::engine.component_registry.register_component<game::Weapon>();
+    tmt::engine.component_registry.register_component<game::Spawner>();
+    tmt::engine.component_registry.register_component<game::RifleProjectile>();
+    tmt::engine.component_registry.register_component<game::ProjectileSpawner>();
+    tmt::engine.component_registry.register_component<game::Wallet>();
+    tmt::engine.component_registry.register_component<game::MiningComponent>();
+    tmt::engine.component_registry.register_component<game::AnimationPlayer>();
 
     return std::make_unique<Game>(specs);
 }

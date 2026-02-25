@@ -1,20 +1,26 @@
 #include "palette.hpp"
 
 #include "editor.hpp"
-#define IM_CUSTOM_COLORSPACE_MATRIX { 0.597314f, 0.073732f, 0.020689f, 0.332820f, 0.917381f, 0.118816f, 0.038138f, 0.017072f, 0.961536f }
-#include "editor/shared/imgui_color_wheel.hpp"
-
-#include "engine/engine.hpp"
-#include "engine/core/ecs.hpp"
 #include "editor/windows/node_hierarchy.hpp"
-#include "engine/core/components/voxel_renderer.hpp"
-#include "engine/shared/colorspace.hpp"
+#include "editor/core/systems/undo_redo/type_diff.hpp"
 
-#include <glm/gtc/packing.hpp>
-
-namespace {}  // namespace
+#include <engine/engine.hpp>
+#include <engine/core/ecs.hpp>
+#include <engine/core/components/voxel_renderer.hpp>
 
 namespace tmt {
+
+void Palette::set_selected_material_index(const MaterialIndex material_index) {
+    if (selected_material_index == material_index) return;  // Skip setting the material again and sending the diff to the undo redo system.
+
+    TypeDiff diff { &selected_material_index };
+
+    diff.before();
+    selected_material_index = material_index;
+    diff.after();
+
+    IUndoRedo::send_to_manager(std::move(diff), "Select Material");
+}
 
 void Palette::before_begin() {
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
@@ -32,11 +38,6 @@ void Palette::display() {
     if (renderer == nullptr) return;
 
     display_palette(renderer->resource);
-
-    if (ImGui::Begin(ICON_MS_EDIT " Material Editor")) {
-        display_material_editor();
-    }
-    ImGui::End();
 }
 
 void Palette::display_palette(const ResourceRef<VoxelVolume>& resource) {
@@ -80,48 +81,6 @@ void Palette::display_palette(const ResourceRef<VoxelVolume>& resource) {
         draw_list->AddRect(min, max, ImColor(0xFF000000u), 0.0f, 0, 6.0f);
         draw_list->AddRect(min, max, ImColor(0xFFFFFFFFu), 0.0f, 0, 3.0f);
     }
-}
-
-void Palette::display_material_editor() {
-    /* Doesn't actually work yet but for the idea */
-    const auto selected_entity = editor.windows[Editor::Mode::VOXEL].get<NodeHierarchy>().get_selected_entity();
-    if (selected_entity == entt::null) {
-        ImGui::TextWrapped("No voxel model selected.");
-        return;
-    }
-
-    const VoxelRenderer* renderer = engine.ecs.try_get_component<VoxelRenderer>(selected_entity);
-    if (renderer == nullptr) return;
-
-    Material& material = renderer->resource->blas->palette.entries[selected_material_index];
-
-    ImGui::BeginGroup();
-
-    static glm::vec3 albedo {};
-    if (update_material_editor) {
-        albedo = material.albedo.unpack();
-        update_material_editor = false;
-    }
-    if (ImGui::ColorWheel3("Albedo", &albedo.x, ImGuiColorWheelFlags_CustomColorSpace)) material.albedo = Rgb10(albedo);
-
-    float roughness = static_cast<float>(material.roughness) / 255.0f;
-    if (ImGui::SliderFloat("Roughness", &roughness, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_ClampOnInput)) material.roughness = static_cast<uint8_t>(roughness * 255.0f);
-
-    float metallic = static_cast<float>(material.metallic) / 255.0f;
-    if (ImGui::SliderFloat("Metallic", &metallic, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_ClampOnInput)) material.metallic = static_cast<uint8_t>(metallic * 255.0f);
-
-    float ior = glm::unpackHalf1x16(material.ior);
-    if (ImGui::SliderFloat("IOR", &ior, 1.0f, 3.0f, "%.3f", ImGuiSliderFlags_ClampOnInput)) material.ior = glm::packHalf1x16(ior);
-
-    float transmission = static_cast<float>(material.transmission) / 255.0f;
-    if (ImGui::SliderFloat("Transmission", &transmission, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_ClampOnInput)) material.transmission = static_cast<uint8_t>(transmission * 255.0f);
-
-    float emission = glm::unpackHalf1x16(material.emission);
-    if (ImGui::DragFloat("Emission", &emission, 0.1f, 0.0f, std::numeric_limits<float>::max(), "%.3f", ImGuiSliderFlags_ClampOnInput)) material.emission = glm::packHalf1x16(emission);
-
-    ImGui::EndGroup();
-
-    if (ImGui::IsItemEdited()) renderer->resource->set_dirty();
 }
 
 }  // namespace tmt

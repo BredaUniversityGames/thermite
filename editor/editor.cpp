@@ -50,6 +50,7 @@
 #include "editor/windows/model_viewer.hpp"
 #include "editor/windows/node_hierarchy.hpp"
 #include "editor/windows/palette.hpp"
+#include "editor/windows/material_editor.hpp"
 #include "editor/windows/brush.hpp"
 #include "editor/windows/editor_settings.hpp"
 
@@ -112,6 +113,7 @@ void Editor::on_engine_init(const ApplicationSpecs&) {
     windows[Mode::VOXEL].add<ModelViewer>();
     windows[Mode::VOXEL].add<NodeHierarchy>();
     windows[Mode::VOXEL].add<Palette>();
+    windows[Mode::VOXEL].add<MaterialEditor>();
     windows[Mode::VOXEL].add<Brush>();
     windows[Mode::VOXEL].add<Console>();
     windows[Mode::VOXEL].add<UndoRedoManager>();
@@ -123,6 +125,7 @@ void Editor::on_engine_init(const ApplicationSpecs&) {
     windows[Mode::PREFAB].add<AssetBrowser>();
     windows[Mode::PREFAB].add<Console>();
     windows[Mode::PREFAB].add<ScenesWindow>();
+    windows[Mode::PREFAB].add<UndoRedoManager>();
 
     for (auto& [mode, collection] : windows) {
         for (const auto& window : collection) {

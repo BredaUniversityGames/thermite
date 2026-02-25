@@ -53,6 +53,7 @@ if (THERMITE_EDITOR_BUILD)
     set(GRAPHITE_IMGUI_DIR "${CMAKE_SOURCE_DIR}/extern/imgui/")
 endif()
 add_subdirectory(graphite)
+set_target_properties(graphite PROPERTIES UNITY_BUILD OFF)
 
 # visit_struct - struct reflection
 # https://github.com/cbeck88/visit_struct
@@ -138,6 +139,14 @@ if (THERMITE_EDITOR_BUILD)
         PRIVATE "./imgui-node-editor"
     )
 
+    # imgui-bezier-editor - nice looking bezier editor for imgui
+    # https://github.com/ocornut/imgui/issues/786
+    add_compile_definitions(IMGUI_DEFINE_MATH_OPERATORS)
+
+    target_include_directories(thermite-editor
+        PRIVATE "./imgui-bezier-editor"
+    )
+
     # ImPlot - Immediate Mode Plotting
     # https://github.com/epezent/implot
     target_sources(thermite-editor
@@ -201,6 +210,8 @@ set(ZLIB_BUILD_TESTING OFF CACHE BOOL "" FORCE)
 set(ZLIB_BUILD_SHARED OFF CACHE BOOL "" FORCE)
 set(ZLIB_BUILD_STATIC ON CACHE BOOL "" FORCE)
 add_subdirectory(zlib)
+
+set_target_properties(zlibstatic PROPERTIES UNITY_BUILD OFF)
 
 # fmod - audio engine
 set(FMOD_POSTFIX "$<$<CONFIG:Debug>:L>")
