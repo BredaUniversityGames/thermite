@@ -57,7 +57,7 @@ void main(int2 thread_id: SV_DispatchThreadID) {
             const VisData vis = unpack_visibility(packed);
             const GeoData geo = unpack_geometry(vis, objects, ray);
 
-            const float3 illuminance = slot.read_diffuse() * geo.material.albedo;
+            const float3 illuminance = slot.read_diffuse() * geo.material.albedo();
             render_target[pixel_id] = float4(cs::delinearize(cs::acescg_to_r709(cs::aces_filmic_tonemapping(illuminance))), 1.0f);
         }
     }

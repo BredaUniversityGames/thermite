@@ -15,11 +15,17 @@
 #include "engine/core/renderer/voxel_object.hpp"
 #include "engine/systems/gameplay/game_component.hpp"
 
+// For custom ImGui logic
+#include "editor/all.hpp"
+
 // Game Components
 #include "components/player.hpp"
 #include "components/wallet.hpp"
+#include "components/asteroid_field_component.hpp"
 #include "components/mining_component.hpp"
 #include "components/animation_player.hpp"
+#include "components/collision_trigger.hpp"
+#include "components/ore_collector.hpp"
 #include "components/projectile_spawner.hpp"
 #include "components/rifle_projectile.hpp"
 #include "components/spawner.hpp"
@@ -73,15 +79,18 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     tmt::engine.scenes.register_scene<Gym>();
     tmt::engine.scenes.register_scene<Zoo>();
 
-    /* Register Components */
+    /* Register Game Components */
     tmt::engine.component_registry.register_component<game::Player>();
     tmt::engine.component_registry.register_component<game::Weapon>();
     tmt::engine.component_registry.register_component<game::Spawner>();
     tmt::engine.component_registry.register_component<game::RifleProjectile>();
     tmt::engine.component_registry.register_component<game::ProjectileSpawner>();
+    tmt::engine.component_registry.register_component<game::AsteroidFieldComponent>();
     tmt::engine.component_registry.register_component<game::Wallet>();
     tmt::engine.component_registry.register_component<game::MiningComponent>();
     tmt::engine.component_registry.register_component<game::AnimationPlayer>();
+    tmt::engine.component_registry.register_component<game::OreCollector>();
+    tmt::engine.component_registry.register_component<game::CollisionTrigger>();
 
     return std::make_unique<Game>(specs);
 }

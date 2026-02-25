@@ -24,26 +24,16 @@ public [ForceInline] ShadingFrame create_shading_frame(const float3 n, const flo
 
 /* Voxel material data, used in a palette. */
 public struct Material {
-    /* `Base Color` Overall color of the material used for diffuse, metal and transmission. */
-    public float3 albedo;
-    // /* `Roughness` Specifies microfacet roughness of the surface for specular reflection and transmission. */
-    // public float roughness;
-    // /* `Emission Color` Color of light emitted from the surface. */
-    // public float3 emission_color;
-    // /* `Emission` Strength of the emitted light. */
-    // public float emission;
-    // /* `Specular Tint` Color tint for specular and metallic reflection. */
-    // public float3 specular_tint;
-    // /* `Specular` Adjustment to the IOR to increase or decrease intensity of the specular layer. */
-    // /* 0.5 means no adjustment, 0 removes all reflections, 1 doubles them at normal incidence. */
-    // public float specular;
-    // /* `Metallic` Blends between a dielectric and metallic material model. */
-    // public float metallic;
-    // /* `IOR` Index of refraction (IOR) for specular reflection and transmission. */
-    // public float ior;
-    // /* `Transmission` Transmission is used to render materials like glass and liquids, */
-    // /* where the surface both reflects light and transmits it into the interior of the object. */
-    // public float transmission;
+    public uint packed_albedo; /* Packed 10bit RGB color. */
+    public uint ior_emission; /* Packed f16 ior, f16 emission. */
+    public uint roughness_metallic_transmission; /* Packed 8bit roughness, metallic, and transmission. (1 byte unused) */
+
+    /* Material base color (ACEScg) */
+    public [ForceInline] float3 albedo() { return decode_rgb10(packed_albedo); };
+    /* Material index of refraction [1,3] */
+    public [ForceInline] float ior() { return f16tof32(ior_emission); };
+    /* Material microfacet roughness [0,1] */
+    public [ForceInline] float roughness() { return float(roughness_metallic_transmission & 0xFFu) * (1.0f / 0xFFu); };
 };
 
 /* f_layer(ωi,ωo) = f_coat(ωi,ωo) + (1 - E_coat(ωo)) * f_sub(ωi,ωo) */
@@ -137,11 +127,13 @@ public struct Material {
 /* Evaluate opaque base material slab. (diffuse & gloss) */
 [ForceInline] public float3 opaque_base_slab(
     const float wi_costheta, const float wo_costheta, 
-    const float wh_costheta, const float3 albedo, 
-    const float alpha, const float eta
+    const float wh_costheta, const Material mat,
 ) {
     /* Evaluate the two slabs */
-    const float3 diffuse = diffuse_slab(albedo);
+    const float3 diffuse = diffuse_slab(mat.albedo());
+    const float roughness = mat.roughness();
+    const float alpha = roughness * roughness;
+    const float eta = mat.ior() / 1.0f;
     const float3 gloss = gloss_slab(wi_costheta, wo_costheta, wh_costheta, alpha * alpha, eta);
 
     /* Layer the two slabs, diffuse = substrate, gloss = coating */
