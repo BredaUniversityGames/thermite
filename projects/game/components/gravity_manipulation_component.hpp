@@ -22,15 +22,17 @@ class GravityManipulationComponent : public tmt::GameComponent<GravityManipulati
     float pull_strength = 20.0f;
     float push_strength = 40.0f;
     float attraction_acceleration = 0.1f;
+    float push_cooldown = 1.0f;
+    entt::entity attraction_point_entity;
+    bool active = true;
 
    private:
     std::vector<entt::entity> currently_manipulated_entities;
     void grav_point_check();
     void grav_attract();
     void grav_shoot();
-    void calculate_attract_point();
-    glm::vec3 attract_point;
+    float push_cooldown_counter = 0.0f;
 };
 
 }  // namespace game
-TMT_OBJECT(game::GravityManipulationComponent, (range, forward_offset, vertical_offset, max_mass, pull_strength, push_strength, attraction_acceleration));
+TMT_OBJECT(game::GravityManipulationComponent, (range, max_mass, pull_strength, push_strength, attraction_acceleration, push_cooldown, attraction_point_entity, active));

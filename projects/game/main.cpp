@@ -73,8 +73,8 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     // clang-format on
 
     /* Register Scenes */
-    tmt::engine.scenes.register_scene<MikaTestScene>();
     tmt::engine.scenes.register_scene<DanielTestScene>();
+    tmt::engine.scenes.register_scene<MikaTestScene>();
     tmt::engine.scenes.register_scene<MainGameScene>();
     tmt::engine.scenes.register_scene<MainMenuScene>();
     tmt::engine.scenes.register_scene<Gym>();
