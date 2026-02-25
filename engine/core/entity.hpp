@@ -10,9 +10,8 @@ namespace tmt {
 
 using Entity = entt::entity;
 
-struct Disable {
-    static constexpr bool disabled = true;
-};
+struct DisableFlag {}; /* used to mark disabled entities, gets serialized */
+struct Disable {};     /* disabled entities, does not get serialized, only used at runtime */
 
 template <typename R, typename T>
 concept TypeRange = std::ranges::range<R> && std::same_as<std::ranges::range_value_t<R>, T>;
@@ -29,5 +28,7 @@ struct EntityHelper {
 
 }  // namespace tmt
 
-TMT_COMPONENT(tmt::Disable, "Disable", (disabled));
+TMT_COMPONENT_NAME(tmt::DisableFlag, "Disable");
+TMT_COMPONENT_SERIALIZE_EMPTY(tmt::DisableFlag);
+TMT_COMPONENT_INSPECT_EMPTY(tmt::DisableFlag);
 FMT_LOGGING(tmt::Entity, "{}", tmt::EntityHelper::to_string(obj));

@@ -54,6 +54,57 @@ struct EcsComponentTraits {
     }
 };
 
+template <typename T>
+struct EcsComponentTraits<T, std::enable_if_t<std::is_empty_v<T>>> {
+    static constexpr bool IS_GAME_COMPONENT = false;
+
+    static T& add(Registry& registry, Entity entity) {
+        registry.emplace<T>(entity);
+        static T instance {};
+        return instance;
+    }
+
+    static void remove(Registry& registry, Entity entity) { registry.remove<T>(entity); }
+
+    static T& get(Registry& registry, Entity entity) {
+        static T instance {};
+        return instance;
+    }
+
+    static const T& get(const Registry& registry, Entity entity) {
+        static const T instance {};
+        return instance;
+    }
+
+    static bool has(const Registry& registry, Entity entity) { return registry.all_of<T>(entity); }
+
+    static T& add_or_get(Registry& registry, Entity entity) {
+        if (!registry.all_of<T>(entity)) registry.emplace<T>(entity);
+        static T instance {};
+        return instance;
+    }
+
+    static T* try_get(Registry& registry, Entity entity) {
+        static T instance {};
+        return registry.all_of<T>(entity) ? &instance : nullptr;
+    }
+
+    static const T* try_get(const Registry& registry, Entity entity) {
+        static const T instance {};
+        return registry.all_of<T>(entity) ? &instance : nullptr;
+    }
+
+    template <typename... Rest, typename... Excludes>
+    static auto view_with(Registry& registry, entt::exclude_t<Excludes...> = entt::exclude_t {}) {
+        return registry.view<T, Rest...>(entt::exclude_t<Excludes...> {});
+    }
+
+    template <typename... Rest, typename... Excludes>
+    static auto view_with(const Registry& registry, entt::exclude_t<Excludes...> = entt::exclude_t {}) {
+        return registry.view<T, Rest...>(entt::exclude_t<Excludes...> {});
+    }
+};
+
 class Ecs : public OnGameStart, public OnGameUpdate, public OnGameFixedUpdate, public OnGameEnd, public OnEndFrame {
    public:
     Ecs() = default;
@@ -231,7 +282,13 @@ class Ecs : public OnGameStart, public OnGameUpdate, public OnGameFixedUpdate, p
 
     bool valid(const Entity entity) const { return registry.valid(entity); }
 
-    bool enabled(const Entity entity) const { return !has_component<Disable>(entity); }
+    bool is_enabled(const Entity entity) const;
+
+    bool is_disabled(const Entity entity) const;
+
+    void enable(const Entity entity);
+
+    void disable(const Entity entity);
 
     Collection<ISystem> systems;
 
@@ -248,6 +305,8 @@ class Ecs : public OnGameStart, public OnGameUpdate, public OnGameFixedUpdate, p
     void on_game_end() override;
 
     void on_end_frame() override;
+
+    void propagate_enable(const Entity entity);
 };
 
 }  // namespace tmt

@@ -53,10 +53,20 @@ void Inspector::display_entity_info(const MenuContext& menu_context) {
     if (menu_context.primary_entity == entt::null) {
         return;
     }
-    auto entity_str = tmt::EntityHelper::to_string(menu_context.primary_entity);
-    if (ImGui::Selectable(("Entity: " + entity_str).c_str())) {
-        ImGui::SetClipboardText(entity_str.c_str());
+
+    bool marked_disabled = engine.ecs.has_component<DisableFlag>(menu_context.primary_entity);
+    if (ImGui::Checkbox("##Disabled", &marked_disabled)) {
+        if (marked_disabled) {
+            engine.ecs.disable(menu_context.primary_entity);
+        } else {
+            engine.ecs.enable(menu_context.primary_entity);
+        }
     }
+
+    ImGui::SameLine();
+
+    auto entity_str = tmt::EntityHelper::to_string(menu_context.primary_entity);
+    ImGui::Text("Entity: %s", entity_str.c_str());
     if (ImGui::IsItemHovered()) {
         ImGui::SetTooltip("Click to copy Entity ID");
     }

@@ -28,10 +28,10 @@ namespace tmt {
 // clang-format off
 using SerializeComponents = ComponentRegistry<
 	/* Order in which components are serialized */
-	Disable,
 	Prefab,
 	Name, 
 	Transform, 
+	DisableFlag,
 	VoxelRenderer, 
 	Camera,
 	VoxelBody,
@@ -52,7 +52,6 @@ using SerializeComponents = ComponentRegistry<
 // clang-format off
 using InspectComponents = ComponentRegistry<
 	/* Order in which components are displayed in the editor */
-	Disable,
 	Name, 
 	Transform,
 	VoxelRenderer, 
