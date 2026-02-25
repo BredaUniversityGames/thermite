@@ -85,6 +85,8 @@ void tmt::Viewport::display() {
 
     float snap_value = 0.0f;
     const bool ctrl_held = ImGui::IsKeyDown(ImGuiKey_LeftCtrl) || ImGui::IsKeyDown(ImGuiKey_RightCtrl);
+    const bool shift_held = ImGui::IsKeyDown(ImGuiKey_LeftShift) || ImGui::IsKeyDown(ImGuiKey_RightShift);
+    const bool alt_held = ImGui::IsKeyDown(ImGuiKey_LeftAlt) || ImGui::IsKeyDown(ImGuiKey_RightAlt);
 
     if (ctrl_held) {
         const auto operation = Gizmo::OPERATIONS[editor.gizmo.operation];
@@ -119,7 +121,12 @@ void tmt::Viewport::display() {
         }
     }
 
-    const bool gizmo_changed = editor.gizmo.manip(image_pos.x, image_pos.y, width, height, selected_entities, snap_value);
+    // Build modifiers for bounds manipulation
+    BoundsModifiers modifiers;
+    modifiers.uniform_scale = shift_held;    // Shift: maintain aspect ratio
+    modifiers.scale_from_center = alt_held;  // Alt: keep center fixed
+
+    const bool gizmo_changed = editor.gizmo.manip(image_pos.x, image_pos.y, width, height, selected_entities, snap_value, modifiers);
     if (gizmo_changed) OnSceneModified::dispatch();
 
     const bool toolbar_buttons_hovered = toolbar(image_pos);

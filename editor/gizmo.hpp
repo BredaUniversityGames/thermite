@@ -8,6 +8,12 @@
 
 namespace tmt {
 
+// Modifier flags for bounds manipulation
+struct BoundsModifiers {
+    bool uniform_scale = false;      // Shift: maintain aspect ratio
+    bool scale_from_center = false;  // Alt: keep center fixed (adjusts position)
+};
+
 class Gizmo {
    public:
     Gizmo() = default;
@@ -15,7 +21,7 @@ class Gizmo {
     void init();
 
     bool hovered() const;
-    bool manip(float x, float y, float width, float height, const std::span<const Entity>& selected_entities, float snap) const;
+    bool manip(float x, float y, float width, float height, const std::span<const Entity>& selected_entities, float snap, const BoundsModifiers& modifiers) const;
 
     static constexpr uint8_t GIZMO_OP_COUNT { 4 };
     // Translate=7, Rotate=120, Scale=896, Bounds=1024

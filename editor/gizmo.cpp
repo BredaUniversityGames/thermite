@@ -38,7 +38,9 @@ bool Gizmo::hovered() const {
     return ImGuizmo::IsOver();
 }
 
-bool Gizmo::manip(const float x, const float y, const float width, const float height, const std::span<const Entity>& selected_entities, const float snap) const {
+bool Gizmo::manip(
+    const float x, const float y, const float width, const float height, const std::span<const Entity>& selected_entities, const float snap, const BoundsModifiers& modifiers
+) const {
     ImGuizmo::SetRect(x, y, width, height);
     ImGuizmo::SetDrawlist();
 
@@ -187,9 +189,10 @@ bool Gizmo::manip(const float x, const float y, const float width, const float h
 
     // --- 4. Apply delta ---
     if (changed) {
-        // For UI bounds mode, only modify UIComponent::size, not the transform
+        // For UI bounds mode, only modify UIComponent::size (and optionally position)
         if (use_bounds) {
             UIComponent& ui = engine.ecs.get_component<UIComponent>(primary);
+            Transform& t = engine.ecs.get_component<Transform>(primary);
 
             // ImGuizmo bounds manipulation modifies the MATRIX with scale, not the bounds array
             // Extract the scale from the manipulated matrix relative to the start matrix
@@ -198,13 +201,48 @@ bool Gizmo::manip(const float x, const float y, const float width, const float h
             const glm::vec3 current_scale = glm::vec3(glm::length(glm::vec3(gizmo_matrix[0])), glm::length(glm::vec3(gizmo_matrix[1])), glm::length(glm::vec3(gizmo_matrix[2])));
 
             // Calculate scale ratio
-            const glm::vec3 scale_ratio = current_scale / start_scale;
+            glm::vec2 scale_ratio = glm::vec2(current_scale.x / start_scale.x, current_scale.y / start_scale.y);
 
-            // Apply scale to the ORIGINAL UI size (captured at drag start)
+            // Shift: Uniform scaling (maintain aspect ratio)
+            if (modifiers.uniform_scale) {
+                const float max_scale = std::max(scale_ratio.x, scale_ratio.y);
+                const float min_scale = std::min(scale_ratio.x, scale_ratio.y);
+                const float uniform = (std::abs(max_scale - 1.f) > std::abs(min_scale - 1.f)) ? max_scale : min_scale;
+                scale_ratio = glm::vec2(uniform);
+            }
+
+            // Calculate new size from ORIGINAL size (captured at drag start)
             const float new_width = start_ui_size.x * scale_ratio.x;
             const float new_height = start_ui_size.y * scale_ratio.y;
 
             if (new_width > 0.f && new_height > 0.f) {
+                // ImGuizmo scales around the opposite corner/edge (not centered)
+                // This means dragging one edge keeps the opposite edge fixed - which is our DEFAULT behavior
+                //
+                // Alt held: Scale from center - need to adjust position to keep center fixed
+                if (modifiers.scale_from_center) {
+                    // Size delta from original
+                    const glm::vec2 size_delta = glm::vec2(new_width, new_height) - start_ui_size;
+
+                    // To scale from center, we need to offset by half the size change
+                    // ImGuizmo already moved position for edge-based scaling, so we reset to start
+                    // then apply centered offset
+                    const glm::mat4& start_matrix = entity_start_matrices[primary];
+                    const glm::vec3 start_pos = glm::vec3(start_matrix[3]);
+
+                    // For centered scaling, position shifts by half the delta in the direction of the pivot
+                    // With pivot 0.5, no shift needed. With pivot 0, shift by -delta/2. With pivot 1, shift by +delta/2
+                    const glm::vec2 center_offset = -size_delta * (ui_pivot - glm::vec2(0.5f));
+
+                    t.set_local_position(start_pos + glm::vec3(center_offset, 0.f));
+                } else {
+                    // Default: Use ImGuizmo's position (scales from opposite edge)
+                    // ImGuizmo modifies gizmo_matrix position, apply it
+                    const glm::vec2 ui_offset = AnchorHelper::calculate_anchor_offset(primary);
+                    glm::vec3 new_pos = glm::vec3(gizmo_matrix[3]) - glm::vec3(ui_offset, 0.f);
+                    t.set_local_position(new_pos);
+                }
+
                 ui.size = glm::vec2(new_width, new_height);
             }
         } else {

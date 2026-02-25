@@ -1,6 +1,8 @@
 #include "ui_component.hpp"
 #include <ImReflect.hpp>
 #include "editor/imgui/types/glm.hpp"
+#include "engine/engine.hpp"
+#include "engine/core/ecs.hpp"
 
 void tag_invoke(ImReflect::ImInput_t, const char*, tmt::UIComponent& value, ImSettings& settings, ImResponse& response) {
     auto& type_settings = settings.get<tmt::UIComponent>();
@@ -22,6 +24,9 @@ void tag_invoke(ImReflect::ImInput_t, const char*, tmt::UIComponent& value, ImSe
     ImReflect::Input("Aspect Mode", value.aspect_mode, type_settings, type_response);
     ImReflect::Input("Aspect Ratio", value.aspect_ratio, type_settings, type_response);
     ImResponse anchor_response = ImReflect::Input("Anchor", value.anchor);
+
+    const tmt::Entity entity = tmt::engine.ecs.get_entity(value);
+    auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
 
     if (anchor_response.get<tmt::Anchor>().is_changed()) {
         switch (value.anchor) {
@@ -53,5 +58,8 @@ void tag_invoke(ImReflect::ImInput_t, const char*, tmt::UIComponent& value, ImSe
                 value.pivot = { 1.0f, 1.0f };
                 break;
         }
+
+        glm::vec3 position = transform.get_local_position();
+        transform.set_local_position(glm::vec3(0.0f, 0.0f, position.z));
     }
 }
