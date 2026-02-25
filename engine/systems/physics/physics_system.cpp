@@ -274,6 +274,9 @@ void Physics::generate_constraint(int index, const PhysicsGroup& group) {
         // Transform& other_transform = group.get<Transform>(other_entity);
         // auto& [other_vb, other_transform] = group.get<VoxelBody, Transform>(other_entity);
 
+        // --- check layer collision ---
+        if (!physics_layers.can_collide(vb.layer, other_vb.layer)) continue;
+
         if (sat_early_out(vb, other_vb)) continue;
 
         Collision coll(entity, other_entity);

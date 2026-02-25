@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <cstdint>
+#include <stdexcept>
 
 namespace tmt {
 
@@ -17,8 +18,12 @@ class PhysicsLayers {
     void remove_layer(uint32_t layer);
 
     const std::string& get_layer_name(uint32_t layer) const;
+    void set_layer_name(uint32_t layer, const std::string& name);
 
     uint32_t get_layer_count() const { return layer_count; }
+
+    void load();
+    void save() const;
 
    private:
     bool collision_matrix[MAX_LAYERS][MAX_LAYERS];
