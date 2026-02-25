@@ -283,6 +283,9 @@
             "MyButton": {}
         }
     },
+    "Disable": {
+        "1": {}
+    },
     "UIComponent": {
         "0": {
             "size": {
