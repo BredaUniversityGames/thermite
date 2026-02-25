@@ -16,23 +16,27 @@ void game::WeaponManager::switch_to(WeaponType weapon_slot) {
 }
 
 void game::WeaponManager::start() {
-    tmt::Log::info("[WeaponManager] Starting with weapon: {}", magic_enum::enum_name(starting_weapon));
     current_weapon = starting_weapon;
-    switch_to(current_weapon);
+    tmt::Log::info("[WeaponManager] Starting with weapon: {}", magic_enum::enum_name(starting_weapon));
+
+    subscribe_weapon(current_weapon);
 }
 
 void game::WeaponManager::update(const tmt::FrameData& time) {
     auto& input = tmt::engine.input;
 
     if (input.is_action_pressed(action::SHOOT)) {
-        tmt::engine.ecs.get_dispatcher().trigger(ShootEvent { shooting_entity });
+        tmt::engine.ecs.get_dispatcher().trigger(ShootEvent { shooting_entity, false });
+    }
+    if (input.is_action_pressed(action::SECONDARY_TOOL_USE)) {
+        tmt::engine.ecs.get_dispatcher().trigger(ShootEvent { shooting_entity, true });
     }
 
-    if (input.is_action_pressed(action::SWITCH_RIFLE)) {
+    if (input.is_action_just_pressed(action::SWITCH_RIFLE)) {
         switch_to(WeaponType::RIFLE);
-    } else if (input.is_action_pressed(action::SWITCH_MINING)) {
+    } else if (input.is_action_just_pressed(action::SWITCH_MINING)) {
         switch_to(WeaponType::MINING);
-    } else if (input.is_action_pressed(action::SWITCH_GRAVITY)) {
+    } else if (input.is_action_just_pressed(action::SWITCH_GRAVITY)) {
         switch_to(WeaponType::GRAVITY);
     }
 }

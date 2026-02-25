@@ -4,6 +4,7 @@
 #include "engine/core/components/voxel_renderer.hpp"
 #include "engine/core/logger.hpp"
 #include "weapon.hpp"
+#include "engine/core/polyline.hpp"
 
 using namespace game;
 
@@ -25,14 +26,17 @@ void MiningComponent::on_weapon_fired(const WeaponFiredEvent& e) {
 }
 
 void MiningComponent::mine(glm::vec3 origin, glm::vec3 dir) {
-    if (cooldown_counter > 0) return;
+    // if (cooldown_counter > 0) return;
     if (!stencil) {
         tmt::Log::error("Mining component has no valid stencil!");
         return;
     }
 
+    // TODO quick debuggin maybe remove it
     const tmt::Ray ray_cast = tmt::Ray(origin, dir);
     const tmt::Hit hit = tmt::engine.renderer.trace_ray(ray_cast);
+    cfg.set_values();
+    tmt::engine.polyline.draw_line(origin, origin + hit.distance * dir, 2.0f);
 
     if (hit.miss() == false) {
         auto* resource = tmt::engine.ecs.get_component<tmt::VoxelRenderer>(hit.entity).resource.resource.get();
@@ -40,5 +44,5 @@ void MiningComponent::mine(glm::vec3 origin, glm::vec3 dir) {
         resource->set_dirty();
     }
 
-    cooldown_counter = cooldown;
+    // cooldown_counter = cooldown;
 }

@@ -28,7 +28,11 @@ void GravityManipulationComponent::draw_debug_lines() const {
 void GravityManipulationComponent::on_weapon_fired(const WeaponFiredEvent& e) {
     if (e.weapon_entity != entity) return;
     grav_point_check();
-    grav_attract();
+    if (e.secondary_shot == false) {
+        grav_attract();
+    } else {
+        grav_shoot();
+    }
 }
 
 void GravityManipulationComponent::grav_point_check() {
