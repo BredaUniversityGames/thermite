@@ -299,3 +299,9 @@ struct std::tuple_element<N, tmt::ViewElement<Types...>> {
 template <typename T>
 requires(std::is_base_of_v<tmt::IGameComponent, T>)
 struct JsonReflect::Detail::delta_serialize<T> : std::true_type {};
+
+template <typename T>
+requires(std::is_base_of_v<tmt::IGameComponent, T>)
+struct JsonReflect::Detail::delta_default<T> {
+    static T make() { return T(static_cast<tmt::Entity>(entt::null)); }
+};
