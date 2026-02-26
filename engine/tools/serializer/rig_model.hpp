@@ -6,6 +6,7 @@
 /* Deserialize only */
 inline void tag_invoke(JsonReflect::deserialize_t, const JsonReflect::json& j, tmt::RigModel& value) {
     JsonReflect::Detail::from_json_visitable(j, value);
+
     if (!value.rig_path.relative_path.empty() && !value.rig_is_loaded) {
         auto entity = tmt::engine.ecs.get_entity(value);
         value.init(entity);
