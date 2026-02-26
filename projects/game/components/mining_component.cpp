@@ -12,9 +12,12 @@ void MiningComponent::start() {
     tmt::engine.ecs.get_dispatcher().sink<WeaponFiredEvent>().connect<&MiningComponent::on_weapon_fired>(this);
 }
 
-void MiningComponent::update(const tmt::FrameData& time) {}
+void MiningComponent::update(const tmt::FrameData& time) {
+    has_drawn_debug = true;
+}
 
 void MiningComponent::draw_debug_lines() const {
+    if (has_drawn_debug) return;
     cfg.set_values();
     tmt::engine.polyline.draw_line(last_ray.origin, last_ray.origin + last_hit.distance * last_ray.dir, 2.0f);
 
@@ -45,5 +48,6 @@ void MiningComponent::mine(glm::vec3 origin, glm::vec3 dir) {
         auto* resource = tmt::engine.ecs.get_component<tmt::VoxelRenderer>(hit.entity).resource.resource.get();
         resource->blas->subtract(stencil.resource.get(), hit.coord);
         resource->set_dirty();
+        has_drawn_debug = false;
     }
 }
