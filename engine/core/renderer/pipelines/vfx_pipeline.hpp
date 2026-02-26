@@ -48,7 +48,8 @@ struct GpuParticleEffect {
 
     float jitter_speed {};
     uint32_t flipbook_frames {};
-    glm::vec2 pad {};
+    float anim_speed {};
+    float pad {};
 };
 
 struct GpuEmitter {
@@ -74,13 +75,17 @@ struct GpuParticle {
     float rot_speed {};
     float rotation {};
 
+    GpuBezierCurve size_curve {};
+    GpuBezierCurve opacity_curve {};
+
     float pos_jitter {};
     uint32_t tex_index {};
     uint32_t effect_index {};
     uint32_t current_frame {};
 
     uint32_t flipbook_frames {};
-    glm::vec3 pad {};
+    float anim_speed {};
+    glm::vec2 pad {};
 };
 
 struct Counters {

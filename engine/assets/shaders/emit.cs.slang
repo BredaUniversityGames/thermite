@@ -56,8 +56,12 @@ void main(uint3 thread_id: SV_DispatchThreadID) {
     p.rotation = 0.0f;
     p.pos_jitter = lerp(effect.pos_jitter.min, effect.pos_jitter.max, rand_float(seed)) * effect.jitter_speed;
 
+    p.size_curve = effect.size_curve;
+    p.opacity_curve = effect.opacity_curve;
+
     p.tex_index = effect.tex_index;
     p.flipbook_frames = effect.flipbook_frames;
+    p.anim_speed = effect.anim_speed;
     p.current_frame = 0;
 
     float3 dir = sample_cone(effect.dir, effect.cone_angle, rand_float2(seed));

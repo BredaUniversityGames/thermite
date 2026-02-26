@@ -14,6 +14,7 @@ inline void tag_invoke(ImReflect::ImInput_t, const char* label, tmt::ParticleEff
     ImReflect::Input("Cone Angle", effect.cone_angle, type_settings, type_response);
     ImReflect::Input("Spawn Count", effect.spawn_count, type_settings, type_response);
     ImReflect::Input("Speed", effect.speed, type_settings, type_response);
+    ImReflect::Input("Animation Speed", effect.anim_speed, type_settings, type_response);
 
     if (ImGui::TreeNode("Size")) {
         ImReflect::Input("Start Size", effect.start_size, type_settings, type_response);

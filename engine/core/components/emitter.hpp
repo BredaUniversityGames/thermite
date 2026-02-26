@@ -34,6 +34,8 @@ struct ParticleEffect {
     Range pos_jitter { 0.0f, 0.0f };
     float jitter_speed = 1.0f;
 
+    float anim_speed = 1.0f;
+
     bool active = true;
     bool should_burst = false;
 

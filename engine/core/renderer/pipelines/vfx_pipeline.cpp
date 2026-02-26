@@ -168,6 +168,7 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
             eff.jitter_speed = effect.jitter_speed;
             eff.tex_index = effect.texture.resource->image.get_index();
             eff.flipbook_frames = effect.texture.resource->flipbook_frames;
+            eff.anim_speed = effect.anim_speed;
 
             em.total_spawn_count += eff.spawn_count;
 
@@ -205,7 +206,6 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
 
     render_graph.add_compute_pass("Simulate Particles", "particle_sim.cs")
                 .read(render_view.render_view_buffer)
-                .read(particle_effects_buffer)
                 .write(particle_buffer)
                 .write(alive_list)
                 .write(alive_list_new)

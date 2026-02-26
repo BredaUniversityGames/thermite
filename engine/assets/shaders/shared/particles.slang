@@ -35,6 +35,7 @@ public struct ParticleEffect {
 
     public float jitter_speed;
     public uint32_t flipbook_frames;
+    public float anim_speed;
 };
 
 public struct ParticleEmitter {
@@ -60,12 +61,16 @@ public struct Particle {
     public float rot_speed;
     public float rotation;
 
+    public BezierCurve size_curve;
+    public BezierCurve opacity_curve;
+
     public float pos_jitter;
     public uint32_t tex_index;
     public uint32_t effect_index;
     public uint32_t current_frame;
 
     public uint32_t flipbook_frames;
+    public float anim_speed;
 };
 
 public struct Counters {
