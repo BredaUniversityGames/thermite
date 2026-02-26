@@ -75,6 +75,7 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
     //         .read(render_view.render_view_buffer) /* Render view buffer */
     //         .read(scene_view.scene_view) /* Scene view buffer */
     //         .read(render_view.blue_noise->image) /* Blue noise texture */
+    //         .read(engine.renderer.linear_sampler)
     //         .read(scene_view.bvh_nodes) /* TLAS nodes buffer */
     //         .read(scene_view.object_indices) /* Voxel object indices buffer */
     //         .read(scene_view.object_data) /* Voxel objects buffer */

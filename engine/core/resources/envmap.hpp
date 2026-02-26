@@ -16,8 +16,10 @@ class Envmap : public FileResource {
 
     inline static const std::set<std::string_view> SUPPORTED_FILE_EXTENSIONS { ".hdr", ".exr" };
 
-    Texture texture {};
-    Image image {};
+    Texture full_texture {};
+    Image full_image {};
+    Texture filtered_texture {};
+    Image filtered_image {};
 
     uint32_t width {};
     uint32_t height {};

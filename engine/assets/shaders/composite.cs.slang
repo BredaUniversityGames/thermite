@@ -34,9 +34,9 @@ void main(int2 thread_id: SV_DispatchThreadID) {
     const Ray ray = pinhole_ray(render_view, thread_id);
 
     if (null_visibility(packed)) {
-        if (render_view.envmap_handle != 0u) {
+        if (render_view.envmap_full_handle != 0u) {
             const float2 uv = dir_to_latlong(ray.dir);
-            const float3 env = bindless::texture_sampled<Texture2D<float4>>(render_view.envmap_handle).SampleLevel(envmap_sampler, uv, 0).rgb;
+            const float3 env = bindless::texture_sampled<Texture2D<float4>>(render_view.envmap_full_handle).SampleLevel(envmap_sampler, uv, 0).rgb;
             render_target[thread_id] = float4(cs::delinearize(cs::acescg_to_r709(cs::aces_filmic_tonemapping(env))), 1.0f);
         } else {
             render_target[thread_id] = float4(0.247f, 0.247f, 0.247f, 1.0f);

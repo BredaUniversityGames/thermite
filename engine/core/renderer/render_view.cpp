@@ -118,9 +118,11 @@ void RenderView::update_gpu_view(RenderGraph& render_graph, const Camera& camera
     gpu_view.shading_rate_di = (uint32_t)shading_rate_di;
     gpu_view.shading_rate_gi = (uint32_t)shading_rate_gi;
     if (envmap) {
-        gpu_view.envmap_handle = envmap->image.get_index();
+        gpu_view.envmap_full_handle = envmap->full_image.get_index();
+        gpu_view.envmap_filtered_handle = envmap->filtered_image.get_index();
     } else {
-        gpu_view.envmap_handle = 0u;
+        gpu_view.envmap_full_handle = 0u;
+        gpu_view.envmap_filtered_handle = 0u;
     }
 
     /* Upload the active render view */

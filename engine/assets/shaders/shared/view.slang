@@ -20,8 +20,10 @@ public struct RenderView {
     public uint shading_rate_di;
     /* 0 = FullRate, 1 = HalfRate, 2 = QuarterRate */
     public uint shading_rate_gi;
-    /* Environment map bindless handle. */
-    public uint envmap_handle;
+    /* Environment map (full) bindless handle. */
+    public uint envmap_full_handle;
+    /* Environment map (filtered) bindless handle. */
+    public uint envmap_filtered_handle;
 };
 
 /* Holds information about the active scene. */
