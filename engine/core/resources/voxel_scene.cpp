@@ -10,9 +10,21 @@
 #include "engine/tools/timer.hpp"
 #include "engine/tools/svh_format.hpp"
 #include "engine/tools/uuid.hpp"
+#include "engine/shared/colorspace.hpp"
 
 #include <queue>
 #include <omp.h>
+
+namespace {
+
+void recurse_get_uuids(const tmt::VoxelSceneNode& node, std::vector<tmt::UUID>& uuids) {
+    uuids.push_back(node.uuid);
+    for (auto& children : node.children) {
+        recurse_get_uuids(children, uuids);
+    }
+}
+
+}  // namespace
 
 namespace tmt {
 
@@ -317,7 +329,7 @@ VoxelSceneNode parse_hierarchy(const vengi::Node* file_node) {
     VoxelSceneNode node {};
     node.uuid = UUID(file_node->uuid[0], file_node->uuid[1]);
     node.name = file_node->name;
-    node.transform = file_node->transform.get_world_matrix();
+    node.transform = file_node->transform;
 
     /* If this node is a voxel model node */
     if (file_node->type == vengi::NodeType::MODEL) {
@@ -332,10 +344,14 @@ VoxelSceneNode parse_hierarchy(const vengi::Node* file_node) {
         /* Load the voxel material palette */
         const std::vector<vengi::PaletteColor>& palette = file_node->palette->colors;
         for (uint32_t i = 0u; i < palette.size(); ++i) {
-            Material material {};
-            material.albedo_r = (float)palette[i].color.r * (1.0f / 255.0f);
-            material.albedo_g = (float)palette[i].color.g * (1.0f / 255.0f);
-            material.albedo_b = (float)palette[i].color.b * (1.0f / 255.0f);
+            glm::vec3 color;
+            color.r = (float)palette[i].color.r * (1.0f / 255.0f);
+            color.g = (float)palette[i].color.g * (1.0f / 255.0f);
+            color.b = (float)palette[i].color.b * (1.0f / 255.0f);
+
+            Material material;
+            material.albedo = cs::r709_to_acescg(cs::linearize(color));
+
             node.tree->palette.entries[i] = material;
         }
     }
@@ -375,6 +391,16 @@ bool VoxelScene::load() {
 
 void VoxelScene::unload() {
     root_nodes.clear();
+}
+
+std::vector<UUID> VoxelScene::get_all_uuids() const {
+    std::vector<UUID> uuids;
+
+    for (auto& node : root_nodes) {
+        recurse_get_uuids(node, uuids);
+    }
+
+    return uuids;
 }
 
 }  // namespace tmt

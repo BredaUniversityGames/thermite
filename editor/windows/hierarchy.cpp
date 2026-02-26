@@ -43,6 +43,7 @@ void Hierarchy::display() {
     top_bar();
     render_hierarchy();
     context_menu(entt::null);
+
     file_drag_drop(entt::null);
 
     ImGui::PopStyleVar();
@@ -276,7 +277,13 @@ void Hierarchy::top_bar() {
 }
 
 bool Hierarchy::display_entity(const HierarchyState& state) {
-    const auto scope = ImReflect::Detail::scope_id((int)state.entity);
+    const auto scope_id = ImReflect::Detail::scope_id((int)state.entity);
+
+    const bool disabled = engine.ecs.is_disabled(state.entity);
+
+    static float base_alpha = ImGui::GetStyle().Alpha;
+    const float alpha = disabled ? base_alpha * ImGui::GetStyle().DisabledAlpha : base_alpha;
+    const auto scope_disabled = ImReflect::Detail::scope_style(ImGuiStyleVar_Alpha, alpha);
 
     const bool filtering = filter.empty() == false;
     if (filtering) {
@@ -338,9 +345,11 @@ bool Hierarchy::display_entity(const HierarchyState& state) {
     drag_drop_source(state.entity);
     const bool dropped = drag_drop_target(state.entity);
     /* Force open treenode using imgui storage */
-    if (dropped) {
+    if (const bool contains = force_open_entities.contains(state.entity) || dropped) {
         ImGuiStorage* storage = ImGui::GetStateStorage();
         storage->SetBool(tree_node_id, true);
+
+        if (contains) force_open_entities.erase(state.entity);
     }
 
     /* Selection logic */

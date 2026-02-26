@@ -15,22 +15,22 @@
 
 #include <extern/imgui-node-editor/imgui_node_editor.h>
 namespace ignode = ax::NodeEditor;
-static ignode::EditorContext* g_Context = nullptr;  // internal state container for imgui-node-editor.
+static ignode::EditorContext* g_ContextDebugger = nullptr;  // internal state container for imgui-node-editor.
 
 namespace tmt {
 
 void GoapDebugger::on_editor_start() {
-    if (!g_Context) {
+    if (!g_ContextDebugger) {
         ignode::Config config;
         config.SettingsFile = "goap_graph.json";
-        g_Context = ignode::CreateEditor(&config);
+        g_ContextDebugger = ignode::CreateEditor(&config);
     }
 }
 
 void GoapDebugger::on_editor_end() {
-    if (g_Context) {
-        ignode::DestroyEditor(g_Context);
-        g_Context = nullptr;
+    if (g_ContextDebugger) {
+        ignode::DestroyEditor(g_ContextDebugger);
+        g_ContextDebugger = nullptr;
     }
 }
 
@@ -51,7 +51,7 @@ void GoapDebugger::display() {
 
     // Gather all agents
     std::vector<Entity> agents;
-    for (auto [e, agent] : ecs.view<GoapAgent>().each()) {
+    for (auto [e, agent] : engine.ecs.view<GoapAgent>().each()) {
         agents.push_back(e);
     }
 
@@ -97,7 +97,7 @@ void GoapDebugger::display() {
     }
 
     // --- Draw only selected agent ---
-    if (selected_agent != entt::null && ecs.any_of<GoapAgent, WorldState>(selected_agent)) {
+    if (selected_agent != entt::null && ecs.all_of<GoapAgent, WorldState>(selected_agent)) {
         auto& agent = ecs.get<GoapAgent>(selected_agent);
         auto& ws = ecs.get<WorldState>(selected_agent);
 
@@ -181,20 +181,11 @@ void GoapDebugger::draw_details_view(GoapAgent& agent, WorldState& ws) {
     if (ImGui::TreeNode("World State")) {
         for (auto& [id, val] : ws.facts) {
             const std::string& fact_name = FactRegistry::instance().get_name(id);
+
             ImGui::PushID(id);
 
-            switch (val.value_type) {
-                case FactValue::Type::BOOL_TYPE:
-                    if (ImGui::Checkbox(fact_name.c_str(), &val.bool_val)) {
-                        agent.needs_replan = true;
-                    }
-                    break;
-                case FactValue::Type::INT_TYPE:
-                    ImGui::Text("%s = %d", fact_name.c_str(), val.int_val);
-                    break;
-                case FactValue::Type::FLOAT_TYPE:
-                    ImGui::Text("%s = %.2f", fact_name.c_str(), val.float_val);
-                    break;
+            if (ImGui::Checkbox(fact_name.c_str(), &val)) {
+                agent.needs_replan = true;
             }
 
             ImGui::PopID();
@@ -221,7 +212,7 @@ void GoapDebugger::draw_details_view(GoapAgent& agent, WorldState& ws) {
             bool can_run = true;
             for (auto& [fact, val] : effective.preconditions) {
                 auto it = ws.facts.find((uint32_t)std::hash<std::string>()(fact));
-                if (it == ws.facts.end() || it->second.bool_val != val) {
+                if (it == ws.facts.end() || it->second != val) {
                     can_run = false;
                     break;
                 }
@@ -269,7 +260,7 @@ struct PlanNode {
  *   - Available goals with priority and relevance
  */
 void GoapDebugger::draw_goap_graph(GoapAgent& agent, WorldState& ws) {
-    ignode::SetCurrentEditor(g_Context);
+    ignode::SetCurrentEditor(g_ContextDebugger);
     ignode::Begin("GOAP Graph");
 
     int nodeId = 1000;

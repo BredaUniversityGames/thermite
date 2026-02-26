@@ -1,12 +1,37 @@
 #include "palette.hpp"
 
 #include "editor.hpp"
-#include "engine/engine.hpp"
-#include "engine/core/ecs.hpp"
 #include "editor/windows/node_hierarchy.hpp"
-#include "engine/core/components/voxel_renderer.hpp"
+#include "editor/core/systems/undo_redo/type_diff.hpp"
+
+#include <engine/engine.hpp>
+#include <engine/core/ecs.hpp>
+#include <engine/core/components/voxel_renderer.hpp>
+
+#include "engine/shared/colorspace.hpp"
 
 namespace tmt {
+
+void Palette::set_selected_material_index(const MaterialIndex material_index) {
+    if (selected_material_index == material_index) return;  // Skip setting the material again and sending the diff to the undo redo system.
+
+    TypeDiff diff { &selected_material_index };
+
+    diff.before();
+    selected_material_index = material_index;
+    update_material_editor = true;
+    diff.after();
+
+    // We set the value to its current value before and after (setting them both to true) because the value always has to be set to true when undo/redo is done (very hacky workaround).
+    TypeDiff update_diff { &update_material_editor };
+    update_diff.before();
+    update_diff.after();
+
+    UndoRedoCollection collection;
+    collection.add_action(std::move(diff));
+    collection.add_action(std::move(update_diff));
+    UndoRedoCollection::send_to_manager(std::move(collection), "Select Material");
+}
 
 void Palette::before_begin() {
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
@@ -24,11 +49,6 @@ void Palette::display() {
     if (renderer == nullptr) return;
 
     display_palette(renderer->resource);
-
-    if (ImGui::Begin(ICON_MS_EDIT " Material Editor")) {
-        display_material_editor();
-    }
-    ImGui::End();
 }
 
 void Palette::display_palette(const ResourceRef<VoxelVolume>& resource) {
@@ -47,15 +67,17 @@ void Palette::display_palette(const ResourceRef<VoxelVolume>& resource) {
 
             const uint32_t i = x + y * 8u;
             const Material& material = resource->blas->palette.entries[i];
+            const glm::vec3 linear_srgb = cs::acescg_to_r709(material.albedo.unpack());
+            glm::vec3 nonlinear_srgb = cs::delinearize(linear_srgb);
 
-            const ImVec4 color = ImVec4(material.albedo_r, material.albedo_g, material.albedo_b, 1.0f);
+            const ImVec4 color = ImVec4(nonlinear_srgb.r, nonlinear_srgb.g, nonlinear_srgb.b, 1.0f);
             draw_list->AddRectFilled(min, max, ImGui::ColorConvertFloat4ToU32(color));
             draw_list->AddRect(min, max, ImColor(0xFF000000u), 0.0f, 0, 3.0f);
 
             ImGui::SetCursorScreenPos(min);
             const std::string button_id = "##palette_entry_" + std::to_string(i);
             if (ImGui::InvisibleButton(button_id.c_str(), ImVec2(entry_width, entry_height))) {
-                selected_material_index = static_cast<MaterialIndex>(i);
+                set_selected_material_index(static_cast<MaterialIndex>(i));
             }
         }
     }
@@ -70,23 +92,6 @@ void Palette::display_palette(const ResourceRef<VoxelVolume>& resource) {
         draw_list->AddRect(min, max, ImColor(0xFF000000u), 0.0f, 0, 6.0f);
         draw_list->AddRect(min, max, ImColor(0xFFFFFFFFu), 0.0f, 0, 3.0f);
     }
-}
-
-void Palette::display_material_editor() const {
-    /* Doesn't actually work yet but for the idea */
-    const auto selected_entity = editor.windows[Editor::Mode::VOXEL].get<NodeHierarchy>().get_selected_entity();
-    if (selected_entity == entt::null) {
-        ImGui::TextWrapped("No voxel model selected.");
-        return;
-    }
-
-    const VoxelRenderer* renderer = engine.ecs.try_get_component<VoxelRenderer>(selected_entity);
-    if (renderer == nullptr) return;
-
-    Material& material = renderer->resource->blas->palette.entries[selected_material_index];
-    ImGui::Text("Editing Material Index: %u", selected_material_index);
-    ImGui::Separator();
-    if (ImGui::ColorPicker3("Albedo Color", &material.albedo_r)) renderer->resource->set_dirty();
 }
 
 }  // namespace tmt

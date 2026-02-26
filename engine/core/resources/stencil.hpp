@@ -1,6 +1,7 @@
 #pragma once
 
 #include "engine/core/resources/voxel_scene.hpp"
+#include "engine/core/reflection.hpp"
 
 namespace tmt {
 

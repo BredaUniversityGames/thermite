@@ -16,6 +16,8 @@
 #include "engine/systems/animation/components/bone_hierarchy_renderer.hpp"
 #include "engine/systems/animation/constraints/two_bone_ik.hpp"
 
+
+
 class Game : public tmt::Application {
    public:
     Game(const tmt::ApplicationSpecs& specs) : Application(specs) {}
@@ -58,30 +60,28 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     return std::make_unique<Game>(specs);
 }
 
-
-
 void AnimationScene::on_start() {
     using namespace tmt;
     { /* Camera entity */
-        Entity entity = engine.ecs.create_entity("Camera");
-        auto& transform = engine.ecs.get_component<Transform>(entity);
-        auto& camera = engine.ecs.add_component<Camera>(entity);
+        tmt::Entity entity = tmt::engine.ecs.create_entity("Camera");
+        auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
+        auto& camera = tmt::engine.ecs.add_component<tmt::Camera>(entity);
         transform.set_world_position(glm::vec3(0.0f, 0.0f, -16.0f));
     }
 
-    { /* Animation entity */
-        auto rig_ent = engine.ecs.create_entity();
-        auto& rig_ent_rig_model_comp = engine.ecs.add_component<RigModel>(rig_ent);
+    //{ /* Animation entity */
+    //    auto rig_ent = tmt::engine.ecs.create_entity();
+    //    auto& rig_ent_rig_model_comp = tmt::engine.ecs.add_component<tmt::RigModel>(rig_ent);
 
-        IO::FileLocation location { IO::Location::PROJECT, "Victory_animation.fbx" };
-        rig_ent_rig_model_comp.init(location, rig_ent);
+        //IO::FileLocation location { IO::Location::PROJECT, "Victory_animation.fbx" };
+        //rig_ent_rig_model_comp.init(location, rig_ent);
         //rig_ent_rig_model_comp.data->animation_files.push_back(location);
       //  rig_ent_rig_model_comp.data->reload();
 
        // rig_ent_rig_model_comp.set_current_animation("Victory_animation");
         //rig_ent_rig_model_comp.state = RigModel::State::ANIMATE_LOOP;
        // rig_ent_rig_model_comp.time = 0.0f;
-    }
+    
 
 
     { /* Test rig */
@@ -202,7 +202,6 @@ void AnimationScene::on_start() {
 void AnimationScene::on_update(const tmt::FrameData& time) 
 {
     using namespace tmt;
-
     static float x = 0.f;
     x-=time.delta_time*2.f;
 
@@ -235,3 +234,4 @@ void AnimationScene::on_update(const tmt::FrameData& time)
 }
 
 void AnimationScene::on_end() {}
+void Game::on_end() {}

@@ -1,3 +1,5 @@
+#pragma once
+
 #include "engine/core/ecs.hpp"
 
 #include "engine/core/resources.hpp"
@@ -86,5 +88,4 @@ class NavMesh {
 };
 
 }  // namespace tmt
-TMT_COMPONENT(tmt::NavMesh, "Navigation Mesh", (voxel_volume, lod_level, inflation));
-
+TMT_COMPONENT(tmt::NavMesh, "Navigation Mesh", (voxel_volume, lod_level));
