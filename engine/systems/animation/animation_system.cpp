@@ -109,25 +109,24 @@ void RigModelManager::inspect(float) {
 
 void tmt::ConstraintSystem::on_start() 
 {
-    for (const auto& [entity, transform, damped_constraint] : engine.ecs.get_registry().view<Transform, AnimConstraints::DampedTransformConstraint>().each()) {
+    for (const auto& [entity, transform, damped_constraint] : engine.ecs.view<Transform, AnimConstraints::DampedTransformConstraint>().each()) {
         damped_constraint.local_rest_pose.bone_entity = entity;
-        auto& start_transform = tmt::engine.ecs.get_component<Transform>(entity);
-
-        AnimConstraints::DampedTransform::set_local_rest_pose(start_transform, damped_constraint.local_rest_pose);
+        AnimConstraints::DampedTransform::set_local_rest_pose(transform, damped_constraint.local_rest_pose);
+    }
+    for (const auto& [entity, transform, two_bone_constraint] : engine.ecs.view<Transform, AnimConstraints::TwoBoneIKConstraint>().each()) {
+        two_bone_constraint.root = entity;
+        two_bone_constraint.parent = transform.get_parent();
     }
 }
 void tmt::ConstraintSystem::on_update(const tmt::FrameData& time) 
 {
-    for (const auto& [entity, transform, damped_constraint] : engine.ecs.get_registry().view<Transform, AnimConstraints::DampedTransformConstraint>().each()) {
-        auto& start_transform = tmt::engine.ecs.get_component<Transform>(entity);
-
-        damped_constraint.local_rest_pose.local_pos = start_transform.get_local_position();
-        damped_constraint.local_rest_pose.local_rot = start_transform.get_local_rotation();
+    for (const auto& [entity, transform, damped_constraint] : engine.ecs.view<Transform, AnimConstraints::DampedTransformConstraint>().each()) {
+        damped_constraint.local_rest_pose.local_pos = transform.get_local_position();
+        damped_constraint.local_rest_pose.local_rot = transform.get_local_rotation();
 
         AnimConstraints::DampedTransform::update_damped_pose(damped_constraint.local_rest_pose, damped_constraint.local_rest_pose.local_pos, damped_constraint.local_rest_pose.local_rot, damped_constraint.damp);
     }
-    for (const auto& [entity, transform, two_bone_constraint] : engine.ecs.get_registry().view<Transform, AnimConstraints::TwoBoneIKConstraint>().each()) {
-        auto& start_transform = tmt::engine.ecs.get_component<Transform>(entity);
+    for (const auto& [entity, transform, two_bone_constraint] : engine.ecs.view<Transform, AnimConstraints::TwoBoneIKConstraint>().each()) {
 
         AnimConstraints::TwoBoneIK::TwoBoneInputData input_data;
         if(engine.ecs.valid(two_bone_constraint.parent))
@@ -135,22 +134,90 @@ void tmt::ConstraintSystem::on_update(const tmt::FrameData& time)
             input_data.parent = &engine.ecs.get_component<Transform>(two_bone_constraint.parent);
         }
 
-        auto& root_transform = engine.ecs.get_component<Transform>(two_bone_constraint.root);
+        auto& root_transform = transform;
         auto& mid_transform = engine.ecs.get_component<Transform>(two_bone_constraint.mid);
+        auto& tip_transform = engine.ecs.get_component<Transform>(two_bone_constraint.tip);
 
         input_data.root = &root_transform;
         input_data.mid = &mid_transform;
-        input_data.end = &engine.ecs.get_component<Transform>(two_bone_constraint.tip);
+        input_data.end = &tip_transform;
 
-        input_data.effector = two_bone_constraint.target_position;
-        input_data.bend_pos = two_bone_constraint.bend_position;
+        auto& bend_target_transform = engine.ecs.get_component<Transform>(two_bone_constraint.bend_position_entity);
+        auto& target_position_transform = engine.ecs.get_component<Transform>(two_bone_constraint.target_position_entity);
+
+        input_data.effector = target_position_transform.get_world_position();
+        input_data.bend_pos = bend_target_transform.get_world_position();
 
         auto output = AnimConstraints::TwoBoneIK::solve_two_bone_ik(input_data);
         
         root_transform.set_local_rotation(output.root_rot);
         mid_transform.set_local_rotation(output.mid_rot);
     }
-}
+    for (const auto& [entity, transform, walk_cycle] : engine.ecs.view<Transform, AnimConstraints::EffectorWalkCycle>().each()) {
+        walk_cycle.step_timer += time.delta_time;
+
+        glm::vec3 continuous_available_pos = engine.ecs.get_component<Transform>(walk_cycle.desired_target_entity).get_world_position();
+
+        glm::vec3 point_velocity = (continuous_available_pos - walk_cycle.last_continuous_pos) / time.delta_time;
+        walk_cycle.last_continuous_pos = continuous_available_pos;
+
+        if (walk_cycle.step_timer >= walk_cycle.step_time + walk_cycle.cycle_offset && !walk_cycle.stepping_effector) {
+            walk_cycle.step_timer -= walk_cycle.step_time;
+
+            walk_cycle.stepping_effector = true;
+
+            walk_cycle.initial_pos = walk_cycle.effector;
+        }
+
+        auto up = transform.get_up();
+        // predict based on positional change
+        glm::vec3 prediction_vec = (point_velocity * time.delta_time) * walk_cycle.step_prediction_strength;
+        glm::vec3 subtraction_vec = prediction_vec * up;
+        prediction_vec -= subtraction_vec;
+
+        /* if (glm::length(prediction_vec) > 0.5f) {
+            prediction_vec = glm::normalize(prediction_vec) * 0.5f;
+        }*/
+
+        walk_cycle.desired_pos = continuous_available_pos + prediction_vec;
+
+
+        if (walk_cycle.grounded) {
+            if (!walk_cycle.became_grounded) {
+                walk_cycle.became_grounded = true;
+                walk_cycle.initial_pos = continuous_available_pos + up * walk_cycle.step_height;
+                walk_cycle.desired_pos = continuous_available_pos;
+                walk_cycle.stepping_effector = true;
+            }
+
+            if (walk_cycle.stepping_effector) {
+                float distance_height_factor = glm::clamp(glm::distance(walk_cycle.initial_pos, continuous_available_pos), 0.f, 1.f);
+
+                glm::vec3 mix_step = glm::mix(walk_cycle.initial_pos, walk_cycle.desired_pos, walk_cycle.step_interp);
+                float height_step = sinf(glm::pi<float>() * walk_cycle.step_interp) * walk_cycle.step_height * distance_height_factor * static_cast<float>(walk_cycle.grounded);
+
+                glm::vec3 heightvec = up * height_step;
+                mix_step += heightvec;
+
+                walk_cycle.effector = mix_step;
+
+                walk_cycle.step_interp += time.delta_time * (1.f / walk_cycle.step_duration);
+
+                if (walk_cycle.step_interp >= 1.f) {
+                    walk_cycle.step_interp = 0.f;
+
+                    walk_cycle.stepping_effector = false;
+                }
+            }
+        } else {
+            walk_cycle.effector = glm::mix(walk_cycle.effector, continuous_available_pos + up * walk_cycle.step_height, 20.f * time.delta_time);
+            walk_cycle.became_grounded = false;
+        }
+        
+        auto& effector_transform = engine.ecs.get_component<Transform>(walk_cycle.effector_entity);
+        effector_transform.set_world_position(walk_cycle.effector);
+    }
+ }
 
 
 

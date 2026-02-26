@@ -170,6 +170,8 @@ void AnimationScene::on_start() {
             glm::quat rot = glm::angleAxis(rad_ang, glm::vec3(0.f, 1.f, 0.f));
             glm::vec3 p = glm::normalize(rot * glm::vec3(0.f, 0.f, 1.f));
 
+
+
             arm_entities[i] = engine.ecs.create_entity();
             auto& two_bone_ik_constraint = engine.ecs.add_component<AnimConstraints::TwoBoneIKConstraint>(arm_entities[i]);
             bone_renderer.color = glm::vec4(0.f, 1.f, 1.f, 1.f);
@@ -185,11 +187,17 @@ void AnimationScene::on_start() {
             auto& child_1_transform = engine.ecs.get_component<Transform>(child_1);
             child_1_transform.set_local_position(p * 3.f);
 
-            two_bone_ik_constraint.parent = walker_entity;
-            two_bone_ik_constraint.root = arm_entities[i];
+            auto bend_entity = engine.ecs.create_entity();
+            engine.ecs.add_component<NoBone>(bend_entity);
+            auto& bend_transform = engine.ecs.get_component<Transform>(bend_entity);
+            bend_transform.set_parent(walker_entity);
+            bend_transform.set_world_position(p * 2.f + glm::vec3(0.f, 100.f, 0.f));
+
+            /*two_bone_ik_constraint.parent = walker_entity;
+            two_bone_ik_constraint.root = arm_entities[i];*/
             two_bone_ik_constraint.mid = child_0;
             two_bone_ik_constraint.tip = child_1;
-            two_bone_ik_constraint.bend_position = p * 2.f + glm::vec3(0.f, 100.f, 0.f);
+            two_bone_ik_constraint.bend_position_entity = bend_entity;
 
             transform.set_parent(walker_entity);
             transform.add_child(child_0);
@@ -221,7 +229,7 @@ void AnimationScene::on_update(const tmt::FrameData& time)
         anim_vars.grounded = true;
         anim_vars.up = glm::vec3(0.f, 1.f, 0.f);
 
-        two_bone_ik.target_position = walk_cycles[i].do_walk_cycle(time.delta_time, anim_vars);
+        two_bone_ik.target_position_entity = snake_entity;//walk_cycles[i].do_walk_cycle(time.delta_time, anim_vars);
         
     }
 

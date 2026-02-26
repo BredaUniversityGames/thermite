@@ -1,4 +1,5 @@
 #include "rig_renderer.hpp"
+#include "engine/systems/animation/components/bone_hierarchy_renderer.hpp"
 #include "engine/engine.hpp"
 #include "engine/core/polyline.hpp"
 #include "engine/core/ecs.hpp"
@@ -13,6 +14,8 @@ void tmt::RenderBoneHierarchy(const tmt::Transform& root)
     glm::vec3 origin = root.get_world_position();
 
     for (auto child : children) {
+
+        if(tmt::engine.ecs.has_component<tmt::NoBone>(child)) continue;
 
         auto& child_transform = tmt::engine.ecs.get_component<Transform>(child);
         glm::vec3 child_origin = child_transform.get_world_position();

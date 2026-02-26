@@ -23,15 +23,57 @@ struct DampedTransformConstraint{
 };
 struct TwoBoneIKConstraint
 {
+    //automatically set
     tmt::Entity parent = entt::null;
+    //automatically set
     tmt::Entity root;
+
     tmt::Entity mid;
     tmt::Entity tip;
 
-    glm::vec3 target_position;
-    glm::vec3 bend_position;
+    tmt::Entity target_position_entity;
+    tmt::Entity bend_position_entity;
+};
+struct EffectorWalkCycle
+{
+    // step after how much time?
+    float step_time;
+
+    // step motion duration
+    float step_duration;
+
+    // step motion height
+    float step_height;
+
+    bool grounded;
+
+    // the continuously available position
+    tmt::Entity desired_target_entity;
+
+    tmt::Entity effector_entity;
+
+    // the timing offset of the internal step timer
+    float cycle_offset = 0.f;
+
+    float step_prediction_strength = 1.f;
+
+    glm::vec3 last_continuous_pos;
+    glm::vec3 initial_pos;
+    glm::vec3 desired_pos;
+
+    // the internally tracked effector
+    glm::vec3 effector;
+
+    float step_timer = 0.f;
+    float step_interp = 0.f;
+
+    bool stepping_effector = false;
+    bool became_grounded = false;
 };
 
 }  // namespace AnimConstraints
 }  // namespace tmt
-TMT_COMPONENT(tmt::AnimConstraints::DampedTransformConstraint, "DampedTransformConstraint", (damp));
+TMT_COMPONENT(tmt::AnimConstraints::DampedTransformConstraint, "Damped Transform Constraint", (damp));
+TMT_COMPONENT(tmt::AnimConstraints::TwoBoneIKConstraint, "Two Bone IK Constraint", (mid, tip, target_position_entity, bend_position_entity));
+TMT_COMPONENT(tmt::AnimConstraints::EffectorWalkCycle, "Effector Walk Cycle", (step_time, step_duration, step_height, desired_target_entity, effector_entity, cycle_offset, step_prediction_strength));
+//TMT_COMPONENT(tmt::AnimConstraints::EffectorWalkCycle, "Effector e"
