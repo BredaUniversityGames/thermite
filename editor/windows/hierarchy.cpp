@@ -174,7 +174,7 @@ void Hierarchy::copy_selection() {
     ImGui::SetClipboardText(json.dump().c_str());
 }
 
-void Hierarchy::paste_entities(const Entity hovered_entity) {
+void Hierarchy::paste_entities(const Entity hovered_entity, const bool overwrite_parent) {
     const char* clipboard_text = ImGui::GetClipboardText();
     if (clipboard_text == nullptr) {
         Log::warn("Failed to paste entities, clipboard is empty.");
@@ -190,9 +190,11 @@ void Hierarchy::paste_entities(const Entity hovered_entity) {
     Serializer::deserialize(deserialized, new_entities, tmt::engine.ecs);
 
     const std::set<Entity> parents = EntityHelper::upper_parents(new_entities);
-    for (const Entity parent : parents) {
-        Transform& parent_transform = tmt::engine.ecs.get_component<Transform>(parent);
-        parent_transform.set_parent(hovered_entity);
+    if (overwrite_parent) {
+        for (const Entity parent : parents) {
+            Transform& parent_transform = tmt::engine.ecs.get_component<Transform>(parent);
+            parent_transform.set_parent(hovered_entity);
+        }
     }
 
     clear_selection();
@@ -206,7 +208,7 @@ void Hierarchy::duplicate_selection() {
     if (selected_entities.empty()) return;
 
     copy_selection();
-    paste_entities(entt::null);
+    paste_entities(entt::null, false);
 }
 
 void Hierarchy::delete_selection() {
@@ -253,15 +255,17 @@ void Hierarchy::on_editor_update(const FrameData&) {
     const bool is_playing = engine.game_controller.is_running();
     const bool using_debug_cam = editor.windows[editor.editor_mode].get<Viewport>().is_using_debug_camera();
     const bool wants_keyboard = ImGui::GetIO().WantCaptureKeyboard;
+    const bool has_selection = !selected_entities.empty();
 
-    if (!is_playing && !using_debug_cam && !wants_keyboard && !selected_entities.empty()) {
+    /* print bools */
+    if (!is_playing && !using_debug_cam && !wants_keyboard) {
         const bool ctrl_held = ImGui::IsKeyDown(ImGuiKey_LeftCtrl) || ImGui::IsKeyDown(ImGuiKey_RightCtrl);
         if (ctrl_held) {
-            if (ImGui::IsKeyPressed(ImGuiKey_C, false)) {
+            if (has_selection && ImGui::IsKeyPressed(ImGuiKey_C, false)) {
                 copy_selection();
             } else if (ImGui::IsKeyPressed(ImGuiKey_V, false)) {
-                paste_entities(entt::null);
-            } else if (ImGui::IsKeyPressed(ImGuiKey_D, false)) {
+                paste_entities(entt::null, false);
+            } else if (has_selection && ImGui::IsKeyPressed(ImGuiKey_D, false)) {
                 duplicate_selection();
             }
         }

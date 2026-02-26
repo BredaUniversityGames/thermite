@@ -71,7 +71,7 @@ class Hierarchy : public IWindow, public OnGameEnd, public OnPreUnloadScene {
     void file_drag_drop(const tmt::Entity parent);
 
     void copy_selection();
-    void paste_entities(const Entity hovered_entity);
+    void paste_entities(const Entity hovered_entity, const bool overwrite_parent = true);
     void duplicate_selection();
     void delete_selection();
 
