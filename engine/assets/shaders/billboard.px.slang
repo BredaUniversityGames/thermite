@@ -13,5 +13,8 @@ float4 main(BillboardVertexOutput input) : SV_Target0 {
 
     const float4 tex_sample = tex.Sample(point_sampler, anim_uv);
 
+    if (tex_sample.a == 0.0f)
+        discard;
+
     return float4(tex_sample.rgb, input.opacity);
 }
