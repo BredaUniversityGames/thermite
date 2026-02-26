@@ -75,3 +75,7 @@ using InspectComponents = ComponentRegistry<
 // clang-format on
 
 }  // namespace tmt
+
+template <typename T>
+requires(tmt::SerializeComponents::contains<T>())
+JsonReflect::Detail::delta_serialize<T> : std::true_type {};
