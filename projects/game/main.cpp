@@ -15,14 +15,22 @@
 #include "engine/core/renderer/voxel_object.hpp"
 #include "engine/systems/gameplay/game_component.hpp"
 
+// For custom ImGui logic
+#include "editor/all.hpp"
+
 // Game Components
 #include "components/player.hpp"
 #include "components/wallet.hpp"
+#include "components/asteroid_field_component.hpp"
 #include "components/mining_component.hpp"
 #include "components/animation_player.hpp"
+#include "components/gravity_manipulation_component.hpp"
+#include "components/collision_trigger.hpp"
+#include "components/ore_collector.hpp"
 #include "components/projectile_spawner.hpp"
 #include "components/rifle_projectile.hpp"
 #include "components/spawner.hpp"
+#include "components/text_component.hpp"
 #include "components/weapon.hpp"
 
 class Game : public tmt::Application {
@@ -52,6 +60,16 @@ class Gym : public tmt::Scene<Gym> {
     static constexpr std::string_view scene_name() { return "Gym"; }
 };
 
+class DanielTestScene : public tmt::Scene<DanielTestScene> {
+   public:
+    static constexpr std::string_view scene_name() { return "DanielTestScene"; }
+};
+
+class MikaTestScene : public tmt::Scene<MikaTestScene> {
+   public:
+    static constexpr std::string_view scene_name() { return "MikaTestScene"; }
+};
+
 std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs& args) {
     // clang-format off
     tmt::ApplicationSpecs specs {
@@ -62,20 +80,27 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     // clang-format on
 
     /* Register Scenes */
+    tmt::engine.scenes.register_scene<DanielTestScene>();
+    tmt::engine.scenes.register_scene<MikaTestScene>();
     tmt::engine.scenes.register_scene<MainGameScene>();
     tmt::engine.scenes.register_scene<MainMenuScene>();
     tmt::engine.scenes.register_scene<Gym>();
     tmt::engine.scenes.register_scene<Zoo>();
 
-    /* Register Components */
+    /* Register Game Components */
     tmt::engine.component_registry.register_component<game::Player>();
     tmt::engine.component_registry.register_component<game::Weapon>();
     tmt::engine.component_registry.register_component<game::Spawner>();
     tmt::engine.component_registry.register_component<game::RifleProjectile>();
     tmt::engine.component_registry.register_component<game::ProjectileSpawner>();
+    tmt::engine.component_registry.register_component<game::AsteroidFieldComponent>();
     tmt::engine.component_registry.register_component<game::Wallet>();
     tmt::engine.component_registry.register_component<game::MiningComponent>();
     tmt::engine.component_registry.register_component<game::AnimationPlayer>();
+    tmt::engine.component_registry.register_component<game::GravityManipulationComponent>();
+    tmt::engine.component_registry.register_component<game::OreCollector>();
+    tmt::engine.component_registry.register_component<game::CollisionTrigger>();
+    tmt::engine.component_registry.register_component<game::TextComponent>();
 
     return std::make_unique<Game>(specs);
 }
