@@ -21,7 +21,7 @@ void tmt::RigModelManager::on_start() {}
 
 void RigModelManager::on_update(const FrameData& time) {
     inspect(time.delta_time);
-    for (const auto& [entity, rig] : engine.ecs.get_registry().view<RigModel>().each()) {
+    for (const auto& [entity, rig] : engine.ecs.view<RigModel>().each()) {
         if (rig.data == nullptr) continue;
 
         if (rig.state != RigModel::State::STATIONARY && !rig.is_transferring()) rig.time += rig.animation_speed * time.delta_time;
@@ -87,7 +87,7 @@ void RigModelManager::inspect(float) {
     int lines_drawn = 0;
     engine.polyline.use_color(1.0f, 0.3f, 0.3f);
     engine.polyline.use_line_width(0.25f);
-    for (const auto& [entity, transform, rig] : engine.ecs.get_registry().view<Transform, RigModel>().each()) {
+    for (const auto& [entity, transform, rig] : engine.ecs.view<Transform, RigModel>().each()) {
         for (const Entity bone_entity : rig.bone_entities) {
             auto& bone_transform = engine.ecs.get_component<Transform>(bone_entity);
             // auto& bone_name = engine.ecs.get_component<Name>(bone_entity);
