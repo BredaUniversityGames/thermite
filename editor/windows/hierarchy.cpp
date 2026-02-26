@@ -530,70 +530,57 @@ bool Hierarchy::drag_drop_target(const Entity dropped_entity) {
         if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY")) {
             const DragNDropPayload* payload_data = (DragNDropPayload*)payload->Data;
 
-            UndoRedoCollection diff_collection;
-
-            /* Snapshot the new parent before any changes */
-            std::optional<ComponentDiff<Transform>> new_parent_diff;
-            if (dropped_entity != entt::null && engine.ecs.valid(dropped_entity)) {
-                new_parent_diff.emplace(dropped_entity);
-                new_parent_diff->before();
-            }
-
+            /* Collect the entities that will be moved */
+            std::vector<Entity> entities_to_move;
             if (payload_data->multiple) {
-                /* Multiple entities being moved */
                 for (const auto& selected_entity : selected_entities) {
                     if (selected_entity == dropped_entity) continue;
-                    auto& transform = engine.ecs.get_component<Transform>(selected_entity);
-
-                    ComponentDiff<Transform> child_diff { selected_entity };
-                    child_diff.before();
-
-                    /* Track the old parent transform change (losing a child) */
-                    const Entity old_parent = transform.get_parent();
-                    if (old_parent != entt::null && engine.ecs.valid(old_parent) && old_parent != dropped_entity) {
-                        ComponentDiff<Transform> old_parent_diff { old_parent };
-                        old_parent_diff.before();
-                        transform.set_parent(dropped_entity);
-                        old_parent_diff.after();
-                        diff_collection.add_action(std::move(old_parent_diff));
-                    } else {
-                        transform.set_parent(dropped_entity);
-                    }
-
-                    child_diff.after();
-                    diff_collection.add_action(std::move(child_diff));
+                    entities_to_move.push_back(selected_entity);
                 }
             } else {
-                /* Single entity being moved */
-                Entity single_entity = payload_data->entity;
-                if (dropped_entity != single_entity) {
-                    auto& transform = engine.ecs.get_component<Transform>(single_entity);
-
-                    ComponentDiff<Transform> child_diff { single_entity };
-                    child_diff.before();
-
-                    const Entity old_parent = transform.get_parent();
-                    if (old_parent != entt::null && engine.ecs.valid(old_parent) && old_parent != dropped_entity) {
-                        ComponentDiff<Transform> old_parent_diff { old_parent };
-                        old_parent_diff.before();
-                        transform.set_parent(dropped_entity);
-                        old_parent_diff.after();
-                        diff_collection.add_action(std::move(old_parent_diff));
-                    } else {
-                        transform.set_parent(dropped_entity);
-                    }
-
-                    child_diff.after();
-                    diff_collection.add_action(std::move(child_diff));
+                if (dropped_entity != payload_data->entity) {
+                    entities_to_move.push_back(payload_data->entity);
                 }
             }
 
-            /* Snapshot the new parent after all changes */
-            if (new_parent_diff.has_value()) {
-                new_parent_diff->after();
-                diff_collection.add_action(std::move(*new_parent_diff));
+            /* Collect all unique affected parents (old parents + new parent) for a single before/after snapshot each */
+            std::map<Entity, ComponentDiff<Transform>> parent_diffs;
+
+            if (dropped_entity != entt::null && engine.ecs.valid(dropped_entity)) {
+                parent_diffs.emplace(dropped_entity, ComponentDiff<Transform> { dropped_entity });
             }
 
+            for (const Entity entity : entities_to_move) {
+                const Entity old_parent = engine.ecs.get_component<Transform>(entity).get_parent();
+                if (old_parent != entt::null && engine.ecs.valid(old_parent) && !parent_diffs.contains(old_parent)) {
+                    parent_diffs.emplace(old_parent, ComponentDiff<Transform> { old_parent });
+                }
+            }
+
+            /* Snapshot all parents and children BEFORE mutations */
+            for (auto& [_, diff] : parent_diffs) diff.before();
+
+            std::vector<ComponentDiff<Transform>> child_diffs;
+            child_diffs.reserve(entities_to_move.size());
+            for (const Entity entity : entities_to_move) {
+                child_diffs.emplace_back(entity);
+                child_diffs.back().before();
+            }
+
+            /* Perform all re-parenting */
+            for (const Entity entity : entities_to_move) {
+                auto& transform = engine.ecs.get_component<Transform>(entity);
+                transform.set_parent(dropped_entity);
+            }
+
+            /* Snapshot all parents and children AFTER mutations */
+            for (auto& [_, diff] : parent_diffs) diff.after();
+            for (auto& diff : child_diffs) diff.after();
+
+            /* Build the undo/redo collection */
+            UndoRedoCollection diff_collection;
+            for (auto& [_, diff] : parent_diffs) diff_collection.add_action(std::move(diff));
+            for (auto& diff : child_diffs) diff_collection.add_action(std::move(diff));
             diff_collection.commit("Modified Hierarchy");
 
             ImGui::EndDragDropTarget();
