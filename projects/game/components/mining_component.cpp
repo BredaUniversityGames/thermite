@@ -12,9 +12,7 @@ void MiningComponent::start() {
     tmt::engine.ecs.get_dispatcher().sink<WeaponFiredEvent>().connect<&MiningComponent::on_weapon_fired>(this);
 }
 
-void MiningComponent::update(const tmt::FrameData& time) {
-    cooldown_counter -= time.delta_time;
-}
+void MiningComponent::update(const tmt::FrameData& time) {}
 
 void MiningComponent::end() {
     tmt::engine.ecs.get_dispatcher().sink<WeaponFiredEvent>().disconnect<&MiningComponent::on_weapon_fired>(this);
@@ -26,16 +24,15 @@ void MiningComponent::on_weapon_fired(const WeaponFiredEvent& e) {
 }
 
 void MiningComponent::mine(glm::vec3 origin, glm::vec3 dir) {
-    // if (cooldown_counter > 0) return;
     if (!stencil) {
         tmt::Log::error("Mining component has no valid stencil!");
         return;
     }
 
-    // TODO quick debuggin maybe remove it
     const tmt::Ray ray_cast = tmt::Ray(origin, dir);
     const tmt::Hit hit = tmt::engine.renderer.trace_ray(ray_cast);
     cfg.set_values();
+    // TODO maybe add a generic resource for the time
     tmt::engine.polyline.draw_line(origin, origin + hit.distance * dir, 2.0f);
 
     if (hit.miss() == false) {
@@ -43,6 +40,4 @@ void MiningComponent::mine(glm::vec3 origin, glm::vec3 dir) {
         resource->blas->subtract(stencil.resource.get(), hit.coord);
         resource->set_dirty();
     }
-
-    // cooldown_counter = cooldown;
 }

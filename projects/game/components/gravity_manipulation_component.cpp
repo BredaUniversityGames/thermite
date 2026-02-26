@@ -11,9 +11,7 @@ void GravityManipulationComponent::start() {
     tmt::engine.ecs.get_dispatcher().sink<WeaponFiredEvent>().connect<&GravityManipulationComponent::on_weapon_fired>(this);
 }
 
-void GravityManipulationComponent::update(const tmt::FrameData& time) {
-    push_cooldown_counter -= time.delta_time;
-}
+void GravityManipulationComponent::update(const tmt::FrameData& time) {}
 
 void GravityManipulationComponent::end() {
     tmt::engine.ecs.get_dispatcher().sink<WeaponFiredEvent>().disconnect<&GravityManipulationComponent::on_weapon_fired>(this);
@@ -40,7 +38,7 @@ void GravityManipulationComponent::grav_point_check() {
 
     auto attraction_pos = tmt::engine.ecs.get_component<tmt::Transform>(attraction_point_entity).get_world_position();
 
-    auto physical_entity_view = tmt::engine.ecs.get_registry().view<tmt::VoxelBody>();
+    auto physical_entity_view = tmt::engine.ecs.view<tmt::VoxelBody>();
     for (entt::entity e : physical_entity_view) {
         auto& vb = tmt::engine.ecs.get_component<tmt::VoxelBody>(e);
         if (vb.get_mass() >= max_mass) continue;
@@ -66,14 +64,11 @@ void GravityManipulationComponent::grav_attract() {
 }
 
 void GravityManipulationComponent::grav_shoot() {
-    if (push_cooldown_counter > 0) return;
-
     glm::vec3 direction = tmt::engine.ecs.get_component<tmt::Transform>(attraction_point_entity).get_forward();
     for (auto e : currently_manipulated_entities) {
         auto& vb = tmt::engine.ecs.get_component<tmt::VoxelBody>(e);
         vb.velocity += direction * push_strength;
     }
-    push_cooldown_counter = push_cooldown;
 }
 
 }  // namespace game
