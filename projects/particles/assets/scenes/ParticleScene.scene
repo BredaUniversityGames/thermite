@@ -134,8 +134,8 @@
                         "max": 1.0
                     },
                     "end_opacity": {
-                        "min": 1.0,
-                        "max": 1.0
+                        "min": 0.0,
+                        "max": 0.0
                     },
                     "opacity_curve": {
                         "values": [
@@ -164,7 +164,8 @@
                         "data": {
                             "flipbook_frames": 6
                         }
-                    }
+                    },
+                    "name": "Particle Effect"
                 }
             ],
             "active": true

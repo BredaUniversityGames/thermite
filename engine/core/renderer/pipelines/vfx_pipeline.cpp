@@ -230,7 +230,7 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
                                 .read(alive_list, ShaderStages::Vertex)
                                 .read(point_sampler, ShaderStages::Pixel | ShaderStages::Vertex)
                                 .depth_stencil(render_view.dbuffer.image, true, true)
-                                .alpha_blending(true)
+                                .alpha_blending(false)
                                 .load_op_depth(LoadOp::Load)
                                 .load_op_color(LoadOp::Load)
                                 .attach(render_image)
