@@ -8,6 +8,7 @@
 #include "engine/core/components/camera.hpp"
 #include "engine/core/components/transform.hpp"
 #include "engine/core/resources/texture_2d.hpp"
+#include "engine/core/resources/envmap.hpp"
 #include "engine/shared/ray.hpp"
 
 class RenderGraph;
@@ -32,6 +33,8 @@ struct GpuView {
     glm::uint shading_rate_di = 0u;
     /* Shading rate GI. (0 = 1/1, 1 = 1/2, 2 = 1/4) */
     glm::uint shading_rate_gi = 2u;
+    /* Environment map bindless handle. */
+    glm::uint envmap_handle = 0u;
 };
 
 /* Screen buffer resource. */
@@ -78,8 +81,11 @@ struct RenderView {
     /* Directional albedo look up texture (32x32) */
     Texture diralbedo_lut_texture {};
     Image diralbedo_lut {};
+
     /* Blue noise texture (512x512) */
     ResourceRef<Texture2D> blue_noise {};
+    /* HDRI environment map */
+    ResourceRef<Envmap> envmap {};
 
     /* Screen buffers */
     ScreenBuffer vbuffer {}; /* Visibility buffer (WxH, 6->8 bytes) */

@@ -116,9 +116,6 @@ void VfxPipeline::init(GPUAdapter& gpu) {
 
         bank.upload_buffer(billboard_vertices, &quads, 0, sizeof(GpuQuad) * 6);
     }
-
-    /* Initialize the Sampler */
-    linear_sampler = bank.create_sampler("[Particles] Linear Sampler").expect("failed to initialize linear sampler.");
 }
 
 void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
@@ -221,7 +218,7 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
                                 .read(render_view.render_view_buffer, ShaderStages::Vertex)
                                 .read(particle_buffer, ShaderStages::Vertex)
                                 .read(alive_list, ShaderStages::Vertex)
-                                .read(linear_sampler, ShaderStages::Pixel | ShaderStages::Vertex)
+                                .read(engine.renderer.linear_sampler, ShaderStages::Pixel | ShaderStages::Vertex)
                                 .depth_stencil(render_view.dbuffer.image, true, true)
                                 .alpha_blending(true)
                                 .load_op_depth(LoadOp::Load)
@@ -245,8 +242,6 @@ void VfxPipeline::deinit(GPUAdapter& gpu) {
     bank.destroy(emitter_buffer);
     bank.destroy(particle_effects_buffer);
     bank.destroy(billboard_vertices);
-
-    bank.destroy(linear_sampler);
 }
 
 }  // namespace tmt

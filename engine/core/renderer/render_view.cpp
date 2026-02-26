@@ -77,6 +77,8 @@ void RenderView::init() {
 
     /* Load blue noise texture */
     blue_noise = engine.resources.load_resource<Texture2D>({IO::Location::ENGINE, "blue_noise_rg512.png"});
+    
+    envmap = engine.resources.load_resource<Envmap>({IO::Location::ENGINE, "default_hdri.hdr"});
 }
 
 void RenderView::update() {
@@ -115,6 +117,11 @@ void RenderView::update_gpu_view(RenderGraph& render_graph, const Camera& camera
     gpu_view.dt = engine.frame_data().delta_time;
     gpu_view.shading_rate_di = (uint32_t)shading_rate_di;
     gpu_view.shading_rate_gi = (uint32_t)shading_rate_gi;
+    if (envmap) {
+        gpu_view.envmap_handle = envmap->image.get_index();
+    } else {
+        gpu_view.envmap_handle = 0u;
+    }
 
     /* Upload the active render view */
     render_graph.upload_buffer(render_view_buffer, &gpu_view, 0u, sizeof(GpuView));

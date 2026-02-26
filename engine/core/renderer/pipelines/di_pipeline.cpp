@@ -110,6 +110,7 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
     if (engine.renderer.display_mode == DisplayMode::DEFAULT) {
         render_graph.add_compute_pass("composite pass", "composite.cs")
             .read(render_view.render_view_buffer) /* Render view buffer */
+            .read(engine.renderer.linear_sampler)
             .read(scene_view.object_data) /* Voxel objects buffer */
             .read(render_view.vbuffer.image) /* Visibility buffer */
             .write(render_view.macrofacet_cache) /* Cache buffer */

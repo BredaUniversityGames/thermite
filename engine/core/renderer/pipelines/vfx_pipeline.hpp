@@ -116,8 +116,6 @@ class VfxPipeline {
     Buffer emitter_buffer {};
     Buffer particle_effects_buffer {};
     Buffer billboard_vertices {};
-
-    Sampler linear_sampler {};
 };
 
 }  // namespace tmt
