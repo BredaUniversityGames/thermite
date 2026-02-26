@@ -13,7 +13,7 @@
 #include "engine/core/renderer/renderer.hpp"
 #include "extern/imgui-console/include/csys/arguments.h"
 
-using namespace tmt;
+namespace tmt {
 
 namespace {
 
@@ -451,3 +451,5 @@ void Console::register_commands() {
         csys::Arg<float>("y"), csys::Arg<float>("z"), csys::Arg<csys::String>("text"), csys::Arg<float>("size", 1.0f), csys::Arg<float>("time", 5.0f)
     );
 }
+
+}  // namespace tmt

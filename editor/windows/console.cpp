@@ -6,7 +6,7 @@
 #include "engine/core/polyline.hpp"
 #include "engine/core/input/input.hpp"
 
-using namespace tmt;
+namespace tmt {
 
 void Console::display() {
     console.DrawContent();
@@ -44,3 +44,5 @@ void Console::register_scripts() {
         }
     }
 }
+
+}  // namespace tmt

@@ -2,11 +2,14 @@
 #include "engine/core/logger.hpp"
 #include "zlib.h"
 
+
+
 std::unique_ptr<vengi::Node> VengiParser::load(const tmt::IO::FileLocation& vengi_file) {
-    using namespace tmt;
-    std::vector<char> data = IO::read_file(vengi_file);
+    
+
+    std::vector<char> data = tmt::IO::read_file(vengi_file);
     if (data.empty()) {
-        Log::error(Log::Scope::ENGINE, "Failed to read .vengi file: {}", vengi_file.get_absolute_path().string());
+        tmt::Log::error(tmt::Log::Scope::ENGINE, "Failed to read .vengi file: {}", vengi_file.get_absolute_path().string());
         return nullptr;
     }
 
@@ -22,7 +25,7 @@ std::unique_ptr<vengi::Node> VengiParser::load(const tmt::IO::FileLocation& veng
             throw std::runtime_error("Invalid magic number. Expected 'VENG'");
         }
 
-        std::vector<char> decompressed_output = zlib_decompress_vengi_file(data);
+        std::vector<char> decompressed_output = VengiParser::zlib_decompress_vengi_file(data);
 
         // Parse decompressed data
         vengi::BinaryParser reader(decompressed_output);
@@ -30,7 +33,7 @@ std::unique_ptr<vengi::Node> VengiParser::load(const tmt::IO::FileLocation& veng
         // Read version
         uint32_t version = reader.read_version();
         if (version > 6) {
-            Log::warn(Log::Scope::ENGINE, "Newer file format detected, Vengi Parser might need refactor..");
+            tmt::Log::warn(tmt::Log::Scope::ENGINE, "Newer file format detected, Vengi Parser might need refactor..");
         }
 
         // Parse root node
@@ -42,7 +45,7 @@ std::unique_ptr<vengi::Node> VengiParser::load(const tmt::IO::FileLocation& veng
 
         return ret_node;
     } catch (const std::exception& e) {
-        Log::error(Log::Scope::ENGINE, "Exception raised by loading .vengi file:\n{}", e.what());
+        tmt::Log::error(tmt::Log::Scope::ENGINE, "Exception raised by loading .vengi file:\n{}", e.what());
         return ret_node;
     }
 }
