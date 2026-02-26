@@ -1,6 +1,7 @@
 #pragma once
 #include "engine/core/system.hpp"
 #include "engine/core/ecs.hpp"
+#include "engine/systems/physics/components/destructable.hpp"
 
 namespace tmt {
 
@@ -21,6 +22,8 @@ class Destruction : public ISystem {
 
    private:
     std::vector<Entity> find_seperations(Entity entity, const Stencil* stencil, glm::ivec3 offset);
+
+    void generate_connection_graph(Destructable& graph, Svt64* tree);
 };
 
 }  // namespace tmt

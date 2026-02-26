@@ -89,6 +89,8 @@ void Game::on_start() {
         vb.resource = voxel_volume_piece;
         vb.gravity = 0.0f;
         vb.type = tmt::VoxelBody::STATIC;
+
+        tmt::engine.ecs.add_component<tmt::Destructable>(entity);
     }
 
     // for (size_t z = 0; z < 5; z++) {
