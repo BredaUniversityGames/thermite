@@ -19,7 +19,7 @@ class ComponentRegistry {
     using get = std::tuple_element_t<Index, Components>;
 
     template <typename T>
-    constexpr bool contains() const {
+    static constexpr bool contains() {
         return (std::is_same_v<T, all_components> || ...);
     }
 

@@ -1,4 +1,5 @@
 #pragma once
+#include <type_traits>
 #include "engine/tools/component_registry.hpp"
 
 /* All components */
@@ -78,4 +79,4 @@ using InspectComponents = ComponentRegistry<
 
 template <typename T>
 requires(tmt::SerializeComponents::contains<T>())
-JsonReflect::Detail::delta_serialize<T> : std::true_type {};
+struct JsonReflect::Detail::delta_serialize<T> : std::true_type {};
