@@ -169,6 +169,7 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
             eff.tex_index = effect.texture.resource->image.get_index();
             eff.flipbook_frames = effect.texture.resource->flipbook_frames;
             eff.anim_speed = effect.anim_speed;
+            eff.dither_scale = effect.dither_scale;
 
             em.total_spawn_count += eff.spawn_count;
 
@@ -228,9 +229,9 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
                                 .read(render_view.render_view_buffer, ShaderStages::Vertex)
                                 .read(particle_buffer, ShaderStages::Vertex)
                                 .read(alive_list, ShaderStages::Vertex)
+                                .read(render_view.blue_noise1d->image, ShaderStages::Pixel)
                                 .read(point_sampler, ShaderStages::Pixel | ShaderStages::Vertex)
                                 .depth_stencil(render_view.dbuffer.image, true, true)
-                                .alpha_blending(false)
                                 .load_op_depth(LoadOp::Load)
                                 .load_op_color(LoadOp::Load)
                                 .attach(render_image)

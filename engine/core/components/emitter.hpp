@@ -35,6 +35,7 @@ struct ParticleEffect {
     float jitter_speed = 1.0f;
 
     float anim_speed = 1.0f;
+    float dither_scale = 1.0f;
 
     bool active = true;
     bool should_burst = false;

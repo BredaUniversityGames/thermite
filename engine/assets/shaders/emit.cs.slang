@@ -63,6 +63,7 @@ void main(uint3 thread_id: SV_DispatchThreadID) {
     p.flipbook_frames = effect.flipbook_frames;
     p.anim_speed = effect.anim_speed;
     p.current_frame = 0;
+    p.dither_scale = effect.dither_scale;
 
     float3 dir = sample_cone(effect.dir, effect.cone_angle, rand_float2(seed));
     float speed = lerp(effect.speed.min, effect.speed.max, rand_float(seed));

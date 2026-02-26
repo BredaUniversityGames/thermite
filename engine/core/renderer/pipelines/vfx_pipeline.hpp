@@ -49,7 +49,7 @@ struct GpuParticleEffect {
     float jitter_speed {};
     uint32_t flipbook_frames {};
     float anim_speed {};
-    float pad {};
+    float dither_scale {};
 };
 
 struct GpuEmitter {
@@ -85,7 +85,8 @@ struct GpuParticle {
 
     uint32_t flipbook_frames {};
     float anim_speed {};
-    glm::vec2 pad {};
+    float dither_scale {};
+    float pad {};
 };
 
 struct Counters {

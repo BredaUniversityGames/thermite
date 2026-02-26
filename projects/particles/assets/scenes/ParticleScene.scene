@@ -106,7 +106,7 @@
                         "y": 1.0,
                         "z": 0.0
                     },
-                    "cone_angle": 10.0,
+                    "cone_angle": 45.0,
                     "spawn_count": 1,
                     "speed": {
                         "min": 1.0,
@@ -130,12 +130,12 @@
                         ]
                     },
                     "start_opacity": {
-                        "min": 1.0,
+                        "min": 0.0,
                         "max": 1.0
                     },
                     "end_opacity": {
                         "min": 0.0,
-                        "max": 0.0
+                        "max": 0.30000001192092896
                     },
                     "opacity_curve": {
                         "values": [
