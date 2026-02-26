@@ -14,7 +14,7 @@
 
 void ChasePlayer::on_start(tmt::Entity walking_entity) {
     //
-    for (const auto& [CamEntity, camera] : tmt::engine.ecs.get_registry().view<tmt::Camera>().each()) {
+    for (const auto& [CamEntity, camera] : tmt::engine.ecs.view<tmt::Camera>().each()) {
         player = CamEntity;
         break;
     }

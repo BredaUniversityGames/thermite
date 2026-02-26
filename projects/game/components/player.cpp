@@ -1,4 +1,7 @@
 #include "player.hpp"
+
+#include "events.hpp"
+
 #include <glm/glm.hpp>
 #include <glm/gtc/constants.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -12,7 +15,8 @@
 // TODO before we have a serializer for input, you can add all the needed keybindings here.
 //  TODO we still have to add the gamepad inputs here
 
-using namespace game;
+namespace game {
+
 void setup_inputs(tmt::InputMap& input_map) {
     // movement
     input_map.add_action(action::MOVE_FORWARD);
@@ -40,12 +44,14 @@ void setup_inputs(tmt::InputMap& input_map) {
     input_map.add_action(action::SHOOT);
     input_map.add_action_mouse(action::SHOOT, tmt::MouseButton::LEFT);
 
-    input_map.add_action(action::SWITCH_WEAPON_1);
-    input_map.add_key_to_action(action::SWITCH_WEAPON_1, tmt::Key::NUM_1);
-    input_map.add_action(action::SWITCH_WEAPON_2);
-    input_map.add_key_to_action(action::SWITCH_WEAPON_2, tmt::Key::NUM_2);
-    input_map.add_action(action::SWITCH_WEAPON_3);
-    input_map.add_key_to_action(action::SWITCH_WEAPON_3, tmt::Key::NUM_3);
+    input_map.add_action(action::SWITCH_RIFLE);
+    input_map.add_key_to_action(action::SWITCH_RIFLE, tmt::Key::NUM_1);
+    input_map.add_action(action::SWITCH_GRAVITY);
+    input_map.add_key_to_action(action::SWITCH_GRAVITY, tmt::Key::NUM_2);
+    input_map.add_action(action::SWITCH_MINING);
+    input_map.add_key_to_action(action::SWITCH_MINING, tmt::Key::NUM_3);
+    input_map.add_action(action::SECONDARY_TOOL_USE);
+    input_map.add_action_mouse(action::SECONDARY_TOOL_USE, tmt::MouseButton::RIGHT);
 }
 
 void Player::start() {
@@ -57,9 +63,10 @@ void Player::start() {
 }
 
 void Player::update(const tmt::FrameData& time) {
+    // triggers the event for shooting
+    auto& input = tmt::engine.input;
     auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
     auto& camera = tmt::engine.ecs.get_component<tmt::Camera>(entity);
-    auto& input = tmt::engine.input;
     const float dx = input.get_mouse_delta_x();
     const float dy = input.get_mouse_delta_y();
 
@@ -106,7 +113,7 @@ void Player::update(const tmt::FrameData& time) {
     if (breaking) {
         float current_speed = glm::length(velocity);
         if (current_speed > 0.0f) {
-            float break_force = acceleration * 2.0f * time.delta_time;
+            float break_force = deceleration * time.delta_time;
             float new_speed = glm::max(0.0f, current_speed - break_force);
             velocity = glm::normalize(velocity) * new_speed;
         }
@@ -125,3 +132,5 @@ void Player::update(const tmt::FrameData& time) {
 void Player::end() {
     // Cleanup code for the player component
 }
+
+}  // namespace game

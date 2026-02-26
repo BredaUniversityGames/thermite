@@ -14,7 +14,7 @@
 #include <cstdlib>
 
 void Wander::on_start(tmt::Entity walking_entity) {
-    for (const auto& [camEntity, camera] : tmt::engine.ecs.get_registry().view<tmt::Camera>().each()) {
+    for (const auto& [camEntity, camera] : tmt::engine.ecs.view<tmt::Camera>().each()) {
         player = camEntity;
         break;
     }
@@ -52,7 +52,7 @@ void Wander::on_tick(tmt::Entity walking_entity, float dt) {
     auto nm_nodes = nav_mesh.nodes_mesh;
 
     // generate wander path only once when no path
-    if (!has_path) {
+    if (!has_path && nav_mesh.nodes) {
         // pick a random node on the nav mesh
         if (!nav_mesh.nodes_mesh->empty()) {
             int random_node_index = rand() % static_cast<int>(nav_mesh.nodes_mesh->size());

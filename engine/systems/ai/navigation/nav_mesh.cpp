@@ -4,7 +4,7 @@
 #include "engine/core/polyline.hpp"
 #include "engine/core/logger.hpp"
 
-using namespace tmt;
+namespace tmt {
 
 void Volume::traverse(tmt::ResourceRef<tmt::VoxelVolume> voxel_volume, int lod_level) {
     traversed = true;
@@ -283,6 +283,7 @@ int tmt::NavMesh::find_closest_node(const glm::vec3& position) {
 }
 
 std::optional<glm::vec3> tmt::NavMesh::follow_path(glm::vec3 start, glm::vec3 end) {
+    if (!nodes) return std::nullopt;
     // Calculate path
     int start_pos = find_closest_node(start);
     int closest_node_id = find_closest_node(end);
@@ -357,3 +358,5 @@ void tmt::NavMesh::inspect() {
         tmt::engine.polyline.draw_line((*nodes_mesh)[path[i]].world_pos, (*nodes_mesh)[path[i + 1]].world_pos);
     }
 }
+
+}  // namespace tmt

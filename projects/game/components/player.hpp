@@ -1,5 +1,8 @@
 #pragma once
 #include "engine/systems/gameplay/game_component.hpp"
+#include "engine/core/components/camera.hpp"
+
+namespace game {
 
 class Player : public tmt::GameComponent<Player> {
    public:
@@ -15,6 +18,7 @@ class Player : public tmt::GameComponent<Player> {
 
     // Movement parameters
     float acceleration = 20.0f;
+    float deceleration = 40.0f;
     float drag = 5.0f;
     float max_speed = 10.0f;
 
@@ -24,7 +28,13 @@ class Player : public tmt::GameComponent<Player> {
     float max_health = 100.0f;
     float max_battery = 100.0f;
 
+    // Helper functions
+    tmt::Transform& get_transform() { return tmt::engine.ecs.get_component<tmt::Transform>(entity); }
+    tmt::Camera& get_camera() { return tmt::engine.ecs.get_component<tmt::Camera>(entity); }
+
    private:
     glm::vec3 velocity = { 0.0f, 0.0f, 0.0f };
 };
-TMT_OBJECT(Player, (camera_sensitivity, acceleration, drag, max_speed, health, battery, max_health, max_battery));
+
+}  // namespace game
+TMT_OBJECT(game::Player, (camera_sensitivity, acceleration, deceleration, drag, max_speed, health, battery, max_health, max_battery));

@@ -1,3 +1,4 @@
+#include "windows/build_packager.hpp"
 #if THERMITE_EDITOR
     #pragma message(" THERMITE_EDITOR=1 ")
 #else
@@ -13,6 +14,7 @@
 #include "engine/core/logger.hpp"
 #include "engine/core/renderer/renderer.hpp"
 #include "engine/core/renderer/pipelines/di_pipeline.hpp"
+#include "engine/core/renderer/pipelines/ui_pipeline.hpp"
 #include "engine/core/scenes.hpp"
 
 #include "editor/imgui/manager.hpp"
@@ -49,8 +51,10 @@
 #include "editor/windows/model_viewer.hpp"
 #include "editor/windows/node_hierarchy.hpp"
 #include "editor/windows/palette.hpp"
+#include "editor/windows/material_editor.hpp"
 #include "editor/windows/brush.hpp"
 #include "editor/windows/editor_settings.hpp"
+#include "editor/windows/ui.hpp"
 
 /* Singleton */
 tmt::Editor tmt::editor;
@@ -105,11 +109,14 @@ void Editor::on_engine_init(const ApplicationSpecs&) {
     windows[Mode::SCENE].add<Rendering>();
     windows[Mode::SCENE].add<UndoRedoManager>();
     windows[Mode::SCENE].add<EditorSettingsWindow>();
+    windows[Mode::SCENE].add<BuildPackager>();
+    windows[Mode::SCENE].add<UIEditor>();
 
     engine.scenes.register_scene<VoxelEditScene>();
     windows[Mode::VOXEL].add<ModelViewer>();
     windows[Mode::VOXEL].add<NodeHierarchy>();
     windows[Mode::VOXEL].add<Palette>();
+    windows[Mode::VOXEL].add<MaterialEditor>();
     windows[Mode::VOXEL].add<Brush>();
     windows[Mode::VOXEL].add<Console>();
     windows[Mode::VOXEL].add<UndoRedoManager>();
@@ -121,6 +128,8 @@ void Editor::on_engine_init(const ApplicationSpecs&) {
     windows[Mode::PREFAB].add<AssetBrowser>();
     windows[Mode::PREFAB].add<Console>();
     windows[Mode::PREFAB].add<ScenesWindow>();
+    windows[Mode::PREFAB].add<UndoRedoManager>();
+    windows[Mode::PREFAB].add<UIEditor>();
 
     for (auto& [mode, collection] : windows) {
         for (const auto& window : collection) {
@@ -238,6 +247,11 @@ void Editor::main_menu_bar() {
                     }
                 }
                 ImGui::EndMenu();
+            }
+            
+            if(ImGui::MenuItem("Enable UI Pipeline", nullptr, engine.renderer.ui_pipeline.render_ui_pipeline))
+            {
+                engine.renderer.ui_pipeline.render_ui_pipeline = !engine.renderer.ui_pipeline.render_ui_pipeline;            
             }
 
             ImGui::EndMenu();

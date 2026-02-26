@@ -3,8 +3,9 @@
     "entities": [
         0,
         2,
-        3,
         4,
+        5,
+        1048579,
         3145734
     ],
     "UUID": {
@@ -21,11 +22,14 @@
         "2": {
             "name": "Asteroids"
         },
-        "3": {
-            "name": "animation guy"
-        },
         "4": {
             "name": "Walkable_asteroid"
+        },
+        "5": {
+            "name": "Walking Dragon"
+        },
+        "1048579": {
+            "name": "Entity_1048579"
         },
         "3145734": {
             "name": "Walking Dragon"
@@ -72,26 +76,6 @@
             "parent": 4294967295,
             "children": []
         },
-        "3": {
-            "local_position": {
-                "x": 0.0,
-                "y": 0.0,
-                "z": 0.0
-            },
-            "local_rotation": {
-                "w": 1.0,
-                "x": 0.0,
-                "y": 0.0,
-                "z": 0.0
-            },
-            "local_scale": {
-                "x": 1.0,
-                "y": 1.0,
-                "z": 1.0
-            },
-            "parent": 4294967295,
-            "children": []
-        },
         "4": {
             "local_position": {
                 "x": 0.0,
@@ -108,6 +92,46 @@
                 "x": 1.0000001192092896,
                 "y": 1.0,
                 "z": 1.0000001192092896
+            },
+            "parent": 4294967295,
+            "children": []
+        },
+        "5": {
+            "local_position": {
+                "x": -0.562983512878418,
+                "y": 5.419820308685303,
+                "z": 23.93695831298828
+            },
+            "local_rotation": {
+                "w": 0.9147375226020813,
+                "x": 0.0,
+                "y": 0.4040485620498657,
+                "z": 0.0
+            },
+            "local_scale": {
+                "x": 0.19580405950546265,
+                "y": 0.19580404460430145,
+                "z": 0.19580405950546265
+            },
+            "parent": 4294967295,
+            "children": []
+        },
+        "1048579": {
+            "local_position": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "local_rotation": {
+                "w": 1.0,
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "local_scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
             },
             "parent": 4294967295,
             "children": []
@@ -134,11 +158,35 @@
         }
     },
     "Voxel Renderer": {
+        "1": {
+            "resource": {
+                "file_location": {
+                    "sub_location": "PROJECT",
+                    "relative_path": "asteroids/test_asteroid_2.vengi"
+                }
+            }
+        },
         "4": {
             "resource": {
                 "file_location": {
                     "sub_location": "PROJECT",
                     "relative_path": "asteroids/test_asteroid_3.vengi"
+                }
+            }
+        },
+        "5": {
+            "resource": {
+                "file_location": {
+                    "sub_location": "PROJECT",
+                    "relative_path": "dragon128.vengi"
+                }
+            }
+        },
+        "3145734": {
+            "resource": {
+                "file_location": {
+                    "sub_location": "PROJECT",
+                    "relative_path": "dragon128.vengi"
                 }
             }
         }
@@ -226,19 +274,12 @@
                 "use_3d_distribution": false
             }
         },
-        "3": {
-            "AnimationPlayer": {
-                "animation_location": [
-                    {
-                        "relative_path": "animations/Victory_animation.fbx",
-                        "sub_location": "PROJECT"
-                    }
-                ],
-                "animation_name": "Victory_animation",
-                "rig_location": {
-                    "relative_path": "animations/Victory_animation.fbx",
-                    "sub_location": "PROJECT"
-                }
+        "5": {
+            "Walking": {
+                "attack_range": 1.0,
+                "max_chase_distance": 20.0,
+                "walk_speed": 2.5,
+                "walkable_asteroid": 1
             }
         },
         "3145734": {
@@ -253,6 +294,15 @@
         }
     },
     "Navigation Mesh": {
+        "1": {
+            "voxel_volume": {
+                "file_location": {
+                    "sub_location": "PROJECT",
+                    "relative_path": "asteroids/test_asteroid_2.vengi"
+                }
+            },
+            "lod_level": 1
+        },
         "4": {
             "voxel_volume": {
                 "file_location": {
@@ -261,6 +311,18 @@
                 }
             },
             "lod_level": 1
+        }
+    },
+    "Animated Rig": {
+        "1048579": {
+            "data": {
+                "file_location": {
+                    "sub_location": "PROJECT",
+                    "relative_path": "animations\\Victory_animation.fbx"
+                }
+            },
+            "vox_path": "",
+            "animations": {}
         }
     },
     "systems": null

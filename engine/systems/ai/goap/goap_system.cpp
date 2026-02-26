@@ -1,6 +1,9 @@
 #include "goap_system.hpp"
 #include "core/logger.hpp"
 
+#include "components/goap_agent_factory.hpp"
+#include "components/goap_agent_type_ref.hpp"
+
 #include "engine.hpp"
 #include "core/ecs.hpp"
 
@@ -14,6 +17,18 @@ namespace tmt {
 void Goap::on_start() {
     Log::info("Goap on_start");
     agent_types().load();
+
+    auto& registry = engine.ecs.get_registry();
+
+    // Build runtime agents from serialized scene data
+    for (auto entity : engine.ecs.view<GoapAgentTypeRef>()) {
+        auto& type_ref = registry.get<GoapAgentTypeRef>(entity);
+
+        // Avoid double building if already exists
+        if (registry.any_of<GoapAgent>(entity)) continue;
+
+        GoapAgentFactory::spawn_agent_from_type(type_ref.type_id, entity);
+    }
 }
 
 /**
@@ -29,9 +44,7 @@ void Goap::on_start() {
  *    3. Execute action(s)
  */
 void Goap::on_update(const FrameData& time) {
-    auto& registry = engine.ecs.get_registry();
-
-    for (auto [entity, agent, world] : registry.view<GoapAgent, WorldState>().each()) {
+    for (auto [entity, agent, world] : engine.ecs.view<GoapAgent, WorldState>().each()) {
         process_agent(entity, world, time.delta_time);
 
         if (agent.current_action && agent.current_action->is_running && agent.current_action->wants_fixed_update == false) {
@@ -41,9 +54,7 @@ void Goap::on_update(const FrameData& time) {
 }
 
 void Goap::on_fixed_update(const FrameData& time) {
-    auto& registry = engine.ecs.get_registry();
-
-    for (auto [entity, agent] : registry.view<GoapAgent>().each()) {
+    for (auto [entity, agent] : engine.ecs.view<GoapAgent>().each()) {
         if (agent.current_action && agent.current_action->is_running && agent.current_action->wants_fixed_update == true) {
             agent.current_action->on_fixed_tick(entity, time.delta_time);
         }
@@ -122,26 +133,6 @@ void Goap::update_goal(Entity entity, GoapAgent& agent, WorldState& ws) {
     }
 }
 
-// ------------------------------------------------------
-// A* GOAP Planner
-// ------------------------------------------------------
-/**
- * Internal search node used for A*.
- *
- * A node represents choosing 1 action in the action graph.
- * Links backwards to parent to build the full plan.
- */
-struct Node {
-    GoapAction* action;
-    float cost_so_far;
-    float heuristic;
-    Node* parent;
-
-    Node(GoapAction* a, float cost, float h, Node* p) : action(a), cost_so_far(cost), heuristic(h), parent(p) {}
-
-    float total_cost() const { return cost_so_far + heuristic; }
-};
-
 /**
  * Builds the runtime-effective version of a GOAP action.
  *
@@ -192,6 +183,26 @@ EffectiveGoapAction build_effective_action(const GoapAction& base, const GoapAct
  *   - If goal satisfied -> reconstruct plan
  */
 void Goap::update_plan(Entity entity, GoapAgent& agent, WorldState& ws) {
+    // This has to be inside to allow for Unity Builds
+    // ------------------------------------------------------
+    // A* GOAP Planner
+    // ------------------------------------------------------
+    /**
+     * Internal search node used for A*.
+     *
+     * A node represents choosing 1 action in the action graph.
+     * Links backwards to parent to build the full plan.
+     */
+    struct Node {
+        GoapAction* action;
+        float cost_so_far;
+        float heuristic;
+        Node* parent;
+
+        Node(GoapAction* a, float cost, float h, Node* p) : action(a), cost_so_far(cost), heuristic(h), parent(p) {}
+
+        float total_cost() const { return cost_so_far + heuristic; }
+    };
     // Stop any running action before replanning
     if (agent.current_action) {
         agent.current_action->on_interrupt(entity);
@@ -225,18 +236,18 @@ void Goap::update_plan(Entity entity, GoapAgent& agent, WorldState& ws) {
         }
     }
 
-    // Add all initial actions whose preconditions match the current worldstate
     for (GoapAction* action : agent.available_actions) {
         if (!action) continue;
 
         const auto* override = action_overrides.find(action->get_id());
         EffectiveGoapAction effective = build_effective_action(*action, override);
 
-        // Check preconditions against current worldstate
         bool satisfied = true;
         for (auto& [fact, val] : effective.preconditions) {
-            auto it = ws.facts.find((uint32_t)std::hash<std::string>()(fact));
-            if (it == ws.facts.end() || it->second.bool_val != val) {
+            uint32_t fact_id = (uint32_t)std::hash<std::string>()(fact);
+            auto it = ws.facts.find(fact_id);
+
+            if (it == ws.facts.end() || it->second != val) {
                 satisfied = false;
                 break;
             }
@@ -245,6 +256,7 @@ void Goap::update_plan(Entity entity, GoapAgent& agent, WorldState& ws) {
         if (satisfied) {
             nodes.emplace_back(action, effective.cost, 0.f, nullptr);
             open_list.push(&nodes.back());
+
             if (show_logging) Log::info("GOAP: Starting action '{}' satisfies preconditions, added to open list", action->get_id());
         } else {
             if (show_logging) Log::info("GOAP: Action '{}' does not satisfy preconditions", action->get_id());
@@ -292,7 +304,7 @@ void Goap::update_plan(Entity entity, GoapAgent& agent, WorldState& ws) {
             bool satisfied = true;
             for (auto& [fact, val] : effective.preconditions) {
                 auto it = temp.facts.find((uint32_t)std::hash<std::string>()(fact));
-                if (it == temp.facts.end() || it->second.bool_val != val) {
+                if (it == temp.facts.end() || it->second != val) {
                     satisfied = false;
                     break;
                 }

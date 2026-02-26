@@ -8,43 +8,31 @@
 #include "engine/systems/ai/goap/components/world_state.hpp"
 #include "engine/systems/ai/goap/components/goap_action_overrides.hpp"
 #include "engine/systems/ai/goap/components/goap_goal_registry.hpp"
+#include "engine/systems/ai/goap/components/goap_agent_type_ref.hpp"
 #include "engine/systems/ai/goap/components/goap_agent_type_registry.hpp"
 #include "engine/systems/ai/goap/components/goap_action_registry.hpp"
+#include "engine/systems/ai/goap/components/goap_agent_factory.hpp"
 #include "engine/systems/ai/goap/goap_system.hpp"
 #include "engine/core/logger.hpp"
 
 #include <extern/imgui-node-editor/imgui_node_editor.h>
 namespace ignode = ax::NodeEditor;
-static ignode::EditorContext* g_Context = nullptr;  // Internal editor state container for imgui-node-editor
+static ignode::EditorContext* g_ContextAgentEditor = nullptr;  // Internal editor state container for imgui-node-editor
 
 namespace tmt {
 
 void GoapAgentEditor::on_editor_start() {
-    if (!g_Context) {
+    if (!g_ContextAgentEditor) {
         ignode::Config config;
         config.SettingsFile = "agent_editor.json";
-        g_Context = ignode::CreateEditor(&config);
-    }
-
-    Goap* goap = engine.ecs.systems.try_get<Goap>();
-
-    if (!goap) {
-        Log::warn("GOAP system not active.");
-        return;
+        g_ContextAgentEditor = ignode::CreateEditor(&config);
     }
 }
 
 void GoapAgentEditor::on_editor_end() {
-    if (g_Context) {
-        ignode::DestroyEditor(g_Context);
-        g_Context = nullptr;
-    }
-
-    Goap* goap = engine.ecs.systems.try_get<Goap>();
-
-    if (!goap) {
-        Log::warn("GOAP system not active.");
-        return;
+    if (g_ContextAgentEditor) {
+        ignode::DestroyEditor(g_ContextAgentEditor);
+        g_ContextAgentEditor = nullptr;
     }
 }
 
@@ -136,7 +124,7 @@ void GoapAgentEditor::display() {
  *   - Sections for actions, goals, and default world state
  */
 void GoapAgentEditor::draw_agent_type_node(GoapAgentType& type) {
-    ignode::SetCurrentEditor(g_Context);
+    ignode::SetCurrentEditor(g_ContextAgentEditor);
     ignode::Begin("AgentTypeEditor");
 
     // Generate a stable node ID from the type's string ID
@@ -151,6 +139,21 @@ void GoapAgentEditor::draw_agent_type_node(GoapAgentType& type) {
     draw_actions_section(type);
     draw_goals_section(type);
     draw_world_state_section(type);
+
+    // --- Button to add agents of this type ---
+    ImGui::SeparatorText("Runtime Agents");
+
+    if (ImGui::Button("Spawn Agent")) {
+        auto& ecs = engine.ecs;
+
+        tmt::Entity e = ecs.create_entity(("Agent_" + type.id).c_str());
+
+        // Add serialized type reference
+        auto& type_ref = ecs.add_component<GoapAgentTypeRef>(e);
+        type_ref.type_id = type.id;
+
+        Log::info("Placed GOAP agent of type '{}' in scene", type.id);
+    }
 
     ignode::EndNode();
 
@@ -225,12 +228,12 @@ void GoapAgentEditor::draw_world_state_section(GoapAgentType& type) {
     // Iterate through all existing facts in the agent type
     for (auto it = type.default_world_state.begin(); it != type.default_world_state.end();) {
         const std::string& name = it->first;  // The key is now a string directly
-        bool v = it->second.bool_val;
+        bool v = it->second;
 
         ImGui::PushID(name.c_str());          // Use string as ImGui ID
 
         // Display a checkbox for the fact
-        if (ImGui::Checkbox(name.c_str(), &v)) it->second.bool_val = v;
+        if (ImGui::Checkbox(name.c_str(), &v)) it->second = v;
 
         ImGui::SameLine();
 
@@ -250,8 +253,8 @@ void GoapAgentEditor::draw_world_state_section(GoapAgentType& type) {
     ImGui::SameLine();
     if (ImGui::Button("Add")) {
         if (newFact[0]) {
-            type.default_world_state[newFact] = FactValue(true);  // key is now string
-            newFact[0] = '\0';                                    // Clear input buffer
+            type.default_world_state[newFact] = true;  // key is now string
+            newFact[0] = '\0';                         // Clear input buffer
         }
     }
 }

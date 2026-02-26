@@ -22,6 +22,8 @@
 #include "systems/gameplay/gameplay.hpp"
 #include "systems/gameplay/game_component_registry.hpp"
 #include "systems/motion_math/motion_math_system.hpp"
+#include "systems/ui/ui.hpp"
+#include "systems/ui/button_manager.hpp"
 #include "events/engine.hpp"
 #include "events/game.hpp"
 #include "events/scene.hpp"
@@ -79,10 +81,12 @@ void Engine::init(std::unique_ptr<Application> user_app) {
 
     ecs.systems.add<Physics>();
     ecs.systems.add<RigModelManager>();
-    ecs.systems.add<Goap>();
+    // ecs.systems.add<Goap>();
     ecs.systems.add<NavigationSystem>();
-    ecs.systems.add<Gameplay>(); /* Should be last */
+    ecs.systems.add<UI>();
     ecs.systems.add<MotionMathSystem>();
+    ecs.systems.add<ButtonManager>();
+    ecs.systems.add<Gameplay>(); /* Should be last */
 
     OnEngineInit::dispatch(app->specs);
 }
@@ -165,6 +169,8 @@ void Engine::run() {
 void Engine::end() {
     TMT_ZONE_SCOPED_N("Engine::end")
 
+    Log::flush();
+    Log::info("Engine started shutdown");
     OnEngineEnd::dispatch();
 
     salvo.end();
@@ -173,6 +179,7 @@ void Engine::end() {
     audio.end();  // Needs to be ended after the ecs.
     resources.unload_unused();
     renderer.end();
+    Log::info("Engine finished shutdown");
 }
 
 /* Engine events */

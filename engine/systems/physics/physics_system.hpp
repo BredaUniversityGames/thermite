@@ -10,7 +10,7 @@
 
 namespace tmt {
 
-using PhysicsGroup = decltype(std::declval<entt::registry>().group<VoxelBody>(entt::get<Transform>));
+using PhysicsGroup = decltype(std::declval<Ecs>().group<VoxelBody>(entt::get<Transform>));
 
 class Physics : public ISystem {
    public:
@@ -22,6 +22,8 @@ class Physics : public ISystem {
     void on_update(const FrameData& time) override;
     void on_fixed_update(const FrameData& time) override;
     void on_end() override;
+
+    const Bvh2<VoxelObject>& get_bvh() { return bvh; }
 
    private:
     // Simulation data
