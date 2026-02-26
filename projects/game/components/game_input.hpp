@@ -15,6 +15,9 @@ constexpr auto SWITCH_RIFLE = "rifle";
 constexpr auto SWITCH_MINING = "mining";
 constexpr auto SWITCH_GRAVITY = "gravity";
 constexpr auto SECONDARY_TOOL_USE = "secondary_tool_use";
+constexpr auto OPEN_PAUSE_MENU = "open_pause_menu";
+constexpr auto OPEN_INVENTORY = "open_inventory";
+constexpr auto OPEN_UPGRADE_MENU = "open_upgrade_menu";
 
 
 }  // namespace action

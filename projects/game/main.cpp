@@ -26,6 +26,7 @@
 #include "components/animation_player.hpp"
 #include "components/gravity_manipulation_component.hpp"
 #include "components/collision_trigger.hpp"
+#include "components/menu_controller.hpp"
 #include "components/ore_collector.hpp"
 #include "components/projectile_spawner.hpp"
 #include "components/rifle_projectile.hpp"
@@ -104,6 +105,7 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     tmt::engine.component_registry.register_component<game::WeaponManager>();
     tmt::engine.component_registry.register_component<game::TextComponent>();
     tmt::engine.component_registry.register_component<game::Upgrade>();
+    tmt::engine.component_registry.register_component<game::MenuController>();
 
     return std::make_unique<Game>(specs);
 }

@@ -1,5 +1,5 @@
 #include "upgrade.hpp"
-
+#include "engine/core/components/button.hpp"
 #include "mining_component.hpp"
 #include "player.hpp"
 #include "weapon.hpp"
@@ -10,6 +10,26 @@ void Upgrade::start() {
     // if entities are not set, try to set them automatically
     if (player_entity==entt::null)
     player_entity = tmt::engine.ecs.view<Player>().front().entity;  // Assuming there's only one player entity in the game
+
+    auto button_component = tmt::engine.ecs.try_get_component<tmt::Button>(entity);
+    if (button_component) {
+        button_component->on_click.add(this, &Upgrade::button_apply);
+    }
+}
+
+void Upgrade::end() {
+    auto button_component = tmt::engine.ecs.try_get_component<tmt::Button>(entity);
+    if (button_component) {
+        button_component->on_click.clear();
+    }
+}
+
+void Upgrade::button_apply() {
+    if (apply_upgrade()) {
+        tmt::engine.ecs.disable(entity);
+    } else {
+        //sad :(
+    }
 }
 
 bool Upgrade::apply_upgrade() {
@@ -72,42 +92,42 @@ bool Upgrade::apply_upgrade() {
                 tmt::Log::error("Upgrade target does not have valid player component, could not apply max health upgrade.");
                 return false;
             }
-            player_component->max_health += upgrade_value;
+            player_component->max_health = upgrade_to;
             break;
         case UpgradeType::MAX_BATTERY:
             if (!player_component) {
                 tmt::Log::error("Upgrade target does not have valid player component, could not apply max battery upgrade.");
                 return false;
             }
-            player_component->max_battery += upgrade_value;
+            player_component->max_battery = upgrade_to;
             break;
         case UpgradeType::MAX_SPEED:
             if (!player_component) {
                 tmt::Log::error("Upgrade target does not have valid player component, could not apply max speed upgrade.");
                 return false;
             }
-            player_component->max_speed += upgrade_value;
+            player_component->max_speed = upgrade_to;
             break;
         case UpgradeType::ACCELERATION:
             if (!player_component) {
                 tmt::Log::error("Upgrade target does not have valid player component, could not apply acceleration upgrade.");
                 return false;
             }
-            player_component->acceleration += upgrade_value;
+            player_component->acceleration = upgrade_to;
             break;
         case UpgradeType::PRIMARY_ATK_SPEED:
             if (!weapon_component) {
                 tmt::Log::error("Upgrade target does not have valid weapon component, could not apply primary atk speed upgrade");
                 return false;
             }
-            weapon_component->primary_fire_rate.shots_per_second += upgrade_value;
+            weapon_component->primary_fire_rate.shots_per_second = upgrade_to;
             break;
         case UpgradeType::SECONDARY_ATK_SPEED:
             if (!weapon_component) {
                 tmt::Log::error("Upgrade target does not have valid weapon component, could not apply secondary atk speed upgrade");
                 return false;
             }
-            weapon_component->secondary_fire_rate.shots_per_second += upgrade_value;
+            weapon_component->secondary_fire_rate.shots_per_second = upgrade_to;
             break;
         case UpgradeType::GUN_DMG:
             tmt::Log::warn("Weapon damage upgrade not implemented yet.");
