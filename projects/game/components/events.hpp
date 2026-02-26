@@ -35,5 +35,9 @@ struct MovementUpdateEvent {
 struct AttachAttemptEvent {
     tmt::Entity entity;
 };
+struct AttachEvent {
+    tmt::Entity entity;
+    bool is_attached;
+};
 
 }  // namespace game

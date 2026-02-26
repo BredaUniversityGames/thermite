@@ -4,7 +4,7 @@
 namespace game {
 
 struct DebugLineConfig {
-    tmt::RGBA color { 1.0f };
+    tmt::RGBA color { glm::vec4 { 1.0f } };
     float line_width = 1.0f;
     void set_values() const;
 };

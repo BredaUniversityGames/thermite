@@ -24,6 +24,7 @@
 #include "components/asteroid_field_component.hpp"
 #include "components/mining_component.hpp"
 #include "components/animation_player.hpp"
+#include "components/attach_component.hpp"
 #include "components/gravity_manipulation_component.hpp"
 #include "components/collision_trigger.hpp"
 #include "components/mover_component.hpp"
@@ -105,6 +106,7 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     tmt::engine.component_registry.register_component<game::WeaponManager>();
     tmt::engine.component_registry.register_component<game::TextComponent>();
     tmt::engine.component_registry.register_component<game::MoverComponent>();
+    tmt::engine.component_registry.register_component<game::AttachComponent>();
 
     return std::make_unique<Game>(specs);
 }

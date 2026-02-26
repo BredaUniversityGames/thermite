@@ -16,16 +16,16 @@ class AttachComponent : public tmt::GameComponent<AttachComponent> {
     void update(const tmt::FrameData& time) override;
     void end() override;
     void draw_debug_lines() const override;
-
-    bool on_check_range_to_attach(const AttachAttemptEvent& event) const;
+    bool check_inside_range(const game::AttachAttemptEvent& event) const;
+    void on_check_range_to_attach(const AttachAttemptEvent& event);
 
     float radius = 1.0f;
     tmt::Entity entity_that_attaches = entt::null;
-    bool is_attached = false;
     DebugLineConfig cfg;
 
    private:
+    bool is_attached = false;
 };
 
 }  // namespace game
-TMT_OBJECT(game::AttachComponent, (radius, entity_that_attaches, is_attached, cfg));
+TMT_OBJECT(game::AttachComponent, (radius, entity_that_attaches, cfg));

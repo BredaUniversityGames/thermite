@@ -11,6 +11,8 @@ class Player : public tmt::GameComponent<Player> {
     static std::string_view get_name() { return "Player"; }
 
     void start() override;
+    void look_camera() const;
+    void move_player();
     void update(const tmt::FrameData& time) override;
     void end() override;
 
@@ -32,7 +34,10 @@ class Player : public tmt::GameComponent<Player> {
     tmt::Transform& get_transform() { return tmt::engine.ecs.get_component<tmt::Transform>(entity); }
     tmt::Camera& get_camera() { return tmt::engine.ecs.get_component<tmt::Camera>(entity); }
 
+    void set_move(bool value);
+
    private:
+    bool can_move = true;
     glm::vec3 velocity = { 0.0f, 0.0f, 0.0f };
 };
 

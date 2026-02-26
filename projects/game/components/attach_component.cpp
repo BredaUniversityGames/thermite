@@ -13,17 +13,37 @@ void game::AttachComponent::end() {
 void game::AttachComponent::draw_debug_lines() const {
     cfg.set_values();
 
-    if (on_check_range_to_attach({ entity_that_attaches })) {
+    if (check_inside_range({ entity_that_attaches })) {
         tmt::engine.polyline.use_color(glm::vec4 { 1.0f, 0.0f, 0.0f, 1.0f });
     }
     tmt::engine.polyline.draw_sphere(tmt::engine.ecs.get_component<tmt::Transform>(entity).get_world_position(), radius);
 }
-bool game::AttachComponent::on_check_range_to_attach(const AttachAttemptEvent& event) const {
-    if (event.entity == entt::null || tmt::engine.ecs.valid(event.entity) == false) {
-        return false;
-    }
+bool game::AttachComponent::check_inside_range(const AttachAttemptEvent& event) const {
     auto entity_pos = tmt::engine.ecs.get_component<tmt::Transform>(event.entity).get_world_position();
     const auto pos = tmt::engine.ecs.get_component<tmt::Transform>(entity).get_world_position();
 
     return glm::distance2(entity_pos, pos) < radius * radius;
+}
+void game::AttachComponent::on_check_range_to_attach(const AttachAttemptEvent& event) {
+    if (event.entity == entt::null || tmt::engine.ecs.valid(event.entity) == false) {
+        return;
+    }
+    // TODO this only works if the entity that is attached to this has no parent.
+
+    if (is_attached) {
+        is_attached = false;
+        tmt::engine.ecs.get_component<tmt::Transform>(entity_that_attaches).set_parent(entt::null);
+        tmt::engine.ecs.get_dispatcher().trigger<AttachEvent>({ .entity = entity_that_attaches, .is_attached = is_attached });
+
+        return;
+    }
+    // attach if is inside and the flag is active
+    if (check_inside_range(event)) {
+        is_attached = true;
+        tmt::Log::info("Entity {} is attached to {}", entity_that_attaches, entity);
+        tmt::engine.ecs.get_component<tmt::Transform>(entity_that_attaches).set_parent(entity);
+
+        tmt::engine.ecs.get_dispatcher().trigger<AttachEvent>({ .entity = entity_that_attaches, .is_attached = is_attached });
+        // TODO add a mover component to this
+    }
 }
