@@ -19,13 +19,17 @@
 #include "engine/core/components/transform.hpp"
 #include "engine/core/components/voxel_renderer.hpp"
 
-#include "engine/tools/serializer/ecs.hpp"
+#include "engine/tools/serializer/all.hpp"
 #include "engine/tools/prefab_helper.hpp"
 
 #include "editor/events/scene.hpp"
 
 #include "editor/shared/colors.hpp"
 #include "editor/shared/icons.hpp"
+
+#include "editor/core/systems/undo_redo/entity_diff.hpp"
+#include "editor/core/systems/undo_redo/component_diff.hpp"
+#include "editor/core/systems/undo_redo/undo_redo_manager.hpp"
 
 namespace tmt {
 
@@ -99,10 +103,7 @@ void Hierarchy::context_menu(const Entity hovered_entity) {
         if (selected_entities.empty() == false) { /* Delete selection */
             const auto text = selected_entities.size() > 1 ? "Delete Entities" : "Delete Entity";
             if (ImGui::MenuItem(text)) {
-                for (const auto selected : selected_entities) {
-                    tmt::engine.ecs.destroy_entity(selected);
-                }
-                clear_selection();
+                delete_selection();
                 ImGui::CloseCurrentPopup();
             }
         }
@@ -197,6 +198,9 @@ void Hierarchy::paste_entities(const Entity hovered_entity, const bool overwrite
         }
     }
 
+    EntityDiff diff { parents, true };
+    EntityDiff::send_to_manager(std::move(diff), "Pasted Entities");
+
     clear_selection();
     for (const auto entity : parents) {
         selected_entities.insert(entity);
@@ -213,6 +217,10 @@ void Hierarchy::duplicate_selection() {
 
 void Hierarchy::delete_selection() {
     if (selected_entities.empty()) return;
+
+    const std::set<Entity> upper_parents = EntityHelper::upper_parents(selected_entities);
+    EntityDiff diff { upper_parents, false };
+    EntityDiff::send_to_manager(std::move(diff), "Deleted Entities");
 
     for (const auto selected : selected_entities) {
         tmt::engine.ecs.destroy_entity(selected);
@@ -307,6 +315,9 @@ void Hierarchy::top_bar() {
                 engine.ecs.add_or_get_component<Transform>(entity);
                 clear_selection();
                 selected_entities.insert(entity);
+
+                EntityDiff diff { entity, true };
+                EntityDiff::send_to_manager(std::move(diff), "Created Entity");
             }
             ImGui::EndMenu();
         }
@@ -518,21 +529,73 @@ bool Hierarchy::drag_drop_target(const Entity dropped_entity) {
     if (ImGui::BeginDragDropTarget()) {
         if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY")) {
             const DragNDropPayload* payload_data = (DragNDropPayload*)payload->Data;
+
+            UndoRedoCollection diff_collection;
+
+            /* Snapshot the new parent before any changes */
+            std::optional<ComponentDiff<Transform>> new_parent_diff;
+            if (dropped_entity != entt::null && engine.ecs.valid(dropped_entity)) {
+                new_parent_diff.emplace(dropped_entity);
+                new_parent_diff->before();
+            }
+
             if (payload_data->multiple) {
                 /* Multiple entities being moved */
                 for (const auto& selected_entity : selected_entities) {
                     if (selected_entity == dropped_entity) continue;
                     auto& transform = engine.ecs.get_component<Transform>(selected_entity);
-                    transform.set_parent(dropped_entity);
+
+                    ComponentDiff<Transform> child_diff { selected_entity };
+                    child_diff.before();
+
+                    /* Track the old parent transform change (losing a child) */
+                    const Entity old_parent = transform.get_parent();
+                    if (old_parent != entt::null && engine.ecs.valid(old_parent) && old_parent != dropped_entity) {
+                        ComponentDiff<Transform> old_parent_diff { old_parent };
+                        old_parent_diff.before();
+                        transform.set_parent(dropped_entity);
+                        old_parent_diff.after();
+                        diff_collection.add_action(std::move(old_parent_diff));
+                    } else {
+                        transform.set_parent(dropped_entity);
+                    }
+
+                    child_diff.after();
+                    diff_collection.add_action(std::move(child_diff));
                 }
             } else {
                 /* Single entity being moved */
                 Entity single_entity = payload_data->entity;
                 if (dropped_entity != single_entity) {
                     auto& transform = engine.ecs.get_component<Transform>(single_entity);
-                    transform.set_parent(dropped_entity);
+
+                    ComponentDiff<Transform> child_diff { single_entity };
+                    child_diff.before();
+
+                    const Entity old_parent = transform.get_parent();
+                    if (old_parent != entt::null && engine.ecs.valid(old_parent) && old_parent != dropped_entity) {
+                        ComponentDiff<Transform> old_parent_diff { old_parent };
+                        old_parent_diff.before();
+                        transform.set_parent(dropped_entity);
+                        old_parent_diff.after();
+                        diff_collection.add_action(std::move(old_parent_diff));
+                    } else {
+                        transform.set_parent(dropped_entity);
+                    }
+
+                    child_diff.after();
+                    diff_collection.add_action(std::move(child_diff));
                 }
             }
+
+            /* Snapshot the new parent after all changes */
+            if (new_parent_diff.has_value()) {
+                new_parent_diff->after();
+                diff_collection.add_action(std::move(*new_parent_diff));
+            }
+
+            diff_collection.commit("Modified Hierarchy");
+
             ImGui::EndDragDropTarget();
             selected_index_begin = NULL_INDEX;
             selection_parent = entt::null;
