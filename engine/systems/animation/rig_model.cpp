@@ -39,11 +39,18 @@ void RigModel::init_bones(const Bone& b, Entity p) {
     }
 }
 
-void RigModel::init(const IO::FileLocation& directory, Entity p) {
-    if (directory.relative_path.empty()) return;
+void RigModel::init(Entity p) {
+    if (rig_path.relative_path.empty()) return;
+
+    data.file_location = rig_path;
+    data = engine.resources.load_resource<RigData>(rig_path);
+    if (!data) {
+        return;
+    }
     armature_entity = p;
     rig_is_loaded = true;
-    data = engine.resources.load_resource<RigData>(directory);
+    
+
 
     //file_directory = directory;
 
@@ -110,10 +117,12 @@ void RigModel::recurse(const tmt::VoxelSceneNode& node, tmt::Entity parent_entit
 };
 
 void tmt::RigModel::attach_voxel_objects() {
+    auto voxel_file = engine.resources.load_resource<VoxelScene>(vox_path);
+    if (!voxel_file) {
+        return;
+    }
     vox_is_loaded = true;
 
-    // Load the voxel scene and populate entities by recursing through nodes
-    auto voxel_file = engine.resources.load_resource<VoxelScene>(vox_path);
     glm::vec3 armature_pos = engine.ecs.get_component<Transform>(armature_entity).get_world_position();
 
     for (const VoxelSceneNode& root_node : voxel_file->root_nodes) {

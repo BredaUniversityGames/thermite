@@ -19,10 +19,12 @@ class RigModel {
     RigModel() = default;
     RigModel(const IO::FileLocation& directory, Entity p);
     // todo: change this to Resource ref
-    void init(const IO::FileLocation& directory, Entity p);
+    void init(Entity p);
 
     bool rig_is_loaded = false;
     bool vox_is_loaded = false;
+
+    IO::FileLocation rig_path = {};
     IO::FileLocation vox_path = {};
 
     float time = 0.05f;
@@ -70,4 +72,4 @@ class RigModel {
 
 }  // namespace tmt
 
-TMT_COMPONENT(tmt::RigModel, "Animated Rig", (data, vox_path));
+TMT_COMPONENT(tmt::RigModel, "Animated Rig", (data, vox_path, rig_path));
