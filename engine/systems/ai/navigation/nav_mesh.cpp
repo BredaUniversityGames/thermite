@@ -3,6 +3,7 @@
 #include "engine/engine.hpp"
 #include "engine/core/polyline.hpp"
 #include "engine/core/logger.hpp"
+#include "glm/gtx/pca.hpp"
 
 namespace tmt {
 
@@ -59,6 +60,21 @@ bool Volume::is_surface(uint32_t x, uint32_t y, uint32_t z) {
     return false;
 };
 
+glm::vec3 NavMesh::compute_normal(NavNode& node) {
+    glm::vec3 normal(0.0f);
+    auto& neighbors = node.connecting_nodes;
+    for (int i = 0; i < neighbors.size(); i++) {
+        glm::vec3 edgeA = (*nodes_mesh)[neighbors[i]].local_pos - node.local_pos;
+        glm::vec3 edgeB = (*nodes_mesh)[neighbors[(i + 1) % neighbors.size()]].local_pos - node.local_pos;
+        if (edgeA.x < edgeB.x + 0.00001f && edgeA.x > edgeB.x - 0.0001f && 
+            edgeA.y < edgeB.y + 0.00001f && edgeA.y > edgeB.y - 0.0001f && 
+            edgeA.z < edgeB.z + 0.00001f && edgeA.z > edgeB.z - 0.0001f) continue;
+        normal += glm::normalize(glm::cross(edgeA, edgeB));
+    }
+
+    return glm::normalize(normal);
+}
+
 void NavMesh::generate_mesh_over_time() {
     entered_loop = false;
     if (iteration_nmg == 0) {
@@ -84,13 +100,15 @@ void NavMesh::generate_mesh_over_time() {
         iteration_nmg = 0;
         std::swap(nodes_mesh, generating_nodes);
         for (auto& node : (*nodes_mesh)) {
-            NavNode node1 = (*nodes_mesh)[node.connecting_nodes[0]];
-            NavNode node2 = (*nodes_mesh)[node.connecting_nodes[1]];
-
-            glm::vec3 dir1 = glm::normalize(node1.local_pos - node.local_pos);
-            glm::vec3 dir2 = glm::normalize(node2.local_pos - node.local_pos);
-
-            node.normal = glm::normalize(glm::cross(dir1, dir2));
+            node.normal = compute_normal(node);
+        }
+        for (int i = 0; i < 1; ++i) {
+            for (auto& node : (*nodes_mesh)) {
+                for (auto& index : node.connecting_nodes) {
+                    node.normal += (*nodes_mesh)[index].normal;
+                }
+                //node.normal = glm::normalize(node.normal);
+            }
         }
         if (generating_lod == lod_level) {
             generating = false;
