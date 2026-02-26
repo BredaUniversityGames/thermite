@@ -13,19 +13,19 @@ class AttachComponent : public tmt::GameComponent<AttachComponent> {
     static std::string_view get_name() { return "AttachComponent"; }
 
     void start() override;
-    void update(const tmt::FrameData& time) override {};
+    void update(const tmt::FrameData& time) override;
     void end() override;
     void draw_debug_lines() const override;
 
     bool on_check_range_to_attach(const AttachAttemptEvent& event) const;
 
-    bool is_attached = false;
     float radius = 1.0f;
     tmt::Entity entity_that_attaches = entt::null;
+    bool is_attached = false;
     DebugLineConfig cfg;
 
    private:
 };
 
 }  // namespace game
-TMT_OBJECT(game::AttachComponent, (is_attached, radius, entity_that_attaches, cfg));
+TMT_OBJECT(game::AttachComponent, (radius, entity_that_attaches, is_attached, cfg));

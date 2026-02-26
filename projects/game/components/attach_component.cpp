@@ -6,6 +6,7 @@
 void game::AttachComponent::start() {
     tmt::engine.ecs.get_dispatcher().sink<AttachAttemptEvent>().connect<&AttachComponent::on_check_range_to_attach>(this);
 }
+void game::AttachComponent::update(const tmt::FrameData& time) {}
 void game::AttachComponent::end() {
     tmt::engine.ecs.get_dispatcher().sink<AttachAttemptEvent>().disconnect<&AttachComponent::on_check_range_to_attach>(this);
 }
