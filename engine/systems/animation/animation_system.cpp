@@ -98,25 +98,6 @@ void RigModelManager::on_update(const FrameData& time) {
 void tmt::RigModelManager::on_end() {}
 
 void RigModelManager::inspect(float) {
-    int lines_drawn = 0;
-    engine.polyline.use_color(1.0f, 1.0f, 1.0f);
-    engine.polyline.use_line_width(0.25f);
-
-    for (const auto& [entity, transform, rig] : engine.ecs.view<Transform, RigModel>().each()) {
-        for (const Entity bone_entity : rig.bone_entities) {
-            auto& bone_transform = engine.ecs.get_component<Transform>(bone_entity);
-            // auto& bone_name = engine.ecs.get_component<Name>(bone_entity);
-            const glm::vec3 joint = bone_transform.get_world_position();
-        //    if (bone_transform.has_parent()) {
-        //        auto& parent_transform = engine.ecs.get_component<Transform>(bone_transform.get_parent());
-        //        const glm::vec3 parent_joint = parent_transform.get_world_position();
-        //        engine.polyline.draw_line(parent_joint, joint);
-        //        lines_drawn++;
-        //    }
-        //}
-
-        
-    }
 
     for (const auto& [entity, transform, bone_renderer] : engine.ecs.get_registry().view<Transform, BoneHierarchyRenderer>().each()) 
     {
@@ -125,6 +106,7 @@ void RigModelManager::inspect(float) {
         tmt::RenderBoneHierarchy(transform);
     }
 }
+
 void tmt::ConstraintSystem::on_start() 
 {
     for (const auto& [entity, transform, damped_constraint] : engine.ecs.get_registry().view<Transform, AnimConstraints::DampedTransformConstraint>().each()) {
@@ -176,3 +158,4 @@ void tmt::ConstraintSystem::on_end() {}
 
 std::string tmt::ConstraintSystem::get_name() { return std::string(); }
 
+}

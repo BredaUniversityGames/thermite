@@ -234,4 +234,3 @@ void AnimationScene::on_update(const tmt::FrameData& time)
 }
 
 void AnimationScene::on_end() {}
-void Game::on_end() {}
