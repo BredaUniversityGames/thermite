@@ -52,6 +52,8 @@ void setup_inputs(tmt::InputMap& input_map) {
     input_map.add_key_to_action(action::SWITCH_MINING, tmt::Key::NUM_3);
     input_map.add_action(action::SECONDARY_TOOL_USE);
     input_map.add_action_mouse(action::SECONDARY_TOOL_USE, tmt::MouseButton::RIGHT);
+    input_map.add_action(action::ATTACH_KEY);
+    input_map.add_key_to_action(action::ATTACH_KEY, tmt::Key::E);
 }
 
 void Player::start() {
@@ -65,6 +67,9 @@ void Player::start() {
 void Player::update(const tmt::FrameData& time) {
     // triggers the event for shooting
     auto& input = tmt::engine.input;
+    if (input.is_action_just_pressed(action::ATTACH_KEY)) {
+        tmt::engine.ecs.get_dispatcher().trigger<AttachAttemptEvent>({ .entity = entity });
+    }
     auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
     auto& camera = tmt::engine.ecs.get_component<tmt::Camera>(entity);
     const float dx = input.get_mouse_delta_x();

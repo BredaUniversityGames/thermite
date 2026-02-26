@@ -25,4 +25,15 @@ struct TriggerCollisionEvent {
     tmt::Entity other_object;
 };
 
+struct TriggerMovementEvent {
+    tmt::Entity trigger;
+};
+struct MovementUpdateEvent {
+    tmt::Entity moved_entity;
+    glm::vec3 delta;
+};
+struct AttachAttemptEvent {
+    tmt::Entity entity;
+};
+
 }  // namespace game
