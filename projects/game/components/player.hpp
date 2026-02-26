@@ -1,5 +1,6 @@
 #pragma once
 #include "engine/systems/gameplay/game_component.hpp"
+#include "engine/core/components/camera.hpp"
 
 namespace game {
 
@@ -12,8 +13,6 @@ class Player : public tmt::GameComponent<Player> {
     void start() override;
     void update(const tmt::FrameData& time) override;
     void end() override;
-
-    void trigger_shoot();
 
     float camera_sensitivity = 0.1f;
 
@@ -28,6 +27,10 @@ class Player : public tmt::GameComponent<Player> {
     float battery = 100.0f;
     float max_health = 100.0f;
     float max_battery = 100.0f;
+
+    // Helper functions
+    tmt::Transform& get_transform() { return tmt::engine.ecs.get_component<tmt::Transform>(entity); }
+    tmt::Camera& get_camera() { return tmt::engine.ecs.get_component<tmt::Camera>(entity); }
 
    private:
     glm::vec3 velocity = { 0.0f, 0.0f, 0.0f };

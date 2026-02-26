@@ -10,7 +10,7 @@
 
 namespace tmt {
 
-using PhysicsGroup = decltype(std::declval<entt::registry>().group<VoxelBody>(entt::get<Transform>));
+using PhysicsGroup = decltype(std::declval<Ecs>().group<VoxelBody>(entt::get<Transform>));
 
 class Physics : public ISystem {
    public:
@@ -22,6 +22,8 @@ class Physics : public ISystem {
     void on_update(const FrameData& time) override;
     void on_fixed_update(const FrameData& time) override;
     void on_end() override;
+
+    const Bvh2<VoxelObject>& get_bvh() { return bvh; }
 
    private:
     // Simulation data
@@ -42,7 +44,6 @@ class Physics : public ISystem {
         tmt::Svt64* tree_a, const glm::vec3& center_a, const glm::quat& rotation_a, float half_extent_a, tmt::Svt64* tree_b, const glm::vec3& center_b, const glm::quat& rotation_b,
         float half_extent_b, Collision& coll
     );
-
    public:
     // Static utility functions
     static void initialize_voxel_body(VoxelBody& vb);
@@ -51,6 +52,9 @@ class Physics : public ISystem {
     static void add_force_at_position(VoxelBody& vb, const glm::vec3& force, const glm::vec3& position);
     static void set_position(VoxelBody& vb, const glm::vec3& position);
     static void set_rotation(VoxelBody& vb, const glm::quat& rotation);
+    static void recalculate_physics_data(VoxelBody& vb);
+    static void recalculate_surface_normals(VoxelBody& vb);
+    static void recalculate_surface_normals(VoxelVolume& volume);
 };
 
 }  // namespace tmt

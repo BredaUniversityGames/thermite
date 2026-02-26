@@ -276,6 +276,15 @@ void Transform::set_parent(Entity new_parent) {
     if (has_parent()) {
         auto& new_parent_transform = engine.ecs.get_component<Transform>(parent);
         new_parent_transform.children.insert(get_self());
+
+        const bool parent_is_disabled = engine.ecs.is_disabled(new_parent);
+        if (parent_is_disabled) {
+            engine.ecs.disable(self, false);
+        } else {
+            if (!engine.ecs.has_component<DisableFlag>(self)) {
+                engine.ecs.enable(self, false);
+            }
+        }
     }
 
     if (unparenting || changing_parent) {
@@ -354,6 +363,7 @@ void Transform::calculate_world_matrix() const {
         const glm::mat4 scale = glm::scale(glm::identity<glm::mat4>(), local_scale);
 
         world_matrix = translation * rotation * scale;
+        local_eulers = glm::eulerAngles(local_rotation);
 
         if (parent != entt::null) {
             auto& parent_transform = engine.ecs.get_component<Transform>(parent);

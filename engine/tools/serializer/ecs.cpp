@@ -1,5 +1,4 @@
 #include "ecs.hpp"
-#include "ecs.hpp"
 #include "engine/tools/serializer.hpp"
 
 #include "engine/core/entity.hpp"
@@ -136,7 +135,7 @@ void tag_invoke(JsonReflect::deserialize_t, const JsonReflect::json& j, tmt::Ent
 /* ECS */
 tmt::json tag_invoke(JsonReflect::serialize_t, const tmt::Ecs& ecs) {
     std::set<tmt::Entity> entities;
-    for (const auto entity : ecs.get_registry().view<entt::entity>()) {
+    for (const auto entity : ecs.view<entt::entity>()) {
         entities.insert(entity);
     }
     tmt::json result = tmt::Serializer::serialize(entities, ecs);
@@ -291,7 +290,7 @@ std::optional<tmt::json> get_source_component_json(const tmt::Entity entity, con
 template <typename ComponentType>
 void serialize_component(tmt::SerializeState& state) {
     /* If no component instance exists, continue */
-    if (state.ecs.get_registry().view<ComponentType>().size() <= 0) return;
+    if (state.ecs.view<ComponentType>().size() <= 0) return;
 
     constexpr auto COMPONENT_NAME = tmt::Component<ComponentType>::get_name();
     TMT_ZONE_SCOPED_N(COMPONENT_NAME);
@@ -525,7 +524,7 @@ static void deserialize_scene(std::set<tmt::Entity>& new_entities, tmt::Deserial
         TMT_ZONE_SCOPED_N("Ecs::deserialize_scene::prepare_prefabs")
         /* Gather all already existing prefabs in scene */
         std::unordered_set<tmt::Prefab> existing_prefab_instances;
-        auto view = state.ecs.get_registry().view<tmt::Prefab>();
+        auto view = state.ecs.view<tmt::Prefab>();
         for (const auto&& [entity, prefab_comp] : view.each()) {
             existing_prefab_instances.insert(prefab_comp);
         }
@@ -547,7 +546,7 @@ static void deserialize_scene(std::set<tmt::Entity>& new_entities, tmt::Deserial
 
             /* Check if prefab instance already exists in scene, if yes, generate new instance id */
             if (existing_prefab_instances.contains(prefab_comp_original)) {
-                // Check global map first — was this instance already created at ANY level?
+                // Check global map first - was this instance already created at ANY level?
                 if (state.global_instance_map && state.global_instance_map->contains(prefab_comp_original.instance_id)) {
                     tmt::Entity already_created = state.global_instance_map->at(prefab_comp_original.instance_id);
                     // Wire it into current mapping scope so recursive deserialization uses it
@@ -555,7 +554,7 @@ static void deserialize_scene(std::set<tmt::Entity>& new_entities, tmt::Deserial
                     branch.set_value({ { prefab_comp_original.source_entity, already_created }, { entt::null, entt::null } });
                     continue;  // Don't re-instantiate
                 }
-                // Truly a fresh duplicate — generate new ID
+                // Truly a fresh duplicate - generate new ID
                 tmt::PrefabInstanceID new_instance_id = tmt::UUIDGenerator::generate();
 
                 state.instance_id_mapping[prefab_comp_original.instance_id] = new_instance_id;
@@ -713,4 +712,12 @@ void tag_invoke(JsonReflect::deserialize_t, const tmt::json& j, std::set<tmt::En
     }
     deserialize_scene(new_entities, state);
     // state.entity_mapping.print();
+
+    for (const auto new_entity : new_entities) {
+        const bool has_disabled = ecs.has_component<tmt::DisableFlag>(new_entity);
+        if (has_disabled == false) continue;
+
+        /* If entity is disabled, disable it */
+        ecs.disable(new_entity, true);
+    }
 }

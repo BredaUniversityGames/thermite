@@ -410,7 +410,7 @@ void ModelViewer::display() {
     if (is_tool_gizmo) {
         const Entity selected_entity = editor.windows[Editor::Mode::VOXEL].get<NodeHierarchy>().get_selected_entity();
 
-        editor.gizmo.manip(window_pos.x, window_pos.y, size.x, size.y, { &selected_entity, &selected_entity + 1 });
+        editor.gizmo.manip(window_pos.x, window_pos.y, size.x, size.y, { &selected_entity, &selected_entity + 1 }, 0.0f, {});
 
         const bool can_select = (ImGui::IsWindowHovered() && !ImGuizmo::IsOver());
         if (can_select && engine.input.is_mouse_button_just_pressed(MouseButton::LEFT)) {
@@ -454,7 +454,7 @@ void ModelViewer::display() {
 
     const MaterialIndex material_index = editor.windows[Editor::Mode::VOXEL].get<Palette>().get_selected_material_index();
     const Material& material = resource->blas->palette.entries[material_index];
-    draw_selection(hit, half_extent, transform, glm::vec3 { material.albedo_r, material.albedo_g, material.albedo_b });
+    draw_selection(hit, half_extent, transform, material.albedo.unpack());
 
     handle_brush(brush_state, resource, hit, material_index);
 }
