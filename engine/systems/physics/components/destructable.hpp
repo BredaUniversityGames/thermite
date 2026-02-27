@@ -4,16 +4,20 @@
 namespace tmt {
 
 // 1024 ^3, max number of leaf nodes in a svt64 with the largest supported size
-constexpr uint32_t MAX_VOXEL_NODES = 1073741824;
+constexpr uint32_t MAX_VOXEL_NODES = 1 << 30;
 
 struct DestructionNode;
 
 struct AxisConnections {
     uint8_t count = 0;
-    DestructionNode* data[16];
+    uint32_t node_indices[16];
+
+    void add_connection(uint32_t node_index) { node_indices[count++] = node_index; };
 };
 
 struct DestructionNode {
+    uint32_t id = 0;
+
     // Level is the inverse depth of the tree, where 0 is the voxel level
     uint8_t level = 0;
 
@@ -28,8 +32,19 @@ struct DestructionNode {
 
 struct Destructable {
     uint32_t node_count = 0;
-    std::unordered_map<uint64_t, DestructionNode*> nodes_map;
+
+    // svt64 tree node index to destruction node index
+    std::unordered_map<uint32_t, uint32_t> nodes_map;
     std::vector<DestructionNode> nodes;
+
+    DestructionNode* get_node(uint32_t node_index, uint8_t level) {
+        uint32_t key = (level << 30) | node_index;
+        auto it = nodes_map.find(key);
+        if (it != nodes_map.end()) {
+            return &nodes[it->second];
+        }
+        return nullptr;
+    }
 };
 
 }  // namespace tmt

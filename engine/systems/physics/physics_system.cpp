@@ -824,6 +824,8 @@ void Physics::set_rotation(VoxelBody& vb, const glm::quat& rotation) {
 }
 
 void Physics::recalculate_physics_data(VoxelBody& vb) {
+    TMT_ZONE_SCOPED
+
     initialize_voxel_body(vb);
     recalculate_surface_normals(vb);
 }

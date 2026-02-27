@@ -1,5 +1,4 @@
 #include "destruction_system.hpp"
-#include "destruction_system.hpp"
 #include "engine/engine.hpp"
 #include "engine/core/ecs.hpp"
 #include "engine/core/logger.hpp"
@@ -7,6 +6,7 @@
 #include "engine/core/resources/stencil.hpp"
 #include "engine/systems/physics/components/voxel_body.hpp"
 #include "engine/systems/physics/physics_system.hpp"
+#include "engine/tools/profiler.hpp"
 
 namespace tmt {
 
@@ -23,14 +23,30 @@ void Destruction::on_update(const FrameData& time) {
         for (DestructionNode& node : des.nodes) {
             const glm::vec3 half_scale = glm::vec3(vb.width, vb.height, vb.depth) * 0.5f;
             const glm::vec3 pos = (glm::vec3)node.global_position * UNITS_PER_VOXEL + vb.position + 0.05f - half_scale;
+            
+            // Draw connections to neighbors
+            for (size_t i = 0; i < 6; i++) {
+                for (size_t j = 0; j < node.connections[i].count; j++) {
+                    uint32_t node_index = node.connections[i].node_indices[j];
+                    const glm::vec3 connection_pos = (glm::vec3)des.nodes[node_index].global_position * UNITS_PER_VOXEL + vb.position + 0.05f - half_scale;
+
+                    
+                    const glm::vec3 p1 = pos * 0.75f + connection_pos * 0.25f;
+                    const glm::vec3 diff = connection_pos - pos;
+                    const glm::vec3 dir = glm::normalize(connection_pos - pos);
+
+                    engine.polyline.draw_arrow(p1, dir, glm::length(diff) * 0.5f);
+                    //engine.polyline.draw_line(p1, p2);
+                }
+            }
 
             engine.polyline.draw_circle(pos, 0.033f * (1 << node.level));
 
-            //if (node.level == 0) {
-            //    engine.polyline.draw_circle(pos, 0.033f);
-            //} else {
-            //    engine.polyline.draw_circle(pos, 0.033f * 4.0f);
-            //}
+            // if (node.level == 0) {
+            //     engine.polyline.draw_circle(pos, 0.033f);
+            // } else {
+            //     engine.polyline.draw_circle(pos, 0.033f * 4.0f);
+            // }
         }
     }
 }
@@ -42,6 +58,8 @@ void Destruction::on_end() {
 }
 
 void Destruction::destroy_voxels(Entity entity, const Stencil* stencil, glm::ivec3 offset) {
+    TMT_ZONE_SCOPED_N("Destruction")
+
     // Get voxel body component
     VoxelBody* vb = engine.ecs.try_get_component<VoxelBody>(entity);
     if (vb == nullptr) return;
@@ -62,6 +80,8 @@ void Destruction::destroy_voxels(Entity entity, const Stencil* stencil, glm::ive
 }
 
 std::vector<Entity> Destruction::find_seperations(Entity entity, const Stencil* stencil, glm::ivec3 offset) {
+    TMT_ZONE_SCOPED
+
     VoxelBody& vb = engine.ecs.get_component<VoxelBody>(entity);
     auto* resource = vb.resource.resource.get();
     Svt64* tree = resource->blas.get();
@@ -186,10 +206,84 @@ bool all_children_solid(Svt64* tree, const uint32_t node_index) {
 
     // Recurse into all chidren
     for (size_t i = 0; i < 64; i++) {
-        if(!all_children_solid(tree, node.abs_ptr() + i)) return false;
+        if (!all_children_solid(tree, node.abs_ptr() + i)) return false;
     }
 
     return true;
+}
+
+// 1 vector per direction
+void set_highest_level_neighbors(
+    Destructable& graph, DestructionNode& connection_node, Svt64* tree, const uint32_t node_index, const uint32_t current_depth, const uint32_t node_scale, const uint32_t global_x,
+    const uint32_t global_y, const uint32_t global_z
+) {
+    std::array<std::vector<DestructionNode*>, 6> neighbors;
+
+    {  // -X
+        tmt::Svt64Node* node = &tree->nodes[0];
+        for (uint32_t level = 1u; level <= tree->depth; ++level) {
+            // Get position of neighbor on this level
+            const uint32_t x_index = ((global_x - node_scale) >> ((tree->depth - level) * 2u)) & 3u;
+            const uint32_t y_index = (global_y >> ((tree->depth - level) * 2u)) & 3u;
+            const uint32_t z_index = (global_z >> ((tree->depth - level) * 2u)) & 3u;
+
+            // Get node index of this neighbor
+            const uint32_t child_index = (x_index << 0u) | (z_index << 2u) | (y_index << 4u);
+
+            // If no node exists on this position
+            if ((node->child_mask & (1ull << child_index)) == 0u) break;
+
+            const uint32_t child_pos = (uint32_t)__popcnt64(node->child_mask & ((1ull << child_index) - 1u));
+            const uint32_t neighbor_node_index = node->abs_ptr() + child_pos;
+
+            // Check if connection node exists for this depth on the neighbors position
+            DestructionNode* neighbor = graph.get_node(neighbor_node_index, tree->depth - level);
+            if (neighbor != nullptr) {
+                // Make connections both ways
+                connection_node.connections[0].add_connection(neighbor->id);
+                neighbor->connections[1].add_connection(connection_node.id);
+                break;
+            } else if (level == tree->depth) {
+                // We are on the voxel level and there is no connections
+                break;
+            }
+
+            node = &tree->nodes[neighbor_node_index];
+        }
+    }
+
+    //{  // +X
+    //    tmt::Svt64Node* node = &tree->nodes[0];
+    //    for (uint32_t level = 1u; level <= tree->depth; ++level) {
+    //        // Get position of neighbor on this level
+    //        const uint32_t x_index = ((global_x + node_scale) >> ((tree->depth - level) * 2u)) & 3u;
+    //        const uint32_t y_index = (global_y >> ((tree->depth - level) * 2u)) & 3u;
+    //        const uint32_t z_index = (global_z >> ((tree->depth - level) * 2u)) & 3u;
+
+    //        // Get node index of this neighbor
+    //        const uint32_t child_index = (x_index << 0u) | (z_index << 2u) | (y_index << 4u);
+
+    //        // If no node exists on this position
+    //        if ((node->child_mask & (1ull << child_index)) == 0u) break;
+
+    //        const uint32_t child_pos = (uint32_t)__popcnt64(node->child_mask & ((1ull << child_index) - 1u));
+    //        const uint32_t neighbor_node_index = node->abs_ptr() + child_pos;
+
+    //        // Check if connection node exists for this depth on the neighbors position
+    //        DestructionNode* neighbor = graph.get_node(neighbor_node_index, tree->depth - level);
+    //        if (neighbor != nullptr) {
+    //            // Make connections both ways
+    //            connection_node.connections[1].add_connection(neighbor->id);
+    //            neighbor->connections[0].add_connection(connection_node.id);
+    //            break;
+    //        } else if (level == tree->depth) {
+    //            // We are on the voxel level and there is no connections
+    //            break;
+    //        }
+
+    //        node = &tree->nodes[neighbor_node_index];
+    //    }
+    //}
 }
 
 void recurse_generate_connection(
@@ -206,7 +300,7 @@ void recurse_generate_connection(
     uint64_t mask = node.child_mask;
 
     const uint8_t level = tree->depth - current_depth;
-    
+
     // Alwasy skip root node, check if all children are solid
     if (current_depth != 0 && all_children_solid(tree, node_index)) {
         // Create node in connection graph for this leaf node
@@ -214,12 +308,15 @@ void recurse_generate_connection(
         connection_node.level = level;
         connection_node.tree_node = node_index;
         connection_node.global_position = glm::uvec3(global_x + node_scale / 2, global_y + node_scale / 2, global_z + node_scale / 2);
+        connection_node.id = graph.node_count++;
+        graph.nodes.push_back(connection_node);
+        graph.nodes_map[(level << 30) | node_index] = connection_node.id;
+
+        set_highest_level_neighbors(graph, connection_node, tree, node_index, current_depth, node_scale, global_x, global_y, global_z);
 
         // Find neighbors on all edges
-        
-        // Make function that gets the highset level neighbors
 
-        graph.nodes.push_back(connection_node);
+        // Make function that gets the highest level neighbors
 
         // We are a full leaf node, we can stop recursion here
         return;
@@ -256,6 +353,7 @@ void recurse_generate_connection(
             connection_node.global_position = glm::uvec3(x, y, z);
 
             graph.nodes.push_back(connection_node);
+            graph.nodes_map[child_node_index] = connection_node.id;
         }
 
         // Clear bit
