@@ -24,10 +24,8 @@ void Destruction::on_update(const FrameData& time) {
             const glm::vec3 half_scale = glm::vec3(vb.width, vb.height, vb.depth) * 0.5f;
             const glm::vec3 pos = (glm::vec3)node.global_position * UNITS_PER_VOXEL + vb.position + 0.05f - half_scale;
 
-            //uint32_t voxel_count = vb.resource.resource.get()->blas.get()->voxel_count;
-            //Log::info("voxels %u", vb.resource.resource.get()->blas.get()->voxel_count);
-
-            if (node.level == 0) continue;
+            // uint32_t voxel_count = vb.resource.resource.get()->blas.get()->voxel_count;
+            // Log::info("voxels %u", vb.resource.resource.get()->blas.get()->voxel_count);
 
             // Draw connections to neighbors
             for (size_t i = 0; i < 6; i++) {
@@ -40,10 +38,10 @@ void Destruction::on_update(const FrameData& time) {
 
                     const glm::vec3 p1 = pos * 0.75f + connection_pos * 0.25f;
                     const glm::vec3 p2 = connection_pos * 0.75f + pos * 0.25f;
-                    //const glm::vec3 diff = connection_pos - pos;
-                    //const glm::vec3 dir = glm::normalize(connection_pos - pos);
+                    // const glm::vec3 diff = connection_pos - pos;
+                    // const glm::vec3 dir = glm::normalize(connection_pos - pos);
 
-                    //engine.polyline.draw_arrow(p1, dir, glm::length(diff) * 0.5f);
+                    // engine.polyline.draw_arrow(p1, dir, glm::length(diff) * 0.5f);
                     engine.polyline.draw_line(p1, p2);
                 }
             }
@@ -248,7 +246,7 @@ void set_lower_level_neighbors(
             // Make connections both ways
             connection_node.connections[0].add_connection(neighbor->id);
             neighbor->connections[1].add_connection(connection_node.id);
-        } else if (!node.is_leaf()) {  // If this child is not a leaf node, go one level deeper
+        } else if (current_depth > 0) {  // If this child is not a leaf node, go one level deeper
             set_lower_level_neighbors(
                 graph, connection_node, tree, child_node_index, current_depth - 1u, node_scale >> 2u, global_x + local_x * node_scale, global_y + local_y * node_scale,
                 global_z + local_z * node_scale, edge_mask
@@ -269,6 +267,8 @@ void set_highest_level_neighbors(
 
         // Skip the deepest part of the tree (voxels)
         for (uint32_t level = 1u; level < tree->depth; ++level) {
+            if (node_scale > global_x) break;
+
             // Get position of neighbor on this level
             const uint32_t x_index = ((global_x - node_scale) >> ((tree->depth - level) * 2u)) & 3u;
             const uint32_t y_index = (global_y >> ((tree->depth - level) * 2u)) & 3u;
@@ -277,7 +277,7 @@ void set_highest_level_neighbors(
             // Get node index of this neighbor
             const uint32_t child_index = (x_index << 0u) | (z_index << 2u) | (y_index << 4u);
 
-            // If no node exists on this position
+            // If no node exists on this position and we are at a higher level
             if ((node->child_mask & (1ull << child_index)) == 0u) break;
 
             const uint32_t child_pos = (uint32_t)__popcnt64(node->child_mask & ((1ull << child_index) - 1u));
@@ -290,12 +290,13 @@ void set_highest_level_neighbors(
                 connection_node.connections[0].add_connection(neighbor->id);
                 neighbor->connections[1].add_connection(connection_node.id);
                 break;
-            }  // If there is no connection but the neighbor node is on a lower level
-            else if (tree->depth - level < connection_node.level) {
-                // Go one level deeper to find a connection on the edge
+            }  // If there is no connection but the neighbor node goes to a lower level
+            else if (tree->depth - level <= connection_node.level) {
+                // Go one level deeper to find a connection on the edges
                 // +X edge mask
                 uint64_t edge_mask = 0x8888888888888888ULL;
                 set_lower_level_neighbors(graph, connection_node, tree, neighbor_node_index, tree->depth - level, node_scale, global_x - node_scale, global_y, global_z, edge_mask);
+                break;
             }
 
             node = &tree->nodes[neighbor_node_index];
@@ -304,11 +305,13 @@ void set_highest_level_neighbors(
 
     {  // -Z
         tmt::Svt64Node* node = &tree->nodes[0];
-        for (uint32_t level = 1u; level <= tree->depth; ++level) {
+        for (uint32_t level = 1u; level < tree->depth; ++level) {
+            if (node_scale > global_z) break;
+
             // Get position of neighbor on this level
             const uint32_t x_index = (global_x >> ((tree->depth - level) * 2u)) & 3u;
-            const uint32_t y_index = (global_y>> ((tree->depth - level) * 2u)) & 3u;
-            const uint32_t z_index = ((global_z - node_scale)>> ((tree->depth - level) * 2u)) & 3u;
+            const uint32_t y_index = (global_y >> ((tree->depth - level) * 2u)) & 3u;
+            const uint32_t z_index = ((global_z - node_scale) >> ((tree->depth - level) * 2u)) & 3u;
 
             // Get node index of this neighbor
             const uint32_t child_index = (x_index << 0u) | (z_index << 2u) | (y_index << 4u);
@@ -326,24 +329,24 @@ void set_highest_level_neighbors(
                 connection_node.connections[0].add_connection(neighbor->id);
                 neighbor->connections[1].add_connection(connection_node.id);
                 break;
-            } else if (level == tree->depth) {
-                // We are on the voxel level and there is no connections
-                break;
             }  // If there is no connection but the neighbor node is on a lower level
-            else if (tree->depth - level < connection_node.level) {
+            else if (tree->depth - level <= connection_node.level) {
                 // Go one level deeper to find a connection on the edge
                 // +Z edge mask
                 uint64_t edge_mask = 0xF000F000F000F000ULL;
-                set_lower_level_neighbors(graph, connection_node, tree, neighbor_node_index, tree->depth - level, node_scale, global_x - node_scale, global_y, global_z, edge_mask);
+                set_lower_level_neighbors(graph, connection_node, tree, neighbor_node_index, tree->depth - level, node_scale, global_x, global_y, global_z - node_scale, edge_mask);
+                break;
             }
 
             node = &tree->nodes[neighbor_node_index];
         }
     }
 
-        {  // -Y
+    {  // -Y
         tmt::Svt64Node* node = &tree->nodes[0];
-        for (uint32_t level = 1u; level <= tree->depth; ++level) {
+        for (uint32_t level = 1u; level < tree->depth; ++level) {
+            if (node_scale > global_y) break;
+
             // Get position of neighbor on this level
             const uint32_t x_index = (global_x >> ((tree->depth - level) * 2u)) & 3u;
             const uint32_t y_index = ((global_y - node_scale) >> ((tree->depth - level) * 2u)) & 3u;
@@ -365,17 +368,14 @@ void set_highest_level_neighbors(
                 connection_node.connections[0].add_connection(neighbor->id);
                 neighbor->connections[1].add_connection(connection_node.id);
                 break;
-            }  
-            else if (level == tree->depth) {
-                // We are on the voxel level and there is no connections
-                break;
-            }// If there is no connection but the neighbor node is on a lower level
+            }  // If there is no connection but the neighbor node is on a lower level
             else if (tree->depth - level <= connection_node.level) {
                 // Go one level deeper to find a connection on the edge
                 // +Y edge mask
                 uint64_t edge_mask = 0xFFFF000000000000ULL;
-                set_lower_level_neighbors(graph, connection_node, tree, neighbor_node_index, tree->depth - level, node_scale, global_x - node_scale, global_y, global_z, edge_mask);
-            } 
+                set_lower_level_neighbors(graph, connection_node, tree, neighbor_node_index, tree->depth - level, node_scale, global_x, global_y - node_scale, global_z, edge_mask);
+                break;
+            }
 
             node = &tree->nodes[neighbor_node_index];
         }
@@ -397,8 +397,8 @@ void recurse_generate_connection(
 
     const uint8_t level = tree->depth - current_depth;
 
-    // Alwasy skip root node, check if all children are solid
-    if (current_depth != 0 && all_children_solid(tree, node_index)) {
+    // Alwasy skip root node, check if all children are solid (always make a node for leaf nodes)
+    if ((current_depth != 0 && all_children_solid(tree, node_index)) || level == 1) {
         // Create node in connection graph for this node
         DestructionNode connection_node;
         connection_node.level = level;
@@ -438,21 +438,21 @@ void recurse_generate_connection(
             );
         } else {
             //// We are a voxel
-            //const uint32_t x = global_x + local_x * child_scale;
-            //const uint32_t y = global_y + local_y * child_scale;
-            //const uint32_t z = global_z + local_z * child_scale;
+            // const uint32_t x = global_x + local_x * child_scale;
+            // const uint32_t y = global_y + local_y * child_scale;
+            // const uint32_t z = global_z + local_z * child_scale;
 
             //// Create node in connection graph for this leaf node
-            //DestructionNode connection_node;
-            //connection_node.level = level - 1u;
-            //connection_node.tree_node = child_node_index;
-            //connection_node.global_position = glm::uvec3(x, y, z);
-            //connection_node.id = graph.node_count++;
+            // DestructionNode connection_node;
+            // connection_node.level = level - 1u;
+            // connection_node.tree_node = child_node_index;
+            // connection_node.global_position = glm::uvec3(x, y, z);
+            // connection_node.id = graph.node_count++;
 
-            //graph.nodes.push_back(connection_node);
-            //graph.nodes_map[child_node_index] = connection_node.id;
+            // graph.nodes.push_back(connection_node);
+            // graph.nodes_map[child_node_index] = connection_node.id;
 
-            //set_highest_level_neighbors(graph, graph.nodes.back(), tree, child_node_index, current_depth + 1, child_scale, x, y, z);
+            // set_highest_level_neighbors(graph, graph.nodes.back(), tree, child_node_index, current_depth + 1, child_scale, x, y, z);
 
             //// Create node in connection graph for this node
             // DestructionNode connection_node;
