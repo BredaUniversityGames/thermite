@@ -9,10 +9,10 @@ constexpr uint32_t MAX_VOXEL_NODES = 1 << 30;
 struct DestructionNode;
 
 struct AxisConnections {
-    uint8_t count = 0;
-    uint32_t node_indices[16];
+    //uint8_t count = 0;
+    std::vector<uint32_t> node_indices;
 
-    void add_connection(uint32_t node_index) { node_indices[count++] = node_index; };
+    void add_connection(uint32_t node_index) { node_indices.push_back(node_index); };
 };
 
 struct DestructionNode {
@@ -26,7 +26,7 @@ struct DestructionNode {
 
     glm::uvec3 global_position = glm::uvec3(0);
 
-    // One vector per axis
+    // One vector per axis (non continuous memory)
     std::array<AxisConnections, 6> connections;
 };
 
