@@ -78,7 +78,7 @@ void RenderView::init() {
     /* Load blue noise texture */
     blue_noise = engine.resources.load_resource<Texture2D>({IO::Location::ENGINE, "blue_noise_rg512.png"});
     
-    envmap = engine.resources.load_resource<Envmap>({IO::Location::ENGINE, "default_hdri.hdr"});
+    // envmap = engine.resources.load_resource<Envmap>({IO::Location::ENGINE, "default_hdri.hdr"});
 }
 
 void RenderView::update() {

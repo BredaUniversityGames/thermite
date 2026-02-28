@@ -65,6 +65,13 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
             .group_size(16, 8)
             .work_size(shading_res.x, shading_res.y);
     }
+    
+    /* Cache eviction pass */
+    render_graph.add_compute_pass("cache eviction pass", "cache_evict.cs")
+        .read(render_view.render_view_buffer) /* Render view buffer */
+        .write(render_view.macrofacet_cache) /* Cache buffer */
+        .group_size(128)
+        .work_size(CACHE_SIZE);
         
     // { /* Global illumination pass */
     //     glm::uvec2 shading_res = render_view.gpu_view.resolution;
@@ -99,13 +106,6 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
     //         .group_size(16, 8)
     //         .work_size(shading_res.x, shading_res.y);
     // }
-    
-    /* Cache eviction pass (amortize over 8 frames) */
-    render_graph.add_compute_pass("cache eviction pass", "cache_evict.cs")
-        .read(render_view.render_view_buffer) /* Render view buffer */
-        .write(render_view.macrofacet_cache) /* Cache buffer */
-        .group_size(128)
-        .work_size(CACHE_SIZE);
     
     /* Debug visualizations */
     if (engine.renderer.display_mode == DisplayMode::DEFAULT) {

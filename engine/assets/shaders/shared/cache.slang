@@ -14,7 +14,7 @@ public static const uint INACTIVE_THRESHOLD = 60u;
 /* Number of slots available in the cache. */
 static const uint CAPACITY = 10000000u;
 
-static const uint TEMPORAL_SAMPLES = 32u;
+static const uint TEMPORAL_SAMPLES = 24u;
 
 /* Cache Slot (48 bytes) */
 public struct Slot {
@@ -62,16 +62,17 @@ public struct Slot {
 
         /* Accumulator warmup factor */
         if (temporal < TEMPORAL_SAMPLES) temporal += 1u;
-        const float warmup_factor = 1.0f / (float)temporal;
+        // const float warmup_factor = 1.0f / (float)temporal;
 
-        /* Calculate a confidence factor based on spatial samples taken */
-        const float temporal_factor = saturate((float)spatial_samples / 128.0f);
+        // /* Calculate a confidence factor based on spatial samples taken */
+        // const float temporal_factor = saturate((float)spatial_samples / 128.0f);
 
-        /* Calculate a confidence factor based on staleness */
-        const float staleness = 1.0f - exp(-(float)(age / 60.0f) * 3.5f);
+        // /* Calculate a confidence factor based on staleness */
+        // const float staleness = 1.0f - exp(-(float)(age / 60.0f) * 3.5f);
 
-        /* Merge factors to create EMA alpha */
-        const float alpha = lerp(warmup_factor * temporal_factor, 1.0f, staleness);
+        // /* Merge factors to create EMA alpha */
+        // const float alpha = lerp(temporal_factor, 1.0f, max(staleness, warmup_factor));
+        const float alpha = 1.0f / (float)temporal;
 
         diffuse.w = encode_rgb9e5(lerp(read_diffuse(), diffuse_accu, alpha));
         specular.w = encode_rgb9e5(lerp(read_specular(), specular_accu, alpha));
