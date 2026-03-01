@@ -55,6 +55,7 @@ class Physics : public ISystem {
     static void recalculate_physics_data(VoxelBody& vb);
     static void recalculate_surface_normals(VoxelBody& vb);
     static void recalculate_surface_normals(VoxelVolume& volume);
+    static void recalculate_edge_normals(VoxelBody& vb, const std::vector<glm::uvec3>& edge_indices);
 };
 
 }  // namespace tmt

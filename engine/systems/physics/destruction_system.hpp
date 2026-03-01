@@ -21,9 +21,11 @@ class Destruction : public ISystem {
     void destroy_voxels(Entity entity, const Stencil* stencil, glm::ivec3 offset = glm::ivec3(0));
 
    private:
-    std::vector<Entity> find_seperations(Entity entity, const Stencil* stencil, glm::ivec3 offset);
-
+    void fill_edge_indices(std::vector<glm::uvec3>& edge_indices, Entity entity, const Stencil* stencil, glm::ivec3 offset);
+    std::vector<Entity> find_seperations(Entity entity, const std::vector<glm::uvec3>& edge_indices, const Stencil* stencil, glm::ivec3 offset);
+    void regenerate_connection_graph(Destructable& graph, Svt64* tree, const std::vector<glm::uvec3>& edge_indices);
     void generate_connection_graph(Destructable& graph, Svt64* tree);
+
 };
 
 }  // namespace tmt

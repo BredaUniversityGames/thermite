@@ -958,4 +958,87 @@ void Physics::recalculate_surface_normals(VoxelVolume& volume) {
     recurse_recalculate_normals(tree, 0, 0, node_scale, 0, 0, 0);
 }
 
+void Physics::recalculate_edge_normals(VoxelBody& vb, const std::vector<glm::uvec3>& edge_indices) {
+    TMT_ZONE_SCOPED
+
+    Svt64* tree = vb.resource.resource->blas.get();
+
+    for (const glm::uvec3& edge_pos : edge_indices) {
+        const uint32_t x = edge_pos.x;
+        const uint32_t y = edge_pos.y;
+        const uint32_t z = edge_pos.z;
+        PhysicsVoxel& voxel = *tree->get_physics_voxel(x, y, z);
+
+        int empty_sides = 0;
+        glm::ivec3 normal = {};
+
+        // -X
+        if (tree->is_empty(x - 1, y, z)) {
+            normal += glm::ivec3(-1, 0, 0);
+            empty_sides++;
+        }
+
+        // +X
+        if (tree->is_empty(x + 1, y, z)) {
+            normal += glm::ivec3(1, 0, 0);
+            empty_sides++;
+        }
+
+        // -Y
+        if (tree->is_empty(x, y - 1, z)) {
+            normal += glm::ivec3(0, -1, 0);
+            empty_sides++;
+        }
+
+        // +Y
+        if (tree->is_empty(x, y + 1, z)) {
+            normal += glm::ivec3(0, 1, 0);
+            empty_sides++;
+        }
+
+        // -Z
+        if (tree->is_empty(x, y, z - 1)) {
+            normal += glm::ivec3(0, 0, -1);
+            empty_sides++;
+        }
+
+        // +Z
+        if (tree->is_empty(x, y, z + 1)) {
+            normal += glm::ivec3(0, 0, 1);
+            empty_sides++;
+        }
+
+        voxel.normal_index = 0;
+
+        // Classify voxel type based on empty neighbors
+        if (empty_sides == 0) {
+            voxel.type = PhysicsVoxelType::INSIDE;
+        } else if (empty_sides == 1) {
+            for (size_t i = 1; i < 7; i++) {
+                if (NORMAL_LUT[i] == normal) {
+                    voxel.normal_index = i;
+                    break;
+                }
+            }
+            voxel.type = PhysicsVoxelType::FACE;
+        } else if (empty_sides == 2) {
+            for (size_t i = 7; i < 19; i++) {
+                if (NORMAL_LUT[i] == normal) {
+                    voxel.normal_index = i;
+                    break;
+                }
+            }
+            voxel.type = PhysicsVoxelType::EDGE;
+        } else {  // empty_sides >= 3
+            for (size_t i = 19; i < 27; i++) {
+                if (NORMAL_LUT[i] == normal) {
+                    voxel.normal_index = i;
+                    break;
+                }
+            }
+            voxel.type = PhysicsVoxelType::CORNER;
+        }
+    }
+}
+
 }  // namespace tmt

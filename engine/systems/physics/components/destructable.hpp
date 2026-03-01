@@ -45,6 +45,12 @@ struct Destructable {
         }
         return nullptr;
     }
+
+    void clear() {
+        node_count = 0;
+        nodes_map.clear();
+        nodes.clear();
+    }
 };
 
 }  // namespace tmt
