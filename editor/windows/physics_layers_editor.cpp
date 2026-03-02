@@ -196,37 +196,6 @@ void PhysicsLayersEditor::draw_collision_matrix(PhysicsLayers& layers) {
 
         ImGui::EndTable();
     }
-
-    //ImGui::Spacing();
-    //ImGui::Text("Raycast Filtering");
-    //ImGui::Separator();
-
-    //if (ImGui::BeginTable("RaycastTable", count + 2, ImGuiTableFlags_Borders | ImGuiTableFlags_SizingStretchSame)) {
-    //    ImGui::TableNextRow();
-
-    //    // --- First column (like Index column) ---
-    //    ImGui::TableNextColumn();
-    //    ImGui::Text("Ray");
-
-    //    // --- Second column (like Name column, but empty) ---
-    //    ImGui::TableNextColumn();
-    //    ImGui::Text("");
-
-    //    // --- Layer checkboxes ---
-    //    for (uint32_t col = 0; col < count; ++col) {
-    //        ImGui::TableNextColumn();
-
-    //        bool enabled = layers.is_raycast_enabled(col);
-
-    //        ImGui::PushID(10000 + col);  // avoid ID conflicts
-    //        if (ImGui::Checkbox("", &enabled)) {
-    //            layers.set_raycast_enabled(col, enabled);
-    //        }
-    //        ImGui::PopID();
-    //    }
-
-    //    ImGui::EndTable();
-    //}
 }
 
 }  // namespace tmt

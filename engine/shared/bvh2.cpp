@@ -341,7 +341,7 @@ Hit Bvh2<T>::trace(const Ray& ray) const {
 }
 
 template <typename T>
-Hit Bvh2<T>::trace(const Ray& ray, float t_min) const {
+Hit Bvh2<T>::trace(const Ray& ray, uint32_t ray_mask) const {
     /* Avoid an infinite loop when the BVH has nothing inside it */
     if (nodes[0].left_first == 0u && nodes[0].prim_count == 0u) return Hit();
 
@@ -362,10 +362,12 @@ Hit Bvh2<T>::trace(const Ray& ray, float t_min) const {
             /* Intersect all primitives */
             for (uint32_t i = 0u; i < node.prim_count; ++i) {
                 const T& prim = prims[indices[node.left_first + i]];
-                const Hit hit = prim.intersect(ray, hit_t);
 
-                // Only consider hits further than t_min
-                if (hit.distance < hit_t && hit.distance >= t_min) {
+                /* skip if masks don't match */
+                if ((prim.mask & ray_mask) == 0) continue;
+
+                const Hit hit = prim.intersect(ray, hit_t);
+                if (hit.distance < hit_t) {
                     hit_t = hit.distance;
                     hit_index = indices[node.left_first + i];
                     hit_coord = hit.coord;
@@ -388,16 +390,18 @@ Hit Bvh2<T>::trace(const Ray& ray, float t_min) const {
 
         /* Swap child nodes so that the closest one comes first */
         if (dist1 > dist2) {
-            std::swap(dist1, dist2);
-            std::swap(child1_index, child2_index);
+            std::swap(dist1, dist2), std::swap(child1_index, child2_index);
         }
 
         /* If we missed both child nodes */
         if (dist1 == BIG_F32) {
+            /* Pop the node stack */
             if (stack_ptr == 0u) break;
             node_index = stack[--stack_ptr];
         } else {
+            /* Continue with the closest child node */
             node_index = child1_index;
+            /* Push the 2nd child onto the node stack if we hit it */
             if (dist2 != BIG_F32) stack[stack_ptr++] = child2_index;
         }
     }

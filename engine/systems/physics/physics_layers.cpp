@@ -19,7 +19,7 @@ PhysicsLayers::PhysicsLayers() {
         for (uint32_t j = 0; j < MAX_LAYERS; ++j) {
             collision_matrix[i][j] = false;
         }
-        //raycast_enabled[i] = true;  // default: ray hits everything
+        // raycast_enabled[i] = true;  // default: ray hits everything
     }
 }
 
@@ -121,11 +121,6 @@ void PhysicsLayers::set_layer_name(uint32_t layer, const std::string& name) {
     if (layer >= MAX_LAYERS) return;
     layer_names[layer] = name;
 }
-
-//bool PhysicsLayers::is_raycast_enabled(uint32_t layer) const {
-//    if (layer >= MAX_LAYERS) return false;
-//    return raycast_enabled[layer];
-//}
 
 /**
  * Load physics layers from JSON file
