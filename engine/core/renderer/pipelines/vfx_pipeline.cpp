@@ -143,7 +143,7 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
 
         GpuEmitter em {};
         em.effects_count = emitter.effects.size();
-        em.effects_offset = emitters.size();
+        em.effects_offset = effects.size();
 
         for (auto& effect : emitter.effects) {
             if (!effect.active && !effect.should_burst) continue;
