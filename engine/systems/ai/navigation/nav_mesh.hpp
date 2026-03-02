@@ -58,6 +58,7 @@ class NavMesh {
 
     tmt::ResourceRef<tmt::VoxelVolume> voxel_volume;
     int lod_level = 0;
+    glm::vec3 inflation = glm::vec3(1.0f);
 
     bool generating = false;
     bool initialized = false;
@@ -97,5 +98,4 @@ class NavMesh {
 };
 
 }  // namespace tmt
-
 TMT_COMPONENT(tmt::NavMesh, "Navigation Mesh", (voxel_volume, lod_level));

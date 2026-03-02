@@ -125,7 +125,28 @@
                     "relative_path": "asteroids\\test_asteroid_7.vengi"
                 }
             },
-            "lod_level": 1
+            "lod_level": 1,
+            "inflation": {
+                "x": 1.2000000476837158,
+                "y": 1.2000000476837158,
+                "z": 1.2000000476837158
+            }
+        }
+    },
+    "DampedTransformConstraint": {
+        "5": {
+            "damp": 0.9900000095367432
+        }
+    },
+    "BoneHierarchyRenderer": {
+        "5": {
+            "color": {
+                "x": 0.20000000298023224,
+                "y": 0.800000011920929,
+                "z": 0.20000000298023224,
+                "w": 1.0
+            },
+            "line_width": 0.20000000298023224
         }
     },
     "GoapAgentTypeRef": {
