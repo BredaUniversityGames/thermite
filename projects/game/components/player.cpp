@@ -12,6 +12,8 @@
 #include "engine/core/window.hpp"
 #include "engine/core/input/input_map.hpp"
 #include "game_input.hpp"
+#include "engine/core/components/ui_component.hpp"
+
 // TODO before we have a serializer for input, you can add all the needed keybindings here.
 //  TODO we still have to add the gamepad inputs here
 
