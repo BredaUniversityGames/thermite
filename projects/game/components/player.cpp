@@ -79,16 +79,18 @@ void Player::update(const tmt::FrameData& time) {
     const float dy = input.get_mouse_delta_y();
 
     // Mouse Look (unchanged)
-    camera.yaw -= dx * camera_sensitivity;
-    camera.pitch -= dy * camera_sensitivity;
+    if (camera_movement) {
+        camera.yaw -= dx * camera_sensitivity;
+        camera.pitch -= dy * camera_sensitivity;
+    }
     camera.pitch = glm::clamp(camera.pitch, -89.0f, 89.0f);
 
     glm::vec3 front = {};
+    if (camera_movement) {
     front.x = cos(glm::radians(camera.yaw)) * cos(glm::radians(camera.pitch));
     front.y = sin(glm::radians(camera.pitch));
     front.z = sin(glm::radians(camera.yaw)) * cos(glm::radians(camera.pitch));
     front = glm::normalize(front);
-    if (camera_movement) {
         transform.look_at(transform.get_world_position() + front, glm::vec3(0.0f, 1.0f, 0.0f));
     }
 
