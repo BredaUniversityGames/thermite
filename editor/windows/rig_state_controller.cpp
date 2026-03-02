@@ -24,7 +24,7 @@ template <typename Type>
 [[nodiscard]] std::string make_unique_name(const std::map<std::string, Type>& map, const std::string& string, int index = 1) {
     if (!string.empty() && !map.contains(string)) return string;
 
-    const auto format = fmt::format(fmt::runtime(string + " ({})"), index);
+    auto format = fmt::format(fmt::runtime(string + " ({})"), index);
     if (!map.contains(format)) return format;
 
     return make_unique_name(map, string, ++index);
@@ -109,8 +109,7 @@ void RigStateController::display() {
                     controller->states[unique_name] = AnimationState { animation_name };
 
                     const int hash = static_cast<int>(std::hash<std::string> {}(unique_name));
-                    // ImNodes::SetNodeScreenSpacePos(hash, ImGui::GetMousePos());
-                    ax::NodeEditor::SetNodePosition(hash, ImGui::GetMousePos());
+                    ax::NodeEditor::SetNodePosition(hash, ax::NodeEditor::ScreenToCanvas(ImGui::GetMousePos()));
                     diff_util.after();
 
                     IUndoRedo::send_to_manager(std::move(diff_util), "Create state");
@@ -120,24 +119,20 @@ void RigStateController::display() {
             }
             ImGui::SetCursorPos(start_position);
 
-            // ImNodes::EditorContextSet(controller->editor_context);
             ax::NodeEditor::SetCurrentEditor(controller->editor_context);
 
             // Setup grid rect for context menus later
             grid_rect.Min = ImGui::GetCursorPos() + ImGui::GetWindowPos();
             grid_rect.Max = grid_rect.Min + ImGui::GetContentRegionAvail();
 
-            // ImNodes::BeginNodeEditor();
             ax::NodeEditor::Begin("NodeEditor");
             draw_transitions(*controller);
             draw_states(selected, *controller);
             ax::NodeEditor::End();
-            // ImNodes::EndNodeEditor();
 
             context_popups(selected, *controller);
         }
 
-        ax::NodeEditor::SetCurrentEditor(nullptr);
 
         ImGui::TableSetColumnIndex(2);
 
@@ -149,6 +144,8 @@ void RigStateController::display() {
         }
 
         ImGui::EndTable();
+
+        ax::NodeEditor::SetCurrentEditor(nullptr);
     }
 
     ImGui::EndDisabled();
@@ -157,7 +154,9 @@ void RigStateController::display() {
 void RigStateController::rig_controller_creation(entt::registry& registry, const Entity entity) {
     RigController& controller = registry.get<RigController>(entity);
 
-    controller.editor_context = ax::NodeEditor::CreateEditor();
+    ax::NodeEditor::Config config {};
+    config.NavigateButtonIndex = 2;  // Set the navigation button to the middle mouse (avoids issues with context menus).
+    controller.editor_context = ax::NodeEditor::CreateEditor(&config);
 }
 
 void RigStateController::rig_controller_destruction(entt::registry& registry, const Entity entity) {
@@ -260,9 +259,7 @@ void RigStateController::list_parameters(const Entity entity, RigController& con
         controller.rename_parameter(edited_map_item.first, make_unique_name(parameters, edited_map_item.second));
         diff_util.after();
         IUndoRedo::send_to_manager(std::move(diff_util), "Rename parameter");
-    }
-
-    if (ImGui::BeginPopup("Parameter context")) {
+    } else if (ImGui::BeginPopup("Parameter context")) {
         if (ImGui::MenuItem("Delete parameter")) {
             diff_util.before();
             controller.remove_parameter(selected_parameter);
@@ -274,7 +271,7 @@ void RigStateController::list_parameters(const Entity entity, RigController& con
     }
 }
 
-void RigStateController::draw_transition_select(ImVec2 middle, int transition_index, ImVec2 clickable_size = ImVec2 { 25.0f, 25.0f }) {
+void RigStateController::draw_transition_select(const ImVec2& middle, const int transition_index, const ImVec2& clickable_size = ImVec2 { 25.0f, 25.0f }) {
     const ImVec2 middle_pos = middle - clickable_size / 2.0f;
 
     ImGui::PushID(transition_index);
@@ -321,7 +318,7 @@ void RigStateController::draw_transitions(const RigController& controller) {
     }
 }
 
-void RigStateController::draw_transition(ImVec2 start, ImVec2 middle, int transition_index) const {
+void RigStateController::draw_transition(const ImVec2& start, const ImVec2& middle, int transition_index) const {
     constexpr float triangle_size = 12.0f;
     ImU32 color = 0xFFFFFFFF;
     if (transition_index == selected_transition) color = 0xFFEE9A39;  // Selection blue
@@ -348,11 +345,7 @@ void RigStateController::draw_states(const Entity entity, RigController& control
         const int hash = static_cast<int>(std::hash<std::string> {}(name));
 
         if (name == controller.current_state) {
-            // ImNodes::PushColorStyle(ImNodesCol_NodeBackground, 0xFF177032);
-            // ImNodes::PushColorStyle(ImNodesCol_NodeBackgroundHovered, 0xFF26BC54);
-            // ImNodes::PushColorStyle(ImNodesCol_NodeBackgroundSelected, 0xFF26BC54);
             ax::NodeEditor::PushStyleColor(ax::NodeEditor::StyleColor_NodeBg, ImGui::ColorConvertU32ToFloat4(0xFF177032));
-            // ax::NodeEditor::PushStyleColor(ax::NodeEditor::StyleColor_NodeBgHovered, ImGui::ColorConvertU32ToFloat4(0xFF26BC54));
             ax::NodeEditor::PushStyleColor(ax::NodeEditor::StyleColor_NodeSelRect, ImGui::ColorConvertU32ToFloat4(0xFF26BC54));
         }
         // ImNodes::BeginNode(hash);
@@ -385,15 +378,9 @@ void RigStateController::draw_states(const Entity entity, RigController& control
         }
 
         positions[name] = get_node_position(hash);
-        // ImNodes::EndNode();
         ax::NodeEditor::EndNode();
 
-        if (name == controller.current_state) {
-            // ImNodes::PopColorStyle();
-            // ImNodes::PopColorStyle();
-            // ImNodes::PopColorStyle();
-            ax::NodeEditor::PopStyleColor(2);
-        }
+        if (name == controller.current_state) ax::NodeEditor::PopStyleColor(2);
     }
 
     // Clicked while connecting, but no node is being clicked
@@ -462,7 +449,7 @@ void RigStateController::context_popups(const Entity entity, RigController& cont
 
             // ax::NodeEditor::BeginNode(hash);
             //  ImNodes::SetNodeScreenSpacePos(hash, ImGui::GetMousePos());
-            ax::NodeEditor::SetNodePosition(hash, ImGui::GetMousePos());
+            ax::NodeEditor::SetNodePosition(hash, ax::NodeEditor::ScreenToCanvas(ImGui::GetMousePos()));
             // ax::NodeEditor::EndNode();
 
             diff_util.after();
@@ -579,9 +566,6 @@ void RigStateController::list_conditions(const Entity entity, RigController& con
 
     ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 5.0f);
     ImGui::PushStyleVar(ImGuiStyleVar_ChildBorderSize, 2.0f);
-    // ImGui::PushStyleColor(ImGuiCol_MenuBarBg, EDITCOL_BG_2);
-    // ImGui::PushStyleColor(ImGuiCol_ChildBg, EDITCOL_BG_1);
-    // ImGui::PushStyleColor(ImGuiCol_Border, EDITCOL_BG_4);
     ImGui::BeginChild("Conditions", ImVec2 { 0.0f, 0.0f }, ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY, ImGuiWindowFlags_MenuBar);
     if (ImGui::BeginMenuBar()) {
         ImGui::Text("Conditions");
@@ -728,7 +712,6 @@ void RigStateController::list_conditions(const Entity entity, RigController& con
     }
     ImGui::EndDisabled();
     ImGui::EndChild();
-    // ImGui::PopStyleColor(3);
     ImGui::PopStyleVar(2);
 }
 

@@ -29,8 +29,8 @@ class RigStateController : public IWindow {
     static void list_parameters(Entity entity, RigController& controller);
 
     void draw_transitions(const RigController& controller);
-    void draw_transition(ImVec2 start, ImVec2 middle, int transition_index) const;
-    void draw_transition_select(ImVec2 middle, int transition_index, ImVec2 clickable_size);
+    void draw_transition(const ImVec2& start, const ImVec2& middle, int transition_index) const;
+    void draw_transition_select(const ImVec2& middle, int transition_index, const ImVec2& clickable_size);
 
     void draw_states(Entity entity, RigController& controller);
     void context_popups(Entity entity, RigController& controller);
