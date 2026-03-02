@@ -47,11 +47,17 @@ static inline void tag_invoke(JsonReflect::deserialize_t, const JsonReflect::jso
                 typename T::ConstructorArgTypes args {};
                 if (j.contains("constructor_args")) {
                     JsonReflect::from_json(j.at("constructor_args"), args);
+                    auto result = std::apply(
+                        [&](auto&&... unpacked_args) {
+                            //
+                            return tmt::engine.resources.copy_resource<T>(file_ref, std::forward<decltype(unpacked_args)>(unpacked_args)...);
+                        },
+                        std::move(args)
+                    );
+                    value.resource = result.resource;
+                } else {
+                    value.resource = tmt::engine.resources.copy_resource<T>(file_ref).resource;
                 }
-                auto result = std::apply(
-                    [&](auto&&... unpacked_args) { return tmt::engine.resources.copy_resource<T>(file_ref, std::forward<decltype(unpacked_args)>(unpacked_args)...); }, std::move(args)
-                );
-                value.resource = result.resource;
             } else {
                 value.resource = tmt::engine.resources.copy_resource<T>(file_ref).resource;
             }
