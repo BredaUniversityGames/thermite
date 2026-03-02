@@ -29,8 +29,9 @@ class Player : public tmt::GameComponent<Player> {
     float max_battery = 100.0f;
 
     // Helper functions
-    tmt::Transform& get_transform() { return tmt::engine.ecs.get_component<tmt::Transform>(entity); }
-    tmt::Camera& get_camera() { return tmt::engine.ecs.get_component<tmt::Camera>(entity); }
+    tmt::Transform& get_transform() const { return tmt::engine.ecs.get_component<tmt::Transform>(entity); }
+    tmt::Camera& get_camera() const { return tmt::engine.ecs.get_component<tmt::Camera>(entity); }
+
 
    private:
     glm::vec3 velocity = { 0.0f, 0.0f, 0.0f };
