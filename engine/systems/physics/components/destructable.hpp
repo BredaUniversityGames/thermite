@@ -37,8 +37,8 @@ struct Destructable {
     std::unordered_map<uint32_t, uint32_t> nodes_map;
     std::vector<DestructionNode> nodes;
 
-    DestructionNode* get_node(uint32_t node_index, uint8_t level) {
-        uint32_t key = (level << 30) | node_index;
+    DestructionNode* get_node(uint32_t x, uint32_t y, uint32_t z) {
+        uint32_t key = x + (y << 10) + (z << 20);
         auto it = nodes_map.find(key);
         if (it != nodes_map.end()) {
             return &nodes[it->second];
