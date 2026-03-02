@@ -33,6 +33,7 @@
 #include "components/spawner.hpp"
 #include "components/text_component.hpp"
 #include "components/weapon.hpp"
+#include "components/upgrade.hpp"
 
 class Game : public tmt::Application {
    public:
