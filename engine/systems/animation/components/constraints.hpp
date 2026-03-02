@@ -75,5 +75,5 @@ struct EffectorWalkCycle
 }  // namespace tmt
 TMT_COMPONENT(tmt::AnimConstraints::DampedTransformConstraint, "Damped Transform Constraint", (damp));
 TMT_COMPONENT(tmt::AnimConstraints::TwoBoneIKConstraint, "Two Bone IK Constraint", (mid, tip, target_position_entity, bend_position_entity));
-TMT_COMPONENT(tmt::AnimConstraints::EffectorWalkCycle, "Effector Walk Cycle", (step_time, step_duration, step_height, desired_target_entity, effector_entity, cycle_offset, step_prediction_strength));
+TMT_COMPONENT(tmt::AnimConstraints::EffectorWalkCycle, "Effector Walk Cycle", (step_time, step_duration, step_height, desired_target_entity, effector_entity, cycle_offset, grounded, step_prediction_strength));
 //TMT_COMPONENT(tmt::AnimConstraints::EffectorWalkCycle, "Effector e"

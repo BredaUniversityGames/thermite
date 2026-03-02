@@ -155,54 +155,55 @@ void AnimationScene::on_start() {
         child_3_transform.add_child(child_4);
     }
     {
-        walker_entity = engine.ecs.create_entity("walker");
-        auto& bone_renderer = engine.ecs.add_component<BoneHierarchyRenderer>(walker_entity);
-        for(int i = 0; i < 3; i++)
-        {
-            walk_cycles[i].step_time = 0.8f;
-            walk_cycles[i].step_height = 0.5f;
-            walk_cycles[i].step_duration = 0.5f;
-            walk_cycles[i].step_prediction_strength = 5.f;
-            walk_cycles[i].set_offset(i * (0.8f/3.f));
+        //walker_entity = engine.ecs.create_entity("walker");
+        //auto& bone_renderer = engine.ecs.add_component<BoneHierarchyRenderer>(walker_entity);
+        //for(int i = 0; i < 3; i++)
+        //{
+        //    walk_cycles[i].step_time = 0.8f;
+        //    walk_cycles[i].step_height = 0.5f;
+        //    walk_cycles[i].step_duration = 0.5f;
+        //    walk_cycles[i].step_prediction_strength = 5.f;
+        //    walk_cycles[i].set_offset(i * (0.8f/3.f));
 
-            float rad_ang = (i+1) * 2.f/3.f * glm::pi<float>(); 
+        //    float rad_ang = (i+1) * 2.f/3.f * glm::pi<float>(); 
 
-            glm::quat rot = glm::angleAxis(rad_ang, glm::vec3(0.f, 1.f, 0.f));
-            glm::vec3 p = glm::normalize(rot * glm::vec3(0.f, 0.f, 1.f));
+        //    glm::quat rot = glm::angleAxis(rad_ang, glm::vec3(0.f, 1.f, 0.f));
+        //    glm::vec3 p = glm::normalize(rot * glm::vec3(0.f, 0.f, 1.f));
 
 
 
-            arm_entities[i] = engine.ecs.create_entity();
-            auto& two_bone_ik_constraint = engine.ecs.add_component<AnimConstraints::TwoBoneIKConstraint>(arm_entities[i]);
-            bone_renderer.color = glm::vec4(0.f, 1.f, 1.f, 1.f);
-            bone_renderer.line_width = 0.4f;
-            auto& transform = engine.ecs.get_component<Transform>(arm_entities[i]);
-            transform.set_local_position(p);
+        //    arm_entities[i] = engine.ecs.create_entity();
+        //    auto& two_bone_ik_constraint = engine.ecs.add_component<AnimConstraints::TwoBoneIKConstraint>(arm_entities[i]);
+        //    auto& walk_cycle = engine.ecs.add_component<AnimConstraints::EffectorWalkCycle>(arm_entities[i]);
+        //    bone_renderer.color = glm::vec4(0.f, 1.f, 1.f, 1.f);
+        //    bone_renderer.line_width = 0.4f;
+        //    auto& transform = engine.ecs.get_component<Transform>(arm_entities[i]);
+        //    transform.set_local_position(p);
 
-            auto child_0 = engine.ecs.create_entity();
-            auto& child_0_transform = engine.ecs.get_component<Transform>(child_0);
-            child_0_transform.set_local_position(p * 2.f);
+        //    auto child_0 = engine.ecs.create_entity();
+        //    auto& child_0_transform = engine.ecs.get_component<Transform>(child_0);
+        //    child_0_transform.set_local_position(p * 2.f);
 
-            auto child_1 = engine.ecs.create_entity();
-            auto& child_1_transform = engine.ecs.get_component<Transform>(child_1);
-            child_1_transform.set_local_position(p * 3.f);
+        //    auto child_1 = engine.ecs.create_entity();
+        //    auto& child_1_transform = engine.ecs.get_component<Transform>(child_1);
+        //    child_1_transform.set_local_position(p * 3.f);
 
-            auto bend_entity = engine.ecs.create_entity();
-            engine.ecs.add_component<NoBone>(bend_entity);
-            auto& bend_transform = engine.ecs.get_component<Transform>(bend_entity);
-            bend_transform.set_parent(walker_entity);
-            bend_transform.set_world_position(p * 2.f + glm::vec3(0.f, 100.f, 0.f));
+        //    auto bend_entity = engine.ecs.create_entity();
+        //    engine.ecs.add_component<NoBone>(bend_entity);
+        //    auto& bend_transform = engine.ecs.get_component<Transform>(bend_entity);
+        //    bend_transform.set_parent(walker_entity);
+        //    bend_transform.set_world_position(p * 2.f + glm::vec3(0.f, 100.f, 0.f));
 
-            /*two_bone_ik_constraint.parent = walker_entity;
-            two_bone_ik_constraint.root = arm_entities[i];*/
-            two_bone_ik_constraint.mid = child_0;
-            two_bone_ik_constraint.tip = child_1;
-            two_bone_ik_constraint.bend_position_entity = bend_entity;
-
-            transform.set_parent(walker_entity);
-            transform.add_child(child_0);
-            child_0_transform.add_child(child_1);      
-        }
+        //    /*two_bone_ik_constraint.parent = walker_entity;
+        //    two_bone_ik_constraint.root = arm_entities[i];*/
+        //    two_bone_ik_constraint.mid = child_0;
+        //    two_bone_ik_constraint.tip = child_1;
+        //    two_bone_ik_constraint.bend_position_entity = bend_entity;
+        //    
+        //    transform.set_parent(walker_entity);
+        //    transform.add_child(child_0);
+        //    child_0_transform.add_child(child_1);      
+        //}
         
     }
 }
@@ -214,24 +215,24 @@ void AnimationScene::on_update(const tmt::FrameData& time)
     x-=time.delta_time*2.f;
 
     auto& parent_transform = engine.ecs.get_component<Transform>(walker_entity);
-    for (size_t i = 0; i < 3; i++) {
+    //for (size_t i = 0; i < 3; i++) {
 
-        float rad_ang = (i+1) * 2.f/3.f * glm::pi<float>(); 
+    //    float rad_ang = (i+1) * 2.f/3.f * glm::pi<float>(); 
 
-        glm::quat rot = glm::angleAxis(rad_ang, glm::vec3(0.f, 1.f, 0.f));
-        glm::vec3 p = glm::normalize(rot * glm::vec3(0.f, 0.f, 1.f));
+    //    glm::quat rot = glm::angleAxis(rad_ang, glm::vec3(0.f, 1.f, 0.f));
+    //    glm::vec3 p = glm::normalize(rot * glm::vec3(0.f, 0.f, 1.f));
 
-        auto& two_bone_ik = engine.ecs.get_component<tmt::AnimConstraints::TwoBoneIKConstraint>(arm_entities[i]);
+    //    auto& two_bone_ik = engine.ecs.get_component<tmt::AnimConstraints::TwoBoneIKConstraint>(arm_entities[i]);
 
-        tmt::AnimConstraints::TwoBoneIK::EffectorWalkCycle::WalkCycleUpdateVariables anim_vars;
-        glm::vec3 target = parent_transform.get_world_matrix() * glm::vec4(p*3.f, 1.f);
-        anim_vars.continuous_available_pos = glm::vec3(target.x, 0.f, target.z);
-        anim_vars.grounded = true;
-        anim_vars.up = glm::vec3(0.f, 1.f, 0.f);
+    //    tmt::AnimConstraints::TwoBoneIK::EffectorWalkCycle::WalkCycleUpdateVariables anim_vars;
+    //    glm::vec3 target = parent_transform.get_world_matrix() * glm::vec4(p*3.f, 1.f);
+    //    anim_vars.continuous_available_pos = glm::vec3(target.x, 0.f, target.z);
+    //    anim_vars.grounded = true;
+    //    anim_vars.up = glm::vec3(0.f, 1.f, 0.f);
 
-        two_bone_ik.target_position_entity = snake_entity;//walk_cycles[i].do_walk_cycle(time.delta_time, anim_vars);
-        
-    }
+    //    two_bone_ik.target_position_entity = snake_entity;//walk_cycles[i].do_walk_cycle(time.delta_time, anim_vars);
+    //    
+    //}
 
     //auto& snake_transform = engine.ecs.get_component<Transform>(snake_entity);
     //snake_transform.set_local_position(TestMotion::sample_position(time.elapsed_time));
