@@ -27,53 +27,58 @@
 #include "ai_actions/chase_player.hpp"
 #include "ai_actions/wander.hpp"
 
+
 class Demo : public tmt::Application {
    public:
     Demo(const tmt::ApplicationSpecs& specs) : Application(specs) {}
     void on_start() override {
-        ///* Register actions */
-        //auto& ecs = tmt::engine.ecs;
-        //auto& goap = ecs.systems.get<tmt::Goap>();
+        /* Register actions */
+        if (!tmt::engine.ecs.systems.try_get<tmt::Goap>()) {
+            tmt::engine.ecs.systems.add<tmt::Goap>();
+        }
 
-        //auto& action_reg = goap.actions();
-        //auto& goal_reg = goap.goals();
-        //auto& type_reg = goap.agent_types();
+        auto& ecs = tmt::engine.ecs;
+        auto& goap = ecs.systems.get<tmt::Goap>();
 
-        //action_reg.register_action(std::make_unique<ChasePlayer>());
-        //action_reg.register_action(std::make_unique<Wander>());
+        auto& action_reg = goap.actions();
+        auto& goal_reg = goap.goals();
+        auto& type_reg = goap.agent_types();
 
-        //tmt::GoapAgentType dragon;
-        //dragon.id = "dragon";
-        //dragon.action_ids = { "ChasePlayer", "Wander" };
+        action_reg.register_action(std::make_unique<ChasePlayer>());
+        action_reg.register_action(std::make_unique<Wander>());
 
-        //dragon.default_world_state = {
-        //    { "player_in_range", false },
-        //    { "in_attack_range", false },
-        //};
+        tmt::GoapAgentType dragon;
+        dragon.id = "dragon";
+        dragon.action_ids = { "ChasePlayer", "Wander" };
 
-        //{
-        //    tmt::GoapGoal chase;
-        //    chase.name = "ChasePlayer";
-        //    chase.desired_state = { { tmt::FactId("in_attack_range"), true } };
-        //    chase.priority = 10;
-        //    chase.valid = true;
+        dragon.default_world_state = {
+            { "player_in_range", false },
+            { "in_attack_range", false },
+        };
 
-        //    goal_reg.register_goal("ChasePlayer", chase);
-        //}
+        {
+            tmt::GoapGoal chase;
+            chase.name = "ChasePlayer";
+            chase.desired_state = { { tmt::FactId("in_attack_range"), true } };
+            chase.priority = 10;
+            chase.valid = true;
 
-        //{
-        //    tmt::GoapGoal wander;
-        //    wander.name = "Wander";
-        //    wander.desired_state = { { tmt::FactId("player_in_range"), true } };
-        //    wander.priority = 1;
-        //    wander.valid = true;
+            goal_reg.register_goal("ChasePlayer", chase);
+        }
 
-        //    goal_reg.register_goal("Wander", wander);
-        //}
+        {
+            tmt::GoapGoal wander;
+            wander.name = "Wander";
+            wander.desired_state = { { tmt::FactId("player_in_range"), true } };
+            wander.priority = 1;
+            wander.valid = true;
 
-        //dragon.goal_ids = { "ChasePlayer", "Wander" };
+            goal_reg.register_goal("Wander", wander);
+        }
 
-        //type_reg.register_type(dragon);
+        dragon.goal_ids = { "ChasePlayer", "Wander" };
+
+        type_reg.register_type(dragon);
     }
 };
 

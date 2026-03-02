@@ -2,6 +2,9 @@
 #include "engine/systems/gameplay/game_component.hpp"
 #include "engine/core/entity.hpp"
 
+constexpr int leg_amount = 4;
+
+
 class Walking : public tmt::GameComponent<Walking> {
    public:
     using GameComponent::GameComponent;
@@ -12,6 +15,9 @@ class Walking : public tmt::GameComponent<Walking> {
     void update(const tmt::FrameData& time) override;
     void end() override;
 
+    float leg_time = 0.0f;
+    float max_leg_time = 1.0f;
+    tmt::Entity end_effector[leg_amount];
     tmt::Entity walkable_asteroid = entt::null;
     glm::vec3 velocity = glm::vec3(0, 0, 0);
     glm::quat rotation = glm::quat(1, 0, 0, 0);

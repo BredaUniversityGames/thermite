@@ -387,16 +387,12 @@ std::optional<glm::vec3> tmt::NavMesh::follow_path(glm::vec3 start, glm::vec3 en
             }
         }
     }
-    tmt::engine.polyline.use_color(0.0f, 1.0f, 0.0f);
-    tmt::engine.polyline.use_line_width(1.0f);
-    // tmt::engine.polyline.draw_sphere(target_pos, 0.1f);
-    tmt::engine.polyline.draw_sphere(start, 0.1f);
 
     return glm::normalize(target_pos - start);
 }
 
 void tmt::NavMesh::inspect() {
-    // return;
+    return;
     tmt::engine.polyline.use_color(1.0f, 0.0f, 0.0f);
     tmt::engine.polyline.use_line_width(2, true);
 

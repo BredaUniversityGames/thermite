@@ -2,7 +2,8 @@
     "version": 1,
     "entities": [
         0,
-        1
+        1,
+        2
     ],
     "Name": {
         "0": {
@@ -10,6 +11,9 @@
         },
         "1": {
             "name": "camera"
+        },
+        "2": {
+            "name": "walker"
         }
     },
     "Transform": {
@@ -34,6 +38,26 @@
             "children": []
         },
         "1": {
+            "local_position": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "local_rotation": {
+                "w": 1.0,
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "local_scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "parent": 4294967295,
+            "children": []
+        },
+        "2": {
             "local_position": {
                 "x": 0.0,
                 "y": 0.0,
@@ -80,6 +104,17 @@
                 "drag": 5.0,
                 "max_speed": 10.0
             }
+        },
+        "2": {
+            "Walking": {
+                "attack_range": 20.0,
+                "max_chase_distance": 100.0,
+                "ray_count": 100,
+                "rotation_speed": 2.0,
+                "rotation_t": 0.0,
+                "walk_speed": 0.10000000149011612,
+                "walkable_asteroid": 0
+            }
         }
     },
     "Navigation Mesh": {
@@ -91,6 +126,11 @@
                 }
             },
             "lod_level": 1
+        }
+    },
+    "GoapAgentTypeRef": {
+        "2": {
+            "type_id": "dragon"
         }
     },
     "systems": null
