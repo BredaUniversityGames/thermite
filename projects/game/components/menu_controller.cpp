@@ -52,27 +52,53 @@ void MenuController::update(const tmt::FrameData& time) {
 void MenuController::start() {}
 
 void MenuController::enable_pause_menu() const {
+    if (check_for_open_menus()) return;
+    unlock_mouse();
     tmt::engine.ecs.enable(pause_menu_entity);
 }
 
 void MenuController::disable_pause_menu() const {
+    lock_mouse();
     tmt::engine.ecs.disable(pause_menu_entity);
 }
 
 void MenuController::enable_inventory_menu() const {
+    if (check_for_open_menus()) return;
+    unlock_mouse();
     tmt::engine.ecs.enable(inventory_menu_entity);
 }
 
 void MenuController::disable_inventory_menu() const {
+    lock_mouse();
     tmt::engine.ecs.disable(inventory_menu_entity);
 }
 
 void MenuController::enable_upgrade_menu() const {
+    if (check_for_open_menus()) return;
+    unlock_mouse();
     tmt::engine.ecs.enable(upgrade_menu_entity);
 }
 
 void MenuController::disable_upgrade_menu() const {
+    lock_mouse();
     tmt::engine.ecs.disable(upgrade_menu_entity);
 }
 
+void MenuController::lock_mouse() {
+    tmt::engine.input.lock_mouse(true);
+    tmt::engine.input.set_mouse_relative_to_window(true);
+}
+
+void MenuController::unlock_mouse() {
+    tmt::engine.input.lock_mouse(false);
+    tmt::engine.input.set_mouse_relative_to_window(false);
+    
+}
+
+bool MenuController::check_for_open_menus() const {
+    if (tmt::engine.ecs.is_enabled(pause_menu_entity)) return true;
+    if (tmt::engine.ecs.is_enabled(upgrade_menu_entity)) return true;
+    if (tmt::engine.ecs.is_enabled(inventory_menu_entity)) return true;
+    return false;
+}
 }  // namespace game

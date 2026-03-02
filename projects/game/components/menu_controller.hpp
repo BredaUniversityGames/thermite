@@ -28,6 +28,9 @@ class MenuController : public tmt::GameComponent<MenuController> {
     void disable_upgrade_menu() const;
 
    private:
+    static void lock_mouse();
+    static void unlock_mouse();
+    bool check_for_open_menus() const;
 };
 
 }  // namespace game
