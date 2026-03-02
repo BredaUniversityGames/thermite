@@ -77,8 +77,8 @@ class Resources {
 
     /* Runtime resources loading that takes in a file resource */
     template <typename T, typename... Args>
-    requires std::derived_from<T, RuntimeResource<typename T::ResourceType, typename T::>>
-    ResourceRef<T> copy_resource(const ResourceRef<typename T::ResourceType>& file_resource, Args&&... args) {
+    requires requires { typename T::is_runtime_resource; } && std::derived_from<T, RuntimeResource<typename T::ResourceType, Args...>>
+    ResourceRef<T> copy_resource(const ResourceRef<typename T::ResourceType, typename... Args>& file_resource, Args&&... args) {
         if (file_resource == nullptr) {
             Log::error(Log::Scope::ENGINE, "[Resources] Cannot copy nullptr file resource");
             ResourceRef<T> ref;

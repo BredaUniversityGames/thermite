@@ -13,6 +13,11 @@ static inline tmt::json tag_invoke(JsonReflect::serialize_t, const tmt::Resource
     if constexpr (JsonReflect::Detail::has_to_json_v<T>) {
         j["data"] = JsonReflect::to_json(value.resource);
     }
+    if constexpr (requires { typename T::has_constructor_args; }) {
+        if (value) {
+            j["constructor_values"] = JsonReflect::to_json(value->constructor_args);
+        }
+    }
     return j;
 }
 

@@ -52,6 +52,7 @@ class RuntimeResource : public Resource {
    public:
     using ResourceType = T;
     using ConstructorArgTypes = std::tuple<ConstructorArgs...>;
+    using has_constructor_args = std::bool_constant<(sizeof...(ConstructorArgs) > 0)>;
     using is_runtime_resource = std::true_type;
 
     virtual ~RuntimeResource() = default;
