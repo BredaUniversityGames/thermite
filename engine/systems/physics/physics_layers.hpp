@@ -57,6 +57,15 @@ class PhysicsLayers {
     // Returns the current number of layers (including removed ones with empty names)
     uint32_t get_layer_count() const { return layer_count; }
 
+    // Checks if raycast is enabled for this layer
+    //bool is_raycast_enabled(uint32_t layer) const;
+
+    // Enable or disable raycast for a specific layer
+    /*void set_raycast_enabled(uint32_t layer, bool enabled) {
+        if (layer >= MAX_LAYERS) return;
+        raycast_enabled[layer] = enabled;
+    }*/
+
     // Load layers and collision matrix from JSON file
     void load();
 
@@ -72,6 +81,9 @@ class PhysicsLayers {
 
     // Number of layers currently defined (max = MAX_LAYERS)
     uint32_t layer_count = 0;
+
+    // Checks wether raycasting will take these layers into consideration
+    //bool raycast_enabled[MAX_LAYERS];
 };
 
 }  // namespace tmt

@@ -59,6 +59,8 @@ class Physics : public ISystem {
     static void set_rotation(VoxelBody& vb, const glm::quat& rotation);
 
     PhysicsLayers& layers() { return physics_layers; }
+    // Raycast against layers in the layer_mask
+    Hit raycast(const Ray& ray, uint32_t layer_mask) const;
 };
 
 }  // namespace tmt

@@ -733,4 +733,44 @@ void Physics::set_rotation(VoxelBody& vb, const glm::quat& rotation) {
     vb.center_of_mass = vb.position + (vb.rotation * vb.com_local_offset);
 }
 
+/**
+ * Cast a ray, using a layer mask
+ *
+ *  Example:
+ *   uint32_t layer_mask = (1 << 1) | (1 << 2); ray interacts only with Player and Enemy layers
+ *   Hit hit = physics->raycast(ray, layer_mask);
+ *
+ *  Result:
+ *   Layer 0 -> not in mask = can not hit
+ *   Layer 1 -> in mask     = can hit
+ *   Layer 2 -> in mask     = can hit
+ *   Layer 3 -> not in mask = can not hit
+ *
+ * If hit entity is not in the layer mask, the ray will continue.
+ */
+Hit Physics::raycast(const Ray& ray, uint32_t layer_mask) const {
+    float t_min = 0.0f;
+
+    while (true) {
+        Hit hit = bvh.trace(ray, t_min);
+        if (!hit) break;
+
+        Entity entity = hit.entity;
+        auto& registry = engine.ecs.get_registry();
+
+        if (registry.any_of<VoxelBody>(entity)) {
+            const auto& body = registry.get<VoxelBody>(entity);
+
+            if ((1u << body.layer) & layer_mask) {
+                return hit;  // valid hit
+            }
+        }
+
+        // Continue past ignored hit
+        t_min = hit.distance + 0.0001f;
+    }
+
+    return Hit();  // no valid hit
+}
+
 }  // namespace tmt
