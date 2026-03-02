@@ -22,10 +22,7 @@ float4 main(BillboardVertexOutput input) : SV_Target0 {
     const float dither = should_dither ? blue_noise1d.Sample(point_sampler, screen_pos / (512.0f * input.dither_scale)).r : 0.0f;
 
     // dither when alpha is above 0.0f but below 1.0f
-    if (tex_sample.a == 0.0f)
-        discard;
-    
-    if (tex_sample.a * input.opacity < dither)
+    if (tex_sample.a * input.opacity <= dither)
         discard;
     
     return float4(tex_sample.rgb, 1.0f);
