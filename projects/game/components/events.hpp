@@ -30,7 +30,7 @@ struct TriggerMovementEvent {
 };
 struct MovementUpdateEvent {
     tmt::Entity moved_entity;
-    glm::vec3 delta;
+    float length;
 };
 struct AttachAttemptEvent {
     tmt::Entity entity;

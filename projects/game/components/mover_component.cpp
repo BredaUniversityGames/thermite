@@ -2,13 +2,7 @@
 
 #include "events.hpp"
 #include "engine/core/polyline.hpp"
-#include "player.hpp"
-void game::MoverComponent::start() {
-    tmt::engine.ecs.get_dispatcher().sink<TriggerMovementEvent>().connect<&MoverComponent::update_movement>(this);
-}
-void game::MoverComponent::end() {
-    tmt::engine.ecs.get_dispatcher().sink<TriggerMovementEvent>().disconnect<&MoverComponent::update_movement>(this);
-}
+
 void game::MoverComponent::draw_debug_lines() const {
     cfg.set_values();
     auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
@@ -21,8 +15,9 @@ void game::MoverComponent::update_movement(const TriggerMovementEvent& event) {
         return;
     }
     auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
-    auto delta = transform.get_forward() * movement_speed * tmt::engine.frame_data().delta_time;
+    auto distance = movement_speed * tmt::engine.frame_data().delta_time;
+    auto delta = transform.get_forward() * distance;
     transform.translate(delta);
 
-    tmt::engine.ecs.get_dispatcher().trigger<MovementUpdateEvent>({ .moved_entity = entity, .delta = delta });
+    tmt::engine.ecs.get_dispatcher().trigger<MovementUpdateEvent>({ .moved_entity = entity, .length = distance });
 }
