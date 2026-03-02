@@ -70,7 +70,9 @@ inline void tag_invoke(ImReflect::ImInput_t, const char* label, tmt::ParticleEmi
         ImGui::PushID(i);
 
         /* Header with colored accent */
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(effect.name_color.x, effect.name_color.y, effect.name_color.z, 1.0f));
         bool open = ImGui::CollapsingHeader(effect.name.c_str(), ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowOverlap);
+        ImGui::PopStyleColor();
 
         /* Right-aligned buttons on the header line */
         float button_width = ImGui::CalcTextSize("X").x + ImGui::GetStyle().FramePadding.x * 2.0f;
@@ -114,6 +116,12 @@ inline void tag_invoke(ImReflect::ImInput_t, const char* label, tmt::ParticleEmi
             name_buf[sizeof(name_buf) - 1] = '\0';
             if (ImGui::InputText("Name", name_buf, sizeof(name_buf))) {
                 effect.name = name_buf;
+            }
+
+            ImVec4 color {};
+            color = { effect.name_color.x, effect.name_color.y, effect.name_color.z, 1.0f };
+            if (ImGui::ColorEdit3("Name Color", &color.x)) {
+                effect.name_color = { color.x, color.y, color.z };
             }
 
             ImGui::Spacing();
