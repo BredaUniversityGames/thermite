@@ -86,6 +86,8 @@ class NavMesh {
    public:
     glm::mat4 world_matrix = glm::mat4(1.f);
     glm::vec3 compute_normal(NavNode& node);
+    
+    void average_neighbor_normals();
     void generate_mesh_over_time();
     void generate_mesh(int iterations = 1e34);
     std::vector<int> find_path(const int starting_node_id, const int ending_node_id);
