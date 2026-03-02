@@ -35,6 +35,7 @@
 #include "components/text_component.hpp"
 #include "components/weapon.hpp"
 #include "components/fuel.hpp"
+#include "components/upgrade.hpp"
 
 class Game : public tmt::Application {
    public:
