@@ -30,51 +30,7 @@
 class Demo : public tmt::Application {
    public:
     Demo(const tmt::ApplicationSpecs& specs) : Application(specs) {}
-    void on_start() override {
-        /* Register actions */
-        auto& ecs = tmt::engine.ecs;
-        auto& goap = ecs.systems.get<tmt::Goap>();
-
-        auto& action_reg = goap.actions();
-        auto& goal_reg = goap.goals();
-        auto& type_reg = goap.agent_types();
-
-        action_reg.register_action(std::make_unique<ChasePlayer>());
-        action_reg.register_action(std::make_unique<Wander>());
-
-        tmt::GoapAgentType dragon;
-        dragon.id = "dragon";
-        dragon.action_ids = { "ChasePlayer", "Wander" };
-
-        dragon.default_world_state = {
-            { "player_in_range", false },
-            { "in_attack_range", false },
-        };
-
-        {
-            tmt::GoapGoal chase;
-            chase.name = "ChasePlayer";
-            chase.desired_state = { { tmt::FactId("in_attack_range"), true } };
-            chase.priority = 10;
-            chase.valid = true;
-
-            goal_reg.register_goal("ChasePlayer", chase);
-        }
-
-        {
-            tmt::GoapGoal wander;
-            wander.name = "Wander";
-            wander.desired_state = { { tmt::FactId("player_in_range"), true } };
-            wander.priority = 1;
-            wander.valid = true;
-
-            goal_reg.register_goal("Wander", wander);
-        }
-
-        dragon.goal_ids = { "ChasePlayer", "Wander" };
-
-        type_reg.register_type(dragon);
-    }
+    void on_start() override {}
 };
 
 class MainScene : public tmt::Scene<MainScene> {

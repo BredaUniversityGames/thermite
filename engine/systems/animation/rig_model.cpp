@@ -16,7 +16,6 @@ namespace {
 namespace tmt {
 
 void RigModel::init_bones(const Bone& b, Entity p) {
-    Log::info("init bones got called!");
     if (!engine.ecs.try_get_component<Transform>(p)) {
         Log::warn("Parent entity {} has no Transform!", static_cast<uint32_t>(p));
     }

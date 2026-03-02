@@ -34,6 +34,7 @@ bool tmt::RigData::load() {
     const ufbx_node* root_node = *std::find_if(rig_fbx->nodes.begin(), rig_fbx->nodes.end(), [&root_bone](const ufbx_node* bone_node) { return bone_node->bone == root_bone; });
 
     init_bone_fbx(root_node, mesh_connections);
+    extract_bone_keyframes_fbx(rig_fbx, rig_fbx, mesh_connections);
 
     for (auto& [animation_directory, name] : animation_files) {
         opts = {};

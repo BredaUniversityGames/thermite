@@ -25,6 +25,7 @@ void tmt::RigModelManager::on_start() {}
 
 void RigModelManager::on_update(const FrameData& time) {
     inspect(time.delta_time);
+
     for (const auto& [entity, rig] : engine.ecs.view<RigModel>().each()) {
         auto path = rig.vox_path.relative_path;
         if (!rig.vox_is_loaded && !path.empty()) {

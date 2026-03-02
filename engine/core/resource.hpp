@@ -10,6 +10,8 @@ class Resource {
    public:
     virtual ~Resource() = default;
 
+    bool is_loaded() const { return loaded; }
+
    protected:
     /* [Required] */
     virtual bool load() = 0;
@@ -19,8 +21,6 @@ class Resource {
         unload();
         return load();
     }
-
-    bool is_loaded() const { return loaded; }
 
    private:
     friend class Resources;
@@ -85,4 +85,4 @@ class ResourceRef {
 
 }  // namespace tmt
 
-TMT_OBJECT(tmt::FileResource, (file_location));
+JSON_REFLECT(tmt::FileResource, file_location);

@@ -417,7 +417,8 @@ bool VoxelScene::load() {
     const std::string& file_extension = file_location.relative_path.extension().generic_string();
     if (file_extension == ".svh") {
         root_nodes = decode_svh(IO::read_file(file_location));
-        if (root_nodes.empty()) Log::error("Failed to load voxel scene from file: {}", file_location);
+        if (root_nodes.empty()) 
+            Log::error("Failed to load voxel scene from file: {}", file_location);
 
         return !root_nodes.empty();
     }

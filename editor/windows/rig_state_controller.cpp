@@ -15,7 +15,9 @@
 
 namespace {
 
-ImVec2 get_node_position(const int id) {
+constexpr size_t INVALID_INDEX { std::numeric_limits<size_t>::max() };
+
+ImVec2 get_node_position(const size_t id) {
     // return ImNodes::GetNodeScreenSpacePos(id) + (ImNodes::GetNodeDimensions(id) / 2.0);
     return ax::NodeEditor::GetNodePosition(id) + ax::NodeEditor::GetNodeSize(id) / 2.0f;
 }
@@ -30,7 +32,7 @@ template <typename Type>
     return make_unique_name(map, string, ++index);
 }
 
-bool mouse_clicked_state_node(const int node_id, const ImGuiMouseButton button) {
+bool mouse_clicked_state_node(const size_t node_id, const ImGuiMouseButton button) {
     if (ImGui::IsMouseClicked(button)) {
         // const ImVec2 position = ImNodes::GetNodeScreenSpacePos(node_id);
         // const ImVec2 size = ImNodes::GetNodeDimensions(node_id);
@@ -62,11 +64,11 @@ void RigStateController::display() {
     const bool valid_controller = (model != nullptr && controller != nullptr && model->data);
     if (!valid_controller) {
         selected_state.clear();
-        selected_transition = -1;
+        selected_transition = INVALID_INDEX;
     }
 
     bool selected_item = false;
-    if (valid_controller) selected_item = (controller->states.contains(selected_state) || selected_transition != -1);
+    if (valid_controller) selected_item = (controller->states.contains(selected_state) || selected_transition != INVALID_INDEX);
 
     ComponentDiff<RigController> diff_util { selected };
 
@@ -97,18 +99,24 @@ void RigStateController::display() {
         ImGui::TableSetColumnIndex(1);
 
         if (valid_controller) {
+            // Start the editor for this controller.
+            ax::NodeEditor::SetCurrentEditor(controller->editor_context);
+
             const ImVec2 start_position = ImGui::GetCursorPos();
             ImGui::Dummy(ImGui::GetContentRegionAvail());
             if (ImGui::BeginDragDropTarget()) {
                 const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("Animation name");
                 if (payload) {
-                    const std::string& animation_name = *static_cast<std::string*>(payload->Data);
+                    const std::string animation_name {
+                        static_cast<const char*>(payload->Data),
+                        static_cast<size_t>(payload->DataSize),
+                    };
 
                     diff_util.before();
                     const auto unique_name = make_unique_name(controller->states, animation_name);
                     controller->states[unique_name] = AnimationState { animation_name };
 
-                    const int hash = static_cast<int>(std::hash<std::string> {}(unique_name));
+                    const size_t hash = std::hash<std::string> {}(unique_name);
                     ax::NodeEditor::SetNodePosition(hash, ax::NodeEditor::ScreenToCanvas(ImGui::GetMousePos()));
                     diff_util.after();
 
@@ -118,8 +126,6 @@ void RigStateController::display() {
                 ImGui::EndDragDropTarget();
             }
             ImGui::SetCursorPos(start_position);
-
-            ax::NodeEditor::SetCurrentEditor(controller->editor_context);
 
             // Setup grid rect for context menus later
             grid_rect.Min = ImGui::GetCursorPos() + ImGui::GetWindowPos();
@@ -133,13 +139,12 @@ void RigStateController::display() {
             context_popups(selected, *controller);
         }
 
-
         ImGui::TableSetColumnIndex(2);
 
         if (has_selection) {
             if (!selected_state.empty())
                 inspect_state(selected, *controller);
-            else if (selected_transition != -1)
+            else if (selected_transition != INVALID_INDEX)
                 inspect_transition(selected, *controller);
         }
 
@@ -177,10 +182,10 @@ void RigStateController::on_editor_end() {
 
 void RigStateController::list_animations(const RigModel& model) {
     for (auto& [name, animation] : model.data->bones.back().animations) {
-        ImGui::Selectable(name.c_str(), false /*, ImGuiSelectableFlags_SpanAvailWidth*/);
+        ImGui::Selectable(name.c_str(), false);
         if (ImGui::BeginDragDropSource()) {
             ImGui::TextUnformatted(name.c_str());
-            ImGui::SetDragDropPayload("Animation name", &name, sizeof(std::string));
+            ImGui::SetDragDropPayload("Animation name", name.data(), name.size());
             ImGui::EndDragDropSource();
         }
     }
@@ -271,10 +276,11 @@ void RigStateController::list_parameters(const Entity entity, RigController& con
     }
 }
 
-void RigStateController::draw_transition_select(const ImVec2& middle, const int transition_index, const ImVec2& clickable_size = ImVec2 { 25.0f, 25.0f }) {
+void RigStateController::draw_transition_select(const ImVec2& middle, const size_t transition_index, const ImVec2& clickable_size = ImVec2 { 25.0f, 25.0f }) {
     const ImVec2 middle_pos = middle - clickable_size / 2.0f;
 
-    ImGui::PushID(transition_index);
+    ImGui::PushID(static_cast<int>(transition_index & 0xFFFFFFFF));
+    ImGui::PushID(static_cast<int>((transition_index >> 32) & 0xFFFFFFFF));
 
     ImGui::SetCursorPos(middle_pos - ImGui::GetWindowPos());
     if (ImGui::InvisibleButton("##Connection", clickable_size)) {
@@ -288,13 +294,14 @@ void RigStateController::draw_transition_select(const ImVec2& middle, const int 
     }
 
     ImGui::PopID();
+    ImGui::PopID();
 }
 
 void RigStateController::draw_transitions(const RigController& controller) {
     const auto& transitions = controller.transitions;
 
-    const int transition_count = static_cast<int>(transitions.size());
-    for (int i = 0; i < transition_count; i++) {
+    const size_t transition_count = transitions.size();
+    for (size_t i = 0; i < transition_count; i++) {
         auto& transition = transitions.at(i);
         if (!positions.contains(transition.from) || !positions.contains(transition.to)) continue;
 
@@ -314,11 +321,11 @@ void RigStateController::draw_transitions(const RigController& controller) {
 
     if (!connecting_state.empty()) {
         const ImVec2 start = positions[connecting_state];
-        draw_transition(start, (start + ImGui::GetMousePos()) / 2.0f, -1);
+        draw_transition(start, (start + ImGui::GetMousePos()) / 2.0f, INVALID_INDEX);
     }
 }
 
-void RigStateController::draw_transition(const ImVec2& start, const ImVec2& middle, int transition_index) const {
+void RigStateController::draw_transition(const ImVec2& start, const ImVec2& middle, const size_t transition_index) const {
     constexpr float triangle_size = 12.0f;
     ImU32 color = 0xFFFFFFFF;
     if (transition_index == selected_transition) color = 0xFFEE9A39;  // Selection blue
@@ -342,13 +349,13 @@ void RigStateController::draw_transition(const ImVec2& start, const ImVec2& midd
 void RigStateController::draw_states(const Entity entity, RigController& controller) {
     positions.clear();
     for (auto& [name, state] : controller.states) {
-        const int hash = static_cast<int>(std::hash<std::string> {}(name));
+        const size_t hash = std::hash<std::string> {}(name);
 
         if (name == controller.current_state) {
             ax::NodeEditor::PushStyleColor(ax::NodeEditor::StyleColor_NodeBg, ImGui::ColorConvertU32ToFloat4(0xFF177032));
             ax::NodeEditor::PushStyleColor(ax::NodeEditor::StyleColor_NodeSelRect, ImGui::ColorConvertU32ToFloat4(0xFF26BC54));
         }
-        // ImNodes::BeginNode(hash);
+
         ax::NodeEditor::BeginNode(hash);
         ImGui::TextUnformatted(name.c_str());
 
@@ -366,13 +373,13 @@ void RigStateController::draw_states(const Entity entity, RigController& control
 
                 connecting_state.clear();
             } else {
-                selected_transition = -1;
+                selected_transition = INVALID_INDEX;
                 selected_state = name;
             }
         }
 
         if (mouse_clicked_state_node(hash, ImGuiMouseButton_Right) && !ImGui::IsPopupOpen("State context")) {
-            selected_transition = -1;
+            selected_transition = INVALID_INDEX;
             selected_state = name;
             open_state_context = true;
         }
@@ -409,12 +416,15 @@ void RigStateController::context_popups(const Entity entity, RigController& cont
 
             if (selected_state != "Start" && ImGui::MenuItem("Delete state")) {
                 diff_util.before();
-                // ImNodes::ClearNodeSelection();
+
                 ax::NodeEditor::ClearSelection();
+
                 controller.remove_state(selected_state);
                 if (controller.current_state == selected_state) controller.current_state.clear();
+
                 diff_util.after();
                 IUndoRedo::send_to_manager(diff_util, "Delete state");
+
                 selected_state.clear();
                 ImGui::CloseCurrentPopup();
             }
@@ -425,11 +435,11 @@ void RigStateController::context_popups(const Entity entity, RigController& cont
     }
 
     if (ImGui::BeginPopup("Transition context")) {
-        if (selected_transition != -1) {
+        if (selected_transition != INVALID_INDEX) {
             if (ImGui::MenuItem("Delete transition")) {
                 diff_util.before();
-                controller.transitions.erase(controller.transitions.begin() + selected_transition);
-                selected_transition = -1;
+                controller.transitions.erase(controller.transitions.begin() + static_cast<int64_t>(selected_transition));
+                selected_transition = INVALID_INDEX;
                 diff_util.after();
                 IUndoRedo::send_to_manager(diff_util, "Delete transition");
                 ImGui::CloseCurrentPopup();
@@ -444,13 +454,10 @@ void RigStateController::context_popups(const Entity entity, RigController& cont
         if (ImGui::MenuItem("Create state")) {
             diff_util.before();
             const std::string state_name = make_unique_name(controller.states, "New state");
-            const int hash = static_cast<int>(std::hash<std::string> {}(state_name));
+            const size_t hash = std::hash<std::string> {}(state_name);
             controller.states[state_name];
 
-            // ax::NodeEditor::BeginNode(hash);
-            //  ImNodes::SetNodeScreenSpacePos(hash, ImGui::GetMousePos());
             ax::NodeEditor::SetNodePosition(hash, ax::NodeEditor::ScreenToCanvas(ImGui::GetMousePos()));
-            // ax::NodeEditor::EndNode();
 
             diff_util.after();
             IUndoRedo::send_to_manager(std::move(diff_util), "Create state");
@@ -481,8 +488,8 @@ void RigStateController::inspect_state(const Entity entity, RigController& contr
         constexpr std::hash<std::string> hasher;
         // const ImVec2 node_position = ImNodes::GetNodeScreenSpacePos(static_cast<int>(hasher(selected_state)));
         // ImNodes::SetNodeScreenSpacePos(static_cast<int>(hasher(new_name)), node_position);
-        const ImVec2 node_position = ax::NodeEditor::GetNodePosition(static_cast<int>(hasher(selected_state)));
-        ax::NodeEditor::SetNodePosition(static_cast<int>(hasher(new_name)), node_position);
+        const ImVec2 node_position = ax::NodeEditor::GetNodePosition(hasher(selected_state));
+        ax::NodeEditor::SetNodePosition(hasher(new_name), node_position);
 
         IUndoRedo::send_to_manager(diff_util, "Rename state");
         selected_state = new_name;
@@ -495,7 +502,10 @@ void RigStateController::inspect_state(const Entity entity, RigController& contr
         const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("Animation name");
         if (payload) {
             state_diff->before();
-            const std::string& animation_name = *static_cast<std::string*>(payload->Data);
+            const std::string_view animation_name {
+                static_cast<const char*>(payload->Data),
+                static_cast<const char*>(payload->Data) + payload->DataSize,
+            };
             state.animation = animation_name;
             state_diff->after();
 
@@ -562,7 +572,7 @@ void RigStateController::inspect_transition(const Entity entity, RigController& 
 
 void RigStateController::list_conditions(const Entity entity, RigController& controller, Transition& transition) {
     static std::shared_ptr<ComponentDiff<RigController>> diff_util {};
-    static int condition_index = -1;
+    static size_t condition_index = INVALID_INDEX;
 
     ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 5.0f);
     ImGui::PushStyleVar(ImGuiStyleVar_ChildBorderSize, 2.0f);
@@ -572,11 +582,13 @@ void RigStateController::list_conditions(const Entity entity, RigController& con
         ImGui::EndMenuBar();
     }
 
-    const int condition_count = static_cast<int>(transition.conditions.size());
-    for (int i = 0; i < condition_count; i++) {
+    const size_t condition_count = transition.conditions.size();
+    for (size_t i = 0; i < condition_count; i++) {
         auto& condition = transition.conditions[i];
 
-        ImGui::PushID(i);
+        ImGui::PushID(static_cast<int>(i & 0xFFFFFFFF));
+        ImGui::PushID(static_cast<int>((i >> 32) & 0xFFFFFFFF));
+
         ImGui::BeginGroup();
         ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
         if (ImGui::BeginCombo("##Parameter name", condition.parameter_name.c_str())) {
@@ -647,6 +659,8 @@ void RigStateController::list_conditions(const Entity entity, RigController& con
                 break;
         }
         ImGui::EndGroup();
+
+        ImGui::PopID();
         ImGui::PopID();
 
         if (ImGui::IsItemActivated()) {
@@ -670,7 +684,7 @@ void RigStateController::list_conditions(const Entity entity, RigController& con
                 ComponentDiff<RigController> diff { entity };
 
                 diff.before();
-                transition.conditions.erase(transition.conditions.begin() + condition_index);
+                transition.conditions.erase(transition.conditions.begin() + static_cast<int64_t>(condition_index));
                 diff.after();
 
                 IUndoRedo::send_to_manager(diff, "Delete condition");
