@@ -30,9 +30,9 @@ inline void tag_invoke(ImReflect::ImInput_t, const char* label, tmt::ResourceRef
 }
 
 inline void recurse_node_names(const tmt::VoxelSceneNode& node, tmt::ResourceRef<tmt::VoxelVolume>& value, tmt::UUID& new_uuid) {
-    constexpr ImGuiTreeNodeFlags default_flags = ImGuiTreeNodeFlags_SpanFullWidth | ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_DrawLinesFull;
+    constexpr ImGuiTreeNodeFlags DEFAULT_FLAGS = ImGuiTreeNodeFlags_SpanFullWidth | ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_DrawLinesFull;
 
-    ImGuiTreeNodeFlags flags = default_flags;
+    ImGuiTreeNodeFlags flags = DEFAULT_FLAGS;
     flags |= (node.children.empty() ? ImGuiTreeNodeFlags_Leaf : 0);
     flags |= (node.uuid == value->uuid ? ImGuiTreeNodeFlags_Selected : 0);
 
