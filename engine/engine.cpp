@@ -15,6 +15,7 @@
 #include "core/renderer/renderer.hpp"
 
 #include "systems/physics/physics_system.hpp"
+#include "systems/physics/destruction_system.hpp"
 #include "systems/animation/animation_system.hpp"
 #include "systems/camera/camera_system.hpp"
 #include "systems/ai/goap/goap_system.hpp"
@@ -80,6 +81,7 @@ void Engine::init(std::unique_ptr<Application> user_app) {
     salvo.init();
 
     ecs.systems.add<Physics>();
+    ecs.systems.add<Destruction>();
     ecs.systems.add<RigModelManager>();
     // ecs.systems.add<Goap>();
     ecs.systems.add<NavigationSystem>();
@@ -177,7 +179,7 @@ void Engine::end() {
     ecs.clear();
     scenes.end();
     audio.end();  // Needs to be ended after the ecs.
-    resources.unload_unused();
+    resources.force_unload_all();
     renderer.end();
     Log::info("Engine finished shutdown");
 }
