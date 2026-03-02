@@ -4,7 +4,7 @@
 
 #include <engine/core/components/emitter.hpp>
 
-inline void tag_invoke(ImReflect::ImInput_t, const char* label, tmt::ParticleEffect& effect, ImSettings& settings, ImResponse& response) {
+inline void tag_invoke(ImReflect::ImInput_t, const char*, tmt::ParticleEffect& effect, ImSettings& settings, ImResponse& response) {
     auto& type_settings = settings.get<tmt::ParticleEffect>();
     auto& type_response = response.get<tmt::ParticleEffect>();
 
@@ -38,7 +38,7 @@ inline void tag_invoke(ImReflect::ImInput_t, const char* label, tmt::ParticleEff
     ImReflect::Input("Texture", effect.texture, type_settings, type_response);
 }
 
-inline void tag_invoke(ImReflect::ImInput_t, const char* label, tmt::ParticleEmitter& value, ImSettings& settings, ImResponse& response) {
+inline void tag_invoke(ImReflect::ImInput_t, const char*, tmt::ParticleEmitter& value, ImSettings& settings, ImResponse& response) {
     auto& type_settings = settings.get<tmt::ParticleEmitter>();
     auto& type_response = response.get<tmt::ParticleEmitter>();
 
