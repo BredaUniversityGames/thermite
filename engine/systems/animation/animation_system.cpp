@@ -100,21 +100,22 @@ void tmt::RigModelManager::on_end() {}
 void RigModelManager::on_draw_lines() const 
 {
     for (const auto& [entity, transform, bone_renderer] : engine.ecs.get_registry().view<Transform, BoneHierarchyRenderer>().each()) {
+        tmt::engine.polyline.use_depth_testing(true);
         tmt::engine.polyline.use_color(bone_renderer.color);
         tmt::engine.polyline.use_line_width(bone_renderer.line_width);
         tmt::RenderBoneHierarchy(transform);
     }
     
-    for (const auto& [entity, transform, bend_hint] : engine.ecs.get_registry().view<Transform, BendHint>().each())
-    {
-        tmt::engine.polyline.use_color(glm::vec4(1.f, 0.f, 0.f, 1.f));
-        tmt::engine.polyline.draw_sphere(transform.get_world_position(), bend_hint.radius);
-    }
+    //for (const auto& [entity, transform, bend_hint] : engine.ecs.get_registry().view<Transform, BendHint>().each())
+    //{
+    //    tmt::engine.polyline.use_color(glm::vec4(1.f, 0.f, 0.f, 1.f));
+    //    tmt::engine.polyline.draw_sphere(transform.get_world_position(), bend_hint.radius);
+    //}
 
-    for (const auto& [entity, transform, effector] : engine.ecs.get_registry().view<Transform, Effector>().each()) {
-        tmt::engine.polyline.use_color(glm::vec4(0.f, 0.7f, 0.7f, 1.f));
-        tmt::engine.polyline.draw_sphere(transform.get_world_position(), effector.radius);
-    }
+    //for (const auto& [entity, transform, effector] : engine.ecs.get_registry().view<Transform, Effector>().each()) {
+    //    tmt::engine.polyline.use_color(glm::vec4(0.f, 0.7f, 0.7f, 1.f));
+    //    tmt::engine.polyline.draw_sphere(transform.get_world_position(), effector.radius);
+    //}
 }
 
 void tmt::ConstraintSystem::on_start() 
@@ -179,7 +180,10 @@ void tmt::ConstraintSystem::on_update(const tmt::FrameData& time)
             walk_cycle.initial_pos = walk_cycle.effector;
         }
 
-        auto up = glm::vec3(0.f, 1.f, 0.f);//transform.get_up();
+        auto parent = transform.get_parent();
+        auto& parent_transform = engine.ecs.get_component<Transform>(parent);
+
+        auto up = parent_transform.get_up();
         // predict based on positional change
         glm::vec3 prediction_vec = (point_velocity * time.delta_time) * walk_cycle.step_prediction_strength;
         glm::vec3 subtraction_vec = prediction_vec * up;

@@ -5,7 +5,7 @@
 #include "engine/core/polyline.hpp"
 
 void Walking::start() {
-    tmt::GoapAgentFactory::spawn_agent_from_type("dragon", entity);
+    //tmt::GoapAgentFactory::spawn_agent_from_type("dragon", entity);
 
     for (int i = 0; i < leg_amount; ++i) {
         if (!tmt::engine.ecs.valid(end_effector[i])) {
@@ -37,6 +37,10 @@ void Walking::update(const tmt::FrameData& time) {
 
     glm::vec3 move_to = ray.origin + ray.dir * hit.distance;
     glm::vec3 desired_velocity = glm::normalize(move_to - walking_transform.get_world_position()) * walk_speed * 0.5f;
+    if (glm::isnan(desired_velocity.x)) {
+        tmt::Log::warn("desired vel is nan");
+        return;
+    }
 
     velocity += desired_velocity;
 
@@ -60,11 +64,13 @@ void Walking::update(const tmt::FrameData& time) {
             rot_velocity = glm::normalize(glm::quat_cast(basis));
         }
     }
-    float t = time.delta_time * rotation_speed;
-    rotation = glm::slerp(rotation, rot_velocity, glm::clamp(t, 0.0f, 1.0f));
-    rotation = glm::normalize(rotation);
 
-    walking_transform.set_world_rotation(rotation);
+    if (glm::dot(velocity, velocity) > 0.1f) {
+        float t = time.delta_time * rotation_speed;
+        rotation = glm::slerp(rotation, rot_velocity, glm::clamp(t, 0.0f, 1.0f));
+        rotation = glm::normalize(rotation);
+        walking_transform.set_world_rotation(rotation);
+    }
 
     // compute end effector positions
     // Extract object basis from its rotation
@@ -82,7 +88,7 @@ void Walking::update(const tmt::FrameData& time) {
         glm::vec3 leg_dir = forward * c + right * s;
         auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(end_effector[i]);
         transform.set_world_position(walking_transform.get_world_position() + leg_dir);
-        tmt::engine.polyline.draw_sphere(transform.get_world_position(), 0.1f);
+        //tmt::engine.polyline.draw_sphere(transform.get_world_position(), 0.1f);
     }
 
     glm::vec3 half_extent = { 0.2f, 0.2f, 0.5f };
@@ -92,7 +98,7 @@ void Walking::update(const tmt::FrameData& time) {
 
     float body_height = 0.5f;
     box_position += local_up * body_height;
-    tmt::engine.polyline.draw_obb(box_position, half_extent, box_rotation);
+    //tmt::engine.polyline.draw_obb(box_position, half_extent, box_rotation);
 }
 
 void Walking::end() {}
