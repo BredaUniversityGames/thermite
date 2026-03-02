@@ -24,14 +24,18 @@
 #include "components/asteroid_field_component.hpp"
 #include "components/mining_component.hpp"
 #include "components/animation_player.hpp"
+#include "components/attach_component.hpp"
 #include "components/gravity_manipulation_component.hpp"
 #include "components/collision_trigger.hpp"
+#include "components/mover_component.hpp"
 #include "components/ore_collector.hpp"
 #include "components/projectile_spawner.hpp"
 #include "components/rifle_projectile.hpp"
 #include "components/spawner.hpp"
 #include "components/text_component.hpp"
 #include "components/weapon.hpp"
+#include "components/fuel.hpp"
+#include "components/upgrade.hpp"
 
 class Game : public tmt::Application {
    public:
@@ -80,9 +84,10 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     // clang-format on
 
     /* Register Scenes */
+    tmt::engine.scenes.register_scene<MainGameScene>();
     tmt::engine.scenes.register_scene<DanielTestScene>();
     tmt::engine.scenes.register_scene<MikaTestScene>();
-    tmt::engine.scenes.register_scene<MainGameScene>();
+    tmt::engine.scenes.register_scene<DanielTestScene>();
     tmt::engine.scenes.register_scene<MainMenuScene>();
     tmt::engine.scenes.register_scene<Gym>();
     tmt::engine.scenes.register_scene<Zoo>();
@@ -100,7 +105,12 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     tmt::engine.component_registry.register_component<game::GravityManipulationComponent>();
     tmt::engine.component_registry.register_component<game::OreCollector>();
     tmt::engine.component_registry.register_component<game::CollisionTrigger>();
+    tmt::engine.component_registry.register_component<game::WeaponManager>();
     tmt::engine.component_registry.register_component<game::TextComponent>();
+    tmt::engine.component_registry.register_component<game::MoverComponent>();
+    tmt::engine.component_registry.register_component<game::AttachComponent>();
+    tmt::engine.component_registry.register_component<game::Upgrade>();
+    tmt::engine.component_registry.register_component<game::FuelComponent>();
 
     return std::make_unique<Game>(specs);
 }
