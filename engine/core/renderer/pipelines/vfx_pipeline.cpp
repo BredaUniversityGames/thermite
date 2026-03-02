@@ -153,7 +153,7 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
 
             eff.pos = transform.get_world_position() + effect.pos_offset;
             eff.dir = glm::normalize(effect.dir);
-            eff.cone_angle = glm::radians(effect.cone_angle);
+            eff.cone_angle = glm::cos(glm::radians(effect.cone_angle));
             eff.speed = effect.speed;
             eff.lifetime = effect.particle_lifetime;
             eff.spawn_count = effect.spawn_count;
