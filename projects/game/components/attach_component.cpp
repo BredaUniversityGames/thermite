@@ -4,6 +4,17 @@
 #include "glm/gtx/norm.inl"
 #include "player.hpp"
 
+namespace {
+
+void set_attached_entity_transform(tmt::Entity entity, tmt::Entity parent = entt::null) {
+    auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
+    transform.set_parent(parent);
+    if (parent != entt::null) {
+        transform.set_local_position(glm::vec3(0.0f));
+    }
+}
+
+}  // namespace
 void game::AttachComponent::start() {
     // By default assign the player entity
     if (entity_that_attaches == entt::null) {
@@ -12,13 +23,12 @@ void game::AttachComponent::start() {
             entity_that_attaches = element.entity;
             break;
         }
-
-        tmt::engine.ecs.get_dispatcher().sink<AttachAttemptEvent>().connect<&AttachComponent::on_check_range_to_attach>(this);
     }
+    tmt::engine.ecs.get_dispatcher().sink<AttachAttemptEvent>().connect<&AttachComponent::on_check_range_to_attach>(this);
 }
 void game::AttachComponent::update(const tmt::FrameData& time) {
     if (is_attached) {
-        tmt::engine.ecs.get_dispatcher().trigger<TriggerMovementEvent>({ .trigger = entity_that_attaches });
+        tmt::engine.ecs.get_dispatcher().trigger<TriggerMovementEvent>({ .trigger = entity });
     }
 }
 void game::AttachComponent::end() {
@@ -46,7 +56,7 @@ void game::AttachComponent::on_check_range_to_attach(const AttachAttemptEvent& e
 
     if (is_attached) {
         is_attached = false;
-        tmt::engine.ecs.get_component<tmt::Transform>(entity_that_attaches).set_parent(entt::null);
+        set_attached_entity_transform(entity_that_attaches, entt::null);
         tmt::engine.ecs.get_dispatcher().trigger<AttachEvent>({ .entity = entity_that_attaches, .is_attached = is_attached });
 
         return;
@@ -55,9 +65,10 @@ void game::AttachComponent::on_check_range_to_attach(const AttachAttemptEvent& e
     if (check_inside_range(event)) {
         is_attached = true;
         tmt::Log::info("Entity {} is attached to {}", entity_that_attaches, entity);
-        tmt::engine.ecs.get_component<tmt::Transform>(entity_that_attaches).set_parent(entity);
+        // TODO maybe do not base it on the parent, should be fine for now though
+        // TODO add a mover component to this
+        set_attached_entity_transform(entity_that_attaches, entity);
 
         tmt::engine.ecs.get_dispatcher().trigger<AttachEvent>({ .entity = entity_that_attaches, .is_attached = is_attached });
-        // TODO add a mover component to this
     }
 }

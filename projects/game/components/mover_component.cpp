@@ -2,8 +2,9 @@
 
 #include "events.hpp"
 #include "engine/core/polyline.hpp"
+#include "player.hpp"
 void game::MoverComponent::start() {
-    tmt::engine.ecs.get_dispatcher().sink<TriggerMovementEvent>().disconnect<&MoverComponent::update_movement>(this);
+    tmt::engine.ecs.get_dispatcher().sink<TriggerMovementEvent>().connect<&MoverComponent::update_movement>(this);
 }
 void game::MoverComponent::end() {
     tmt::engine.ecs.get_dispatcher().sink<TriggerMovementEvent>().disconnect<&MoverComponent::update_movement>(this);
