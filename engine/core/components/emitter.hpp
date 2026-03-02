@@ -16,6 +16,7 @@ struct ParticleEffect {
 
     float particle_lifetime = 1.0f;
 
+    glm::vec3 pos_offset = { 0.0f, 0.0f, 0.0f };
     glm::vec3 dir = { 0.0f, 1.0f, 0.0f };
     float cone_angle = 10.0f;  // In Degrees
 
@@ -56,7 +57,7 @@ struct ParticleEmitter {
 
 TMT_OBJECT(tmt::Range, (min, max));
 TMT_OBJECT(
-    tmt::ParticleEffect, (particle_lifetime, dir, cone_angle, spawn_count, speed, start_size, end_size, size_curve, start_opacity, end_opacity, opacity_curve, rotation, pos_jitter,
+    tmt::ParticleEffect, (particle_lifetime, pos_offset, dir, cone_angle, spawn_count, speed, start_size, end_size, size_curve, start_opacity, end_opacity, opacity_curve, rotation, pos_jitter,
                           jitter_speed, active, texture, name)
 );
 

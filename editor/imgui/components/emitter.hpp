@@ -10,6 +10,7 @@ inline void tag_invoke(ImReflect::ImInput_t, const char* label, tmt::ParticleEff
 
     ImReflect::Input("Active", effect.active, type_settings, type_response);
     ImReflect::Input("Lifetime", effect.particle_lifetime, type_settings, type_response);
+    ImReflect::Input("Pos Offset", effect.pos_offset, type_settings, type_response);
     ImReflect::Input("Direction", effect.dir, type_settings, type_response);
     ImReflect::Input("Cone Angle", effect.cone_angle, type_settings, type_response);
     ImReflect::Input("Spawn Count", effect.spawn_count, type_settings, type_response);
