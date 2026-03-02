@@ -4,6 +4,7 @@
 #include "engine/core/polyline.hpp"
 #include "engine/core/logger.hpp"
 #include "glm/gtx/pca.hpp"
+#include "engine/core/renderer/renderer.hpp"
 
 namespace tmt {
 
@@ -61,61 +62,96 @@ bool Volume::is_surface(uint32_t x, uint32_t y, uint32_t z) {
 };
 
 glm::vec3 NavMesh::compute_normal(NavNode& node) {
-    glm::vec3 normal(0.0f);
+    float length_acc = 0.f;
+    glm::vec3 edge_acc(0.f);
+    glm::vec3 last_edge(0.f, 1.f, 0.f);
     auto& neighbors = node.connecting_nodes;
     for (int i = 0; i < neighbors.size(); i++) {
-        glm::vec3 edgeA = (*nodes_mesh)[neighbors[i]].local_pos - node.local_pos;
-        glm::vec3 edgeB = (*nodes_mesh)[neighbors[(i + 1) % neighbors.size()]].local_pos - node.local_pos;
-        if (edgeA.x < edgeB.x + 0.00001f && edgeA.x > edgeB.x - 0.0001f && 
-            edgeA.y < edgeB.y + 0.00001f && edgeA.y > edgeB.y - 0.0001f && 
-            edgeA.z < edgeB.z + 0.00001f && edgeA.z > edgeB.z - 0.0001f) continue;
-        normal += glm::normalize(glm::cross(edgeA, edgeB));
+        glm::vec3 edge = (*nodes_mesh)[neighbors[i]].local_pos - node.local_pos;
+
+        float edge_weight = glm::dot(edge, last_edge);
+
+        edge_acc += glm::normalize(edge);
+        length_acc += glm::dot(edge, edge);
     }
 
-    return glm::normalize(normal);
+    if (glm::dot(edge_acc, edge_acc) < 0.001f) {
+        // flat side, needs special handling
+        edge_acc = glm::vec3(0.f);
+        for (int i = 0; i < neighbors.size(); i++) {
+            glm::vec3 edge_a = glm::normalize((*nodes_mesh)[neighbors[i]].local_pos - node.local_pos);
+            glm::vec3 edge_b = glm::normalize((*nodes_mesh)[neighbors[(i + 1) % neighbors.size()]].local_pos - node.local_pos);
+
+            if (abs(glm::dot(edge_a, edge_b)) > 0.99f) continue;
+
+            edge_acc += glm::cross(edge_a, edge_b);
+        }
+    }
+    glm::vec3 norm_edge = glm::normalize(edge_acc);
+    length_acc /= static_cast<float>(neighbors.size());
+
+    tmt::Ray ray(node.world_pos, norm_edge);
+
+    auto hit = tmt::engine.renderer.trace_ray(ray);
+    if (!hit.miss() && (hit.distance * hit.distance) < length_acc) {
+        norm_edge = -norm_edge;
+    }
+
+    tmt::engine.polyline.use_color(glm::vec4(1.f, 1.f, 1.f, 1.f));
+    tmt::engine.polyline.draw_line(node.local_pos, node.local_pos + norm_edge, 1000.f);
+
+    return norm_edge;
 }
 
 void NavMesh::generate_mesh_over_time() {
-    entered_loop = false;
-    if (iteration_nmg == 0) {
-        if (!generating) {
-            generating_lod += lod_level + 2;
-            init();
-            nodes_mesh->clear();
-        }
-        delete node_map;
-        node_map = new std::unordered_map<uint32_t, int>;
-        volume = Volume();
-        volume.traversed = false;
-        if (generating_nodes) generating_nodes->clear();
-        generating = true;
-        generate_mesh(100);
-    } else {
-        generate_mesh(100);
-    }
+    // entered_loop = false;
+    // if (iteration_nmg == 0) {
+    //     if (!generating) {
+    //         generating_lod += lod_level + 2;
+    //         init();
+    //         nodes_mesh->clear();
+    //     }
+    //     delete node_map;
+    //     node_map = new std::unordered_map<uint32_t, int>;
+    //     volume = Volume();
+    //     volume.traversed = false;
+    //     if (generating_nodes) generating_nodes->clear();
+    //     generating = true;
+    //     generate_mesh(100);
+    // } else {
+    //     generate_mesh(100);
+    // }
 
-    iteration_nmg++;
+    // iteration_nmg++;
 
-    if (!entered_loop) {
-        iteration_nmg = 0;
-        std::swap(nodes_mesh, generating_nodes);
-        for (auto& node : (*nodes_mesh)) {
-            node.normal = compute_normal(node);
-        }
-        for (int i = 0; i < 1; ++i) {
-            for (auto& node : (*nodes_mesh)) {
-                for (auto& index : node.connecting_nodes) {
-                    node.normal += (*nodes_mesh)[index].normal;
-                }
-                //node.normal = glm::normalize(node.normal);
-            }
-        }
-        if (generating_lod == lod_level) {
-            generating = false;
-        } else {
-            generating_lod--;
-        }
-        
+    // if (!entered_loop) {
+    //     iteration_nmg = 0;
+    //     std::swap(nodes_mesh, generating_nodes);
+    //     for (auto& node : (*nodes_mesh)) {
+    //         node.normal = compute_normal(node);
+    //     }
+    //     for (int i = 0; i < 1; ++i) {
+    //         for (auto& node : (*nodes_mesh)) {
+    //             for (auto& index : node.connecting_nodes) {
+    //                 node.normal += (*nodes_mesh)[index].normal;
+    //             }
+    //             //node.normal = glm::normalize(node.normal);
+    //         }
+    //     }
+    // 
+    //     if (generating_lod == lod_level) {
+    //         generating = false;
+    //     } else {
+    //         generating_lod--;
+    //     }
+    //
+    // }
+
+    generating_lod = lod_level;
+
+    generate_mesh(100);
+    for (auto& node : (*nodes_mesh)) {
+        node.normal = compute_normal(node);
     }
 }
 
@@ -157,6 +193,7 @@ void NavMesh::generate_mesh(int iterations) {
                     glm::vec3 voxel_pos = (glm::vec3(x, y, z) + 0.5f) * float(volume.divisor);
                     glm::vec3 centered = voxel_pos - full_size * 0.5f;
                     node.local_pos = centered * voxel_scale;
+                    node.world_pos = world_matrix * glm::vec4(node.local_pos, 1.f);
                     node.iteration = iteration_nmg;
                     (*node_map)[pos_index] = (int)generating_nodes->size();
                     node_index = (int)generating_nodes->size();
@@ -182,6 +219,7 @@ void NavMesh::generate_mesh(int iterations) {
                                 glm::vec3 voxel_pos = (glm::vec3(neighbor.x, neighbor.y, neighbor.z) + 0.5f) * float(volume.divisor);
                                 glm::vec3 centered = voxel_pos - full_size * 0.5f;
                                 node.local_pos = centered * voxel_scale;
+                                node.world_pos = world_matrix * glm::vec4(node.local_pos, 1.f);
                                 node.iteration = iteration_nmg;
                                 (*node_map)[neighbor_pos_index] = (int)generating_nodes->size();
                                 neighbor_node_index = (int)generating_nodes->size();
@@ -339,14 +377,14 @@ std::optional<glm::vec3> tmt::NavMesh::follow_path(glm::vec3 start, glm::vec3 en
     }
     tmt::engine.polyline.use_color(0.0f, 1.0f, 0.0f);
     tmt::engine.polyline.use_line_width(1.0f);
-    //tmt::engine.polyline.draw_sphere(target_pos, 0.1f);
+    // tmt::engine.polyline.draw_sphere(target_pos, 0.1f);
     tmt::engine.polyline.draw_sphere(start, 0.1f);
 
     return glm::normalize(target_pos - start);
 }
 
 void tmt::NavMesh::inspect() {
-    //return;
+    // return;
     tmt::engine.polyline.use_color(1.0f, 0.0f, 0.0f);
     tmt::engine.polyline.use_line_width(2, true);
 
@@ -355,8 +393,7 @@ void tmt::NavMesh::inspect() {
             if (i > (*nodes_mesh)[i].connecting_nodes[j]) continue;
             int conn_idx = (*nodes_mesh)[i].connecting_nodes[j];
             glm::vec3 color = glm::vec3(
-                (((float)(*nodes_mesh)[i].iteration * 13.0f / 7.0f + 3.5f) * 21.0f),
-                (((float)(*nodes_mesh)[i].iteration * 43.0f / 23.0f + 3.2f) * 17.0f),
+                (((float)(*nodes_mesh)[i].iteration * 13.0f / 7.0f + 3.5f) * 21.0f), (((float)(*nodes_mesh)[i].iteration * 43.0f / 23.0f + 3.2f) * 17.0f),
                 (((float)(*nodes_mesh)[i].iteration * 97.0f / 67.0f + 3.9f) * 3.0f)
             );
             color.x = glm::abs(color.x - std::floor(color.x));
@@ -365,9 +402,9 @@ void tmt::NavMesh::inspect() {
             tmt::engine.polyline.use_color(color);
             engine.polyline.draw_line((*nodes_mesh)[i].world_pos, (*nodes_mesh)[conn_idx].world_pos);
 
-            //draw normal
-            tmt::engine.polyline.use_color(1.0f, 1.0f, 1.0f);
-            engine.polyline.draw_line((*nodes_mesh)[i].world_pos, (*nodes_mesh)[i].world_pos + (*nodes_mesh)[i].normal * 0.5f);
+            // draw normal
+            // tmt::engine.polyline.use_color(1.0f, 1.0f, 1.0f);
+            // engine.polyline.draw_line((*nodes_mesh)[i].world_pos, (*nodes_mesh)[i].world_pos + (*nodes_mesh)[i].normal);
         }
     }
 

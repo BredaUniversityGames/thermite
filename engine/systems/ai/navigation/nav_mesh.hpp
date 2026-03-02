@@ -60,7 +60,7 @@ class NavMesh {
     int lod_level = 0;
 
     bool generating = false;
-
+    bool initialized = false;
    private:
     std::unordered_map<uint32_t, int>* node_map;
     Volume volume;
@@ -84,6 +84,7 @@ class NavMesh {
     std::vector<NavNode>* generating_nodes = nullptr;
 
    public:
+    glm::mat4 world_matrix = glm::mat4(1.f);
     glm::vec3 compute_normal(NavNode& node);
     void generate_mesh_over_time();
     void generate_mesh(int iterations = 1e34);
