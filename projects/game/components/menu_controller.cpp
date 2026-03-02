@@ -1,6 +1,7 @@
 #include "menu_controller.hpp"
 #include "engine/core/input/input.hpp"
 #include "game_input.hpp"
+#include "player.hpp"
 
 namespace game {
 
@@ -87,12 +88,19 @@ void MenuController::disable_upgrade_menu() const {
 void MenuController::lock_mouse() {
     tmt::engine.input.lock_mouse(true);
     tmt::engine.input.set_mouse_relative_to_window(true);
+
+    auto player_entity = tmt::engine.ecs.view<Player>().front().entity;  // Assuming there's only one player entity in the game
+    tmt::engine.ecs.get_component<Player>(player_entity).toggle_camera_movement();
+    tmt::engine.ecs.get_component<Player>(player_entity).toggle_player_movement();
 }
 
 void MenuController::unlock_mouse() {
     tmt::engine.input.lock_mouse(false);
     tmt::engine.input.set_mouse_relative_to_window(false);
-    
+
+    auto player_entity = tmt::engine.ecs.view<Player>().front().entity;  // Assuming there's only one player entity in the game
+    tmt::engine.ecs.get_component<Player>(player_entity).toggle_camera_movement();
+    tmt::engine.ecs.get_component<Player>(player_entity).toggle_player_movement();
 }
 
 bool MenuController::check_for_open_menus() const {
