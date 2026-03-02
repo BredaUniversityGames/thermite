@@ -2,18 +2,32 @@
 
 #include "engine/core/polyline.hpp"
 #include "glm/gtx/norm.inl"
+#include "player.hpp"
 
 void game::AttachComponent::start() {
-    tmt::engine.ecs.get_dispatcher().sink<AttachAttemptEvent>().connect<&AttachComponent::on_check_range_to_attach>(this);
+    // By default assign the player entity
+    if (entity_that_attaches == entt::null) {
+        auto player_view = tmt::engine.ecs.view<game::Player>();
+        for (auto& element : player_view) {
+            entity_that_attaches = element.entity;
+            break;
+        }
+
+        tmt::engine.ecs.get_dispatcher().sink<AttachAttemptEvent>().connect<&AttachComponent::on_check_range_to_attach>(this);
+    }
 }
-void game::AttachComponent::update(const tmt::FrameData& time) {}
+void game::AttachComponent::update(const tmt::FrameData& time) {
+    if (is_attached) {
+        tmt::engine.ecs.get_dispatcher().trigger<TriggerMovementEvent>({ .trigger = entity_that_attaches });
+    }
+}
 void game::AttachComponent::end() {
     tmt::engine.ecs.get_dispatcher().sink<AttachAttemptEvent>().disconnect<&AttachComponent::on_check_range_to_attach>(this);
 }
 void game::AttachComponent::draw_debug_lines() const {
     cfg.set_values();
 
-    if (check_inside_range({ entity_that_attaches })) {
+    if (entity_that_attaches != entt::null && check_inside_range({ entity_that_attaches })) {
         tmt::engine.polyline.use_color(glm::vec4 { 1.0f, 0.0f, 0.0f, 1.0f });
     }
     tmt::engine.polyline.draw_sphere(tmt::engine.ecs.get_component<tmt::Transform>(entity).get_world_position(), radius);

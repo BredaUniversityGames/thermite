@@ -62,11 +62,12 @@ void Player::start() {
     tmt::engine.input.warp_mouse({ screen_size.x / 2.0f, screen_size.y / 2.0f }, true);
     tmt::engine.input.lock_mouse(true);
     setup_inputs(tmt::engine.input_map);
+    tmt::engine.ecs.get_dispatcher().sink<AttachEvent>().connect<&Player::on_attach>(this);
 }
 void Player::end() {
-    tmt::engine.ecs.get_dispatcher().trigger<AttachEvent>({ .entity = entity_that_attaches, .is_attached = is_attached });
+    // tmt::engine.ecs.get_dispatcher().trigger<AttachEvent>({ .entity = entity_that_attaches, .is_attached = is_attached });
 
-    tmt::engine.ecs.get_dispatcher().sink<AttachEvent>().disconnect<&Player::on_attach_change>(this);
+    tmt::engine.ecs.get_dispatcher().sink<AttachEvent>().disconnect<&Player::on_attach>(this);
 }
 
 void Player::look_camera() const {
@@ -156,8 +157,11 @@ void Player::update(const tmt::FrameData& time) {
     }
 }
 
-void Player::set_move(bool value) {
-    can_move = value;
+void Player::on_attach(const AttachEvent& event) {
+    if (event.entity != entity) {
+        return;
+    }
+    can_move = !event.is_attached;
 }
 
 }  // namespace game
