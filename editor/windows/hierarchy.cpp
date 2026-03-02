@@ -34,6 +34,61 @@
 
 namespace tmt {
 
+/* Strips any trailing " (N)" suffix from a name to get the base name. */
+static std::string get_base_name(const std::string& name) {
+    if (name.size() < 4) return name;
+
+    // Check if the name ends with " (N)" where N is one or more digits
+    if (name.back() != ')') return name;
+
+    auto paren_open = name.rfind(" (");
+    if (paren_open == std::string::npos) return name;
+
+    // Check that everything between " (" and ")" is digits
+    const std::string between = name.substr(paren_open + 2, name.size() - paren_open - 3);
+    if (between.empty()) return name;
+
+    for (char c : between) {
+        if (!std::isdigit(static_cast<unsigned char>(c))) return name;
+    }
+
+    return name.substr(0, paren_open);
+}
+
+/* Finds the next available duplicate number for a base name, considering all existing entity names. */
+static int find_next_duplicate_number(const std::string& base_name, const Registry& registry) {
+    int max_number = 0;
+
+    auto view = registry.view<Name>();
+    for (auto [entity, name_component] : view.each()) {
+        const std::string& existing_name = name_component.name;
+
+        if (existing_name == base_name) {
+            // The base name itself exists, so we need at least (1)
+            max_number = std::max(max_number, 1);
+        } else if (existing_name.size() > base_name.size()) {
+            // Check if it matches "base_name (N)"
+            const std::string prefix = base_name + " (";
+            if (existing_name.rfind(prefix, 0) == 0 && existing_name.back() == ')') {
+                const std::string num_str = existing_name.substr(prefix.size(), existing_name.size() - prefix.size() - 1);
+                bool all_digits = !num_str.empty();
+                for (char c : num_str) {
+                    if (!std::isdigit(static_cast<unsigned char>(c))) {
+                        all_digits = false;
+                        break;
+                    }
+                }
+                if (all_digits) {
+                    int num = std::stoi(num_str);
+                    max_number = std::max(max_number, num + 1);
+                }
+            }
+        }
+    }
+
+    return max_number == 0 ? 1 : max_number;
+}
+
 void Hierarchy::before_begin() {
     /* zero margin */
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
@@ -176,16 +231,16 @@ void Hierarchy::copy_selection() {
     ImGui::SetClipboardText(json.dump().c_str());
 }
 
-void Hierarchy::paste_entities(const Entity hovered_entity, const bool overwrite_parent) {
+std::set<Entity> Hierarchy::paste_entities(const Entity hovered_entity, const bool overwrite_parent) {
     const char* clipboard_text = ImGui::GetClipboardText();
     if (clipboard_text == nullptr) {
         Log::warn("Failed to paste entities, clipboard is empty.");
-        return;
+        return {};
     }
     const json deserialized = json::parse(clipboard_text, nullptr, false);
     if (deserialized.is_discarded()) {
         Log::error("Failed to parse clipboard JSON for entities. Clipboard is: \"{}\"", clipboard_text);
-        return;
+        return {};
     }
 
     std::set<Entity> new_entities;
@@ -207,13 +262,25 @@ void Hierarchy::paste_entities(const Entity hovered_entity, const bool overwrite
         selected_entities.insert(entity);
     }
     OnSceneModified::dispatch();
+    return new_entities;
 }
 
 void Hierarchy::duplicate_selection() {
     if (selected_entities.empty()) return;
 
     copy_selection();
-    paste_entities(entt::null, false);
+    const std::set<Entity> new_entities = paste_entities(entt::null, false);
+
+    // Rename duplicated entities with incrementing " (N)" suffixes
+    auto& reg = tmt::engine.ecs.get_registry();
+    for (const Entity entity : new_entities) {
+        if (!reg.all_of<Name>(entity)) continue;
+
+        Name& name_comp = reg.get<Name>(entity);
+        const std::string base = get_base_name(name_comp.name);
+        const int next_number = find_next_duplicate_number(base, reg);
+        name_comp.name = base + " (" + std::to_string(next_number) + ")";
+    }
 }
 
 void Hierarchy::delete_selection() {
