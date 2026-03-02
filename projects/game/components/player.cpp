@@ -52,6 +52,16 @@ void setup_inputs(tmt::InputMap& input_map) {
     input_map.add_key_to_action(action::SWITCH_MINING, tmt::Key::NUM_3);
     input_map.add_action(action::SECONDARY_TOOL_USE);
     input_map.add_action_mouse(action::SECONDARY_TOOL_USE, tmt::MouseButton::RIGHT);
+
+    // menus
+    input_map.add_action(action::OPEN_INVENTORY);
+    input_map.add_key_to_action(action::OPEN_INVENTORY, tmt::Key::I);
+    input_map.add_action(action::OPEN_PAUSE_MENU);
+    input_map.add_key_to_action(action::OPEN_PAUSE_MENU, tmt::Key::P);
+    input_map.add_action(action::OPEN_UPGRADE_MENU);
+    input_map.add_key_to_action(action::OPEN_UPGRADE_MENU, tmt::Key::U);
+    input_map.add_action(action::ATTACH_KEY);
+    input_map.add_key_to_action(action::ATTACH_KEY, tmt::Key::E);
 }
 
 void Player::start() {
@@ -60,30 +70,44 @@ void Player::start() {
     tmt::engine.input.warp_mouse({ screen_size.x / 2.0f, screen_size.y / 2.0f }, true);
     tmt::engine.input.lock_mouse(true);
     setup_inputs(tmt::engine.input_map);
+    tmt::engine.ecs.get_dispatcher().sink<AttachEvent>().connect<&Player::on_attach>(this);
+}
+void Player::end() {
+    // tmt::engine.ecs.get_dispatcher().trigger<AttachEvent>({ .entity = entity_that_attaches, .is_attached = is_attached });
+
+    tmt::engine.ecs.get_dispatcher().sink<AttachEvent>().disconnect<&Player::on_attach>(this);
 }
 
-void Player::update(const tmt::FrameData& time) {
-    // triggers the event for shooting
+void Player::look_camera() const {
     auto& input = tmt::engine.input;
+
     auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
     auto& camera = tmt::engine.ecs.get_component<tmt::Camera>(entity);
     const float dx = input.get_mouse_delta_x();
     const float dy = input.get_mouse_delta_y();
 
     // Mouse Look (unchanged)
+
     camera.yaw -= dx * camera_sensitivity;
     camera.pitch -= dy * camera_sensitivity;
+
     camera.pitch = glm::clamp(camera.pitch, -89.0f, 89.0f);
 
     glm::vec3 front = {};
+
     front.x = cos(glm::radians(camera.yaw)) * cos(glm::radians(camera.pitch));
     front.y = sin(glm::radians(camera.pitch));
     front.z = sin(glm::radians(camera.yaw)) * cos(glm::radians(camera.pitch));
     front = glm::normalize(front);
     transform.look_at(transform.get_world_position() + front, glm::vec3(0.0f, 1.0f, 0.0f));
+}
 
-    // Calculate desired movement direction (unchanged from demo)
+void Player::move_player() {
+    auto& input = tmt::engine.input;
+
     glm::vec3 input_dir = { 0.0f, 0.0f, 0.0f };
+    auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
+
     if (input.is_action_pressed(action::MOVE_FORWARD)) input_dir += transform.get_forward();
     if (input.is_action_pressed(action::MOVE_BACKWARD)) input_dir -= transform.get_forward();
     if (input.is_action_pressed(action::MOVE_RIGHT)) input_dir += transform.get_right();
@@ -91,19 +115,21 @@ void Player::update(const tmt::FrameData& time) {
     if (input.is_action_pressed(action::MOVE_UP)) input_dir += glm::vec3(0.0f, 1.0f, 0.0f);
     if (input.is_action_pressed(action::MOVE_DOWN)) input_dir -= glm::vec3(0.0f, 1.0f, 0.0f);
 
-    // Added button for breaking, port from prototype
+        // Added button for breaking, port from prototype
     bool breaking = input.is_action_pressed(action::BREAK);
+    
 
+    auto delta_time = tmt::engine.frame_data().delta_time;
     // Apply acceleration or drag
     if (glm::length(input_dir) > 0.0f) {
         // Accelerate in input direction
         input_dir = glm::normalize(input_dir);
-        velocity += input_dir * acceleration * time.delta_time;
+        velocity += input_dir * acceleration * delta_time;
     } else {
         // Apply drag when no input
         float current_speed = glm::length(velocity);
         if (current_speed > 0.0f) {
-            float drag_force = drag * time.delta_time;
+            float drag_force = drag * delta_time;
             float new_speed = glm::max(0.0f, current_speed - drag_force);
             velocity = glm::normalize(velocity) * new_speed;
         }
@@ -113,7 +139,7 @@ void Player::update(const tmt::FrameData& time) {
     if (breaking) {
         float current_speed = glm::length(velocity);
         if (current_speed > 0.0f) {
-            float break_force = deceleration * time.delta_time;
+            float break_force = deceleration * delta_time;
             float new_speed = glm::max(0.0f, current_speed - break_force);
             velocity = glm::normalize(velocity) * new_speed;
         }
@@ -126,11 +152,37 @@ void Player::update(const tmt::FrameData& time) {
     }
 
     // Apply velocity to position
-    transform.translate(velocity * time.delta_time);
+    transform.translate(velocity * delta_time);
 }
 
-void Player::end() {
-    // Cleanup code for the player component
+void Player::update(const tmt::FrameData& time) {
+    // triggers the event for shooting
+    auto& input = tmt::engine.input;
+    if (input.is_action_just_pressed(action::ATTACH_KEY)) {
+        tmt::engine.ecs.get_dispatcher().trigger<AttachAttemptEvent>({ .entity = entity });
+    }
+
+    if (camera_movement) {
+        look_camera();
+    }
+
+    // TODO this needs the state pattern for the player, it needs to move the camera, but not move while on the barge
+    //  Calculate desired movement direction (unchanged from demo)
+    if (can_move) {
+        if (player_movement) {
+            move_player();
+        }
+    }
+
+    tmt::engine.ecs.try_get_component<tmt::UIComponent>(hp_bar_max_entity)->size.x = max_health + 2.0f;
+    tmt::engine.ecs.try_get_component<tmt::UIComponent>(hp_bar_current_entity)->size.x = health;
+}
+
+void Player::on_attach(const AttachEvent& event) {
+    if (event.entity != entity) {
+        return;
+    }
+    can_move = !event.is_attached;
 }
 
 }  // namespace game
