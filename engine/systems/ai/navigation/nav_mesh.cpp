@@ -114,55 +114,42 @@ glm::vec3 NavMesh::compute_normal(NavNode& node) {
 }
 
 void NavMesh::generate_mesh_over_time() {
-    // entered_loop = false;
-    // if (iteration_nmg == 0) {
-    //     if (!generating) {
-    //         generating_lod += lod_level + 2;
-    //         init();
-    //         nodes_mesh->clear();
-    //     }
-    //     delete node_map;
-    //     node_map = new std::unordered_map<uint32_t, int>;
-    //     volume = Volume();
-    //     volume.traversed = false;
-    //     if (generating_nodes) generating_nodes->clear();
-    //     generating = true;
-    //     generate_mesh(100);
-    // } else {
-    //     generate_mesh(100);
-    // }
+     entered_loop = false;
+     if (iteration_nmg == 0) {
+         if (!generating) {
+             generating_lod += lod_level + 2;
+             init();
+             nodes_mesh->clear();
+         }
+         delete node_map;
+         node_map = new std::unordered_map<uint32_t, int>;
+         volume = Volume();
+         volume.traversed = false;
+         if (generating_nodes) generating_nodes->clear();
+         generating = true;
+         generate_mesh(100);
+     } else {
+         generate_mesh(100);
+     }
 
-    // iteration_nmg++;
+     iteration_nmg++;
 
-    // if (!entered_loop) {
-    //     iteration_nmg = 0;
-    //     std::swap(nodes_mesh, generating_nodes);
-    //     for (auto& node : (*nodes_mesh)) {
-    //         node.normal = compute_normal(node);
-    //     }
-    //     for (int i = 0; i < 1; ++i) {
-    //         for (auto& node : (*nodes_mesh)) {
-    //             for (auto& index : node.connecting_nodes) {
-    //                 node.normal += (*nodes_mesh)[index].normal;
-    //             }
-    //             //node.normal = glm::normalize(node.normal);
-    //         }
-    //     }
-    // 
-    //     if (generating_lod == lod_level) {
-    //         generating = false;
-    //     } else {
-    //         generating_lod--;
-    //     }
-    //
-    // }
-
-    generating_lod = lod_level;
-
-    generate_mesh();
-    for (auto& node : (*nodes_mesh)) {
-        node.normal = compute_normal(node);
-    }
+     if (!entered_loop) {
+         iteration_nmg = 0;
+         std::swap(nodes_mesh, generating_nodes);
+         for (auto& node : (*nodes_mesh)) {
+             node.normal = compute_normal(node);
+         }
+         // we HAVE to call this twice
+         average_neighbor_normals();
+         average_neighbor_normals();
+     
+         if (generating_lod == lod_level) {
+             generating = false;
+         } else {
+             generating_lod--;
+         }
+     }
 }
 
 void NavMesh::average_neighbor_normals()

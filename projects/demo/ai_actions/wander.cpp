@@ -21,11 +21,6 @@ void Wander::on_start(tmt::Entity walking_entity) {
 
     const auto& walking = tmt::engine.ecs.get_component<Walking>(walking_entity);
     auto& nav_mesh = tmt::engine.ecs.get_component<tmt::NavMesh>(walking.walkable_asteroid);
-    if (!nav_mesh.nodes_mesh) {
-        nav_mesh.voxel_volume = tmt::engine.ecs.get_component<tmt::VoxelRenderer>(walking.walkable_asteroid).resource;
-        nav_mesh.lod_level = 1;
-        nav_mesh.generate_mesh_over_time();
-    }
     done_walking = false;
     has_path = false;
 }

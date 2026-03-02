@@ -13,6 +13,9 @@ void tmt::NavigationSystem::on_start() {
 
 void tmt::NavigationSystem::on_update(const FrameData&) {
     for (const auto& [entity, transform, nav_mesh] : engine.ecs.view<Transform, NavMesh>().each()) {
+        if (nav_mesh.generating) {
+            nav_mesh.generate_mesh_over_time();
+        }
         if(!nav_mesh.initialized)
         {
             auto& bvh = tmt::engine.renderer.scene_view.bvh;
@@ -22,9 +25,7 @@ void tmt::NavigationSystem::on_update(const FrameData&) {
             nav_mesh.initialized = true;
             nav_mesh.generate_mesh_over_time();
         }
-        if (nav_mesh.generating) {
-            nav_mesh.generate_mesh_over_time();
-        }
+
         if (!nav_mesh.nodes_mesh) continue;
 
         glm::mat4 world_matrix = transform.get_world_matrix();
