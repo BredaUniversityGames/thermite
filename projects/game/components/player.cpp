@@ -87,20 +87,21 @@ void Player::look_camera() const {
     const float dy = input.get_mouse_delta_y();
 
     // Mouse Look (unchanged)
-    if (camera_movement) {
-        camera.yaw -= dx * camera_sensitivity;
-        camera.pitch -= dy * camera_sensitivity;
-    }
+
+    camera.yaw -= dx * camera_sensitivity;
+    camera.pitch -= dy * camera_sensitivity;
+
     camera.pitch = glm::clamp(camera.pitch, -89.0f, 89.0f);
 
     glm::vec3 front = {};
-    if (camera_movement) {
+
     front.x = cos(glm::radians(camera.yaw)) * cos(glm::radians(camera.pitch));
     front.y = sin(glm::radians(camera.pitch));
     front.z = sin(glm::radians(camera.yaw)) * cos(glm::radians(camera.pitch));
     front = glm::normalize(front);
     transform.look_at(transform.get_world_position() + front, glm::vec3(0.0f, 1.0f, 0.0f));
 }
+
 void Player::move_player() {
     auto& input = tmt::engine.input;
 
@@ -115,8 +116,8 @@ void Player::move_player() {
     if (input.is_action_pressed(action::MOVE_DOWN)) input_dir -= glm::vec3(0.0f, 1.0f, 0.0f);
 
         // Added button for breaking, port from prototype
-        breaking = input.is_action_pressed(action::BREAK);
-    }
+    bool breaking = input.is_action_pressed(action::BREAK);
+    
 
     auto delta_time = tmt::engine.frame_data().delta_time;
     // Apply acceleration or drag
@@ -153,6 +154,7 @@ void Player::move_player() {
     // Apply velocity to position
     transform.translate(velocity * delta_time);
 }
+
 void Player::update(const tmt::FrameData& time) {
     // triggers the event for shooting
     auto& input = tmt::engine.input;
@@ -160,12 +162,16 @@ void Player::update(const tmt::FrameData& time) {
         tmt::engine.ecs.get_dispatcher().trigger<AttachAttemptEvent>({ .entity = entity });
     }
 
-    look_camera();
+    if (camera_movement) {
+        look_camera();
+    }
 
     // TODO this needs the state pattern for the player, it needs to move the camera, but not move while on the barge
     //  Calculate desired movement direction (unchanged from demo)
     if (can_move) {
-        move_player();
+        if (player_movement) {
+            move_player();
+        }
     }
 }
 
