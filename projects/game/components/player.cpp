@@ -88,19 +88,24 @@ void Player::update(const tmt::FrameData& time) {
     front.y = sin(glm::radians(camera.pitch));
     front.z = sin(glm::radians(camera.yaw)) * cos(glm::radians(camera.pitch));
     front = glm::normalize(front);
-    transform.look_at(transform.get_world_position() + front, glm::vec3(0.0f, 1.0f, 0.0f));
+    if (camera_movement) {
+        transform.look_at(transform.get_world_position() + front, glm::vec3(0.0f, 1.0f, 0.0f));
+    }
 
     // Calculate desired movement direction (unchanged from demo)
     glm::vec3 input_dir = { 0.0f, 0.0f, 0.0f };
-    if (input.is_action_pressed(action::MOVE_FORWARD)) input_dir += transform.get_forward();
-    if (input.is_action_pressed(action::MOVE_BACKWARD)) input_dir -= transform.get_forward();
-    if (input.is_action_pressed(action::MOVE_RIGHT)) input_dir += transform.get_right();
-    if (input.is_action_pressed(action::MOVE_LEFT)) input_dir -= transform.get_right();
-    if (input.is_action_pressed(action::MOVE_UP)) input_dir += glm::vec3(0.0f, 1.0f, 0.0f);
-    if (input.is_action_pressed(action::MOVE_DOWN)) input_dir -= glm::vec3(0.0f, 1.0f, 0.0f);
+    bool breaking = false;
+    if (player_movement) {
+        if (input.is_action_pressed(action::MOVE_FORWARD)) input_dir += transform.get_forward();
+        if (input.is_action_pressed(action::MOVE_BACKWARD)) input_dir -= transform.get_forward();
+        if (input.is_action_pressed(action::MOVE_RIGHT)) input_dir += transform.get_right();
+        if (input.is_action_pressed(action::MOVE_LEFT)) input_dir -= transform.get_right();
+        if (input.is_action_pressed(action::MOVE_UP)) input_dir += glm::vec3(0.0f, 1.0f, 0.0f);
+        if (input.is_action_pressed(action::MOVE_DOWN)) input_dir -= glm::vec3(0.0f, 1.0f, 0.0f);
 
-    // Added button for breaking, port from prototype
-    bool breaking = input.is_action_pressed(action::BREAK);
+        // Added button for breaking, port from prototype
+        breaking = input.is_action_pressed(action::BREAK);
+    }
 
     // Apply acceleration or drag
     if (glm::length(input_dir) > 0.0f) {
