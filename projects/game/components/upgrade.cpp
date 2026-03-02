@@ -8,12 +8,17 @@ namespace game {
 
 void Upgrade::start() {
     // if entities are not set, try to set them automatically
-    if (player_entity==entt::null)
-    player_entity = tmt::engine.ecs.view<Player>().front().entity;  // Assuming there's only one player entity in the game
+    if (!tmt::engine.ecs.valid(player_entity)){
+        tmt::Log::error("Player entity was invalid, trying to get it automatically.");
+        player_entity = tmt::engine.ecs.view<Player>().front().entity;  // Assuming there's only one player entity in the game
+    }
 
     auto button_component = tmt::engine.ecs.try_get_component<tmt::Button>(entity);
     if (button_component) {
+        tmt::Log::info("Found button component, adding apply function to button.");
         button_component->on_click.add(this, &Upgrade::button_apply);
+    } else {
+        tmt::Log::warn("No button found for upgrade!");
     }
 }
 
@@ -27,8 +32,10 @@ void Upgrade::end() {
 void Upgrade::button_apply() {
     if (apply_upgrade()) {
         tmt::engine.ecs.disable(entity);
+        tmt::Log::info("Applied upgrade.");
+
     } else {
-        //sad :(
+        tmt::Log::warn("Did not apply upgrade.");
     }
 }
 
@@ -54,27 +61,45 @@ bool Upgrade::apply_upgrade() {
         auto upgrade_cost = std::get<1>(cost);
         switch (resource) {
             case UpgradeResource::DOLLARS:
-                if (wallet_component->dollars < upgrade_cost) return false;
+                if (wallet_component->dollars < upgrade_cost) {
+                    tmt::Log::info("Unable to buy upgrade, insufficient dollars.");
+                    return false;
+                }
                 wallet_component->dollars -= upgrade_cost;
                 break;
             case UpgradeResource::GOLD:
-                if (wallet_component->gold < upgrade_cost) return false;
+                if (wallet_component->gold < upgrade_cost) {
+                    tmt::Log::info("Unable to buy upgrade, insufficient gold.");
+                    return false;
+                }
                 wallet_component->gold -= upgrade_cost;
                 break;
             case UpgradeResource::SILVER:
-                if (wallet_component->silver < upgrade_cost) return false;
+                if (wallet_component->silver < upgrade_cost) {
+                    tmt::Log::info("Unable to buy upgrade, insufficient silver.");
+                    return false;
+                }
                 wallet_component->silver -= upgrade_cost;
                 break;
             case UpgradeResource::COPPER:
-                if (wallet_component->copper < upgrade_cost) return false;
+                if (wallet_component->copper < upgrade_cost) {
+                    tmt::Log::info("Unable to buy upgrade, insufficient copper.");
+                    return false;
+                }
                 wallet_component->copper -= upgrade_cost;
                 break;
             case UpgradeResource::IRON:
-                if (wallet_component->iron < upgrade_cost) return false;
+                if (wallet_component->iron < upgrade_cost) {
+                    tmt::Log::info("Unable to buy upgrade, insufficient iron.");
+                    return false;
+                }
                 wallet_component->iron -= upgrade_cost;
                 break;
             case UpgradeResource::ENEMY_CORES:
-                if (wallet_component->enemy_cores < upgrade_cost) return false;
+                if (wallet_component->enemy_cores < upgrade_cost) {
+                    tmt::Log::info("Unable to buy upgrade, insufficient enemy cores.");
+                    return false;
+                }
                 wallet_component->enemy_cores -= upgrade_cost;
                 break;
             default:
