@@ -589,6 +589,13 @@ static void deserialize_scene(std::set<tmt::Entity>& new_entities, tmt::Deserial
             TMT_ZONE_SCOPED_N("Ecs::deserialize_scene::deserialize_prefab_instances")
             for (const auto& [prefab_instance_id, prefab_info] : prefab_instance_ids) {
                 auto original_prefab_json = tmt::engine.resources.load_resource<tmt::Json>(prefab_info.source_location);
+                if (original_prefab_json == nullptr) {
+                    tmt::Log::error(
+                        tmt::Log::Scope::ENGINE, "[Serialization] Failed to load prefab JSON for deserialization. PrefabInstanceID: {}, SourceLocation: {}",
+                        prefab_instance_id, prefab_info.source_location
+                    );
+                    continue;
+                }
                 tmt::SceneJson prefab_scene_json(original_prefab_json->get_parsed_json());
 
                 tmt::DeserializeState prefab_state { state.ecs, prefab_scene_json };
