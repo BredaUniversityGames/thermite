@@ -537,7 +537,7 @@ static void deserialize_scene(std::set<tmt::Entity>& new_entities, tmt::Deserial
                 continue;
             }
 
-            auto mapping = state.get_root_mapping(deserialized_entity_id);
+            auto mapping = state.get_current_mapping(deserialized_entity_id);
             if (mapping) {
                 /* Entity already exists in mapping, skip */
                 new_to_old.insert({ mapping.value(), deserialized_entity_id });
@@ -598,6 +598,7 @@ static void deserialize_scene(std::set<tmt::Entity>& new_entities, tmt::Deserial
 
             /* add to new mapping absed on instance id */
             state.add_mapping(instance_id, old_entity, new_entity);
+            state.add_mapping(instance_id, prefab_comp.source_entity, new_entity);
         }
 
         /* Deserialize Prefabs */

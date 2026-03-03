@@ -59,7 +59,7 @@ class Resources {
 
         // load() success checking
         if (!resource->load()) {
-            tmt::Log::error(tmt::Log::Scope::ENGINE, "[Resources] Failed to load resource!");
+            tmt::Log::error(tmt::Log::Scope::ENGINE, "[Resources] Failed to load resource: {}", file_location);
             resource->unload();
             resource->loaded = false;
             ResourceRef<T> ref(file_location);
