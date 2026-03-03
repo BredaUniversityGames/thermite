@@ -10,6 +10,8 @@
 #include "engine/systems/animation/components/bone_hierarchy_renderer.hpp"
 #include "engine/systems/animation/constraints/damped_transform.hpp"
 #include "engine/systems/animation/constraints/two_bone_ik.hpp"
+#include "engine/core/renderer/renderer.hpp"
+#include "systems/ai/navigation/nav_mesh.hpp"
 
 #define CONDITION(comparison) [](const Variant& parameter, const Variant& value) -> bool { return parameter comparison value; }
 
@@ -106,16 +108,16 @@ void RigModelManager::on_draw_lines() const
         tmt::RenderBoneHierarchy(transform);
     }
     
-    //for (const auto& [entity, transform, bend_hint] : engine.ecs.get_registry().view<Transform, BendHint>().each())
-    //{
-    //    tmt::engine.polyline.use_color(glm::vec4(1.f, 0.f, 0.f, 1.f));
-    //    tmt::engine.polyline.draw_sphere(transform.get_world_position(), bend_hint.radius);
-    //}
+    for (const auto& [entity, transform, bend_hint] : engine.ecs.get_registry().view<Transform, BendHint>().each())
+    {
+        tmt::engine.polyline.use_color(glm::vec4(1.f, 0.f, 0.f, 1.f));
+        tmt::engine.polyline.draw_sphere(transform.get_world_position(), bend_hint.radius);
+    }
 
-    //for (const auto& [entity, transform, effector] : engine.ecs.get_registry().view<Transform, Effector>().each()) {
-    //    tmt::engine.polyline.use_color(glm::vec4(0.f, 0.7f, 0.7f, 1.f));
-    //    tmt::engine.polyline.draw_sphere(transform.get_world_position(), effector.radius);
-    //}
+    for (const auto& [entity, transform, effector] : engine.ecs.get_registry().view<Transform, Effector>().each()) {
+        tmt::engine.polyline.use_color(glm::vec4(0.f, 0.7f, 0.7f, 1.f));
+        tmt::engine.polyline.draw_sphere(transform.get_world_position(), effector.radius);
+    }
 }
 
 void tmt::ConstraintSystem::on_start() 
@@ -166,8 +168,20 @@ void tmt::ConstraintSystem::on_update(const tmt::FrameData& time)
     }
     for (const auto& [entity, transform, walk_cycle] : engine.ecs.view<Transform, AnimConstraints::EffectorWalkCycle>().each()) {
         walk_cycle.step_timer += time.delta_time;
+        auto parent = transform.get_parent();
+        auto& parent_transform = engine.ecs.get_component<Transform>(parent);
+        auto up = parent_transform.get_up();
 
         glm::vec3 continuous_available_pos = engine.ecs.get_component<Transform>(walk_cycle.desired_target_entity).get_world_position();
+        if (auto nav_mesh = engine.ecs.try_get_component<NavMesh>(walk_cycle.ground_entity)) {
+            int idx = nav_mesh->find_closest_node(continuous_available_pos);
+            if (idx != -1) up = (*nav_mesh->nodes_mesh)[idx].normal;
+        }
+        Ray ray;
+        ray.dir = -up;
+        ray.origin = continuous_available_pos + up * 0.5f;
+        Hit hit = engine.renderer.trace_ray(ray);
+        continuous_available_pos = ray.origin + ray.dir * hit.distance;
 
         glm::vec3 point_velocity = (continuous_available_pos - walk_cycle.last_continuous_pos) / time.delta_time;
         walk_cycle.last_continuous_pos = continuous_available_pos;
@@ -180,10 +194,7 @@ void tmt::ConstraintSystem::on_update(const tmt::FrameData& time)
             walk_cycle.initial_pos = walk_cycle.effector;
         }
 
-        auto parent = transform.get_parent();
-        auto& parent_transform = engine.ecs.get_component<Transform>(parent);
 
-        auto up = parent_transform.get_up();
         // predict based on positional change
         glm::vec3 prediction_vec = (point_velocity * time.delta_time) * walk_cycle.step_prediction_strength;
         glm::vec3 subtraction_vec = prediction_vec * up;

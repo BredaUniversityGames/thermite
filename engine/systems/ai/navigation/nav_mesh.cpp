@@ -340,6 +340,7 @@ std::vector<int> NavMesh::find_path(const int starting_node_id, const int ending
 int tmt::NavMesh::find_closest_node(const glm::vec3& position) {
     int closest_node = -1;
     float closest_distance = std::numeric_limits<float>::max();
+    if (!nodes_mesh) return -1;
     for (int i = 0; i < (int)(*nodes_mesh).size(); i++) {
         float distance = glm::distance(position, (*nodes_mesh)[i].world_pos);
         if (distance < closest_distance) {

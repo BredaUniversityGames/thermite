@@ -35,7 +35,7 @@ void Walking::update(const tmt::FrameData& time) {
     ray.dir = glm::normalize(-normal);
     const tmt::Hit hit = tmt::engine.renderer.trace_ray(ray);
 
-    glm::vec3 move_to = ray.origin + ray.dir * hit.distance;
+    glm::vec3 move_to = ray.origin + ray.dir * hit.distance - ray.dir * height_above_ground;
     glm::vec3 desired_velocity = glm::normalize(move_to - walking_transform.get_world_position()) * walk_speed * 0.5f;
     if (glm::isnan(desired_velocity.x)) {
         tmt::Log::warn("desired vel is nan");
@@ -65,7 +65,7 @@ void Walking::update(const tmt::FrameData& time) {
         }
     }
 
-    if (glm::dot(velocity, velocity) > 0.1f) {
+    if (glm::dot(velocity, velocity) > 0.5f) {
         float t = time.delta_time * rotation_speed;
         rotation = glm::slerp(rotation, rot_velocity, glm::clamp(t, 0.0f, 1.0f));
         rotation = glm::normalize(rotation);
@@ -90,15 +90,6 @@ void Walking::update(const tmt::FrameData& time) {
         transform.set_world_position(walking_transform.get_world_position() + leg_dir);
         //tmt::engine.polyline.draw_sphere(transform.get_world_position(), 0.1f);
     }
-
-    glm::vec3 half_extent = { 0.2f, 0.2f, 0.5f };
-    glm::vec3 box_position = walking_transform.get_world_position();
-    glm::quat box_rotation = walking_transform.get_world_rotation();
-    glm::vec3 local_up = box_rotation * glm::vec3(0, 1, 0);
-
-    float body_height = 0.5f;
-    box_position += local_up * body_height;
-    //tmt::engine.polyline.draw_obb(box_position, half_extent, box_rotation);
 }
 
 void Walking::end() {}

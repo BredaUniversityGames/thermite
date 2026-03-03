@@ -52,6 +52,8 @@ struct EffectorWalkCycle
 
     tmt::Entity effector_entity;
 
+    tmt::Entity ground_entity;
+
     // the timing offset of the internal step timer
     float cycle_offset = 0.f;
 
@@ -75,5 +77,5 @@ struct EffectorWalkCycle
 }  // namespace tmt
 TMT_COMPONENT(tmt::AnimConstraints::DampedTransformConstraint, "Damped Transform Constraint", (damp));
 TMT_COMPONENT(tmt::AnimConstraints::TwoBoneIKConstraint, "Two Bone IK Constraint", (mid, tip, target_position_entity, bend_position_entity));
-TMT_COMPONENT(tmt::AnimConstraints::EffectorWalkCycle, "Effector Walk Cycle", (step_time, step_duration, step_height, desired_target_entity, effector_entity, cycle_offset, grounded, step_prediction_strength));
+TMT_COMPONENT(tmt::AnimConstraints::EffectorWalkCycle, "Effector Walk Cycle", (step_time, step_duration, step_height, desired_target_entity, effector_entity, ground_entity, cycle_offset, grounded, step_prediction_strength));
 //TMT_COMPONENT(tmt::AnimConstraints::EffectorWalkCycle, "Effector e"
