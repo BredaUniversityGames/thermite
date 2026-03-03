@@ -4,44 +4,17 @@
         0,
         1,
         2,
-        4,
-        8,
-        9,
-        20,
-        21,
-        1048598,
-        2097155
+        1048579
     ],
     "Name": {
         "0": {
-            "name": "walker"
+            "name": "navmesh"
         },
         "1": {
-            "name": "player"
+            "name": "walker"
         },
         "2": {
-            "name": "navmsh"
-        },
-        "8": {
-            "diff": [
-                {
-                    "op": "replace",
-                    "path": "/name",
-                    "value": "root"
-                }
-            ]
-        },
-        "20": {
-            "diff": [
-                {
-                    "op": "replace",
-                    "path": "/name",
-                    "value": "root"
-                }
-            ]
-        },
-        "1048598": {
-            "name": "light"
+            "name": "player"
         }
     },
     "Transform": {
@@ -63,10 +36,7 @@
                 "z": 1.0
             },
             "parent": 4294967295,
-            "children": [
-                1048598,
-                2097155
-            ]
+            "children": []
         },
         "1": {
             "local_position": {
@@ -86,7 +56,9 @@
                 "z": 1.0
             },
             "parent": 4294967295,
-            "children": []
+            "children": [
+                1048579
+            ]
         },
         "2": {
             "local_position": {
@@ -108,302 +80,18 @@
             "parent": 4294967295,
             "children": []
         },
-        "8": {
-            "diff": [
-                {
-                    "op": "replace",
-                    "path": "/children/0",
-                    "value": 9
-                },
-                {
-                    "op": "remove",
-                    "path": "/children/11"
-                },
-                {
-                    "op": "remove",
-                    "path": "/children/10"
-                },
-                {
-                    "op": "remove",
-                    "path": "/children/9"
-                },
-                {
-                    "op": "remove",
-                    "path": "/children/8"
-                },
-                {
-                    "op": "remove",
-                    "path": "/children/7"
-                },
-                {
-                    "op": "remove",
-                    "path": "/children/6"
-                },
-                {
-                    "op": "remove",
-                    "path": "/children/5"
-                },
-                {
-                    "op": "remove",
-                    "path": "/children/4"
-                },
-                {
-                    "op": "remove",
-                    "path": "/children/3"
-                },
-                {
-                    "op": "remove",
-                    "path": "/children/2"
-                },
-                {
-                    "op": "remove",
-                    "path": "/children/1"
-                },
-                {
-                    "op": "replace",
-                    "path": "/local_position/x",
-                    "value": 0.4034225344657898
-                },
-                {
-                    "op": "replace",
-                    "path": "/local_position/y",
-                    "value": 0.0
-                },
-                {
-                    "op": "replace",
-                    "path": "/local_position/z",
-                    "value": -0.3746306896209717
-                },
-                {
-                    "op": "replace",
-                    "path": "/local_rotation/w",
-                    "value": -0.4069922864437103
-                },
-                {
-                    "op": "replace",
-                    "path": "/local_rotation/y",
-                    "value": 0.9134315848350525
-                },
-                {
-                    "op": "replace",
-                    "path": "/local_scale/x",
-                    "value": 0.9999921321868896
-                },
-                {
-                    "op": "replace",
-                    "path": "/local_scale/z",
-                    "value": 0.9999901652336121
-                },
-                {
-                    "op": "replace",
-                    "path": "/parent",
-                    "value": 0
-                }
-            ]
-        },
-        "9": {
+        "1048579": {
             "diff": [
                 {
                     "op": "replace",
                     "path": "/parent",
-                    "value": 0
-                }
-            ]
-        },
-        "20": {
-            "diff": [
-                {
-                    "op": "replace",
-                    "path": "/children/0",
-                    "value": 1048582
-                },
-                {
-                    "op": "remove",
-                    "path": "/children/11"
-                },
-                {
-                    "op": "remove",
-                    "path": "/children/10"
-                },
-                {
-                    "op": "remove",
-                    "path": "/children/9"
-                },
-                {
-                    "op": "remove",
-                    "path": "/children/8"
-                },
-                {
-                    "op": "remove",
-                    "path": "/children/7"
-                },
-                {
-                    "op": "remove",
-                    "path": "/children/6"
-                },
-                {
-                    "op": "remove",
-                    "path": "/children/5"
-                },
-                {
-                    "op": "remove",
-                    "path": "/children/4"
-                },
-                {
-                    "op": "remove",
-                    "path": "/children/3"
-                },
-                {
-                    "op": "remove",
-                    "path": "/children/2"
-                },
-                {
-                    "op": "remove",
-                    "path": "/children/1"
-                },
-                {
-                    "op": "replace",
-                    "path": "/local_position/x",
-                    "value": -0.040060803294181824
-                },
-                {
-                    "op": "replace",
-                    "path": "/local_position/y",
-                    "value": 0.0
-                },
-                {
-                    "op": "replace",
-                    "path": "/local_position/z",
-                    "value": 0.6211552619934082
-                },
-                {
-                    "op": "replace",
-                    "path": "/local_rotation/w",
-                    "value": 0.7265806794166565
-                },
-                {
-                    "op": "replace",
-                    "path": "/local_rotation/y",
-                    "value": 0.6870811581611633
-                },
-                {
-                    "op": "replace",
-                    "path": "/local_scale/x",
-                    "value": 0.999995768070221
-                },
-                {
-                    "op": "replace",
-                    "path": "/local_scale/z",
-                    "value": 0.9999948740005493
-                },
-                {
-                    "op": "replace",
-                    "path": "/parent",
-                    "value": 0
-                }
-            ]
-        },
-        "21": {
-            "diff": [
-                {
-                    "op": "replace",
-                    "path": "/parent",
-                    "value": 0
-                }
-            ]
-        },
-        "1048598": {
-            "local_position": {
-                "x": 0.0,
-                "y": 6.400000095367432,
-                "z": 0.0
-            },
-            "local_rotation": {
-                "w": 1.0,
-                "x": 0.0,
-                "y": 0.0,
-                "z": 0.0
-            },
-            "local_scale": {
-                "x": 1.0,
-                "y": 1.0,
-                "z": 1.0
-            },
-            "parent": 0,
-            "children": []
-        },
-        "2097155": {
-            "diff": [
-                {
-                    "op": "replace",
-                    "path": "/children/0",
-                    "value": 0
-                },
-                {
-                    "op": "replace",
-                    "path": "/children/1",
-                    "value": 0
-                },
-                {
-                    "op": "replace",
-                    "path": "/children/2",
                     "value": 1
-                },
-                {
-                    "op": "replace",
-                    "path": "/children/3",
-                    "value": 10
-                },
-                {
-                    "op": "replace",
-                    "path": "/children/4",
-                    "value": 11
-                },
-                {
-                    "op": "replace",
-                    "path": "/children/5",
-                    "value": 12
-                },
-                {
-                    "op": "replace",
-                    "path": "/children/6",
-                    "value": 13
-                },
-                {
-                    "op": "replace",
-                    "path": "/children/7",
-                    "value": 14
-                },
-                {
-                    "op": "replace",
-                    "path": "/children/8",
-                    "value": 15
-                },
-                {
-                    "op": "replace",
-                    "path": "/children/9",
-                    "value": 16
-                },
-                {
-                    "op": "replace",
-                    "path": "/children/10",
-                    "value": 17
-                },
-                {
-                    "op": "replace",
-                    "path": "/children/11",
-                    "value": 18
-                },
-                {
-                    "op": "replace",
-                    "path": "/parent",
-                    "value": 0
                 }
             ]
         }
     },
     "Voxel Renderer": {
-        "2": {
+        "0": {
             "resource": {
                 "file_location": {
                     "sub_location": "PROJECT",
@@ -416,7 +104,7 @@
         }
     },
     "Camera": {
-        "1": {
+        "2": {
             "fov": 80.0,
             "pitch": 0.0,
             "yaw": 90.0,
@@ -424,19 +112,19 @@
         }
     },
     "ComponentCollection": {
-        "0": {
+        "1": {
             "Walking": {
                 "attack_range": 20.0,
-                "height_above_ground": 0.3499999940395355,
+                "height_above_ground": 0.30000001192092896,
                 "max_chase_distance": 100.0,
                 "ray_count": 100,
                 "rotation_speed": 2.5,
                 "rotation_t": 0.0,
                 "walk_speed": 0.20000000298023224,
-                "walkable_asteroid": 2
+                "walkable_asteroid": 0
             }
         },
-        "1": {
+        "2": {
             "Player": {
                 "acceleration": 20.0,
                 "camera_sensitivity": 0.10000000149011612,
@@ -446,7 +134,7 @@
         }
     },
     "Navigation Mesh": {
-        "2": {
+        "0": {
             "voxel_volume": {
                 "file_location": {
                     "sub_location": "PROJECT",
@@ -459,136 +147,20 @@
             "lod_level": 1
         }
     },
-    "Two Bone IK Constraint": {
-        "8": {
-            "mid": 9,
-            "tip": 7,
-            "target_position_entity": 14,
-            "bend_position_entity": 12
-        },
-        "20": {
-            "mid": 21,
-            "tip": 19,
-            "target_position_entity": 15,
-            "bend_position_entity": 11
-        }
-    },
-    "Effector Walk Cycle": {
-        "4": {
-            "diff": [
-                {
-                    "op": "replace",
-                    "path": "/step_duration",
-                    "value": 0.4000000059604645
-                },
-                {
-                    "op": "add",
-                    "path": "/ground_entity",
-                    "value": 2
-                }
-            ]
-        },
-        "8": {
-            "step_time": 0.5,
-            "step_duration": 0.20000000298023224,
-            "step_height": 1.0,
-            "desired_target_entity": 17,
-            "effector_entity": 14,
-            "ground_entity": 2,
-            "cycle_offset": 0.6000000238418579,
-            "grounded": true,
-            "step_prediction_strength": 0.0
-        },
-        "20": {
-            "step_time": 0.5,
-            "step_duration": 0.20000000298023224,
-            "step_height": 1.0,
-            "desired_target_entity": 18,
-            "effector_entity": 15,
-            "ground_entity": 2,
-            "cycle_offset": 0.8999999761581421,
-            "grounded": true,
-            "step_prediction_strength": 0.0
-        }
-    },
-    "Light": {
-        "1048598": {
-            "color": {
-                "x": 1.0,
-                "y": 1.0,
-                "z": 1.0
-            },
-            "temperature": 6500.0,
-            "type": "SPHERE_LIGHT",
-            "light": {
-                "index": 0,
-                "value": {
-                    "source_radius": 0.20000000298023224,
-                    "attenuation_radius": 6.0,
-                    "luminous_flux": 275.0
-                }
-            }
-        }
-    },
     "GoapAgentTypeRef": {
-        "0": {
+        "1": {
             "type_id": "dragon"
         }
     },
     "Prefab": {
-        "4": {
-            "source_location": {
-                "sub_location": "PROJECT",
-                "relative_path": "Walker.prefab"
-            },
-            "source_entity": 1,
-            "root_entity": 2097155,
-            "instance_id": "5e6e28f6-1ec0-4c57-b340-cf54f88b764e"
-        },
-        "8": {
+        "1048579": {
             "source_location": {
                 "sub_location": "PROJECT",
                 "relative_path": "Walker.prefab"
             },
             "source_entity": 0,
-            "root_entity": 2097155,
-            "instance_id": "5e6e28f6-1ec0-4c57-b340-cf54f88b764e"
-        },
-        "9": {
-            "source_location": {
-                "sub_location": "PROJECT",
-                "relative_path": "Walker.prefab"
-            },
-            "source_entity": 9,
-            "root_entity": 2097155,
-            "instance_id": "5e6e28f6-1ec0-4c57-b340-cf54f88b764e"
-        },
-        "20": {
-            "source_location": {
-                "sub_location": "PROJECT",
-                "relative_path": "Walker.prefab"
-            },
-            "source_entity": 0,
-            "root_entity": 2097155,
-            "instance_id": "5e6e28f6-1ec0-4c57-b340-cf54f88b764e"
-        },
-        "21": {
-            "source_location": {
-                "sub_location": "PROJECT",
-                "relative_path": "Walker.prefab"
-            },
-            "source_entity": 1048582,
-            "root_entity": 2097155,
-            "instance_id": "5e6e28f6-1ec0-4c57-b340-cf54f88b764e"
-        },
-        "2097155": {
-            "source_location": {
-                "sub_location": "PROJECT",
-                "relative_path": "Walker.prefab"
-            },
-            "source_entity": 0,
-            "root_entity": 2097155,
-            "instance_id": "5e6e28f6-1ec0-4c57-b340-cf54f88b764e"
+            "root_entity": 1048579,
+            "instance_id": "d7a68073-7655-4563-b4aa-9919250eb430"
         }
     },
     "systems": null

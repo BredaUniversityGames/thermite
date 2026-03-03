@@ -514,6 +514,7 @@
             "step_height": 1.0,
             "desired_target_entity": 16,
             "effector_entity": 13,
+            "ground_entity": 0,
             "cycle_offset": 0.30000001192092896,
             "grounded": true,
             "step_prediction_strength": 0.0
@@ -524,6 +525,7 @@
             "step_height": 1.0,
             "desired_target_entity": 17,
             "effector_entity": 14,
+            "ground_entity": 0,
             "cycle_offset": 0.6000000238418579,
             "grounded": true,
             "step_prediction_strength": 0.0
@@ -534,6 +536,7 @@
             "step_height": 1.0,
             "desired_target_entity": 18,
             "effector_entity": 15,
+            "ground_entity": 0,
             "cycle_offset": 0.8999999761581421,
             "grounded": true,
             "step_prediction_strength": 0.0
