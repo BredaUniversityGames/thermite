@@ -118,6 +118,12 @@ struct DeserializeState {
         }
         entity_mappings[instance][from] = to;
     }
+
+    void remove_mapping(const tmt::PrefabInstanceID instance, const tmt::Entity from) {
+        if (entity_mappings.contains(instance)) {
+            entity_mappings[instance].erase(from);
+        }
+    }
 };
 
 }  // namespace tmt
@@ -127,7 +133,9 @@ tmt::json tag_invoke(JsonReflect::serialize_t, const tmt::Entity& entity, tmt::S
         const bool is_prefab = state.ecs.has_component<tmt::Prefab>(entity);
         if (is_prefab) {
             const auto& prefab_comp = state.ecs.get_component<tmt::Prefab>(entity);
-            return static_cast<std::uint32_t>(prefab_comp.source_entity);
+            if (prefab_comp.instance_id == state.current_prefab_instance_id.value()) {
+                return static_cast<std::uint32_t>(prefab_comp.source_entity);
+            }
         }
     }
 
@@ -144,9 +152,10 @@ void tag_invoke(JsonReflect::deserialize_t, const JsonReflect::json& j, tmt::Ent
         entity = mapping.value();
     } else {
         entity = deserialized_entity;
+        const bool is_valid_entity = state.ecs.valid(entity);
         tmt::Log::debug(
-            tmt::Log::Scope::ENGINE, "[Serialization] No existing mapping found for entity {} in prefab instance {}, using deserialized entity directly.", deserialized_entity,
-            state.current_prefab_instance_id, entity
+            tmt::Log::Scope::ENGINE, "[Serialization] No existing mapping found for entity {} in prefab instance {}, using {} deserialized entity directly.", deserialized_entity,
+            state.current_prefab_instance_id, is_valid_entity ? "(valid)" : "(invalid)"
         );
     }
 }
@@ -571,9 +580,31 @@ static void deserialize_scene(std::set<tmt::Entity>& new_entities, tmt::Deserial
                 continue;
             }
 
-            /* Special handling for Prefab component */
             tmt::Prefab prefab_comp {};
             tmt::Serializer::deserialize<tmt::Prefab>(prefab_entry.value(), prefab_comp);
+
+            /* Check if the original entity is still in the prefab since it could be deleted */
+            const auto json = tmt::engine.resources.load_resource<tmt::Json>(prefab_comp.source_location);
+            const auto prefab_json = tmt::SceneJson(json->get_parsed_json());
+            const auto& entities_in_prefab_json = prefab_json.entities();
+
+            std::set<tmt::Entity> entities_in_prefab {};
+            tmt::Serializer::deserialize(entities_in_prefab_json, entities_in_prefab);
+
+            const bool entity_still_exists = entities_in_prefab.contains(prefab_comp.source_entity);
+            if (entity_still_exists == false) {
+                tmt::Log::warn(
+                    tmt::Log::Scope::ENGINE,
+                    "[Serialization] Prefab source entity {} not found in prefab JSON. This might be caused by a prefab structure change, marking it for delete. PrefabInstanceID: {}, "
+                    "SourceLocation: {}",
+                    prefab_comp.source_entity, prefab_comp.instance_id, prefab_comp.source_location
+                );
+
+                /* Mark it for delete */
+                /* We still deserialize its components but get removed instantly */
+                state.ecs.destroy_entity(new_entity);
+                state.remove_mapping(state.current_prefab_instance_id, old_entity);
+            }
 
             /* Check if prefab instance already exists in scene, if yes, generate new instance id */
             if (existing_prefab_instances.contains(prefab_comp)) {
