@@ -29,8 +29,8 @@ void DiPipeline::init(GPUAdapter&) {}
 /* clang-format off */
 
 void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, SceneView& scene_view) {
-    /* TEMP: For now just don't do anything unless illuminance is visible */
-    // if (engine.renderer.display_mode != DisplayMode::ILLUMINANCE && engine.renderer.display_mode != DisplayMode::CACHE && engine.renderer.display_mode != DisplayMode::DEFAULT) return;
+    /* Only run this pass if it's outputs are actually used */
+    if (engine.renderer.display_mode != DisplayMode::ILLUMINANCE && engine.renderer.display_mode != DisplayMode::CACHE && engine.renderer.display_mode != DisplayMode::DEFAULT) return;
 
     /* Get Render Image */
     const BindHandle render_image = render_view.get_render_image();
@@ -107,7 +107,7 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
     //         .work_size(shading_res.x, shading_res.y);
     // }
     
-    /* Debug visualizations */
+    /* Composite pass */
     if (engine.renderer.display_mode == DisplayMode::DEFAULT) {
         render_graph.add_compute_pass("composite pass", "composite.cs")
             .read(render_view.render_view_buffer) /* Render view buffer */
@@ -119,7 +119,7 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
             .group_size(16, 8)
             .work_size(render_res.x, render_res.y);
     }
-    
+
     /* Debug visualizations */
     if (engine.renderer.display_mode == DisplayMode::ILLUMINANCE) {
         render_graph.add_compute_pass("[debug] illuminance pass", "debug/illuminance.cs")
@@ -131,8 +131,6 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
             .group_size(16, 8)
             .work_size(render_res.x, render_res.y);
     }
-    
-    /* Debug visualizations */
     if (engine.renderer.display_mode == DisplayMode::CACHE) {
         render_graph.add_compute_pass("[debug] cache pass", "debug/cache.cs")
             .read(render_view.render_view_buffer) /* Render view buffer */
