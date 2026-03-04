@@ -327,6 +327,17 @@ void Transform::remove_child(Entity child) {
     }
 }
 
+std::set<Entity> Transform::get_all_parents() const {
+    std::set<Entity> result;
+    Entity current_parent = parent;
+    while (current_parent != entt::null) {
+        result.insert(current_parent);
+        const auto& transform = engine.ecs.get_component<Transform>(current_parent);
+        current_parent = transform.parent;
+    }
+    return result;
+}
+
 bool Transform::has_children() const {
     return !children.empty();
 }
@@ -363,7 +374,6 @@ void Transform::calculate_world_matrix() const {
         const glm::mat4 scale = glm::scale(glm::identity<glm::mat4>(), local_scale);
 
         world_matrix = translation * rotation * scale;
-        local_eulers = glm::eulerAngles(local_rotation);
 
         if (parent != entt::null) {
             auto& parent_transform = engine.ecs.get_component<Transform>(parent);
