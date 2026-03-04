@@ -226,39 +226,6 @@ void tag_invoke(JsonReflect::deserialize_t, const tmt::json& j, tmt::Entity& ent
 }
 
 std::optional<tmt::json> recursive_find_component_json(const tmt::SceneJson& prefab_json, const std::string& component_name, const tmt::Entity& entity_id) {
-    ///*Check if it's a prefab inside this prefab */
-    // constexpr auto PREFAB_COMPONENT_NAME = tmt::Component<tmt::Prefab>::get_name();
-    // const std::optional<tmt::json> maybe_value = prefab_json.component_value(PREFAB_COMPONENT_NAME, entity_id);
-    // if (maybe_value.has_value()) {
-    //     const tmt::json& prefab_component_json = maybe_value.value();
-
-    //    tmt::Prefab prefab_component {};
-    //    tmt::Serializer::deserialize<tmt::Prefab>(prefab_component_json, prefab_component);
-    //    auto original_prefab_json = tmt::engine.resources.load_resource<tmt::Json>(prefab_component.source_location);
-
-    //    tmt::SceneJson nested_prefab_json(original_prefab_json->get_parsed_json());
-    //    const std::optional<tmt::json> found = recursive_find_component_json(nested_prefab_json, component_name, prefab_component.source_entity);
-    //    if (found.has_value() == false) {
-    //        return found;
-    //    }
-
-    //    /* we found something, check if this prefab overrides it */
-    //    const std::optional<tmt::json> override = prefab_json.component_value(component_name, entity_id);
-    //    if (override.has_value() == false) {
-    //        return found;
-    //    }
-
-    //    /* patch override */
-    //    const tmt::json& override_value = override.value();
-    //    if (override_value.contains("diff")) {
-    //        const tmt::json& diff = override_value["diff"];
-    //        tmt::json base = found.value();
-    //        tmt::json patched = base.patch(diff);
-    //        return patched;
-    //    } else {
-    //        return found;
-    //    }
-    //}
     return prefab_json.component_value(component_name, entity_id);
 }
 
@@ -295,38 +262,6 @@ std::optional<tmt::json> get_source_component_json(const tmt::Entity entity, con
     std::optional<tmt::json> result = source_prefab_json.component_value(COMPONENT_NAME, source_entity);
 
     return result;
-
-    // if (prefab.prefab_chain.empty()) return result; /* Guarenteed to return a value */
-
-    // for (const auto chain : prefab.prefab_chain) {
-    //     /* Could still NOT contain overrides, since entity could be referenced */
-
-    //    const tmt::Entity chain_entity = chain.source_entity;
-    //    const tmt::ResourceRef<tmt::Json> chain_parsed_json = tmt::engine.resources.load_resource<tmt::Json>(chain.source_location);
-    //    const tmt::SceneJson chain_prefab_json(chain_parsed_json->get_parsed_json());
-
-    //    if (chain_prefab_json.has_component_entry(COMPONENT_NAME, chain_entity) == false) {
-    //        /* Entity is only referenced but no overrides */
-    //        continue;
-    //    }
-
-    //    const std::optional<tmt::json> chain_result = chain_prefab_json.component_value(COMPONENT_NAME, chain_entity);
-    //    if (chain_result.has_value() == false) {
-    //        /* Entity is only referenced but no overrides */
-    //        continue;
-    //    }
-
-    //    if (result.has_value()) {
-    //        /* chain result guarenteed to be diff (or removed) */
-    //        const tmt::json& patch = chain_result.value()["diff"];
-    //        apply_patch_override(result.value(), patch);
-    //    } else {
-    //        /* First instance of component after it was either: a) removed b) never added before */
-    //        result = chain_result;
-    //    }
-    //}
-
-    // return result;
 }
 
 template <typename ComponentType>
