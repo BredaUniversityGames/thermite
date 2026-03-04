@@ -130,13 +130,6 @@ uint jenkins32(uint a) {
 }
 
 public inline uint voxel_hash(const uint voxel_index, const uint object_index, const uint face_index) {
-    /* Cut away 3 bits on each axis, 10 bit -> 7 bit */
-    const uint voxel_x = voxel_index & 0b1111111u;
-    const uint voxel_y = voxel_index >> 10 & 0b1111111u;
-    const uint voxel_z = voxel_index >> 20 & 0b1111111u;
-    const uint voxel21 = voxel_x | (voxel_y << 7) | (voxel_z << 14);
-
-    /* 21 bit voxel index, 8 bit object index, 3 bit face index */
     return jenkins32(voxel_index) ^ jenkins32(object_index | (face_index << 16));
 }
 
