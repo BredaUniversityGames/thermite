@@ -1,6 +1,7 @@
 #pragma once
 #include "engine/systems/gameplay/game_component.hpp"
 #include "engine/core/resources/voxel_volume.hpp"
+#include "engine/events/engine.hpp"
 
 namespace game {
 
@@ -40,11 +41,14 @@ struct AsteroidFieldComponent : public tmt::GameComponent<AsteroidFieldComponent
     float layer_width = 100.f;
     float layer_height = 100.f;
     bool draw_debug = false;
+    bool has_barge_removal_zone = false;
+    float barge_removal_zone_extent = 10.f;
 
     std::vector<FAsteroidFieldLayer> asteroid_layers;
 
     void spawn_field();
     void clear_children();
+    void do_removal();
 
     static std::string_view get_name() { return "Asteroid Field Component"; }
 
@@ -80,4 +84,4 @@ struct AsteroidFieldComponent : public tmt::GameComponent<AsteroidFieldComponent
 }  // namespace game
 TMT_OBJECT(game::FAsteroidLayerEntry, (spawnable, radius_factor, spawn_weight, belt_bias));
 TMT_OBJECT(game::FAsteroidFieldLayer, (layer_entries, rejection_samples, spacing_radius, space_weight, layer_spacing));
-TMT_OBJECT(game::AsteroidFieldComponent, (seed, field_depth, layer_width, layer_height, asteroid_layers, draw_debug));
+TMT_OBJECT(game::AsteroidFieldComponent, (seed, field_depth, layer_width, layer_height, asteroid_layers, draw_debug, has_barge_removal_zone, barge_removal_zone_extent));

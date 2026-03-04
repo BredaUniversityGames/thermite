@@ -5,6 +5,8 @@
 #include "engine/engine.hpp"
 #include "engine/core/polyline.hpp"
 #include "engine/core/ecs.hpp"
+#include "engine/shared/bvh2.hpp"
+#include "engine/core/renderer/renderer.hpp"
 
 namespace game {
 
@@ -211,9 +213,32 @@ void AsteroidFieldComponent::clear_children() {
     }
 }
 
+void AsteroidFieldComponent::do_removal() 
+{
+    auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
+
+    glm::vec3 mid = transform.get_world_position() + glm::vec3(layer_width, layer_height, 0.f) * 0.5f;
+    glm::vec3 min = mid - glm::vec3(barge_removal_zone_extent, barge_removal_zone_extent, 0.f);
+    glm::vec3 max = min + glm::vec3(2.f * barge_removal_zone_extent, 2.f * barge_removal_zone_extent, field_depth);
+    tmt::Aabb removal_zone = tmt::Aabb(min, max);
+    auto overlapped_entities = tmt::engine.renderer.scene_view.bvh.overlap(removal_zone);
+
+    for (int i = 0; i < overlapped_entities.size(); i++) {
+        tmt::Entity overlap_ent = tmt::engine.renderer.scene_view.entities[overlapped_entities[i]];
+        auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(overlap_ent);
+
+        if(transform.get_parent() == entity)
+        {
+            tmt::engine.ecs.destroy_entity(overlap_ent);        
+        }
+    }
+}
+
 void AsteroidFieldComponent::start() {}
 
-void AsteroidFieldComponent::update(const tmt::FrameData& time) {}
+void AsteroidFieldComponent::update(const tmt::FrameData& time) 
+{
+}
 
 void AsteroidFieldComponent::end() {}
 
@@ -237,6 +262,16 @@ void AsteroidFieldComponent::draw_debug_lines() const {
         tmt::engine.polyline.draw_line(layer_bmin, layer_bmax);
 
         ++it;
+    }
+
+    glm::vec3 mid = min + glm::vec3(layer_width, layer_height, 0.f) * 0.5f;
+
+    if(has_barge_removal_zone)
+    {
+        glm::vec3 min = mid - glm::vec3(barge_removal_zone_extent, barge_removal_zone_extent, 0.f);
+        glm::vec3 max = min + glm::vec3(2.f*barge_removal_zone_extent, 2.f*barge_removal_zone_extent, field_depth);
+        tmt::engine.polyline.use_color(glm::vec4(1.f, 0.f, 0.f, 1.f));
+        tmt::engine.polyline.draw_aabb(min, max);   
     }
 }
 

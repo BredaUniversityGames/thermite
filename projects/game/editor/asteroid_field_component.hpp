@@ -11,6 +11,14 @@ inline void tag_invoke(ImReflect::ImInput_t, const char* name, game::AsteroidFie
 
     auto& type_resp = response.get<AsteroidFieldComponent>();
 
+    if(value.has_barge_removal_zone) 
+    {
+        if(ImGui::Button("Clear removal zone"))
+        {
+            value.do_removal();
+        }
+    }
+
     static bool reload_toggle = false;
     ImGui::Checkbox("Enable instant reload", &reload_toggle);
 
