@@ -54,44 +54,45 @@ struct EcsComponentTraits {
     }
 };
 
+/* Ecs traits for empty components like Disable and DisableFlag */
 template <typename T>
 struct EcsComponentTraits<T, std::enable_if_t<std::is_empty_v<T>>> {
     static constexpr bool IS_GAME_COMPONENT = false;
 
     static T& add(Registry& registry, Entity entity) {
         registry.emplace<T>(entity);
-        static T instance {};
-        return instance;
+        static T INSTANCE {};
+        return INSTANCE;
     }
 
     static void remove(Registry& registry, Entity entity) { registry.remove<T>(entity); }
 
-    static T& get(Registry& registry, Entity entity) {
-        static T instance {};
-        return instance;
+    static T& get(Registry&, Entity) {
+        static T INSTANCE {};
+        return INSTANCE;
     }
 
-    static const T& get(const Registry& registry, Entity entity) {
-        static const T instance {};
-        return instance;
+    static const T& get(const Registry&, Entity) {
+        static const T INSTANCE {};
+        return INSTANCE;
     }
 
     static bool has(const Registry& registry, Entity entity) { return registry.all_of<T>(entity); }
 
     static T& add_or_get(Registry& registry, Entity entity) {
         if (!registry.all_of<T>(entity)) registry.emplace<T>(entity);
-        static T instance {};
-        return instance;
+        static T INSTANCE {};
+        return INSTANCE;
     }
 
     static T* try_get(Registry& registry, Entity entity) {
-        static T instance {};
+        static T INSTANCE {};
         return registry.all_of<T>(entity) ? &instance : nullptr;
     }
 
     static const T* try_get(const Registry& registry, Entity entity) {
-        static const T instance {};
-        return registry.all_of<T>(entity) ? &instance : nullptr;
+        static const T INSTANCE {};
+        return registry.all_of<T>(entity) ? &INSTANCE : nullptr;
     }
 
     template <typename... Rest, typename... Excludes>
