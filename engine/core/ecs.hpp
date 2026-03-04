@@ -87,7 +87,7 @@ struct EcsComponentTraits<T, std::enable_if_t<std::is_empty_v<T>>> {
 
     static T* try_get(Registry& registry, Entity entity) {
         static T INSTANCE {};
-        return registry.all_of<T>(entity) ? &instance : nullptr;
+        return registry.all_of<T>(entity) ? &INSTANCE : nullptr;
     }
 
     static const T* try_get(const Registry& registry, Entity entity) {
