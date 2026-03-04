@@ -117,6 +117,7 @@ class Log {
     }
 
    private:
+    friend class Console;
     static void on_signal(const int signal) {
         error("Flushing logs due to signal: {}", signal);
         flush();
