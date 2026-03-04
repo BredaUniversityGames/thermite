@@ -21,7 +21,7 @@ class Player : public tmt::GameComponent<Player> {
     void look_camera() const;
     void move_player();
     void update(const tmt::FrameData& time) override;
-    void AttemptAttach(tmt::Input& input);
+    void attempt_attach(tmt::Input& input);
     void on_attach(const AttachEvent& event);
     void end() override;
 
@@ -47,7 +47,7 @@ class Player : public tmt::GameComponent<Player> {
 
    private:
     void refill(float delta);
-    PlayerState state;
+    PlayerState state = PlayerState::FREEMOVING;
     glm::vec3 velocity = { 0.0f, 0.0f, 0.0f };
 };
 

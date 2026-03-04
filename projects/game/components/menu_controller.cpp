@@ -91,7 +91,7 @@ void MenuController::lock_mouse() {
 
     auto player_entity = tmt::engine.ecs.view<Player>().front().entity;  // Assuming there's only one player entity in the game
     // TODO this will get removed when proper game state are implemented
-    tmt::engine.ecs.get_component<Player>(player_entity).set_state(PlayerState::PAUSED);
+    tmt::engine.ecs.get_component<Player>(player_entity).set_state(PlayerState::FREEMOVING);
 }
 
 void MenuController::unlock_mouse() {
@@ -100,7 +100,7 @@ void MenuController::unlock_mouse() {
 
     auto player_entity = tmt::engine.ecs.view<Player>().front().entity;  // Assuming there's only one player entity in the game
     // TODO this will get removed when proper game state are implemented
-    tmt::engine.ecs.get_component<Player>(player_entity).set_state(PlayerState::FREEMOVING);
+    tmt::engine.ecs.get_component<Player>(player_entity).set_state(PlayerState::PAUSED);
 }
 
 bool MenuController::check_for_open_menus() const {

@@ -160,13 +160,13 @@ void Player::update(const tmt::FrameData& time) {
     auto& input = tmt::engine.input;
     switch (state) {
         case game::PlayerState::FREEMOVING:
-            AttemptAttach(input);
+            attempt_attach(input);
             look_camera();
             move_player();
 
             break;
         case game::PlayerState::ATTACHED:
-            AttemptAttach(input);
+            attempt_attach(input);
             look_camera();
             refill(tmt::engine.frame_data().delta_time);
             break;
@@ -189,7 +189,7 @@ void Player::update(const tmt::FrameData& time) {
     }
 }
 
-void Player::AttemptAttach(tmt::Input& input) {
+void Player::attempt_attach(tmt::Input& input) {
     if (input.is_action_just_pressed(action::ATTACH_KEY)) {
         tmt::engine.ecs.get_dispatcher().trigger<AttachAttemptEvent>({ .entity = entity });
     }
@@ -198,8 +198,8 @@ void Player::AttemptAttach(tmt::Input& input) {
 void Player::refill(float delta) {
     // TODO probably an event here for audio, graphics etc.
 
-    health.value = glm::max(health.max_value, health.value + delta * health.increase_multiplier);
-    energy.value = glm::max(energy.max_value, health.value + delta * health.increase_multiplier);
+    health.value = glm::min(health.max_value, health.value + delta * health.increase_multiplier);
+    energy.value = glm::min(energy.max_value, energy.value + delta * energy.increase_multiplier);
 }
 void Player::on_attach(const AttachEvent& event) {
     if (event.entity != entity) {
