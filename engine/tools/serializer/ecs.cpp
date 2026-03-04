@@ -153,9 +153,10 @@ void tag_invoke(JsonReflect::deserialize_t, const JsonReflect::json& j, tmt::Ent
     if (mapping.has_value() == false) {
         entity = deserialized_entity;
         const bool is_valid_entity = state.ecs.valid(entity);
+        const auto& prefab_location = state.current_prefab_location;
         tmt::Log::debug(
-            tmt::Log::Scope::ENGINE, "[Serialization] No existing mapping found for entity {} in prefab instance {}, using {} deserialized entity directly.", deserialized_entity,
-            state.current_prefab_instance_id, is_valid_entity ? "(valid)" : "(invalid)"
+            tmt::Log::Scope::ENGINE, "[Serialization] No existing mapping found for entity {} in prefab {} instance {}, using {} deserialized entity directly.", deserialized_entity,
+            prefab_location, state.current_prefab_instance_id, is_valid_entity ? "(valid)" : "(invalid)"
         );
         return;
     }
