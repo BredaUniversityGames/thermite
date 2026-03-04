@@ -20,6 +20,7 @@ class Viewport : public IWindow, public OnRetrieveMouseState {
 
     void before_begin() override;
     void display() override;
+    void snap_to_entity();
     void end_display() override;
 
     std::string get_title() const override;
@@ -28,6 +29,7 @@ class Viewport : public IWindow, public OnRetrieveMouseState {
     constexpr bool default_open() const override { return true; }
 
     bool get_is_hovered() const { return is_hovered; }
+    bool is_using_debug_camera() const { return using_debug_camera; }
 
    private:
     friend class ModelViewer;
