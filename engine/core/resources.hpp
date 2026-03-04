@@ -58,8 +58,9 @@ class Resources {
         resource->last_modified_time = IO::get_file_last_modified_time(file_location);
 
         // load() success checking
-        if (!resource->load()) {
-            tmt::Log::error(tmt::Log::Scope::ENGINE, "[Resources] Failed to load resource!");
+        const bool file_exists = resource->last_modified_time != TimeStamp::min();
+        if (!file_exists || !resource->load()) {
+            tmt::Log::error(tmt::Log::Scope::ENGINE, "[Resources] Failed to load resource: {}", file_location);
             resource->unload();
             resource->loaded = false;
             ResourceRef<T> ref(file_location);
