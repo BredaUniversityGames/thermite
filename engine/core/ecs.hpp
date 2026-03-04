@@ -61,15 +61,15 @@ struct EcsComponentTraits<T, std::enable_if_t<std::is_empty_v<T>>> {
 
     static T& add(Registry& registry, Entity entity) {
         registry.emplace<T>(entity);
-        static T INSTANCE {};
-        return INSTANCE;
+        static T instance {};
+        return instance;
     }
 
     static void remove(Registry& registry, Entity entity) { registry.remove<T>(entity); }
 
     static T& get(Registry&, Entity) {
-        static T INSTANCE {};
-        return INSTANCE;
+        static T instance {};
+        return instance;
     }
 
     static const T& get(const Registry&, Entity) {
@@ -81,13 +81,13 @@ struct EcsComponentTraits<T, std::enable_if_t<std::is_empty_v<T>>> {
 
     static T& add_or_get(Registry& registry, Entity entity) {
         if (!registry.all_of<T>(entity)) registry.emplace<T>(entity);
-        static T INSTANCE {};
-        return INSTANCE;
+        static T instance {};
+        return instance;
     }
 
     static T* try_get(Registry& registry, Entity entity) {
-        static T INSTANCE {};
-        return registry.all_of<T>(entity) ? &INSTANCE : nullptr;
+        static T instance {};
+        return registry.all_of<T>(entity) ? &instance : nullptr;
     }
 
     static const T* try_get(const Registry& registry, Entity entity) {
