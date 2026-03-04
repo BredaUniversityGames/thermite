@@ -1,4 +1,5 @@
 #pragma once
+#include "engine/events/event.hpp"
 #include "engine/core/entity.hpp"
 
 namespace tmt {
