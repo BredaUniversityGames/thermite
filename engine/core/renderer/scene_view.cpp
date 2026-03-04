@@ -82,9 +82,11 @@ inline std::vector<T> reserved(const size_t count) {
     return std::move(v);
 }
 
-/* Check if any element of a matrix 4x4 is NaN. */
-bool nan_check(const glm::mat4 m) {
-    return glm::isnan(glm::dot(m[0] + m[1] + m[2] + m[3], glm::vec4(1.0f)));
+/* Check if any element of a 4x4 matrix is NaN or Inf. */
+bool validate_transform(const glm::mat4 m) {
+    const glm::vec4 sum4 = m[0] + m[1] + m[2] + m[3];
+    const float sum = sum4[0] + sum4[1] + sum4[2] + sum4[3];
+    return glm::isnan(sum) || glm::isinf(sum);
 }
 
 void SceneView::update_voxel_objects(RenderGraph& render_graph) {
@@ -108,8 +110,8 @@ void SceneView::update_voxel_objects(RenderGraph& render_graph) {
 
         /* Don't render objects with invalid transforms */
         const bool zero_scale = glm::any(glm::equal(transform.get_world_scale(), glm::vec3(0.0f)));
-        const bool any_nan = nan_check(transform.get_world_matrix());
-        if (zero_scale || any_nan) continue;
+        const bool valid = validate_transform(transform.get_world_matrix());
+        if (zero_scale || valid) continue;
         renderer.resource->update_if_dirty();
 
         /* Create new CPU and GPU object */
