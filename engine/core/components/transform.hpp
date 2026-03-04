@@ -64,11 +64,14 @@ struct Transform {
 
     void add_child(const Entity child);
     void remove_child(const Entity child);
+    /* Get all parents recursively, aka parent of parent too */
+    std::set<Entity> get_all_parents() const;
 
     bool has_children() const;
     const std::set<Entity>& get_children() const;
     /* Get all children recursivly, aka children of children too */
     std::set<Entity> get_all_children() const;
+
 
     void mark_dirty();
 
@@ -78,7 +81,7 @@ struct Transform {
     glm::vec3 local_position { 0.0f, 0.0f, 0.0f };
     glm::quat local_rotation { 1.0f, 0.0f, 0.0f, 0.0f };
     glm::vec3 local_scale { 1.0f, 1.0f, 1.0f };
-    glm::vec3 local_eulers { 0.f, 0.f, 0.f };
+    mutable glm::vec3 local_eulers { 0.f, 0.f, 0.f };
 
     mutable glm::mat4 world_matrix { glm::identity<glm::mat4>() };
 

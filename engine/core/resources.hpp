@@ -58,8 +58,9 @@ class Resources {
         resource->last_modified_time = IO::get_file_last_modified_time(file_location);
 
         // load() success checking
-        if (!resource->load()) {
-            tmt::Log::error(tmt::Log::Scope::ENGINE, "[Resources] Failed to load resource!");
+        const bool file_exists = resource->last_modified_time != TimeStamp::min();
+        if (!file_exists || !resource->load()) {
+            tmt::Log::error(tmt::Log::Scope::ENGINE, "[Resources] Failed to load resource: {}", file_location);
             resource->unload();
             resource->loaded = false;
             ResourceRef<T> ref(file_location);
@@ -77,7 +78,7 @@ class Resources {
 
     /* Runtime resources loading that takes in a file resource */
     template <typename T, typename... Args>
-    requires std::derived_from<T, RuntimeResource<typename T::ResourceType>>
+    requires requires { typename T::is_runtime_resource; } && std::constructible_from<T, const std::shared_ptr<typename T::ResourceType>&, Args...>
     ResourceRef<T> copy_resource(const ResourceRef<typename T::ResourceType>& file_resource, Args&&... args) {
         if (file_resource == nullptr) {
             Log::error(Log::Scope::ENGINE, "[Resources] Cannot copy nullptr file resource");
@@ -107,9 +108,9 @@ class Resources {
         return ref;
     }
 
-    /* Runtime resources loading that takes in a file resource args */
+    /* Runtime resources loading that takes in a file location (loads file resource first, then creates runtime resource) */
     template <typename T, typename... Args>
-    requires std::derived_from<T, RuntimeResource<typename T::ResourceType>> && std::constructible_from<typename T::ResourceType, const IO::FileLocation&, Args...>
+    requires requires { typename T::is_runtime_resource; } && std::constructible_from<typename T::ResourceType, const IO::FileLocation&, Args...>
     ResourceRef<T> copy_resource(const IO::FileLocation& file_location, Args&&... args) {
         auto file_resource = load_resource<typename T::ResourceType>(file_location, std::forward<Args>(args)...);
         if (file_resource == nullptr) {
@@ -120,6 +121,8 @@ class Resources {
     }
 
     void unload_unused();
+
+    void force_unload_all();
 
     size_t resource_count() const;
 

@@ -92,6 +92,13 @@ void VfxPipeline::init(GPUAdapter& gpu) {
                              .expect("failed to initialise the particle emitter buffer.");
     }
 
+    /* Initialise Particle Effects Buffer */
+    {
+        particle_effects_buffer =
+            bank.create_buffer("[Particles] Particle Effects Buffer", BufferUsage::Storage | BufferUsage::TransferDst, MAX_EMITTERS * MAX_EFFECTS_PER_EMITTER, sizeof(GpuParticleEffect))
+                .expect("failed to initialise the particle effects buffer.");
+    }
+
     /* Initialize the Billboard Vertex Buffer */
     {
         billboard_vertices = bank.create_buffer("[Particles] Billboard Vertex Buffer", BufferUsage::Vertex | BufferUsage::TransferDst, 6, sizeof(GpuQuad))
@@ -112,7 +119,7 @@ void VfxPipeline::init(GPUAdapter& gpu) {
     }
 
     /* Initialize the Sampler */
-    linear_sampler = bank.create_sampler("[Particles] Linear Sampler").expect("failed to initialize linear sampler.");
+    point_sampler = bank.create_sampler("[Particles] Linear Sampler", Filter::Nearest).expect("failed to initialize linear sampler.");
 }
 
 void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
@@ -120,29 +127,75 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
     std::swap(alive_list, alive_list_new);
 
     std::vector<GpuEmitter> emitters {};
+    std::vector<GpuParticleEffect> effects {};
 
     /* clang-format off */
-    const entt::basic_group group = engine.ecs.get_registry().group<ParticleEmitter>(entt::get<Transform>);
+    const entt::basic_group group = engine.ecs.group<ParticleEmitter>(entt::get<Transform>);
     for (auto&& [entity, emitter, transform] : group.each()) {
         /* Skip inactive emitters */
-        if (!emitter.active) continue;
+        if (!emitter.active && !emitter.should_burst) continue;
 
         if (emitters.size() >= MAX_EMITTERS) break;
 
+        if (effects.size() >= MAX_EMITTERS * MAX_EFFECTS_PER_EMITTER) break;
+
+        emitter.should_burst = !emitter.should_burst;
+
         GpuEmitter em {};
-        em.pos = transform.get_world_position();
-        em.dir = glm::normalize(emitter.dir);
-        em.cone_angle = glm::radians(emitter.cone_angle);
-        em.max_speed = emitter.max_speed;
-        em.min_speed = emitter.min_speed;
-        em.particle_lifetime = emitter.particle_lifetime;
-        em.spawn_count = emitter.spawn_count;
-        em.tex_index = emitter.texture.resource->image.get_index();
-        
+        em.effects_count = emitter.effects.size();
+        em.effects_offset = effects.size();
+
+        for (auto& effect : emitter.effects) {
+            if (!effect.active && !effect.should_burst) continue;
+
+            effect.should_burst = !effect.should_burst;
+
+            uint32_t actual_spawn_count = 0u;
+
+            GpuParticleEffect eff {};
+
+            if (effect.spawn_interval <= 0.0f) {
+                // No interval so we spawn every frame
+                actual_spawn_count = effect.spawn_count;
+            } 
+            else {
+                effect.spawn_timer += render_view.gpu_view.dt;
+                while (effect.spawn_timer >= effect.spawn_interval) {
+                    actual_spawn_count += effect.spawn_count;
+                    effect.spawn_timer -= effect.spawn_interval;
+                }
+            }
+
+            eff.pos = transform.get_world_position() + effect.pos_offset;
+            eff.dir = glm::normalize(effect.dir);
+            eff.cone_angle = glm::cos(glm::radians(effect.cone_angle));
+            eff.start_speed = effect.start_speed;
+            eff.end_speed = effect.end_speed;
+            eff.lifetime = effect.particle_lifetime;
+            eff.spawn_count = actual_spawn_count;
+            eff.start_size = effect.start_size;
+            eff.end_size = effect.end_size;
+            eff.size_curve.points = effect.size_curve.get_vec4();
+            eff.start_opacity = effect.start_opacity;
+            eff.end_opacity = effect.end_opacity;
+            eff.opacity_curve.points = effect.opacity_curve.get_vec4();
+            eff.rotation = effect.rotation;
+            eff.pos_jitter = effect.pos_jitter;
+            eff.jitter_speed = effect.jitter_speed;
+            eff.tex_index = effect.texture.resource->image.get_index();
+            eff.flipbook_frames = effect.texture.resource->flipbook_frames;
+            eff.anim_speed = effect.anim_speed;
+            eff.dither_scale = effect.dither_scale;
+
+            em.total_spawn_count += eff.spawn_count;
+
+            effects.push_back(eff);
+        }
         emitters.push_back(em);
     }
 
     render_graph.upload_buffer(emitter_buffer, emitters.data(), 0, sizeof(GpuEmitter) * emitters.size());
+    render_graph.upload_buffer(particle_effects_buffer, effects.data(), 0, sizeof(GpuParticleEffect) * effects.size());
 
     /* Emit Stage */
     for (uint32_t i = 0; i < emitters.size(); i++) {
@@ -152,13 +205,14 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
                 .push_constants(&i, 0, sizeof(i))
                 .read(render_view.render_view_buffer)
                 .read(emitter_buffer)
+                .read(particle_effects_buffer)
                 .write(counter_buffer)
                 .write(alive_list)
                 .write(alive_list_new)
                 .write(dead_list)
                 .write(particle_buffer)
                 .group_size(64, 1, 1)
-                .work_size(em.spawn_count, 1, 1);
+                .work_size(em.total_spawn_count, 1, 1);
     }
 
     render_graph.add_compute_pass("Particle Begin Update", "particle_begin_update.cs")
@@ -191,7 +245,8 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
                                 .read(render_view.render_view_buffer, ShaderStages::Vertex)
                                 .read(particle_buffer, ShaderStages::Vertex)
                                 .read(alive_list, ShaderStages::Vertex)
-                                .read(linear_sampler, ShaderStages::Pixel | ShaderStages::Vertex)
+                                .read(render_view.blue_noise1d->image, ShaderStages::Pixel)
+                                .read(point_sampler, ShaderStages::Pixel | ShaderStages::Vertex)
                                 .depth_stencil(render_view.dbuffer.image, true, true)
                                 .load_op_depth(LoadOp::Load)
                                 .load_op_color(LoadOp::Load)
@@ -212,9 +267,10 @@ void VfxPipeline::deinit(GPUAdapter& gpu) {
     bank.destroy(alive_list);
     bank.destroy(counter_buffer);
     bank.destroy(emitter_buffer);
+    bank.destroy(particle_effects_buffer);
     bank.destroy(billboard_vertices);
 
-    bank.destroy(linear_sampler);
+    bank.destroy(point_sampler);
 }
 
 }  // namespace tmt

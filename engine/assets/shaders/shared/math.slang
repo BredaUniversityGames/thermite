@@ -4,16 +4,70 @@ module math;
 public static const float BIG_F32 = 1e30f;
 /* PI constant. */
 public static const float PI_F32 = 3.14159265359f;
+public static const float RCP_PI_F32 = 1.0f / PI_F32;
+
+public static const float GOLDEN_RATIO_F32 = 1.61803398875f;
 
 /* Number of voxels per unit in world-space. */
 public static const uint VOXELS_PER_UNIT = 10u;
 /* Number of world-space units per voxel. */
 public static const float UNITS_PER_VOXEL = 1.0f / VOXELS_PER_UNIT;
 
+public struct Range {
+    public float min;
+    public float max;
+};
+
+// Bezier Helpers
+float bezier_x(float t, float4 p) {
+    const float u = 1.0f - t;
+    return 3.0f * u * u * t * p.x + 3.0f * u * t * t * p.z + t * t * t;
+}
+float bezier_y(float t, float4 p) {
+    const float u = 1.0f - t;
+    return 3.0f * u * u * t * p.y + 3.0f * u * t * t * p.w + t * t * t;
+}
+float bezier_dx(float t, float4 p) {
+    const float u = 1.0f - t;
+    return 3.0f * u * u * p.x + 6.0f * u * t * (p.z - p.x) + 3.0f * t * t * (1.0f - p.z);
+}
+
+// Cubic Bezier
+public struct BezierCurve {
+    // 4 control points
+    public float4 points;
+
+    public float evaluate(float x) {
+        if (is_linear())
+            return x;
+
+        // Newton's method: find t where bezier_x(t) == x
+        float t = x; // initial guess
+        for (int i = 0; i < 5; i++) {
+            const float dx = bezier_dx(t, points);
+            if (abs(dx) < 1e-6) break;
+            t -= (bezier_x(t, points) - x) / dx;
+            t = saturate(t);
+        }
+        return saturate(bezier_y(t, points));
+    }
+
+    public bool is_linear() {
+        return points.x == 0.0f && points.y == 0.0f && points.z == 1.0f && points.w == 1.0f;
+    }
+};
+
 /* Returns true if the given bit `i` in `x` is set. */
 public [ForceInline] bool bit_set(const uint x, const uint i) {
     const uint mask = 1u << i;
     return (x & mask) != 0u;
+}
+
+/* Swap two variables around. */
+public [ForceInline] void swap<T>(inout T a, inout T b) {
+    const T c = a;
+    a = b;
+    b = c;
 }
 
 /* Convert a uint64 into two uint32s. */
@@ -57,9 +111,19 @@ public float3 decode_rgb9e5(const uint p) {
     return float3(r, g, b);
 }
 
+/* Decode a SDR color value packed as RGB10. */
+public float3 decode_rgb10(const uint p) {
+    const float rcp_scale = 1.0f / (float)(1u << 10);
+    return float3(
+        (float)(p & 0x3FFu) * rcp_scale,
+        (float)((p >> 10) & 0x3FFu) * rcp_scale,
+        (float)((p >> 20) & 0x3FFu) * rcp_scale
+    );
+}
+
 public struct Basis {
-    public float3 a;
-    public float3 b;
+    public float3 a; /* tangent */
+    public float3 b; /* bitangent */
 };
 
 /* Create two orthonormal basis vectors for a given normal vector. */
@@ -74,18 +138,25 @@ public [ForceInline] Basis orthonormal_basis(const float3 n) {
     );
 }
 
-/* R1 quasi-random sequence. */
+/* R1 quasi-random sequence. [0, 1) */
 public float r1(const uint n) {
     /* Improved coefficients from <https://www.martysmods.com/a-better-r2-sequence/> */
     /* (1.0 - original coefficients) */
     return frac(n * 0.38196601125010515179366115080745f);
 }
 
-/* R2 quasi-random sequence. */
+/* R2 quasi-random sequence. [0, 1) */
 public float2 r2(const uint n) {
     /* Improved coefficients from <https://www.martysmods.com/a-better-r2-sequence/> */
     /* (1.0 - original coefficients) */
     return frac(n * float2(0.2451223337533073f, 0.4301597090019468f));
+}
+
+/* R2 quasi-random sequence. [0, 1) */
+public float2 r2(const float2 noise, const uint i) {
+    /* Improved coefficients from <https://www.martysmods.com/a-better-r2-sequence/> */
+    /* (1.0 - original coefficients) */
+    return frac(noise + float(i) * float2(0.2451223337533073f, 0.4301597090019468f));
 }
 
 uint pcg(inout uint state) {

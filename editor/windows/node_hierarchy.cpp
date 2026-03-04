@@ -180,6 +180,14 @@ void NodeHierarchy::open_svh() {
     );
 }
 
+void NodeHierarchy::open_svh(const IO::FileLocation& location) {
+    clear_hierarchy();
+    loaded_location = location;
+
+    const ResourceRef<VoxelScene> resource = engine.resources.load_resource<VoxelScene>(location);
+    build_scene(resource->root_nodes);
+}
+
 void NodeHierarchy::save_svh() {
     if (loaded_location.relative_path.empty()) {
         save_svh_as();
@@ -221,7 +229,7 @@ void NodeHierarchy::import_file(const std::string& file_description, const std::
 void NodeHierarchy::export_file(const std::string& file_description, const std::string& file_extension) const {
     save_file_dialog(
         [this](const IO::FileLocation& location) {
-            const entt::basic_group renderer_group = engine.ecs.get_registry().group<VoxelRenderer>(entt::get<Transform>);
+            const entt::basic_group renderer_group = engine.ecs.group<VoxelRenderer>(entt::get<Transform>);
             if (renderer_group.empty()) return;
 
             // Make sure all the paths have the correct extension.
@@ -284,7 +292,9 @@ void NodeHierarchy::export_file(const std::string& file_description, const std::
 
                         // Write the color then the alpha, which is always 1.0.
                         const Material& material = tree->palette.entries[i];
-                        mtl_file << std::format("Kd {} {} {}", cs::linearize(material.albedo_r), cs::linearize(material.albedo_g), cs::linearize(material.albedo_b)) << '\n';
+                        const glm::vec3 albedo = material.albedo.unpack();
+
+                        mtl_file << std::format("Kd {} {} {}", cs::linearize(albedo.r), cs::linearize(albedo.g), cs::linearize(albedo.b)) << '\n';
                         mtl_file << "d 1.0" << '\n';
                     }
                 }

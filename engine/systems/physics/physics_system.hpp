@@ -4,13 +4,14 @@
 
 #include "collision.hpp"
 #include "constraint_solver.hpp"
+#include "physics_layers.hpp"
 #include "components/voxel_body.hpp"
 #include "engine/core/renderer/voxel_object.hpp"
 #include "engine/shared/bvh2.hpp"
 
 namespace tmt {
 
-using PhysicsGroup = decltype(std::declval<entt::registry>().group<VoxelBody>(entt::get<Transform>));
+using PhysicsGroup = decltype(std::declval<Ecs>().group<VoxelBody>(entt::get<Transform>));
 
 class Physics : public ISystem {
    public:
@@ -23,6 +24,8 @@ class Physics : public ISystem {
     void on_fixed_update(const FrameData& time) override;
     void on_end() override;
 
+    const Bvh2<VoxelObject>& get_bvh() { return bvh; }
+
    private:
     // Simulation data
     float simulation_time_accum = 0.0f;
@@ -30,6 +33,9 @@ class Physics : public ISystem {
     bool simulating = true;
     ConstraintSolver solver = {};
     Bvh2<VoxelObject> bvh {};
+
+    // Layers
+    PhysicsLayers physics_layers;
 
     // Simulation functions
     bool sat_early_out(const VoxelBody& vb_a, const VoxelBody& vb_b);
@@ -42,7 +48,6 @@ class Physics : public ISystem {
         tmt::Svt64* tree_a, const glm::vec3& center_a, const glm::quat& rotation_a, float half_extent_a, tmt::Svt64* tree_b, const glm::vec3& center_b, const glm::quat& rotation_b,
         float half_extent_b, Collision& coll
     );
-
    public:
     // Static utility functions
     static void initialize_voxel_body(VoxelBody& vb);
@@ -51,6 +56,15 @@ class Physics : public ISystem {
     static void add_force_at_position(VoxelBody& vb, const glm::vec3& force, const glm::vec3& position);
     static void set_position(VoxelBody& vb, const glm::vec3& position);
     static void set_rotation(VoxelBody& vb, const glm::quat& rotation);
+
+    PhysicsLayers& layers() { return physics_layers; }
+    // Raycast against layers in the layer_mask
+    
+    Hit raycast(const Ray& ray, uint32_t layer_mask) const;
+
+    static void recalculate_physics_data(VoxelBody& vb);
+    static void recalculate_surface_normals(VoxelBody& vb);
+    static void recalculate_surface_normals(VoxelVolume& volume);
 };
 
 }  // namespace tmt

@@ -55,10 +55,14 @@ struct VoxelBody {
     float get_inv_mass() const;
     glm::mat3 get_inv_world_inertia() const;
 
+    float get_mass() const { return type == STATIC ? 0 : 1.0/inv_mass; }
+
     // Collider properties
     float width = 1.0f;
     float height = 1.0f;
     float depth = 1.0f;
+
+    uint32_t layer = 0;  // default layer
 
     ResourceRef<VoxelVolume> resource {};
 
@@ -71,4 +75,4 @@ struct VoxelBody {
 
 }  // namespace tmt
 
-TMT_COMPONENT(tmt::VoxelBody, "Voxel Body", (resource, type, gravity));
+TMT_COMPONENT(tmt::VoxelBody, "Voxel Body", (resource, type, gravity, layer));

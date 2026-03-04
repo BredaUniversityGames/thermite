@@ -32,6 +32,7 @@ class UiPipeline {
    private:
     Buffer images_buffer {};
     Buffer image_vertex_buffer {};
+    Sampler image_sampler {};
 
     uint32_t image_count = 0;
 
@@ -47,6 +48,8 @@ class UiPipeline {
     /* Cannot be copied */
     UiPipeline(const UiPipeline&) = delete;
     UiPipeline& operator=(const UiPipeline&) = delete;
+
+    bool render_ui_pipeline = true;
 };
 
 }  // namespace tmt
