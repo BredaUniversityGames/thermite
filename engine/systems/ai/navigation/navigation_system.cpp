@@ -27,6 +27,10 @@ void tmt::NavigationSystem::on_update(const FrameData&) {
         }
 
         if (!nav_mesh.nodes_mesh) continue;
+        
+        for (auto& node : (*nav_mesh.nodes_mesh)) {
+            node.normal = nav_mesh.compute_normal(node);
+        }
 
         glm::mat4 world_matrix = transform.get_world_matrix();
         for (auto& node : *nav_mesh.nodes_mesh) {

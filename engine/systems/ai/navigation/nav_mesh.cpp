@@ -393,7 +393,7 @@ std::optional<glm::vec3> tmt::NavMesh::follow_path(glm::vec3 start, glm::vec3 en
 }
 
 void tmt::NavMesh::inspect() {
-    return;
+    //return;
     tmt::engine.polyline.use_color(1.0f, 0.0f, 0.0f);
     tmt::engine.polyline.use_line_width(2, true);
 
@@ -412,16 +412,25 @@ void tmt::NavMesh::inspect() {
             engine.polyline.draw_line((*nodes_mesh)[i].world_pos, (*nodes_mesh)[conn_idx].world_pos);
 
             // draw normal
-            tmt::engine.polyline.use_color(1.0f, 1.0f, 1.0f);
+            tmt::engine.polyline.use_color(1.0f, 1.0f, 0.0f);
             tmt::engine.polyline.use_line_width(5.f);
             engine.polyline.draw_line((*nodes_mesh)[i].world_pos, (*nodes_mesh)[i].world_pos + (*nodes_mesh)[i].normal);
         }
     }
 
-    tmt::engine.polyline.use_color(1.0f, 1.0f, 1.0f);
-    for (int i = 0; i < (int)path.size() - 1; i++) {
-        tmt::engine.polyline.draw_line((*nodes_mesh)[path[i]].world_pos, (*nodes_mesh)[path[i + 1]].world_pos);
+    for (int i = 0; i < (*generating_nodes).size(); i++) {
+        for (int j = 0; j < (*generating_nodes)[i].connecting_nodes.size(); j++) {
+            if (i > (*generating_nodes)[i].connecting_nodes[j]) continue;
+            int conn_idx = (*generating_nodes)[i].connecting_nodes[j];
+            tmt::engine.polyline.use_color(1.0f, 1.0f, 1.0f);
+            engine.polyline.draw_line((*generating_nodes)[i].world_pos, (*generating_nodes)[conn_idx].world_pos);
+        }
     }
+
+    //tmt::engine.polyline.use_color(1.0f, 1.0f, 1.0f);
+    //for (int i = 0; i < (int)path.size() - 1; i++) {
+    //    tmt::engine.polyline.draw_line((*nodes_mesh)[path[i]].world_pos, (*nodes_mesh)[path[i + 1]].world_pos);
+    //}
 }
 
 }  // namespace tmt
