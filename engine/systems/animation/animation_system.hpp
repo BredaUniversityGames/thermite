@@ -23,7 +23,7 @@ class RigModelManager : public ISystem, OnGameStart, OnDrawLines  {
     constexpr std::string get_name() const override {return "RigModelManager"; };
 };
 
-class ConstraintSystem : public ISystem 
+class AnimationConstraintSystem : public ISystem 
 {
    public:
 

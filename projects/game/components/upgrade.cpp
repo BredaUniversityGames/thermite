@@ -1,4 +1,6 @@
 #include "upgrade.hpp"
+
+#include "fuel.hpp"
 #include "engine/core/components/button.hpp"
 #include "mining_component.hpp"
 #include "player.hpp"
@@ -8,7 +10,7 @@ namespace game {
 
 void Upgrade::start() {
     // if entities are not set, try to set them automatically
-    if (!tmt::engine.ecs.valid(player_entity)){
+    if (!tmt::engine.ecs.valid(player_entity)) {
         tmt::Log::error("Player entity was invalid, trying to get it automatically.");
         player_entity = tmt::engine.ecs.view<Player>().front().entity;  // Assuming there's only one player entity in the game
     }
@@ -110,6 +112,7 @@ bool Upgrade::apply_upgrade() {
 
     auto player_component = tmt::engine.ecs.try_get_component<Player>(upgrade_target);
     auto weapon_component = tmt::engine.ecs.try_get_component<Weapon>(upgrade_target);
+    auto fuel_component = tmt::engine.ecs.try_get_component<FuelComponent>(upgrade_target);
 
     switch (type) {
         case UpgradeType::MAX_HEALTH:
@@ -117,14 +120,14 @@ bool Upgrade::apply_upgrade() {
                 tmt::Log::error("Upgrade target does not have valid player component, could not apply max health upgrade.");
                 return false;
             }
-            player_component->max_health = upgrade_to;
+            player_component->health.max_value = upgrade_to;
             break;
         case UpgradeType::MAX_BATTERY:
             if (!player_component) {
                 tmt::Log::error("Upgrade target does not have valid player component, could not apply max battery upgrade.");
                 return false;
             }
-            player_component->max_battery = upgrade_to;
+            player_component->energy.max_value = upgrade_to;
             break;
         case UpgradeType::MAX_SPEED:
             if (!player_component) {
@@ -158,9 +161,12 @@ bool Upgrade::apply_upgrade() {
             tmt::Log::warn("Weapon damage upgrade not implemented yet.");
             return false;
             break;
-        case UpgradeType::BARGE_FUEL:
-            tmt::Log::warn("Barge fuel upgrade not implemented yet.");
-            return false;
+        case UpgradeType::BARGE_MAX_FUEL:
+            if (!fuel_component) {
+                tmt::Log::error("Upgrade target does not have valid fuel component, could not apply max barge fuel upgrade");
+                return false;
+            }
+            fuel_component->max_fuel = upgrade_to;
             break;
         default:
             tmt::Log::error("Invalid upgrade type, could not apply upgrade.");
@@ -170,4 +176,4 @@ bool Upgrade::apply_upgrade() {
     return true;           // Upgrade applied successfully
 }
 
-}                          // namespace game
+}  // namespace game

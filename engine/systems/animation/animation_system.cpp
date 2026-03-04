@@ -120,7 +120,7 @@ void RigModelManager::on_draw_lines() const
     }
 }
 
-void tmt::ConstraintSystem::on_start() 
+void tmt::AnimationConstraintSystem::on_start() 
 {
     for (const auto& [entity, transform, damped_constraint] : engine.ecs.view<Transform, AnimConstraints::DampedTransformConstraint>().each()) {
         damped_constraint.local_rest_pose.bone_entity = entity;
@@ -131,7 +131,7 @@ void tmt::ConstraintSystem::on_start()
         two_bone_constraint.parent = transform.get_parent();
     }
 }
-void tmt::ConstraintSystem::on_update(const tmt::FrameData& time) 
+void tmt::AnimationConstraintSystem::on_update(const tmt::FrameData& time) 
 {
     for (const auto& [entity, transform, damped_constraint] : engine.ecs.view<Transform, AnimConstraints::DampedTransformConstraint>().each()) {
         damped_constraint.local_rest_pose.local_pos = transform.get_local_position();
@@ -246,8 +246,8 @@ void tmt::ConstraintSystem::on_update(const tmt::FrameData& time)
 
 
 
-void tmt::ConstraintSystem::on_end() {}
+void tmt::AnimationConstraintSystem::on_end() {}
 
-std::string tmt::ConstraintSystem::get_name() { return std::string(); }
+std::string tmt::AnimationConstraintSystem::get_name() { return std::string(); }
 
 }
