@@ -8,7 +8,7 @@ namespace game {
 
 void Upgrade::start() {
     // if entities are not set, try to set them automatically
-    if (!tmt::engine.ecs.valid(player_entity)){
+    if (!tmt::engine.ecs.valid(player_entity)) {
         tmt::Log::error("Player entity was invalid, trying to get it automatically.");
         player_entity = tmt::engine.ecs.view<Player>().front().entity;  // Assuming there's only one player entity in the game
     }
@@ -117,14 +117,14 @@ bool Upgrade::apply_upgrade() {
                 tmt::Log::error("Upgrade target does not have valid player component, could not apply max health upgrade.");
                 return false;
             }
-            player_component->max_health = upgrade_to;
+            player_component->health.max_value = upgrade_to;
             break;
         case UpgradeType::MAX_BATTERY:
             if (!player_component) {
                 tmt::Log::error("Upgrade target does not have valid player component, could not apply max battery upgrade.");
                 return false;
             }
-            player_component->max_battery = upgrade_to;
+            player_component->energy.max_value = upgrade_to;
             break;
         case UpgradeType::MAX_SPEED:
             if (!player_component) {
@@ -170,4 +170,4 @@ bool Upgrade::apply_upgrade() {
     return true;           // Upgrade applied successfully
 }
 
-}                          // namespace game
+}  // namespace game
