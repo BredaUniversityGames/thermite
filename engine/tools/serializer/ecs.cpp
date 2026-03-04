@@ -226,39 +226,39 @@ void tag_invoke(JsonReflect::deserialize_t, const tmt::json& j, tmt::Entity& ent
 }
 
 std::optional<tmt::json> recursive_find_component_json(const tmt::SceneJson& prefab_json, const std::string& component_name, const tmt::Entity& entity_id) {
-    /*Check if it's a prefab inside this prefab */
-    constexpr auto PREFAB_COMPONENT_NAME = tmt::Component<tmt::Prefab>::get_name();
-    const std::optional<tmt::json> maybe_value = prefab_json.component_value(PREFAB_COMPONENT_NAME, entity_id);
-    if (maybe_value.has_value()) {
-        const tmt::json& prefab_component_json = maybe_value.value();
+    ///*Check if it's a prefab inside this prefab */
+    // constexpr auto PREFAB_COMPONENT_NAME = tmt::Component<tmt::Prefab>::get_name();
+    // const std::optional<tmt::json> maybe_value = prefab_json.component_value(PREFAB_COMPONENT_NAME, entity_id);
+    // if (maybe_value.has_value()) {
+    //     const tmt::json& prefab_component_json = maybe_value.value();
 
-        tmt::Prefab prefab_component {};
-        tmt::Serializer::deserialize<tmt::Prefab>(prefab_component_json, prefab_component);
-        auto original_prefab_json = tmt::engine.resources.load_resource<tmt::Json>(prefab_component.source_location);
+    //    tmt::Prefab prefab_component {};
+    //    tmt::Serializer::deserialize<tmt::Prefab>(prefab_component_json, prefab_component);
+    //    auto original_prefab_json = tmt::engine.resources.load_resource<tmt::Json>(prefab_component.source_location);
 
-        tmt::SceneJson nested_prefab_json(original_prefab_json->get_parsed_json());
-        const std::optional<tmt::json> found = recursive_find_component_json(nested_prefab_json, component_name, prefab_component.source_entity);
-        if (found.has_value() == false) {
-            return found;
-        }
+    //    tmt::SceneJson nested_prefab_json(original_prefab_json->get_parsed_json());
+    //    const std::optional<tmt::json> found = recursive_find_component_json(nested_prefab_json, component_name, prefab_component.source_entity);
+    //    if (found.has_value() == false) {
+    //        return found;
+    //    }
 
-        /* we found something, check if this prefab overrides it */
-        const std::optional<tmt::json> override = prefab_json.component_value(component_name, entity_id);
-        if (override.has_value() == false) {
-            return found;
-        }
+    //    /* we found something, check if this prefab overrides it */
+    //    const std::optional<tmt::json> override = prefab_json.component_value(component_name, entity_id);
+    //    if (override.has_value() == false) {
+    //        return found;
+    //    }
 
-        /* patch override */
-        const tmt::json& override_value = override.value();
-        if (override_value.contains("diff")) {
-            const tmt::json& diff = override_value["diff"];
-            tmt::json base = found.value();
-            tmt::json patched = base.patch(diff);
-            return patched;
-        } else {
-            return found;
-        }
-    }
+    //    /* patch override */
+    //    const tmt::json& override_value = override.value();
+    //    if (override_value.contains("diff")) {
+    //        const tmt::json& diff = override_value["diff"];
+    //        tmt::json base = found.value();
+    //        tmt::json patched = base.patch(diff);
+    //        return patched;
+    //    } else {
+    //        return found;
+    //    }
+    //}
     return prefab_json.component_value(component_name, entity_id);
 }
 
@@ -447,6 +447,7 @@ void deserialize_component(tmt::DeserializeState& state) {
 
     if (state.json.has_components(COMPONENT_NAME) == false) return;
 
+    std::set<tmt::Entity> skipped_entities {};
     const tmt::json& entries = state.json.components(COMPONENT_NAME);
     /* Add components */
     {
@@ -474,6 +475,33 @@ void deserialize_component(tmt::DeserializeState& state) {
             }
 
             const tmt::Entity entity = mapping.value();
+            const bool is_diffed = json_value.is_object() && json_value.contains("diff");
+
+            if (is_diffed) {
+                const bool has_prefab = state.ecs.has_component<tmt::Prefab>(entity);
+                if (has_prefab) {
+                    /* check if component is still in prefab */
+                    const tmt::Prefab& prefab_comp = state.ecs.get_component<tmt::Prefab>(entity);
+                    const tmt::Entity source_entity = prefab_comp.source_entity;
+
+                    const tmt::ResourceRef<tmt::Json> source_parsed_json = tmt::engine.resources.load_resource<tmt::Json>(prefab_comp.source_location);
+                    const tmt::SceneJson source_prefab_json(source_parsed_json->get_parsed_json());
+                    const std::optional<tmt::json> source_component_json = recursive_find_component_json(source_prefab_json, COMPONENT_NAME, source_entity);
+
+                    if (source_component_json.has_value() == false) {
+                        /* Component removed in prefab, skip */
+                        skipped_entities.insert(entity_key);
+                        tmt::Log::debug(
+                            tmt::Log::Scope::ENGINE,
+                            "[Serialization] Entity {} component {} is diffed but has no source component in prefab, skipping deserialization of this component. This likely means the "
+                            "component was removed in the prefab.",
+                            entity_key, COMPONENT_NAME
+                        );
+                        continue;
+                    }
+                }
+            }
+
             state.ecs.add_or_get_component<ComponentType>(entity);
         }
     }
@@ -484,6 +512,11 @@ void deserialize_component(tmt::DeserializeState& state) {
             tmt::Entity entity_key = tmt::EntityHelper::from_string(json_key);
 
             if (entity_key == entt::null) {
+                tmt::Log::debug(tmt::Log::Scope::ENGINE, "[Serialization] {} objects contain an entt::null entry in file: {}", COMPONENT_NAME, state.current_prefab_location);
+                continue;
+            }
+
+            if (skipped_entities.contains(entity_key)) {
                 continue;
             }
 
