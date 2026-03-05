@@ -19,7 +19,7 @@ void Destruction::on_start() {
 void Destruction::on_update(const FrameData& time) {
     for (const auto& [entity, des, vb] : engine.ecs.view<Destructable, VoxelBody>().each()) {
         engine.polyline.use_depth_testing(false);
-        engine.polyline.use_color(0.1f, 0.3f, 0.9f);
+        //engine.polyline.use_color(0.1f, 0.3f, 0.9f);
         for (DestructionNode& node : des.nodes) {
             if (node.level == 10) continue;
 
@@ -29,6 +29,12 @@ void Destruction::on_update(const FrameData& time) {
 
             // uint32_t voxel_count = vb.resource.resource.get()->blas.get()->voxel_count;
             // Log::info("voxels %u", vb.resource.resource.get()->blas.get()->voxel_count);
+
+            srand(node.flood_mask << 5u);
+            
+            if (node.flood_mask == 0) engine.polyline.use_color(0.0f, 0.0f, 0.0f);
+            else
+                engine.polyline.use_color(((float)rand() / (float)RAND_MAX), ((float)rand() / (float)RAND_MAX), ((float)rand() / (float)RAND_MAX));
 
             // Draw connections to neighbors
             for (size_t i = 0; i < 6; i++) {
@@ -75,12 +81,12 @@ void Destruction::destroy_voxels(Entity entity, const Stencil* stencil, glm::ive
 
     // Subtract voxels from BLAS
     auto* resource = vb->resource.resource.get();
-    resource->blas.get()->subtract(stencil, offset);
+    resource->blas->subtract(stencil, offset);
     resource->set_dirty();
 
     // Get all the voxels positions of the empty voxels on the edge of destructed voxels
     std::vector<glm::uvec3> edge_indices;
-    //fill_edge_indices(edge_indices, entity, stencil, offset);
+    fill_edge_indices(edge_indices, entity, stencil, offset);
 
     // Clear the graph and generate it a new one (to slow)
     //des->clear();
@@ -90,7 +96,7 @@ void Destruction::destroy_voxels(Entity entity, const Stencil* stencil, glm::ive
     regenerate_connection_graph(*des, resource->blas.get(), stencil, offset);
 
     // Find where the objects seperate and creates new entities for each part
-    std::vector<Entity> seperated_entities = find_seperations(entity, edge_indices, stencil, offset);
+    std::vector<Entity> seperated_entities = find_seperations(entity, edge_indices, *des);
 
     // Recalculate physics data for all seperate voxel bodies
     for (Entity seperate_entity : seperated_entities) {
@@ -208,18 +214,81 @@ std::vector<Entity> Destruction::find_seperations(Entity entity, const std::vect
     if (current_mark > 2) Log::info("Seperation Found!");
 
     return std::vector<Entity> { entity };
+}
 
-    // for (size_t i = 0; i < stencil_size; i++) {
-    //     // if this voxel is empty, skip it
-    //     if (stencil->data[i] == 0) continue;
+void seperation_flood(Destructable& graph, DestructionNode& current_node, uint8_t id) {
+    current_node.flood_mask = id;
 
-    //    uint32_t local_x = i % stencil->size.x;
-    //    uint32_t local_y = (i / stencil->size.x) % stencil->size.y;
-    //    uint32_t local_z = i / (stencil->size.x * stencil->size.y);
+    // For all directions
+    for (size_t i = 0; i < 6; i++) {
+        // For all connections in this direction
+        for (size_t j = 0; j < current_node.connections[i].node_indices.size(); j++) {
+            uint32_t connection_index = current_node.connections[i].node_indices[j];
+            DestructionNode& connected_node = graph.nodes[connection_index];
+            if (connected_node.flood_mask == 0) {
+                if (connected_node.level == 1) {
+                    
+                }
 
-    //
-    //    edge_indices.push_back(i);
-    //}
+                seperation_flood(graph, connected_node, id);
+            }
+        }
+    }
+}
+
+std::vector<Entity> Destruction::find_seperations(Entity entity, const std::vector<glm::uvec3>& edge_indices, Destructable& graph) {
+    VoxelBody& vb = engine.ecs.get_component<VoxelBody>(entity);
+    auto* resource = vb.resource.resource.get();
+    Svt64* tree = resource->blas.get();
+
+    uint8_t flood_id = 1;
+    // Loop over edge indices
+    for (const glm::uvec3& edge_pos : edge_indices) {
+        DestructionNode* current_node = nullptr;
+
+        tmt::Svt64Node* node = &tree->nodes[0];
+        glm::uvec3 global_pos = glm::uvec3(0);
+        // Find the node relavent to that index
+        for (uint32_t level = 1u; level < tree->depth; ++level) {
+
+            // Get position of neighbor on this level
+            const uint32_t x_index = (edge_pos.x >> ((tree->depth - level) * 2u)) & 3u;
+            const uint32_t y_index = (edge_pos.y >> ((tree->depth - level) * 2u)) & 3u;
+            const uint32_t z_index = (edge_pos.z >> ((tree->depth - level) * 2u)) & 3u;
+
+            // Get node index of this neighbor
+            const uint32_t child_index = (x_index << 0u) | (z_index << 2u) | (y_index << 4u);
+
+            // If no node exists on this position and we are at a higher level (should never happen)
+            if ((node->child_mask & (1ull << child_index)) == 0u) break;
+
+            const uint32_t child_pos = (uint32_t)__popcnt64(node->child_mask & ((1ull << child_index) - 1u));
+            const uint32_t neighbor_node_index = node->abs_ptr() + child_pos;
+
+            const uint16_t level_scale = 1u << ((tree->depth - level) * 2u);
+
+            global_pos += glm::uvec3(x_index * level_scale, y_index * level_scale, z_index * level_scale);
+
+            // Check if connection node exists for this depth on the edge position
+            DestructionNode* des_node = graph.get_node(global_pos.x, global_pos.y, global_pos.z);
+            if (des_node != nullptr && des_node->level == tree->depth - level) {
+                current_node = des_node;
+                break;
+            }  
+
+            node = &tree->nodes[neighbor_node_index];
+        }
+
+        // If we coulnd't find a node, or it has already been touched by the floodfill
+        if (current_node == nullptr || current_node->flood_mask != 0) continue;
+
+        // Start floodfill from that node
+        seperation_flood(graph, *current_node, flood_id++);
+
+        // When node is level 1, do special flood thingy
+    }
+
+    return std::vector<Entity> { entity };
 }
 
 bool all_children_solid(Svt64* tree, const uint32_t node_index) {
@@ -748,175 +817,6 @@ void Destruction::regenerate_connection_graph(Destructable& graph, Svt64* tree, 
         // Create new nodes recursively (when we are not already on the lowest level)
         recurse_generate_connection(graph, tree, node_index, tree->depth - lvl, node_scale, node_min.x, node_min.y, node_min.z);
     }
-
-
-    //std::unordered_set<uint32_t> handled_nodes;
-    //const uint32_t tree_bounds = (1u << (tree->depth * 2u));
-
-    //// Loop over the stencil and find all voxels where destruction happened next to
-    //for (uint32_t local_z = 0; local_z < stencil->size.z; local_z++) {
-    //    for (uint32_t local_y = 0; local_y < stencil->size.y; local_y++) {
-    //        for (uint32_t local_x = 0; local_x < stencil->size.x; local_x++) {
-    //            uint32_t i = local_x + local_y * stencil->size.x + local_z * stencil->size.x * stencil->size.y;
-
-    //            // if this voxel is empty, skip it
-    //            if (stencil->data[i] == 0) continue;
-    //            glm::ivec3 tree_pos = glm::ivec3(local_x, local_y, local_z) + offset;
-
-    //            // If the world position of this voxel is outside the bounds of the tree, skip it
-    //            if (tree_pos.x < 0 || tree_pos.y < 0 || tree_pos.z < 0 || tree_pos.x > tree_bounds - 1u || tree_pos.y > tree_bounds - 1u || tree_pos.z > tree_bounds - 1u) continue;
-
-    //            // Find corresponding connection node
-
-    //            // Skip it if it already handled
-
-    //            // If not, severe connections, remove node, set as handled
-
-    //            // Get Node on the position starting from the root node
-    //            tmt::Svt64Node* node = &tree->nodes[0];
-    //            uint32_t parent_index = 0;
-    //            for (uint32_t level = 1u; level < tree->depth; ++level) {
-    //                // Get position on this level
-    //                const uint32_t x_index = (tree_pos.x >> ((tree->depth - level) * 2u)) & 3u;
-    //                const uint32_t y_index = (tree_pos.y >> ((tree->depth - level) * 2u)) & 3u;
-    //                const uint32_t z_index = (tree_pos.z >> ((tree->depth - level) * 2u)) & 3u;
-
-    //                // Get node index
-    //                const uint32_t child_index = (x_index << 0u) | (z_index << 2u) | (y_index << 4u);
-
-    //                // NOTE: NODE SHOULD BE GUARANTEED TO EXIST WE JUST DONT KNOW ON WHICH LEVEL THE NODE IS
-    //                // if ((node->child_mask & (1ull << child_index)) == 0u) break;
-
-    //                const uint32_t child_pos = (uint32_t)__popcnt64(node->child_mask & ((1ull << child_index) - 1u));
-    //                const uint32_t node_index = node->abs_ptr() + child_pos;
-    //                const uint32_t node_id = pos_to_node_id(x_index, y_index, z_index);
-
-    //                // NOTE: GET NODES BY POSITION, NOT BY INDEX, THIS IS NOT CORRECT CUS THE INDICES MOVE
-
-    //                // If the node is already marked as handled, stop searching
-    //                if (handled_nodes.contains(node_id)) break;
-
-    //                // Check for the node on this level
-    //                DestructionNode* des_node = graph.get_node(x_index, y_index, z_index);
-    //                if (des_node != nullptr && des_node->level == tree->depth - level) {
-    //                    // Break all to this node
-    //                    // For all axes
-    //                    for (size_t i = 0; i < 6; i++) {
-    //                        // For all connections on this axis
-    //                        for (size_t j = 0; j < des_node->connections[i].node_indices.size(); j++) {
-    //                            uint32_t connection_node_index = des_node->connections[i].node_indices[j];
-    //                            // Get connection node
-    //                            DestructionNode& connection_node = graph.nodes[connection_node_index];
-    //                            // Remove connection to this node from the neighbor
-    //                            for (size_t k = 0; k < connection_node.connections[i ^ 1].node_indices.size(); k++) {
-    //                                if (connection_node.connections[i ^ 1].node_indices[k] == des_node->id) {
-    //                                    connection_node.connections[i ^ 1].node_indices.erase(connection_node.connections[i ^ 1].node_indices.begin() + k);
-    //                                    break;
-    //                                }
-    //                            }
-    //                        }
-    //                    }
-
-    //                    // NOTE: TEMP FOR DEBUG DRAWING PURPOSES
-    //                    des_node->level = 10;
-
-    //                    // Mark node as handled
-    //                    handled_nodes.insert(node_id);
-
-    //                    // Remove node from hashmap
-    //                    graph.nodes_map.erase(node_id);
-
-    //                    // Dont go recusrive if we are at the lowest level
-    //                    if (tree->depth - level > 1u) {
-    //                        // Create new nodes recursively
-    //                        recurse_generate_connection(
-    //                            graph, tree, node_index, level, (1u << ((tree->depth - level) * 2u)), des_node->global_position.x, des_node->global_position.y, des_node->global_position.z
-    //                        );
-    //                    }
-
-    //                    break;
-    //                }
-
-    //                node = &tree->nodes[node_index];
-    //            }
-    //        }
-
-    //        // Loop over tree
-    //        // If the tree node has any overlap with the stencil, check if it has a connection node
-    //        // If it doesn't go deeper
-    //        // If it does, it can be removed and recalculated
-
-    //        // for (const glm::uvec3& edge_pos : edge_indices) {
-    //        //     // Get Node on the position starting from the root node
-    //        //     tmt::Svt64Node* node = &tree->nodes[0];
-    //        //     uint32_t parent_index = 0;
-    //        //     for (uint32_t level = 1u; level < tree->depth; ++level) {
-    //        //         // Get position on this level
-    //        //         const uint32_t x_index = (edge_pos.x >> ((tree->depth - level) * 2u)) & 3u;
-    //        //         const uint32_t y_index = (edge_pos.y >> ((tree->depth - level) * 2u)) & 3u;
-    //        //         const uint32_t z_index = (edge_pos.z >> ((tree->depth - level) * 2u)) & 3u;
-
-    //        //        // Get node index
-    //        //        const uint32_t child_index = (x_index << 0u) | (z_index << 2u) | (y_index << 4u);
-
-    //        //        // NOTE: NODE SHOULD BE GUARANTEED TO EXIST WE JUST DONT KNOW ON WHICH LEVEL THE NODE IS
-    //        //        // if ((node->child_mask & (1ull << child_index)) == 0u) break;
-
-    //        //        const uint32_t child_pos = (uint32_t)__popcnt64(node->child_mask & ((1ull << child_index) - 1u));
-    //        //        const uint32_t node_index = node->abs_ptr() + child_pos;
-
-    //        //        // If the node is already marked as handled, stop searching
-    //        //        if (handled_nodes.contains(node_index)) break;
-
-    //        //        // Check for the node on this level
-    //        //        DestructionNode* des_node = graph.get_node(node_index, tree->depth - level);
-    //        //        if (des_node != nullptr) {
-    //        //            // Break all to this node
-    //        //            // For all axes
-    //        //            for (size_t i = 0; i < 6; i++) {
-    //        //                // For all connections on this axis
-    //        //                for (size_t j = 0; j < des_node->connections[i].node_indices.size(); j++) {
-    //        //                    uint32_t connection_node_index = des_node->connections[i].node_indices[j];
-    //        //                    // Get connection node
-    //        //                    DestructionNode& connection_node = graph.nodes[connection_node_index];
-    //        //                    // Remove connection to this node from the neighbor
-    //        //                    for (size_t k = 0; k < connection_node.connections[i ^ 1].node_indices.size(); k++) {
-    //        //                        if (connection_node.connections[i ^ 1].node_indices[k] == des_node->id) {
-    //        //                            connection_node.connections[i ^ 1].node_indices.erase(connection_node.connections[i ^ 1].node_indices.begin() + k);
-    //        //                            break;
-    //        //                        }
-    //        //                    }
-    //        //                }
-
-    //        //                // NOTE: WE CANT REMOVE THE NODE BECUASE THE WILL INVILADATE THE OTHER NODE IDS
-    //        //                // graph.nodes.erase(graph.nodes.begin() + des_node->id);
-
-    //        //                // Remove node from hashmap (remove it after all edge indices are checked, because there can be overlap)
-    //        //                // graph.nodes_map.erase((des_node->level << 30) | des_node->tree_node);
-    //        //            }
-
-    //        //            // NOTE: TEMP FOR DEBUG DRAWING PURPOSES
-    //        //            des_node->level = 10;
-
-    //        //            // Mark node as handled
-    //        //            handled_nodes.insert(node_index);
-
-    //        //            // Remove node from hashmap
-    //        //            graph.nodes_map.erase((tree->depth - level << 30) | node_index);
-
-    //        //            // Create new nodes recursively
-    //        //            recurse_generate_connection(
-    //        //                graph, tree, node_index, level, (1u << ((tree->depth - level) * 2u)), des_node->global_position.x, des_node->global_position.y, des_node->global_position.z
-    //        //            );
-
-    //        //            break;
-    //        //        }
-
-    //        //        node = &tree->nodes[node_index];
-    //        //    }
-    //        //}
-    //    }
-    //}
 }
 
 void Destruction::generate_connection_graph(Destructable& graph, Svt64* tree) {

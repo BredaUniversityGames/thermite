@@ -26,6 +26,8 @@ struct DestructionNode {
 
     glm::uvec3 global_position = glm::uvec3(0);
 
+    uint64_t flood_mask = 0;
+
     // One vector per axis (non continuous memory)
     std::array<AxisConnections, 6> connections;
 };
