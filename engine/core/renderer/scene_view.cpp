@@ -85,11 +85,7 @@ inline std::vector<T> reserved(const size_t count) {
 /* Validate a transform. */
 bool validate_transform(const glm::mat4 m) {
     /* Calculate the scale of the transform */
-    const glm::vec3 scale = glm::vec3(
-        glm::length(glm::vec3(m[0])),
-        glm::length(glm::vec3(m[1])),
-        glm::length(glm::vec3(m[2]))
-    );
+    const glm::vec3 scale = glm::vec3(glm::length(glm::vec3(m[0])), glm::length(glm::vec3(m[1])), glm::length(glm::vec3(m[2])));
 
     /* Ensure the scale isn't too small */
     if (glm::any(glm::epsilonEqual(scale, glm::vec3(0.0f), 0.001f))) return true;
