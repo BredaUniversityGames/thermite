@@ -87,6 +87,7 @@ struct RenderView {
     ScreenBuffer dbuffer {}; /* Depth buffer (WxH, 4 bytes) */
     ScreenBuffer lbuffer {}; /* Raw luminance buffer (WxH, 4 bytes) */
     ScreenBuffer nbuffer {}; /* Denoised luminance buffer (WxH, 4 bytes) */
+    ScreenBuffer hbuffer {}; /* Accumulated frame buffer (WxH, 8 bytes) */
 
     /* Macrofacet buffers */
     Buffer macrofacet_cache {}; /* Macrofacet hash cache (10.000.000, 48 bytes) */

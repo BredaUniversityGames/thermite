@@ -116,6 +116,7 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
             .write(render_view.macrofacet_cache) /* Cache buffer */
             .read(render_view.lbuffer.image) /* Luminance buffer */
             .write(render_image) /* Render target */
+            .write(render_view.hbuffer.image)
             .group_size(16, 8)
             .work_size(render_res.x, render_res.y);
     }

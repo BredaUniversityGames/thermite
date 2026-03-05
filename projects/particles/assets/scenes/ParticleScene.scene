@@ -4,7 +4,8 @@
         0,
         1,
         2,
-        3
+        3,
+        4
     ],
     "Name": {
         "0": {
@@ -18,6 +19,9 @@
         },
         "3": {
             "name": "Particle Emitter 2"
+        },
+        "4": {
+            "name": "Sun"
         }
     },
     "Transform": {
@@ -100,6 +104,26 @@
             },
             "parent": 4294967295,
             "children": []
+        },
+        "4": {
+            "local_position": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "local_rotation": {
+                "w": 1.0,
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "local_scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "parent": 4294967295,
+            "children": []
         }
     },
     "Voxel Renderer": {
@@ -123,6 +147,24 @@
             "active": true
         }
     },
+    "Light": {
+        "4": {
+            "color": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "temperature": 6070.0,
+            "type": "SUN_LIGHT",
+            "light": {
+                "index": 1,
+                "value": {
+                    "source_angle": 0.04886921867728233,
+                    "luminous_intensity": 20.0
+                }
+            }
+        }
+    },
     "ParticleEmitter": {
         "0": {
             "effects": [
@@ -140,6 +182,7 @@
                     },
                     "cone_angle": 45.0,
                     "spawn_count": 1,
+                    "spawn_interval": 0.0,
                     "start_speed": {
                         "min": 1.0,
                         "max": 1.0
@@ -231,6 +274,7 @@
                     },
                     "cone_angle": 10.0,
                     "spawn_count": 8,
+                    "spawn_interval": 0.0,
                     "start_speed": {
                         "min": 1.0,
                         "max": 1.0
@@ -327,6 +371,7 @@
                     },
                     "cone_angle": 90.0,
                     "spawn_count": 8,
+                    "spawn_interval": 0.0,
                     "start_speed": {
                         "min": 1.0,
                         "max": 1.0

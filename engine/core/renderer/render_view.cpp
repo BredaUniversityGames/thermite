@@ -19,6 +19,13 @@
 
 namespace tmt {
 
+/* R2 quasi-random sequence. [0, 1) */
+static glm::vec2 r2_sequence(const uint32_t n) {
+    /* Improved coefficients from <https://www.martysmods.com/a-better-r2-sequence/> */
+    /* (1.0 - original coefficients) */
+    return glm::fract(glm::vec2(n) * glm::vec2(0.2451223337533073f, 0.4301597090019468f));
+}
+
 void RenderView::init() {
     VRAMBank& bank = engine.renderer.vram_bank();
 
@@ -40,6 +47,16 @@ void RenderView::init() {
 
     /* Viewport Image */
     viewport.image = bank.create_image("Viewport Image", viewport.texture).expect("failed to initialize attachment image.");
+
+    /* History Screen Buffer Texture */
+    hbuffer.texture = bank.create_texture(
+                              "History Buffer Texture", TextureUsage::ColorAttachment | TextureUsage::Sampled | TextureUsage::Storage, TextureFormat::RGBA16Sfloat,
+                              { (uint32_t)engine.window.width, (uint32_t)engine.window.height, 0 }, { 1, 1 }
+    )
+                          .expect("failed to initialize history buffer texture");
+
+    /* History Screen Buffer Image */
+    hbuffer.image = bank.create_image("History Buffer Image", hbuffer.texture).expect("failed to initialize history buffer image.");
 
     /* Create the active render view buffer */
     render_view_buffer = bank.create_buffer("Render View Buffer", BufferUsage::Constant | BufferUsage::TransferDst, sizeof(RenderView)).expect("failed to create render view buffer.");
@@ -105,9 +122,19 @@ void RenderView::update() {
 void RenderView::update_gpu_view(RenderGraph& render_graph, const Camera& camera, const Transform& transform) {
     const float aspect_ratio = (float)gpu_view.resolution.x / (float)gpu_view.resolution.y;
 
+    /* Calculate camera jitter */
+    const glm::vec2 r2 = r2_sequence(frame_counter); // [0, 1) range
+    // offset is in [-0.5, 0.5)
+    glm::vec2 pixel_offset = { (r2.x - 0.5f) / (float)gpu_view.resolution.x, (r2.y - 0.5f) / (float)gpu_view.resolution.y };
+    // scale to ndc [-1, 1]
+    pixel_offset *= 2.0f;
+
     /* Iterate over all cameras to find an active one to use as render view */
     glm::mat4 p = glm::perspective(glm::radians(camera.fov), aspect_ratio, 0.05f, 1000.0f);
     const glm::mat4 world = transform.get_world_matrix();
+    // apply jitter
+    p[2][0] += pixel_offset.x;
+    p[2][1] += pixel_offset.y;
     p[1][1] *= -1.0f;
     gpu_view.world_to_clip = p * glm::inverse(world);  // p * v
     gpu_view.clip_to_world = glm::inverse(gpu_view.world_to_clip);
@@ -143,6 +170,8 @@ void RenderView::deinit() {
     bank.destroy(lbuffer.texture);
     bank.destroy(nbuffer.image);
     bank.destroy(nbuffer.texture);
+    bank.destroy(hbuffer.image);
+    bank.destroy(hbuffer.texture);
     bank.destroy(viewport.texture);
     bank.destroy(viewport.image);
 
@@ -205,6 +234,7 @@ void RenderView::resize_textures() {
     bank.resize_texture(dbuffer.texture, view_size).expect("failed to resize depth buffer texture.");
     bank.resize_texture(lbuffer.texture, render_size).expect("failed to resize lbuffer texture.");
     bank.resize_texture(nbuffer.texture, render_size).expect("failed to resize nbuffer texture.");
+    bank.resize_texture(hbuffer.texture, view_size).expect("failed to resize hbuffer texture.");
 }
 
 }  // namespace tmt

@@ -17,6 +17,8 @@ RWStructuredBuffer<cache::Slot> macrofacet_cache;
 Texture2D<float3> lbuffer;
 /* Render target. (Output) */
 RWTexture2D<float4> render_target;
+/* Histroy Buffer. (Output) */
+RWTexture2D<float4> history_buffer;
 
 [shader("compute")]
 [numthreads(16, 8, 1)]
@@ -27,8 +29,10 @@ void main(int2 thread_id: SV_DispatchThreadID) {
     /* Load visibility buffer data */
     const uint64_t packed = asuint64(vbuffer[thread_id]);
 
+    float4 color = float4(0.0f);
+
     if (null_visibility(packed)) {
-        render_target[thread_id] = float4(0.075f, 0.075f, 0.075f, 1.0f);
+        color = float4(0.075f, 0.075f, 0.075f, 1.0f);
     } else {
         const cache::Slot slot = cache::sample(macrofacet_cache, packed, render_view.frame_index);
 
@@ -43,7 +47,12 @@ void main(int2 thread_id: SV_DispatchThreadID) {
             const GeoData geo = unpack_geometry(vis, objects, ray);
 
             const float3 illuminance = slot.read_diffuse() * geo.material.albedo();
-            render_target[thread_id] = float4(cs::delinearize(cs::acescg_to_r709(cs::aces_filmic_tonemapping(illuminance))), 1.0f);
+            color = float4(cs::delinearize(cs::acescg_to_r709(cs::aces_filmic_tonemapping(illuminance))), 1.0f);
         }
     }
+
+    /* TAA Resolve */
+    const float4 output = float4(lerp(history_buffer[thread_id].rgb, color.rgb, 0.05f), 1.0f);
+    render_target[thread_id] = output;
+    history_buffer[thread_id] = output;
 }
