@@ -7,11 +7,7 @@
 #include "engine/core/resources.hpp"
 #include "engine/core/components/voxel_renderer.hpp"
 
-namespace {
-
-
-
-}
+namespace {}
 
 namespace tmt {
 
@@ -39,12 +35,16 @@ void RigModel::init_bones(const Bone& b, Entity p) {
 }
 
 void RigModel::init(const IO::FileLocation& directory, Entity p) {
-    if (directory.relative_path.empty()) return;
+    if (directory.relative_path.empty()) {
+        Log::error("Can't initialize RigModel with invalid file: {}", directory);
+        return;
+    }
+
     armature_entity = p;
     rig_is_loaded = true;
     data = engine.resources.load_resource<RigData>(directory);
 
-    //file_directory = directory;
+    // file_directory = directory;
 
     name = data->name;
 
@@ -65,13 +65,14 @@ void RigModel::init(const IO::FileLocation& directory, Entity p) {
 }
 
 void RigModel::recurse(const tmt::VoxelSceneNode& node, tmt::Entity parent_entity, const glm::mat4& parent_matrix, glm::vec3 armature_pos) {
+    std::vector<Entity> pivot_entities;
+
     glm::mat4 matrix = glm::identity<glm::mat4>();
     tmt::Entity voxel_entity = entt::null;
     for (int j = 0; j < bone_entities.size(); j++) {
         auto& bone_name = engine.ecs.get_component<Name>(bone_entities[j]);
         auto& bone_transf = engine.ecs.get_component<Transform>(bone_entities[j]);
         if (bone_name.name == node.name) {
-            
             voxel_entity = tmt::engine.ecs.create_entity(node.name);
             auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(voxel_entity);
             transform.set_world_matrix(parent_matrix * node.transform);

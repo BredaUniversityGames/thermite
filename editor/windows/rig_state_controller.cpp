@@ -18,7 +18,6 @@ namespace {
 constexpr size_t INVALID_INDEX { std::numeric_limits<size_t>::max() };
 
 ImVec2 get_node_position(const size_t id) {
-    // return ImNodes::GetNodeScreenSpacePos(id) + (ImNodes::GetNodeDimensions(id) / 2.0);
     return ax::NodeEditor::GetNodePosition(id) + ax::NodeEditor::GetNodeSize(id) / 2.0f;
 }
 

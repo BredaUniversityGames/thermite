@@ -12,3 +12,4 @@
 #include "engine/tools/serializer/rig_controller.hpp"
 #include "engine/tools/serializer/color.hpp"
 #include "engine/tools/serializer/named_type.hpp"
+#include "engine/tools/serializer/rig_model.hpp"

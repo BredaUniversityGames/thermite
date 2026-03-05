@@ -31,12 +31,12 @@ bool tmt::RigData::load() {
 
     // Use std::find to find the node with the root bone (to start off our bone initialization)
     const ufbx_bone* root_bone = rig_fbx->bones[0];
-    const ufbx_node* root_node = *std::find_if(rig_fbx->nodes.begin(), rig_fbx->nodes.end(), [&root_bone](const ufbx_node* bone_node) { return bone_node->bone == root_bone; });
+    const ufbx_node* root_node = *std::ranges::find_if(rig_fbx->nodes, [&root_bone](const ufbx_node* bone_node) { return bone_node->bone == root_bone; });
 
     init_bone_fbx(root_node, mesh_connections);
     extract_bone_keyframes_fbx(rig_fbx, rig_fbx, mesh_connections);
 
-    for (auto& [animation_directory, name] : animation_files) {
+    for (auto&& [animation_directory, animation_name] : animation_files) {
         opts = {};
         opts.ignore_geometry = true;
         const std::vector<char>& animation_data = IO::read_file(animation_directory);
@@ -151,8 +151,6 @@ void RigData::extract_bone_keyframes_fbx(const ufbx_scene* animation_fbx, const 
 void RigData::init_bone_fbx(const ufbx_node* node, const std::map<const ufbx_node*, const ufbx_node*>& mesh_connections) {
     Bone bone;
     bone.name = node->name.data;
-
-    Log::info("Loading bone: {} with {} children", bone.name, node->children.count);
 
     const ufbx_transform& node_transform = node->local_transform;
 

@@ -11,7 +11,7 @@ inline void tag_invoke(ImReflect::ImInput_t, const char*, tmt::RigModel& value, 
     // load rig model if not loaded and make field for file location
     if (!value.rig_is_loaded) {
         ImGui::Text("Rig not loaded");
-        ImReflect::Input("", value.vox_path);
+        ImReflect::Input("", value.data);
 
         if (ImGui::Button("Load Rig")) {
             const auto entity = tmt::engine.ecs.get_entity(value);

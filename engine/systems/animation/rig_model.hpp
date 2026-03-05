@@ -31,8 +31,6 @@ class RigModel {
     float transfer_threshold = 0.0f;
     Entity armature_entity = entt::null;
     std::vector<Entity> bone_entities;
-    std::vector<Entity> voxel_entities;
-    std::vector<Entity> pivot_entities;
     ResourceRef<RigData> data;
 
     void recurse(const tmt::VoxelSceneNode& node, tmt::Entity parent_entity, const glm::mat4& parent_matrix, glm::vec3 armature_pos);
@@ -70,4 +68,4 @@ class RigModel {
 
 }  // namespace tmt
 
-TMT_COMPONENT(tmt::RigModel, "Animated Rig", (data, vox_path));
+TMT_COMPONENT(tmt::RigModel, "Animated Rig", (rig_is_loaded, vox_is_loaded, vox_path, data));

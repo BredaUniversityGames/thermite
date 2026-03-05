@@ -22,7 +22,7 @@ namespace tmt {
 
 struct Trigger {
     Trigger() = default;
-    Trigger(bool _value) : value(_value) {};
+    Trigger(bool _value) : value(_value) {}
 
     // operators needed due to comparing std::variant<..., Trigger>
     [[nodiscard]] bool operator==(const Trigger&) const { return value; }
@@ -53,7 +53,7 @@ struct Condition {
         auto& compare = COMPARE_MAP.at(compare_type);
         const bool satisfied = compare(parameter, compare_value);
         return satisfied;
-    };
+    }
 
     std::string parameter_name;
 
