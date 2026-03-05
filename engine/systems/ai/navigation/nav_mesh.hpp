@@ -31,12 +31,12 @@ enum class NavMeshGenerationState {
     UNINITIALISED,
     INITIALISING_VOLUME,
     GENERATING_MESH,
-    FINISHED_LOWER_LOD, 
+    FINISHED_LOWER_LOD,
     GENERATING_NORMALS,
-    AVERAGING_NORMALS1, 
+    AVERAGING_NORMALS1,
     AVERAGING_NORMALS2,
     FINISHED_AVERAGING_NORMALS,
-    FINISHED 
+    FINISHED
 };
 
 class NavNode {
@@ -98,7 +98,7 @@ class NavMesh {
    public:
     glm::mat4 world_matrix = glm::mat4(1.f);
     void compute_normals(int iterations = std::numeric_limits<int>::max());
-    
+
     void average_neighbor_normals(int iterations = std::numeric_limits<int>::max());
     void generate_mesh_over_time();
     void generate_mesh(int iterations = std::numeric_limits<int>::max());

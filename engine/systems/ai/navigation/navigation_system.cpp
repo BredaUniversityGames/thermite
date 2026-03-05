@@ -7,17 +7,14 @@ std::string tmt::NavigationSystem::get_name() {
     return "NavigationSystem";
 }
 
-void tmt::NavigationSystem::on_start() {
-    
-}
+void tmt::NavigationSystem::on_start() {}
 
 void tmt::NavigationSystem::on_update(const FrameData&) {
     for (const auto& [entity, transform, nav_mesh] : engine.ecs.view<Transform, NavMesh>().each()) {
         if (nav_mesh.generation_state == NavMeshGenerationState::UNINITIALISED) {
             nav_mesh.generate_mesh_over_time();
         }
-        if (nav_mesh.generation_state != NavMeshGenerationState::UNINITIALISED && nav_mesh.generation_state != NavMeshGenerationState::FINISHED)
-        {
+        if (nav_mesh.generation_state != NavMeshGenerationState::UNINITIALISED && nav_mesh.generation_state != NavMeshGenerationState::FINISHED) {
             auto& bvh = tmt::engine.renderer.scene_view.bvh;
 
             if (bvh.nodes[0].left_first == 0u && bvh.nodes[0].prim_count == 0u) continue;
@@ -33,8 +30,6 @@ void tmt::NavigationSystem::on_update(const FrameData&) {
         }
 
         nav_mesh.inspect();
-
-
     }
 }
 

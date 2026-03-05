@@ -413,19 +413,19 @@ void tmt::NavMesh::inspect() {
     tmt::engine.polyline.use_color(1.0f, 0.0f, 0.0f);
     tmt::engine.polyline.use_line_width(2, true);
 
-    //for (int i = 0; i < (*nodes_mesh).size(); i++) {
-    //    for (int j = 0; j < (*nodes_mesh)[i].connecting_nodes.size(); j++) {
-    //        if (i > (*nodes_mesh)[i].connecting_nodes[j]) continue;
-    //        int conn_idx = (*nodes_mesh)[i].connecting_nodes[j];
-    //        glm::vec3 color = glm::vec3(
-    //            (((float)(*nodes_mesh)[i].iteration * 13.0f / 7.0f + 3.5f) * 21.0f), (((float)(*nodes_mesh)[i].iteration * 43.0f / 23.0f + 3.2f) * 17.0f),
-    //            (((float)(*nodes_mesh)[i].iteration * 97.0f / 67.0f + 3.9f) * 3.0f)
-    //        );
-    //        color.x = glm::abs(color.x - std::floor(color.x));
-    //        color.y = glm::abs(color.y - std::floor(color.y));
-    //        color.z = glm::abs(color.z - std::floor(color.z));
-    //        tmt::engine.polyline.use_color(color);
-    //        engine.polyline.draw_line((*nodes_mesh)[i].world_pos, (*nodes_mesh)[conn_idx].world_pos);
+    // for (int i = 0; i < (*nodes_mesh).size(); i++) {
+    //     for (int j = 0; j < (*nodes_mesh)[i].connecting_nodes.size(); j++) {
+    //         if (i > (*nodes_mesh)[i].connecting_nodes[j]) continue;
+    //         int conn_idx = (*nodes_mesh)[i].connecting_nodes[j];
+    //         glm::vec3 color = glm::vec3(
+    //             (((float)(*nodes_mesh)[i].iteration * 13.0f / 7.0f + 3.5f) * 21.0f), (((float)(*nodes_mesh)[i].iteration * 43.0f / 23.0f + 3.2f) * 17.0f),
+    //             (((float)(*nodes_mesh)[i].iteration * 97.0f / 67.0f + 3.9f) * 3.0f)
+    //         );
+    //         color.x = glm::abs(color.x - std::floor(color.x));
+    //         color.y = glm::abs(color.y - std::floor(color.y));
+    //         color.z = glm::abs(color.z - std::floor(color.z));
+    //         tmt::engine.polyline.use_color(color);
+    //         engine.polyline.draw_line((*nodes_mesh)[i].world_pos, (*nodes_mesh)[conn_idx].world_pos);
 
     //        // draw normal
     //        tmt::engine.polyline.use_color(1.0f, 1.0f, 0.0f);
@@ -434,12 +434,12 @@ void tmt::NavMesh::inspect() {
     //    }
     //}
 
-    //for (int i = 0; i < (*generating_nodes).size(); i++) {
-    //    for (int j = 0; j < (*generating_nodes)[i].connecting_nodes.size(); j++) {
-    //        if (i > (*generating_nodes)[i].connecting_nodes[j]) continue;
-    //        int conn_idx = (*generating_nodes)[i].connecting_nodes[j];
-    //        tmt::engine.polyline.use_color(1.0f, 1.0f, 1.0f);
-    //        engine.polyline.draw_line((*generating_nodes)[i].world_pos, (*generating_nodes)[conn_idx].world_pos);
+    // for (int i = 0; i < (*generating_nodes).size(); i++) {
+    //     for (int j = 0; j < (*generating_nodes)[i].connecting_nodes.size(); j++) {
+    //         if (i > (*generating_nodes)[i].connecting_nodes[j]) continue;
+    //         int conn_idx = (*generating_nodes)[i].connecting_nodes[j];
+    //         tmt::engine.polyline.use_color(1.0f, 1.0f, 1.0f);
+    //         engine.polyline.draw_line((*generating_nodes)[i].world_pos, (*generating_nodes)[conn_idx].world_pos);
 
     //        // draw normal
     //        tmt::engine.polyline.use_color(1.0f, 0.0f, 1.0f);
@@ -448,10 +448,10 @@ void tmt::NavMesh::inspect() {
     //    }
     //}
 
-     //tmt::engine.polyline.use_color(1.0f, 1.0f, 1.0f);
-     //for (int i = 0; i < (int)path.size() - 1; i++) {
-     //    tmt::engine.polyline.draw_line((*nodes_mesh)[path[i]].world_pos, (*nodes_mesh)[path[i + 1]].world_pos);
-     //}
+    // tmt::engine.polyline.use_color(1.0f, 1.0f, 1.0f);
+    // for (int i = 0; i < (int)path.size() - 1; i++) {
+    //     tmt::engine.polyline.draw_line((*nodes_mesh)[path[i]].world_pos, (*nodes_mesh)[path[i + 1]].world_pos);
+    // }
 }
 
 }  // namespace tmt
