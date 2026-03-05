@@ -37,7 +37,9 @@ void Input::update(const FrameData& time) {
     TMT_ZONE_SCOPED_N("Input")
 
     mouse_dx = 0;
+    mouse_dx_engine = 0;
     mouse_dy = 0;
+    mouse_dy_engine = 0;
     scroll_dx = 0;
     scroll_dy = 0;
 
@@ -57,16 +59,6 @@ void Input::update(const FrameData& time) {
                     mouse_dy += sdl_event.motion.yrel;
                     break;
                 }
-                case SDL_EVENT_WINDOW_RESIZED: {
-                    engine.window.width = sdl_event.window.data1;
-                    engine.window.height = sdl_event.window.data2;
-                    engine.window.resized = true;
-                    break;
-                }
-                case SDL_EVENT_WINDOW_RESTORED: {
-                    engine.window.resized = true;
-                    break;
-                }
                 case SDL_EVENT_MOUSE_WHEEL: {
                     scroll_dx = sdl_event.wheel.x;
                     scroll_dy = sdl_event.wheel.y;
@@ -79,6 +71,21 @@ void Input::update(const FrameData& time) {
 
         /* Handle non-blocked events */
         switch (sdl_event.type) {
+            case SDL_EVENT_MOUSE_MOTION: {
+                mouse_dx_engine += sdl_event.motion.xrel;
+                mouse_dy_engine += sdl_event.motion.yrel;
+                break;
+            }
+            case SDL_EVENT_WINDOW_RESIZED: {
+                engine.window.width = sdl_event.window.data1;
+                engine.window.height = sdl_event.window.data2;
+                engine.window.resized = true;
+                break;
+            }
+            case SDL_EVENT_WINDOW_RESTORED: {
+                engine.window.resized = true;
+                break;
+            }
             case SDL_EVENT_QUIT: {
                 engine.set_is_running(false);
                 break;
@@ -544,6 +551,15 @@ float Input::get_mouse_delta_y() const {
 glm::vec2 Input::get_mouse_delta() const {
     if (!can_use_input_mouse()) return {};
     return { mouse_dx, mouse_dy };
+}
+float Input::get_mouse_delta_engine_x() const {
+    return mouse_dx_engine;
+}
+float Input::get_mouse_delta_engine_y() const {
+    return mouse_dy_engine;
+}
+glm::vec2 Input::get_mouse_delta_engine() const {
+    return { mouse_dx_engine, mouse_dy_engine };
 }
 void Input::set_mouse_relative_to_window(bool value) {
     SDL_SetWindowRelativeMouseMode(engine.window.window, value);

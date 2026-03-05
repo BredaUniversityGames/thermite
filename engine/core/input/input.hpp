@@ -159,6 +159,12 @@ class Input {
 
     glm::vec2 get_mouse_delta() const;
 
+    float get_mouse_delta_engine_x() const;
+
+    float get_mouse_delta_engine_y() const;
+
+    glm::vec2 get_mouse_delta_engine() const;
+
     /// <summary>
     /// Enables or disables relative mouse mode (cursor hidden, infinite movement).
     /// </summary>
@@ -317,6 +323,8 @@ class Input {
     float mouse_y = 0.0f;
     float mouse_dx = 0.0f;
     float mouse_dy = 0.0f;
+    float mouse_dx_engine = 0.0f;
+    float mouse_dy_engine = 0.0f;
     float scroll_dx = 0.0f;
     float scroll_dy = 0.0f;
     bool mouse_locked = false;
