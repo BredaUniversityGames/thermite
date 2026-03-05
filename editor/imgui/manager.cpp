@@ -75,13 +75,9 @@ void ImGuiManager::on_sdl_event(internal::SdlEvent& event) {
         return;
     }
 
-    if (viewport->get_is_hovered()) {
+    if (viewport->get_is_focused()) {
         /* Don't let imgui capture input if hovering viewport */
-        event.imgui_capture_mouse = false;
-        event.imgui_capture_keyboard = false;
-    } else {
-        event.imgui_capture_mouse = ImGui::GetIO().WantCaptureMouse;
-        event.imgui_capture_keyboard = ImGui::GetIO().WantCaptureKeyboard;
+        event.block_input = true;
     }
 }
 

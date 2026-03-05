@@ -29,6 +29,7 @@ class Viewport : public IWindow, public OnRetrieveMouseState {
     constexpr bool default_open() const override { return true; }
 
     bool get_is_hovered() const { return is_hovered; }
+    bool get_is_focused() const { return is_focused; }
     bool is_using_debug_camera() const { return using_debug_camera; }
 
    private:
@@ -42,6 +43,7 @@ class Viewport : public IWindow, public OnRetrieveMouseState {
     float height = -1;
 
     bool is_hovered = false;
+    bool is_focused = false;
     glm::vec2 mouse_pos = { 0.0f, 0.0f };
 
     float camera_speed = 4.0f;

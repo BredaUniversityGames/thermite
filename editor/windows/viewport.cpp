@@ -72,6 +72,8 @@ void tmt::Viewport::display() {
     height = size.y;
 
     const ImVec2 image_pos = ImGui::GetCursorScreenPos();
+    is_focused = ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows);
+    printf("Focused: %d\n", is_focused);
 
     if (height <= 0.f) return;
 

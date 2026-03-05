@@ -14,8 +14,7 @@ struct SdlEvent {
     SdlEvent(SDL_Event event) : event(event) {}
 
     SDL_Event event;
-    bool imgui_capture_mouse = false;
-    bool imgui_capture_keyboard = false;
+    bool block_input = false;
 };
 
 class OnSdlEvent : public EventListenerBase<OnSdlEvent, SdlEvent> {
