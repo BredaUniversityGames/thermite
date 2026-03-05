@@ -7,10 +7,10 @@ namespace game {
 void game::SceneSwitchComponent::start() {
     
     if (auto button_component = tmt::engine.ecs.try_get_component<tmt::Button>(entity)) {
-        tmt::Log::info("Found button component, adding apply function to button.");
+        tmt::Log::info("Found button component, adding switch scene to on click.");
         button_component->on_click.add(this, &SceneSwitchComponent::switch_scene);
     } else {
-        tmt::Log::warn("No button found for upgrade!");
+        tmt::Log::warn("No button found for scene switch component!");
     }
 }
 

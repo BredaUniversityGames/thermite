@@ -1,0 +1,28 @@
+#pragma once
+#include "engine/systems/gameplay/game_component.hpp"
+#include "engine/core/components/camera.hpp"
+
+namespace game {
+
+
+class EntityControlComponent : public tmt::GameComponent<EntityControlComponent> {
+   public:
+    using GameComponent::GameComponent;
+
+    static std::string_view get_name() { return "Entity Control Component (Button)"; }
+
+    void start() override;
+    void update(const tmt::FrameData& time) override;
+    void end() override;
+
+    std::vector<tmt::Entity> entities_to_disable = { entt::null };
+    std::vector<tmt::Entity> entities_to_enable = { entt::null };
+
+   private:
+    void disable();
+    void enable();
+};
+
+}  // namespace game
+
+TMT_OBJECT(game::EntityControlComponent, (entities_to_disable, entities_to_enable));
