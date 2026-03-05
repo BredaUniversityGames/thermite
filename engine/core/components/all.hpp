@@ -48,6 +48,7 @@ using SerializeComponents = ComponentRegistry<
 	UIComponent,
 	ImageRenderer,
 	Button,
+	BoneComp,
 	RigModel,
 	GoapAgentType,
 	GoapAgentTypeRef,

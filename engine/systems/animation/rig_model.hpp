@@ -8,11 +8,11 @@
 #include "engine/core/resources/voxel_volume.hpp"
 #include "engine/core/reflection.hpp"
 
+namespace tmt {
+
 struct BoneComp {
     int id = -1;
 };
-
-namespace tmt {
 
 class RigModel {
    public:
@@ -24,16 +24,16 @@ class RigModel {
     bool rig_is_loaded = false;
     bool vox_is_loaded = false;
     IO::FileLocation vox_path = {};
+    ResourceRef<RigData> data;
+    std::vector<Entity> bone_entities;
 
     float time = 0.05f;
     float animation_speed = 1.0f;
     float transfer_time = 0.0f;
     float transfer_threshold = 0.0f;
     Entity armature_entity = entt::null;
-    std::vector<Entity> bone_entities;
-    ResourceRef<RigData> data;
 
-    void recurse(const tmt::VoxelSceneNode& node, tmt::Entity parent_entity, const glm::mat4& parent_matrix, glm::vec3 armature_pos);
+    void recurse(const ResourceRef<VoxelScene>& scene, const tmt::VoxelSceneNode& node, tmt::Entity parent_entity, const glm::mat4& parent_matrix, const glm::vec3& armature_pos);
     void attach_voxel_objects();
 
     [[nodiscard]] bool is_transferring() const {
@@ -55,7 +55,7 @@ class RigModel {
     void animate_rotation(Transform& t, Bone& b);
     void animate_scale(Transform& t, Bone& b);
 
-    enum class State { ANIMATE_LOOP, ANIMATE_ONCE, STATIONARY, TRANSFERRING_TO_LOOP, TRANSFERRING_TO_ONCE, TRANSFERRING_TO_STOP } state = State::STATIONARY;
+    enum class State : uint8_t { ANIMATE_LOOP, ANIMATE_ONCE, STATIONARY, TRANSFERRING_TO_LOOP, TRANSFERRING_TO_ONCE, TRANSFERRING_TO_STOP } state = State::STATIONARY;
 
    private:
     std::string next_animation;
@@ -68,4 +68,5 @@ class RigModel {
 
 }  // namespace tmt
 
+JSON_REFLECT(tmt::BoneComp, id);
 TMT_COMPONENT(tmt::RigModel, "Animated Rig", (rig_is_loaded, vox_is_loaded, vox_path, data));

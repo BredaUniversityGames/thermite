@@ -5,9 +5,14 @@
 #include "engine/core/components/voxel_renderer.hpp"
 #include "engine/core/input/input.hpp"
 #include "engine/core/logger.hpp"
+#include "engine/core/scene.hpp"
+#include "engine/core/scenes.hpp"
 #include "engine/systems/animation/animation_system.hpp"
 
-
+class MainScene : public tmt::Scene<MainScene> {
+   public:
+    static constexpr std::string_view scene_name() { return "MainScene"; }
+};
 
 class Game : public tmt::Application {
    public:
@@ -22,13 +27,13 @@ class Game : public tmt::Application {
 };
 
 std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs& args) {
-    // clang-format off
     tmt::ApplicationSpecs specs {
         .name = "Example Game",
         .command_args = args,
-        .log_file = "example_game_logs.txt"
+        .log_file = "example_game_logs.txt",
     };
-    // clang-format on
+
+    tmt::engine.scenes.register_scene<MainScene>();
 
     return std::make_unique<Game>(specs);
 }
