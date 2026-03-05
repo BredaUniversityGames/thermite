@@ -19,7 +19,7 @@ void Destruction::on_start() {
 void Destruction::on_update(const FrameData& time) {
     for (const auto& [entity, des, vb] : engine.ecs.view<Destructable, VoxelBody>().each()) {
         engine.polyline.use_depth_testing(false);
-        //engine.polyline.use_color(0.1f, 0.3f, 0.9f);
+        // engine.polyline.use_color(0.1f, 0.3f, 0.9f);
         for (DestructionNode& node : des.nodes) {
             if (node.level == 10) continue;
 
@@ -31,8 +31,9 @@ void Destruction::on_update(const FrameData& time) {
             // Log::info("voxels %u", vb.resource.resource.get()->blas.get()->voxel_count);
 
             srand(node.flood_mask << 5u);
-            
-            if (node.flood_mask == 0) engine.polyline.use_color(0.0f, 0.0f, 0.0f);
+
+            if (node.flood_mask == 0)
+                engine.polyline.use_color(0.0f, 0.0f, 0.0f);
             else
                 engine.polyline.use_color(((float)rand() / (float)RAND_MAX), ((float)rand() / (float)RAND_MAX), ((float)rand() / (float)RAND_MAX));
 
@@ -89,8 +90,8 @@ void Destruction::destroy_voxels(Entity entity, const Stencil* stencil, glm::ive
     fill_edge_indices(edge_indices, entity, stencil, offset);
 
     // Clear the graph and generate it a new one (to slow)
-    //des->clear();
-    //generate_connection_graph(*des, resource->blas.get());
+    // des->clear();
+    // generate_connection_graph(*des, resource->blas.get());
 
     // Regenerate part of the graph based on the edge indices
     regenerate_connection_graph(*des, resource->blas.get(), stencil, offset);
@@ -216,6 +217,12 @@ std::vector<Entity> Destruction::find_seperations(Entity entity, const std::vect
     return std::vector<Entity> { entity };
 }
 
+void low_level_seperation_flood(Destructable& graph, DestructionNode& current_node, uint8_t id, uint64_t overlap_mask) {
+    // Get svt64 node
+
+    // flood over this node from all of the voxels in the overlap mask
+}
+
 void seperation_flood(Destructable& graph, DestructionNode& current_node, uint8_t id) {
     current_node.flood_mask = id;
 
@@ -225,13 +232,20 @@ void seperation_flood(Destructable& graph, DestructionNode& current_node, uint8_
         for (size_t j = 0; j < current_node.connections[i].node_indices.size(); j++) {
             uint32_t connection_index = current_node.connections[i].node_indices[j];
             DestructionNode& connected_node = graph.nodes[connection_index];
-            if (connected_node.flood_mask == 0) {
-                if (connected_node.level == 1) {
-                    
-                }
+            // If we visited this node before, continue
+            if (connected_node.flood_mask != 0) continue;
 
+            // If the node is not a leaf node in the tree
+            if (connected_node.level != 1) {
                 seperation_flood(graph, connected_node, id);
+                continue;
             }
+
+            //
+            //if (current_node.level)
+
+            // Get the mask of the svt64 node, flip it, apply edge mask, give it to
+            low_level_seperation_flood(graph, connected_node, id);
         }
     }
 }
@@ -250,7 +264,6 @@ std::vector<Entity> Destruction::find_seperations(Entity entity, const std::vect
         glm::uvec3 global_pos = glm::uvec3(0);
         // Find the node relavent to that index
         for (uint32_t level = 1u; level < tree->depth; ++level) {
-
             // Get position of neighbor on this level
             const uint32_t x_index = (edge_pos.x >> ((tree->depth - level) * 2u)) & 3u;
             const uint32_t y_index = (edge_pos.y >> ((tree->depth - level) * 2u)) & 3u;
@@ -274,7 +287,7 @@ std::vector<Entity> Destruction::find_seperations(Entity entity, const std::vect
             if (des_node != nullptr && des_node->level == tree->depth - level) {
                 current_node = des_node;
                 break;
-            }  
+            }
 
             node = &tree->nodes[neighbor_node_index];
         }
@@ -420,7 +433,7 @@ void set_highest_level_neighbors(
 
             const uint16_t level_scale = 1u << ((tree->depth - level) * 2u);
 
-                        global_pos += glm::uvec3(x_index * level_scale, y_index * level_scale, z_index * level_scale);
+            global_pos += glm::uvec3(x_index * level_scale, y_index * level_scale, z_index * level_scale);
 
             // Check if connection node exists for this depth on the neighbors position
             DestructionNode* neighbor = graph.get_node(global_pos.x, global_pos.y, global_pos.z);
@@ -692,7 +705,7 @@ void recurse_regenerate_connection(
                     if (neighbor_node.connections[i ^ 1].node_indices[k] == connection_node->id) {
                         neighbor_node.connections[i ^ 1].node_indices.erase(neighbor_node.connections[i ^ 1].node_indices.begin() + k);
                         break;
-                    } 
+                    }
                 }
             }
         }
@@ -761,8 +774,7 @@ void Destruction::regenerate_connection_graph(Destructable& graph, Svt64* tree, 
         glm::uvec3 node_max = node.global_position + glm::uvec3(node_scale);
 
         // AABB Check
-        if (node_max.x <= min.x || node_min.x >= max.x || node_max.y <= min.y || node_min.y >= max.y || node_max.z <= min.z || node_min.z >= max.z)
-            continue;
+        if (node_max.x <= min.x || node_min.x >= max.x || node_max.y <= min.y || node_min.y >= max.y || node_max.z <= min.z || node_min.z >= max.z) continue;
 
         // Remove all connections from this node to its neighbors
         for (size_t i = 0; i < 6; i++) {
