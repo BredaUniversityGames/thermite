@@ -7,6 +7,7 @@
 
 #include <engine/tools/serializer/containers.hpp>
 #include <engine/tools/serializer/rig_controller.hpp>
+#include <engine/core/polyline.hpp>
 
 #include "editor.hpp"
 #include "editor/windows/hierarchy.hpp"
@@ -55,6 +56,26 @@ ImRect grid_rect;
 }  // namespace
 
 namespace tmt {
+
+void RigStateController::on_editor_update(const FrameData&) {
+    engine.polyline.use_color(1.0f, 0.3f, 0.3f);
+    engine.polyline.use_line_width(0.25f);
+
+    for (const auto&& [entity, transform, rig] : engine.ecs.view<Transform, RigModel>().each()) {
+        for (const Entity bone_entity : rig.bone_entities) {
+            if (!engine.ecs.valid(bone_entity)) continue;
+
+            auto& bone_transform = engine.ecs.get_component<Transform>(bone_entity);
+            const glm::vec3 joint = bone_transform.get_world_position();
+
+            if (bone_transform.has_parent()) {
+                auto& parent_transform = engine.ecs.get_component<Transform>(bone_transform.get_parent());
+                const glm::vec3 parent_joint = parent_transform.get_world_position();
+                engine.polyline.draw_line(parent_joint, joint);
+            }
+        }
+    }
+}
 
 void RigStateController::display() {
     const Entity selected = editor.windows[Editor::Mode::SCENE].get<Hierarchy>().get_first_selected_entity();

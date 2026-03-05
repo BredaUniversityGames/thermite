@@ -5,28 +5,12 @@
 #include "engine.hpp"
 #include "rig_model.hpp"
 #include "animation_data.hpp"
-#include "engine/core/polyline.hpp"
 #include "engine/core/components/rig_controller.hpp"
 
 namespace tmt {
 
-std::string RigModelManager::get_name() {
-    return "animation system";
-}
-
-void tmt::RigModelManager::on_game_start() {
-    // for (const auto& [entity, rig] : engine.ecs.view<RigModel>().each()) {
-    //     auto& rigmodel = tmt::engine.ecs.get_component<tmt::RigModel>(entity);
-    //     rigmodel.init(rigmodel.data.file_location, entity);
-    // }
-}
-
-void tmt::RigModelManager::on_start() {}
-
 void RigModelManager::on_update(const FrameData& time) {
-    inspect(time.delta_time);
-
-    for (const auto& [entity, rig, controller] : engine.ecs.view<RigModel, RigController>().each()) {
+    for (const auto&& [entity, rig, controller] : engine.ecs.view<RigModel, RigController>().each()) {
         const std::string& current_state = controller.current_state;
         if (current_state.empty()) {
             const auto& name = engine.ecs.get_component<Name>(entity);
@@ -119,7 +103,15 @@ void RigModelManager::on_update(const FrameData& time) {
             }
         }
 
+        // Checks for when the amount of bone entities does not match the amount of bones the rig has.
+        if (rig.bone_entities.empty())
+            Log::error(Log::Scope::ENGINE, "Tried to animate RigModel without any bone entities!");
+        else if (rig.bone_entities.size() < rig.data->bones.size())
+            Log::warn(Log::Scope::ENGINE, "Tried to animate RigModel with some missing bone entities!");
+
         for (const Entity bone_entity : rig.bone_entities) {
+            if (!engine.ecs.valid(bone_entity)) continue;  // Check if the bone entity is actually valid (we'd prefer the list is guaranteed to be accurate, but this works fine.).
+
             auto& transform = engine.ecs.get_component<Transform>(bone_entity);
 
             const BoneComp& bone_comp_id = engine.ecs.get_component<BoneComp>(bone_entity);
@@ -128,28 +120,6 @@ void RigModelManager::on_update(const FrameData& time) {
             rig.animate_translation(transform, bone);
             rig.animate_rotation(transform, bone);
             rig.animate_scale(transform, bone);
-        }
-    }
-}
-
-void RigModelManager::on_end() {}
-
-void RigModelManager::inspect(float) {
-    int lines_drawn = 0;
-    engine.polyline.use_color(1.0f, 0.3f, 0.3f);
-    engine.polyline.use_line_width(0.25f);
-    for (const auto&& [entity, transform, rig] : engine.ecs.view<Transform, RigModel>().each()) {
-        for (const Entity bone_entity : rig.bone_entities) {
-            auto& bone_transform = engine.ecs.get_component<Transform>(bone_entity);
-            // auto& bone_name = engine.ecs.get_component<Name>(bone_entity);
-            const glm::vec3 joint = bone_transform.get_world_position();
-
-            if (bone_transform.has_parent()) {
-                auto& parent_transform = engine.ecs.get_component<Transform>(bone_transform.get_parent());
-                const glm::vec3 parent_joint = parent_transform.get_world_position();
-                engine.polyline.draw_line(parent_joint, joint);
-                lines_drawn++;
-            }
         }
     }
 }

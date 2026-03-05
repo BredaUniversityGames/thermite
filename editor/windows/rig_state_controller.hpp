@@ -18,7 +18,7 @@ class RigStateController : public IWindow {
     void display() override;
 
     void on_editor_start() override;
-    void on_editor_update(const FrameData&) override {}
+    void on_editor_update(const FrameData&) override;
     void on_editor_end() override;
 
    private:
@@ -43,7 +43,7 @@ class RigStateController : public IWindow {
     bool open_state_context = false;
     bool open_transition_context = false;
 
-    size_t selected_transition = -1;
+    size_t selected_transition { std::numeric_limits<size_t>::max() };
     std::string selected_state;
     std::string connecting_state;
 
