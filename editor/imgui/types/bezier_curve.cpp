@@ -3,5 +3,9 @@
 #include "extern/imgui-bezier-editor/bezier_editor.hpp"
 
 void tag_invoke(ImReflect::ImInput_t, const char* label, tmt::BezierCurve& curve, ImSettings&, ImResponse& response) {
-    ImGui::Bezier(label, curve.values.data());  // draw
+    ImGui::PushID(label);
+    ImGui::Bezier("", curve.values.data());  // draw
+    ImGui::PopID();
+    ImGui::SameLine();
+    ImGui::Text(label);
 }
