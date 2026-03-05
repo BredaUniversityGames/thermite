@@ -41,13 +41,15 @@ void Input::update(const FrameData& time) {
     scroll_dx = 0;
     scroll_dy = 0;
 
-    bool input_blocked = false;
+    OnBlockInputEvent block_event {};
+    OnBlockInputRequest::dispatch(block_event);
+    const bool input_blocked = block_event.block;
+
     SDL_Event sdl_event {};
     while (SDL_PollEvent(&sdl_event)) {
         internal::SdlEvent sdl_event_wrapper(sdl_event);
         internal::OnSdlEvent::dispatch(sdl_event_wrapper);
 
-        input_blocked |= sdl_event_wrapper.block_input;
         if (input_blocked == false) {
             switch (sdl_event.type) {
                 case SDL_EVENT_MOUSE_MOTION: {

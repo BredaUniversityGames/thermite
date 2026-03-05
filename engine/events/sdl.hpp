@@ -14,7 +14,6 @@ struct SdlEvent {
     SdlEvent(SDL_Event event) : event(event) {}
 
     SDL_Event event;
-    bool block_input = false;
 };
 
 class OnSdlEvent : public EventListenerBase<OnSdlEvent, SdlEvent> {

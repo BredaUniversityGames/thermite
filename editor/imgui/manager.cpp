@@ -69,16 +69,6 @@ void ImGuiManager::deinit() {
 
 void ImGuiManager::on_sdl_event(internal::SdlEvent& event) {
     ImGui_ImplSDL3_ProcessEvent(&event.event);
-    const auto* viewport = editor.windows[editor.editor_mode].try_get<Viewport>();
-
-    if (viewport == nullptr) {
-        return;
-    }
-
-    if (viewport->get_is_focused()) {
-        /* Don't let imgui capture input if hovering viewport */
-        event.block_input = true;
-    }
 }
 
 void ImGuiManager::on_engine_update(const FrameData&) {}

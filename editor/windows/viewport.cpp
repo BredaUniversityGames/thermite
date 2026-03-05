@@ -351,6 +351,13 @@ void tmt::Viewport::on_retrieve_mouse_state(MouseOverride& event) {
     event.handled = true;
 }
 
+void tmt::Viewport::on_block_input_request(OnBlockInputEvent& event) {
+    if (is_hovered || is_focused == false) {
+        event.block = true;
+        event.handled = true;
+    }
+}
+
 void tmt::Viewport::update_debug_camera(const tmt::FrameData& time) {
     if (engine.game_controller.is_running() || is_hovered == false) return;
     // Gather Variables to be used

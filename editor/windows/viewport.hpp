@@ -7,7 +7,7 @@ struct ImVec2;
 
 namespace tmt {
 
-class Viewport : public IWindow, public OnRetrieveMouseState {
+class Viewport : public IWindow, public OnRetrieveMouseState, public OnBlockInputRequest {
    public:
     Viewport() = default;
     ~Viewport() = default;
@@ -68,6 +68,9 @@ class Viewport : public IWindow, public OnRetrieveMouseState {
 
     // Inherited via OnRetrieveMouseState
     void on_retrieve_mouse_state(MouseOverride& event) override;
+
+    // Inherited via OnBlockInputRequest
+    void on_block_input_request(OnBlockInputEvent& event) override;
 };
 
 }  // namespace tmt
