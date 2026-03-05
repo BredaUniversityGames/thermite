@@ -17,6 +17,7 @@
 #include "editor/events/scene.hpp"
 #include "editor/windows/scenes.hpp"
 #include "engine/core/components/ui_component.hpp"
+#include "engine/systems/motion_math/motion_math_system.hpp"
 
 void tmt::Viewport::on_editor_start() {
     // Setup Input Actions
@@ -84,6 +85,8 @@ void tmt::Viewport::display() {
     auto imgui_mouse_pos = ImGui::GetMousePos();
     mouse_pos.x = imgui_mouse_pos.x - image_pos.x;
     mouse_pos.y = imgui_mouse_pos.y - image_pos.y;
+
+    left_panel();
 
     const std::vector<Entity>& selected_entities = editor.windows[editor.editor_mode].get<Hierarchy>().get_selected_entities();
 
@@ -331,6 +334,135 @@ void tmt::Viewport::selection_logic(const ImVec2& imgui_mouse_pos, const ImVec2&
     }
 }
 
+void tmt::Viewport::left_panel() {
+
+    auto& mm = engine.ecs.systems.get<MotionMathSystem>();
+
+    ImGuiIO& io = ImGui::GetIO();
+
+    // Persistent state per panel (use a map keyed by id if you have multiple)
+    //static float t = 0.0f;  // 0 closed, 1 open
+    static bool pinned_open = false;
+
+    // Child rect in screen space
+    const ImVec2 childMin = ImGui::GetWindowPos();
+    const ImVec2 childSize = ImGui::GetWindowSize();
+    const ImVec2 childMax = ImVec2(childMin.x + childSize.x, childMin.y + childSize.y);
+
+    // "Edge hot zone" like Blender: hover near left edge to open
+    const float edge_zone = 10.0f;      // px
+    const float grab_handle_w = 14.0f;  // visible handle thickness
+    const float panel_h = childSize.y;
+
+    const bool mouse_in_child = io.MousePos.x >= childMin.x && io.MousePos.x <= childMax.x && io.MousePos.y >= childMin.y && io.MousePos.y <= childMax.y;
+
+    const bool hover_edge = mouse_in_child && (io.MousePos.x <= childMin.x + edge_zone);
+
+    // Also keep it open while interacting with it
+    // We'll set this after we build the panel window via IsWindowHovered/IsWindowFocused.
+    bool interacting_with_panel = false;
+
+    // Desired state
+    bool want_open = pinned_open || hover_edge;
+    Log::info("{}", want_open);
+
+    static SecondOrderSolver::State<float> t_state {.current_state = 0.f};
+    
+    SecondOrderSolver::solve(t_state, want_open ? 1.f : 0.f, 1.f, 1.f, 0.f, tmt::engine.frame_data().delta_time);
+    float t = t_state.current_state;
+
+    //t = Approach(t, want_open ? 1.0f : 0.0f, want_open ? open_speed : close_speed, io.DeltaTime);
+
+
+
+    // Early out if basically closed (optional)
+    if (t < 0.001f && !want_open) t = 0.0f;
+
+    // Eased
+    //const float te = EaseOutCubic(t);
+
+    // Panel position: slides in from left
+    // When closed: x = childMin.x - panel_width
+    // When open:   x = childMin.x
+    const float x = glm::mix(childMin.x - 370.f, childMin.x, t);
+    const ImVec2 panelPos = ImVec2(x, childMin.y);
+    const ImVec2 panelSize = ImVec2(370.f, panel_h);
+
+    // Handle area (always slightly visible when closed? Blender shows a tiny tab)
+    // We'll draw a tab that sits on the left edge; when closed, it sits at childMin.x.
+    const float tab_x = (t > 0.01f) ? (panelPos.x + panelSize.x - grab_handle_w) : (childMin.x);
+    const ImVec2 tabMin = ImVec2(tab_x, childMin.y + 40.0f);
+    const ImVec2 tabMax = ImVec2(tab_x + grab_handle_w, childMin.y + 120.0f);
+
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+
+    // Visuals: panel background + border (drawn behind the panel window contents)
+    if (t > 0.001f) {
+        const ImU32 bg = ImGui::GetColorU32(ImGuiCol_WindowBg);
+        const ImU32 bd = ImGui::GetColorU32(ImGuiCol_Border);
+        dl->AddRectFilled(panelPos, ImVec2(panelPos.x + panelSize.x, panelPos.y + panelSize.y), bg, 6.0f);
+        dl->AddRect(panelPos, ImVec2(panelPos.x + panelSize.x, panelPos.y + panelSize.y), bd, 6.0f);
+    }
+
+    // Tab visuals
+    {
+        const ImU32 tabCol = ImGui::GetColorU32(ImGuiCol_Button);
+        const ImU32 tabColH = ImGui::GetColorU32(ImGuiCol_ButtonHovered);
+        bool tabHovered = mouse_in_child && io.MousePos.x >= tabMin.x && io.MousePos.x <= tabMax.x && io.MousePos.y >= tabMin.y && io.MousePos.y <= tabMax.y;
+
+        dl->AddRectFilled(tabMin, tabMax, tabHovered ? tabColH : tabCol, 6.0f);
+        dl->AddRect(tabMin, tabMax, ImGui::GetColorU32(ImGuiCol_Border), 6.0f);
+
+        // Small "grip" lines
+        const float cx = (tabMin.x + tabMax.x) * 0.5f;
+        dl->AddLine(ImVec2(cx - 3, tabMin.y + 20), ImVec2(cx - 3, tabMax.y - 20), ImGui::GetColorU32(ImGuiCol_TextDisabled), 1.0f);
+        dl->AddLine(ImVec2(cx + 3, tabMin.y + 20), ImVec2(cx + 3, tabMax.y - 20), ImGui::GetColorU32(ImGuiCol_TextDisabled), 1.0f);
+
+        // Click tab to pin/unpin
+        if (tabHovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) pinned_open = !pinned_open;
+    }
+
+    // Actual panel UI as a borderless window positioned over the overlay rect
+    // Use a unique name (panel_id) so Dear ImGui can track it.
+    if (t > 0.001f) {
+        ImGui::SetNextWindowPos(panelPos);
+        ImGui::SetNextWindowSize(panelSize);
+        ImGui::SetNextWindowBgAlpha(0.0f);  // we already drew bg in draw list; keep window transparent
+
+        ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoDocking;
+
+        // IMPORTANT: prevent the panel from extending outside child interaction-wise
+        // We'll clip by pushing a clip rect (draw + input). Draw list clip is enough for visuals;
+        // input still works fine as long as panel rect is within child rect (it is).
+        ImGui::PushClipRect(childMin, childMax, true);
+
+        ImGui::Begin("panel_", nullptr, flags);
+        interacting_with_panel = ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem) || ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows);
+
+        // Content
+        ImGui::Dummy(ImVec2(0, 6));
+        ImGui::TextUnformatted("Viewport Tools");
+        ImGui::Separator();
+
+        static float exposure = 1.0f;
+        static int mode = 0;
+        ImGui::SliderFloat("Exposure", &exposure, 0.1f, 5.0f);
+        ImGui::RadioButton("Select", &mode, 0);
+        ImGui::SameLine();
+        ImGui::RadioButton("Move", &mode, 1);
+        ImGui::SameLine();
+        ImGui::RadioButton("Rotate", &mode, 2);
+        ImGui::Checkbox("Pin open", &pinned_open);
+
+        ImGui::End();
+        ImGui::PopClipRect();
+    }
+
+    // If user is using the panel, keep it open even if they move away from edge.
+    // (Optional) This mimics Blender nicely.
+    //if (interacting_with_panel) pinned_open = pinned_open || true;  // don’t auto-unpin; just ensures it stays open during interaction
+}
+
 void tmt::Viewport::force_open_recurse_upwards(Entity entity) {
     auto& hierarchy = editor.windows[Editor::Mode::SCENE].get<Hierarchy>();
 
@@ -353,14 +485,13 @@ void tmt::Viewport::update_debug_camera(const tmt::FrameData& time) {
     if (!engine.game_controller.is_viewing_scene() || is_hovered == false) return;
     // Gather Variables to be used
     auto& input = engine.input;
-    
+
     const bool enable_mouse_look = input.is_action_pressed(action::RIGHT_CLICK);
     const bool is_2d_axis_movement = input.is_action_pressed(action::LEFT_CLICK);
-    
+
     if (!enable_mouse_look) {
         /* Show mouse cursor */
 
-        
         input.set_mouse_relative_to_window(false);
         input.lock_mouse(false);
         using_debug_camera = false;

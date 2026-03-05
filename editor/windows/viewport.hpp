@@ -37,6 +37,7 @@ class Viewport : public IWindow, public OnRetrieveMouseState {
     void update_debug_camera(const tmt::FrameData& frame_data);
     bool toolbar(const ImVec2& image_pos);
     void selection_logic(const ImVec2& imgui_mouse_pos, const ImVec2& image_pos, bool toolbar_buttons_hovered);
+    void left_panel();
 
     float width = -1;
     float height = -1;
