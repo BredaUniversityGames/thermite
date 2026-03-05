@@ -23,11 +23,8 @@ class Envmap : public FileResource {
 
     uint32_t width {};
     uint32_t height {};
-    uint32_t dummy {};
 
     std::string name = "Unnamed Environment Map";
 };
 
 }  // namespace tmt
-
-TMT_OBJECT(tmt::Envmap, (dummy));

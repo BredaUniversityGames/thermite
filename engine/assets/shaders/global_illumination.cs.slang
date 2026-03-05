@@ -36,11 +36,11 @@ inline float3 ambient_occlusion(const float3 point, const float3 normal, const f
     if (t < GI_RANGE) return 0.0f;
 
     /* In case there's no envmap, use a base gray color */
-    if (render_view.envmap_filtered_handle == 0u) return float3(0.2475f, 0.2475f, 0.2475f); 
+    if (scene_view.envmap_filtered_handle == 0u) return float3(0.2475f, 0.2475f, 0.2475f); 
 
     /* Sample the filtered envmap */
     const float2 uv = dir_to_latlong(ambient_dir);
-    const float3 env = bindless::texture_sampled<Texture2D<float4>>(render_view.envmap_filtered_handle).SampleLevel(envmap_sampler, uv, 0).rgb;
+    const float3 env = bindless::texture_sampled<Texture2D<float4>>(scene_view.envmap_filtered_handle).SampleLevel(envmap_sampler, uv, 0).rgb;
     return env;
 }
 

@@ -8,6 +8,8 @@ import bindless;
 
 /* Active render view. */
 ConstantBuffer<RenderView> render_view;
+/* Active scene view. */
+ConstantBuffer<SceneView> scene_view;
 /* Environment map sampler. */
 SamplerState envmap_sampler;
 /* Object buffers. */
@@ -36,9 +38,9 @@ void main(int2 thread_id: SV_DispatchThreadID) {
     float3 luminance = 0.0f;
     if (null_visibility(packed)) {
         /* Sample environment */
-        if (render_view.envmap_full_handle != 0u) {
+        if (scene_view.envmap_full_handle != 0u) {
             const float2 uv = dir_to_latlong(ray.dir);
-            luminance = bindless::texture_sampled<Texture2D<float4>>(render_view.envmap_full_handle).SampleLevel(envmap_sampler, uv, 0).rgb;
+            luminance = bindless::texture_sampled<Texture2D<float4>>(scene_view.envmap_full_handle).SampleLevel(envmap_sampler, uv, 0).rgb;
         } else {
             /* Default environment color */
             render_target[thread_id] = float4(0.247f, 0.247f, 0.247f, 1.0f);

@@ -33,10 +33,6 @@ struct GpuView {
     glm::uint shading_rate_di = 0u;
     /* Shading rate GI. (0 = 1/1, 1 = 1/2, 2 = 1/4) */
     glm::uint shading_rate_gi = 2u;
-    /* Environment map (full) bindless handle. */
-    glm::uint envmap_full_handle = 0u;
-    /* Environment map (filtered) bindless handle. */
-    glm::uint envmap_filtered_handle = 0u;
 };
 
 /* Screen buffer resource. */
@@ -83,8 +79,6 @@ struct RenderView {
     /* Directional albedo look up texture (32x32) */
     Texture diralbedo_lut_texture {};
     Image diralbedo_lut {};
-    /* HDRI environment map */
-    ResourceRef<Envmap> envmap {};
     /* Blue noise textures (512x512) */
     ResourceRef<Texture2D> blue_noise2d {};
     ResourceRef<Texture2D> blue_noise1d {};
