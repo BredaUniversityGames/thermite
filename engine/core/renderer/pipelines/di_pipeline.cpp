@@ -24,27 +24,35 @@ glm::uvec2 div_up(const glm::uvec2 a, const uint32_t ax, const uint32_t ay) {
     return glm::uvec2(div_up(a.x, ax), div_up(a.y, ay));
 }
 
-void DiPipeline::init(GPUAdapter& gpu) {
-    VRAMBank& bank = gpu.get_vram_bank();
-    // settings_buffer = bank.create_buffer("DI Settings Buffer", BufferUsage::Constant | BufferUsage::TransferDst, sizeof(DiSettings)).expect("failed to create di settings buffer.");
-}
+void DiPipeline::init(GPUAdapter&) {}
 
 /* clang-format off */
 
 void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, SceneView& scene_view) {
-    /* TEMP: For now just don't do anything unless illuminance is visible */
-    if (engine.renderer.display_mode != DisplayMode::ILLUMINANCE && engine.renderer.display_mode != DisplayMode::DEFAULT) return;
+    /* Only run this pass if it's outputs are actually used */
+    if (engine.renderer.display_mode != DisplayMode::ILLUMINANCE && engine.renderer.display_mode != DisplayMode::CACHE && engine.renderer.display_mode != DisplayMode::DEFAULT) return;
 
     /* Get Render Image */
     const BindHandle render_image = render_view.get_render_image();
     const glm::uvec2 render_res = render_view.gpu_view.resolution;
 
-    /* Upload new settings if they changed */
-    // if (settings_dirty) {
-    //     render_graph.upload_buffer(settings_buffer, &settings, 0u, sizeof(DiSettings));
-    //     settings_dirty = false;
-    // }
-    
+    if (cache_init == false) {
+        /* Cache init pass */
+        render_graph.add_compute_pass("cache init pass", "cache_init.cs")
+            .write(render_view.macrofacet_cache) /* Cache buffer */
+            .group_size(128)
+            .work_size(CACHE_SIZE);
+
+        cache_init = true;
+    } else {
+        /* Cache eviction pass (amortize over 8 frames) */
+        render_graph.add_compute_pass("cache eviction pass", "cache_evict.cs")
+            .read(render_view.render_view_buffer) /* Render view buffer */
+            .write(render_view.macrofacet_cache) /* Cache buffer */
+            .group_size(128)
+            .work_size(CACHE_SIZE);
+    }
+
     { /* Shading resolution based on shading rate */
         glm::uvec2 shading_res = render_view.gpu_view.resolution;
         if (render_view.get_shading_rate_di() == ShadingRate::HALF_RATE) shading_res = div_up(render_view.gpu_view.resolution, 2u, 1u);
@@ -65,7 +73,7 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
             .group_size(16, 8)
             .work_size(shading_res.x, shading_res.y);
     }
-        
+    
     // { /* Global illumination pass */
     //     glm::uvec2 shading_res = render_view.gpu_view.resolution;
     //     if (render_view.get_shading_rate_gi() == ShadingRate::HALF_RATE) shading_res = div_up(render_view.gpu_view.resolution, 2u, 1u);
@@ -99,14 +107,7 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
     //         .work_size(shading_res.x, shading_res.y);
     // }
     
-    /* Cache eviction pass (amortize over 8 frames) */
-    render_graph.add_compute_pass("cache eviction pass", "cache_evict.cs")
-        .read(render_view.render_view_buffer) /* Render view buffer */
-        .write(render_view.macrofacet_cache) /* Cache buffer */
-        .group_size(128)
-        .work_size(CACHE_SIZE);
-    
-    /* Debug visualizations */
+    /* Composite pass */
     if (engine.renderer.display_mode == DisplayMode::DEFAULT) {
         render_graph.add_compute_pass("composite pass", "composite.cs")
             .read(render_view.render_view_buffer) /* Render view buffer */
@@ -118,7 +119,7 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
             .group_size(16, 8)
             .work_size(render_res.x, render_res.y);
     }
-    
+
     /* Debug visualizations */
     if (engine.renderer.display_mode == DisplayMode::ILLUMINANCE) {
         render_graph.add_compute_pass("[debug] illuminance pass", "debug/illuminance.cs")
@@ -130,13 +131,19 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
             .group_size(16, 8)
             .work_size(render_res.x, render_res.y);
     }
+    if (engine.renderer.display_mode == DisplayMode::CACHE) {
+        render_graph.add_compute_pass("[debug] cache pass", "debug/cache.cs")
+            .read(render_view.render_view_buffer) /* Render view buffer */
+            .read(render_view.vbuffer.image) /* Visibility buffer */
+            .write(render_view.macrofacet_cache) /* Cache buffer */
+            .write(render_image) /* Render target */
+            .group_size(16, 8)
+            .work_size(render_res.x, render_res.y);
+    }
 }
 
 /* clang-format on */
 
-void DiPipeline::deinit(GPUAdapter& gpu) {
-    // VRAMBank& bank = gpu.get_vram_bank();
-    // bank.destroy(settings_buffer);
-}
+void DiPipeline::deinit(GPUAdapter&) {}
 
 }  // namespace tmt
