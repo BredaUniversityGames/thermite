@@ -14,8 +14,6 @@
 #include "engine/core/components/rig_controller.hpp"
 #include "engine/systems/ai/navigation/nav_mesh.hpp"
 
-#define CONDITION(comparison) [](const Variant& parameter, const Variant& value) -> bool { return parameter comparison value; }
-
 namespace tmt {
 
 void RigModelManager::on_update(const FrameData& time) {
@@ -60,7 +58,7 @@ void RigModelManager::on_update(const FrameData& time) {
         }
     }
     
-    for (const auto& [entity, rig] : engine.ecs.view<RigModel>().each()) {
+    for (const auto&& [entity, rig] : engine.ecs.view<RigModel>().each()) {
         auto path = rig.vox_path.relative_path;
         if (!rig.vox_is_loaded && !path.empty()) {
             rig.attach_voxel_objects();
@@ -133,24 +131,22 @@ void RigModelManager::on_update(const FrameData& time) {
     }
 }
 
-void tmt::RigModelManager::on_end() {}
-
 void RigModelManager::on_draw_lines() const 
 {
-    for (const auto& [entity, transform, bone_renderer] : engine.ecs.get_registry().view<Transform, BoneHierarchyRenderer>().each()) {
+    for (const auto&& [entity, transform, bone_renderer] : engine.ecs.get_registry().view<Transform, BoneHierarchyRenderer>().each()) {
         tmt::engine.polyline.use_depth_testing(true);
         tmt::engine.polyline.use_color(bone_renderer.color);
         tmt::engine.polyline.use_line_width(bone_renderer.line_width);
         tmt::RenderBoneHierarchy(transform);
     }
     
-    for (const auto& [entity, transform, bend_hint] : engine.ecs.get_registry().view<Transform, BendHint>().each())
+    for (const auto&& [entity, transform, bend_hint] : engine.ecs.get_registry().view<Transform, BendHint>().each())
     {
         tmt::engine.polyline.use_color(glm::vec4(1.f, 0.f, 0.f, 1.f));
         tmt::engine.polyline.draw_sphere(transform.get_world_position(), bend_hint.radius);
     }
 
-    for (const auto& [entity, transform, effector] : engine.ecs.get_registry().view<Transform, Effector>().each()) {
+    for (const auto&& [entity, transform, effector] : engine.ecs.get_registry().view<Transform, Effector>().each()) {
         tmt::engine.polyline.use_color(glm::vec4(0.f, 0.7f, 0.7f, 1.f));
         tmt::engine.polyline.draw_sphere(transform.get_world_position(), effector.radius);
     }
@@ -158,24 +154,24 @@ void RigModelManager::on_draw_lines() const
 
 void tmt::AnimationConstraintSystem::on_start() 
 {
-    for (const auto& [entity, transform, damped_constraint] : engine.ecs.view<Transform, AnimConstraints::DampedTransformConstraint>().each()) {
+    for (const auto&& [entity, transform, damped_constraint] : engine.ecs.view<Transform, AnimConstraints::DampedTransformConstraint>().each()) {
         damped_constraint.local_rest_pose.bone_entity = entity;
         AnimConstraints::DampedTransform::set_local_rest_pose(transform, damped_constraint.local_rest_pose);
     }
-    for (const auto& [entity, transform, two_bone_constraint] : engine.ecs.view<Transform, AnimConstraints::TwoBoneIKConstraint>().each()) {
+    for (const auto&& [entity, transform, two_bone_constraint] : engine.ecs.view<Transform, AnimConstraints::TwoBoneIKConstraint>().each()) {
         two_bone_constraint.root = entity;
         two_bone_constraint.parent = transform.get_parent();
     }
 }
 void tmt::AnimationConstraintSystem::on_update(const tmt::FrameData& time) 
 {
-    for (const auto& [entity, transform, damped_constraint] : engine.ecs.view<Transform, AnimConstraints::DampedTransformConstraint>().each()) {
+    for (const auto&& [entity, transform, damped_constraint] : engine.ecs.view<Transform, AnimConstraints::DampedTransformConstraint>().each()) {
         damped_constraint.local_rest_pose.local_pos = transform.get_local_position();
         damped_constraint.local_rest_pose.local_rot = transform.get_local_rotation();
 
         AnimConstraints::DampedTransform::update_damped_pose(damped_constraint.local_rest_pose, damped_constraint.local_rest_pose.local_pos, damped_constraint.local_rest_pose.local_rot, damped_constraint.damp);
     }
-    for (const auto& [entity, transform, two_bone_constraint] : engine.ecs.view<Transform, AnimConstraints::TwoBoneIKConstraint>().each()) {
+    for (const auto&& [entity, transform, two_bone_constraint] : engine.ecs.view<Transform, AnimConstraints::TwoBoneIKConstraint>().each()) {
 
         AnimConstraints::TwoBoneIK::TwoBoneInputData input_data;
         if(engine.ecs.valid(two_bone_constraint.parent))
@@ -202,7 +198,7 @@ void tmt::AnimationConstraintSystem::on_update(const tmt::FrameData& time)
         root_transform.set_local_rotation(output.root_rot);
         mid_transform.set_local_rotation(output.mid_rot);
     }
-    for (const auto& [entity, transform, walk_cycle] : engine.ecs.view<Transform, AnimConstraints::EffectorWalkCycle>().each()) {
+    for (const auto&& [entity, transform, walk_cycle] : engine.ecs.view<Transform, AnimConstraints::EffectorWalkCycle>().each()) {
         walk_cycle.step_timer += time.delta_time;
         auto parent = transform.get_parent();
         auto& parent_transform = engine.ecs.get_component<Transform>(parent);

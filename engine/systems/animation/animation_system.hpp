@@ -2,7 +2,7 @@
 
 #include <cstdint>
 #include "engine/core/ecs.hpp"
-#include "engine/system/animation/rig_model.hpp"
+#include "engine/systems/animation/rig_model.hpp"
 #include "engine/systems/animation/components/constraints.hpp"
 #include "engine/events/game.hpp"
 #include "engine/events/debug.hpp"
@@ -11,14 +11,15 @@ namespace tmt {
 
 class RigModelManager : public ISystem, OnDrawLines  {
    public:
-    std::string get_name() override { return "animation system"; }
+    std::string ISystem::get_name() override { return "animation system"; }
 
     void on_start() override {}
     void on_update(const FrameData& time) override;
+    void on_end() override {}
 
     // Inherited via OnDrawLines
     void on_draw_lines() const override;
-    constexpr std::string get_name() const override {return "RigModelManager"; };
+    constexpr std::string OnDrawLines::get_name() const override { return "RigModelManager"; }
 };
 
 class AnimationConstraintSystem : public ISystem 
