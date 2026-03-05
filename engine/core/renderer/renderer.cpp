@@ -115,13 +115,16 @@ void Renderer::update() {
 
     /* Update the camera view */
     Entity cam_entity = Camera::get_active_camera();
-    if (engine.game_controller.is_running() && cam_entity != entt::null) {
+    bool is_viewing_scene = engine.game_controller.is_viewing_scene();
+    if (!is_viewing_scene && cam_entity != entt::null) {
         const Camera& camera = engine.ecs.get_component<Camera>(cam_entity);
         const Transform& transform = engine.ecs.get_component<Transform>(cam_entity);
         render_view.update_gpu_view(render_graph, camera, transform);
     } else {
         render_view.update_gpu_view(render_graph, debug_camera, debug_transform);
     }
+
+
 
     /* Enqueue pipelines */
     geometry_pipeline.enqueue(render_graph, render_view, scene_view);

@@ -235,7 +235,7 @@ bool tmt::Viewport::toolbar(const ImVec2& image_pos) {
 }
 
 void tmt::Viewport::selection_logic(const ImVec2& imgui_mouse_pos, const ImVec2& image_pos, bool toolbar_buttons_hovered) {
-    if (!is_hovered || engine.game_controller.is_running()) return;
+    if (!is_hovered || !engine.game_controller.is_viewing_scene()) return;
 
     auto& hierarchy = editor.windows[Editor::Mode::SCENE].get<Hierarchy>();
     const std::vector<Entity>& selected_entities = hierarchy.get_selected_entities();
@@ -350,15 +350,17 @@ void tmt::Viewport::on_retrieve_mouse_state(MouseOverride& event) {
 }
 
 void tmt::Viewport::update_debug_camera(const tmt::FrameData& time) {
-    if (engine.game_controller.is_running() || is_hovered == false) return;
+    if (!engine.game_controller.is_viewing_scene() || is_hovered == false) return;
     // Gather Variables to be used
     auto& input = engine.input;
-
+    
     const bool enable_mouse_look = input.is_action_pressed(action::RIGHT_CLICK);
     const bool is_2d_axis_movement = input.is_action_pressed(action::LEFT_CLICK);
-
+    
     if (!enable_mouse_look) {
         /* Show mouse cursor */
+
+        
         input.set_mouse_relative_to_window(false);
         input.lock_mouse(false);
         using_debug_camera = false;

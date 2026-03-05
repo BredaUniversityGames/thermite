@@ -15,11 +15,14 @@ class GameController {
         should_end_game = true;
         is_game_paused = false;
     }
+    void set_scene_view() {scene_viewing = true;}
+    void set_game_view() {scene_viewing = false;}
 
     bool should_game_start() const { return should_start_game; }
     bool should_game_pause() const { return should_pause_game; }
     bool should_game_resume() const { return should_resume_game; }
     bool should_game_end() const { return should_end_game; }
+    bool is_viewing_scene() const {return scene_viewing; }
 
    private:
     friend class Engine;
@@ -30,6 +33,7 @@ class GameController {
 #ifndef THERMITE_EDITOR
     bool should_start_game = true;
 #else
+    bool scene_viewing = true;
     bool should_start_game = false;
 #endif
     bool should_pause_game = false;

@@ -44,7 +44,7 @@ bool Gizmo::manip(
     ImGuizmo::SetRect(x, y, width, height);
     ImGuizmo::SetDrawlist();
 
-    if (engine.game_controller.is_running()) return false;
+    if (!engine.game_controller.is_viewing_scene()) return false;
 
     if (selected_entities.empty()) {
         ImGuizmo::ResetOperation();

@@ -13,16 +13,18 @@ void GameFlow::display() {
     if (engine.game_controller.is_playing()) {
         if (ImGui::Button("End")) {
             engine.game_controller.end_game();
+            engine.game_controller.set_scene_view();
             has_ended = true;
         }
     } else {
         if (ImGui::Button("Start")) {
             working_scene = engine.scenes.get_active_scene_type();
             cached_scene = Serializer::serialize(engine.ecs);
-
             engine.game_controller.start_game();
+            engine.game_controller.set_game_view();
         }
     }
+
     ImGui::SameLine();
     if (engine.game_controller.is_paused()) {
         if (ImGui::Button("Resume")) {
@@ -37,6 +39,17 @@ void GameFlow::display() {
             was_mouse_locked = engine.input.is_mouse_locked();
             unlock_mouse();
         }
+    }
+
+    static const char* switch_view_name;
+    bool is_viewing_scene = engine.game_controller.is_viewing_scene();
+    switch_view_name = is_viewing_scene ? "Switch to game view" : "Switch to scene view";
+
+    if (ImGui::Button(switch_view_name)) {
+        if (is_viewing_scene)
+            engine.game_controller.set_game_view();
+        else
+            engine.game_controller.set_scene_view();
     }
 }
 
