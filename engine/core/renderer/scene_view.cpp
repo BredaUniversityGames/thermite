@@ -216,7 +216,7 @@ void SceneView::update_lights(RenderGraph& render_graph, const RenderView&) {
     const entt::basic_group env_group = engine.ecs.group<const Environment>();
     gpu_view.envmap_full_handle = 0u;
     gpu_view.envmap_filtered_handle = 0u;
-    
+
     /* Iterate over all environments */
     for (auto&& [entity, env] : env_group.each()) {
         if (env.resource) {

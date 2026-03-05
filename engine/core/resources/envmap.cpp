@@ -93,8 +93,8 @@ void conic_prefilter(const float* src, float* dst, int src_w, int src_h, int src
 }
 
 /* For a given aperture, what is the minimum required envmap resolution. */
-void prefilter_resolution(int& out_w, int& out_h, const float aperture) { 
-    const float cone_angle = aperture * 2.0f; 
+void prefilter_resolution(int& out_w, int& out_h, const float aperture) {
+    const float cone_angle = aperture * 2.0f;
 
     /* x4 to avoid aliasing */
     out_h = (int)ceilf(glm::pi<float>() / cone_angle * 4.0f);
@@ -137,8 +137,11 @@ bool Envmap::load() {
 
     { /* Init the filtered texture resource */
         const std::string texture_name = name + " Envmap (Filtered) Texture";
-        filtered_texture = bank.create_texture(texture_name.c_str(), TextureUsage::Sampled | TextureUsage::TransferDst, TextureFormat::RGBA16Sfloat, { (uint32_t)filtered_width, (uint32_t)filtered_height, 0u })
-                    .expect("failed to initialise envmap texture.");
+        filtered_texture =
+            bank.create_texture(
+                    texture_name.c_str(), TextureUsage::Sampled | TextureUsage::TransferDst, TextureFormat::RGBA16Sfloat, { (uint32_t)filtered_width, (uint32_t)filtered_height, 0u }
+            )
+                .expect("failed to initialise envmap texture.");
     }
 
     /* Pack and upload filtered texture */
@@ -147,8 +150,9 @@ bool Envmap::load() {
 
     { /* Init the full texture resource */
         const std::string texture_name = name + " Envmap (Full) Texture";
-        full_texture = bank.create_texture(texture_name.c_str(), TextureUsage::Sampled | TextureUsage::TransferDst, TextureFormat::RGBA16Sfloat, { (uint32_t)full_width, (uint32_t)full_height, 0u })
-                    .expect("failed to initialise envmap texture.");
+        full_texture =
+            bank.create_texture(texture_name.c_str(), TextureUsage::Sampled | TextureUsage::TransferDst, TextureFormat::RGBA16Sfloat, { (uint32_t)full_width, (uint32_t)full_height, 0u })
+                .expect("failed to initialise envmap texture.");
     }
 
     /* Pack and upload full texture */

@@ -40,7 +40,7 @@ struct SceneView {
     void init();
     void update(RenderGraph& render_graph, const RenderView& render_view);
     void deinit();
-    
+
     /* GPU resources */
     Buffer bvh_nodes {};
     Buffer object_indices {};
