@@ -11,10 +11,15 @@ constexpr auto MOVE_UP = "move_up";
 constexpr auto MOVE_DOWN = "move_down";
 constexpr auto BREAK = "break";
 constexpr auto SHOOT = "shoot";
+constexpr auto SWITCH_RIFLE = "rifle";
+constexpr auto SWITCH_MINING = "mining";
+constexpr auto SWITCH_GRAVITY = "gravity";
 constexpr auto SECONDARY_TOOL_USE = "secondary_tool_use";
-constexpr auto SWITCH_WEAPON_1 = "switch_1";
-constexpr auto SWITCH_WEAPON_2 = "switch_2";
-constexpr auto SWITCH_WEAPON_3 = "switch_3";
+constexpr auto OPEN_PAUSE_MENU = "open_pause_menu";
+constexpr auto OPEN_INVENTORY = "open_inventory";
+constexpr auto OPEN_UPGRADE_MENU = "open_upgrade_menu";
+
+constexpr auto ATTACH_KEY = "attach_key";
 
 }  // namespace action
 }  // namespace game

@@ -3,7 +3,8 @@
     "entities": [
         0,
         1,
-        2
+        2,
+        3
     ],
     "Name": {
         "0": {
@@ -14,6 +15,9 @@
         },
         "2": {
             "name": "Asteroid"
+        },
+        "3": {
+            "name": "Particle Emitter 2"
         }
     },
     "Transform": {
@@ -76,6 +80,26 @@
             },
             "parent": 4294967295,
             "children": []
+        },
+        "3": {
+            "local_position": {
+                "x": 6.460744857788086,
+                "y": 0.22782957553863525,
+                "z": 23.642126083374023
+            },
+            "local_rotation": {
+                "w": 1.0,
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "local_scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "parent": 4294967295,
+            "children": []
         }
     },
     "Voxel Renderer": {
@@ -84,7 +108,10 @@
                 "file_location": {
                     "sub_location": "PROJECT",
                     "relative_path": "test_asteroid_3.vengi"
-                }
+                },
+                "constructor_args": [
+                    "00000000-0000-0000-0000-000000000000"
+                ]
             }
         }
     },
@@ -101,24 +128,51 @@
             "effects": [
                 {
                     "particle_lifetime": 3.0,
+                    "pos_offset": {
+                        "x": 0.0,
+                        "y": 0.0,
+                        "z": 0.0
+                    },
                     "dir": {
                         "x": 0.0,
                         "y": 1.0,
                         "z": 0.0
                     },
-                    "cone_angle": 10.0,
+                    "cone_angle": 45.0,
                     "spawn_count": 1,
-                    "speed": {
-                        "min": 2.0,
-                        "max": 2.0
+                    "start_speed": {
+                        "min": 1.0,
+                        "max": 1.0
+                    },
+                    "end_speed": {
+                        "min": 1.0,
+                        "max": 1.0
+                    },
+                    "speed_curve": {
+                        "values": [
+                            0.0,
+                            0.0,
+                            1.0,
+                            1.0,
+                            0.0
+                        ]
                     },
                     "start_size": {
-                        "min": 0.0,
-                        "max": 0.0
+                        "min": 64.0,
+                        "max": 64.0
                     },
                     "end_size": {
-                        "min": 256.0,
-                        "max": 256.0
+                        "min": 64.0,
+                        "max": 64.0
+                    },
+                    "size_curve": {
+                        "values": [
+                            0.0,
+                            0.0,
+                            1.0,
+                            0.625,
+                            0.0
+                        ]
                     },
                     "start_opacity": {
                         "min": 1.0,
@@ -127,6 +181,15 @@
                     "end_opacity": {
                         "min": 1.0,
                         "max": 1.0
+                    },
+                    "opacity_curve": {
+                        "values": [
+                            0.0,
+                            0.0,
+                            1.0,
+                            1.0,
+                            0.0
+                        ]
                     },
                     "rotation": {
                         "min": 0.0,
@@ -138,23 +201,207 @@
                     },
                     "jitter_speed": 1.0,
                     "active": true,
-                    "test": {
-                        "values": [
-                            1.0,
-                            0.0078125,
-                            1.0,
-                            0.3359375,
-                            12.0
-                        ]
-                    },
                     "texture": {
                         "file_location": {
                             "sub_location": "PROJECT",
-                            "relative_path": "bojan.png"
+                            "relative_path": "player1.png"
                         },
                         "data": {
-                            "dummy": 0
+                            "flipbook_frames": 6
                         }
+                    },
+                    "name": "Particle Effect",
+                    "name_color": {
+                        "x": 1.0,
+                        "y": 1.0,
+                        "z": 1.0
+                    }
+                },
+                {
+                    "particle_lifetime": 1.0,
+                    "pos_offset": {
+                        "x": 0.0,
+                        "y": 0.0,
+                        "z": 0.0
+                    },
+                    "dir": {
+                        "x": 0.0,
+                        "y": 1.0,
+                        "z": 0.0
+                    },
+                    "cone_angle": 10.0,
+                    "spawn_count": 8,
+                    "start_speed": {
+                        "min": 1.0,
+                        "max": 1.0
+                    },
+                    "end_speed": {
+                        "min": 10.0,
+                        "max": 10.0
+                    },
+                    "speed_curve": {
+                        "values": [
+                            0.0,
+                            0.0,
+                            1.0,
+                            1.0,
+                            0.0
+                        ]
+                    },
+                    "start_size": {
+                        "min": 64.0,
+                        "max": 64.0
+                    },
+                    "end_size": {
+                        "min": 64.0,
+                        "max": 64.0
+                    },
+                    "size_curve": {
+                        "values": [
+                            0.0,
+                            0.0,
+                            1.0,
+                            1.0,
+                            0.0
+                        ]
+                    },
+                    "start_opacity": {
+                        "min": 1.0,
+                        "max": 1.0
+                    },
+                    "end_opacity": {
+                        "min": 1.0,
+                        "max": 1.0
+                    },
+                    "opacity_curve": {
+                        "values": [
+                            0.0,
+                            0.0,
+                            1.0,
+                            1.0,
+                            0.0
+                        ]
+                    },
+                    "rotation": {
+                        "min": 0.0,
+                        "max": 3.0
+                    },
+                    "pos_jitter": {
+                        "min": 0.0,
+                        "max": 0.0
+                    },
+                    "jitter_speed": 1.0,
+                    "active": true,
+                    "texture": {
+                        "file_location": {
+                            "sub_location": "ENGINE",
+                            "relative_path": "missing.png"
+                        },
+                        "data": {
+                            "flipbook_frames": 1
+                        }
+                    },
+                    "name": "Effect 2",
+                    "name_color": {
+                        "x": 1.0,
+                        "y": 1.0,
+                        "z": 1.0
+                    }
+                }
+            ],
+            "active": true
+        },
+        "3": {
+            "effects": [
+                {
+                    "particle_lifetime": 1.0,
+                    "pos_offset": {
+                        "x": 0.0,
+                        "y": 0.0,
+                        "z": 0.0
+                    },
+                    "dir": {
+                        "x": 0.0,
+                        "y": 1.0,
+                        "z": 0.0
+                    },
+                    "cone_angle": 90.0,
+                    "spawn_count": 8,
+                    "start_speed": {
+                        "min": 1.0,
+                        "max": 1.0
+                    },
+                    "end_speed": {
+                        "min": 1.0,
+                        "max": 1.0
+                    },
+                    "speed_curve": {
+                        "values": [
+                            0.17499999701976776,
+                            0.8849999904632568,
+                            0.3199999928474426,
+                            1.274999976158142,
+                            16.0
+                        ]
+                    },
+                    "start_size": {
+                        "min": 256.0,
+                        "max": 256.0
+                    },
+                    "end_size": {
+                        "min": 256.0,
+                        "max": 256.0
+                    },
+                    "size_curve": {
+                        "values": [
+                            0.0,
+                            0.0,
+                            1.0,
+                            1.0,
+                            0.0
+                        ]
+                    },
+                    "start_opacity": {
+                        "min": 1.0,
+                        "max": 1.0
+                    },
+                    "end_opacity": {
+                        "min": 0.0,
+                        "max": 0.0
+                    },
+                    "opacity_curve": {
+                        "values": [
+                            0.2150000035762787,
+                            0.6100000143051147,
+                            0.35499998927116394,
+                            1.0,
+                            11.0
+                        ]
+                    },
+                    "rotation": {
+                        "min": 1.0,
+                        "max": 3.0
+                    },
+                    "pos_jitter": {
+                        "min": 0.0,
+                        "max": 0.0
+                    },
+                    "jitter_speed": 1.0,
+                    "active": true,
+                    "texture": {
+                        "file_location": {
+                            "sub_location": "PROJECT",
+                            "relative_path": "dust.png"
+                        },
+                        "data": {
+                            "flipbook_frames": 1
+                        }
+                    },
+                    "name": "Dust",
+                    "name_color": {
+                        "x": 1.0,
+                        "y": 1.0,
+                        "z": 1.0
                     }
                 }
             ],

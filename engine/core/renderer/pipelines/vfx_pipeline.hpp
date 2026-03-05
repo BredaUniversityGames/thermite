@@ -31,9 +31,9 @@ struct GpuParticleEffect {
     glm::vec3 dir {};
     float cone_angle {};
 
-    Range speed {};
-    uint32_t spawn_count {};
-    uint32_t tex_index {};
+    Range start_speed {};
+    Range end_speed {};
+    GpuBezierCurve speed_curve {};
 
     Range start_size {};
     Range end_size {};
@@ -47,7 +47,13 @@ struct GpuParticleEffect {
     Range pos_jitter {};
 
     float jitter_speed {};
-    glm::vec3 pad {};
+    uint32_t flipbook_frames {};
+    float anim_speed {};
+    float dither_scale {};
+
+    uint32_t spawn_count {};
+    uint32_t tex_index {};
+    glm::vec2 pad {};
 };
 
 struct GpuEmitter {
@@ -60,7 +66,12 @@ struct GpuParticle {
     glm::vec3 pos {};
     float age {};
 
-    glm::vec3 velocity {};
+    glm::vec3 start_speed {};
+    float pad {};
+    glm::vec3 end_speed {};
+    float pad2 {};
+
+    glm::vec3 dir {};
     float lifetime {};
 
     float size {};
@@ -73,11 +84,19 @@ struct GpuParticle {
     float rot_speed {};
     float rotation {};
 
-    float pos_jitter {};
+    GpuBezierCurve size_curve {};
+    GpuBezierCurve opacity_curve {};
+    GpuBezierCurve speed_curve {};
 
+    float pos_jitter {};
     uint32_t tex_index {};
     uint32_t effect_index {};
-    float pad {};
+    uint32_t current_frame {};
+
+    uint32_t flipbook_frames {};
+    float anim_speed {};
+    float dither_scale {};
+    float pad3 {};
 };
 
 struct Counters {
@@ -117,7 +136,7 @@ class VfxPipeline {
     Buffer particle_effects_buffer {};
     Buffer billboard_vertices {};
 
-    Sampler linear_sampler {};
+    Sampler point_sampler {};
 };
 
 }  // namespace tmt

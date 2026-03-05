@@ -11,12 +11,29 @@ void Resources::unload_unused() {
         if (ref_count <= 1) {
             collection.file_resource->unload();
             collection.file_resource->loaded = false;
-            tmt::Log::info(tmt::Log::Scope::ENGINE, "[Resources] Unloaded unused file resource {}", file_location);
+            tmt::Log::debug(tmt::Log::Scope::ENGINE, "[Resources] Unloaded unused file resource {}", file_location);
             resource_type_locations[resources.at(file_location).type_hash].erase(file_location);  // Get the type hash
             resources.erase(file_location);
             i--;
         }
     }
+}
+
+void Resources::force_unload_all() {
+    for (auto& [file_location, collection] : resources) {
+        const int ref_count = collection.file_resource.use_count();
+
+        if (ref_count > 1) {
+            tmt::Log::debug(tmt::Log::Scope::ENGINE, "[Resources] Force unloading file resource {} with {} active references!", file_location, ref_count - 1);
+        } else {
+            tmt::Log::debug(tmt::Log::Scope::ENGINE, "[Resources] Force unloaded file resource {}", file_location);
+        }
+
+        collection.file_resource->unload();
+        collection.file_resource->loaded = false;
+    }
+    resources.clear();
+    resource_type_locations.clear();
 }
 
 size_t Resources::resource_count() const {
@@ -50,13 +67,21 @@ bool Resources::reload_resource(const std::shared_ptr<Resource>& resource) const
 }
 
 bool Resources::reload_resource(const std::shared_ptr<FileResource>& resource) const {
+    const auto last_modified_time = IO::get_file_last_modified_time(resource->file_location);
+    // Check if the file to reload from exists.
+    if (last_modified_time == TimeStamp::min())
+    {
+        tmt::Log::error(tmt::Log::Scope::ENGINE, "[Resources] Failed to reload resource, couldn't find file: {}", resource->file_location);
+        return false;
+    }
+
     const bool success = resource->reload();
     if (!success) {
         tmt::Log::error(tmt::Log::Scope::ENGINE, "[Resources] Failed to reload resource: {}", resource->file_location);
         return false;
     }
+    resource->last_modified_time = last_modified_time;
     resource->loaded = true;
-    resource->last_modified_time = IO::get_file_last_modified_time(resource->file_location);
     return true;
 }
 

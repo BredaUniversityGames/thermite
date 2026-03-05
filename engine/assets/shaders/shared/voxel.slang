@@ -73,7 +73,12 @@ public [ForceInline] void trace_voxel_object<let DEBUG : bool>(Ray ray, VoxelObj
     hit.t = hit_dist;
     hit.voxel_index = local_hit.voxel_index;
     hit.object_index = index;
-    hit.face_index = local_hit.face_index == 3u ? aabb_face_index(entry_uvw) : local_hit.face_index;
+    if (local_hit.face_index == 3u && t_near > 0.0f) {
+        /* Use the bounding box normals if we didn't get a normal from the SVT64 */
+        hit.face_index = aabb_face_index(entry_uvw);
+    } else {
+        hit.face_index = local_hit.face_index;
+    }
 }
 
 public [ForceInline] void occlusion_voxel_object(Ray ray, VoxelObject object, uint index, inout float t) {
@@ -119,17 +124,6 @@ public [ForceInline] void occlusion_voxel_object(Ray ray, VoxelObject object, ui
     t = hit_dist;
 }
 
-/* XXHash32 <https://jcgt.org/published/0009/03/02/> */
-// public inline uint xxhash32(const uint p) {
-//     const uint PRIME32_2 = 2246822519u, PRIME32_3 = 3266489917u;
-//     const uint PRIME32_4 = 668265263u, PRIME32_5 = 374761393u;
-//     uint h32 = p + PRIME32_5;
-//     h32 = PRIME32_4 * ((h32 << 17u) | (h32 >> (32u - 17u)));
-//     h32 = PRIME32_2 * (h32 ^ (h32 >> 15u));
-//     h32 = PRIME32_3 * (h32 ^ (h32 >> 13u));
-//     return h32 ^ (h32 >> 16u);
-// }
-
 uint jenkins32(uint a) {
     a = (a + 0x7ed55d16u) + (a << 12);
     a = (a ^ 0xc761c23cu) ^ (a >> 19);
@@ -141,16 +135,7 @@ uint jenkins32(uint a) {
 }
 
 public inline uint voxel_hash(const uint voxel_index, const uint object_index, const uint face_index) {
-    /* Cut away 3 bits on each axis, 10 bit -> 7 bit */
-    const uint voxel_x = voxel_index & 0b1111111u;
-    const uint voxel_y = voxel_index >> 10 & 0b1111111u;
-    const uint voxel_z = voxel_index >> 20 & 0b1111111u;
-    const uint voxel21 = voxel_x | (voxel_y << 7) | (voxel_z << 14);
-
-    /* 21 bit voxel index, 8 bit object index, 3 bit face index */
-    return jenkins32(voxel21
-        | ((object_index & 0b11111111u) << 21u)
-        | ((face_index & 0b111u) << 29u));
+    return jenkins32(voxel_index) ^ jenkins32(object_index | (face_index << 16));
 }
 
 public inline uint voxel_hash(const uint64_t packed) {

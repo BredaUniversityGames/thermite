@@ -23,6 +23,8 @@
 #include "systems/gameplay/gameplay.hpp"
 #include "systems/gameplay/game_component_registry.hpp"
 #include "systems/motion_math/motion_math_system.hpp"
+#include "systems/ui/ui.hpp"
+#include "systems/ui/button_manager.hpp"
 #include "events/engine.hpp"
 #include "events/game.hpp"
 #include "events/scene.hpp"
@@ -81,10 +83,13 @@ void Engine::init(std::unique_ptr<Application> user_app) {
     ecs.systems.add<Physics>();
     ecs.systems.add<Destruction>();
     ecs.systems.add<RigModelManager>();
-    // ecs.systems.add<Goap>();
+    ecs.systems.add<AnimationConstraintSystem>();
+    ecs.systems.add<Goap>();
     ecs.systems.add<NavigationSystem>();
-    ecs.systems.add<Gameplay>(); /* Should be last */
+    ecs.systems.add<UI>();
     ecs.systems.add<MotionMathSystem>();
+    ecs.systems.add<ButtonManager>();
+    ecs.systems.add<Gameplay>(); /* Should be last */
 
     OnEngineInit::dispatch(app->specs);
 }
@@ -175,7 +180,7 @@ void Engine::end() {
     ecs.clear();
     scenes.end();
     audio.end();  // Needs to be ended after the ecs.
-    resources.unload_unused();
+    resources.force_unload_all();
     renderer.end();
     Log::info("Engine finished shutdown");
 }

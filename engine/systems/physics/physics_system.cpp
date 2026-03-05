@@ -36,6 +36,8 @@ void Physics::on_start() {
             vb.center_of_mass = vb.position + (vb.rotation * vb.com_local_offset);
         }
     }
+
+    physics_layers.load();
 }
 
 void draw_node(tmt::Bvh2<VoxelObject>& bvh, uint32_t current_node) {
@@ -219,6 +221,8 @@ void Physics::on_fixed_update(const FrameData&) {
             object.local_to_world = transform.get_world_matrix();
             object.world_to_local = glm::inverse(object.local_to_world);
             object.size = vb.resource->size;
+            object.mask = (1u << vb.layer);
+            object.volume = vb.resource.resource.get();
             objects.push_back(std::move(object));
         }
 
@@ -281,6 +285,9 @@ void Physics::generate_constraint(int index, const PhysicsGroup& group) {
         VoxelBody& other_vb = group.get<VoxelBody>(other_entity);
         // Transform& other_transform = group.get<Transform>(other_entity);
         // auto& [other_vb, other_transform] = group.get<VoxelBody, Transform>(other_entity);
+
+        // --- check layer collision ---
+        if (!physics_layers.can_collide(vb.layer, other_vb.layer)) continue;
 
         if (sat_early_out(vb, other_vb)) continue;
 
@@ -823,9 +830,30 @@ void Physics::set_rotation(VoxelBody& vb, const glm::quat& rotation) {
     vb.center_of_mass = vb.position + (vb.rotation * vb.com_local_offset);
 }
 
-void Physics::recalculate_physics_data(VoxelBody& vb) {
-    TMT_ZONE_SCOPED
+/**
+ * Cast a ray using a layer mask.
+ *
+ * Example:
+ *   uint32_t layer_mask = (1 << 1) | (1 << 2);
+ *   Hit hit = physics->raycast(ray, layer_mask);
+ *
+ * Result:
+ *   Layer 0 -> not in mask = cannot hit
+ *   Layer 1 -> in mask     = can hit
+ *   Layer 2 -> in mask     = can hit
+ *   Layer 3 -> not in mask = cannot hit
+ *
+ * The BVH filters objects internally using bitmask comparison:
+ *   (object.mask & layer_mask) != 0
+ *
+ * Objects whose mask does not overlap with the ray's mask
+ * are ignored during traversal.
+ */
+Hit Physics::raycast(const Ray& ray, uint32_t layer_mask) const {
+    return bvh.trace(ray, layer_mask);
+}
 
+void Physics::recalculate_physics_data(VoxelBody& vb) {
     initialize_voxel_body(vb);
     recalculate_surface_normals(vb);
 }
