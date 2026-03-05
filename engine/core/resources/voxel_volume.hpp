@@ -9,15 +9,16 @@
 namespace tmt {
 
 /* Voxel volume run-time resource, created from a Voxel model resource. */
-class VoxelVolume : public tmt::RuntimeResource<VoxelScene> {
+class VoxelVolume : public tmt::RuntimeResource<VoxelScene, UUID> {
+    using Base = tmt::RuntimeResource<VoxelScene, UUID>;
    public:
     // Constructor for temporary VoxelVolume's that aren't managed by the resource system (used in the voxel editor).
     VoxelVolume(const glm::uvec3& grid_size);
     VoxelVolume(const VoxelSceneNode& node);
 
-    VoxelVolume(const std::shared_ptr<VoxelScene>& file_resource) : RuntimeResource<VoxelScene>(file_resource) {}
-    VoxelVolume(const std::shared_ptr<VoxelScene>& file_resource, const UUID& uuid) : RuntimeResource<VoxelScene>(file_resource), uuid { uuid } {}
-    ~VoxelVolume() { unload(); }
+    VoxelVolume(const std::shared_ptr<VoxelScene>& file_resource) : Base(file_resource, NULL_UUID) {}
+    VoxelVolume(const std::shared_ptr<VoxelScene>& file_resource, const UUID& uuid) : Base(file_resource, uuid), uuid { uuid } {}
+    ~VoxelVolume() override { VoxelVolume::unload(); }
 
     bool load() override;
     void unload() override;
@@ -26,7 +27,10 @@ class VoxelVolume : public tmt::RuntimeResource<VoxelScene> {
     void update_if_dirty();
 
     /* Mark this voxel volume as dirty, meaning it needs to be re-uploaded to the GPU. */
-    inline void set_dirty() { is_dirty = true; };
+    void set_dirty() { is_dirty = true; }
+
+    /* Human-readable name */
+    std::string name {};
 
     /* 128 bit unique identifier. */
     UUID uuid { NULL_UUID };

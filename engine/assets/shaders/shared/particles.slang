@@ -7,6 +7,9 @@ public struct BillboardVertexOutput {
     public float2 uv : TEXCOORD0;
     public uint32_t tex_index : TEXINDEX0;
     public float opacity : OPACITY0;
+    public uint32_t current_frame : CURRFRAME0;
+    public uint32_t flipbook_frames : FRAMES0;
+    public float dither_scale : DITHERSCALE0;
 };
 
 public struct ParticleEffect {
@@ -16,9 +19,9 @@ public struct ParticleEffect {
     public float3 dir;
     public float cone_angle;
 
-    public Range speed;
-    public uint32_t spawn_count;
-    public uint32_t tex_index;
+    public Range start_speed;
+    public Range end_speed;
+    public BezierCurve speed_curve;
 
     public Range start_size;
     public Range end_size;
@@ -32,6 +35,12 @@ public struct ParticleEffect {
     public Range pos_jitter;
 
     public float jitter_speed;
+    public uint32_t flipbook_frames;
+    public float anim_speed;
+    public float dither_scale;
+
+    public uint32_t spawn_count;
+    public uint32_t tex_index;
 };
 
 public struct ParticleEmitter {
@@ -44,7 +53,9 @@ public struct Particle {
     public float3 pos;
     public float age;
 
-    public float3 velocity;
+    public float3 start_speed;
+    public float3 end_speed;
+    public float3 dir;
     public float lifetime;
 
     public float size;
@@ -57,10 +68,18 @@ public struct Particle {
     public float rot_speed;
     public float rotation;
 
-    public float pos_jitter;
+    public BezierCurve size_curve;
+    public BezierCurve opacity_curve;
+    public BezierCurve speed_curve;
 
+    public float pos_jitter;
     public uint32_t tex_index;
     public uint32_t effect_index;
+    public uint32_t current_frame;
+
+    public uint32_t flipbook_frames;
+    public float anim_speed;
+    public float dither_scale;
 };
 
 public struct Counters {

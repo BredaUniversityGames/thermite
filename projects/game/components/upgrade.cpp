@@ -1,5 +1,7 @@
 #include "upgrade.hpp"
 
+#include "fuel.hpp"
+#include "engine/core/components/button.hpp"
 #include "mining_component.hpp"
 #include "player.hpp"
 #include "weapon.hpp"
@@ -8,8 +10,35 @@ namespace game {
 
 void Upgrade::start() {
     // if entities are not set, try to set them automatically
-    if (player_entity==entt::null)
-    player_entity = tmt::engine.ecs.view<Player>().front().entity;  // Assuming there's only one player entity in the game
+    if (!tmt::engine.ecs.valid(player_entity)) {
+        tmt::Log::error("Player entity was invalid, trying to get it automatically.");
+        player_entity = tmt::engine.ecs.view<Player>().front().entity;  // Assuming there's only one player entity in the game
+    }
+
+    auto button_component = tmt::engine.ecs.try_get_component<tmt::Button>(entity);
+    if (button_component) {
+        tmt::Log::info("Found button component, adding apply function to button.");
+        button_component->on_click.add(this, &Upgrade::button_apply);
+    } else {
+        tmt::Log::warn("No button found for upgrade!");
+    }
+}
+
+void Upgrade::end() {
+    auto button_component = tmt::engine.ecs.try_get_component<tmt::Button>(entity);
+    if (button_component) {
+        button_component->on_click.clear();
+    }
+}
+
+void Upgrade::button_apply() {
+    if (apply_upgrade()) {
+        tmt::engine.ecs.disable(entity);
+        tmt::Log::info("Applied upgrade.");
+
+    } else {
+        tmt::Log::warn("Did not apply upgrade.");
+    }
 }
 
 bool Upgrade::apply_upgrade() {
@@ -34,27 +63,45 @@ bool Upgrade::apply_upgrade() {
         auto upgrade_cost = std::get<1>(cost);
         switch (resource) {
             case UpgradeResource::DOLLARS:
-                if (wallet_component->dollars < upgrade_cost) return false;
+                if (wallet_component->dollars < upgrade_cost) {
+                    tmt::Log::info("Unable to buy upgrade, insufficient dollars.");
+                    return false;
+                }
                 wallet_component->dollars -= upgrade_cost;
                 break;
             case UpgradeResource::GOLD:
-                if (wallet_component->gold < upgrade_cost) return false;
+                if (wallet_component->gold < upgrade_cost) {
+                    tmt::Log::info("Unable to buy upgrade, insufficient gold.");
+                    return false;
+                }
                 wallet_component->gold -= upgrade_cost;
                 break;
             case UpgradeResource::SILVER:
-                if (wallet_component->silver < upgrade_cost) return false;
+                if (wallet_component->silver < upgrade_cost) {
+                    tmt::Log::info("Unable to buy upgrade, insufficient silver.");
+                    return false;
+                }
                 wallet_component->silver -= upgrade_cost;
                 break;
             case UpgradeResource::COPPER:
-                if (wallet_component->copper < upgrade_cost) return false;
+                if (wallet_component->copper < upgrade_cost) {
+                    tmt::Log::info("Unable to buy upgrade, insufficient copper.");
+                    return false;
+                }
                 wallet_component->copper -= upgrade_cost;
                 break;
             case UpgradeResource::IRON:
-                if (wallet_component->iron < upgrade_cost) return false;
+                if (wallet_component->iron < upgrade_cost) {
+                    tmt::Log::info("Unable to buy upgrade, insufficient iron.");
+                    return false;
+                }
                 wallet_component->iron -= upgrade_cost;
                 break;
             case UpgradeResource::ENEMY_CORES:
-                if (wallet_component->enemy_cores < upgrade_cost) return false;
+                if (wallet_component->enemy_cores < upgrade_cost) {
+                    tmt::Log::info("Unable to buy upgrade, insufficient enemy cores.");
+                    return false;
+                }
                 wallet_component->enemy_cores -= upgrade_cost;
                 break;
             default:
@@ -65,6 +112,7 @@ bool Upgrade::apply_upgrade() {
 
     auto player_component = tmt::engine.ecs.try_get_component<Player>(upgrade_target);
     auto weapon_component = tmt::engine.ecs.try_get_component<Weapon>(upgrade_target);
+    auto fuel_component = tmt::engine.ecs.try_get_component<FuelComponent>(upgrade_target);
 
     switch (type) {
         case UpgradeType::MAX_HEALTH:
@@ -72,50 +120,53 @@ bool Upgrade::apply_upgrade() {
                 tmt::Log::error("Upgrade target does not have valid player component, could not apply max health upgrade.");
                 return false;
             }
-            player_component->max_health += upgrade_value;
+            player_component->health.max_value = upgrade_to;
             break;
         case UpgradeType::MAX_BATTERY:
             if (!player_component) {
                 tmt::Log::error("Upgrade target does not have valid player component, could not apply max battery upgrade.");
                 return false;
             }
-            player_component->max_battery += upgrade_value;
+            player_component->energy.max_value = upgrade_to;
             break;
         case UpgradeType::MAX_SPEED:
             if (!player_component) {
                 tmt::Log::error("Upgrade target does not have valid player component, could not apply max speed upgrade.");
                 return false;
             }
-            player_component->max_speed += upgrade_value;
+            player_component->max_speed = upgrade_to;
             break;
         case UpgradeType::ACCELERATION:
             if (!player_component) {
                 tmt::Log::error("Upgrade target does not have valid player component, could not apply acceleration upgrade.");
                 return false;
             }
-            player_component->acceleration += upgrade_value;
+            player_component->acceleration = upgrade_to;
             break;
         case UpgradeType::PRIMARY_ATK_SPEED:
             if (!weapon_component) {
                 tmt::Log::error("Upgrade target does not have valid weapon component, could not apply primary atk speed upgrade");
                 return false;
             }
-            weapon_component->primary_fire_rate.shots_per_second += upgrade_value;
+            weapon_component->primary_fire_rate.shots_per_second = upgrade_to;
             break;
         case UpgradeType::SECONDARY_ATK_SPEED:
             if (!weapon_component) {
                 tmt::Log::error("Upgrade target does not have valid weapon component, could not apply secondary atk speed upgrade");
                 return false;
             }
-            weapon_component->secondary_fire_rate.shots_per_second += upgrade_value;
+            weapon_component->secondary_fire_rate.shots_per_second = upgrade_to;
             break;
         case UpgradeType::GUN_DMG:
             tmt::Log::warn("Weapon damage upgrade not implemented yet.");
             return false;
             break;
-        case UpgradeType::BARGE_FUEL:
-            tmt::Log::warn("Barge fuel upgrade not implemented yet.");
-            return false;
+        case UpgradeType::BARGE_MAX_FUEL:
+            if (!fuel_component) {
+                tmt::Log::error("Upgrade target does not have valid fuel component, could not apply max barge fuel upgrade");
+                return false;
+            }
+            fuel_component->max_fuel = upgrade_to;
             break;
         default:
             tmt::Log::error("Invalid upgrade type, could not apply upgrade.");
@@ -125,4 +176,4 @@ bool Upgrade::apply_upgrade() {
     return true;           // Upgrade applied successfully
 }
 
-}                          // namespace game
+}  // namespace game
