@@ -3,6 +3,7 @@
 
 #include "engine/core/renderer/renderer.hpp"
 #include "engine/core/polyline.hpp"
+#include "engine/systems/ai/navigation/nav_mesh.hpp"
 
 void Walking::start() {
     //tmt::GoapAgentFactory::spawn_agent_from_type("dragon", entity);
