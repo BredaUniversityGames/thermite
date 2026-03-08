@@ -217,14 +217,25 @@ std::vector<Entity> Destruction::find_seperations(Entity entity, const std::vect
     return std::vector<Entity> { entity };
 }
 
-void low_level_seperation_flood(Destructable& graph, DestructionNode& current_node, uint8_t id, uint64_t overlap_mask) {
+void low_level_seperation_flood(Destructable& graph, DestructionNode& current_node, uint8_t id, uint64_t overlap_mask, Svt64* tree) {
     // Get svt64 node
+    
 
     // flood over this node from all of the voxels in the overlap mask
 }
 
-void seperation_flood(Destructable& graph, DestructionNode& current_node, uint8_t id) {
+void seperation_flood(Destructable& graph, DestructionNode& current_node, uint8_t id, Svt64* tree) {
+    const uint64_t edge_masks[6] {
+        0x1111111111111111ULL,  // -X
+        0x8888888888888888ULL,  // +X
+        0x000000000000FFFFULL,  // -Y
+        0xFFFF000000000000ULL,  // +Y
+        0x000F000F000F000FULL,  // -Z
+        0xF000F000F000F000ULL   // +Z
+    };
+
     current_node.flood_mask = id;
+    const Svt64Node& tree_node = tree->nodes[current_node.tree_node];
 
     // For all directions
     for (size_t i = 0; i < 6; i++) {
@@ -237,15 +248,32 @@ void seperation_flood(Destructable& graph, DestructionNode& current_node, uint8_
 
             // If the node is not a leaf node in the tree
             if (connected_node.level != 1) {
-                seperation_flood(graph, connected_node, id);
+                seperation_flood(graph, connected_node, id, tree);
                 continue;
             }
 
-            //
-            //if (current_node.level)
+            // Flip the mask on a defined axis
+            uint64_t edge_mask = 0u;
+            const uint8_t axis = i / 2;
+            if (axis == 0) { // X axis
+                edge_mask = ((edge_mask & 0x1111111111111111ULL) << 3) | ((edge_mask & 0x2222222222222222ULL) << 1) | ((edge_mask & 0x4444444444444444ULL) >> 1) |
+                            ((edge_mask & 0x8888888888888888ULL) >> 3);
+            } else if (axis == 1) { // Y axis
+                edge_mask = ((edge_mask & 0x000000000000FFFFULL) << 48) | ((edge_mask & 0x00000000FFFF0000ULL) << 16) | ((edge_mask & 0x0000FFFF00000000ULL) >> 16) |
+                            ((edge_mask & 0xFFFF000000000000ULL) >> 48);
+            } else if (axis == 2) { // Z axis
+                edge_mask = ((edge_mask & 0x000F000F000F000FULL) << 12) | ((edge_mask & 0x00F000F000F000F0ULL) << 4) | ((edge_mask & 0x0F000F000F000F00ULL) >> 4) |
+                            ((edge_mask & 0xF000F000F000F000ULL) >> 12);
+            }
+
+            // Mask the edge
+            //edge_mask = edge_mask
+
+            // if (current_node.level)
+            //tree_node.child_mask
 
             // Get the mask of the svt64 node, flip it, apply edge mask, give it to
-            low_level_seperation_flood(graph, connected_node, id);
+            low_level_seperation_flood(graph, connected_node, id, 0, tree);
         }
     }
 }
@@ -296,7 +324,7 @@ std::vector<Entity> Destruction::find_seperations(Entity entity, const std::vect
         if (current_node == nullptr || current_node->flood_mask != 0) continue;
 
         // Start floodfill from that node
-        seperation_flood(graph, *current_node, flood_id++);
+        seperation_flood(graph, *current_node, flood_id++, tree);
 
         // When node is level 1, do special flood thingy
     }
