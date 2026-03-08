@@ -219,8 +219,13 @@ std::vector<Entity> Destruction::find_seperations(Entity entity, const std::vect
 
 void low_level_seperation_flood(Destructable& graph, DestructionNode& current_node, uint8_t id, uint64_t overlap_mask, Svt64* tree) {
     // Get svt64 node
-    
+    // NOTE: THIS IS PROBABLY WRONG ONCE WE REBUILD THE DESTRUCTION GRAPH
+    const Svt64Node& tree_node = tree->nodes[current_node.tree_node];
 
+    // If there are no solid voxels on the overlap, return
+    if ((tree_node.child_mask & overlap_mask) == 0ull) return;
+
+    uint64_t checked_mask = 0u;
     // flood over this node from all of the voxels in the overlap mask
 }
 
@@ -241,7 +246,7 @@ void seperation_flood(Destructable& graph, DestructionNode& current_node, uint8_
     for (size_t i = 0; i < 6; i++) {
         // For all connections in this direction
         for (size_t j = 0; j < current_node.connections[i].node_indices.size(); j++) {
-            uint32_t connection_index = current_node.connections[i].node_indices[j];
+            const uint32_t connection_index = current_node.connections[i].node_indices[j];
             DestructionNode& connected_node = graph.nodes[connection_index];
             // If we visited this node before, continue
             if (connected_node.flood_mask != 0) continue;
