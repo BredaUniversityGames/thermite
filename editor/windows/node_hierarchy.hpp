@@ -27,7 +27,7 @@ class NodeHierarchy : public IWindow {
     void add_selected_entity(Entity entity);
     void set_selected_entity(Entity entity);
     void remove_selected_entity(Entity entity);
-    void clear_selected_entity();
+    void clear_selected_entities();
 
     void new_svh();
     void open_svh();
@@ -46,7 +46,7 @@ class NodeHierarchy : public IWindow {
     friend class VoxelNodeDiff;
 
     static void recalculate_all_physics();
-    void recurse_display_node(Entity entity, const Name& name, Transform& transform);
+    void recurse_display_node(Entity entity, const Name& name, Transform& transform, std::vector<Entity>& all_entities);
     void clear_hierarchy();
 
     void drop_hierarchy();

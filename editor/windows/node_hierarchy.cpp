@@ -31,6 +31,37 @@
 
 namespace {
 
+bool apply_requests(ImGuiMultiSelectIO* io, std::vector<tmt::Entity>& selection, const std::vector<tmt::Entity>& entities) {
+    bool set_all = false;
+
+    for (const auto& request : io->Requests) {
+        switch (request.Type) {
+            case ImGuiSelectionRequestType_None:
+                break;
+
+            case ImGuiSelectionRequestType_SetAll:
+                selection.clear();
+                // "entities" will only be populated after looping through entities, but the SetAll (ctrl + A) call can happen before the loop.
+                set_all = request.Selected;
+                break;
+
+            case ImGuiSelectionRequestType_SetRange: {
+                if (request.Selected) {
+                    for (ImGuiSelectionUserData i = request.RangeFirstItem; i <= request.RangeLastItem; i++) {
+                        selection.push_back(entities.at(i));
+                    }
+                } else {
+                    for (ImGuiSelectionUserData i = request.RangeFirstItem; i <= request.RangeLastItem; i++) {
+                        selection.erase(std::ranges::find(selection, *(entities.begin() + i)));
+                    }
+                }
+            } break;
+        }
+    }
+
+    return set_all;
+}
+
 void drag3_uint32(const char* label, uint32_t values[3], const float speed = 0.1f, const uint32_t& min = 0u, const uint32_t& max = 0u) {
     ImGui::DragScalarN(label, ImGuiDataType_U32, values, 3, speed, &min, &max, nullptr, ImGuiSliderFlags_ClampOnInput);
 }
@@ -214,7 +245,7 @@ void NodeHierarchy::remove_selected_entity(const Entity entity) {
     if (iterator != selected_entities.end()) selected_entities.erase(iterator);
 }
 
-void NodeHierarchy::clear_selected_entity() {
+void NodeHierarchy::clear_selected_entities() {
     selected_entities.clear();
 }
 
@@ -405,7 +436,7 @@ void NodeHierarchy::recalculate_all_physics() {
     }
 }
 
-void NodeHierarchy::recurse_display_node(const Entity entity, const Name& name, Transform& transform) {
+void NodeHierarchy::recurse_display_node(const Entity entity, const Name& name, Transform& transform, std::vector<Entity>& all_entities) {
     ImGui::PushID(static_cast<int>(entity));
 
     const std::set<Entity>& children = transform.get_children();
@@ -417,6 +448,9 @@ void NodeHierarchy::recurse_display_node(const Entity entity, const Name& name, 
     flags |= (children.empty() ? ImGuiTreeNodeFlags_Leaf : 0);
     flags |= (is_entity_selected(entity) ? ImGuiTreeNodeFlags_Selected : 0);
 
+    ImGui::SetNextItemSelectionUserData(all_entities.size());
+    all_entities.push_back(entity);
+
     const bool tree_open = ImGui::TreeNodeEx(name.name.c_str(), flags);
     node_context_menu(entity);
     drag_node(entity, name.name);
@@ -427,17 +461,20 @@ void NodeHierarchy::recurse_display_node(const Entity entity, const Name& name, 
     if (tree_open) {
         for (const Entity child : children) {
             auto&& [child_name, child_transform] = engine.ecs.get_component<Name, Transform>(child);
-            recurse_display_node(child, child_name, child_transform);
+            recurse_display_node(child, child_name, child_transform, all_entities);
         }
 
         ImGui::TreePop();
+    } else {
+        const std::set<Entity> all_children = transform.get_all_children();
+        all_entities.insert(all_entities.end(), all_children.begin(), all_children.end());
     }
 
     ImGui::PopID();
 }
 
 void NodeHierarchy::clear_hierarchy() {
-    clear_selected_entity();
+    clear_selected_entities();
     root_entities.clear();
     engine.ecs.clear();
 
@@ -748,11 +785,25 @@ void NodeHierarchy::display() {
     popup_create_node();
     popup_resize_node();
 
+    constexpr ImGuiMultiSelectFlags multiselect_flags =
+        ImGuiMultiSelectFlags_ClearOnEscape | ImGuiMultiSelectFlags_ClearOnClickVoid | ImGuiMultiSelectFlags_BoxSelect1d | ImGuiMultiSelectFlags_SelectOnClickRelease;
+
+    // Handle multi selecting entities at the start of the recursive display.
+    std::vector<Entity> all_entities;
+    ImGuiMultiSelectIO* ms_io = ImGui::BeginMultiSelect(multiselect_flags, static_cast<int>(selected_entities.size()));
+    const bool select_all = apply_requests(ms_io, selected_entities, all_entities);
+
     for (const Entity entity : root_entities) {
         auto&& [transform, name] = engine.ecs.get_component<Transform, Name>(entity);
 
-        recurse_display_node(entity, name, transform);
+        recurse_display_node(entity, name, transform, all_entities);
     }
+    if (select_all) selected_entities.insert(selected_entities.end(), all_entities.begin(), all_entities.end());
+
+    // Handle multi selecting entities after all entities have been displayed (e.g. Ctrl+A to select all entities).
+    ms_io = ImGui::EndMultiSelect();
+    apply_requests(ms_io, selected_entities, all_entities);
+
     // Erase all root entities that have been marked for delete.
     std::erase_if(root_entities, [](const Entity& entity) { return !engine.ecs.valid(entity) || engine.ecs.has_component<Delete>(entity); });
 
