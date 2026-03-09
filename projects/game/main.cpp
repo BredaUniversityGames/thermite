@@ -18,6 +18,19 @@
 // For custom ImGui logic
 #include "editor/all.hpp"
 
+// GOAP
+#include "engine/systems/ai/goap/goap_system.hpp"
+#include "engine/systems/ai/goap/components/goap_agent.hpp"
+#include "engine/systems/ai/goap/components/goap_agent_type_registry.hpp"
+#include "engine/systems/ai/goap/components/goap_agent_factory.hpp"
+#include "engine/systems/ai/goap/components/goap_action_registry.hpp"
+#include "engine/systems/ai/goap/components/goap_goal_registry.hpp"
+#include "engine/systems/ai/goap/components/goap_goal.hpp"
+
+//AI actions
+#include "ai_actions/chase_player.hpp"
+#include "ai_actions/wander.hpp"
+
 // Game Components
 #include "components/player.hpp"
 #include "components/wallet.hpp"
@@ -37,12 +50,61 @@
 #include "components/weapon.hpp"
 #include "components/fuel.hpp"
 #include "components/upgrade.hpp"
+#include "components/medium_enemy.hpp"
 
 class Game : public tmt::Application {
    public:
     Game(const tmt::ApplicationSpecs& specs) : Application(specs) {}
 
-    void on_start() override {};
+    void on_start() override {
+        /* Register actions */
+        if (!tmt::engine.ecs.systems.try_get<tmt::Goap>()) {
+            tmt::engine.ecs.systems.add<tmt::Goap>();
+        }
+
+        auto& ecs = tmt::engine.ecs;
+        auto& goap = ecs.systems.get<tmt::Goap>();
+
+        auto& action_reg = goap.actions();
+        auto& goal_reg = goap.goals();
+        auto& type_reg = goap.agent_types();
+
+        action_reg.register_action(std::make_unique<ChasePlayer>());
+        action_reg.register_action(std::make_unique<Wander>());
+
+        tmt::GoapAgentType dragon;
+        dragon.id = "dragon";
+        dragon.action_ids = { "ChasePlayer", "Wander" };
+
+        dragon.default_world_state = {
+            { "player_in_range", false },
+            { "in_attack_range", false },
+        };
+
+        {
+            tmt::GoapGoal chase;
+            chase.name = "ChasePlayer";
+            chase.desired_state = { { tmt::FactId("in_attack_range"), true } };
+            chase.priority = 10;
+            chase.valid = true;
+
+            goal_reg.register_goal("ChasePlayer", chase);
+        }
+
+        {
+            tmt::GoapGoal wander;
+            wander.name = "Wander";
+            wander.desired_state = { { tmt::FactId("player_in_range"), true } };
+            wander.priority = 1;
+            wander.valid = true;
+
+            goal_reg.register_goal("Wander", wander);
+        }
+
+        dragon.goal_ids = { "ChasePlayer", "Wander" };
+
+        type_reg.register_type(dragon);
+    };
     void on_update(const tmt::FrameData& time) override {};
     void on_end() override {};
 };
@@ -70,6 +132,11 @@ class DanielTestScene : public tmt::Scene<DanielTestScene> {
     static constexpr std::string_view scene_name() { return "DanielTestScene"; }
 };
 
+class LoekTestScene : public tmt::Scene<LoekTestScene> {
+   public:
+    static constexpr std::string_view scene_name() { return "LoekTestScene"; }
+};
+
 class MikaTestScene : public tmt::Scene<MikaTestScene> {
    public:
     static constexpr std::string_view scene_name() { return "MikaTestScene"; }
@@ -89,6 +156,7 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     tmt::engine.scenes.register_scene<DanielTestScene>();
     tmt::engine.scenes.register_scene<MikaTestScene>();
     tmt::engine.scenes.register_scene<DanielTestScene>();
+    tmt::engine.scenes.register_scene<LoekTestScene>();
     tmt::engine.scenes.register_scene<MainMenuScene>();
     tmt::engine.scenes.register_scene<Gym>();
     tmt::engine.scenes.register_scene<Zoo>();
@@ -113,6 +181,7 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     tmt::engine.component_registry.register_component<game::Upgrade>();
     tmt::engine.component_registry.register_component<game::MenuController>();
     tmt::engine.component_registry.register_component<game::FuelComponent>();
+    tmt::engine.component_registry.register_component<game::MediumEnemy>();
 
     return std::make_unique<Game>(specs);
 }
