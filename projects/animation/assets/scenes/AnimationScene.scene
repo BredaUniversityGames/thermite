@@ -758,13 +758,13 @@
             "local_position": {
                 "x": 0.0,
                 "y": 0.0,
-                "z": 0.0
+                "z": -7.0
             },
             "local_rotation": {
-                "w": 1.0,
-                "x": 0.0,
-                "y": 0.0,
-                "z": 0.0
+                "w": -4.371138828673793e-08,
+                "x": -0.0,
+                "y": 1.0,
+                "z": -0.0
             },
             "local_scale": {
                 "x": 1.0,
@@ -3146,7 +3146,14 @@
     },
     "Rig Controller": {
         "19": {
-            "parameters": {},
+            "parameters": {
+                "New trigger": {
+                    "index": 3,
+                    "value": {
+                        "value": false
+                    }
+                }
+            },
             "states": {
                 "Start": {
                     "animation": "",
@@ -3154,10 +3161,16 @@
                     "repeat": false,
                     "transition_on_finish": false
                 },
+                "Victory_animation": {
+                    "animation": "Victory_animation",
+                    "animation_speed": 1.0,
+                    "repeat": false,
+                    "transition_on_finish": true
+                },
                 "Walk": {
                     "animation": "Walk",
                     "animation_speed": 1.0,
-                    "repeat": false,
+                    "repeat": true,
                     "transition_on_finish": false
                 }
             },
@@ -3166,6 +3179,29 @@
                     "from": "Start",
                     "to": "Walk",
                     "transition_time": 0.0,
+                    "conditions": []
+                },
+                {
+                    "from": "Walk",
+                    "to": "Victory_animation",
+                    "transition_time": 0.20000000298023224,
+                    "conditions": [
+                        {
+                            "parameter_name": "New trigger",
+                            "compare_value": {
+                                "index": 3,
+                                "value": {
+                                    "value": false
+                                }
+                            },
+                            "compare_type": "EQUAL"
+                        }
+                    ]
+                },
+                {
+                    "from": "Victory_animation",
+                    "to": "Walk",
+                    "transition_time": 0.20000000298023224,
                     "conditions": []
                 }
             ]
