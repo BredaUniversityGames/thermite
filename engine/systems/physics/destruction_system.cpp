@@ -7,6 +7,7 @@
 #include "engine/systems/physics/components/voxel_body.hpp"
 #include "engine/systems/physics/physics_system.hpp"
 #include "engine/tools/profiler.hpp"
+#include <queue>
 
 namespace tmt {
 
@@ -30,9 +31,9 @@ void Destruction::on_update(const FrameData& time) {
             // uint32_t voxel_count = vb.resource.resource.get()->blas.get()->voxel_count;
             // Log::info("voxels %u", vb.resource.resource.get()->blas.get()->voxel_count);
 
-            srand(node.flood_mask << 5u);
+            srand(node.flood_id << 5u);
 
-            if (node.flood_mask == 0)
+            if (node.flood_id == 0)
                 engine.polyline.use_color(0.0f, 0.0f, 0.0f);
             else
                 engine.polyline.use_color(((float)rand() / (float)RAND_MAX), ((float)rand() / (float)RAND_MAX), ((float)rand() / (float)RAND_MAX));
@@ -217,7 +218,19 @@ std::vector<Entity> Destruction::find_seperations(Entity entity, const std::vect
     return std::vector<Entity> { entity };
 }
 
-void low_level_seperation_flood(Destructable& graph, DestructionNode& current_node, uint8_t id, uint64_t overlap_mask, Svt64* tree) {
+constexpr uint64_t edge_masks[6] {
+    0x1111111111111111ULL,  // -X
+    0x8888888888888888ULL,  // +X
+    0x000000000000FFFFULL,  // -Y
+    0xFFFF000000000000ULL,  // +Y
+    0x000F000F000F000FULL,  // -Z
+    0xF000F000F000F000ULL   // +Z
+};
+
+// Forward declare function
+void separation_flood(Destructable& graph, DestructionNode& current_node, uint8_t id, Svt64* tree);
+
+void low_level_separation_flood(Destructable& graph, DestructionNode& current_node, uint8_t id, uint64_t overlap_mask, Svt64* tree) {
     // Get svt64 node
     // NOTE: THIS IS PROBABLY WRONG ONCE WE REBUILD THE DESTRUCTION GRAPH
     const Svt64Node& tree_node = tree->nodes[current_node.tree_node];
@@ -225,21 +238,121 @@ void low_level_seperation_flood(Destructable& graph, DestructionNode& current_no
     // If there are no solid voxels on the overlap, return
     if ((tree_node.child_mask & overlap_mask) == 0ull) return;
 
-    uint64_t checked_mask = 0u;
-    // flood over this node from all of the voxels in the overlap mask
+    current_node.flood_id = id;
+
+    uint64_t flood_mask = overlap_mask;
+
+    // -X, +X, -Y, +Y, -Z, +Z
+    const glm::ivec3 dirs[6] = { { -1, 0, 0 }, { 1, 0, 0 }, { 0, -1, 0 }, { 0, 1, 0 }, { 0, 0, -1 }, { 0, 0, 1 } };
+
+    // Loop over flood overlap mask solids
+    while (overlap_mask != 0ull) {
+        // Find index of first set bit
+        const uint32_t i = std::countr_zero(overlap_mask);
+
+        // Continue if bit is already set in the flood mask
+        // if ((flood_mask & (1u << i)) != 0ull) continue;
+
+        // Flood fill
+        std::queue<uint32_t> queue;
+        queue.push(i);
+        while (!queue.empty()) {
+            // Get front and remove it
+            const uint32_t index = queue.front();
+            queue.pop();
+
+            // Get local coordinates
+            const uint32_t local_x = (i >> 0u) & 3u;
+            const uint32_t local_y = (i >> 4u) & 3u;
+            const uint32_t local_z = (i >> 2u) & 3u;
+
+            // For all directions
+            for (size_t a = 0; a < 6; a++) {
+                // Range Check
+                if ((local_x == 0u && dirs[a].x == -1) || (local_x == 3u && dirs[a].x == 1)) continue;
+                if ((local_y == 0u && dirs[a].y == -1) || (local_y == 3u && dirs[a].y == 1)) continue;
+                if ((local_z == 0u && dirs[a].z == -1) || (local_z == 3u && dirs[a].z == 1)) continue;
+
+                // Get neighbor position
+                const uint32_t x = local_x + dirs[a].x;
+                const uint32_t y = local_y + dirs[a].y;
+                const uint32_t z = local_z + dirs[a].z;
+
+                // 3d to 1d position
+                const uint32_t neighbor_index = (x << 0u) | (z << 2u) | (y << 4u);
+
+                // Continue if the bit is empty in the tree (no voxel exists there)
+                if ((tree_node.child_mask & (1u << neighbor_index)) == 0ull) continue;
+
+                // Continue if bit is already set in the flood mask
+                if ((flood_mask & (1u << neighbor_index)) != 0ull) continue;
+
+                // Add neighboring bit to the mask
+                flood_mask |= (1u << neighbor_index);
+
+                // Add neighbor to the queue
+                queue.push(neighbor_index);
+            }
+        }
+
+        // Clear bit
+        overlap_mask &= ~(1ull << i);
+    }
+
+    current_node.flood_masks.push_back({ id, flood_mask });
+
+    // When flood only touched part of the mask
+    if (flood_mask == tree_node.child_mask) current_node.cleared = true;
+
+    // Loop over connections
+    // For all directions
+    for (size_t i = 0; i < 6; i++) {
+        // If there is no overlap with the on the relavant axis, skip this direction
+        if ((flood_mask & edge_masks[i ^ 1u]) == 0u) continue;
+
+        // For all connections in this direction
+        for (size_t j = 0; j < current_node.connections[i].node_indices.size(); j++) {
+            const uint32_t connection_index = current_node.connections[i].node_indices[j];
+            DestructionNode& connected_node = graph.nodes[connection_index];
+            // If we visited this node before, continue
+            if (connected_node.flood_id != 0) continue;
+
+            const Svt64Node& node_neighbor = tree->nodes[connected_node.tree_node];
+
+            // If the node is not a leaf node in the tree, or is fully filled
+            if (connected_node.level != 1 || node_neighbor.child_mask == ~(0ull)) {
+                separation_flood(graph, connected_node, id, tree);
+                continue;
+            }
+
+            // If the neighboring node is level 1, do low_level_separation_flood
+            // If the neighboring node is not level 1, do separation_flood
+
+            // Flip the mask on the defined axis
+            uint64_t edge_mask = flood_mask;
+            const uint8_t axis = i / 2;
+            if (axis == 0) {         // X axis
+                edge_mask = ((edge_mask & 0x1111111111111111ULL) << 3) | ((edge_mask & 0x2222222222222222ULL) << 1) | ((edge_mask & 0x4444444444444444ULL) >> 1) |
+                            ((edge_mask & 0x8888888888888888ULL) >> 3);
+            } else if (axis == 1) {  // Y axis
+                edge_mask = ((edge_mask & 0x000000000000FFFFULL) << 48) | ((edge_mask & 0x00000000FFFF0000ULL) << 16) | ((edge_mask & 0x0000FFFF00000000ULL) >> 16) |
+                            ((edge_mask & 0xFFFF000000000000ULL) >> 48);
+            } else if (axis == 2) {  // Z axis
+                edge_mask = ((edge_mask & 0x000F000F000F000FULL) << 12) | ((edge_mask & 0x00F000F000F000F0ULL) << 4) | ((edge_mask & 0x0F000F000F000F00ULL) >> 4) |
+                            ((edge_mask & 0xF000F000F000F000ULL) >> 12);
+            }
+
+            // Mask the edge
+            edge_mask &= edge_masks[i];
+
+            // Get the mask of the svt64 node, flip it, apply edge mask, give it to
+            low_level_separation_flood(graph, connected_node, id, edge_mask, tree);
+        }
+    }
 }
 
-void seperation_flood(Destructable& graph, DestructionNode& current_node, uint8_t id, Svt64* tree) {
-    const uint64_t edge_masks[6] {
-        0x1111111111111111ULL,  // -X
-        0x8888888888888888ULL,  // +X
-        0x000000000000FFFFULL,  // -Y
-        0xFFFF000000000000ULL,  // +Y
-        0x000F000F000F000FULL,  // -Z
-        0xF000F000F000F000ULL   // +Z
-    };
-
-    current_node.flood_mask = id;
+void separation_flood(Destructable& graph, DestructionNode& current_node, uint8_t id, Svt64* tree) {
+    current_node.flood_id = id;
     const Svt64Node& tree_node = tree->nodes[current_node.tree_node];
 
     // For all directions
@@ -249,36 +362,35 @@ void seperation_flood(Destructable& graph, DestructionNode& current_node, uint8_
             const uint32_t connection_index = current_node.connections[i].node_indices[j];
             DestructionNode& connected_node = graph.nodes[connection_index];
             // If we visited this node before, continue
-            if (connected_node.flood_mask != 0) continue;
+            if (connected_node.flood_id != 0) continue;
 
-            // If the node is not a leaf node in the tree
-            if (connected_node.level != 1) {
-                seperation_flood(graph, connected_node, id, tree);
+            const Svt64Node& node_neighbor = tree->nodes[connected_node.tree_node];
+
+            // If the node is not a leaf node in the tree, or is fully filled
+            if (connected_node.level != 1 || node_neighbor.child_mask == ~(0ull)) {
+                separation_flood(graph, connected_node, id, tree);
                 continue;
             }
 
-            // Flip the mask on a defined axis
-            uint64_t edge_mask = 0u;
+            // Flip the mask on the defined axis
+            uint64_t edge_mask = tree->nodes[connected_node.tree_node].child_mask;
             const uint8_t axis = i / 2;
-            if (axis == 0) { // X axis
+            if (axis == 0) {         // X axis
                 edge_mask = ((edge_mask & 0x1111111111111111ULL) << 3) | ((edge_mask & 0x2222222222222222ULL) << 1) | ((edge_mask & 0x4444444444444444ULL) >> 1) |
                             ((edge_mask & 0x8888888888888888ULL) >> 3);
-            } else if (axis == 1) { // Y axis
+            } else if (axis == 1) {  // Y axis
                 edge_mask = ((edge_mask & 0x000000000000FFFFULL) << 48) | ((edge_mask & 0x00000000FFFF0000ULL) << 16) | ((edge_mask & 0x0000FFFF00000000ULL) >> 16) |
                             ((edge_mask & 0xFFFF000000000000ULL) >> 48);
-            } else if (axis == 2) { // Z axis
+            } else if (axis == 2) {  // Z axis
                 edge_mask = ((edge_mask & 0x000F000F000F000FULL) << 12) | ((edge_mask & 0x00F000F000F000F0ULL) << 4) | ((edge_mask & 0x0F000F000F000F00ULL) >> 4) |
                             ((edge_mask & 0xF000F000F000F000ULL) >> 12);
             }
 
             // Mask the edge
-            //edge_mask = edge_mask
-
-            // if (current_node.level)
-            //tree_node.child_mask
+            edge_mask &= edge_masks[i];
 
             // Get the mask of the svt64 node, flip it, apply edge mask, give it to
-            low_level_seperation_flood(graph, connected_node, id, 0, tree);
+            low_level_separation_flood(graph, connected_node, id, edge_mask, tree);
         }
     }
 }
@@ -326,12 +438,24 @@ std::vector<Entity> Destruction::find_seperations(Entity entity, const std::vect
         }
 
         // If we coulnd't find a node, or it has already been touched by the floodfill
-        if (current_node == nullptr || current_node->flood_mask != 0) continue;
+        // if (current_node == nullptr || current_node->flood_id != 0) continue;
 
-        // Start floodfill from that node
-        seperation_flood(graph, *current_node, flood_id++, tree);
+        // Lower level flood
+        if (current_node->level == 1 && !current_node->cleared) {
+            // Get position and index
+            const uint32_t x_index = (edge_pos.x >> 2u) & 3u;
+            const uint32_t y_index = (edge_pos.y >> 2u) & 3u;
+            const uint32_t z_index = (edge_pos.z >> 2u) & 3u;
+            const uint32_t index = (x_index << 0u) | (z_index << 2u) | (y_index << 4u);
 
-        // When node is level 1, do special flood thingy
+            // Make mask from the index
+            const uint64_t mask = 1u << index;
+
+            low_level_separation_flood(graph, *current_node, flood_id++, mask, tree);
+        } else {
+            // Start floodfill from that node
+            separation_flood(graph, *current_node, flood_id++, tree);
+        }
     }
 
     return std::vector<Entity> { entity };
