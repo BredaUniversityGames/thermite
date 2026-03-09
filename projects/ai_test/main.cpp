@@ -62,10 +62,8 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     tmt::engine.ecs.systems.add<tmt::CameraSystem>();
     tmt::engine.scenes.register_scene<AIScene>();
 
-    //tmt::engine.ecs.systems.add<tmt::Goap>();
-
     auto& ecs = tmt::engine.ecs;
-    tmt::Goap* goap = ecs.systems.try_get<tmt::Goap>();
+    auto* goap = ecs.systems.try_get<tmt::Goap>();
     if (goap) {
         auto& action_reg = goap->actions();
         auto& goal_reg = goap->goals();
