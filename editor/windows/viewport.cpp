@@ -72,7 +72,8 @@ void tmt::Viewport::display() {
     width = size.x;
     height = size.y;
 
-    const ImVec2 image_pos = ImGui::GetCursorScreenPos();
+    const ImVec2 img_cursor_pos = ImGui::GetCursorScreenPos();
+    image_pos = {img_cursor_pos.x, img_cursor_pos.y};
 
     if (height <= 0.f) return;
 
@@ -138,9 +139,9 @@ void tmt::Viewport::display() {
     const bool gizmo_changed = editor.gizmo.manip(image_pos.x, image_pos.y, width, height, selected_entities, snap_value, modifiers);
     if (gizmo_changed) OnSceneModified::dispatch();
 
-    const bool toolbar_buttons_hovered = toolbar(image_pos);
+    const bool toolbar_buttons_hovered = toolbar(img_cursor_pos);
 
-    selection_logic(imgui_mouse_pos, image_pos, toolbar_buttons_hovered);
+    selection_logic(imgui_mouse_pos, img_cursor_pos, toolbar_buttons_hovered);
 
     ImGui::EndChild();
 
@@ -364,7 +365,6 @@ void tmt::Viewport::left_panel() {
 
     // Desired state
     bool want_open = pinned_open || hover_edge;
-    Log::info("{}", want_open);
 
     static SecondOrderSolver::State<float> t_state {.current_state = 0.f};
     
@@ -434,7 +434,8 @@ void tmt::Viewport::left_panel() {
         // IMPORTANT: prevent the panel from extending outside child interaction-wise
         // We'll clip by pushing a clip rect (draw + input). Draw list clip is enough for visuals;
         // input still works fine as long as panel rect is within child rect (it is).
-        ImGui::PushClipRect(childMin, childMax, true);
+        ImVec2 min = ImVec2(image_pos.x, image_pos.y);
+        ImGui::PushClipRect(min, min + ImVec2(width, height), false);
 
         ImGui::Begin("panel_", nullptr, flags);
         interacting_with_panel = ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem) || ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows);
@@ -452,7 +453,6 @@ void tmt::Viewport::left_panel() {
         ImGui::RadioButton("Move", &mode, 1);
         ImGui::SameLine();
         ImGui::RadioButton("Rotate", &mode, 2);
-        ImGui::Checkbox("Pin open", &pinned_open);
 
         ImGui::End();
         ImGui::PopClipRect();
@@ -460,7 +460,8 @@ void tmt::Viewport::left_panel() {
 
     // If user is using the panel, keep it open even if they move away from edge.
     // (Optional) This mimics Blender nicely.
-    //if (interacting_with_panel) pinned_open = pinned_open || true;  // don’t auto-unpin; just ensures it stays open during interaction
+    if (interacting_with_panel) pinned_open = true;  // don’t auto-unpin; just ensures it stays open during interaction
+    else pinned_open = false;
 }
 
 void tmt::Viewport::force_open_recurse_upwards(Entity entity) {

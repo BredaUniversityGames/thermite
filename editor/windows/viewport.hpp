@@ -48,6 +48,8 @@ class Viewport : public IWindow, public OnRetrieveMouseState {
     float camera_speed = 4.0f;
     bool using_debug_camera = false;
 
+    glm::ivec2 image_pos;
+
     struct Config {
         constexpr static float SPEED_CHANGE_FACTOR = 0.5f;
         constexpr static float MIN_BASE_SPEED = 1.0f;
