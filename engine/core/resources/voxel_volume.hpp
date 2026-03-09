@@ -11,6 +11,7 @@ namespace tmt {
 /* Voxel volume run-time resource, created from a Voxel model resource. */
 class VoxelVolume : public tmt::RuntimeResource<VoxelScene, UUID> {
     using Base = tmt::RuntimeResource<VoxelScene, UUID>;
+
    public:
     // Constructor for temporary VoxelVolume's that aren't managed by the resource system (used in the voxel editor).
     VoxelVolume(const glm::uvec3& grid_size);
