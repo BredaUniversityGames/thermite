@@ -15,6 +15,14 @@ void SteeringSystem::on_start() {
     Log::info("Steering on_start");
 }
 
+/**
+ * Main per-frame physics update for steering agents.
+ *
+ * Steps:
+ *  - Iterate all entities with SteeringAgent, SteeringRequest, Transform, VoxelBody.
+ *  - Calculate total steering force using calculate_force().
+ *  - Apply steering as acceleration to the velocity.
+ */
 void SteeringSystem::on_fixed_update(const FrameData& time) {
     auto view = engine.ecs.view<SteeringAgent, SteeringRequest, Transform, VoxelBody>();
 
@@ -64,12 +72,25 @@ void SteeringSystem::on_fixed_update(const FrameData& time) {
     }
 }
 
+/**
+ * Returns a steering force to move toward a target at max_speed.
+ */
 glm::vec3 SteeringSystem::seek(const SteeringAgent& agent, const glm::vec3& pos, const glm::vec3& target, const glm::vec3& velocity) {
     glm::vec3 desired = glm::normalize(target - pos) * agent.max_speed;
 
     return desired - velocity;
 }
 
+/**
+ * Returns a steering force to move toward a target but slow down near it.
+ *
+ * Note:
+ *  - radius = Distance from target where the agent begins slowing.
+ *
+ * Returns:
+ *  - Vector representing desired change in velocity.
+ *  - Or -velocity to brake if very close.
+ */
 glm::vec3 SteeringSystem::arrive(const SteeringAgent& agent, const glm::vec3& pos, const glm::vec3& target, float radius, const glm::vec3& velocity) {
     glm::vec3 to_target = target - pos;
     float dist = glm::length(to_target);
@@ -85,6 +106,15 @@ glm::vec3 SteeringSystem::arrive(const SteeringAgent& agent, const glm::vec3& po
     return desired - velocity;
 }
 
+/**
+ * Returns a wandering steering force, introducing small random changes to direction.
+ *
+ * Steps:
+ *  - Add random jitter to wanderTarget.
+ *  - project wanderTarget to a sphere of wanderRadius.
+ *  - Project target forward by wanderDistance.
+ *  - Calculate desired velocity toward the resulting world target.
+ */
 glm::vec3 SteeringSystem::wander(const SteeringAgent& agent, const glm::vec3& position, const VoxelBody& body, WanderData wander, float dt) {
     glm::vec3 velocityDir = glm::normalize(body.velocity);
     if (glm::length2(body.velocity) < 0.0001f) {
@@ -92,24 +122,31 @@ glm::vec3 SteeringSystem::wander(const SteeringAgent& agent, const glm::vec3& po
         velocityDir = glm::vec3(0, 0, 1);
     }
 
-    // 1. Add random jitter to wanderTarget
+    // Add random jitter to wanderTarget
     glm::vec3 jitter(
         (glm::linearRand(-1.0f, 1.0f)) * wander.wanderJitter * dt, (glm::linearRand(-1.0f, 1.0f)) * wander.wanderJitter * dt, (glm::linearRand(-1.0f, 1.0f)) * wander.wanderJitter * dt
     );
     wander.wanderTarget += jitter;
 
-    // 2. Re-project onto sphere of radius wanderRadius
     wander.wanderTarget = glm::normalize(wander.wanderTarget) * wander.wanderRadius;
 
-    // 3. Calculate target in world space
+    // Calculate target in world space
     glm::vec3 targetInFront = velocityDir * wander.wanderDistance;
     glm::vec3 worldTarget = position + targetInFront + wander.wanderTarget;
 
-    // 4. Seek toward worldTarget
+    // Seek toward worldTarget
     glm::vec3 desiredVelocity = glm::normalize(worldTarget - position) * agent.max_speed;
     return desiredVelocity - body.velocity;
 }
 
+/**
+ * Returns a steering force to avoid obstacles in 3D space.
+ *
+ * Steps:
+ *  - Cast multiple rays: forward, forward+right, forward-right, forward+up, forward-up.
+ *  - Query the Physics system to detect hits, ignoring the enemy layer.
+ *  - For each hit within avoidDistance, accumulate a repelling force proportional to proximity.
+ */
 glm::vec3 SteeringSystem::collision_avoidance(Entity entity, const SteeringAgent& agent, const glm::vec3& position, const VoxelBody& body) {
     if (glm::length2(body.velocity) < 0.0001f) return glm::vec3(0);
 
@@ -135,9 +172,9 @@ glm::vec3 SteeringSystem::collision_avoidance(Entity entity, const SteeringAgent
         Hit hit = physics->raycast(ray, layer_mask);
 
         // debug draw
-        engine.polyline.use_color(1.0f, 0.0f, 0.0f);
+        /*engine.polyline.use_color(1.0f, 0.0f, 0.0f);
         engine.polyline.use_line_width(0.5f);
-        engine.polyline.draw_line(ray.origin, ray.origin + dir * avoidDistance);
+        engine.polyline.draw_line(ray.origin, ray.origin + dir * avoidDistance);*/
 
         if (hit && hit.distance < avoidDistance) {
             float strength = agent.max_force * (avoidDistance - hit.distance) / avoidDistance;
@@ -148,6 +185,13 @@ glm::vec3 SteeringSystem::collision_avoidance(Entity entity, const SteeringAgent
     return totalAvoid;
 }
 
+/**
+ * Combines the requested steering behavior with obstacle avoidance.
+ *
+ * Steps:
+ *  - Determine base force from the current request mode (SEEK, ARRIVE, FLEE, WANDER).
+ *  - Add collision_avoidance force on top.
+ */
 glm::vec3 SteeringSystem::calculate_force(const SteeringAgent& agent, const SteeringRequest& request, const Transform& transform, const VoxelBody& body, float dt) {
     glm::vec3 position = transform.get_world_position();
 
@@ -180,6 +224,10 @@ glm::vec3 SteeringSystem::calculate_force(const SteeringAgent& agent, const Stee
     return force;
 }
 
+/**
+ * For ARRIVE requests, checks if the agent is within arrive_radius and moving slowly enough.
+ * Stops the agent and marks the request as completed.
+ */
 void SteeringSystem::check_completion(Entity entity, SteeringRequest& request, const Transform& transform, VoxelBody& body) {
     if (request.mode != SteeringMode::ARRIVE) return;
 
