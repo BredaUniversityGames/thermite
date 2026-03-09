@@ -124,15 +124,15 @@ glm::vec3 SteeringSystem::wander(const SteeringAgent& agent, const glm::vec3& po
 
     // Add random jitter to wanderTarget
     glm::vec3 jitter(
-        (glm::linearRand(-1.0f, 1.0f)) * wander.wanderJitter * dt, (glm::linearRand(-1.0f, 1.0f)) * wander.wanderJitter * dt, (glm::linearRand(-1.0f, 1.0f)) * wander.wanderJitter * dt
+        (glm::linearRand(-1.0f, 1.0f)) * wander.wander_jitter * dt, (glm::linearRand(-1.0f, 1.0f)) * wander.wander_jitter * dt, (glm::linearRand(-1.0f, 1.0f)) * wander.wander_jitter * dt
     );
-    wander.wanderTarget += jitter;
+    wander.wander_target += jitter;
 
-    wander.wanderTarget = glm::normalize(wander.wanderTarget) * wander.wanderRadius;
+    wander.wander_target = glm::normalize(wander.wander_target) * wander.wander_radius;
 
     // Calculate target in world space
-    glm::vec3 targetInFront = velocityDir * wander.wanderDistance;
-    glm::vec3 worldTarget = position + targetInFront + wander.wanderTarget;
+    glm::vec3 targetInFront = velocityDir * wander.wander_distance;
+    glm::vec3 worldTarget = position + targetInFront + wander.wander_target;
 
     // Seek toward worldTarget
     glm::vec3 desiredVelocity = glm::normalize(worldTarget - position) * agent.max_speed;
@@ -172,9 +172,9 @@ glm::vec3 SteeringSystem::collision_avoidance(Entity entity, const SteeringAgent
         Hit hit = physics->raycast(ray, layer_mask);
 
         // debug draw
-        /*engine.polyline.use_color(1.0f, 0.0f, 0.0f);
+        engine.polyline.use_color(1.0f, 0.0f, 0.0f);
         engine.polyline.use_line_width(0.5f);
-        engine.polyline.draw_line(ray.origin, ray.origin + dir * avoidDistance);*/
+        engine.polyline.draw_line(ray.origin, ray.origin + dir * avoidDistance);
 
         if (hit && hit.distance < avoidDistance) {
             float strength = agent.max_force * (avoidDistance - hit.distance) / avoidDistance;
@@ -211,7 +211,7 @@ glm::vec3 SteeringSystem::calculate_force(const SteeringAgent& agent, const Stee
             break;
 
         case SteeringMode::WANDER:
-            force += wander(agent, position, body, request.wanderData, dt);
+            force += wander(agent, position, body, request.wander_data, dt);
             break;
 
         default:

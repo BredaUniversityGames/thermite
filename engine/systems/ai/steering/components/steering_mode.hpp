@@ -30,7 +30,7 @@ enum class SteeringMode { NONE, SEEK, ARRIVE, FLEE, WANDER, PERSUE };
  */
 struct WanderData {
     glm::vec3 wander_target = glm::vec3(0.0f);
-    float wander_radius = 1.5f;
+    float wander_radius = 2.0f;
     float wander_distance = 3.0f;
     float wander_jitter = 0.5f;
 };

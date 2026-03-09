@@ -18,10 +18,10 @@ void WanderAround::on_start(Entity agent) {
     request.mode = SteeringMode::WANDER;
 
     // set initial WanderData
-    request.wanderData.wanderRadius = 2.0f;                // radius of the wander sphere
-    request.wanderData.wanderDistance = 3.0f;              // distance in front of the agent
-    request.wanderData.wanderJitter = 0.5f;                // how much the target jitters per second
-    request.wanderData.wanderTarget = glm::vec3(0, 0, 0);  // start at sphere center
+    request.wander_data.wander_radius = 2.0f;                // radius of the wander sphere
+    request.wander_data.wander_distance = 3.0f;              // distance in front of the agent
+    request.wander_data.wander_jitter = 0.5f;                // how much the target jitters per second
+    request.wander_data.wander_target = glm::vec3(0, 0, 0);  // start at sphere center
 
     registry.emplace_or_replace<SteeringRequest>(agent, request);
 
