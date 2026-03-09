@@ -98,7 +98,7 @@ __m128i inline stom128i(const char* mem) {
 
   return _mm256_castsi256_si128(a);
 }
-#pragma optimize("", off);
+#pragma optimize("", on);
 
 /*
  * UUIDv4 (random 128-bits) RFC-4122
