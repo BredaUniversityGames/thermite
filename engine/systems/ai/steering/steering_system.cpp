@@ -116,10 +116,10 @@ glm::vec3 SteeringSystem::arrive(const SteeringAgent& agent, const glm::vec3& po
  *  - Calculate desired velocity toward the resulting world target.
  */
 glm::vec3 SteeringSystem::wander(const SteeringAgent& agent, const glm::vec3& position, const VoxelBody& body, WanderData wander, float dt) {
-    glm::vec3 velocityDir = glm::normalize(body.velocity);
+    glm::vec3 velocity_dir = glm::normalize(body.velocity);
     if (glm::length2(body.velocity) < 0.0001f) {
         // if agent is almost stationary, pick some default forward
-        velocityDir = glm::vec3(0, 0, 1);
+        velocity_dir = glm::vec3(0, 0, 1);
     }
 
     // Add random jitter to wanderTarget
@@ -131,12 +131,12 @@ glm::vec3 SteeringSystem::wander(const SteeringAgent& agent, const glm::vec3& po
     wander.wander_target = glm::normalize(wander.wander_target) * wander.wander_radius;
 
     // Calculate target in world space
-    glm::vec3 targetInFront = velocityDir * wander.wander_distance;
-    glm::vec3 worldTarget = position + targetInFront + wander.wander_target;
+    glm::vec3 target_in_front = velocity_dir * wander.wander_distance;
+    glm::vec3 world_target = position + target_in_front + wander.wander_target;
 
     // Seek toward worldTarget
-    glm::vec3 desiredVelocity = glm::normalize(worldTarget - position) * agent.max_speed;
-    return desiredVelocity - body.velocity;
+    glm::vec3 desired_velocity = glm::normalize(world_target - position) * agent.max_speed;
+    return desired_velocity - body.velocity;
 }
 
 /**
@@ -158,14 +158,14 @@ glm::vec3 SteeringSystem::collision_avoidance(Entity entity, const SteeringAgent
     if (!physics) return glm::vec3(0);
 
     uint32_t layer_mask = 0xFFFFFFFF & ~(1 << 2);  // ignore enemies
-    float avoidDistance = 80.0f;
+    float avoid_distance = 80.0f;
 
-    glm::vec3 totalAvoid(0.0f);
+    glm::vec3 total_avoid(0.0f);
 
-    float sideFactor = 0.2f;  // smaller deviation for side/up rays
+    float side_factor = 0.2f;  // smaller deviation for side/up rays
 
-    std::vector<glm::vec3> rays = { forward, glm::normalize(forward + right * sideFactor), glm::normalize(forward - right * sideFactor), glm::normalize(forward + up * sideFactor),
-                                    glm::normalize(forward - up * sideFactor) };
+    std::vector<glm::vec3> rays = { forward, glm::normalize(forward + right * side_factor), glm::normalize(forward - right * side_factor), glm::normalize(forward + up * side_factor),
+                                    glm::normalize(forward - up * side_factor) };
 
     for (auto dir : rays) {
         Ray ray(position, dir);
@@ -174,15 +174,15 @@ glm::vec3 SteeringSystem::collision_avoidance(Entity entity, const SteeringAgent
         // debug draw
         engine.polyline.use_color(1.0f, 0.0f, 0.0f);
         engine.polyline.use_line_width(0.5f);
-        engine.polyline.draw_line(ray.origin, ray.origin + dir * avoidDistance);
+        engine.polyline.draw_line(ray.origin, ray.origin + dir * avoid_distance);
 
-        if (hit && hit.distance < avoidDistance) {
-            float strength = agent.max_force * (avoidDistance - hit.distance) / avoidDistance;
-            totalAvoid += hit.normal * strength;
+        if (hit && hit.distance < avoid_distance) {
+            float strength = agent.max_force * (avoid_distance - hit.distance) / avoid_distance;
+            total_avoid += hit.normal * strength;
         }
     }
 
-    return totalAvoid;
+    return total_avoid;
 }
 
 /**
