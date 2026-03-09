@@ -262,9 +262,9 @@ void low_level_separation_flood(Destructable& graph, DestructionNode& current_no
             queue.pop();
 
             // Get local coordinates
-            const uint32_t local_x = (i >> 0u) & 3u;
-            const uint32_t local_y = (i >> 4u) & 3u;
-            const uint32_t local_z = (i >> 2u) & 3u;
+            const uint32_t local_x = (index >> 0u) & 3u;
+            const uint32_t local_y = (index >> 4u) & 3u;
+            const uint32_t local_z = (index >> 2u) & 3u;
 
             // For all directions
             for (size_t a = 0; a < 6; a++) {
@@ -308,7 +308,7 @@ void low_level_separation_flood(Destructable& graph, DestructionNode& current_no
     // For all directions
     for (size_t i = 0; i < 6; i++) {
         // If there is no overlap with the on the relavant axis, skip this direction
-        if ((flood_mask & edge_masks[i ^ 1u]) == 0u) continue;
+        if ((flood_mask & edge_masks[i]) == 0u) continue;
 
         // For all connections in this direction
         for (size_t j = 0; j < current_node.connections[i].node_indices.size(); j++) {
@@ -343,7 +343,7 @@ void low_level_separation_flood(Destructable& graph, DestructionNode& current_no
             }
 
             // Mask the edge
-            edge_mask &= edge_masks[i];
+            edge_mask &= edge_masks[i ^ 1u];
 
             // Get the mask of the svt64 node, flip it, apply edge mask, give it to
             low_level_separation_flood(graph, connected_node, id, edge_mask, tree);
@@ -430,6 +430,7 @@ std::vector<Entity> Destruction::find_seperations(Entity entity, const std::vect
             // Check if connection node exists for this depth on the edge position
             DestructionNode* des_node = graph.get_node(global_pos.x, global_pos.y, global_pos.z);
             if (des_node != nullptr && des_node->level == tree->depth - level) {
+                node = &tree->nodes[neighbor_node_index];
                 current_node = des_node;
                 break;
             }
@@ -438,24 +439,40 @@ std::vector<Entity> Destruction::find_seperations(Entity entity, const std::vect
         }
 
         // If we coulnd't find a node, or it has already been touched by the floodfill
-        // if (current_node == nullptr || current_node->flood_id != 0) continue;
+        if (current_node == nullptr || current_node->flood_id != 0) continue;
 
-        // Lower level flood
-        if (current_node->level == 1 && !current_node->cleared) {
+        if (current_node->level != 1 || node->child_mask != ~(0ull)) {
+            // Start floodfill from that node
+            separation_flood(graph, *current_node, flood_id++, tree);
+        } else {
             // Get position and index
-            const uint32_t x_index = (edge_pos.x >> 2u) & 3u;
-            const uint32_t y_index = (edge_pos.y >> 2u) & 3u;
-            const uint32_t z_index = (edge_pos.z >> 2u) & 3u;
+            const uint32_t x_index = (edge_pos.x) & 3u;
+            const uint32_t y_index = (edge_pos.y) & 3u;
+            const uint32_t z_index = (edge_pos.z) & 3u;
             const uint32_t index = (x_index << 0u) | (z_index << 2u) | (y_index << 4u);
 
             // Make mask from the index
             const uint64_t mask = 1u << index;
 
             low_level_separation_flood(graph, *current_node, flood_id++, mask, tree);
-        } else {
-            // Start floodfill from that node
-            separation_flood(graph, *current_node, flood_id++, tree);
         }
+
+        //// Lower level flood
+        // if (current_node->level == 1 && !current_node->cleared && node->child_mask != ~(0ull)) {
+        //     // Get position and index
+        //     const uint32_t x_index = (edge_pos.x) & 3u;
+        //     const uint32_t y_index = (edge_pos.y) & 3u;
+        //     const uint32_t z_index = (edge_pos.z) & 3u;
+        //     const uint32_t index = (x_index << 0u) | (z_index << 2u) | (y_index << 4u);
+
+        //    // Make mask from the index
+        //    const uint64_t mask = 1u << index;
+
+        //    low_level_separation_flood(graph, *current_node, flood_id++, mask, tree);
+        //} else if (current_node->flood_id == 0) {
+        //    // Start floodfill from that node
+        //    separation_flood(graph, *current_node, flood_id++, tree);
+        //}
     }
 
     return std::vector<Entity> { entity };
