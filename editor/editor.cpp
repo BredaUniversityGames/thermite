@@ -255,6 +255,10 @@ void Editor::main_menu_bar() {
                 engine.renderer.ui_pipeline.render_ui_pipeline = !engine.renderer.ui_pipeline.render_ui_pipeline;
             }
 
+            if (ImGui::MenuItem("Toggle TAA", nullptr, engine.renderer.enable_taa)) {
+                engine.renderer.enable_taa = !engine.renderer.enable_taa;
+            }
+
             ImGui::EndMenu();
         }
 

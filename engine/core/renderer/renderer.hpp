@@ -43,6 +43,7 @@ class Renderer {
 
     /* Display mode for debugging */
     DisplayMode display_mode = DisplayMode::DEFAULT;
+    bool enable_taa = true;
 
     /* Pipelines */
     class GeometryPipeline& geometry_pipeline;

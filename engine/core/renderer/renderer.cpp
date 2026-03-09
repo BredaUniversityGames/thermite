@@ -140,11 +140,22 @@ void Renderer::update() {
             .write(render_view.get_render_image())
             .group_size(16, 8)
             .work_size(render_view.gpu_view.resolution.x, render_view.gpu_view.resolution.y);
-        /* clang-format off */
     }
 
+    //vfx_pipeline.enqueue(render_graph, render_view);
+
+    /* TAA Resolve */
+    uint32_t taa_flag = engine.renderer.enable_taa ? 1u : 0u;
+    render_graph.add_compute_pass("TAA Resolve", "taa_resolve.cs")
+            .read(render_view.lbuffer.image)
+            .write(render_view.hbuffer.image)
+            .write(render_view.get_render_image())
+        .push_constants(&taa_flag, 0, sizeof(uint32_t))
+            .group_size(16, 8)
+            .work_size(render_view.gpu_view.resolution.x, render_view.gpu_view.resolution.y);
+    /* clang-format off */
+
     polyline_pipeline.enqueue(render_graph, render_view);
-    vfx_pipeline.enqueue(render_graph, render_view);
     ui_pipeline.enqueue(render_graph, render_view);
 
 #ifdef THERMITE_EDITOR

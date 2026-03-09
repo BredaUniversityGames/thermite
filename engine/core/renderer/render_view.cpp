@@ -48,16 +48,6 @@ void RenderView::init() {
     /* Viewport Image */
     viewport.image = bank.create_image("Viewport Image", viewport.texture).expect("failed to initialize attachment image.");
 
-    /* History Screen Buffer Texture */
-    hbuffer.texture = bank.create_texture(
-                              "History Buffer Texture", TextureUsage::ColorAttachment | TextureUsage::Sampled | TextureUsage::Storage, TextureFormat::RGBA16Sfloat,
-                              { (uint32_t)engine.window.width, (uint32_t)engine.window.height, 0 }, { 1, 1 }
-    )
-                          .expect("failed to initialize history buffer texture");
-
-    /* History Screen Buffer Image */
-    hbuffer.image = bank.create_image("History Buffer Image", hbuffer.texture).expect("failed to initialize history buffer image.");
-
     /* Create the active render view buffer */
     render_view_buffer = bank.create_buffer("Render View Buffer", BufferUsage::Constant | BufferUsage::TransferDst, sizeof(RenderView)).expect("failed to create render view buffer.");
 
@@ -70,7 +60,7 @@ void RenderView::init() {
     dbuffer.image = bank.create_image("Depth Buffer Image", dbuffer.texture).expect("failed to create depth buffer image.");
 
     /* Calculate the render size (based on shading rate) */
-    Size3D render_size {view_size.x, view_size.y};
+    Size3D render_size { view_size.x, view_size.y };
     if (shading_rate_di == ShadingRate::HALF_RATE) {
         render_size.x = render_size.x >> 1;
     } else if (shading_rate_di == ShadingRate::QUARTER_RATE) {
@@ -79,14 +69,22 @@ void RenderView::init() {
     }
 
     /* Create the illuminance buffer */
-    lbuffer.texture = bank.create_texture("Luminance Buffer Texture", TextureUsage::Storage | TextureUsage::Sampled, TextureFormat::RG11B10Ufloat, render_size).expect("failed to create ibuffer texture.");
+    lbuffer.texture =
+        bank.create_texture("Luminance Buffer Texture", TextureUsage::Storage | TextureUsage::Sampled, TextureFormat::RG11B10Ufloat, render_size).expect("failed to create ibuffer texture.");
     lbuffer.image = bank.create_image("Luminance Buffer Image", lbuffer.texture).expect("failed to create ibuffer image.");
-    nbuffer.texture = bank.create_texture("Denoised Luminance Buffer Texture", TextureUsage::Storage | TextureUsage::Sampled, TextureFormat::RG11B10Ufloat, render_size).expect("failed to create nbuffer texture.");
+    nbuffer.texture = bank.create_texture("Denoised Luminance Buffer Texture", TextureUsage::Storage | TextureUsage::Sampled, TextureFormat::RG11B10Ufloat, render_size)
+                          .expect("failed to create nbuffer texture.");
     nbuffer.image = bank.create_image("Denoised Luminance Buffer Image", nbuffer.texture).expect("failed to create nbuffer image.");
+
+    /* History Screen Buffer Texture */
+    hbuffer.texture = bank.create_texture("History Buffer Texture", TextureUsage::ColorAttachment | TextureUsage::Sampled | TextureUsage::Storage, TextureFormat::RGBA16Sfloat, render_size)
+                          .expect("failed to initialize history buffer texture");
+    /* History Screen Buffer Image */
+    hbuffer.image = bank.create_image("History Buffer Image", hbuffer.texture).expect("failed to initialize history buffer image.");
 
     /* Create the macrofacet cache */
     const uint64_t cache_size = 10'000'000u; /* 480 MB */
-    macrofacet_cache = bank.create_buffer("Macrofacet Cache Buffer", BufferUsage::Storage, cache_size, 48ull/* bytes */).expect("failed to create macrofacet cache buffer.");
+    macrofacet_cache = bank.create_buffer("Macrofacet Cache Buffer", BufferUsage::Storage, cache_size, 48ull /* bytes */).expect("failed to create macrofacet cache buffer.");
 
     /* Generate directional albedo LUT */
     // generate_e_lut(diralbedo_lut_texture, 256u);
@@ -123,7 +121,7 @@ void RenderView::update_gpu_view(RenderGraph& render_graph, const Camera& camera
     const float aspect_ratio = (float)gpu_view.resolution.x / (float)gpu_view.resolution.y;
 
     /* Calculate camera jitter */
-    const glm::vec2 r2 = r2_sequence(frame_counter); // [0, 1) range
+    const glm::vec2 r2 = r2_sequence(frame_counter);  // [0, 1) range
     // offset is in [-0.5, 0.5)
     glm::vec2 pixel_offset = { (r2.x - 0.5f) / (float)gpu_view.resolution.x, (r2.y - 0.5f) / (float)gpu_view.resolution.y };
     // scale to ndc [-1, 1]
@@ -133,8 +131,10 @@ void RenderView::update_gpu_view(RenderGraph& render_graph, const Camera& camera
     glm::mat4 p = glm::perspective(glm::radians(camera.fov), aspect_ratio, 0.05f, 1000.0f);
     const glm::mat4 world = transform.get_world_matrix();
     // apply jitter
-    p[2][0] += pixel_offset.x;
-    p[2][1] += pixel_offset.y;
+    if (engine.renderer.enable_taa) {
+        p[2][0] += pixel_offset.x;
+        p[2][1] += pixel_offset.y;
+    }
     p[1][1] *= -1.0f;
     gpu_view.world_to_clip = p * glm::inverse(world);  // p * v
     gpu_view.clip_to_world = glm::inverse(gpu_view.world_to_clip);
@@ -220,7 +220,7 @@ void RenderView::resize_textures() {
     VRAMBank& bank = engine.renderer.vram_bank();
 
     /* Calculate the render size (based on shading rate) */
-    Size3D render_size {view_size.x, view_size.y};
+    Size3D render_size { view_size.x, view_size.y };
     if (shading_rate_di == ShadingRate::HALF_RATE) {
         render_size.x = render_size.x >> 1;
     } else if (shading_rate_di == ShadingRate::QUARTER_RATE) {
