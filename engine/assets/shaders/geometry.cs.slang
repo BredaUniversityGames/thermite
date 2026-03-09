@@ -12,6 +12,8 @@ StructuredBuffer<uint> object_indices;
 StructuredBuffer<VoxelObject> object_data;
 /* Visibility buffer. */
 RWTexture2D<uint2> vbuffer;
+/* Motion Vector Buffer */
+RWTexture2D<float4> mbuffer;
 
 [shader("compute")]
 [numthreads(16, 8, 1)]
@@ -27,4 +29,32 @@ void main(int2 thread_id: SV_DispatchThreadID) {
 
     /* Write packed visibility info into the visibility buffer */
     vbuffer[thread_id] = asuint2(pack_visibility(hit));
+
+    /* Motion Vectors */
+    if (hit.t < BIG_F32) {
+        float4 hit_pos = float4(ray.origin + ray.dir * hit.t, 1.0f);
+
+        const VoxelObject object = object_data[hit.object_index];
+
+        float4 local_pos = float4(mul(object.world_to_local, hit_pos).xyz, 1.0f);
+
+        float4 prev_pos = float4(mul(object.prev_local_to_world, local_pos).xyz, 1.0f);
+
+        float4 current_pos_clip = mul(render_view.world_to_clip, hit_pos);
+        float2 current_uv = (current_pos_clip.xy / current_pos_clip.w) * 0.5f + 0.5f;
+
+        float4 prev_pos_clip = mul(render_view.prev_world_to_clip, prev_pos);
+        float2 prev_uv = (prev_pos_clip.xy / prev_pos_clip.w) * 0.5f + 0.5f;
+
+        /* Subtract Jitter */
+        current_uv -= render_view.jitter;
+        prev_uv -= render_view.prev_jitter;
+
+        float2 motion_vector = (prev_uv - current_uv) * float2(0.5f, -0.5f);
+
+        mbuffer[thread_id] = float4(motion_vector, 1.0f, 1.0f);
+    }
+    else {
+        mbuffer[thread_id] = float4(0.0f, 0.0f, 0.0f, 1.0f);
+    }
 }

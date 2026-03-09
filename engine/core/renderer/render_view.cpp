@@ -76,11 +76,16 @@ void RenderView::init() {
                           .expect("failed to create nbuffer texture.");
     nbuffer.image = bank.create_image("Denoised Luminance Buffer Image", nbuffer.texture).expect("failed to create nbuffer image.");
 
-    /* History Screen Buffer Texture */
+    /* History Screen Buffer */
     hbuffer.texture = bank.create_texture("History Buffer Texture", TextureUsage::ColorAttachment | TextureUsage::Sampled | TextureUsage::Storage, TextureFormat::RGBA16Sfloat, render_size)
                           .expect("failed to initialize history buffer texture");
-    /* History Screen Buffer Image */
     hbuffer.image = bank.create_image("History Buffer Image", hbuffer.texture).expect("failed to initialize history buffer image.");
+
+    /* Motion Vector Buffer */
+    mbuffer.texture =
+        bank.create_texture("Motion Vector Buffer Texture", TextureUsage::ColorAttachment | TextureUsage::Sampled | TextureUsage::Storage, TextureFormat::RG16Sfloat, render_size)
+                          .expect("failed to initialize motion vector buffer texture");
+    mbuffer.image = bank.create_image("Motion Vector Buffer Image", mbuffer.texture).expect("failed to initialize motion vector buffer image.");
 
     /* Create the macrofacet cache */
     const uint64_t cache_size = 10'000'000u; /* 480 MB */
@@ -137,16 +142,22 @@ void RenderView::update_gpu_view(RenderGraph& render_graph, const Camera& camera
     }
     p[1][1] *= -1.0f;
     gpu_view.world_to_clip = p * glm::inverse(world);  // p * v
+    gpu_view.prev_world_to_clip = prev_world_to_clip;
     gpu_view.clip_to_world = glm::inverse(gpu_view.world_to_clip);
     gpu_view.origin = glm::vec4(transform.get_world_position(), 0.0f);
     gpu_view.frame_index = frame_counter;
     gpu_view.dt = engine.frame_data().delta_time;
     gpu_view.shading_rate_di = (uint32_t)shading_rate_di;
     gpu_view.shading_rate_gi = (uint32_t)shading_rate_gi;
+    gpu_view.jitter = pixel_offset;
+    gpu_view.prev_jitter = prev_jitter;
 
     /* Upload the active render view */
     render_graph.upload_buffer(render_view_buffer, &gpu_view, 0u, sizeof(GpuView));
     frame_counter++; /* Update frame counter */
+
+    prev_world_to_clip = gpu_view.world_to_clip;
+    prev_jitter = gpu_view.jitter;
 }
 
 void RenderView::deinit() {
@@ -172,6 +183,8 @@ void RenderView::deinit() {
     bank.destroy(nbuffer.texture);
     bank.destroy(hbuffer.image);
     bank.destroy(hbuffer.texture);
+    bank.destroy(mbuffer.image);
+    bank.destroy(mbuffer.texture);
     bank.destroy(viewport.texture);
     bank.destroy(viewport.image);
 
@@ -235,6 +248,7 @@ void RenderView::resize_textures() {
     bank.resize_texture(lbuffer.texture, render_size).expect("failed to resize lbuffer texture.");
     bank.resize_texture(nbuffer.texture, render_size).expect("failed to resize nbuffer texture.");
     bank.resize_texture(hbuffer.texture, view_size).expect("failed to resize hbuffer texture.");
+    bank.resize_texture(mbuffer.texture, view_size).expect("failed to resize mbuffer texture.");
 }
 
 }  // namespace tmt

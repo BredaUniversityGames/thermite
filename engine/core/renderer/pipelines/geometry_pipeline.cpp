@@ -41,6 +41,8 @@ void GeometryPipeline::enqueue(RenderGraph& render_graph, RenderView& render_vie
             .read(scene_view.object_data)
             /* Visibility buffer */
             .write(render_view.vbuffer.image)
+            /* Motion Vector buffer */
+            .write(render_view.mbuffer.image)
             .group_size(16, 8)
             .work_size(render_res.x, render_res.y);
     } else {
