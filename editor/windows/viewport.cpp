@@ -73,7 +73,6 @@ void tmt::Viewport::display() {
 
     const ImVec2 image_pos = ImGui::GetCursorScreenPos();
     is_focused = ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows);
-    printf("Focused: %d\n", is_focused);
 
     if (height <= 0.f) return;
 
@@ -352,10 +351,10 @@ void tmt::Viewport::on_retrieve_mouse_state(MouseOverride& event) {
 }
 
 void tmt::Viewport::on_block_input_request(OnBlockInputEvent& event) {
-    if (is_hovered || is_focused == false) {
+    if (is_focused == false) {
         event.block = true;
-        event.handled = true;
     }
+    event.handled = true;
 }
 
 void tmt::Viewport::update_debug_camera(const tmt::FrameData& time) {
@@ -384,9 +383,9 @@ void tmt::Viewport::update_debug_camera(const tmt::FrameData& time) {
     Camera& camera = engine.renderer.get_debug_camera();
     Transform& transform = engine.renderer.get_debug_transform();
 
-    //const float dx = ImGui::GetIO().MouseDelta.x;
-    //const float dy = ImGui::GetIO().MouseDelta.y;
-    //printf("Mouse Delta: %f, %f\n", dx, dy);
+    // const float dx = ImGui::GetIO().MouseDelta.x;
+    // const float dy = ImGui::GetIO().MouseDelta.y;
+    // printf("Mouse Delta: %f, %f\n", dx, dy);
     const float dx = input.get_mouse_delta_engine_x();
     const float dy = input.get_mouse_delta_engine_y();
 

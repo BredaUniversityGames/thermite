@@ -144,6 +144,8 @@ void Input::update(const FrameData& time) {
 
     if (input_blocked) {
         // If input was blocked by an event, we skip processing the rest of the input for this frame
+        prev_mouse_buttons = mouse_buttons;
+        mouse_buttons = 0;
         return;
     }
 
