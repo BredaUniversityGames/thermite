@@ -45,21 +45,20 @@ void MiningComponent::on_weapon_fired(const WeaponFiredEvent& e) {
 }
 void MiningComponent::on_stop_mining(const ReleaseShootEvent& e) {
     // TODO this will trigger no matter what the entity is for now
-    previous_hit.mining_time = 0.0f;
-    previous_hit.voxel_coord = glm::uvec3 { std::numeric_limits<uint32_t>::max() };
+    previous_hit.is_mining = false;
+    tmt::Log::info("Stopped mining, reset previous hits");
 }
 
 void MiningComponent::handle_ore(const tmt::Hit& hit) {
     auto* resource = tmt::engine.ecs.get_component<tmt::VoxelRenderer>(hit.entity).resource.resource.get();
     auto ore_type = resource->blas->get_voxel(hit.coord.x, hit.coord.y, hit.coord.z)->type;
     // switched voxel, reset
-    if (hit.coord != previous_hit.voxel_coord || previous_hit.type != ore_type) {
-        previous_hit.mining_time = 0;
+    if (previous_hit.is_mining == false || hit.coord != previous_hit.voxel_coord) {
+        previous_hit.mining_time = tmt::engine.frame_data().elapsed_time;
         previous_hit.voxel_coord = hit.coord;
         previous_hit.type = ore_type;
+        previous_hit.is_mining = true;
     }
-
-    tmt::Log::info("Material to be mined is {}", magic_enum::enum_name(ore_type));
 
     switch (ore_type) {
         case tmt::Material::Type::NONE:
@@ -69,12 +68,12 @@ void MiningComponent::handle_ore(const tmt::Hit& hit) {
         case tmt::Material::Type::COPPER:
         case tmt::Material::Type::TITANIUM:
             auto ore_toughness = ore_database->at(ore_type).toughness;
-            if (ore_toughness < previous_hit.mining_time) {
-                tmt::Log::info("Material toughness is {}", ore_toughness);
+            if (ore_toughness < tmt::engine.frame_data().elapsed_time - previous_hit.mining_time) {
+                resource->blas->remove_voxel(previous_hit.voxel_coord.x, previous_hit.voxel_coord.y, previous_hit.voxel_coord.z);
+                resource->set_dirty();
             }
             break;
     }
-    previous_hit.mining_time += tmt::engine.frame_data().delta_time;
 
     has_drawn_debug = false;
 }

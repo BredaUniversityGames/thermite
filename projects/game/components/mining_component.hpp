@@ -30,6 +30,7 @@ class MiningComponent : public tmt::GameComponent<MiningComponent> {
         float mining_time = 0.0f;
         tmt::Material::Type type {};
         glm::uvec3 voxel_coord { std::numeric_limits<uint32_t>::max() };
+        bool is_mining = false;
     };
     PreviousAccumulatedHit previous_hit;
     void handle_ore(const tmt::Hit& hit);
