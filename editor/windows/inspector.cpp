@@ -76,6 +76,16 @@ void Inspector::display_entity_info(const MenuContext& menu_context) {
     }
 }
 
+template <typename T>
+struct CanBeDeleted : std::true_type {};
+
+template <>
+struct CanBeDeleted<Transform> : std::false_type {};
+template <>
+struct CanBeDeleted<Name> : std::false_type {};
+template <>
+struct CanBeDeleted<Prefab> : std::false_type {};
+
 void Inspector::display_compile_time_components(const tmt::Inspector::MenuContext& menu_context) {
     InspectComponents::for_each([&menu_context, this](auto type_tag) {
         using T = typename decltype(type_tag)::type;  // Extract type from tag
@@ -93,6 +103,10 @@ void Inspector::display_compile_time_components(const tmt::Inspector::MenuContex
         const ContextMenuResponse context_response = context_menu(name, header_response.right_clicked);
 
         if (context_response.remove_component) {
+            if constexpr (CanBeDeleted<T>::value == false) {
+                tmt::Log::warn("Component '{}' cannot be removed.", name);
+                return;
+            }
             UndoRedoCollection collection;
             for (const Entity& entity : menu_context.selected_entities) {
                 const bool has_comp = engine.ecs.has_component<T>(entity);
@@ -158,7 +172,6 @@ void Inspector::display_compile_time_components(const tmt::Inspector::MenuContex
 
         static std::unordered_map<Entity, ComponentDiff<T>> component_diff;
         if (deactivated_after_edit) {
-            printf("Deactivated component editor: %s\n", name);
             UndoRedoCollection collection;
             for (auto& [entity, diff] : component_diff) {
                 diff.after();
@@ -169,7 +182,6 @@ void Inspector::display_compile_time_components(const tmt::Inspector::MenuContex
         }
 
         if (activated) {
-            printf("Activated component editor: %s\n", name);
             for (const Entity& entity : menu_context.selected_entities) {
                 const bool has_component_2 = tmt::engine.ecs.has_component<T>(entity);
                 if (has_component_2 == false) continue;
