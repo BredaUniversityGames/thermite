@@ -1,9 +1,13 @@
 #include "steering_system.hpp"
 
 #include <glm/gtx/norm.hpp>
+#include <glm/gtc/random.hpp>
 
 #include "engine.hpp"
 #include "core/logger.hpp"
+#include "engine/core/polyline.hpp"
+
+#include "systems/physics/physics_system.hpp"
 
 namespace tmt {
 
@@ -17,9 +21,31 @@ void SteeringSystem::on_fixed_update(const FrameData& time) {
     for (auto [entity, agent, request, transform, body] : view.each()) {
         if (!agent.active) continue;
 
+        body.type = VoxelBody::DYNAMIC;
         if (body.type != VoxelBody::DYNAMIC) continue;
 
         if (request.mode == SteeringMode::NONE) continue;
+
+        // -------- Overshoot prevention --------
+        glm::vec3 position = transform.get_world_position();
+
+        if (request.mode == SteeringMode::ARRIVE) {
+            glm::vec3 toTarget = request.target_position - position;
+
+            float dist = glm::length(toTarget);
+            float moveThisFrame = glm::length(body.velocity) * time.delta_time;
+
+            if (moveThisFrame >= dist) {
+                body.velocity = glm::vec3(0);
+                body.angular_velocity = glm::vec3(0);
+
+                request.completed = true;
+                request.mode = SteeringMode::NONE;
+
+                continue;
+            }
+        }
+        // --------------------------------------
 
         glm::vec3 steering = calculate_force(agent, request, transform, body, time.delta_time);
 
@@ -60,42 +86,98 @@ glm::vec3 SteeringSystem::arrive(const SteeringAgent& agent, const glm::vec3& po
 }
 
 glm::vec3 SteeringSystem::wander(const SteeringAgent& agent, const glm::vec3& position, const VoxelBody& body, WanderData wander, float dt) {
-    // Add random jitter to wanderTarget
-    wander.wanderTarget += glm::vec3(
-        ((float(rand()) / RAND_MAX) - 0.5f) * 2.0f * wander.wanderJitter * dt, ((float(rand()) / RAND_MAX) - 0.5f) * 2.0f * wander.wanderJitter * dt,
-        0.0f
-    );  // keep in XY plane
-
-    // Clamp to circle radius
-    glm::vec2 xy = glm::vec2(wander.wanderTarget.x, wander.wanderTarget.y);
-    if (glm::length2(xy) > wander.wanderRadius * wander.wanderRadius) {
-        xy = glm::normalize(xy) * wander.wanderRadius;
-        wander.wanderTarget.x = xy.x;
-        wander.wanderTarget.y = xy.y;
+    glm::vec3 velocityDir = glm::normalize(body.velocity);
+    if (glm::length2(body.velocity) < 0.0001f) {
+        // if agent is almost stationary, pick some default forward
+        velocityDir = glm::vec3(0, 0, 1);
     }
 
-    // Forward vector in XY
-    glm::vec3 forward = body.velocity;
-    forward.z = 0.0f;
-    if (glm::length2(forward) < 0.0001f)
-        forward = glm::vec3(0, 1, 0);
-    else
-        forward = glm::normalize(forward);
+    // 1. Add random jitter to wanderTarget
+    glm::vec3 jitter(
+        (glm::linearRand(-1.0f, 1.0f)) * wander.wanderJitter * dt, (glm::linearRand(-1.0f, 1.0f)) * wander.wanderJitter * dt, (glm::linearRand(-1.0f, 1.0f)) * wander.wanderJitter * dt
+    );
+    wander.wanderTarget += jitter;
 
-    // Circle center in front of agent
-    glm::vec3 circleCenter = position + forward * wander.wanderDistance;
+    // 2. Re-project onto sphere of radius wanderRadius
+    wander.wanderTarget = glm::normalize(wander.wanderTarget) * wander.wanderRadius;
 
-    // Final target
-    glm::vec3 targetPos = circleCenter + wander.wanderTarget;
+    // 3. Calculate target in world space
+    glm::vec3 targetInFront = velocityDir * wander.wanderDistance;
+    glm::vec3 worldTarget = position + targetInFront + wander.wanderTarget;
 
-    // Compute steering force
-    glm::vec3 toTarget = targetPos - position;
-    if (glm::length2(toTarget) < 0.0001f) return glm::vec3(0.0f);
+    // 4. Seek toward worldTarget
+    glm::vec3 desiredVelocity = glm::normalize(worldTarget - position) * agent.max_speed;
+    return desiredVelocity - body.velocity;
+}
 
-    glm::vec3 desired = glm::normalize(toTarget) * agent.max_speed;
+glm::vec3 SteeringSystem::collision_avoidance(Entity entity, const SteeringAgent& agent, const glm::vec3& position, const VoxelBody& body) {
+    if (glm::length2(body.velocity) < 0.0001f) return glm::vec3(0);
 
-    // Steering = desired - current velocity
-    return desired - body.velocity;
+    glm::vec3 forward = glm::normalize(body.velocity);
+    glm::vec3 right = glm::normalize(glm::cross(forward, glm::vec3(0, 1, 0)));
+    glm::vec3 up = glm::normalize(glm::cross(right, forward));
+
+    auto* physics = engine.ecs.systems.try_get<Physics>();
+    if (!physics) return glm::vec3(0);
+
+    uint32_t layer_mask = 0xFFFFFFFF & ~(1 << 2);  // ignore enemies
+    float avoidDistance = 80.0f;
+
+    glm::vec3 totalAvoid(0.0f);
+
+    float sideFactor = 0.2f;  // smaller deviation for side/up rays
+
+    std::vector<glm::vec3> rays = { forward, glm::normalize(forward + right * sideFactor), glm::normalize(forward - right * sideFactor), glm::normalize(forward + up * sideFactor),
+                                    glm::normalize(forward - up * sideFactor) };
+
+    for (auto dir : rays) {
+        Ray ray(position, dir);
+        Hit hit = physics->raycast(ray, layer_mask);
+
+        // debug draw
+        engine.polyline.use_color(1.0f, 0.0f, 0.0f);
+        engine.polyline.use_line_width(0.5f);
+        engine.polyline.draw_line(ray.origin, ray.origin + dir * avoidDistance);
+
+        if (hit && hit.distance < avoidDistance) {
+            float strength = agent.max_force * (avoidDistance - hit.distance) / avoidDistance;
+            totalAvoid += hit.normal * strength;
+        }
+    }
+
+    return totalAvoid;
+}
+
+glm::vec3 SteeringSystem::calculate_force(const SteeringAgent& agent, const SteeringRequest& request, const Transform& transform, const VoxelBody& body, float dt) {
+    glm::vec3 position = transform.get_world_position();
+
+    glm::vec3 force(0);
+
+    switch (request.mode) {
+        case SteeringMode::SEEK:
+            force += seek(agent, position, request.target_position, body.velocity);
+            break;
+
+        case SteeringMode::ARRIVE:
+            force += arrive(agent, position, request.target_position, request.arrive_radius, body.velocity);
+            break;
+
+        case SteeringMode::FLEE:
+            force += -seek(agent, position, request.target_position, body.velocity);
+            break;
+
+        case SteeringMode::WANDER:
+            force += wander(agent, position, body, request.wanderData, dt);
+            break;
+
+        default:
+            break;
+    }
+
+    // Add avoidance on top
+    force += collision_avoidance(entt::null, agent, position, body);
+
+    return force;
 }
 
 void SteeringSystem::check_completion(Entity entity, SteeringRequest& request, const Transform& transform, VoxelBody& body) {
@@ -113,27 +195,6 @@ void SteeringSystem::check_completion(Entity entity, SteeringRequest& request, c
         // stop the body
         body.velocity = glm::vec3(0);
         body.angular_velocity = glm::vec3(0);
-    }
-}
-
-glm::vec3 SteeringSystem::calculate_force(const SteeringAgent& agent, const SteeringRequest& request, const Transform& transform, const VoxelBody& body, float dt) {
-    glm::vec3 position = transform.get_world_position();
-
-    switch (request.mode) {
-        case SteeringMode::SEEK:
-            return seek(agent, position, request.target_position, body.velocity);
-
-        case SteeringMode::ARRIVE:
-            return arrive(agent, position, request.target_position, request.arrive_radius, body.velocity);
-
-        case SteeringMode::FLEE:
-            return -seek(agent, position, request.target_position, body.velocity);
-
-        case SteeringMode::WANDER:
-            return wander(agent, position, body, request.wanderData, dt);
-
-        default:
-            return glm::vec3(0);
     }
 }
 

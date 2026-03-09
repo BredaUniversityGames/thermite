@@ -2,7 +2,7 @@
 
 #include <glm/glm.hpp>
 
-enum class SteeringMode { NONE, SEEK, ARRIVE, FLEE, WANDER };
+enum class SteeringMode { NONE, SEEK, ARRIVE, FLEE, WANDER, PERSUE };
 
 struct WanderData {
     glm::vec3 wanderTarget = glm::vec3(0.0f);
@@ -15,7 +15,7 @@ struct SteeringRequest {
     SteeringMode mode = SteeringMode::NONE;
 
     glm::vec3 target_position = {};
-    float arrive_radius = 0.5f;
+    float arrive_radius = 6.f;
 
     bool completed = false;
 
