@@ -408,16 +408,24 @@ void ModelViewer::display() {
     const Brush::State brush_state = editor.windows[Editor::Mode::VOXEL].get<Brush>().get_brush_state();
     const bool is_tool_gizmo = brush_state.tool == Brush::Tool::GIZMO;
     if (is_tool_gizmo) {
-        const Entity selected_entity = editor.windows[Editor::Mode::VOXEL].get<NodeHierarchy>().get_selected_entity();
+        NodeHierarchy& hierarchy = editor.windows[Editor::Mode::VOXEL].get<NodeHierarchy>();
+        const std::vector<Entity>& selected_entities = hierarchy.get_selected_entities();
 
-        editor.gizmo.manip(window_pos.x, window_pos.y, size.x, size.y, { &selected_entity, &selected_entity + 1 }, 0.0f, {});
+        editor.gizmo.manip(window_pos.x, window_pos.y, size.x, size.y, selected_entities, 0.0f, {});
 
         const bool can_select = (ImGui::IsWindowHovered() && !ImGuizmo::IsOver());
         if (can_select && engine.input.is_mouse_button_just_pressed(MouseButton::LEFT)) {
             const Ray mouse_ray = engine.renderer.render_view.pixel_ray(mouse_position);
             const Hit hit = engine.renderer.trace_ray(mouse_ray);
 
-            editor.windows[Editor::Mode::VOXEL].get<NodeHierarchy>().set_selected_entity(hit.entity);
+            if (!ImGui::GetIO().KeyCtrl) {
+                hierarchy.set_selected_entity(hit.entity);
+            } else {
+                if (!hierarchy.is_entity_selected(hit.entity))
+                    editor.windows[Editor::Mode::VOXEL].get<NodeHierarchy>().add_selected_entity(hit.entity);
+                else
+                    editor.windows[Editor::Mode::VOXEL].get<NodeHierarchy>().remove_selected_entity(hit.entity);
+            }
         }
     }
 
@@ -430,7 +438,7 @@ void ModelViewer::display() {
 
     // Get the selected entity in the hierarchy and return early if it's invalid.
     NodeHierarchy& node_hierarchy = editor.windows[Editor::Mode::VOXEL].get<NodeHierarchy>();
-    const Entity selected_entity = node_hierarchy.get_selected_entity();
+    const Entity selected_entity = node_hierarchy.get_first_selected_entity();
 
     if (!engine.ecs.valid(selected_entity) || !engine.ecs.has_component<VoxelRenderer>(selected_entity)) return;
 

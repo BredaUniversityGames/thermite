@@ -186,6 +186,38 @@ std::atomic_bool model_load_atomic { true };
 
 namespace tmt {
 
+bool NodeHierarchy::is_entity_selected(Entity entity) {
+    // Linear search because we use an std vector, but we need to keep our own order so there is no good alternative.
+    return std::ranges::find(selected_entities, entity) != selected_entities.end();
+}
+
+Entity NodeHierarchy::get_first_selected_entity() const {
+    if (selected_entities.empty()) return entt::null;
+
+    return *selected_entities.begin();
+}
+
+void NodeHierarchy::add_selected_entity(const Entity entity) {
+    if (entity == entt::null || is_entity_selected(entity)) return;
+
+    selected_entities.push_back(entity);
+}
+
+void NodeHierarchy::set_selected_entity(const Entity entity) {
+    selected_entities.clear();
+    if (entity != entt::null) selected_entities.push_back(entity);
+}
+
+void NodeHierarchy::remove_selected_entity(const Entity entity) {
+    const auto iterator = std::ranges::find(selected_entities, entity);
+
+    if (iterator != selected_entities.end()) selected_entities.erase(iterator);
+}
+
+void NodeHierarchy::clear_selected_entity() {
+    selected_entities.clear();
+}
+
 void NodeHierarchy::new_svh() {
     clear_hierarchy();
     loaded_location = {};
@@ -383,7 +415,7 @@ void NodeHierarchy::recurse_display_node(const Entity entity, const Name& name, 
 
     ImGuiTreeNodeFlags flags = default_flags;
     flags |= (children.empty() ? ImGuiTreeNodeFlags_Leaf : 0);
-    flags |= (entity == selected_entity ? ImGuiTreeNodeFlags_Selected : 0);
+    flags |= (is_entity_selected(entity) ? ImGuiTreeNodeFlags_Selected : 0);
 
     const bool tree_open = ImGui::TreeNodeEx(name.name.c_str(), flags);
     node_context_menu(entity);
@@ -391,8 +423,7 @@ void NodeHierarchy::recurse_display_node(const Entity entity, const Name& name, 
     drop_node(entity, transform);
 
     const bool popup_clicked_open = (ImGui::IsMouseReleased(ImGuiMouseButton_Right) && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup));
-    // Both left mouse button selects and opening the popup also selects, this makes it clear what node entity you have opened the popup for.
-    if (ImGui::IsItemClicked(ImGuiMouseButton_Left) || popup_clicked_open) selected_entity = entity;
+    if (popup_clicked_open) set_selected_entity(entity);
     if (tree_open) {
         for (const Entity child : children) {
             auto&& [child_name, child_transform] = engine.ecs.get_component<Name, Transform>(child);
@@ -406,7 +437,7 @@ void NodeHierarchy::recurse_display_node(const Entity entity, const Name& name, 
 }
 
 void NodeHierarchy::clear_hierarchy() {
-    selected_entity = entt::null;
+    clear_selected_entity();
     root_entities.clear();
     engine.ecs.clear();
 

@@ -21,8 +21,13 @@ class NodeHierarchy : public IWindow {
     constexpr std::string get_title() const override { return ICON_MS_FLOWCHART " Node hierarchy"; }
     constexpr bool default_open() const override { return true; }
 
-    [[nodiscard]] Entity get_selected_entity() const { return selected_entity; }
-    void set_selected_entity(const Entity entity) { selected_entity = entity; }
+    [[nodiscard]] bool is_entity_selected(Entity entity);
+    [[nodiscard]] const std::vector<Entity>& get_selected_entities() const { return selected_entities; }
+    [[nodiscard]] Entity get_first_selected_entity() const;
+    void add_selected_entity(Entity entity);
+    void set_selected_entity(Entity entity);
+    void remove_selected_entity(Entity entity);
+    void clear_selected_entity();
 
     void new_svh();
     void open_svh();
@@ -63,7 +68,7 @@ class NodeHierarchy : public IWindow {
 
     IO::FileLocation loaded_location {};
 
-    Entity selected_entity { entt::null };
+    std::vector<Entity> selected_entities;
     std::set<Entity> root_entities;
 };
 
