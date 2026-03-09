@@ -69,7 +69,7 @@ class NodeHierarchy : public IWindow {
     IO::FileLocation loaded_location {};
 
     std::vector<Entity> selected_entities;
-    std::set<Entity> root_entities;
+    std::vector<Entity> root_entities;
 };
 
 }  // namespace tmt
