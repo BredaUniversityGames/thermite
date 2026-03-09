@@ -62,59 +62,60 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     tmt::engine.ecs.systems.add<tmt::CameraSystem>();
     tmt::engine.scenes.register_scene<AIScene>();
 
-    tmt::engine.ecs.systems.add<tmt::Goap>();
+    //tmt::engine.ecs.systems.add<tmt::Goap>();
 
     auto& ecs = tmt::engine.ecs;
-    auto& goap = ecs.systems.get<tmt::Goap>();
+    tmt::Goap* goap = ecs.systems.try_get<tmt::Goap>();
+    if (goap) {
+        auto& action_reg = goap->actions();
+        auto& goal_reg = goap->goals();
+        auto& type_reg = goap->agent_types();
 
-    auto& action_reg = goap.actions();
-    auto& goal_reg = goap.goals();
-    auto& type_reg = goap.agent_types();
+        // --- Register Actions ---
+        action_reg.register_action(std::make_unique<tmt::PatrolArea>());
+        action_reg.register_action(std::make_unique<tmt::ChasePlayer>());
+        action_reg.register_action(std::make_unique<tmt::KillPlayer>());
+        action_reg.register_action(std::make_unique<tmt::GoToTarget>());
+        action_reg.register_action(std::make_unique<tmt::WanderAround>());
 
-    // --- Register Actions ---
-    action_reg.register_action(std::make_unique<tmt::PatrolArea>());
-    action_reg.register_action(std::make_unique<tmt::ChasePlayer>());
-    action_reg.register_action(std::make_unique<tmt::KillPlayer>());
-    action_reg.register_action(std::make_unique<tmt::GoToTarget>());
-    action_reg.register_action(std::make_unique<tmt::WanderAround>());
+        // --- Register Goals ---
+        {
+            tmt::GoapGoal patrol;
+            patrol.name = "g_PatrolArea";
+            patrol.desired_state = { { tmt::FactId("area_secure"), true } };
+            patrol.priority = 1;
+            patrol.valid = true;
 
-    // --- Register Goals ---
-    {
-        tmt::GoapGoal patrol;
-        patrol.name = "g_PatrolArea";
-        patrol.desired_state = { { tmt::FactId("area_secure"), true } };
-        patrol.priority = 1;
-        patrol.valid = true;
+            goal_reg.register_goal("g_PatrolArea", patrol);
+        }
 
-        goal_reg.register_goal("g_PatrolArea", patrol);
-    }
+        {
+            tmt::GoapGoal kill;
+            kill.name = "g_KillPlayer";
+            kill.desired_state = { { tmt::FactId("player_alive"), false } };
+            kill.priority = 10;
+            kill.valid = true;
 
-    {
-        tmt::GoapGoal kill;
-        kill.name = "g_KillPlayer";
-        kill.desired_state = { { tmt::FactId("player_alive"), false } };
-        kill.priority = 10;
-        kill.valid = true;
+            goal_reg.register_goal("g_KillPlayer", kill);
+        }
 
-        goal_reg.register_goal("g_KillPlayer", kill);
-    }
+        {
+            tmt::GoapGoal reach_target;
+            reach_target.name = "g_ReachTarget";
+            reach_target.desired_state = { { tmt::FactId("at_target"), true } };
+            reach_target.priority = 5;
+            reach_target.valid = true;
+            goal_reg.register_goal("g_ReachTarget", reach_target);
+        }
 
-    {
-        tmt::GoapGoal reach_target;
-        reach_target.name = "g_ReachTarget";
-        reach_target.desired_state = { { tmt::FactId("at_target"), true } };
-        reach_target.priority = 5;
-        reach_target.valid = true;
-        goal_reg.register_goal("g_ReachTarget", reach_target);
-    }
-
-    {
-        tmt::GoapGoal wander_around;
-        wander_around.name = "g_WanderAround";
-        wander_around.desired_state = { { tmt::FactId("can_move"), true } };
-        wander_around.priority = 1;
-        wander_around.valid = true;
-        goal_reg.register_goal("g_WanderAround", wander_around);
+        {
+            tmt::GoapGoal wander_around;
+            wander_around.name = "g_WanderAround";
+            wander_around.desired_state = { { tmt::FactId("can_move"), true } };
+            wander_around.priority = 1;
+            wander_around.valid = true;
+            goal_reg.register_goal("g_WanderAround", wander_around);
+        }
     }
 
     return std::make_unique<Game>(specs);
