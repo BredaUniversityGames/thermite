@@ -7,6 +7,11 @@
 
 namespace game {
 
+class MiningOre {
+    float value = 1.0f;
+    float toughness = 1.0f;
+    // OreType type; thermite, ore, core, non-mineable etc.
+};
 class MiningComponent : public tmt::GameComponent<MiningComponent> {
    public:
     using GameComponent::GameComponent;
@@ -23,11 +28,11 @@ class MiningComponent : public tmt::GameComponent<MiningComponent> {
     DebugLineConfig cfg;
 
    private:
-    std::vector<tmt::ResourceRef<tmt::Stencil>> stencils;   // might be used in the future when we have different stencils to randomly select from, for now unused
-    tmt::Ray last_ray;                                      // for debug lines
-    tmt::Hit last_hit;                                      // for debug lines
-    bool has_drawn_debug;                                   // for debug lines
-    void mine(glm::vec3 origin, glm::vec3 dir);             // base mining function, do not overload if using events, create new function instead
+    std::vector<tmt::ResourceRef<tmt::Stencil>> stencils;  // might be used in the future when we have different stencils to randomly select from, for now unused
+    tmt::Ray last_ray;                                     // for debug lines
+    tmt::Hit last_hit;                                     // for debug lines
+    bool has_drawn_debug;                                  // for debug lines
+    void mine(glm::vec3 origin, glm::vec3 dir);            // base mining function, do not overload if using events, create new function instead
 };
 
 }  // namespace game
