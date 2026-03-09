@@ -47,8 +47,6 @@ void GameFlow::on_editor_update(const FrameData&) {
     if (ImGui::IsKeyPressed(ImGuiKey_F1)) {
         if (engine.input.is_mouse_locked()) {
             unlock_mouse();
-        } else {
-            lock_mouse();
         }
     }
 }

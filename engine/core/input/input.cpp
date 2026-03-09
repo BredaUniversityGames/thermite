@@ -20,10 +20,10 @@
 namespace tmt {
 
 bool Input::can_use_input_mouse() const {
-    return !can_capture_mouse;
+    return can_use_mouse_input;
 }
 bool Input::can_use_input_keyboard() const {
-    return !can_capture_keyboard;
+    return can_use_keyboard_input;
 }
 
 void Input::init() {
@@ -144,9 +144,14 @@ void Input::update(const FrameData& time) {
 
     if (input_blocked) {
         // If input was blocked by an event, we skip processing the rest of the input for this frame
-        prev_mouse_buttons = mouse_buttons;
-        mouse_buttons = 0;
+        can_use_mouse_input = false;
+        can_use_keyboard_input = false;
         return;
+    }
+    else 
+    {
+        can_use_mouse_input = true;
+        can_use_keyboard_input = true;
     }
 
     // reset hold timers

@@ -2,12 +2,13 @@
 #include "editor/core/window.hpp"
 #include "engine/events/input.hpp"
 #include "engine/core/entity.hpp"
+#include "engine/events/game.hpp"
 
 struct ImVec2;
 
 namespace tmt {
 
-class Viewport : public IWindow, public OnRetrieveMouseState, public OnBlockInputRequest {
+class Viewport : public IWindow, public OnRetrieveMouseState, public OnBlockInputRequest, public OnGameStart {
    public:
     Viewport() = default;
     ~Viewport() = default;
@@ -71,6 +72,9 @@ class Viewport : public IWindow, public OnRetrieveMouseState, public OnBlockInpu
 
     // Inherited via OnBlockInputRequest
     void on_block_input_request(OnBlockInputEvent& event) override;
+
+    // Inherited via OnGameStart
+    void on_game_start() override;
 };
 
 }  // namespace tmt
