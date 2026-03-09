@@ -391,6 +391,56 @@ void handle_brush(const Brush::State brush_state, const ResourceRef<VoxelVolume>
     }
 }
 
+void use_gizmo(const NodeHierarchy& hierarchy, const ImVec2& window_pos, const ImVec2& window_size) {
+    const std::vector<Entity>& selected_entities = hierarchy.get_selected_entities();
+
+    float snap_value = 0.0f;
+    const bool ctrl_held = ImGui::IsKeyDown(ImGuiKey_LeftCtrl) || ImGui::IsKeyDown(ImGuiKey_RightCtrl);
+    const bool shift_held = ImGui::IsKeyDown(ImGuiKey_LeftShift) || ImGui::IsKeyDown(ImGuiKey_RightShift);
+    const bool alt_held = ImGui::IsKeyDown(ImGuiKey_LeftAlt) || ImGui::IsKeyDown(ImGuiKey_RightAlt);
+
+    if (ctrl_held) {
+        const auto operation = Gizmo::OPERATIONS[editor.gizmo.operation];
+        switch (operation) {
+            case ImGuizmo::OPERATION::TRANSLATE:
+                snap_value = editor.save_data.snap_values.move;
+                break;
+            case ImGuizmo::OPERATION::ROTATE:
+                snap_value = editor.save_data.snap_values.rotation;
+                break;
+            case ImGuizmo::OPERATION::SCALE:
+                snap_value = editor.save_data.snap_values.scale;
+                break;
+            case ImGuizmo::OPERATION::BOUNDS:
+                snap_value = editor.save_data.snap_values.move;  // Use move snap for bounds
+                break;
+            default:
+                break;
+        }
+    }
+
+    const bool is_using_camera = editor.windows[Editor::Mode::SCENE].get<Viewport>().is_using_debug_camera();
+    const bool wants_to_capture_keyboard = ImGui::GetIO().WantCaptureKeyboard;
+    if (wants_to_capture_keyboard == false && !is_using_camera) {
+        if (ImGui::IsKeyPressed(ImGuiKey_W, false)) {
+            editor.gizmo.operation = 0;  // Translate
+        } else if (ImGui::IsKeyPressed(ImGuiKey_E, false)) {
+            editor.gizmo.operation = 1;  // Rotate
+        } else if (ImGui::IsKeyPressed(ImGuiKey_R, false)) {
+            editor.gizmo.operation = 2;  // Scale
+        } else if (ImGui::IsKeyPressed(ImGuiKey_T, false)) {
+            editor.gizmo.operation = 3;  // Bounds
+        }
+    }
+
+    // Build modifiers for bounds manipulation
+    BoundsModifiers modifiers;
+    modifiers.uniform_scale = shift_held;    // Shift: maintain aspect ratio
+    modifiers.scale_from_center = alt_held;  // Alt: keep center fixed
+
+    editor.gizmo.manip(window_pos.x, window_pos.y, window_size.x, window_size.y, selected_entities, snap_value, modifiers);
+}
+
 }  // namespace
 
 void ModelViewer::display() {
@@ -409,9 +459,8 @@ void ModelViewer::display() {
     const bool is_tool_gizmo = brush_state.tool == Brush::Tool::GIZMO;
     if (is_tool_gizmo) {
         NodeHierarchy& hierarchy = editor.windows[Editor::Mode::VOXEL].get<NodeHierarchy>();
-        const std::vector<Entity>& selected_entities = hierarchy.get_selected_entities();
 
-        editor.gizmo.manip(window_pos.x, window_pos.y, size.x, size.y, selected_entities, 0.0f, {});
+        use_gizmo(hierarchy, window_pos, size);
 
         const bool can_select = (ImGui::IsWindowHovered() && !ImGuizmo::IsOver());
         if (can_select && engine.input.is_mouse_button_just_pressed(MouseButton::LEFT)) {
