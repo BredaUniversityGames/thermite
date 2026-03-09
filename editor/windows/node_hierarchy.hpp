@@ -34,11 +34,13 @@ class NodeHierarchy : public IWindow {
 
     void build_scene(const std::span<VoxelSceneNode>& root_nodes, bool assign_new_uuids = false);
 
-    std::vector<char> encode_voxel_scene() const;
+    [[nodiscard]] std::vector<char> encode_voxel_scene() const;
+    void clear_root_entities() { root_entities.clear(); }
 
    private:
     friend class VoxelNodeDiff;
 
+    static void recalculate_all_physics();
     void recurse_display_node(Entity entity, const Name& name, Transform& transform);
     void clear_hierarchy();
 
@@ -47,14 +49,14 @@ class NodeHierarchy : public IWindow {
 
     void popup_create_node();
     void popup_resize_node();
-    void node_context_menu(Entity node_entity) const;
+    void node_context_menu(Entity node_entity);
 
     void display() override;
 
     void on_editor_start() override {}
     void on_editor_update(const FrameData&) override;
     void on_editor_end() override {}
-    
+
     // Popup ids, will be set when the popups are first created, allows us to open them from anywhere in imgui (hacky workaround).
     uint32_t creation_popup_id { 0 };
     uint32_t resize_popup_id { 0 };
