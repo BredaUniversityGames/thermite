@@ -242,7 +242,7 @@ class Input {
     /// <returns>True if the mouse is locked.</returns>
     bool is_mouse_locked() const;
 
-     /// <summary>
+    /// <summary>
     /// Sets the game's preferred mouse lock state. Useful when an external event temporarily takes control of this state.
     /// </summary>
     /// <param name="value">What the game had as its lock state.

@@ -362,9 +362,8 @@ void tmt::Viewport::on_block_input_request(OnBlockInputEvent& event) {
     event.handled = true;
 }
 
-void tmt::Viewport::on_game_start() 
-{
-   ImGui::SetWindowFocus(get_title().c_str());
+void tmt::Viewport::on_game_start() {
+    ImGui::SetWindowFocus(get_title().c_str());
 }
 
 void tmt::Viewport::update_debug_camera(const tmt::FrameData& time) {
