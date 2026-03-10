@@ -27,25 +27,25 @@ void SceneSwitchComponent::switch_scene() {
 
     switch (target_scene) {
         case TargetSceneEnum::MAIN_MENU:
-            tmt::engine.scenes.load_scene<MainMenuScene>();
+            tmt::engine.scenes.enqueue_scene<MainMenuScene>();
             break;
         case TargetSceneEnum::MAIN_GAME:
-            tmt::engine.scenes.load_scene<MainGameScene>();
+            tmt::engine.scenes.enqueue_scene<MainGameScene>();
             break;
         case TargetSceneEnum::GYM:
-            tmt::engine.scenes.load_scene<Gym>();
+            tmt::engine.scenes.enqueue_scene<Gym>();
             break;
         case TargetSceneEnum::ZOO:
-            tmt::engine.scenes.load_scene<Zoo>();
+            tmt::engine.scenes.enqueue_scene<Zoo>();
             break;
         case TargetSceneEnum::DANIEL_TEST:
-            tmt::engine.scenes.load_scene<DanielTestScene>();
+            tmt::engine.scenes.enqueue_scene<DanielTestScene>();
             break;
         case TargetSceneEnum::MIKA_TEST:
-            tmt::engine.scenes.load_scene<MikaTestScene>();
+            tmt::engine.scenes.enqueue_scene<MikaTestScene>();
             break;
         default:
-            tmt::engine.scenes.load_scene<MainMenuScene>();
+            tmt::engine.scenes.enqueue_scene<MainMenuScene>();
             break;
     }
 }
