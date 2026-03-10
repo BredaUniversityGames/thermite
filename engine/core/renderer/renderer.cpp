@@ -161,7 +161,7 @@ void Renderer::update() {
         /* clang-format off */
     }
 
-    //polyline_pipeline.enqueue(render_graph, render_view);
+    polyline_pipeline.enqueue(render_graph, render_view);
     ui_pipeline.enqueue(render_graph, render_view);
 
 #ifdef THERMITE_EDITOR
