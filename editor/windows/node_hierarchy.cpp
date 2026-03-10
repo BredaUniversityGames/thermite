@@ -238,6 +238,8 @@ void NodeHierarchy::add_selected_entity(const Entity entity) {
 }
 
 void NodeHierarchy::set_selected_entity(const Entity entity) {
+    if (selected_entities.size() == 1 && selected_entities.front() == entity) return;
+
     NodeVectorDiff diff { selected_entities };
     diff.before();
 

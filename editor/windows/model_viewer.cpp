@@ -467,7 +467,10 @@ void ModelViewer::display() {
             const Hit hit = engine.renderer.trace_ray(mouse_ray);
 
             if (!ImGui::GetIO().KeyCtrl) {
-                hierarchy.set_selected_entity(hit.entity);
+                if (hit.miss())
+                    hierarchy.clear_selected_entities();
+                else
+                    hierarchy.set_selected_entity(hit.entity);
             } else {
                 if (!hierarchy.is_entity_selected(hit.entity))
                     editor.windows[Editor::Mode::VOXEL].get<NodeHierarchy>().add_selected_entity(hit.entity);
