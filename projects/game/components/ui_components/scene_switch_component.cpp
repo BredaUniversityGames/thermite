@@ -5,7 +5,6 @@
 namespace game {
 
 void game::SceneSwitchComponent::start() {
-    
     if (auto button_component = tmt::engine.ecs.try_get_component<tmt::Button>(entity)) {
         tmt::Log::info("Found button component, adding switch scene to on click.");
         button_component->on_click.add(this, &SceneSwitchComponent::switch_scene);
@@ -24,7 +23,6 @@ void game::SceneSwitchComponent::end() {
 
 // Cannot be made const because its being used in the button callback and on_click.add doesnt take const functions
 void SceneSwitchComponent::switch_scene() {
-
     switch (target_scene) {
         case TargetSceneEnum::MAIN_MENU:
             tmt::engine.scenes.enqueue_scene<MainMenuScene>();
@@ -49,4 +47,5 @@ void SceneSwitchComponent::switch_scene() {
             break;
     }
 }
+
 }  // namespace game

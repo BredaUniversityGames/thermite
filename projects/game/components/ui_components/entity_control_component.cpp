@@ -10,9 +10,7 @@ void game::EntityControlComponent::start() {
     }
 }
 
-void game::EntityControlComponent::update(const tmt::FrameData& time) {
-    
-}
+void game::EntityControlComponent::update(const tmt::FrameData& time) {}
 
 void game::EntityControlComponent::end() {
     if (auto button_component = tmt::engine.ecs.try_get_component<tmt::Button>(entity)) {

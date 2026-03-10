@@ -4,7 +4,6 @@
 
 namespace game {
 
-
 class EntityControlComponent : public tmt::GameComponent<EntityControlComponent> {
    public:
     using GameComponent::GameComponent;
@@ -24,8 +23,8 @@ class EntityControlComponent : public tmt::GameComponent<EntityControlComponent>
 
    private:
     void button_functionality();
-    void disable( tmt::Entity entity_to_disable);
-    void enable( tmt::Entity entity_to_enable);
+    void disable(tmt::Entity entity_to_disable);
+    void enable(tmt::Entity entity_to_enable);
 };
 
 }  // namespace game
