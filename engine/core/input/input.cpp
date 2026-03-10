@@ -147,9 +147,7 @@ void Input::update(const FrameData& time) {
         can_use_mouse_input = false;
         can_use_keyboard_input = false;
         return;
-    }
-    else 
-    {
+    } else {
         can_use_mouse_input = true;
         can_use_keyboard_input = true;
     }
@@ -499,6 +497,14 @@ float Input::get_action_raw_strength(const std::string& name) {
         max_strength = std::max(event->get_action_strength(), max_strength);
     }
     return max_strength;
+}
+void Input::clear_input_state() {
+    int32_t number_keys;
+    keys_sdl = SDL_GetKeyboardState(&number_keys);
+    prev_keys.resize(number_keys, false);
+    prev_mouse_buttons = 0;
+    mouse_dx = 0.0f;
+    mouse_dy = 0.0f;
 }
 float Input::get_axis(const std::string& negative_action, const std::string& positive_action) {
     return get_action_strength(positive_action) - get_action_strength(negative_action);
