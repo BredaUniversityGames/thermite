@@ -227,13 +227,50 @@ constexpr uint64_t edge_masks[6] {
     0xF000F000F000F000ULL   // +Z
 };
 
+Svt64Node* get_tree_node_at_position(uint32_t x, uint32_t y, uint32_t z, Svt64* tree, Destructable& graph) {
+    tmt::Svt64Node* node = &tree->nodes[0];
+    glm::uvec3 global_pos = glm::uvec3(0);
+    // Find the node relavent to that index
+    for (uint32_t level = 1u; level < tree->depth; ++level) {
+        // Get position of neighbor on this level
+        const uint32_t x_index = (x >> ((tree->depth - level) * 2u)) & 3u;
+        const uint32_t y_index = (y >> ((tree->depth - level) * 2u)) & 3u;
+        const uint32_t z_index = (z >> ((tree->depth - level) * 2u)) & 3u;
+
+        // Get node index of this neighbor
+        const uint32_t child_index = (x_index << 0u) | (z_index << 2u) | (y_index << 4u);
+
+        // If no node exists on this position and we are at a higher level (should never happen)
+        if ((node->child_mask & (1ull << child_index)) == 0u) break;
+
+        const uint32_t child_pos = (uint32_t)__popcnt64(node->child_mask & ((1ull << child_index) - 1u));
+        const uint32_t neighbor_node_index = node->abs_ptr() + child_pos;
+
+        const uint16_t level_scale = 1u << ((tree->depth - level) * 2u);
+
+        global_pos += glm::uvec3(x_index * level_scale, y_index * level_scale, z_index * level_scale);
+
+        // Check if connection node exists for this depth on the edge position
+        DestructionNode* des_node = graph.get_node(global_pos.x, global_pos.y, global_pos.z);
+        if (des_node != nullptr && des_node->level == tree->depth - level) {
+            return &tree->nodes[neighbor_node_index];
+        }
+
+        node = &tree->nodes[neighbor_node_index];
+    }
+
+    return node;
+}
+
 // Forward declare function
 void separation_flood(Destructable& graph, DestructionNode& current_node, uint8_t id, Svt64* tree);
 
 void low_level_separation_flood(Destructable& graph, DestructionNode& current_node, uint8_t id, uint64_t overlap_mask, Svt64* tree) {
     // Get svt64 node
     // NOTE: THIS IS PROBABLY WRONG ONCE WE REBUILD THE DESTRUCTION GRAPH
-    const Svt64Node& tree_node = tree->nodes[current_node.tree_node];
+    const Svt64Node& tree_node = *get_tree_node_at_position(current_node.global_position.x, current_node.global_position.y, current_node.global_position.z, tree, graph);
+
+    // const Svt64Node& tree_node = tree->nodes[current_node.tree_node];
 
     // If there are no solid voxels on the overlap, return
     if ((tree_node.child_mask & overlap_mask) == 0ull) return;
@@ -254,11 +291,11 @@ void low_level_separation_flood(Destructable& graph, DestructionNode& current_no
         // if ((flood_mask & (1u << i)) != 0ull) continue;
 
         // Flood fill
-        std::queue<uint32_t> queue;
+        std::queue<uint8_t> queue;
         queue.push(i);
         while (!queue.empty()) {
             // Get front and remove it
-            const uint32_t index = queue.front();
+            const uint8_t index = queue.front();
             queue.pop();
 
             // Get local coordinates
@@ -279,16 +316,16 @@ void low_level_separation_flood(Destructable& graph, DestructionNode& current_no
                 const uint32_t z = local_z + dirs[a].z;
 
                 // 3d to 1d position
-                const uint32_t neighbor_index = (x << 0u) | (z << 2u) | (y << 4u);
+                const uint8_t neighbor_index = (x << 0u) | (z << 2u) | (y << 4u);
 
                 // Continue if the bit is empty in the tree (no voxel exists there)
-                if ((tree_node.child_mask & (1u << neighbor_index)) == 0ull) continue;
+                if ((tree_node.child_mask & (1ull << neighbor_index)) == 0ull) continue;
 
                 // Continue if bit is already set in the flood mask
-                if ((flood_mask & (1u << neighbor_index)) != 0ull) continue;
+                if ((flood_mask & (1ull << neighbor_index)) != 0ull) continue;
 
                 // Add neighboring bit to the mask
-                flood_mask |= (1u << neighbor_index);
+                flood_mask |= (1ull << neighbor_index);
 
                 // Add neighbor to the queue
                 queue.push(neighbor_index);
@@ -317,10 +354,11 @@ void low_level_separation_flood(Destructable& graph, DestructionNode& current_no
             // If we visited this node before, continue
             if (connected_node.flood_id != 0) continue;
 
-            const Svt64Node& node_neighbor = tree->nodes[connected_node.tree_node];
+            // const Svt64Node& node_neighbor = tree->nodes[connected_node.tree_node];
 
             // If the node is not a leaf node in the tree, or is fully filled
-            if (connected_node.level != 1 || node_neighbor.child_mask == ~(0ull)) {
+            // || node_neighbor.child_mask == ~(0ull)
+            if (connected_node.level != 1) {
                 separation_flood(graph, connected_node, id, tree);
                 continue;
             }
@@ -342,7 +380,7 @@ void low_level_separation_flood(Destructable& graph, DestructionNode& current_no
                             ((edge_mask & 0xF000F000F000F000ULL) >> 12);
             }
 
-            // Mask the edge
+            // Mask the edge (take opposite edge because we flipped the mask)
             edge_mask &= edge_masks[i ^ 1u];
 
             // Get the mask of the svt64 node, flip it, apply edge mask, give it to
@@ -501,7 +539,7 @@ bool all_children_solid(Svt64* tree, const uint32_t node_index) {
 
 void set_lower_level_neighbors(
     Destructable& graph, DestructionNode& connection_node, Svt64* tree, const uint32_t node_index, const uint32_t current_depth, const uint32_t node_scale, const uint32_t global_x,
-    const uint32_t global_y, const uint32_t global_z, uint64_t edge_mask
+    const uint32_t global_y, const uint32_t global_z, uint64_t edge_mask, uint8_t from_dir, uint8_t to_dir
 ) {
     // Get current node
     const tmt::Svt64Node& node = tree->nodes[node_index];
@@ -524,11 +562,11 @@ void set_lower_level_neighbors(
         // If there is a connection node on the neighbors position, make connection
         DestructionNode* neighbor = graph.get_node(x, y, z);
         if (neighbor != nullptr && neighbor->level == tree->depth - current_depth) {
-            // Make connections both ways
-            connection_node.connections[0].add_connection(neighbor->id);
-            neighbor->connections[1].add_connection(connection_node.id);
+            // Make connections both ways (check on wich axis)
+            connection_node.connections[from_dir].add_connection(neighbor->id);
+            neighbor->connections[to_dir].add_connection(connection_node.id);
         } else if (current_depth > 1) {  // If this child is not a leaf node, go one level deeper
-            set_lower_level_neighbors(graph, connection_node, tree, child_node_index, current_depth - 1u, node_scale >> 2u, x, y, z, edge_mask);
+            set_lower_level_neighbors(graph, connection_node, tree, child_node_index, current_depth - 1u, node_scale >> 2u, x, y, z, edge_mask, from_dir, to_dir);
         }
 
         // Unset this bit from the mask
@@ -577,7 +615,7 @@ void set_highest_level_neighbors(
                 // Go one level deeper to find a connection on the edges
                 // +X edge mask
                 uint64_t edge_mask = 0x8888888888888888ULL;
-                set_lower_level_neighbors(graph, connection_node, tree, neighbor_node_index, tree->depth - level, (node_scale >> 2), global_pos.x, global_pos.y, global_pos.z, edge_mask);
+                set_lower_level_neighbors(graph, connection_node, tree, neighbor_node_index, tree->depth - level, (node_scale >> 2), global_pos.x, global_pos.y, global_pos.z, edge_mask, 0, 1);
                 break;
             }
 
@@ -622,7 +660,8 @@ void set_highest_level_neighbors(
                 // +Z edge mask
                 uint64_t edge_mask = 0xF000F000F000F000ULL;
                 set_lower_level_neighbors(
-                    graph, connection_node, tree, neighbor_node_index, tree->depth - level, (node_scale >> 2), x_index * level_scale, y_index * level_scale, z_index * level_scale, edge_mask
+                    graph, connection_node, tree, neighbor_node_index, tree->depth - level, (node_scale >> 2), x_index * level_scale, y_index * level_scale, z_index * level_scale, edge_mask,
+                    4, 5
                 );
                 break;
             }
@@ -668,7 +707,8 @@ void set_highest_level_neighbors(
                 // +Y edge mask
                 uint64_t edge_mask = 0xFFFF000000000000ULL;
                 set_lower_level_neighbors(
-                    graph, connection_node, tree, neighbor_node_index, tree->depth - level, (node_scale >> 2), x_index * level_scale, y_index * level_scale, z_index * level_scale, edge_mask
+                    graph, connection_node, tree, neighbor_node_index, tree->depth - level, (node_scale >> 2), x_index * level_scale, y_index * level_scale, z_index * level_scale, edge_mask,
+                    2, 3
                 );
                 break;
             }

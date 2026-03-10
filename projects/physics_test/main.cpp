@@ -91,15 +91,15 @@ void MainScene::on_start() {
     auto voxel_file_piece = tmt::engine.resources.load_resource<tmt::VoxelScene>({ tmt::IO::Location::PROJECT, "cube64.vengi" });
     auto voxel_volume_piece = tmt::engine.resources.copy_resource<tmt::VoxelVolume>(voxel_file_piece);
 
-    //auto voxel_file_ass3 = tmt::engine.resources.load_resource<tmt::VoxelScene>({ tmt::IO::Location::PROJECT, "test_asteroid_3.vengi" });
-    //auto voxel_volume_ass3 = tmt::engine.resources.copy_resource<tmt::VoxelVolume>(voxel_file_ass3);
+    // auto voxel_file_ass3 = tmt::engine.resources.load_resource<tmt::VoxelScene>({ tmt::IO::Location::PROJECT, "test_asteroid_3.vengi" });
+    // auto voxel_volume_ass3 = tmt::engine.resources.copy_resource<tmt::VoxelVolume>(voxel_file_ass3);
 
-    //auto voxel_file_ass7 = tmt::engine.resources.load_resource<tmt::VoxelScene>({ tmt::IO::Location::PROJECT, "test_asteroid_7.vengi" });
-    //auto voxel_volume_ass7 = tmt::engine.resources.copy_resource<tmt::VoxelVolume>(voxel_file_ass7);
+    // auto voxel_file_ass7 = tmt::engine.resources.load_resource<tmt::VoxelScene>({ tmt::IO::Location::PROJECT, "test_asteroid_7.vengi" });
+    // auto voxel_volume_ass7 = tmt::engine.resources.copy_resource<tmt::VoxelVolume>(voxel_file_ass7);
 
     {
         auto voxel_file = tmt::engine.resources.load_resource<tmt::VoxelScene>({ tmt::IO::Location::PROJECT, "cube4.vengi" });
-        //volume_cube16 = tmt::engine.resources.copy_resource<tmt::VoxelVolume>(voxel_file);
+        // volume_cube16 = tmt::engine.resources.copy_resource<tmt::VoxelVolume>(voxel_file);
         stencil = tmt::engine.resources.copy_resource<tmt::Stencil>(voxel_file);
     }
 
@@ -127,7 +127,7 @@ void MainScene::on_update(const tmt::FrameData& time) {
     time_passed += time.delta_time;
     cooldown -= time.delta_time;
 
-        /* Get the mouse position */
+    /* Get the mouse position */
     const glm::ivec2 mouse_pos = glm::ivec2(tmt::engine.input.get_mouse_x(), tmt::engine.input.get_mouse_y());
 
     /* Create a ray from the mouse position for the current render view and trace it */
@@ -151,12 +151,12 @@ void MainScene::on_update(const tmt::FrameData& time) {
           tmt::Log::warn("{}", i);
           i += j;
       }*/
-    //if (tmt::engine.input.is_mouse_button_pressed(tmt::MouseButton::LEFT) && cooldown <= 0.0f) {
-    //    /* Get the camera position and forward direction */
-    //    const tmt::Entity camera = tmt::Camera::get_active_camera();
-    //    const tmt::Transform& cam_transform = tmt::engine.ecs.get_component<tmt::Transform>(camera);
-    //    const glm::vec3 cam_pos = cam_transform.get_world_position();
-    //    const glm::vec3 cam_forward = cam_transform.get_forward();
+    // if (tmt::engine.input.is_mouse_button_pressed(tmt::MouseButton::LEFT) && cooldown <= 0.0f) {
+    //     /* Get the camera position and forward direction */
+    //     const tmt::Entity camera = tmt::Camera::get_active_camera();
+    //     const tmt::Transform& cam_transform = tmt::engine.ecs.get_component<tmt::Transform>(camera);
+    //     const glm::vec3 cam_pos = cam_transform.get_world_position();
+    //     const glm::vec3 cam_forward = cam_transform.get_forward();
 
     //    /* Spawn box models with forward force */
     //    for (int x = -2; x <= 2; x++) {
