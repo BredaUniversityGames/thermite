@@ -143,7 +143,7 @@ void Renderer::update() {
             .work_size(render_view.gpu_view.resolution.x, render_view.gpu_view.resolution.y);
     }
 
-    // vfx_pipeline.enqueue(render_graph, render_view);
+    vfx_pipeline.enqueue(render_graph, render_view);
 
     /* TAA Resolve */
     if (engine.renderer.display_mode != DisplayMode::MOTIONVECTORS) {
@@ -161,7 +161,7 @@ void Renderer::update() {
         /* clang-format off */
     }
 
-    polyline_pipeline.enqueue(render_graph, render_view);
+    //polyline_pipeline.enqueue(render_graph, render_view);
     ui_pipeline.enqueue(render_graph, render_view);
 
 #ifdef THERMITE_EDITOR

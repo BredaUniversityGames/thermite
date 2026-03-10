@@ -55,7 +55,7 @@ void main(int2 thread_id: SV_DispatchThreadID) {
         if (length(motion_vector) < 1e-5f)
             motion_vector = float2(0.0f, 0.0f);
 
-        mbuffer[thread_id] = float2(motion_vector);
+        mbuffer[thread_id] = motion_vector;
     }
     else {
         mbuffer[thread_id] = float2(0.0f, 0.0f);

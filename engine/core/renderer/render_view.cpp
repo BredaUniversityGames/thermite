@@ -68,9 +68,9 @@ void RenderView::init() {
         render_size.y = render_size.y >> 1;
     }
 
-    /* Create the illuminance buffer */
-    lbuffer.texture =
-        bank.create_texture("Luminance Buffer Texture", TextureUsage::Storage | TextureUsage::Sampled, TextureFormat::RG11B10Ufloat, render_size).expect("failed to create ibuffer texture.");
+    /* Create the luminance buffer */
+    lbuffer.texture = bank.create_texture("Luminance Buffer Texture", TextureUsage::ColorAttachment |TextureUsage::Storage | TextureUsage::Sampled, TextureFormat::RG11B10Ufloat, render_size)
+                          .expect("failed to create ibuffer texture.");
     lbuffer.image = bank.create_image("Luminance Buffer Image", lbuffer.texture).expect("failed to create ibuffer image.");
     nbuffer.texture = bank.create_texture("Denoised Luminance Buffer Texture", TextureUsage::Storage | TextureUsage::Sampled, TextureFormat::RG11B10Ufloat, render_size)
                           .expect("failed to create nbuffer texture.");
