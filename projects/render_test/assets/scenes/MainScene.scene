@@ -830,7 +830,7 @@
         "20": {
             "effects": [
                 {
-                    "particle_lifetime": 3.0,
+                    "particle_lifetime": 1.0,
                     "pos_offset": {
                         "x": 0.0,
                         "y": 0.0,
@@ -842,7 +842,7 @@
                         "z": 0.0
                     },
                     "cone_angle": 90.0,
-                    "spawn_count": 8,
+                    "spawn_count": 32,
                     "spawn_interval": 0.0,
                     "start_speed": {
                         "min": 1.0,
