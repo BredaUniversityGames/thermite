@@ -50,8 +50,13 @@ struct SteeringRequest {
     SteeringMode mode = SteeringMode::NONE;
 
     glm::vec3 target_position = {};
-    float arrive_radius = 6.f;
 
+    float arrive_radius = 6.f;
+    float activation_range = 50.f;
+    float explosion_range = 2.f;
+
+    bool player_in_range = false;
+    bool in_explosion_range = false;
     bool completed = false;
 
     WanderData wander_data;

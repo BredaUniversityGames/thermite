@@ -2,16 +2,15 @@
 
 #include "engine/engine.hpp"
 #include "engine/core/ecs.hpp"
+#include "engine/core/logger.hpp"
 
 #include "engine/systems/ai/goap/components/goap_action.hpp"
-#include "engine/systems/ai/steering/components/steering_mode.hpp"
+#include "../player.hpp"
 
-namespace tmt {
+namespace game {
 
-void WanderSteering::on_start(Entity agent) {
-    time_wandering = 0.f;
-
-    auto& registry = engine.ecs.get_registry();
+void WanderSteering::on_start(tmt::Entity agent) {
+    auto& registry = tmt::engine.ecs.get_registry();
 
     // Create a wander steering request
     SteeringRequest request {};
@@ -25,26 +24,42 @@ void WanderSteering::on_start(Entity agent) {
 
     registry.emplace_or_replace<SteeringRequest>(agent, request);
 
-    time_wandering = 0.f;
+    if (!tmt::engine.ecs.valid(player_entity)) {
+        player_entity = tmt::engine.ecs.view<Player>().front().entity;  // Assuming there's only one player entity in the game
+    }
 }
 
-void WanderSteering::on_tick(Entity /*agent*/, float dt) {
-    time_wandering += dt;
+void WanderSteering::on_tick(tmt::Entity agent, float /*dt*/) {
+    if (!tmt::engine.ecs.valid(player_entity)) return;
+    auto& registry = tmt::engine.ecs.get_registry();
+
+    auto player_transform = tmt::engine.ecs.try_get_component<tmt::Transform>(player_entity);
+    auto agent_transform = tmt::engine.ecs.try_get_component<tmt::Transform>(agent);
+
+    if (player_transform && agent_transform) {
+        float distance = glm::distance(agent_transform->get_world_position(), player_transform->get_world_position());
+        
+        auto& request = registry.get<SteeringRequest>(agent);
+        request.player_in_range = distance <= request.activation_range;
+    }
 }
 
-bool WanderSteering::is_done(Entity /*agent*/) const {
-    return time_wandering >= wander_duration;
+bool WanderSteering::is_done(tmt::Entity agent) const {
+    auto& registry = tmt::engine.ecs.get_registry();
+    auto& request = registry.get<SteeringRequest>(agent);
+
+    return request.player_in_range;
 }
 
-void WanderSteering::on_finished(Entity agent) {
-    auto& registry = engine.ecs.get_registry();
+void WanderSteering::on_finished(tmt::Entity agent) {
+    auto& registry = tmt::engine.ecs.get_registry();
     if (registry.any_of<SteeringRequest>(agent)) {
         registry.remove<SteeringRequest>(agent);
     }
 }
 
-void WanderSteering::on_interrupt(Entity agent) {
+void WanderSteering::on_interrupt(tmt::Entity agent) {
     on_finished(agent);
 }
 
-}  // namespace tmt
+}  // namespace game

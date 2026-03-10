@@ -1,28 +1,28 @@
 #pragma once
 
 #include "engine/systems/ai/goap/components/goap_action.hpp"
+#include "engine/systems/ai/steering/components/steering_mode.hpp"
 
-namespace tmt {
+namespace game {
 
-class SteerToPlayer : public GoapAction {
+class SteerToPlayer : public tmt::GoapAction {
    public:
     SteerToPlayer() {
-        preconditions["can_move"] = true;
-        effects["at_target"] = true;
-        effects["can_move"] = false;
+        preconditions["player_in_range"] = true;
+        effects["explosion_in_range"] = true;
         cost = 2.f;
     }
 
     std::string get_id() const override { return "a_SteerToPlayer"; }
 
-    void on_start(Entity agent) override;
-    void on_tick(Entity /*agent*/, float /*dt*/) override {}  // Steering system handles movement automatically
-    bool is_done(Entity agent) const override;
-    void on_finished(Entity agent) override;
-    void on_interrupt(Entity agent) override;
+    void on_start(tmt::Entity agent) override;
+    void on_tick(tmt::Entity agent, float /*dt*/) override;
+    bool is_done(tmt::Entity agent) const override;
+    void on_finished(tmt::Entity agent) override;
+    void on_interrupt(tmt::Entity agent) override;
 
    private:
-    glm::vec3 target = glm::vec3(10.f, 1.f, 20.f);
+    tmt::Entity player_entity = entt::null;
 };
 
-}  // namespace tmt
+}  // namespace game
