@@ -64,7 +64,7 @@ class Physics : public ISystem {
     Hit raycast(const Ray& ray, uint32_t layer_mask) const;
 
     static void recalculate_physics_data(VoxelBody& vb, VoxelVolume& volume);
-    static void recalculate_surface_normals(VoxelRenderer& vr);
+    static void recalculate_surface_normals(VoxelRenderer& renderer);
     static void recalculate_surface_normals(VoxelVolume& volume);
 };
 

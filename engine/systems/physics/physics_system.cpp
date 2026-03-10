@@ -979,8 +979,8 @@ inline void recurse_recalculate_normals(
     }
 }
 
-void Physics::recalculate_surface_normals(VoxelRenderer& vr) {
-    auto* tree = vr.resource.resource->blas.get();
+void Physics::recalculate_surface_normals(VoxelRenderer& renderer) {
+    auto* tree = renderer.resource.resource->blas.get();
     const uint32_t node_scale = (1u << (tree->depth * 2u));
     recurse_recalculate_normals(tree, 0, 0, node_scale, 0, 0, 0);
 }

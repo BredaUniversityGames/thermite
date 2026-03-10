@@ -81,11 +81,11 @@ std::vector<Entity> Destruction::find_seperations(Entity entity, const Stencil* 
                         edge_indices.push_back((glm::uvec3)neighbor_pos);
                     } else {  // We are not on the edge of the stencil so only mark the neighboring voxel if its empty int the tree
                         glm::ivec3 neighbor_pos = local_pos + dirs[d] + offset;
-                        
+
                         // If the world position is outside the bounds of the resource, skip it
                         if (neighbor_pos.x < 0 || neighbor_pos.y < 0 || neighbor_pos.z < 0) continue;
                         if (neighbor_pos.x >= resource->size.x || neighbor_pos.y >= resource->size.y || neighbor_pos.z >= resource->size.z) continue;
-                        
+
                         // If this voxel is empty in the tree, skip it
                         if (tree->get_physics_voxel(neighbor_pos.x, neighbor_pos.y, neighbor_pos.z) == nullptr) continue;
 
@@ -115,7 +115,7 @@ std::vector<Entity> Destruction::find_seperations(Entity entity, const Stencil* 
 
             // Calculate index of this voxel in the flood grid
             uint32_t current_i = current.x + current.y * resource->size.x + current.z * resource->size.x * resource->size.y;
-            
+
             // If this voxel is already marked, or it does not exist in the tree, skip it
             if (flood_grid[current_i] != 0 || tree->get_physics_voxel(current.x, current.y, current.z) == nullptr) continue;
 
@@ -136,7 +136,7 @@ std::vector<Entity> Destruction::find_seperations(Entity entity, const Stencil* 
 
     if (current_mark > 2) Log::info("Seperation Found!");
 
-    return std::vector<Entity> {entity};
+    return std::vector<Entity> { entity };
 
     // for (size_t i = 0; i < stencil_size; i++) {
     //     // if this voxel is empty, skip it
@@ -149,8 +149,6 @@ std::vector<Entity> Destruction::find_seperations(Entity entity, const Stencil* 
     //
     //    edge_indices.push_back(i);
     //}
-
-
 }
 
 }  // namespace tmt
