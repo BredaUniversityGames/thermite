@@ -17,7 +17,7 @@ struct ParticleEffect {
     float particle_lifetime = 1.0f;
 
     glm::vec3 pos_offset = { 0.0f, 0.0f, 0.0f };
-    glm::vec3 dir = { 0.0f, 1.0f, 0.0f };
+    glm::vec3 dir = { 0.0f, 90.0f, 0.0f }; // In Degrees
     float cone_angle = 10.0f;  // In Degrees
 
     uint32_t spawn_count = 8u;
