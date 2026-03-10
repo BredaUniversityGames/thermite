@@ -38,12 +38,12 @@ void SteeringSystem::on_fixed_update(const FrameData& time) {
         glm::vec3 position = transform.get_world_position();
 
         if (request.mode == SteeringMode::ARRIVE) {
-            glm::vec3 toTarget = request.target_position - position;
+            glm::vec3 to_target = request.target_position - position;
 
-            float dist = glm::length(toTarget);
-            float moveThisFrame = glm::length(body.velocity) * time.delta_time;
+            float dist = glm::length(to_target);
+            float move_this_frame = glm::length(body.velocity) * time.delta_time;
 
-            if (moveThisFrame >= dist) {
+            if (move_this_frame >= dist) {
                 body.velocity = glm::vec3(0);
                 body.angular_velocity = glm::vec3(0);
 
