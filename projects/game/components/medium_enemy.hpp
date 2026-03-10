@@ -8,7 +8,7 @@ class MediumEnemy : public tmt::GameComponent<MediumEnemy> {
    public:
     using GameComponent::GameComponent;
 
-    static std::string_view get_name() { return "Walking"; }
+    static std::string_view get_name() { return "Medium Enemy"; }
 
     void start() override;
     void update(const tmt::FrameData& time) override;
