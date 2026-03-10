@@ -147,9 +147,7 @@ void Input::update(const FrameData& time) {
         can_use_mouse_input = false;
         can_use_keyboard_input = false;
         return;
-    }
-    else 
-    {
+    } else {
         can_use_mouse_input = true;
         can_use_keyboard_input = true;
     }
@@ -575,6 +573,10 @@ bool Input::get_mouse_relative_to_window() {
     return SDL_GetWindowRelativeMouseMode(engine.window.window);
 }
 
+void Input::set_game_preferred_mouse_lock(bool value) {
+    game_mouse_lockstate = value;
+}
+
 void Input::lock_mouse(bool value) {
     if (value) {
         float temp_mouse_x = 0.0f;
@@ -591,6 +593,9 @@ void Input::lock_mouse(bool value) {
 
 bool Input::is_mouse_locked() const {
     return mouse_locked;
+}
+bool Input::get_game_preferred_mouse_lock() const {
+    return game_mouse_lockstate;
 }
 
 void Input::warp_mouse(const glm::vec2& pos, bool relative) {
