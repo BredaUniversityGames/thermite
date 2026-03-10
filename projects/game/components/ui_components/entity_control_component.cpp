@@ -1,4 +1,5 @@
 #include "entity_control_component.hpp"
+#include "engine/core/components/button.hpp"
 
 void game::EntityControlComponent::start() {
     if (auto button_component = tmt::engine.ecs.try_get_component<tmt::Button>(entity)) {
