@@ -5,6 +5,7 @@
 #include "engine/core/logger.hpp"
 #include "engine/core/polyline.hpp"
 #include "engine/tools/fmt/glm.hpp"
+#include <cmath>
 
 using namespace game;
 
@@ -28,9 +29,37 @@ void MiningComponent::update(const tmt::FrameData& time) {
 }
 
 void MiningComponent::draw_debug_lines() const {
-    if (has_drawn_debug) return;
     cfg.set_values();
     auto& polyline = tmt::engine.polyline;
+
+    tmt::Transform* transform { nullptr };
+    if (ray_cylinder.base_transform_entity == entt::null) {
+        transform = &tmt::engine.ecs.get_component<tmt::Transform>(entity);
+    } else {
+        transform = &tmt::engine.ecs.get_component<tmt::Transform>(ray_cylinder.base_transform_entity);
+    }
+    glm::vec3 forward = transform->get_forward();
+    glm::vec3 up = transform->get_up();
+    glm::vec3 right = transform->get_right();
+    auto ray_origin = transform->get_world_position();
+    polyline.draw_world_circle(ray_origin, forward, ray_cylinder.base_radius);
+    polyline.draw_world_circle(ray_origin + ray_cylinder.ray_distance * forward, forward, ray_cylinder.top_radius);
+
+    const float step = glm::two_pi<float>() / static_cast<float>(ray_cylinder.ray_amount);
+    const float circles = ray_cylinder.base_radius / static_cast<float>(ray_cylinder.circle_levels);
+
+    constexpr float golden_angle = 2.399963229728f;
+    // TODO copied code from debug draw, might be able to simplify it
+    // TODO can also be copied in a buffer at the start and only add to the new origin if sin and cos prove to be too  intensive
+    for (size_t i = 0; i < ray_cylinder.ray_amount; i++) {
+        float elapsed_time_index = static_cast<float>(i) + glm::mod(tmt::engine.frame_data().elapsed_time * 0.1f, 1.0f);
+        const float a0 = golden_angle * elapsed_time_index;
+        const float radius = std::sqrt(elapsed_time_index / static_cast<float>(ray_cylinder.ray_amount));
+        const glm::vec3 p0 = ray_origin + radius * (right * glm::cos(a0) + up * glm::sin(a0));
+        polyline.draw_line(p0, p0 + ray_cylinder.ray_distance * forward);
+    }
+
+    if (has_drawn_debug) return;
     polyline.draw_line(last_ray.origin, last_ray.origin + last_hit.distance * last_ray.dir, 2.0f);
 }
 

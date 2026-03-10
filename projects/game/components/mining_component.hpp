@@ -8,6 +8,15 @@
 
 namespace game {
 
+struct RayCylinder {
+    // relative to the transform
+    tmt::Entity base_transform_entity = entt::null;
+    float base_radius = 1.0f;
+    float top_radius = 1.0f;
+    float ray_distance = 2.0f;
+    uint32_t ray_amount = 20;
+    uint32_t circle_levels = 20;
+};
 class MiningComponent : public tmt::GameComponent<MiningComponent> {
    public:
     using GameComponent::GameComponent;
@@ -21,7 +30,8 @@ class MiningComponent : public tmt::GameComponent<MiningComponent> {
 
     tmt::ResourceRef<tmt::Stencil> stencil;  // currently active stencil
     bool active = true;
-    DebugLineConfig cfg;
+    DebugLineConfig cfg {};
+    RayCylinder ray_cylinder {};
 
    private:
     void on_stop_mining(const ReleaseShootEvent& e);
@@ -47,4 +57,5 @@ class MiningComponent : public tmt::GameComponent<MiningComponent> {
 };
 
 }  // namespace game
-TMT_OBJECT(game::MiningComponent, (stencil, active, cfg));
+TMT_OBJECT(game::RayCylinder, (base_transform_entity, base_radius, top_radius, ray_distance, ray_amount, circle_levels));
+TMT_OBJECT(game::MiningComponent, (stencil, active, cfg, ray_cylinder));
