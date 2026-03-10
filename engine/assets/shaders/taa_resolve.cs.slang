@@ -26,6 +26,7 @@ void main(int2 thread_id: SV_DispatchThreadID) {
 
     float3 curr_luminance = lbuffer[thread_id];
 
+    /* Linear Filtering Alternative :( */
      const float2 texel = uv_last * float2(render_view.resolution) - 0.5f;
      const float2 f = frac(texel);
      const int2 t = int2(floor(texel));
@@ -43,18 +44,18 @@ void main(int2 thread_id: SV_DispatchThreadID) {
 
         hbuffer[thread_id] = float4(output, 1.0f);
 
-        // Neighborhood clamp to prevent ghosting
-        float3 nmin = curr_luminance, nmax = curr_luminance;
+        /* Neighborhood clamp to prevent ghosting */
+        float3 neighbour_min = curr_luminance, neighbour_max = curr_luminance;
         for (int y = -1; y <= 1; y++) {
             for (int x = -1; x <= 1; x++) {
                 float3 s = lbuffer[thread_id + int2(x, y)];
-                nmin = min(nmin, s);
-                nmax = max(nmax, s);
+                neighbour_min = min(neighbour_min, s);
+                neighbour_max = max(neighbour_max, s);
             }
         }
-        prev_luminance = clamp(prev_luminance, nmin, nmax);
+        prev_luminance = clamp(prev_luminance, neighbour_min, neighbour_max);
 
-        // Reject off-screen
+        /* Reject off-screen */
         bool valid = all(uv_last >= 0.0f) && all(uv_last <= 1.0f);
         float blend = valid ? 0.95f : 0.0f;
 
