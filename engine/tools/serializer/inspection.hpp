@@ -13,7 +13,7 @@ inline constexpr InspectOnly inspect_only {};
 
 template <typename T>
 requires visit_struct::traits::is_visitable<T, ImReflect::Detail::ImContext>::value
-inline void tag_invoke(JsonReflect::deserialize_t, const JsonReflect::json& j, T& value, tmt::InspectOnly) {
-    /* Deserialize only the fields that are present in the inspector */
-    JsonReflect::Detail::from_json_visitable<ImReflect::Detail::ImContext>(j, value);
+inline JsonReflect::json tag_invoke(JsonReflect::serialize_t, const T& value, tmt::InspectOnly) {
+    /* serialize only the fields that are present in the inspector */
+    return JsonReflect::Detail::to_json_visitable<ImReflect::Detail::ImContext>(value);
 }
