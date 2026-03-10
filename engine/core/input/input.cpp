@@ -42,11 +42,12 @@ void Input::update(const FrameData& time) {
     mouse_dy_engine = 0;
     scroll_dx = 0;
     scroll_dy = 0;
-    std::copy_n(keys_sdl, prev_keys.size(), prev_keys.begin());
 
     OnBlockInputEvent block_event {};
     OnBlockInputRequest::dispatch(block_event);
     const bool input_blocked = block_event.block;
+
+    if(!input_blocked) std::copy_n(keys_sdl, prev_keys.size(), prev_keys.begin());
 
     SDL_Event sdl_event {};
     while (SDL_PollEvent(&sdl_event)) {
