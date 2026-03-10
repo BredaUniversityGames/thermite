@@ -73,6 +73,10 @@ class NavMesh {
     int lod_level = 0;
     glm::vec3 inflation = glm::vec3(1.0f);
 
+    bool draw_nodes = false;
+    bool draw_gen_nodes = false;
+    bool draw_path = false;
+
    private:
     std::unordered_map<uint32_t, int>* node_map;
     Volume volume;
@@ -109,4 +113,4 @@ class NavMesh {
 };
 
 }  // namespace tmt
-TMT_COMPONENT(tmt::NavMesh, "Navigation Mesh", (voxel_volume, lod_level));
+TMT_COMPONENT(tmt::NavMesh, "Navigation Mesh", (voxel_volume, lod_level, draw_nodes, draw_gen_nodes, draw_path));
