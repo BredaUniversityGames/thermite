@@ -2,6 +2,7 @@ import bindless;
 import particles;
 import math;
 import view;
+import colorspace;
 
 ConstantBuffer<RenderView> gpu_view;
 
@@ -36,7 +37,7 @@ FragmentOutput main(BillboardVertexOutput input) {
 
     FragmentOutput output;
 
-    output.color = float4(tex_sample.rgb, 1.0f);
+    output.color = float4(cs::r709_to_acescg(cs::linearize(tex_sample.rgb)), 1.0f);
     output.motion = input.motion_vec;
 
     return output;
