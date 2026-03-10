@@ -72,6 +72,8 @@ void GameFlow::on_game_end() {
 }
 
 void GameFlow::on_pre_load_scene(PreLoadSceneEvent& event) {
+    engine.input.set_game_preferred_mouse_lock(false); // reset
+
     if (has_ended == false) return;
     event.scene_json = cached_scene;
     event.handled = true;
