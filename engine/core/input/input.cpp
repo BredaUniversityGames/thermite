@@ -593,6 +593,13 @@ bool Input::is_mouse_locked() const {
     return mouse_locked;
 }
 
+void Input::set_game_preferred_mouse_lock(bool value) {
+    game_mouse_lockstate = value;
+}
+bool Input::get_game_preferred_mouse_lock() const {
+    return game_mouse_lockstate;
+}
+
 void Input::warp_mouse(const glm::vec2& pos, bool relative) {
     if (relative) {
         SDL_WarpMouseInWindow(engine.window.window, pos.x, pos.y);
