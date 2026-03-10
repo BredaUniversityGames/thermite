@@ -498,7 +498,8 @@ float Input::get_action_raw_strength(const std::string& name) {
 }
 void Input::clear_input_state() {
     int32_t number_keys;
-    keys_sdl = SDL_GetKeyboardState(&number_keys);
+    SDL_GetKeyboardState(&number_keys);
+    curr_keys.resize(number_keys, false);
     prev_keys.resize(number_keys, false);
     prev_mouse_buttons = 0;
     mouse_dx = 0.0f;
