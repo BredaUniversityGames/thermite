@@ -41,6 +41,8 @@
 
 // Goap Components
 #include "engine/systems/ai/goap/goap_system.hpp"
+#include "components/goap_actions/steer_to_player.hpp"
+#include "components/goap_actions/wander_steering.hpp"
 
 class Game : public tmt::Application {
    public:
@@ -121,7 +123,9 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
 
     /* Register Goap Components */
     {
-        tmt::engine.ecs.systems.add<tmt::Goap>();
+        if (!tmt::engine.ecs.systems.try_get<tmt::Goap>()) {
+            tmt::engine.ecs.systems.add<tmt::Goap>();
+        }
 
         auto& ecs = tmt::engine.ecs;
         auto& goap = ecs.systems.get<tmt::Goap>();
@@ -131,8 +135,27 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
         auto& type_reg = goap.agent_types();
 
         /* Register Actions */
+        action_reg.register_action(std::make_unique<tmt::SteerToPlayer>());
+        action_reg.register_action(std::make_unique<tmt::WanderSteering>());
 
         /* Register Goals */
+        {
+            tmt::GoapGoal steer_to_player;
+            steer_to_player.name = "g_SteerToPlayer";
+            steer_to_player.desired_state = { { tmt::FactId("at_target"), true } };
+            steer_to_player.priority = 5;
+            steer_to_player.valid = true;
+            goal_reg.register_goal("g_ReachTarget", steer_to_player);
+        }
+
+        {
+            tmt::GoapGoal wander_steering;
+            wander_steering.name = "g_WanderSteering";
+            wander_steering.desired_state = { { tmt::FactId("can_move"), true } };
+            wander_steering.priority = 1;
+            wander_steering.valid = true;
+            goal_reg.register_goal("g_WanderSteering", wander_steering);
+        }
     }
 
     return std::make_unique<Game>(specs);
