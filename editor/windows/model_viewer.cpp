@@ -10,7 +10,6 @@
 #include "engine/core/resources.hpp"
 #include "engine/core/renderer/renderer.hpp"
 #include "engine/core/components/voxel_renderer.hpp"
-#include "engine/core/input/input.hpp"
 #include "engine/tools/file_dialog.hpp"
 
 #include "editor/windows/palette.hpp"
@@ -321,7 +320,7 @@ void modify_voxel_volume(const ResourceRef<VoxelVolume>& model, const Brush::Mod
 void handle_brush(const Brush::State brush_state, const ResourceRef<VoxelVolume>& model, const Hit& hit, const MaterialIndex material_index) {
     switch (brush_state.tool) {
         case Brush::Tool::COLOR_PICKER: {
-            if (!engine.input.is_mouse_button_pressed(MouseButton::LEFT)) break;
+            if (!ImGui::IsMouseClicked(ImGuiMouseButton_Left)) break;
 
             const Material* picked_material = model->blas->get_voxel(hit.coord.x, hit.coord.y, hit.coord.z);
             if (picked_material == nullptr) break;
@@ -332,7 +331,7 @@ void handle_brush(const Brush::State brush_state, const ResourceRef<VoxelVolume>
         }
 
         case Brush::Tool::SINGLE: {
-            if (!engine.input.is_mouse_button_just_pressed(MouseButton::LEFT)) break;
+            if (!ImGui::IsMouseClicked(ImGuiMouseButton_Left)) break;
 
             VoxelEditDiff diff { model->uuid };
             switch (brush_state.mode) {
@@ -357,10 +356,10 @@ void handle_brush(const Brush::State brush_state, const ResourceRef<VoxelVolume>
         }
 
         case Brush::Tool::BOX: {
-            if (!engine.input.is_mouse_button_pressed(MouseButton::LEFT) && !engine.input.is_mouse_button_just_released(MouseButton::LEFT)) break;
+            if (!ImGui::IsMouseDown(ImGuiMouseButton_Left) && !ImGui::IsMouseReleased(ImGuiMouseButton_Left)) break;
 
             static glm::uvec3 start_coord { std::numeric_limits<uint32_t>::max() };
-            if (engine.input.is_mouse_button_just_pressed(MouseButton::LEFT)) start_coord = hit.coord;
+            if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) start_coord = hit.coord;
 
             const glm::uvec3& end_coord = hit.coord;
 
@@ -379,7 +378,7 @@ void handle_brush(const Brush::State brush_state, const ResourceRef<VoxelVolume>
             engine.polyline.draw_obb(world_position, select_half_extent, transform.get_world_rotation());
 
             // Releasing the mouse button to modify the area.
-            if (!engine.input.is_mouse_button_just_released(MouseButton::LEFT)) break;
+            if (!ImGui::IsMouseReleased(ImGuiMouseButton_Left)) break;
 
             modify_voxel_volume(model, brush_state.mode, min, max, material_index);
 
@@ -463,7 +462,7 @@ void ModelViewer::display() {
         use_gizmo(hierarchy, window_pos, size);
 
         const bool can_select = (ImGui::IsWindowHovered() && !ImGuizmo::IsOver());
-        if (can_select && engine.input.is_mouse_button_just_pressed(MouseButton::LEFT)) {
+        if (can_select && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
             const Ray mouse_ray = engine.renderer.render_view.pixel_ray(mouse_position);
             const Hit hit = engine.renderer.trace_ray(mouse_ray);
 
