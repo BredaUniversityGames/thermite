@@ -41,16 +41,19 @@ void main(int2 thread_id: SV_DispatchThreadID) {
         float4 prev_pos = float4(mul(object.prev_local_to_world, local_pos).xyz, 1.0f);
 
         float4 current_pos_clip = mul(render_view.world_to_clip, hit_pos);
-        float2 current_uv = (current_pos_clip.xy / current_pos_clip.w) * 0.5f + 0.5f;
+        float2 current_ndc = current_pos_clip.xy / current_pos_clip.w;
 
         float4 prev_pos_clip = mul(render_view.prev_world_to_clip, prev_pos);
-        float2 prev_uv = (prev_pos_clip.xy / prev_pos_clip.w) * 0.5f + 0.5f;
+        float2 prev_ndc = prev_pos_clip.xy / prev_pos_clip.w;
 
         /* Subtract Jitter */
-        current_uv -= render_view.jitter;
-        prev_uv -= render_view.prev_jitter;
+        current_ndc -= render_view.jitter;
+        prev_ndc -= render_view.prev_jitter;
 
-        float2 motion_vector = (prev_uv - current_uv) * float2(0.5f, -0.5f);
+        float2 motion_vector = (prev_ndc - current_ndc) * float2(0.5f, 0.5f);
+
+        if (length(motion_vector) < 1e-5f)
+            motion_vector = float2(0.0f, 0.0f);
 
         mbuffer[thread_id] = float4(motion_vector, 1.0f, 1.0f);
     }
