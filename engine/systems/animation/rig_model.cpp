@@ -148,7 +148,7 @@ std::string tmt::RigModel::current_animation_playing() {
 }
 
 void RigModel::play_animation(const std::string& animation_name, float _transfer_time, bool loop_animation) {
-    const auto& animations = data->bones[0].animations;
+    const auto& animations = data->bones.back().animations;
     if (animations.find(animation_name) == animations.end()) {
         Log::warn("invalid animation name: ", animation_name);
 
@@ -175,6 +175,8 @@ void tmt::RigModel::set_animation_speed(float s) {
 
 void RigModel::animate_translation(Transform& t, Bone& b) {
     auto& keyframes = b.animations[get_current_animation()].keyframes_pos;
+    if (keyframes.empty()) return;
+
     int current_frame = (int)keyframes.size() - 1;
     for (int i = 0; i < keyframes.size(); i++) {
         if (time < keyframes[i].time) {
@@ -204,6 +206,8 @@ void RigModel::animate_translation(Transform& t, Bone& b) {
 
 void RigModel::animate_rotation(Transform& t, Bone& b) {
     auto& keyframes = b.animations[get_current_animation()].keyframes_rot;
+    if (keyframes.empty()) return;
+
     int current_frame = (int)keyframes.size() - 1;
     for (int i = 0; i < keyframes.size(); i++) {
         if (time < keyframes[i].time) {
@@ -229,6 +233,8 @@ void RigModel::animate_rotation(Transform& t, Bone& b) {
 
 void RigModel::animate_scale(Transform& t, Bone& b) {
     auto& keyframes = b.animations[get_current_animation()].keyframes_scale;
+    if (keyframes.empty()) return;
+
     int current_frame = (int)keyframes.size() - 1;
     for (int i = 0; i < keyframes.size(); i++) {
         if (time < keyframes[i].time) {

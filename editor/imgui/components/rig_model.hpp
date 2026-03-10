@@ -71,8 +71,8 @@ inline void tag_invoke(ImReflect::ImInput_t, const char*, tmt::RigModel& value, 
 
             if (animation_file != nullptr && animation_file->is_loaded()) {
                 const auto& bones = animation_file->bones;
-                if (!bones.empty() && !bones.front().animations.empty()) {
-                    animation_files.emplace(animation_file.file_location, bones.front().animations.begin()->first);
+                if (!bones.empty() && !bones.back().animations.empty()) {
+                    animation_files.emplace(animation_file.file_location, bones.back().animations.begin()->first);
                     value.data->reload();
                 }
 

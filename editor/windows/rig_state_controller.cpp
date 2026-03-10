@@ -58,8 +58,8 @@ ImRect grid_rect;
 namespace tmt {
 
 void RigStateController::on_editor_update(const FrameData&) {
-    engine.polyline.use_color(1.0f, 0.3f, 0.3f);
-    engine.polyline.use_line_width(0.25f);
+    engine.polyline.use_color(0.0f, 1.0f, 0.0f);
+    engine.polyline.use_line_width(0.75f);
 
     for (const auto&& [entity, transform, rig] : engine.ecs.view<Transform, RigModel>().each()) {
         for (const Entity bone_entity : rig.bone_entities) {
