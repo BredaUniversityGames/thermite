@@ -20,6 +20,7 @@
 #include "systems/camera/camera_system.hpp"
 #include "systems/ai/goap/goap_system.hpp"
 #include "systems/ai/navigation/navigation_system.hpp"
+#include "systems/ai/steering/steering_system.hpp"
 #include "systems/gameplay/gameplay.hpp"
 #include "systems/gameplay/game_component_registry.hpp"
 #include "systems/motion_math/motion_math_system.hpp"
@@ -84,8 +85,10 @@ void Engine::init(std::unique_ptr<Application> user_app) {
     ecs.systems.add<Destruction>();
     ecs.systems.add<RigModelManager>();
     ecs.systems.add<AnimationConstraintSystem>();
-    ecs.systems.add<Goap>();
+    Goap* goap = ecs.systems.try_get<Goap>();
+    if (!goap) ecs.systems.add<Goap>();
     ecs.systems.add<NavigationSystem>();
+    ecs.systems.add<SteeringSystem>();
     ecs.systems.add<UI>();
     ecs.systems.add<MotionMathSystem>();
     ecs.systems.add<ButtonManager>();
@@ -203,6 +206,7 @@ void Engine::fixed_update_engine(const FrameData& frame_data) {
 void Engine::start_game() {
     TMT_ZONE_SCOPED_N("Engine::start_game")
 
+    input.clear_input_state();
     app->on_start();
     if (scenes.get_active_scene()) scenes.get_active_scene()->on_start();
 

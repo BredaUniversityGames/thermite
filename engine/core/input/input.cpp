@@ -20,15 +20,16 @@
 namespace tmt {
 
 bool Input::can_use_input_mouse() const {
-    return !can_capture_mouse;
+    return can_use_mouse_input;
 }
 bool Input::can_use_input_keyboard() const {
-    return !can_capture_keyboard;
+    return can_use_keyboard_input;
 }
 
 void Input::init() {
     int32_t number_keys;
-    keys_sdl = SDL_GetKeyboardState(&number_keys);
+    SDL_GetKeyboardState(&number_keys);
+    curr_keys.resize(number_keys, false);
     prev_keys.resize(number_keys, false);
 
     engine.input_map.setup_default_actions();
@@ -36,58 +37,56 @@ void Input::init() {
 void Input::update(const FrameData& time) {
     TMT_ZONE_SCOPED_N("Input")
 
-    // reset hold timers
-    for (auto& [action_name, input_action] : engine.input_map.actions) {
-        for (auto& event : input_action.events) {
-            if (event->is_just_released() == true) {
-                input_action.time_since_being_pressed = 0.0f;
-            }
-        }
-    }
-    std::copy_n(keys_sdl, prev_keys.size(), prev_keys.begin());
-    prev_mouse_buttons = mouse_buttons;
-
-    // Update gamepad states
-    for (auto& [id, state] : gamepads) {
-        state.prev_buttons = state.buttons;
-        state.prev_axes = state.axes;
-
-        for (int32_t i = 0; i < static_cast<int32_t>(GamepadButton::COUNT); i++) {
-            state.buttons[i] = SDL_GetGamepadButton(state.handle, static_cast<SDL_GamepadButton>(i));
-        }
-
-        for (int32_t i = 0; i < static_cast<int32_t>(GamepadAxis::COUNT); i++) {
-            constexpr float INT16_MAX_F = 32767.0f;
-            auto raw = SDL_GetGamepadAxis(state.handle, static_cast<SDL_GamepadAxis>(i));
-            state.axes[i] = static_cast<float>(raw) / INT16_MAX_F;
-        }
-    }
-
     mouse_dx = 0;
+    mouse_dx_engine = 0;
     mouse_dy = 0;
+    mouse_dy_engine = 0;
     scroll_dx = 0;
     scroll_dy = 0;
 
-    {
-        // Still get mouse position, but allow override via event
-        mouse_buttons = SDL_GetMouseState(&mouse_x, &mouse_y);
-
-        MouseOverride event;
-        OnRetrieveMouseState::dispatch(event);
-        if (event.handled) {
-            mouse_x = event.x;
-            mouse_y = event.y;
-        }
-    }
+    OnBlockInputEvent block_event {};
+    OnBlockInputRequest::dispatch(block_event);
+    const bool input_blocked = block_event.block;
 
     SDL_Event sdl_event {};
     while (SDL_PollEvent(&sdl_event)) {
         internal::SdlEvent sdl_event_wrapper(sdl_event);
         internal::OnSdlEvent::dispatch(sdl_event_wrapper);
 
-        can_capture_mouse = sdl_event_wrapper.imgui_capture_mouse;
-        can_capture_keyboard = sdl_event_wrapper.imgui_capture_keyboard;
+        if (input_blocked == false) {
+            switch (sdl_event.type) {
+                case SDL_EVENT_MOUSE_MOTION: {
+                    mouse_dx += sdl_event.motion.xrel;
+                    mouse_dy += sdl_event.motion.yrel;
+                    break;
+                }
+                case SDL_EVENT_MOUSE_WHEEL: {
+                    scroll_dx = sdl_event.wheel.x;
+                    scroll_dy = sdl_event.wheel.y;
+                    break;
+                }
+                default:
+                    break;
+            }
+        }
+
+        /* Handle non-blocked events */
         switch (sdl_event.type) {
+            case SDL_EVENT_MOUSE_MOTION: {
+                mouse_dx_engine += sdl_event.motion.xrel;
+                mouse_dy_engine += sdl_event.motion.yrel;
+                break;
+            }
+            case SDL_EVENT_WINDOW_RESIZED: {
+                engine.window.width = sdl_event.window.data1;
+                engine.window.height = sdl_event.window.data2;
+                engine.window.resized = true;
+                break;
+            }
+            case SDL_EVENT_WINDOW_RESTORED: {
+                engine.window.resized = true;
+                break;
+            }
             case SDL_EVENT_QUIT: {
                 engine.set_is_running(false);
                 break;
@@ -141,28 +140,60 @@ void Input::update(const FrameData& time) {
                 }
                 break;
             }
-            case SDL_EVENT_MOUSE_MOTION: {
-                mouse_dx += sdl_event.motion.xrel;
-                mouse_dy += sdl_event.motion.yrel;
-                break;
+        }
+    }
+
+    if (input_blocked) {
+        // If input was blocked by an event, we skip processing the rest of the input for this frame
+        can_use_mouse_input = false;
+        can_use_keyboard_input = false;
+        return;
+    } else {
+        can_use_mouse_input = true;
+        can_use_keyboard_input = true;
+    }
+
+    // update keys
+    int32_t number_keys;
+    const bool* keys_sdl = SDL_GetKeyboardState(&number_keys);
+    prev_keys = curr_keys;
+    std::copy(keys_sdl, keys_sdl + number_keys, curr_keys.begin());
+
+    // reset hold timers
+    for (auto& [action_name, input_action] : engine.input_map.actions) {
+        for (auto& event : input_action.events) {
+            if (event->is_just_released() == true) {
+                input_action.time_since_being_pressed = 0.0f;
             }
-            case SDL_EVENT_WINDOW_RESIZED: {
-                engine.window.width = sdl_event.window.data1;
-                engine.window.height = sdl_event.window.data2;
-                engine.window.resized = true;
-                break;
-            }
-            case SDL_EVENT_WINDOW_RESTORED: {
-                engine.window.resized = true;
-                break;
-            }
-            case SDL_EVENT_MOUSE_WHEEL: {
-                scroll_dx = sdl_event.wheel.x;
-                scroll_dy = sdl_event.wheel.y;
-                break;
-            }
-            default:
-                break;
+        }
+    }
+    prev_mouse_buttons = mouse_buttons;
+
+    {
+        // Still get mouse position, but allow override via event
+        mouse_buttons = SDL_GetMouseState(&mouse_x, &mouse_y);
+
+        MouseOverride event;
+        OnRetrieveMouseState::dispatch(event);
+        if (event.handled) {
+            mouse_x = event.x;
+            mouse_y = event.y;
+        }
+    }
+
+    // Update gamepad states
+    for (auto& [id, state] : gamepads) {
+        state.prev_buttons = state.buttons;
+        state.prev_axes = state.axes;
+
+        for (int32_t i = 0; i < static_cast<int32_t>(GamepadButton::COUNT); i++) {
+            state.buttons[i] = SDL_GetGamepadButton(state.handle, static_cast<SDL_GamepadButton>(i));
+        }
+
+        for (int32_t i = 0; i < static_cast<int32_t>(GamepadAxis::COUNT); i++) {
+            constexpr float INT16_MAX_F = 32767.0f;
+            auto raw = SDL_GetGamepadAxis(state.handle, static_cast<SDL_GamepadAxis>(i));
+            state.axes[i] = static_cast<float>(raw) / INT16_MAX_F;
         }
     }
 
@@ -351,36 +382,28 @@ void Input::update(const FrameData& time) {
     }
 }
 bool Input::is_keyboard_button_pressed(Key key) const {
-    if (!can_use_input_keyboard()) return false;
-    return keys_sdl[static_cast<SDL_Scancode>(key)];
+    return curr_keys[static_cast<SDL_Scancode>(key)];
 }
 
 bool Input::is_keyboard_button_just_pressed(Key key) const {
-    if (!can_use_input_keyboard()) return false;
     const auto sdl_scancode = static_cast<SDL_Scancode>(key);
-    return keys_sdl[sdl_scancode] == true && prev_keys[sdl_scancode] == false;
+    return curr_keys[sdl_scancode] == true && prev_keys[sdl_scancode] == false;
 }
 bool Input::is_keyboard_button_released(Key key) const {
-    if (!can_use_input_keyboard()) return false;
     auto sdl_scancode = static_cast<SDL_Scancode>(key);
-    return keys_sdl[sdl_scancode] == false && prev_keys[sdl_scancode] == true;
+    return curr_keys[sdl_scancode] == false && prev_keys[sdl_scancode] == true;
 }
 
 bool Input::is_mouse_button_pressed(MouseButton button) const {
-    if (!can_use_input_mouse()) return false;
     return mouse_buttons & SDL_BUTTON_MASK(static_cast<int>(button));
 }
 bool Input::is_mouse_button_just_pressed(MouseButton button) const {
-    if (!can_use_input_mouse()) return false;
-
     auto mask = SDL_BUTTON_MASK(static_cast<int32_t>(button));
     bool is_pressed = (mouse_buttons & mask) != 0;
     bool was_pressed = (prev_mouse_buttons & mask) != 0;
     return is_pressed == true && was_pressed == false;
 }
 bool Input::is_mouse_button_just_released(MouseButton button) const {
-    if (!can_use_input_mouse()) return false;
-
     auto mask = SDL_BUTTON_MASK(static_cast<int32_t>(button));
     bool is_pressed = (mouse_buttons & mask) != 0;
     bool was_pressed = (prev_mouse_buttons & mask) != 0;
@@ -473,6 +496,15 @@ float Input::get_action_raw_strength(const std::string& name) {
     }
     return max_strength;
 }
+void Input::clear_input_state() {
+    int32_t number_keys;
+    SDL_GetKeyboardState(&number_keys);
+    curr_keys.resize(number_keys, false);
+    prev_keys.resize(number_keys, false);
+    prev_mouse_buttons = 0;
+    mouse_dx = 0.0f;
+    mouse_dy = 0.0f;
+}
 float Input::get_axis(const std::string& negative_action, const std::string& positive_action) {
     return get_action_strength(positive_action) - get_action_strength(negative_action);
 }
@@ -532,6 +564,15 @@ glm::vec2 Input::get_mouse_delta() const {
     if (!can_use_input_mouse()) return {};
     return { mouse_dx, mouse_dy };
 }
+float Input::get_mouse_delta_engine_x() const {
+    return mouse_dx_engine;
+}
+float Input::get_mouse_delta_engine_y() const {
+    return mouse_dy_engine;
+}
+glm::vec2 Input::get_mouse_delta_engine() const {
+    return { mouse_dx_engine, mouse_dy_engine };
+}
 void Input::set_mouse_relative_to_window(bool value) {
     SDL_SetWindowRelativeMouseMode(engine.window.window, value);
 }
@@ -555,6 +596,13 @@ void Input::lock_mouse(bool value) {
 
 bool Input::is_mouse_locked() const {
     return mouse_locked;
+}
+
+void Input::set_game_preferred_mouse_lock(bool value) {
+    game_mouse_lockstate = value;
+}
+bool Input::get_game_preferred_mouse_lock() const {
+    return game_mouse_lockstate;
 }
 
 void Input::warp_mouse(const glm::vec2& pos, bool relative) {
