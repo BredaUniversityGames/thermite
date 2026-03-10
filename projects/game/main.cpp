@@ -39,6 +39,9 @@
 #include "components/ore_properties.hpp"
 #include "components/upgrade.hpp"
 
+// Goap Components
+#include "engine/systems/ai/goap/goap_system.hpp"
+
 class Game : public tmt::Application {
    public:
     Game(const tmt::ApplicationSpecs& specs) : Application(specs) {}
@@ -115,6 +118,22 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     tmt::engine.component_registry.register_component<game::MenuController>();
     tmt::engine.component_registry.register_component<game::FuelComponent>();
     tmt::engine.component_registry.register_component<game::OreProperties>();
+
+    /* Register Goap Components */
+    {
+        tmt::engine.ecs.systems.add<tmt::Goap>();
+
+        auto& ecs = tmt::engine.ecs;
+        auto& goap = ecs.systems.get<tmt::Goap>();
+
+        auto& action_reg = goap.actions();
+        auto& goal_reg = goap.goals();
+        auto& type_reg = goap.agent_types();
+
+        /* Register Actions */
+
+        /* Register Goals */
+    }
 
     return std::make_unique<Game>(specs);
 }
