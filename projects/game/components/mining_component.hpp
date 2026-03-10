@@ -12,10 +12,9 @@ struct RayCylinder {
     // relative to the transform
     tmt::Entity base_transform_entity = entt::null;
     float base_radius = 1.0f;
-    float top_radius = 1.0f;
     float ray_distance = 2.0f;
     uint32_t ray_amount = 20;
-    uint32_t circle_levels = 20;
+    float rotating_speed = 0.0f;
 };
 class MiningComponent : public tmt::GameComponent<MiningComponent> {
    public:
@@ -24,6 +23,7 @@ class MiningComponent : public tmt::GameComponent<MiningComponent> {
 
     void start() override;
     void update(const tmt::FrameData& time) override;
+    tmt::Transform* get_transform() const;
     void end() override;
     void draw_debug_lines() const override;
     void on_weapon_fired(const WeaponFiredEvent& e);
@@ -32,10 +32,23 @@ class MiningComponent : public tmt::GameComponent<MiningComponent> {
     bool active = true;
     DebugLineConfig cfg {};
     RayCylinder ray_cylinder {};
+    // TODO replace with proper mask
+    uint32_t ray_mask = 1 << 0;
 
    private:
     void on_stop_mining(const ReleaseShootEvent& e);
 
+    void handle_ore(const tmt::Hit& hit);
+    std::vector<glm::vec3> compute_ray_origins(const tmt::Transform& transform) const;
+    void assign_database();
+
+    std::unordered_map<tmt::Material::Type, OreProperties::MiningOre>* ore_database { nullptr };
+    std::vector<tmt::ResourceRef<tmt::Stencil>> stencils;  // might be used in the future when we have different stencils to randomly select from, for now unused
+    tmt::Ray last_ray;                                     // for debug lines
+    tmt::Hit last_hit;                                     // for debug lines
+    std::vector<glm::vec3> previous_computed_origins;
+    bool has_drawn_debug;                                  // for debug lines
+    void mine(glm::vec3 origin, glm::vec3 dir);            // base mining function, do not overload if using events, create new function instead
     struct PreviousAccumulatedHit {
         float mining_time = 0.0f;
         tmt::Material::Type type {};
@@ -43,19 +56,8 @@ class MiningComponent : public tmt::GameComponent<MiningComponent> {
         bool is_mining = false;
     };
     PreviousAccumulatedHit previous_hit;
-    void handle_ore(const tmt::Hit& hit);
-
-    void assign_database();
-    std::unordered_map<tmt::Material::Type, OreProperties::MiningOre>* ore_database { nullptr };
-
-    std::vector<tmt::ResourceRef<tmt::Stencil>> stencils;  // might be used in the future when we have different stencils to randomly select from, for now unused
-    tmt::Ray last_ray;                                     // for debug lines
-    tmt::Hit last_hit;                                     // for debug lines
-
-    bool has_drawn_debug;                                  // for debug lines
-    void mine(glm::vec3 origin, glm::vec3 dir);            // base mining function, do not overload if using events, create new function instead
 };
 
 }  // namespace game
-TMT_OBJECT(game::RayCylinder, (base_transform_entity, base_radius, top_radius, ray_distance, ray_amount, circle_levels));
-TMT_OBJECT(game::MiningComponent, (stencil, active, cfg, ray_cylinder));
+TMT_OBJECT(game::RayCylinder, (base_transform_entity, base_radius, ray_distance, ray_amount, rotating_speed));
+TMT_OBJECT(game::MiningComponent, (stencil, active, cfg, ray_cylinder, ray_mask));
