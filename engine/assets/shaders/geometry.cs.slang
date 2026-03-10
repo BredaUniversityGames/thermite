@@ -13,7 +13,7 @@ StructuredBuffer<VoxelObject> object_data;
 /* Visibility buffer. */
 RWTexture2D<uint2> vbuffer;
 /* Motion Vector Buffer */
-RWTexture2D<float4> mbuffer;
+RWTexture2D<float2> mbuffer;
 
 [shader("compute")]
 [numthreads(16, 8, 1)]
@@ -55,9 +55,9 @@ void main(int2 thread_id: SV_DispatchThreadID) {
         if (length(motion_vector) < 1e-5f)
             motion_vector = float2(0.0f, 0.0f);
 
-        mbuffer[thread_id] = float4(motion_vector, 1.0f, 1.0f);
+        mbuffer[thread_id] = float2(motion_vector);
     }
     else {
-        mbuffer[thread_id] = float4(0.0f, 0.0f, 0.0f, 1.0f);
+        mbuffer[thread_id] = float2(0.0f, 0.0f);
     }
 }
