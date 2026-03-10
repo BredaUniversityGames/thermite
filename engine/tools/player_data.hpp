@@ -24,19 +24,41 @@ class PlayerData {
     };
 
     std::map<std::string, Entry> entries;
+    tmt::json data;
 
    public:
     template <typename T>
     T& get(const std::string& key, T default_value = {}) {
         const bool contains = entries.contains(key);
         if (contains == false) {
-            entries.emplace(
-                key, Entry {
-                         .value = default_value,
-                         .ops = create_ops<T>(),
-                     }
-            );
+            const bool has_json = data.contains(key);
+            if (has_json) {
+                const tmt::json& j = data.at(key);
+                entries.emplace(
+                    key,  //
+                    Entry {
+                        .value = std::any(T{}),
+                        .ops = create_ops<T>(),
+                    }
+                );
+                auto& entry = entries.at(key);
+                try {
+                    entry.ops.deserialize(j, entry.value);
+                } catch (const std::exception& e) {
+                    tmt::Log::error(tmt::Log::Scope::ENGINE, "Failed to deserialize key '{}': {}", key, e.what());
+                    entry.value = default_value;
+                }
+            } else {
+                entries.emplace(
+                    key,  //
+                    Entry {
+                        .value = default_value,
+                        .ops = create_ops<T>(),
+                    }
+                );
+            }
         }
+
         auto& entry = entries.at(key);
         if (entry.ops.type_info != typeid(T)) {
             tmt::Log::error(tmt::Log::Scope::ENGINE, "Type mismatch for key '{}'. Requested type: '{}', actual type: '{}'", key, typeid(T).name(), entry.ops.type_info.name());
@@ -46,19 +68,13 @@ class PlayerData {
     }
 
     void serialize() {
-        tmt::json j;
-        for (const auto& [key, entry] : entries) {
-            j[key] = entry.ops.serialize(entry.value);
-        }
-        const bool success = IO::write_text_file(Config::FILE_LOCATION, j.dump(4));
+        const bool success = IO::write_text_file(Config::FILE_LOCATION, data.dump(4));
         if (!success) {
             tmt::Log::error(tmt::Log::Scope::ENGINE, "Failed to write PlayerData to file '{}'", Config::FILE_LOCATION);
         }
     }
 
-    void deserialize() {
-
-    }
+    void deserialize() {}
 
    private:
     template <typename T>
