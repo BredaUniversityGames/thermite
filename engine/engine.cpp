@@ -11,8 +11,8 @@
 #include "core/ecs.hpp"
 #include "core/scenes.hpp"
 #include "core/polyline.hpp"
-
 #include "core/renderer/renderer.hpp"
+#include "engine/tools/player_data.hpp"
 
 #include "systems/physics/physics_system.hpp"
 #include "systems/physics/destruction_system.hpp"
@@ -51,10 +51,12 @@ Engine::Engine() :
     salvo(*new Salvo()),
     scenes(*new Scenes()),
     polyline(*new Polyline()),
-    component_registry(*new GameComponentRegistry()) {}
+    component_registry(*new GameComponentRegistry()),
+    player_data(*new PlayerData()) {}
 
 Engine::~Engine() {
     /* Destruction should be in reverse order */
+    delete &player_data;
     delete &component_registry;
     delete &polyline;
     delete &scenes;
