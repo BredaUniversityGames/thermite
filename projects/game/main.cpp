@@ -36,6 +36,7 @@
 #include "components/text_component.hpp"
 #include "components/weapon.hpp"
 #include "components/fuel.hpp"
+#include "components/ore_properties.hpp"
 #include "components/upgrade.hpp"
 #include "components/ui_components/scene_switch_component.hpp"
 #include "components/ui_components/entity_control_component.hpp"
@@ -91,6 +92,7 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     tmt::engine.component_registry.register_component<game::Upgrade>();
     tmt::engine.component_registry.register_component<game::MenuController>();
     tmt::engine.component_registry.register_component<game::FuelComponent>();
+    tmt::engine.component_registry.register_component<game::OreProperties>();
     /* Register Game UI Components */
     tmt::engine.component_registry.register_component<game::SceneSwitchComponent>();
     tmt::engine.component_registry.register_component<game::EntityControlComponent>();
