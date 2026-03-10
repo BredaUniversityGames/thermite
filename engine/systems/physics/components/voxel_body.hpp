@@ -64,8 +64,6 @@ struct VoxelBody {
 
     uint32_t layer = 0;  // default layer
 
-    ResourceRef<VoxelVolume> resource {};
-
     Aabb aabb() const;
     Box get_local_bounds() const;
     Box get_world_bounds() const;
@@ -75,4 +73,4 @@ struct VoxelBody {
 
 }  // namespace tmt
 
-TMT_COMPONENT(tmt::VoxelBody, "Voxel Body", (resource, type, gravity, layer));
+TMT_COMPONENT(tmt::VoxelBody, "Voxel Body", (type, gravity, layer));

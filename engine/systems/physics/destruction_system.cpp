@@ -2,6 +2,7 @@
 #include "engine/engine.hpp"
 #include "engine/core/logger.hpp"
 #include "engine/core/resources/stencil.hpp"
+#include "engine/core/components/voxel_renderer.hpp"
 #include "engine/systems/physics/components/voxel_body.hpp"
 #include "engine/systems/physics/physics_system.hpp"
 
@@ -21,11 +22,11 @@ void Destruction::on_end() {
 
 void Destruction::destroy_voxels(Entity entity, const Stencil* stencil, glm::ivec3 offset) {
     // Get voxel body component
-    VoxelBody* vb = engine.ecs.try_get_component<VoxelBody>(entity);
-    if (vb == nullptr) return;
+    VoxelRenderer* renderer = engine.ecs.try_get_component<VoxelRenderer>(entity);
+    if (renderer == nullptr) return;
 
     // Subtract voxels from BLAS
-    auto* resource = vb->resource.resource.get();
+    auto* resource = renderer->resource.resource.get();
     resource->blas.get()->subtract(stencil, offset);
     resource->set_dirty();
 
@@ -35,12 +36,13 @@ void Destruction::destroy_voxels(Entity entity, const Stencil* stencil, glm::ive
     // Recalculate physics data for all seperate voxel bodies
     for (Entity seperate_entity : seperated_entities) {
         VoxelBody& seperate_vb = engine.ecs.get_component<VoxelBody>(seperate_entity);
-        Physics::recalculate_physics_data(seperate_vb);
+        auto& volume = engine.ecs.get_component<VoxelRenderer>(seperate_entity).resource;
+        Physics::recalculate_physics_data(seperate_vb, *volume.resource);
     }
 }
 
 std::vector<Entity> Destruction::find_seperations(Entity entity, const Stencil* stencil, glm::ivec3 offset) {
-    VoxelBody& vb = engine.ecs.get_component<VoxelBody>(entity);
+    VoxelRenderer& vb = engine.ecs.get_component<VoxelRenderer>(entity);
     auto* resource = vb.resource.resource.get();
     Svt64* tree = resource->blas.get();
 
