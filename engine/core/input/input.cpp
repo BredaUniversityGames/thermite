@@ -42,6 +42,7 @@ void Input::update(const FrameData& time) {
     mouse_dy_engine = 0;
     scroll_dx = 0;
     scroll_dy = 0;
+    std::copy_n(keys_sdl, prev_keys.size(), prev_keys.begin());
 
     OnBlockInputEvent block_event {};
     OnBlockInputRequest::dispatch(block_event);
@@ -160,7 +161,6 @@ void Input::update(const FrameData& time) {
             }
         }
     }
-    std::copy_n(keys_sdl, prev_keys.size(), prev_keys.begin());
     prev_mouse_buttons = mouse_buttons;
 
     {
