@@ -168,7 +168,7 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
 
             // Convert from deg to dir vector
             const glm::quat local_rot = glm::quat(glm::radians(effect.dir));
-            const glm::vec3 local_dir = local_rot * glm::vec3(0.0f, 1.0f, 0.0f);
+            const glm::vec3 local_dir = local_rot * glm::vec3(0.0f, 0.0f, 1.0f);
 
             // Get emitter's world rotation
             const glm::quat world_rot = transform.get_world_rotation();
