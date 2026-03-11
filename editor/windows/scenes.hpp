@@ -16,7 +16,7 @@ class ScenesWindow : public IWindow, OnSceneModified, OnSceneSerialized, OnPostL
     bool dirty_scene = false;
 
     // Inherited via IWindow
-    void display() override;
+    void on_inspect() override;
 
     void on_editor_start() override;
     void on_editor_update(const FrameData& time) override;

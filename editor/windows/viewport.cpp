@@ -18,6 +18,7 @@
 #include "editor/events/scene.hpp"
 #include "editor/windows/scenes.hpp"
 #include "engine/core/components/ui_component.hpp"
+#include "game_flow.hpp"
 
 void tmt::Viewport::on_editor_start() {}
 
@@ -48,7 +49,7 @@ int tmt::Viewport::get_window_flags() const {
     int flags = ImGuiWindowFlags_MenuBar;
 
     if (!engine.game_controller.is_running()) {
-        const bool is_scene_dirty = editor.windows[editor.editor_mode].get<ScenesWindow>().is_scene_dirty();
+        const bool is_scene_dirty = editor.systems[editor.editor_mode].get<ScenesWindow>().is_scene_dirty();
         if (is_scene_dirty) flags |= ImGuiWindowFlags_UnsavedDocument;
     }
 
@@ -71,8 +72,7 @@ void tmt::Viewport::resume_game() {
     engine.game_controller.resume_game();
 }
 
-void tmt::Viewport::display() {
-    // Menu bar toolbar
+void tmt::Viewport::on_inspect() {
     toolbar();
 
     auto size = ImGui::GetContentRegionAvail();
@@ -95,7 +95,7 @@ void tmt::Viewport::display() {
     mouse_pos.x = imgui_mouse_pos.x - image_pos.x;
     mouse_pos.y = imgui_mouse_pos.y - image_pos.y;
 
-    const std::vector<Entity>& selected_entities = editor.windows[editor.editor_mode].get<Hierarchy>().get_selected_entities();
+    const std::vector<Entity>& selected_entities = editor.systems[editor.editor_mode].get<Hierarchy>().get_selected_entities();
 
     float snap_value = 0.0f;
     const bool ctrl_held = ImGui::IsKeyDown(ImGuiKey_LeftCtrl) || ImGui::IsKeyDown(ImGuiKey_RightCtrl);
@@ -160,7 +160,7 @@ void tmt::Viewport::display() {
 }
 
 void tmt::Viewport::snap_to_entity() {
-    const auto* hierarchy = editor.windows[editor.editor_mode].try_get<Hierarchy>();
+    const auto* hierarchy = editor.systems[editor.editor_mode].try_get<Hierarchy>();
     Entity selected_entity = hierarchy->get_first_selected_entity();
     if (hierarchy == nullptr || !engine.ecs.valid(selected_entity)) return;
 
@@ -300,12 +300,13 @@ void tmt::Viewport::toolbar() {
     // Play/Stop button
     if (engine.game_controller.is_playing()) {
         if (ImGui::Button(ICON_MS_STOP "##Stop", ImVec2(icon_btn_width, 0))) {
-            end_game();
+            // end_game();
+            editor.systems[editor.editor_mode].get<GameFlow>().end_game();
         }
         if (ImGui::IsItemHovered()) ImGui::SetTooltip("Stop");
     } else {
         if (ImGui::Button(ICON_MS_PLAY_ARROW "##Play", ImVec2(icon_btn_width, 0))) {
-            start_game();
+            editor.systems[editor.editor_mode].get<GameFlow>().start_game();
         }
         if (ImGui::IsItemHovered()) ImGui::SetTooltip("Start");
     }
@@ -314,12 +315,12 @@ void tmt::Viewport::toolbar() {
     if (engine.game_controller.is_playing()) {
         if (engine.game_controller.is_paused()) {
             if (ImGui::Button(ICON_MS_PLAY_ARROW "##Resume", ImVec2(icon_btn_width, 0))) {
-                resume_game();
+                editor.systems[editor.editor_mode].get<GameFlow>().resume_game();
             }
             if (ImGui::IsItemHovered()) ImGui::SetTooltip("Resume");
         } else {
             if (ImGui::Button(ICON_MS_PAUSE "##Pause", ImVec2(icon_btn_width, 0))) {
-                pause_game();
+                editor.systems[editor.editor_mode].get<GameFlow>().pause_game();
             }
             if (ImGui::IsItemHovered()) ImGui::SetTooltip("Pause");
         }
@@ -360,7 +361,7 @@ void tmt::Viewport::toolbar() {
 void tmt::Viewport::selection_logic(const ImVec2& imgui_mouse_pos, const ImVec2& image_pos, bool toolbar_buttons_hovered) {
     if (!is_hovered || engine.game_controller.is_running()) return;
 
-    auto& hierarchy = editor.windows[Editor::Mode::SCENE].get<Hierarchy>();
+    auto& hierarchy = editor.systems[Editor::Mode::SCENE].get<Hierarchy>();
     const std::vector<Entity>& selected_entities = hierarchy.get_selected_entities();
     auto& imgui_io = ImGui::GetIO();
 
@@ -455,7 +456,7 @@ void tmt::Viewport::selection_logic(const ImVec2& imgui_mouse_pos, const ImVec2&
 }
 
 void tmt::Viewport::force_open_recurse_upwards(Entity entity) {
-    auto& hierarchy = editor.windows[Editor::Mode::SCENE].get<Hierarchy>();
+    auto& hierarchy = editor.systems[Editor::Mode::SCENE].get<Hierarchy>();
 
     hierarchy.add_entity_to_forced_open(entity);
 

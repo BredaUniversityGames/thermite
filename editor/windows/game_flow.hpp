@@ -12,7 +12,7 @@ class GameFlow : public IWindow, public OnGameEnd, public OnPreLoadScene {
     std::string get_title() const override { return ICON_MS_GAMEPAD "  Game Flow"; };
     constexpr bool default_open() const override { return true; }
 
-    void display() override;
+    void on_inspect() override;
 
     void pause_game();
 

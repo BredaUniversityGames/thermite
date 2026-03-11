@@ -21,7 +21,7 @@ class Hierarchy : public IWindow, public OnGameEnd, public OnPreUnloadScene {
     Hierarchy() = default;
     ~Hierarchy() = default;
 
-    void display() override;
+    void on_inspect() override;
 
     virtual int get_window_flags() const override;
     constexpr std::string get_title() const override { return ICON_MS_ACCOUNT_TREE " Hierarchy"; };

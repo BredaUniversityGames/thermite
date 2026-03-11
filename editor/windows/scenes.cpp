@@ -9,7 +9,7 @@
 
 namespace tmt {
 
-void ScenesWindow::display() {
+void ScenesWindow::on_inspect() {
     const auto& scenes = engine.scenes.get_registered_scenes();
     const auto& active_scene = engine.scenes.get_active_scene();
     const auto& scene_name = active_scene ? active_scene->get_name() : "None";

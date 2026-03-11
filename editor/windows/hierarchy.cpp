@@ -99,7 +99,7 @@ void Hierarchy::before_begin() {
     }
 }
 
-void Hierarchy::display() {
+void Hierarchy::on_inspect() {
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8, 8));
     top_bar();
     render_hierarchy();
@@ -348,7 +348,7 @@ void Hierarchy::on_editor_update(const FrameData&) {
     }
 
     const bool is_playing = engine.game_controller.is_running();
-    const bool using_debug_cam = editor.windows[editor.editor_mode].get<Viewport>().is_using_debug_camera();
+    const bool using_debug_cam = editor.systems[editor.editor_mode].get<Viewport>().is_using_debug_camera();
     const bool wants_keyboard = ImGui::GetIO().WantCaptureKeyboard;
     const bool has_selection = !selected_entities.empty();
 

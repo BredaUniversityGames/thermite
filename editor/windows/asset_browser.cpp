@@ -178,7 +178,7 @@ bool AssetBrowser::location_is_bookmarked(const IO::FileLocation& location) {
     return bookmark_iterator != bookmarks.end();
 }
 
-void AssetBrowser::display() {
+void AssetBrowser::on_inspect() {
     // If we are dragging a file in from another program we manually create a drag and drop source to use in ImGui.
     if (file_drop_state.is_dropping) {
         ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceExtern);  // ImGuiDragDropFlags_SourceExtern means it'll always return true.

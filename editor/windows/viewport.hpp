@@ -19,7 +19,7 @@ class Viewport : public IWindow, public OnRetrieveMouseState, public OnBlockInpu
     void on_editor_end() override;
 
     void before_begin() override;
-    void display() override;
+    void on_inspect() override;
     void snap_to_entity();
     void end_display() override;
 
