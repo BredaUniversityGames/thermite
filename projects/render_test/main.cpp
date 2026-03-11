@@ -123,7 +123,7 @@ void MainScene::on_update(const tmt::FrameData& time) {
                 float random_rot_z = ((float)(rand() % 1000) / 1000.0f) * 3.1415f;
 
                 tmt::Physics::set_rotation(vb, cam_transform.get_world_rotation() * glm::vec3(random_rot_x, random_rot_y, random_rot_z));
-                tmt::Physics::add_force(vb, cam_forward * 2.0f);
+                tmt::Physics::add_force(vb, cam_forward * 20.0f);
             }
         }
 
