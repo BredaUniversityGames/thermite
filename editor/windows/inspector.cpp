@@ -53,9 +53,38 @@ void Inspector::display_entity_info(const MenuContext& menu_context) {
     if (menu_context.primary_entity == entt::null) {
         return;
     }
-    const tmt::Entity& entity = menu_context.primary_entity;
-    ImGui::Text("Entity: %s", tmt::EntityHelper::to_string(entity).c_str());
+
+    bool marked_disabled = !engine.ecs.has_component<DisableFlag>(menu_context.primary_entity);
+    if (ImGui::Checkbox("##Disabled", &marked_disabled)) {
+        if (marked_disabled) {
+            for (const Entity& entity : menu_context.selected_entities) {
+                engine.ecs.enable(entity);
+            }
+        } else {
+            for (const Entity& entity : menu_context.selected_entities) {
+                engine.ecs.disable(entity);
+            }
+        }
+    }
+
+    ImGui::SameLine();
+
+    auto entity_str = tmt::EntityHelper::to_string(menu_context.primary_entity);
+    ImGui::Text("Entity: %s", entity_str.c_str());
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("Click to copy Entity ID");
+    }
 }
+
+template <typename T>
+struct CanBeDeleted : std::true_type {};
+
+template <>
+struct CanBeDeleted<Transform> : std::false_type {};
+template <>
+struct CanBeDeleted<Name> : std::false_type {};
+template <>
+struct CanBeDeleted<Prefab> : std::false_type {};
 
 void Inspector::display_compile_time_components(const tmt::Inspector::MenuContext& menu_context) {
     InspectComponents::for_each([&menu_context, this](auto type_tag) {
@@ -74,23 +103,27 @@ void Inspector::display_compile_time_components(const tmt::Inspector::MenuContex
         const ContextMenuResponse context_response = context_menu(name, header_response.right_clicked);
 
         if (context_response.remove_component) {
-            UndoRedoCollection collection;
-            for (const Entity& entity : menu_context.selected_entities) {
-                const bool has_comp = engine.ecs.has_component<T>(entity);
-                if (has_comp == false) continue;
+            if constexpr (CanBeDeleted<T>::value == false) {
+                tmt::Log::warn("Component '{}' cannot be removed.", name);
+            } else {
+                UndoRedoCollection collection;
+                for (const Entity& entity : menu_context.selected_entities) {
+                    const bool has_comp = engine.ecs.has_component<T>(entity);
+                    if (has_comp == false) continue;
 
-                ComponentDiff<T> component_diff(entity);
-                component_diff.before();
-                tmt::engine.ecs.remove_component<T>(entity);
-                component_diff.after();
-                collection.add_action(component_diff);
+                    ComponentDiff<T> component_diff(entity);
+                    component_diff.before();
+                    tmt::engine.ecs.remove_component<T>(entity);
+                    component_diff.after();
+                    collection.add_action(component_diff);
+                }
+                collection.commit("Remove Component: " + std::string(name));
             }
-            collection.commit("Remove Component: " + std::string(name));
             return;
         }
 
         if (context_response.copy_component) {
-            const json serialized = tmt::Serializer::serialize(component_instance);
+            const json serialized = tmt::Serializer::serialize(component_instance, inspect_only);
             json clipboard_json;
             clipboard_json["runtime"] = false;
             clipboard_json["component_type"] = name;
@@ -127,8 +160,8 @@ void Inspector::display_compile_time_components(const tmt::Inspector::MenuContex
             for (const Entity& entity : menu_context.selected_entities) {
                 if (entity == menu_context.primary_entity) continue;
 
-                const bool has_component = tmt::engine.ecs.has_component<T>(entity);
-                if (has_component == false) continue;
+                const bool entity_has_component = tmt::engine.ecs.has_component<T>(entity);
+                if (entity_has_component == false) continue;
 
                 T& other_instance = tmt::engine.ecs.get_component<T>(entity);
                 json other_json = tmt::Serializer::serialize(other_instance);
@@ -139,7 +172,6 @@ void Inspector::display_compile_time_components(const tmt::Inspector::MenuContex
 
         static std::unordered_map<Entity, ComponentDiff<T>> component_diff;
         if (deactivated_after_edit) {
-            printf("Deactivated component editor: %s\n", name);
             UndoRedoCollection collection;
             for (auto& [entity, diff] : component_diff) {
                 diff.after();
@@ -150,7 +182,6 @@ void Inspector::display_compile_time_components(const tmt::Inspector::MenuContex
         }
 
         if (activated) {
-            printf("Activated component editor: %s\n", name);
             for (const Entity& entity : menu_context.selected_entities) {
                 const bool has_component_2 = tmt::engine.ecs.has_component<T>(entity);
                 if (has_component_2 == false) continue;

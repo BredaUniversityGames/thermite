@@ -276,6 +276,15 @@ void Transform::set_parent(Entity new_parent) {
     if (has_parent()) {
         auto& new_parent_transform = engine.ecs.get_component<Transform>(parent);
         new_parent_transform.children.insert(get_self());
+
+        const bool parent_is_disabled = engine.ecs.is_disabled(new_parent);
+        if (parent_is_disabled) {
+            engine.ecs.disable(self, false);
+        } else {
+            if (!engine.ecs.has_component<DisableFlag>(self)) {
+                engine.ecs.enable(self, false);
+            }
+        }
     }
 
     if (unparenting || changing_parent) {
@@ -316,6 +325,17 @@ void Transform::remove_child(Entity child) {
         child_transform.parent = entt::null;  // Clear the parent reference
         child_transform.mark_dirty();
     }
+}
+
+std::set<Entity> Transform::get_all_parents() const {
+    std::set<Entity> result;
+    Entity current_parent = parent;
+    while (current_parent != entt::null) {
+        result.insert(current_parent);
+        const auto& transform = engine.ecs.get_component<Transform>(current_parent);
+        current_parent = transform.parent;
+    }
+    return result;
 }
 
 bool Transform::has_children() const {

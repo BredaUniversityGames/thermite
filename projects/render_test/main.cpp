@@ -12,6 +12,8 @@
 #include "engine/systems/physics/components/voxel_body.hpp"
 #include "engine/systems/camera/camera_system.hpp"
 
+#include "engine/systems/gameplay/game_component.hpp"
+
 class Game : public tmt::Application {
    public:
     Game(const tmt::ApplicationSpecs& specs) : Application(specs) {}
@@ -35,6 +37,25 @@ class MainScene : public tmt::Scene<MainScene> {
     void on_end() override;
 };
 
+class EntityRef : public tmt::GameComponent<EntityRef> {
+   public:
+    using GameComponent::GameComponent;
+
+    tmt::Entity entity_ref = entt::null;
+    std::set<tmt::Entity> entity_set {};
+
+    static constexpr std::string_view get_name() { return "EntityRef"; }
+
+    // Inherited via GameComponent
+    void start() override {
+        const auto& name = tmt::engine.ecs.get_component<tmt::Name>(entity_ref);
+        tmt::Log::info("EntityRef Component started! Referenced entity name: {}", name.name);
+    }
+    void update(const tmt::FrameData& time) override {}
+    void end() override {}
+};
+TMT_OBJECT(EntityRef, (entity_ref, entity_set));
+
 std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs& args) {
     // clang-format off
     tmt::ApplicationSpecs specs {
@@ -49,6 +70,9 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
 
     /* Register Scenes */
     tmt::engine.scenes.register_scene<MainScene>();
+
+    /* Register Components */
+    tmt::engine.component_registry.register_component<EntityRef>();
 
     return std::make_unique<Game>(specs);
 }
@@ -85,10 +109,9 @@ void MainScene::on_update(const tmt::FrameData& time) {
                 auto& renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(entity);
                 renderer.resource = box_model;
                 auto& vb = tmt::engine.ecs.add_component<tmt::VoxelBody>(entity);
-                vb.resource = box_model;
                 vb.gravity = 0.0f;
                 vb.type = tmt::VoxelBody::DYNAMIC;
-                tmt::Physics::initialize_voxel_body(vb);
+                tmt::Physics::initialize_voxel_body(vb, *box_model.resource.get());
 
                 const glm::vec3 x_offset = cam_transform.get_right() * ((float)x * 1.5f);
                 const glm::vec3 y_offset = cam_transform.get_up() * ((float)y * 1.5f);

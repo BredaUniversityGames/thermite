@@ -23,6 +23,7 @@ enum class DisplayMode : uint32_t {
     NORMALS,     /* Visualize geometric normal data. */
     ALBEDO,      /* Visualize material albedo. */
     ILLUMINANCE, /* Visualize illuminance from the cache. */
+    CACHE,       /* Visualize cache info. */
 };
 
 class Renderer {
@@ -37,6 +38,8 @@ class Renderer {
     /* Rendering views */
     RenderView render_view {};
     SceneView scene_view {};
+
+    Sampler linear_sampler {};
 
     /* Display mode for debugging */
     DisplayMode display_mode = DisplayMode::DEFAULT;
@@ -73,6 +76,8 @@ class Renderer {
 
     Transform& get_debug_transform() { return debug_transform; }
     Camera& get_debug_camera() { return debug_camera; }
+
+    glm::uvec2 viewport_size() const { return render_view.gpu_view.resolution; }
 
 #ifdef THERMITE_EDITOR
     void set_imgui(ImGUI* imgui);

@@ -14,6 +14,7 @@
 #include "engine/core/logger.hpp"
 #include "engine/core/renderer/renderer.hpp"
 #include "engine/core/renderer/pipelines/di_pipeline.hpp"
+#include "engine/core/renderer/pipelines/ui_pipeline.hpp"
 #include "engine/core/scenes.hpp"
 
 #include "editor/imgui/manager.hpp"
@@ -36,6 +37,7 @@
 #include "editor/windows/goap_debugger.hpp"
 #include "editor/windows/goap_action_editor.hpp"
 #include "editor/windows/goap_agent_editor.hpp"
+#include "editor/windows/physics_layers_editor.hpp"
 #include "editor/windows/font_control.hpp"
 #include "editor/windows/profiler_tracy.hpp"
 #include "editor/windows/audio_mixer.hpp"
@@ -50,8 +52,10 @@
 #include "editor/windows/model_viewer.hpp"
 #include "editor/windows/node_hierarchy.hpp"
 #include "editor/windows/palette.hpp"
+#include "editor/windows/material_editor.hpp"
 #include "editor/windows/brush.hpp"
 #include "editor/windows/editor_settings.hpp"
+#include "editor/windows/ui.hpp"
 
 /* Singleton */
 tmt::Editor tmt::editor;
@@ -94,6 +98,7 @@ void Editor::on_engine_init(const ApplicationSpecs&) {
     windows[Mode::SCENE].add<GoapDebugger>();
     windows[Mode::SCENE].add<GoapActionEditor>();
     windows[Mode::SCENE].add<GoapAgentEditor>();
+    windows[Mode::SCENE].add<PhysicsLayersEditor>();
     windows[Mode::SCENE].add<FontControl>();
     windows[Mode::SCENE].add<AudioMixer>();
     windows[Mode::SCENE].add<ScenesWindow>();
@@ -107,11 +112,13 @@ void Editor::on_engine_init(const ApplicationSpecs&) {
     windows[Mode::SCENE].add<UndoRedoManager>();
     windows[Mode::SCENE].add<EditorSettingsWindow>();
     windows[Mode::SCENE].add<BuildPackager>();
+    windows[Mode::SCENE].add<UIEditor>();
 
     engine.scenes.register_scene<VoxelEditScene>();
     windows[Mode::VOXEL].add<ModelViewer>();
     windows[Mode::VOXEL].add<NodeHierarchy>();
     windows[Mode::VOXEL].add<Palette>();
+    windows[Mode::VOXEL].add<MaterialEditor>();
     windows[Mode::VOXEL].add<Brush>();
     windows[Mode::VOXEL].add<Console>();
     windows[Mode::VOXEL].add<UndoRedoManager>();
@@ -124,6 +131,8 @@ void Editor::on_engine_init(const ApplicationSpecs&) {
     windows[Mode::PREFAB].add<Console>();
     windows[Mode::PREFAB].add<ScenesWindow>();
     windows[Mode::PREFAB].add<UndoRedoManager>();
+    windows[Mode::PREFAB].add<UIEditor>();
+    windows[Mode::PREFAB].add<DebugLines>();
 
     for (auto& [mode, collection] : windows) {
         for (const auto& window : collection) {
@@ -207,9 +216,9 @@ void Editor::main_menu_bar() {
 
         if (ImGui::BeginMenu("Renderer")) {
             /* List of display mode labels */
-            static const std::vector<std::string> DISPLAY_MODE_LABELS { "Default", "Steps (0..128)", "Visibility", "Depth (0..100)", "Normals", "Albedo", "Illuminance" };
+            static const std::vector<std::string> DISPLAY_MODE_LABELS { "Default", "Steps (0..128)", "Visibility", "Depth (0..100)", "Normals", "Albedo", "Illuminance", "Cache" };
 
-            static uint32_t display_mode_index = 0u;
+            const uint32_t display_mode_index = (uint32_t)magic_enum::enum_index<DisplayMode>(engine.renderer.display_mode).value_or(0u);
             const std::string& display_mode = DISPLAY_MODE_LABELS[display_mode_index];
 
             if (ImGui::BeginMenu(("Display Mode (" + display_mode + ")").c_str())) {
@@ -218,7 +227,6 @@ void Editor::main_menu_bar() {
                     const bool selected = engine.renderer.display_mode == magic_enum::enum_cast<DisplayMode>(i).value_or(DisplayMode::DEFAULT);
 
                     if (ImGui::MenuItem(DISPLAY_MODE_LABELS[i].c_str(), nullptr, selected)) {
-                        display_mode_index = i;
                         engine.renderer.display_mode = magic_enum::enum_cast<DisplayMode>(i).value_or(DisplayMode::DEFAULT);
                     }
                 }
@@ -231,17 +239,21 @@ void Editor::main_menu_bar() {
             static uint32_t shading_rate_index = 0u;
             const std::string& shading_rate = SHADING_RATE_LABELS[shading_rate_index];
 
-            if (ImGui::BeginMenu(("Shading Rate (" + shading_rate + ")").c_str())) {
+            if (ImGui::BeginMenu(("DI Shading Rate (" + shading_rate + ")").c_str())) {
                 /* Render all shading rate options */
                 for (uint32_t i = 0u; i < SHADING_RATE_LABELS.size(); ++i) {
-                    const bool selected = engine.renderer.di_pipeline.get_shading_rate() == magic_enum::enum_cast<ShadingRate>(i).value_or(ShadingRate::FULL_RATE);
+                    const bool selected = engine.renderer.render_view.get_shading_rate_di() == magic_enum::enum_cast<ShadingRate>(i).value_or(ShadingRate::FULL_RATE);
 
                     if (ImGui::MenuItem(SHADING_RATE_LABELS[i].c_str(), nullptr, selected)) {
                         shading_rate_index = i;
-                        engine.renderer.di_pipeline.set_shading_rate(magic_enum::enum_cast<ShadingRate>(i).value_or(ShadingRate::FULL_RATE));
+                        engine.renderer.render_view.set_shading_rate_di(magic_enum::enum_cast<ShadingRate>(i).value_or(ShadingRate::FULL_RATE));
                     }
                 }
                 ImGui::EndMenu();
+            }
+
+            if (ImGui::MenuItem("Enable UI Pipeline", nullptr, engine.renderer.ui_pipeline.render_ui_pipeline)) {
+                engine.renderer.ui_pipeline.render_ui_pipeline = !engine.renderer.ui_pipeline.render_ui_pipeline;
             }
 
             ImGui::EndMenu();

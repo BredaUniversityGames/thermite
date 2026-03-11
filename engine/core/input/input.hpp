@@ -19,6 +19,7 @@ struct GamepadState {
     std::array<bool, static_cast<int32_t>(GamepadButton::COUNT)> buttons {};
     std::array<bool, static_cast<int32_t>(GamepadButton::COUNT)> prev_buttons {};
     std::array<float, static_cast<int32_t>(GamepadAxis::COUNT)> axes {};
+    std::array<float, static_cast<int32_t>(GamepadAxis::COUNT)> prev_axes {};
 };
 
 class Input {
@@ -156,6 +157,14 @@ class Input {
     /// <returns>Vertical movement in pixels.</returns>
     float get_mouse_delta_y() const;
 
+    glm::vec2 get_mouse_delta() const;
+
+    float get_mouse_delta_engine_x() const;
+
+    float get_mouse_delta_engine_y() const;
+
+    glm::vec2 get_mouse_delta_engine() const;
+
     /// <summary>
     /// Enables or disables relative mouse mode (cursor hidden, infinite movement).
     /// </summary>
@@ -234,6 +243,14 @@ class Input {
     bool is_mouse_locked() const;
 
     /// <summary>
+    /// Sets the game's preferred mouse lock state. Useful when an external event temporarily takes control of this state.
+    /// </summary>
+    /// <param name="value">What the game had as its lock state.
+    void set_game_preferred_mouse_lock(bool value);
+
+    bool get_game_preferred_mouse_lock() const;
+
+    /// <summary>
     /// Moves the cursor position to given position using the default window.
     /// </summary>
     /// <param name="pos">The position used to set the cursor.</param>
@@ -301,22 +318,28 @@ class Input {
     /// <returns>Duration in seconds, or 0.0 if not pressed.</returns>
     float get_action_duration(const std::string& name) const;
 
+    void clear_input_state();
+
    private:
     bool can_use_input_mouse() const;
     bool can_use_input_keyboard() const;
-    bool can_capture_keyboard = false;
-    bool can_capture_mouse = false;
+    bool can_use_keyboard_input = false;
+    bool can_use_mouse_input = false;
     // non-owning pointer from SDL, do not free manually
-    const bool* keys_sdl = nullptr;
+    // const bool* keys_sdl = nullptr;
     uint32_t mouse_buttons = 0u;
     uint32_t prev_mouse_buttons = 0u;
     float mouse_x = 0.0f;
     float mouse_y = 0.0f;
     float mouse_dx = 0.0f;
     float mouse_dy = 0.0f;
+    float mouse_dx_engine = 0.0f;
+    float mouse_dy_engine = 0.0f;
     float scroll_dx = 0.0f;
     float scroll_dy = 0.0f;
     bool mouse_locked = false;
+    bool game_mouse_lockstate = false;
+    std::vector<bool> curr_keys {};
     std::vector<bool> prev_keys {};
     std::unordered_map<int32_t, GamepadState> gamepads {};
 };

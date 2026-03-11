@@ -15,13 +15,17 @@
 #include "core/renderer/renderer.hpp"
 
 #include "systems/physics/physics_system.hpp"
+#include "systems/physics/destruction_system.hpp"
 #include "systems/animation/animation_system.hpp"
 #include "systems/camera/camera_system.hpp"
 #include "systems/ai/goap/goap_system.hpp"
 #include "systems/ai/navigation/navigation_system.hpp"
+#include "systems/ai/steering/steering_system.hpp"
 #include "systems/gameplay/gameplay.hpp"
 #include "systems/gameplay/game_component_registry.hpp"
 #include "systems/motion_math/motion_math_system.hpp"
+#include "systems/ui/ui.hpp"
+#include "systems/ui/button_manager.hpp"
 #include "events/engine.hpp"
 #include "events/game.hpp"
 #include "events/scene.hpp"
@@ -78,11 +82,17 @@ void Engine::init(std::unique_ptr<Application> user_app) {
     salvo.init();
 
     ecs.systems.add<Physics>();
+    ecs.systems.add<Destruction>();
     ecs.systems.add<RigModelManager>();
-    ecs.systems.add<Goap>();
+    ecs.systems.add<AnimationConstraintSystem>();
+    Goap* goap = ecs.systems.try_get<Goap>();
+    if (!goap) ecs.systems.add<Goap>();
     ecs.systems.add<NavigationSystem>();
-    ecs.systems.add<Gameplay>(); /* Should be last */
+    ecs.systems.add<SteeringSystem>();
+    ecs.systems.add<UI>();
     ecs.systems.add<MotionMathSystem>();
+    ecs.systems.add<ButtonManager>();
+    ecs.systems.add<Gameplay>(); /* Should be last */
 
     OnEngineInit::dispatch(app->specs);
 }
@@ -165,14 +175,17 @@ void Engine::run() {
 void Engine::end() {
     TMT_ZONE_SCOPED_N("Engine::end")
 
+    Log::flush();
+    Log::info("Engine started shutdown");
     OnEngineEnd::dispatch();
 
     salvo.end();
     ecs.clear();
     scenes.end();
     audio.end();  // Needs to be ended after the ecs.
-    resources.unload_unused();
+    resources.force_unload_all();
     renderer.end();
+    Log::info("Engine finished shutdown");
 }
 
 /* Engine events */
@@ -193,6 +206,7 @@ void Engine::fixed_update_engine(const FrameData& frame_data) {
 void Engine::start_game() {
     TMT_ZONE_SCOPED_N("Engine::start_game")
 
+    input.clear_input_state();
     app->on_start();
     if (scenes.get_active_scene()) scenes.get_active_scene()->on_start();
 

@@ -15,10 +15,34 @@
 #include "engine/core/renderer/voxel_object.hpp"
 #include "engine/systems/gameplay/game_component.hpp"
 
+// For custom ImGui logic
+#include "editor/all.hpp"
+
 // Game Components
 #include "components/player.hpp"
 #include "components/wallet.hpp"
+#include "components/asteroid_field_component.hpp"
+#include "components/mining_component.hpp"
 #include "components/animation_player.hpp"
+#include "components/attach_component.hpp"
+#include "components/gravity_manipulation_component.hpp"
+#include "components/collision_trigger.hpp"
+#include "components/menu_controller.hpp"
+#include "components/mover_component.hpp"
+#include "components/ore_collector.hpp"
+#include "components/projectile_spawner.hpp"
+#include "components/rifle_projectile.hpp"
+#include "components/spawner.hpp"
+#include "components/text_component.hpp"
+#include "components/weapon.hpp"
+#include "components/fuel.hpp"
+#include "components/ore_properties.hpp"
+#include "components/upgrade.hpp"
+#include "components/ui_components/scene_switch_component.hpp"
+#include "components/ui_components/entity_control_component.hpp"
+
+// Data Headers
+#include "data_headers/scene_list.hpp"
 
 class Game : public tmt::Application {
    public:
@@ -29,33 +53,7 @@ class Game : public tmt::Application {
     void on_end() override {};
 };
 
-class MainMenuScene : public tmt::Scene<MainMenuScene> {
-   public:
-    static constexpr std::string_view scene_name() { return "MainMenuScene"; }
-};
-
-class MainGameScene : public tmt::Scene<MainGameScene> {
-   public:
-    static constexpr std::string_view scene_name() { return "MainGameScene"; }
-};
-
-class EntityRef : public tmt::GameComponent<EntityRef> {
-   public:
-    using GameComponent::GameComponent;
-
-    tmt::Entity entity_ref = entt::null;
-
-    static constexpr std::string_view get_name() { return "EntityRef"; }
-
-    // Inherited via GameComponent
-    void start() override {
-        const auto& name = tmt::engine.ecs.get_component<tmt::Name>(entity_ref);
-        tmt::Log::info("EntityRef Component started! Referenced entity name: {}", name.name);
-    }
-    void update(const tmt::FrameData& time) override {}
-    void end() override {}
-};
-TMT_OBJECT(EntityRef, (entity_ref));
+// Moved scenes to data_headers/scene_list.hpp
 
 std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs& args) {
     // clang-format off
@@ -67,16 +65,37 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     // clang-format on
 
     /* Register Scenes */
-    tmt::engine.scenes.register_scene<MainGameScene>();
     tmt::engine.scenes.register_scene<MainMenuScene>();
-
-    /* Register Components */
-    tmt::engine.component_registry.register_component<Player>();
-    tmt::engine.component_registry.register_component<Wallet>();
-    tmt::engine.component_registry.register_component<AnimationPlayer>();
+    tmt::engine.scenes.register_scene<MainGameScene>();
+    tmt::engine.scenes.register_scene<Zoo>();
+    tmt::engine.scenes.register_scene<Gym>();
+    tmt::engine.scenes.register_scene<DanielTestScene>();
+    tmt::engine.scenes.register_scene<MikaTestScene>();
 
     /* Register Game Components */
-    tmt::engine.component_registry.register_component<EntityRef>();
+    tmt::engine.component_registry.register_component<game::Player>();
+    tmt::engine.component_registry.register_component<game::Weapon>();
+    tmt::engine.component_registry.register_component<game::Spawner>();
+    tmt::engine.component_registry.register_component<game::RifleProjectile>();
+    tmt::engine.component_registry.register_component<game::ProjectileSpawner>();
+    tmt::engine.component_registry.register_component<game::AsteroidFieldComponent>();
+    tmt::engine.component_registry.register_component<game::Wallet>();
+    tmt::engine.component_registry.register_component<game::MiningComponent>();
+    tmt::engine.component_registry.register_component<game::AnimationPlayer>();
+    tmt::engine.component_registry.register_component<game::GravityManipulationComponent>();
+    tmt::engine.component_registry.register_component<game::OreCollector>();
+    tmt::engine.component_registry.register_component<game::CollisionTrigger>();
+    tmt::engine.component_registry.register_component<game::WeaponManager>();
+    tmt::engine.component_registry.register_component<game::TextComponent>();
+    tmt::engine.component_registry.register_component<game::MoverComponent>();
+    tmt::engine.component_registry.register_component<game::AttachComponent>();
+    tmt::engine.component_registry.register_component<game::Upgrade>();
+    tmt::engine.component_registry.register_component<game::MenuController>();
+    tmt::engine.component_registry.register_component<game::FuelComponent>();
+    tmt::engine.component_registry.register_component<game::OreProperties>();
+    /* Register Game UI Components */
+    tmt::engine.component_registry.register_component<game::SceneSwitchComponent>();
+    tmt::engine.component_registry.register_component<game::EntityControlComponent>();
 
     return std::make_unique<Game>(specs);
 }

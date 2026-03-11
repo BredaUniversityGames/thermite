@@ -17,10 +17,14 @@
 #include "goap_actions/chase_player.hpp"
 #include "goap_actions/kill_player.hpp"
 #include "goap_actions/patrol_area.hpp"
+#include "goap_actions/go_to_target.hpp"
+#include "goap_actions/wander_around.hpp"
+
 #include "engine/core/scene.hpp"
 #include "engine/core/scenes.hpp"
 
 #include "engine/systems/ai/navigation/navigation_system.hpp"
+#include "engine/core/renderer/renderer.hpp"
 
 class Game : public tmt::Application {
    public:
@@ -58,16 +62,7 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     tmt::engine.ecs.systems.add<tmt::CameraSystem>();
     tmt::engine.scenes.register_scene<AIScene>();
 
-    return std::make_unique<Game>(specs);
-}
-
-void AIScene::on_start() {
-    { /* Camera entity */
-        tmt::Entity entity = tmt::engine.ecs.create_entity();
-        auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
-        auto& camera = tmt::engine.ecs.add_component<tmt::Camera>(entity);
-        transform.set_world_position(glm::vec3(0.0f, 0.0f, -2.0f));
-    }
+    tmt::engine.ecs.systems.add<tmt::Goap>();
 
     auto& ecs = tmt::engine.ecs;
     auto& goap = ecs.systems.get<tmt::Goap>();
@@ -80,12 +75,14 @@ void AIScene::on_start() {
     action_reg.register_action(std::make_unique<tmt::PatrolArea>());
     action_reg.register_action(std::make_unique<tmt::ChasePlayer>());
     action_reg.register_action(std::make_unique<tmt::KillPlayer>());
+    action_reg.register_action(std::make_unique<tmt::GoToTarget>());
+    action_reg.register_action(std::make_unique<tmt::WanderAround>());
 
     // --- Register Goals ---
     {
         tmt::GoapGoal patrol;
         patrol.name = "g_PatrolArea";
-        patrol.desired_state = { { tmt::FactId("area_secure"), tmt::FactValue(true) } };
+        patrol.desired_state = { { tmt::FactId("area_secure"), true } };
         patrol.priority = 1;
         patrol.valid = true;
 
@@ -95,11 +92,40 @@ void AIScene::on_start() {
     {
         tmt::GoapGoal kill;
         kill.name = "g_KillPlayer";
-        kill.desired_state = { { tmt::FactId("player_alive"), tmt::FactValue(false) } };
+        kill.desired_state = { { tmt::FactId("player_alive"), false } };
         kill.priority = 10;
         kill.valid = true;
 
         goal_reg.register_goal("g_KillPlayer", kill);
+    }
+
+    {
+        tmt::GoapGoal reach_target;
+        reach_target.name = "g_ReachTarget";
+        reach_target.desired_state = { { tmt::FactId("at_target"), true } };
+        reach_target.priority = 5;
+        reach_target.valid = true;
+        goal_reg.register_goal("g_ReachTarget", reach_target);
+    }
+
+    {
+        tmt::GoapGoal wander_around;
+        wander_around.name = "g_WanderAround";
+        wander_around.desired_state = { { tmt::FactId("can_move"), true } };
+        wander_around.priority = 1;
+        wander_around.valid = true;
+        goal_reg.register_goal("g_WanderAround", wander_around);
+    }
+
+    return std::make_unique<Game>(specs);
+}
+
+void AIScene::on_start() {
+    { /* Camera entity */
+        tmt::Entity entity = tmt::engine.ecs.create_entity();
+        auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
+        auto& camera = tmt::engine.ecs.add_component<tmt::Camera>(entity);
+        transform.set_world_position(glm::vec3(0.0f, 0.0f, -2.0f));
     }
 
 #if 0
@@ -143,27 +169,6 @@ void AIScene::on_start() {
         ecs.get_component<tmt::Transform>(ai2).set_world_position({ 5.f, 0.f, 0.f });
     }
 #else
-    {  // --- Spawning agent entities ---
-        auto& type_reg = goap.agent_types();
-
-        // Spawn Enemy 1 if it exists
-        if (type_reg.get("Enemy 1")) {
-            tmt::Entity ai1 = tmt::engine.ecs.create_entity("AI Agent 1");
-            tmt::GoapAgentFactory::spawn_agent_from_type("Enemy 1", ai1);
-            ecs.get_component<tmt::Transform>(ai1).set_world_position({ 0.f, 0.f, 0.f });
-        } else {
-            tmt::Log::warn("Agent type 'Enemy 1' not found. Skipping spawn.");
-        }
-
-        // Spawn Enemy 2 if it exists
-        if (type_reg.get("Enemy 2")) {
-            tmt::Entity ai2 = tmt::engine.ecs.create_entity("AI Agent 2");
-            tmt::GoapAgentFactory::spawn_agent_from_type("Enemy 2", ai2);
-            ecs.get_component<tmt::Transform>(ai2).set_world_position({ 5.f, 0.f, 0.f });
-        } else {
-            tmt::Log::warn("Agent type 'Enemy 2' not found. Skipping spawn.");
-        }
-    }
 #endif
 
     { /* Camera entity */
@@ -175,25 +180,25 @@ void AIScene::on_start() {
     }
 
     {  // voxel entity with navmesh
-        auto voxel_file = tmt::engine.resources.load_resource<tmt::VoxelScene>({ tmt::IO::Location::PROJECT, "test_asteroid_5.vengi" });
-        auto voxel_volume = tmt::engine.resources.copy_resource<tmt::VoxelVolume>(voxel_file);
-        volumes[0] = voxel_volume;
-        voxel_file = tmt::engine.resources.load_resource<tmt::VoxelScene>({ tmt::IO::Location::PROJECT, "test_asteroid_6.vengi" });
-        voxel_volume = tmt::engine.resources.copy_resource<tmt::VoxelVolume>(voxel_file);
-        volumes[1] = voxel_volume;
-        voxel_file = tmt::engine.resources.load_resource<tmt::VoxelScene>({ tmt::IO::Location::PROJECT, "test_asteroid_7.vengi" });
-        voxel_volume = tmt::engine.resources.copy_resource<tmt::VoxelVolume>(voxel_file);
-        volumes[2] = voxel_volume;
-        voxel = tmt::engine.ecs.create_entity("Moving Voxel");
-        auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(voxel);
-        auto& renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(voxel);
-        renderer.resource = voxel_volume;
-        // transform.set_world_rotation(glm::vec3(glm::radians(45.0f), glm::radians(45.0f), 0.0f));
-        transform.set_world_scale(glm::vec3(1.0f, 1.0f, 1.0f));
+       // auto voxel_file = tmt::engine.resources.load_resource<tmt::VoxelScene>({ tmt::IO::Location::PROJECT, "test_asteroid_5.vengi" });
+       // auto voxel_volume = tmt::engine.resources.copy_resource<tmt::VoxelVolume>(voxel_file);
+       // volumes[0] = voxel_volume;
+       // voxel_file = tmt::engine.resources.load_resource<tmt::VoxelScene>({ tmt::IO::Location::PROJECT, "test_asteroid_6.vengi" });
+       // voxel_volume = tmt::engine.resources.copy_resource<tmt::VoxelVolume>(voxel_file);
+       // volumes[1] = voxel_volume;
+       // voxel_file = tmt::engine.resources.load_resource<tmt::VoxelScene>({ tmt::IO::Location::PROJECT, "test_asteroid_7.vengi" });
+       // voxel_volume = tmt::engine.resources.copy_resource<tmt::VoxelVolume>(voxel_file);
+       // volumes[2] = voxel_volume;
 
-        nav_mesh = &tmt::engine.ecs.add_component<tmt::NavMesh>(voxel);
-        nav_mesh->voxel_volume = voxel_volume;
-        nav_mesh->lod_level = 1;
-        nav_mesh->generate_mesh_over_time();
+        // voxel = tmt::engine.ecs.create_entity("Asteroid");
+        // auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(voxel);
+        // auto& renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(voxel);
+        // renderer.resource = voxel_volume;
+        //// transform.set_world_rotation(glm::vec3(glm::radians(45.0f), glm::radians(45.0f), 0.0f));
+        // transform.set_world_scale(glm::vec3(1.0f, 1.0f, 1.0f));
+
+        // nav_mesh = &tmt::engine.ecs.add_component<tmt::NavMesh>(voxel);
+        // nav_mesh->voxel_volume = voxel_volume;
+        // nav_mesh->lod_level = 1;
     }
 }

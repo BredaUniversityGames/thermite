@@ -12,30 +12,33 @@
 #include "engine/tools/profiler.hpp"
 
 #include "components/voxel_body.hpp"
+#include "engine/core/components/voxel_renderer.hpp"
 #include "engine/core/salvo.hpp"
 
 namespace tmt {
 
 void Physics::on_start() {
     Log::info("Physics on_start");
-    for (const auto& [entity, vb, transform] : engine.ecs.get_registry().view<VoxelBody, Transform>().each()) {
+    for (const auto&& [entity, vb, transform, renderer] : engine.ecs.view<VoxelBody, Transform, VoxelRenderer>().each()) {
         vb.position = transform.get_world_position();
         vb.rotation = transform.get_world_rotation();
 
         if (vb.type == VoxelBody::DYNAMIC) {
-            initialize_voxel_body(vb);
+            initialize_voxel_body(vb, *renderer.resource.resource);
             if (vb.gravity <= 0.0f) {
                 vb.type = VoxelBody::SLEEPING;
                 vb.accumulated_forces = 0.0f;
             }
         } else {
-            glm::uvec3 size = vb.resource->size;
+            glm::uvec3 size = renderer.resource->size;
             vb.width = (float)size.x * UNITS_PER_VOXEL;
             vb.height = (float)size.y * UNITS_PER_VOXEL;
             vb.depth = (float)size.z * UNITS_PER_VOXEL;
             vb.center_of_mass = vb.position + (vb.rotation * vb.com_local_offset);
         }
     }
+
+    physics_layers.load();
 }
 
 void draw_node(tmt::Bvh2<VoxelObject>& bvh, uint32_t current_node) {
@@ -104,7 +107,7 @@ void draw_solids(
 
 void Physics::on_update(const FrameData&) {
     engine.polyline.use_line_width(0.25f);
-    for (const auto& [entity, vb, transform] : engine.ecs.get_registry().view<VoxelBody, Transform>().each()) {
+    for (const auto& [entity, vb, transform] : engine.ecs.view<VoxelBody, Transform>().each()) {
         // auto* tree_a = vb.resource->blas.get();
         // const float half_extent_a = powf(4.0f, (float)tree_a->depth) * 0.5f * UNITS_PER_VOXEL;
         // const glm::vec3 extents_diff_a = half_extent_a - ((glm::vec3)vb.resource->size * 0.5f * UNITS_PER_VOXEL);
@@ -118,18 +121,23 @@ void Physics::on_update(const FrameData&) {
         //     engine.polyline.draw_line(edges[i].start, edges[i].end);
         // }
 
+        // engine.polyline.use_depth_testing(false);
+        // engine.polyline.use_line_width(0.5f);
         // engine.polyline.use_color(1.0f, 0.0f, 0.0f);
-        // engine.polyline.draw_circle(vb.center_of_mass, 0.1f);  // glm::vec3(1.0f, 0.0f, 1.0f), 0.2f);
+        // engine.polyline.draw_circle(vb.center_of_mass, 0.2f);  // glm::vec3(1.0f, 0.0f, 1.0f), 0.2f);
         // engine.polyline.use_color(0.0f, 1.0f, 0.0f);
-        // engine.polyline.draw_circle(vb.position, 0.1f);
+        // engine.polyline.draw_circle(vb.position, 0.2f);
         // engine.polyline.use_color(0.0f, 0.0f, 1.0f);
-        // engine.polyline.draw_circle(vb.position + vb.rotation * vb.com_local_offset, 0.1f);
-        //  engine.renderer.draw_cross(vb.position, glm::vec3(1.0f, 0.0f, 0.0f), 0.2f);
-        //  engine.renderer.draw_cross(vb.position + vb.rotation * vb.com_local_offset, glm::vec3(0.0f, 0.0f, 1.0f), 0.2f);
+        // engine.polyline.draw_circle(vb.position + vb.rotation * vb.com_local_offset, 0.2f);
+        /* engine.renderer.draw_cross(vb.position, glm::vec3(1.0f, 0.0f, 0.0f), 0.2f);
+         engine.renderer.draw_cross(vb.position + vb.rotation * vb.com_local_offset, glm::vec3(0.0f, 0.0f, 1.0f), 0.2f);*/
 
-        // // Draw voxel normals
-        // glm::uvec3 size = vb.resource.get()->size;
-        // auto* tree = vb.resource.get()->blas.get();
+        //// Draw voxel normals
+        // engine.polyline.use_depth_testing(false);
+        // engine.polyline.use_color(1.0f, 0.0f, 0.0f);
+        //
+        // glm::uvec3 size = vb.resource->size;
+        // auto* tree = vb.resource->blas.get();
         // for (size_t z = 0; z < size.z; z++) {
         //     for (size_t y = 0; y < size.y; y++) {
         //         for (size_t x = 0; x < size.x; x++) {
@@ -142,7 +150,10 @@ void Physics::on_update(const FrameData&) {
         //                ((float)x + 0.5f - (size.x * 0.5f)) * UNITS_PER_VOXEL, ((float)y + 0.5f - (size.y * 0.5f)) * UNITS_PER_VOXEL, ((float)z + 0.5f - (size.z * 0.5f)) * UNITS_PER_VOXEL
         //            );
         //            glm::vec3 world_pos = vb.position + (vb.rotation * local_pos);
-        //            tmt::engine.renderer.draw_arrow(world_pos, normal, glm::vec3(0.0f, 0.6f, 0.0f), 0.15f, 0.05f);
+
+        //            engine.polyline.draw_line(world_pos, world_pos + normal * 0.05f);
+        //            // engine.polyline.draw_arrow(world_pos, normal * 0.1f, 0.15f);
+        //            // tmt::engine.renderer.draw_arrow(world_pos, normal, glm::vec3(0.0f, 0.6f, 0.0f), 0.15f, 0.05f);
         //        }
         //    }
         //}
@@ -156,7 +167,7 @@ void Physics::on_fixed_update(const FrameData&) {
     TMT_ZONE_SCOPED_N("Physics")
 
     // Update Forces
-    for (const auto& [entity, vb, transform] : engine.ecs.get_registry().view<VoxelBody, Transform>().each()) {
+    for (const auto& [entity, vb, transform] : engine.ecs.view<VoxelBody, Transform>().each()) {
         // if (!transform.is_enabled()) continue;
 
         // Add stored forces
@@ -197,12 +208,14 @@ void Physics::on_fixed_update(const FrameData&) {
     engine.salvo.activate_workers();
 
     // Build physics BVH
-    const entt::basic_group group = engine.ecs.get_registry().group<VoxelBody>(entt::get<Transform>);
+    const entt::basic_group group = engine.ecs.group<VoxelBody>(entt::get<Transform, VoxelRenderer>);
     std::vector<VoxelObject> objects {};
     objects.reserve(group.size());
+    entities = std::vector<Entity>();
+    entities.reserve(group.size());
     {
         TMT_ZONE_SCOPED_N("Build BVH")
-        for (auto&& [entity, vb, transform] : group.each()) {
+        for (auto&& [entity, vb, transform, renderer] : group.each()) {
             // TODO: THIS CAN CAUSE ISSUES WITH MISSING RESOURCES!!!!
 
             // if (vb.resource == nullptr) continue;
@@ -210,8 +223,15 @@ void Physics::on_fixed_update(const FrameData&) {
             VoxelObject object {};
             object.local_to_world = transform.get_world_matrix();
             object.world_to_local = glm::inverse(object.local_to_world);
-            object.size = vb.resource->size;
+            object.size = renderer.resource->size;
+            object.mask = (1u << vb.layer);
+            object.volume = renderer.resource.resource.get();
+            object.rcp_tree_width = 1.0f / powf(4.0f, (float)renderer.resource->blas->depth);
             objects.push_back(std::move(object));
+            
+            /* Save the entity id */
+            /* QUICK FIX: This is to get the entity ID from a raycast() */
+            entities.push_back(entity);
         }
 
         bvh.build(objects.data(), (uint32_t)objects.size());
@@ -250,18 +270,19 @@ void Physics::on_fixed_update(const FrameData&) {
 
 void Physics::generate_constraints() {
     // solver.collisions.resize(MAX_CONTACTS);
-    const PhysicsGroup group = engine.ecs.get_registry().group<VoxelBody>(entt::get<Transform>);
+    const PhysicsGroup group = engine.ecs.group<VoxelBody>(entt::get<Transform, VoxelRenderer>);
     engine.salvo.parallel_for(group.size(), [this, &group](size_t i) { generate_constraint((int)i, group); });
 }
 
 void Physics::generate_constraint(int index, const PhysicsGroup& group) {
     Entity entity = group[index];
     VoxelBody& vb = group.get<VoxelBody>(entity);
+    VoxelRenderer& renderer = group.get<VoxelRenderer>(entity);
     // Transform& transform = group.get<Transform>(entity);
     // auto& [vb, transform] = group.get<VoxelBody, Transform>(entity);
 
     if (vb.type == VoxelBody::STATIC || vb.type == VoxelBody::SLEEPING) return;
-    if (vb.resource == nullptr) return;
+    if (renderer.resource == nullptr) return;
 
     Aabb current_aabb = vb.aabb();
     std::vector<uint32_t> hits = bvh.overlap(current_aabb);
@@ -271,22 +292,26 @@ void Physics::generate_constraint(int index, const PhysicsGroup& group) {
         if (other_entity == entity) continue;
 
         VoxelBody& other_vb = group.get<VoxelBody>(other_entity);
+        VoxelRenderer& other_renderer = group.get<VoxelRenderer>(other_entity);
         // Transform& other_transform = group.get<Transform>(other_entity);
         // auto& [other_vb, other_transform] = group.get<VoxelBody, Transform>(other_entity);
+
+        // --- check layer collision ---
+        if (!physics_layers.can_collide(vb.layer, other_vb.layer)) continue;
 
         if (sat_early_out(vb, other_vb)) continue;
 
         Collision coll(entity, other_entity);
         coll.contacts.reserve(64);
 
-        auto* tree_a = vb.resource->blas.get();
+        auto* tree_a = renderer.resource->blas.get();
         const float half_extent_a = powf(4.0f, (float)tree_a->depth) * 0.5f * UNITS_PER_VOXEL;
-        const glm::vec3 extents_diff_a = half_extent_a - ((glm::vec3)vb.resource->size * 0.5f * UNITS_PER_VOXEL);
+        const glm::vec3 extents_diff_a = half_extent_a - ((glm::vec3)renderer.resource->size * 0.5f * UNITS_PER_VOXEL);
         const glm::vec3 root_center_a = vb.position + (vb.rotation * extents_diff_a);
 
-        auto* tree_b = other_vb.resource->blas.get();
+        auto* tree_b = other_renderer.resource->blas.get();
         const float half_extent_b = powf(4.0f, (float)tree_b->depth) * 0.5f * UNITS_PER_VOXEL;
-        const glm::vec3 extents_diff_b = half_extent_b - ((glm::vec3)other_vb.resource->size * 0.5f * UNITS_PER_VOXEL);
+        const glm::vec3 extents_diff_b = half_extent_b - ((glm::vec3)other_renderer.resource->size * 0.5f * UNITS_PER_VOXEL);
         const glm::vec3 root_center_b = other_vb.position + (other_vb.rotation * extents_diff_b);
 
         compare_trees(tree_a, root_center_a, vb.rotation, half_extent_a, tree_b, root_center_b, other_vb.rotation, half_extent_b, coll);
@@ -299,9 +324,8 @@ void Physics::generate_constraint(int index, const PhysicsGroup& group) {
         solver.collisions[solver.contact_index.fetch_add(1)] = coll;
     }
 }
-void Physics::on_end() {
-    Log::info("Physics on_end");
-}
+
+void Physics::on_end() {}
 
 void Physics::compare_trees(
     tmt::Svt64* tree_a, const glm::vec3& center_a, const glm::quat& rotation_a, float half_extent_a, tmt::Svt64* tree_b, const glm::vec3& center_b, const glm::quat& rotation_b,
@@ -609,7 +633,7 @@ bool Physics::is_separated(const glm::vec3& axis, const VoxelBody::Box& box_a, c
 }
 
 void Physics::apply_velocities() const {
-    for (const auto& [entity, vb, transform] : engine.ecs.get_registry().view<VoxelBody, Transform>().each()) {
+    for (const auto& [entity, vb, transform] : engine.ecs.view<VoxelBody, Transform>().each()) {
         if (vb.type == VoxelBody::STATIC) continue;
 
         vb.position += vb.velocity * Engine::Config::FIXED_TIME_STEP;
@@ -631,74 +655,160 @@ void Physics::apply_velocities() const {
     }
 }
 
-void Physics::initialize_voxel_body(VoxelBody& vb) {
-    // Calculate mass and inertia
-    size_t filled_counter = 0;
-    glm::vec3 sum = {};
-    const glm::vec3 size = (glm::vec3)vb.resource->size * UNITS_PER_VOXEL;
+inline void recurse_mass(
+    tmt::Svt64* tree, uint32_t node_index, uint32_t current_depth, float node_half_extent, const glm::vec3& node_center, const glm::vec3& extents_diff, glm::vec3& mass_center_sum,
+    uint32_t& voxel_count
+) {
+    // Get current node
+    const tmt::Svt64Node& node = tree->nodes[node_index];
+
+    // Calculate new half extent
+    const float child_half_extent = node_half_extent * 0.25f;
+
+    // Copy mask for iteration
+    uint64_t mask = node.child_mask;
+    while (mask != 0u) {
+        // Find index of first set bit
+        const uint32_t i = std::countr_zero(mask);
+
+        // Get local coordinates
+        const uint32_t local_x = (i >> 0u) & 3u;
+        const uint32_t local_y = (i >> 4u) & 3u;
+        const uint32_t local_z = (i >> 2u) & 3u;
+
+        // Calculate local child center
+        const glm::vec3 local_offset = glm::vec3(
+            (((float)local_x + 0.5f) * 0.25f - 0.5f) * node_half_extent * 2.0f, (((float)local_y + 0.5f) * 0.25f - 0.5f) * node_half_extent * 2.0f,
+            (((float)local_z + 0.5f) * 0.25f - 0.5f) * node_half_extent * 2.0f
+        );
+
+        // Calculate world position of child
+        const glm::vec3 child_center = node_center + local_offset;
+
+        // Get child node index
+        const uint32_t child_node_offset = (uint32_t)__popcnt64(node.child_mask & ((1ull << i) - 1u));
+        const uint32_t child_node_index = node.abs_ptr() + child_node_offset;
+
+        // Recursively go deeper if child is not a leaf
+        if (current_depth + 1 < tree->depth) {
+            recurse_mass(tree, child_node_index, current_depth + 1, child_half_extent, child_center, extents_diff, mass_center_sum, voxel_count);
+        } else {
+            voxel_count++;
+            mass_center_sum += child_center - extents_diff;
+        }
+
+        // Clear bit
+        mask &= ~(1ull << i);
+    }
+}
+
+inline void calculate_center_of_mass(VoxelBody& vb, const VoxelVolume& volume) {
+    // Update voxel body dimensions
+    const glm::vec3 size = (glm::vec3)volume.size * UNITS_PER_VOXEL;
     vb.width = size.x;
     vb.height = size.y;
     vb.depth = size.z;
-
     const glm::vec3 half_scale = glm::vec3(vb.width, vb.height, vb.depth) * 0.5f;
 
-    const auto& voxels = vb.resource;
+    // Calculate half extent
+    auto* tree = volume.blas.get();
+    const float half_extent = powf(4.0f, (float)tree->depth) * 0.5f * UNITS_PER_VOXEL;
+    const glm::vec3 extents_diff = half_extent - ((glm::vec3)volume.size * 0.5f * UNITS_PER_VOXEL);
 
-    for (size_t z = 0; z < voxels->size.z; z++) {
-        for (size_t y = 0; y < voxels->size.y; y++) {
-            for (size_t x = 0; x < voxels->size.x; x++) {
-                if (voxels->blas.get()->get_voxel((uint32_t)x, (uint32_t)y, (uint32_t)z) == nullptr) continue;
-                // if (vb.voxels.get_voxel(x, y, z).type == PhysicsVoxelType::EMPTY) continue;
+    // Recurse tree to calculate the center of mass sum and voxel count
+    glm::vec3 mass_center_sum = {};
+    uint32_t voxel_count = 0;
+    const glm::vec3 tree_center = glm::vec3(half_extent);  // Tree is centered here
+    recurse_mass(tree, 0, 0, half_extent, tree_center, half_scale - extents_diff, mass_center_sum, voxel_count);
 
-                filled_counter++;
+    // Then after getting the result, offset it to your coordinate system:
+    vb.com_local_offset = (mass_center_sum / (float)voxel_count) - extents_diff;
 
-                const glm::vec3 local_pos = glm::vec3(((float)x + 0.5f) * UNITS_PER_VOXEL, ((float)y + 0.5f) * UNITS_PER_VOXEL, ((float)z + 0.5f) * UNITS_PER_VOXEL);
-                sum += local_pos - half_scale;
-            }
-        }
-    }
-
-    vb.com_local_offset = sum / (float)filled_counter;
+    // Apply results to voxel body
+    // vb.com_local_offset = mass_center_sum / (float)voxel_count;
     const float voxel_mass = std::powf(UNITS_PER_VOXEL, 3) * vb.density;
-    vb.inv_mass = 1.0f / (voxel_mass * filled_counter);
+    vb.inv_mass = 1.0f / (voxel_mass * voxel_count);
+}
+
+inline void recurse_inertia(
+    tmt::Svt64* tree, uint32_t node_index, uint32_t current_depth, float node_half_extent, const glm::vec3& node_center, const glm::vec3& extents_diff, const glm::vec3& com_local,
+    float voxel_mass, glm::mat3& inertia_tensor
+) {
+    const tmt::Svt64Node& node = tree->nodes[node_index];
+    const float child_half_extent = node_half_extent * 0.25f;
+
+    uint64_t mask = node.child_mask;
+    while (mask != 0u) {
+        const uint32_t i = std::countr_zero(mask);
+
+        const uint32_t local_x = (i >> 0u) & 3u;
+        const uint32_t local_y = (i >> 4u) & 3u;
+        const uint32_t local_z = (i >> 2u) & 3u;
+
+        const glm::vec3 local_offset = glm::vec3(
+            (((float)local_x + 0.5f) * 0.25f - 0.5f) * node_half_extent * 2.0f, (((float)local_y + 0.5f) * 0.25f - 0.5f) * node_half_extent * 2.0f,
+            (((float)local_z + 0.5f) * 0.25f - 0.5f) * node_half_extent * 2.0f
+        );
+
+        const glm::vec3 child_center = node_center + local_offset;
+
+        const uint32_t child_node_offset = (uint32_t)__popcnt64(node.child_mask & ((1ull << i) - 1u));
+        const uint32_t child_node_index = node.abs_ptr() + child_node_offset;
+
+        if (current_depth + 1 < tree->depth) {
+            recurse_inertia(tree, child_node_index, current_depth + 1, child_half_extent, child_center, extents_diff, com_local, voxel_mass, inertia_tensor);
+        } else {
+            // Leaf node - accumulate inertia contribution
+            // Convert to local voxel space (same as mass calculation) then subtract COM
+            const glm::vec3 voxel_pos = child_center - extents_diff;
+            const glm::vec3 r = voxel_pos - com_local;
+            const float r2 = glm::dot(r, r);
+
+            inertia_tensor[0][0] += voxel_mass * (r2 - r.x * r.x);
+            inertia_tensor[1][1] += voxel_mass * (r2 - r.y * r.y);
+            inertia_tensor[2][2] += voxel_mass * (r2 - r.z * r.z);
+            inertia_tensor[0][1] -= voxel_mass * r.x * r.y;
+            inertia_tensor[0][2] -= voxel_mass * r.x * r.z;
+            inertia_tensor[1][2] -= voxel_mass * r.y * r.z;
+        }
+
+        mask &= ~(1ull << i);
+    }
+}
+
+inline glm::mat3 calculate_inertia_tensor(VoxelBody& vb, VoxelVolume& volume) {
+    auto* tree = volume.blas.get();
+    const float half_extent = powf(4.0f, (float)tree->depth) * 0.5f * UNITS_PER_VOXEL;
+    const glm::vec3 extents_diff = half_extent - ((glm::vec3)volume.size * 0.5f * UNITS_PER_VOXEL);
+    const glm::vec3 tree_center = glm::vec3(half_extent);
+
+    const float voxel_mass = std::powf(UNITS_PER_VOXEL, 3) * vb.density;
 
     glm::mat3 inertia_tensor(0.0f);
-    for (size_t z = 0; z < voxels->size.z; z++) {
-        for (size_t y = 0; y < voxels->size.y; y++) {
-            for (size_t x = 0; x < voxels->size.x; x++) {
-                if (voxels->blas.get()->get_voxel((uint32_t)x, (uint32_t)y, (uint32_t)z) == nullptr) continue;
+    recurse_inertia(tree, 0, 0, half_extent, tree_center, extents_diff, vb.com_local_offset, voxel_mass, inertia_tensor);
 
-                const glm::vec3 pos = glm::vec3(x, y, z) * UNITS_PER_VOXEL - half_scale + VOXEL_SIZE_HALF;
-                const glm::vec3 r = pos - vb.com_local_offset;
-                float r2 = glm::dot(r, r);
-
-                inertia_tensor[0][0] += voxel_mass * (r2 - r.x * r.x);
-                inertia_tensor[1][1] += voxel_mass * (r2 - r.y * r.y);
-                inertia_tensor[2][2] += voxel_mass * (r2 - r.z * r.z);
-                inertia_tensor[0][1] -= voxel_mass * r.x * r.y;
-                inertia_tensor[0][2] -= voxel_mass * r.x * r.z;
-                inertia_tensor[1][2] -= voxel_mass * r.y * r.z;
-            }
-        }
-    }
-
+    // Mirror symmetric components
     inertia_tensor[1][0] = inertia_tensor[0][1];
     inertia_tensor[2][0] = inertia_tensor[0][2];
     inertia_tensor[2][1] = inertia_tensor[1][2];
 
-    if (inertia_tensor[0][0] == 0) {
-        inertia_tensor[0][0] = 1;
-    }
+    // Prevent singular matrix
+    if (inertia_tensor[0][0] == 0.0f) inertia_tensor[0][0] = 1.0f;
+    if (inertia_tensor[1][1] == 0.0f) inertia_tensor[1][1] = 1.0f;
+    if (inertia_tensor[2][2] == 0.0f) inertia_tensor[2][2] = 1.0f;
 
-    if (inertia_tensor[1][1] == 0) {
-        inertia_tensor[1][1] = 1;
-    }
+    return inertia_tensor;
+}
 
-    if (inertia_tensor[2][2] == 0) {
-        inertia_tensor[2][2] = 1;
-    }
+void Physics::initialize_voxel_body(VoxelBody& vb, VoxelVolume& volume) {
+    TMT_ZONE_SCOPED
 
-    vb.inv_inertia = glm::inverse(inertia_tensor);
+    // First calculate mass and COM
+    calculate_center_of_mass(vb, volume);
+
+    // Then calculate inertia (needs COM)
+    vb.inv_inertia = glm::inverse(calculate_inertia_tensor(vb, volume));
+
     vb.center_of_mass = vb.position + (vb.rotation * vb.com_local_offset);
 }
 
@@ -728,6 +838,165 @@ void Physics::set_position(VoxelBody& vb, const glm::vec3& position) {
 void Physics::set_rotation(VoxelBody& vb, const glm::quat& rotation) {
     vb.rotation = rotation;
     vb.center_of_mass = vb.position + (vb.rotation * vb.com_local_offset);
+}
+
+/**
+ * Cast a ray using a layer mask.
+ *
+ * Example:
+ *   uint32_t layer_mask = (1 << 1) | (1 << 2);
+ *   Hit hit = physics->raycast(ray, layer_mask);
+ *
+ * Result:
+ *   Layer 0 -> not in mask = cannot hit
+ *   Layer 1 -> in mask     = can hit
+ *   Layer 2 -> in mask     = can hit
+ *   Layer 3 -> not in mask = cannot hit
+ *
+ * The BVH filters objects internally using bitmask comparison:
+ *   (object.mask & layer_mask) != 0
+ *
+ * Objects whose mask does not overlap with the ray's mask
+ * are ignored during traversal.
+ */
+Hit Physics::raycast(const Ray& ray, uint32_t layer_mask) const {
+    Hit hit = bvh.trace(ray, layer_mask);
+    if (hit) hit.entity = entities[(uint32_t)hit.entity];
+    return hit;
+}
+
+void Physics::recalculate_physics_data(VoxelBody& vb, VoxelVolume& volume) {
+    initialize_voxel_body(vb, volume);
+    recalculate_surface_normals(volume);
+}
+
+// Count number of set bits in variable range [0..width]
+inline uint32_t popcnt_var64(uint64_t mask, uint32_t width) {
+    return (uint32_t)__popcnt64(mask & ((1ull << width) - 1));
+}
+
+inline void recurse_recalculate_normals(
+    tmt::Svt64* tree, const uint32_t node_index, const uint32_t current_depth, const uint32_t node_scale, const uint32_t global_x, const uint32_t global_y, const uint32_t global_z
+) {
+    // Get current node
+    const tmt::Svt64Node& node = tree->nodes[node_index];
+
+    // Calculate new scale for child nodes
+    const uint32_t child_scale = node_scale >> 2u;
+
+    // Copy mask for iteration
+    uint64_t mask = node.child_mask;
+    while (mask != 0u) {
+        // Find index of first set bit
+        const uint32_t i = std::countr_zero(mask);
+
+        // Get local coordinates
+        const uint32_t local_x = (i >> 0u) & 3u;
+        const uint32_t local_y = (i >> 4u) & 3u;
+        const uint32_t local_z = (i >> 2u) & 3u;
+
+        // Get child node index
+        const uint32_t child_node_offset = (uint32_t)__popcnt64(node.child_mask & ((1ull << i) - 1u));
+        const uint32_t child_node_index = node.abs_ptr() + child_node_offset;
+
+        // Recursively go deeper if child is not a leaf
+        if (current_depth + 1 < tree->depth) {
+            recurse_recalculate_normals(
+                tree, child_node_index, current_depth + 1, child_scale, global_x + local_x * child_scale, global_y + local_y * child_scale, global_z + local_z * child_scale
+            );
+        } else {
+            // We are a voxel, calculate normal here
+            const uint32_t x = global_x + local_x;
+            const uint32_t y = global_y + local_y;
+            const uint32_t z = global_z + local_z;
+
+            PhysicsVoxel& voxel = tree->physics_data[child_node_index];
+            int empty_sides = 0;
+            glm::ivec3 normal = {};
+
+            // -X
+            if (tree->is_empty(x - 1, y, z)) {
+                normal += glm::ivec3(-1, 0, 0);
+                empty_sides++;
+            }
+
+            // +X
+            if (tree->is_empty(x + 1, y, z)) {
+                normal += glm::ivec3(1, 0, 0);
+                empty_sides++;
+            }
+
+            // -Y
+            if (tree->is_empty(x, y - 1, z)) {
+                normal += glm::ivec3(0, -1, 0);
+                empty_sides++;
+            }
+
+            // +Y
+            if (tree->is_empty(x, y + 1, z)) {
+                normal += glm::ivec3(0, 1, 0);
+                empty_sides++;
+            }
+
+            // -Z
+            if (tree->is_empty(x, y, z - 1)) {
+                normal += glm::ivec3(0, 0, -1);
+                empty_sides++;
+            }
+
+            // +Z
+            if (tree->is_empty(x, y, z + 1)) {
+                normal += glm::ivec3(0, 0, 1);
+                empty_sides++;
+            }
+
+            voxel.normal_index = 0;
+
+            // Classify voxel type based on empty neighbors
+            if (empty_sides == 0) {
+                voxel.type = PhysicsVoxelType::INSIDE;
+            } else if (empty_sides == 1) {
+                for (size_t lut_idx = 1; lut_idx < 7; lut_idx++) {
+                    if (NORMAL_LUT[lut_idx] == normal) {
+                        voxel.normal_index = lut_idx;
+                        break;
+                    }
+                }
+                voxel.type = PhysicsVoxelType::FACE;
+            } else if (empty_sides == 2) {
+                for (size_t lut_idx = 7; lut_idx < 19; lut_idx++) {
+                    if (NORMAL_LUT[lut_idx] == normal) {
+                        voxel.normal_index = lut_idx;
+                        break;
+                    }
+                }
+                voxel.type = PhysicsVoxelType::EDGE;
+            } else {  // empty_sides >= 3
+                for (size_t lut_idx = 19; lut_idx < 27; lut_idx++) {
+                    if (NORMAL_LUT[lut_idx] == normal) {
+                        voxel.normal_index = lut_idx;
+                        break;
+                    }
+                }
+                voxel.type = PhysicsVoxelType::CORNER;
+            }
+        }
+
+        // Clear bit
+        mask &= ~(1ull << i);
+    }
+}
+
+void Physics::recalculate_surface_normals(VoxelRenderer& renderer) {
+    auto* tree = renderer.resource.resource->blas.get();
+    const uint32_t node_scale = (1u << (tree->depth * 2u));
+    recurse_recalculate_normals(tree, 0, 0, node_scale, 0, 0, 0);
+}
+
+void Physics::recalculate_surface_normals(VoxelVolume& volume) {
+    auto* tree = volume.blas.get();
+    const uint32_t node_scale = (1u << (tree->depth * 2u));
+    recurse_recalculate_normals(tree, 0, 0, node_scale, 0, 0, 0);
 }
 
 }  // namespace tmt

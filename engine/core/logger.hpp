@@ -4,6 +4,8 @@
 #include "spdlog/sinks/basic_file_sink.h"
 #include "spdlog/sinks/stdout_color_sinks-inl.h"
 
+#include <csignal>
+
 namespace tmt {
 
 class Log {
@@ -23,6 +25,7 @@ class Log {
         loggers[Scope::RENDERER] = spdlog::stdout_color_mt("Renderer");
         loggers[Scope::EDITOR] = spdlog::stdout_color_mt("Editor");
         loggers[Scope::GLOBAL] = spdlog::stdout_color_mt("Global");
+        spdlog::set_level(spdlog::level::debug);
 
         std::shared_ptr<spdlog::sinks::basic_file_sink_mt> file_sink = nullptr;
         if (!log_file.empty()) {
@@ -38,6 +41,14 @@ class Log {
                 logger.second->sinks().push_back(file_sink);
             }
         }
+
+        // Set signal functions to be called when certain crashes happen, this is to flush the loggers into the log file.
+        (void)std::signal(SIGABRT, &on_signal);
+        (void)std::signal(SIGFPE, &on_signal);
+        (void)std::signal(SIGILL, &on_signal);
+        (void)std::signal(SIGINT, &on_signal);
+        (void)std::signal(SIGSEGV, &on_signal);
+        (void)std::signal(SIGTERM, &on_signal);
     }
 
     enum class Scope {
@@ -52,6 +63,10 @@ class Log {
     static void info(Scope scope, spdlog::format_string_t<Args...> fmt, Args&&... args) {
         loggers[scope]->info(fmt, std::forward<Args>(args)...);
     }
+    template <typename... Args>
+    static void debug(Scope scope, spdlog::format_string_t<Args...> fmt, Args&&... args) {
+        loggers[scope]->debug(fmt, std::forward<Args>(args)...);
+    }
 
     template <typename... Args>
     static void warn(Scope scope, spdlog::format_string_t<Args...> fmt, Args&&... args) {
@@ -62,7 +77,10 @@ class Log {
     static void error(Scope scope, spdlog::format_string_t<Args...> fmt, Args&&... args) {
         loggers[scope]->error(fmt, std::forward<Args>(args)...);
     }
-
+    template <typename... Args>
+    static void debug(spdlog::format_string_t<Args...> fmt, Args&&... args) {
+        loggers[Scope::GLOBAL]->debug(fmt, std::forward<Args>(args)...);
+    }
     template <typename... Args>
     static void info(spdlog::format_string_t<Args...> fmt, Args&&... args) {
         loggers[Scope::GLOBAL]->info(fmt, std::forward<Args>(args)...);
@@ -92,7 +110,19 @@ class Log {
         }
     }
 
+    static void flush() {
+        for (auto& [scope, logger] : loggers) {
+            logger->flush();
+        }
+    }
+
    private:
+    friend class Console;
+    static void on_signal(const int signal) {
+        error("Flushing logs due to signal: {}", signal);
+        flush();
+    }
+
     static inline std::unordered_map<Scope, std::shared_ptr<spdlog::logger>> loggers;
 };
 

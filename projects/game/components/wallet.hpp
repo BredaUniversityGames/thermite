@@ -1,6 +1,8 @@
 #pragma once
 #include "engine/systems/gameplay/game_component.hpp"
 
+namespace game {
+
 class Wallet : public tmt::GameComponent<Wallet> {
    public:
     using GameComponent::GameComponent;
@@ -19,6 +21,8 @@ class Wallet : public tmt::GameComponent<Wallet> {
     float silver = 0.0f;
     float copper = 0.0f;
     float iron = 0.0f;
-    int enemy_cores = 0;
+    float enemy_cores = 0.0f;
 };
-TMT_OBJECT(Wallet, (dollars, gold, silver, copper, iron, enemy_cores));
+
+}  // namespace game
+TMT_OBJECT(game::Wallet, (dollars, gold, silver, copper, iron, enemy_cores));

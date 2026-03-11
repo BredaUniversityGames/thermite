@@ -10,6 +10,7 @@
 
 #include "engine/core/components/voxel_renderer.hpp"
 #include "engine/core/components/light.hpp"
+#include "engine/core/components/environment.hpp"
 
 namespace tmt {
 
@@ -82,9 +83,23 @@ inline std::vector<T> reserved(const size_t count) {
     return std::move(v);
 }
 
+/* Validate a transform. */
+bool validate_transform(const glm::mat4 m) {
+    /* Calculate the scale of the transform */
+    const glm::vec3 scale = glm::vec3(glm::length(glm::vec3(m[0])), glm::length(glm::vec3(m[1])), glm::length(glm::vec3(m[2])));
+
+    /* Ensure the scale isn't too small */
+    if (glm::any(glm::epsilonEqual(scale, glm::vec3(0.0f), 0.001f))) return true;
+
+    /* Check for NaN and Inf values in the matrix */
+    const glm::vec4 sum4 = m[0] + m[1] + m[2] + m[3];
+    const float sum = sum4[0] + sum4[1] + sum4[2] + sum4[3];
+    return glm::isnan(sum) || glm::isinf(sum);
+}
+
 void SceneView::update_voxel_objects(RenderGraph& render_graph) {
     /* Capture all voxel renderers in the scene */
-    const entt::basic_group group = engine.ecs.get_registry().group<VoxelRenderer>(entt::get<Transform>);
+    const entt::basic_group group = engine.ecs.group<VoxelRenderer>(entt::get<Transform>);
 
     /* Allocate space for all voxel objects */
     const size_t count = std::min(group.size(), (size_t)MAX_VOXEL_OBJECTS);
@@ -98,8 +113,11 @@ void SceneView::update_voxel_objects(RenderGraph& render_graph) {
         /* Respect the object limit */
         if (cpu_objects.size() >= (size_t)MAX_VOXEL_OBJECTS) break;
 
-        /* Don't render objects with a zero scale or null resource */
-        if (glm::any(glm::equal(transform.get_world_scale(), glm::vec3(0.0f))) || renderer.resource == nullptr) continue;
+        /* Don't render objects with a null resource */
+        if (renderer.resource == nullptr) continue;
+
+        /* Don't render objects with invalid transforms */
+        if (validate_transform(transform.get_world_matrix())) continue;
         renderer.resource->update_if_dirty();
 
         /* Create new CPU and GPU object */
@@ -139,15 +157,15 @@ void SceneView::update_voxel_objects(RenderGraph& render_graph) {
 
 void SceneView::update_lights(RenderGraph& render_graph, const RenderView&) {
     /* Capture all lights in the scene */
-    const entt::basic_group group = engine.ecs.get_registry().group<const Light>(entt::get<Transform>);
+    const entt::basic_group light_group = engine.ecs.group<const Light>(entt::get<Transform>);
 
     /* Allocate space for all lights */
-    const size_t count = std::min(group.size(), (size_t)MAX_LIGHTS);
+    const size_t count = std::min(light_group.size(), (size_t)MAX_LIGHTS);
     std::vector gpu_lights = reserved<UniversalLightDesc>(count);
     GpuSceneView gpu_view {};
 
     /* Iterate over all lights */
-    for (auto&& [entity, light, transform] : group.each()) {
+    for (auto&& [entity, light, transform] : light_group.each()) {
         const glm::vec3 scale = transform.get_world_scale();
 
         /* We only support 1 sun light in the scene at once */
@@ -196,6 +214,21 @@ void SceneView::update_lights(RenderGraph& render_graph, const RenderView&) {
             }
             default:
                 break;
+        }
+    }
+
+    /* Capture all environment in the scene */
+    const entt::basic_group env_group = engine.ecs.group<const Environment>();
+    gpu_view.envmap_full_handle = 0u;
+    gpu_view.envmap_filtered_handle = 0u;
+
+    /* Iterate over all environments */
+    for (auto&& [entity, env] : env_group.each()) {
+        if (env.resource) {
+            /* Select the first valid environment we find */
+            gpu_view.envmap_full_handle = env.resource->full_image.get_index();
+            gpu_view.envmap_filtered_handle = env.resource->filtered_image.get_index();
+            break;
         }
     }
 

@@ -16,6 +16,10 @@ public struct RenderView {
     public uint frame_index;
     /* Delta Time in seconds. */
     public float dt;
+    /* 0 = FullRate, 1 = HalfRate, 2 = QuarterRate */
+    public uint shading_rate_di;
+    /* 0 = FullRate, 1 = HalfRate, 2 = QuarterRate */
+    public uint shading_rate_gi;
 };
 
 /* Holds information about the active scene. */
@@ -28,6 +32,10 @@ public struct SceneView {
     public float3 sun_luminance;
     /* Number of lights present in the scene. */
     public uint light_count;
+    /* Environment map (full) bindless handle. */
+    public uint envmap_full_handle;
+    /* Environment map (filtered) bindless handle. */
+    public uint envmap_filtered_handle;
 };
 
 /* Represents a ray that can be traced. */

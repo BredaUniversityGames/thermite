@@ -12,6 +12,7 @@
 #include "engine/core/input/input.hpp"
 #include "engine/core/renderer/renderer.hpp"
 #include "extern/imgui-console/include/csys/arguments.h"
+#include <cstdlib>
 
 using namespace tmt;
 
@@ -20,9 +21,8 @@ namespace {
 // TODO this might be useful in ECS?
 template <typename... Components>
 Entity find_entity(const std::string& name) {
-    auto& registry = engine.ecs.get_registry();
-    for (auto entity : registry.view<Name, Components...>()) {
-        if (registry.get<Name>(entity).name == name) {
+    for (auto entity : engine.ecs.view<Name, Components...>()) {
+        if (engine.ecs.get_component<Name>(entity).name == name) {
             return entity;
         }
     }
@@ -68,9 +68,8 @@ void Console::register_commands() {
     );
 
     register_command("list", "List all entities: list", []() {
-        auto& registry = engine.ecs.get_registry();
-        for (auto entity : registry.view<Name>()) {
-            Log::info("[{}] {}", static_cast<uint32_t>(entity), registry.get<Name>(entity).name);
+        for (auto entity : engine.ecs.view<Name>()) {
+            Log::info("[{}] {}", static_cast<uint32_t>(entity), engine.ecs.get_component<Name>(entity).name);
         }
     });
 
@@ -359,6 +358,7 @@ void Console::register_commands() {
 
     // TODO add profiling info here and stats
     register_command("fps", "Show current FPS: fps", []() { Log::info("FPS: {:.1f} ({:.2f}ms)", 1.0f / engine.frame_data().delta_time, engine.frame_data().delta_time * 1000.0f); });
+    register_command("crash", "Crashes the engine!", []() { std::abort(); });
 
     // =========================================================================
     // Debug Drawing - State
