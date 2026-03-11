@@ -30,9 +30,7 @@
 
 namespace {
 
-bool apply_requests(ImGuiMultiSelectIO* io, std::vector<tmt::Entity>& selection, const std::vector<tmt::Entity>& entities) {
-    bool set_all = false;
-
+void apply_requests(ImGuiMultiSelectIO* io, std::vector<tmt::Entity>& selection, const std::vector<tmt::Entity>& entities) {
     for (const auto& request : io->Requests) {
         switch (request.Type) {
             case ImGuiSelectionRequestType_None:
@@ -40,8 +38,7 @@ bool apply_requests(ImGuiMultiSelectIO* io, std::vector<tmt::Entity>& selection,
 
             case ImGuiSelectionRequestType_SetAll:
                 selection.clear();
-                // "entities" will only be populated after looping through entities, but the SetAll (ctrl + A) call can happen before the loop.
-                set_all = request.Selected;
+                if (request.Selected) selection = entities;
                 break;
 
             case ImGuiSelectionRequestType_SetRange: {
@@ -57,8 +54,6 @@ bool apply_requests(ImGuiMultiSelectIO* io, std::vector<tmt::Entity>& selection,
             } break;
         }
     }
-
-    return set_all;
 }
 
 void drag3_uint32(const char* label, uint32_t values[3], const float speed = 0.1f, const uint32_t& min = 0u, const uint32_t& max = 0u) {
@@ -244,7 +239,7 @@ void NodeHierarchy::set_selected_entity(const Entity entity) {
     diff.before();
 
     selected_entities.clear();
-    if (entity != entt::null) selected_entities.push_back(entity);
+    selected_entities.push_back(entity);
 
     diff.after();
     IUndoRedo::send_to_manager(std::move(diff), "Set Node Selection");
@@ -774,9 +769,18 @@ void NodeHierarchy::node_context_menu(const Entity node_entity) {
         ImGui::OpenPopupEx(creation_popup_id);
     }
     if (ImGui::MenuItem(ICON_MS_REMOVE " Delete Node")) {
-        VoxelNodeDiff diff { node_entity, false };
+        NodeVectorDiff selection_diff { selected_entities };
+        selection_diff.before();
+        selected_entities.clear();
+        selection_diff.after();
+
+        VoxelNodeDiff node_diff { node_entity, false };
         engine.ecs.destroy_entity(node_entity);
-        VoxelNodeDiff::send_to_manager(std::move(diff), "Deleted Voxel Node");
+
+        UndoRedoCollection diff_collection;
+        diff_collection.add_action(std::move(node_diff));
+        diff_collection.add_action(std::move(selection_diff));
+        diff_collection.commit("Deleted Voxel Node");
     }
 
     if (ImGui::MenuItem(ICON_MS_COPY_ALL " Duplicate Node")) {
@@ -809,17 +813,18 @@ void NodeHierarchy::display() {
     popup_create_node();
     popup_resize_node();
 
-    NodeVectorDiff diff { selected_entities };
-    diff.before();
-
     constexpr ImGuiMultiSelectFlags multiselect_flags =
         ImGuiMultiSelectFlags_ClearOnEscape | ImGuiMultiSelectFlags_ClearOnClickVoid | ImGuiMultiSelectFlags_BoxSelect1d | ImGuiMultiSelectFlags_SelectOnClickRelease;
 
     // Handle multi selecting entities at the start of the recursive display.
     std::vector<Entity> all_entities;
 
+    // Built in multi select system in imgui.
     ImGuiMultiSelectIO* multi_select_io = ImGui::BeginMultiSelect(multiselect_flags, static_cast<int>(selected_entities.size()));
-    const bool select_all = apply_requests(multi_select_io, selected_entities, all_entities);
+    // Check if ctrl+A is pressed to select all, this is the only selection event that happens during ImGui::BeginMultiSelect and not during ImGui::EndMultiSelect for some reason.
+    const auto iterator =
+        std::ranges::find_if(multi_select_io->Requests, [](const ImGuiSelectionRequest& request) { return request.Type == ImGuiSelectionRequestType_SetAll && request.Selected == true; });
+    const bool set_all = iterator != multi_select_io->Requests.end();
 
     for (const Entity entity : root_entities) {
         auto&& [transform, name] = engine.ecs.get_component<Transform, Name>(entity);
@@ -827,10 +832,13 @@ void NodeHierarchy::display() {
         recurse_display_node(entity, name, transform, all_entities);
     }
 
-    // Handle multi selecting entities after all entities have been displayed (e.g. Ctrl+A to select all entities).
-    multi_select_io = ImGui::EndMultiSelect();
+    NodeVectorDiff diff { selected_entities };
+    diff.before();
+
+    // Handle the selection event request after all the items have been displayed.
+    multi_select_io = multi_select_io = ImGui::EndMultiSelect();
     apply_requests(multi_select_io, selected_entities, all_entities);
-    if (select_all) selected_entities.insert(selected_entities.end(), all_entities.begin(), all_entities.end());
+    if (set_all) selected_entities = all_entities;
 
     diff.after();
     if (diff.has_changed()) IUndoRedo::send_to_manager(std::move(diff), "Modified Node Selection");
