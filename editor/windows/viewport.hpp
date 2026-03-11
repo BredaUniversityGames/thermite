@@ -43,7 +43,7 @@ class Viewport : public IWindow, public OnRetrieveMouseState, public OnBlockInpu
 
     void update_debug_camera(const tmt::FrameData& frame_data);
     void toolbar();
-    void selection_logic(const ImVec2& imgui_mouse_pos, const ImVec2& image_pos);
+    void selection_logic(const ImVec2& imgui_mouse_pos, const ImVec2& image_pos, bool toolbar_buttons_hovered);
 
     float width = -1;
     float height = -1;

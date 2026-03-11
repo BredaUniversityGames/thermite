@@ -14,6 +14,14 @@ class GameFlow : public IWindow, public OnGameEnd, public OnPreLoadScene {
 
     void display() override;
 
+    void pause_game();
+
+    void resume_game();
+
+    void start_game();
+
+    void end_game();
+
     void on_editor_start() override;
     void on_editor_update(const tmt::FrameData& time) override;
     void on_editor_end() override;

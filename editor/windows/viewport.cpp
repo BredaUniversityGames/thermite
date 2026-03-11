@@ -145,7 +145,7 @@ void tmt::Viewport::display() {
     const bool gizmo_changed = editor.gizmo.manip(image_pos.x, image_pos.y, width, height, selected_entities, snap_value, modifiers);
     if (gizmo_changed) OnSceneModified::dispatch();
 
-    selection_logic(imgui_mouse_pos, image_pos);
+    selection_logic(imgui_mouse_pos, image_pos, false);
 
     ImGui::EndChild();
 
