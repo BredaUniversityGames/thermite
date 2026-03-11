@@ -23,34 +23,44 @@ Texture2D<uint2> vbuffer;
 RWTexture2D<float3> lbuffer;
 
 /* Sample glossy specular lobe using VNDF distribution. */
-/* Source: "Sampling Visible GGX Normals with Spherical Caps" */
-[ForceInline] float3 sample_vndf(float3 wo, float alpha, float2 r01) {
-    const float3 wo_std = normalize(float3(wo.xy * alpha, wo.z));
+/* Source: "Bounded VNDF Sampling for Smith–GGX Reflections" */
+[ForceInline] float3 sample_vndf_bounded(float3 i, float alpha, float2 r01) {
+    /* Sample cap */
+    const float3 i_std = normalize(float3(i.xy * alpha, i.z));
     const float phi = 2.0f * PI_F32 * r01.x;
-    const float z = (1.0f - r01.y) * (1.0f + wo_std.z) + -wo_std.z;
-    const float sin_theta = sqrt(clamp(1.0f - z * z, 0.0f, 1.0f));
-    const float x = sin_theta * cos(phi);
-    const float y = sin_theta * sin(phi);
-    const float3 wm_std = float3(x, y, z) + wo_std;
-    return normalize(float3(wm_std.xy * alpha, wm_std.z));
+    const float a = saturate(alpha);
+    const float s = 1.0f + length(float2(i.x, i.y)); 
+    const float a2 = a * a; float s2 = s * s;
+    const float k = (1.0f - a2) * s2 / (s2 + a2 * i.z * i.z);
+    const float b = i.z > 0 ? k * i_std.z : i_std.z;
+    const float z = mad(1.0f - r01.y, 1.0f + b, -b);
+    const float sinTheta = sqrt(saturate(1.0f - z * z));
+    const float3 o_std = { sinTheta * cos(phi), sinTheta * sin(phi), z };
+    const float3 m_std = i_std + o_std;
+    return normalize(float3(m_std.xy * alpha, m_std.z));
 }
 
-[ForceInline] float pdf_vndf(float wh_costheta, float wo_costheta, float alpha_2) {
+/* PDF for bounded glossy specular lobe using VNDF distribution. */
+/* Source: "Bounded VNDF Sampling for Smith–GGX Reflections" */
+float pdf_vndf_bounded(float3 wi, float wh_costheta, float alpha, float alpha_2) {
     /* Trowbridge-Reitz normal distribution function */
-    float wh_costheta_2 = wh_costheta * wh_costheta;
-    float wh_costheta_4 = wh_costheta_2 * wh_costheta_2;
-    float wh_sintheta_2 = 1.0f - wh_costheta_2;
-    float wh_tantheta_2 = wh_sintheta_2 / wh_costheta_2;
-    float e = alpha_2 + wh_tantheta_2;
-    float d = alpha_2 / (PI_F32 * wh_costheta_4 * e * e);
-
-    /* Trowbridge-Reitz masking and shadowing function */
-    float wo_sintheta_2 = 1.0f - wo_costheta * wo_costheta;
-    float wo_tantheta_2 = wo_sintheta_2 / (wo_costheta * wo_costheta);
-    float wo_lambda = (-1.0f + sqrt(1.0f + alpha_2 * wo_tantheta_2)) * 0.5f;
-    float g = 1.0f / (1.0f + wo_lambda);
-
-    return (d * g) / (4.0f * wo_costheta);
+    const float wh_costheta_2 = wh_costheta * wh_costheta;
+    const float wh_costheta_4 = wh_costheta_2 * wh_costheta_2;
+    const float wh_sintheta_2 = 1.0f - wh_costheta_2;
+    const float wh_tantheta_2 = wh_sintheta_2 / wh_costheta_2;
+    const float e = alpha_2 + wh_tantheta_2;
+    const float d = alpha_2 / (PI_F32 * wh_costheta_4 * e * e);
+    /* Sample cap */
+    const float2 ai = alpha * wi.xy;
+    const float len2 = dot(ai, ai);
+    const float t = sqrt(len2 + wi.z * wi.z);
+    if (wi.z >= 0.0f) {
+        const float s = 1.0f + length(float2(wi.x, wi.y));
+        const float s2 = s * s;
+        const float k = (1.0f - alpha_2) * s2 / (s2 + alpha_2 * wi.z * wi.z);
+        return d / (2.0f * (k * wi.z + t));
+    }
+    return d * (t - wi.z) / (2.0f * len2);
 }
 
 [shader("compute")]
@@ -90,7 +100,7 @@ void main(int2 thread_id: SV_DispatchThreadID) {
     const float alpha = roughness * roughness;
 
     /* Importance sample specular lobe */
-    const float3 wh = sample_vndf(wo, alpha, noise);
+    const float3 wh = sample_vndf_bounded(wo, alpha, noise);
     const float3 wi = normalize(reflect(-wo, wh));
 
     /* Ignore directions which lie underneath the horizon */
@@ -99,7 +109,7 @@ void main(int2 thread_id: SV_DispatchThreadID) {
 
     /* Evaluate the BSDF and PDF of the sample */
     const float alpha_2 = alpha * alpha;
-    const float rcp_pdf = 1.0f / pdf_vndf(wh.z, wo.z, alpha_2);
+    const float rcp_pdf = 1.0f / pdf_vndf_bounded(wi, wh.z, alpha, alpha_2);
     const float bsdf = gloss_slab(wi.z, wo.z, wh.z, alpha_2, eta) * rcp_pdf;
 
     /* Trace sample direction */
