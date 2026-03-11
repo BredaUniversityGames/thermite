@@ -38,17 +38,18 @@ void WanderSteering::on_tick(tmt::Entity agent, float /*dt*/) {
 
     if (player_transform && agent_transform) {
         float distance = glm::distance(agent_transform->get_world_position(), player_transform->get_world_position());
-        
+
         auto& request = registry.get<SteeringRequest>(agent);
-        request.player_in_range = distance <= request.activation_range;
+        auto* ws = tmt::engine.ecs.try_get_component<tmt::WorldState>(agent);
+        if (ws) {
+            uint32_t fact = (uint32_t)std::hash<std::string>()("player_in_range");
+            ws->facts[fact] = distance <= request.activation_range;
+        }
     }
 }
 
 bool WanderSteering::is_done(tmt::Entity agent) const {
-    auto& registry = tmt::engine.ecs.get_registry();
-    auto& request = registry.get<SteeringRequest>(agent);
-
-    return request.player_in_range;
+    return false;
 }
 
 void WanderSteering::on_finished(tmt::Entity agent) {

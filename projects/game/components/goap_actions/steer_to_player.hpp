@@ -9,7 +9,7 @@ class SteerToPlayer : public tmt::GoapAction {
    public:
     SteerToPlayer() {
         preconditions["player_in_range"] = true;
-        effects["explosion_in_range"] = true;
+        effects["at_target"] = true;
         cost = 2.f;
     }
 

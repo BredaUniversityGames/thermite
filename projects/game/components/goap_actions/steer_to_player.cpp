@@ -1,5 +1,4 @@
 #include "steer_to_player.hpp"
-#include "steer_to_player.hpp"
 
 #include "engine/engine.hpp"
 #include "engine/core/ecs.hpp"
@@ -11,20 +10,20 @@
 namespace game {
 
 void SteerToPlayer::on_start(tmt::Entity agent) {
-    auto& registry = tmt::engine.ecs.get_registry();
-
     if (!tmt::engine.ecs.valid(player_entity)) {
-        // Create or reset steering request
-        SteeringRequest request {};
-        request.mode = SteeringMode::ARRIVE;
-
-        player_entity = tmt::engine.ecs.view<Player>().front().entity;  // Assuming there's only one player entity in the game
-
-        auto* player_transform = tmt::engine.ecs.try_get_component<tmt::Transform>(player_entity);
-        request.target_position = player_transform->get_world_position();
-
-        registry.emplace_or_replace<SteeringRequest>(agent, request);
+        player_entity = tmt::engine.ecs.view<Player>().front().entity;
     }
+
+    SteeringRequest request {};
+    request.mode = SteeringMode::ARRIVE;
+
+    auto* player_transform = tmt::engine.ecs.try_get_component<tmt::Transform>(player_entity);
+    if (player_transform) {
+        request.target_position = player_transform->get_world_position();
+    }
+
+    auto& registry = tmt::engine.ecs.get_registry();
+    registry.emplace_or_replace<SteeringRequest>(agent, request);
 }
 
 void SteerToPlayer::on_tick(tmt::Entity agent, float /*dt*/) {
@@ -41,21 +40,22 @@ void SteerToPlayer::on_tick(tmt::Entity agent, float /*dt*/) {
     glm::vec3 agent_pos = agent_transform->get_world_position();
     glm::vec3 to_player = player_pos - agent_pos;
 
-    if (glm::length(to_player) < 0.01f) return;
+    float distance = glm::length(to_player);
 
-    // Clamp stop offset so we don't pass the agent
-    float dist_to_player = glm::length(to_player);
-    float safe_offset = glm::min(request.explosion_range, dist_to_player - 0.1f);
-    safe_offset = glm::max(0.f, safe_offset);
-    glm::vec3 stop_offset = glm::normalize(to_player) * safe_offset;
+    // update world state
+    auto* ws = tmt::engine.ecs.try_get_component<tmt::WorldState>(agent);
+    if (ws) {
+        uint32_t fact = (uint32_t)std::hash<std::string>()("player_in_range");
+        ws->facts[fact] = distance <= request.activation_range;
+    }
 
-    glm::vec3 desired_target = player_pos - stop_offset;
+    if (distance < 0.01f) return;
 
-    // Update request only if it changed significantly
-    glm::vec3 diff = request.target_position - desired_target;
+    // Always steer toward the player
+    glm::vec3 diff = request.target_position - player_pos;
+
     if (glm::dot(diff, diff) > 0.0001f) {
-        request.target_position = desired_target;
-        request.arrive_radius = 0.5f;
+        request.target_position = player_pos;
     }
 }
 

@@ -53,10 +53,9 @@ struct SteeringRequest {
 
     float arrive_radius = 6.f;
     float activation_range = 50.f;
-    float explosion_range = 2.f;
+    float min_explosion_range = 2.f;
+    float max_explosion_range = 10.f;
 
-    bool player_in_range = false;
-    bool in_explosion_range = false;
     bool completed = false;
 
     WanderData wander_data;

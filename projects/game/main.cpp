@@ -43,6 +43,7 @@
 #include "engine/systems/ai/goap/goap_system.hpp"
 #include "components/goap_actions/steer_to_player.hpp"
 #include "components/goap_actions/wander_steering.hpp"
+#include "components/goap_actions/explode.hpp"
 
 class Game : public tmt::Application {
    public:
@@ -129,7 +130,7 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
 
         auto& ecs = tmt::engine.ecs;
         auto& goap = ecs.systems.get<tmt::Goap>();
-
+        
         auto& action_reg = goap.actions();
         auto& goal_reg = goap.goals();
         auto& type_reg = goap.agent_types();
@@ -137,18 +138,9 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
         /* Register Actions */
         action_reg.register_action(std::make_unique<game::SteerToPlayer>());
         action_reg.register_action(std::make_unique<game::WanderSteering>());
+        action_reg.register_action(std::make_unique<game::Explode>());
 
         /* Register Goals */
-
-        // Goal: Steer to player, get within explosion range
-        {
-            tmt::GoapGoal steer_to_player;
-            steer_to_player.name = "g_SteerToPlayer";
-            steer_to_player.desired_state = { { tmt::FactId("explosion_in_range"), true } };
-            steer_to_player.priority = 5;
-            steer_to_player.valid = true;
-            goal_reg.register_goal("g_ReachTarget", steer_to_player);
-        }
 
         // Goal: Wander when player not in range
         {
@@ -158,6 +150,24 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
             wander_steering.priority = 1;
             wander_steering.valid = true;
             goal_reg.register_goal("g_WanderSteering", wander_steering);
+        }
+        // Goal: Steer to player, get within explosion range
+        {
+            tmt::GoapGoal steer_to_player;
+            steer_to_player.name = "g_SteerToPlayer";
+            steer_to_player.desired_state = { { tmt::FactId("at_target"), true } };
+            steer_to_player.priority = 5;
+            steer_to_player.valid = true;
+            goal_reg.register_goal("g_ReachTarget", steer_to_player);
+        }
+        // Goal: Explode when in explosion range
+        {
+            tmt::GoapGoal explode;
+            explode.name = "g_Explode";
+            explode.desired_state = { { tmt::FactId("exploded"), true } };
+            explode.priority = 10;
+            explode.valid = true;
+            goal_reg.register_goal("g_Explode", explode);
         }
     }
 

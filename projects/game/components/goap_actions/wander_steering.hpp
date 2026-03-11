@@ -3,7 +3,6 @@
 #include "engine/systems/ai/goap/components/goap_action.hpp"
 #include "engine/systems/ai/steering/components/steering_mode.hpp"
 
-
 namespace game {
 
 class WanderSteering : public tmt::GoapAction {
