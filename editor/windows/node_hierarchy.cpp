@@ -127,16 +127,20 @@ struct NodeResizeData {
 std::unique_ptr<NodeResizeData> node_resize_info;
 
 tmt::Entity recurse_build_scene(
-    const tmt::VoxelSceneNode& node, bool assign_new_uuids, const tmt::Entity parent_entity = entt::null, const glm::mat4& parent_matrix = glm::identity<glm::mat4>()
+    const tmt::VoxelSceneNode& node, bool assign_new_uuids, const std::map<tmt::UUID, tmt::Entity>& previous_entity_mapping, const tmt::Entity parent_entity = entt::null,
+    const glm::mat4& parent_matrix = glm::identity<glm::mat4>()
 ) {
-    const tmt::Entity entity = tmt::engine.ecs.create_entity(node.name);
+    const tmt::UUID uuid = (assign_new_uuids ? tmt::UUIDGenerator::generate() : node.uuid);
+
+    tmt::Entity entity = previous_entity_mapping.contains(uuid) ? previous_entity_mapping.at(uuid) : entt::null;
+    entity = tmt::engine.ecs.create_entity(node.name, entity);
 
     tmt::Transform& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
     transform.set_world_matrix(parent_matrix * node.transform);
     transform.set_parent(parent_entity);
 
     tmt::NodeHierarchy::NodeUUID& uuid_component = tmt::engine.ecs.add_component<tmt::NodeHierarchy::NodeUUID>(entity);
-    uuid_component.uuid = (assign_new_uuids ? tmt::UUIDGenerator::generate() : node.uuid);
+    uuid_component.uuid = uuid;
 
     if (node.tree) {
         tmt::VoxelRenderer& renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(entity);
@@ -148,7 +152,7 @@ tmt::Entity recurse_build_scene(
     }
 
     for (const tmt::VoxelSceneNode& child : node.children) {
-        recurse_build_scene(child, assign_new_uuids, entity, transform.get_world_matrix());
+        recurse_build_scene(child, assign_new_uuids, previous_entity_mapping, entity, transform.get_world_matrix());
     }
 
     return entity;
@@ -421,9 +425,9 @@ void NodeHierarchy::export_file(const std::string& file_description, const std::
     );
 }
 
-void NodeHierarchy::build_scene(const std::span<VoxelSceneNode>& root_nodes, bool assign_new_uuids) {
+void NodeHierarchy::build_scene(const std::span<VoxelSceneNode>& root_nodes, bool assign_new_uuids, const std::map<UUID, Entity>& previous_entity_mapping) {
     for (const VoxelSceneNode& root_node : root_nodes) {
-        const Entity root_entity = recurse_build_scene(root_node, assign_new_uuids);
+        const Entity root_entity = recurse_build_scene(root_node, assign_new_uuids, previous_entity_mapping);
 
         root_entities.push_back(root_entity);
     }
