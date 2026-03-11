@@ -331,17 +331,17 @@ class Ecs : public OnGameStart, public OnGameUpdate, public OnGameFixedUpdate, p
 
     Collection<ISystem> systems;
 
+    void on_game_start() override;
+
+    void on_game_end() override;
+
    private:
     Registry registry;
     Dispatcher dispatcher;
 
-    void on_game_start() override;
-
     void on_game_update(const FrameData& time) override;
 
     void on_game_fixed_update(const FrameData& time) override;
-
-    void on_game_end() override;
 
     void on_end_frame() override;
 
