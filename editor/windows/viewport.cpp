@@ -420,7 +420,7 @@ void tmt::Viewport::update_debug_camera(const tmt::FrameData& time) {
         if (ImGui::IsKeyDown(ImGuiKey_E)) move_dir += transform.get_up();
         if (ImGui::IsKeyDown(ImGuiKey_Space)) move_dir += transform.get_up();
         if (ImGui::IsKeyDown(ImGuiKey_Q)) move_dir -= transform.get_up();
-        if (ImGui::IsKeyDown(ImGuiKey_LeftShift)) move_dir -= transform.get_up();
+        if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl)) move_dir -= transform.get_up();
 
         if (glm::length(move_dir) > 0.0f) pos += glm::normalize(move_dir) * camera_speed * time.delta_time;
     }
