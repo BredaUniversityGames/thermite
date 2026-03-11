@@ -76,12 +76,13 @@ void Engine::init(std::unique_ptr<Application> user_app) {
     app = std::move(user_app);
     Log::init(app->specs.log_file.string());
 
-    IO::init_mounts();
+    IO::init_mounts(app->specs.organization, app->specs.name);
     window.init(app->specs);
     input.init();
     renderer.init();
     audio.init();
     salvo.init();
+    player_data.init();
 
     ecs.systems.add<Physics>();
     ecs.systems.add<Destruction>();
@@ -249,6 +250,7 @@ void Engine::end_game() {
 
     OnSceneEnd::dispatch();
     OnGameEnd::dispatch();
+    player_data.serialize();
 }
 
 const FrameData& tmt::Engine::frame_data() const {

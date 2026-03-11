@@ -11,7 +11,7 @@ namespace tmt {
 
 class PlayerData {
     struct Config {
-        static inline const IO::FileLocation FILE_LOCATION { IO::Location::PROJECT, "PlayerData.json" };
+        static inline const IO::FileLocation FILE_LOCATION { IO::Location::USERDATA, "PlayerData.json" };
     };
 
     struct TypeOps {
@@ -35,7 +35,7 @@ class PlayerData {
         const bool contains = entries.contains(key);
         if (contains == false) {
             /* Check if the key exists in the JSON data */
-            const bool has_json = data->get_parsed_json().contains(key);
+            const bool has_json = data && data->get_parsed_json().contains(key);
             if (has_json) {
                 const tmt::json& j = data->get_parsed_json().at(key);
                 entries.emplace(

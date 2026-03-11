@@ -63,6 +63,7 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     // clang-format off
     tmt::ApplicationSpecs specs {
         .name = "Example Game",
+        .organization = "Thermite",
         .command_args = args,
         .log_file = "example_game_logs.txt"
     };
