@@ -4,6 +4,8 @@
 #include "engine/tools/serializer.hpp"
 #include "engine/core/logger.hpp"
 #include "engine/core/io.hpp"
+#include "engine/core/resources.hpp"
+#include "engine/core/resources/json.hpp"
 
 namespace tmt {
 
@@ -24,20 +26,22 @@ class PlayerData {
     };
 
     std::map<std::string, Entry> entries;
-    tmt::json data;
+    ResourceRef<Json> data;
 
    public:
     template <typename T>
     T& get(const std::string& key, T default_value = {}) {
+        /* Check if it's already loaded */
         const bool contains = entries.contains(key);
         if (contains == false) {
-            const bool has_json = data.contains(key);
+            /* Check if the key exists in the JSON data */
+            const bool has_json = data->get_parsed_json().contains(key);
             if (has_json) {
-                const tmt::json& j = data.at(key);
+                const tmt::json& j = data->get_parsed_json().at(key);
                 entries.emplace(
                     key,  //
                     Entry {
-                        .value = std::any(T{}),
+                        .value = std::any(T {}),
                         .ops = create_ops<T>(),
                     }
                 );
@@ -68,13 +72,20 @@ class PlayerData {
     }
 
     void serialize() {
-        const bool success = IO::write_text_file(Config::FILE_LOCATION, data.dump(4));
+        const bool success = IO::write_text_file(Config::FILE_LOCATION, data->get_parsed_json().dump(4));
         if (!success) {
             tmt::Log::error(tmt::Log::Scope::ENGINE, "Failed to write PlayerData to file '{}'", Config::FILE_LOCATION);
         }
     }
 
-    void deserialize() {}
+    void init() {
+        data = engine.resources.load_resource<Json>(Config::FILE_LOCATION);
+        if (!data) {
+            /* Create file and load */
+            IO::write_text_file(Config::FILE_LOCATION, "{}");
+            data = engine.resources.load_resource<Json>(Config::FILE_LOCATION);
+        }
+    }
 
    private:
     template <typename T>
