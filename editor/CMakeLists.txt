@@ -30,3 +30,12 @@ target_precompile_headers(thermite-editor PRIVATE "shared/pch.hpp")
 
 # Set warning level (W4 = level 4, WX = warnings as errors)
 target_compile_options(thermite-editor PRIVATE /W4 /permissive- /WX)
+
+# Disable warnings for external imgui-node-editor sources
+set_source_files_properties(
+    "${CMAKE_SOURCE_DIR}/extern/imgui-node-editor/imgui_node_editor.cpp"
+    "${CMAKE_SOURCE_DIR}/extern/imgui-node-editor/imgui_node_editor_api.cpp"
+    "${CMAKE_SOURCE_DIR}/extern/imgui-node-editor/imgui_canvas.cpp"
+    "${CMAKE_SOURCE_DIR}/extern/imgui-node-editor/crude_json.cpp"
+    PROPERTIES COMPILE_FLAGS "/wd4100"
+)
