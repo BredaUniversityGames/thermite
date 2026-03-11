@@ -4,94 +4,90 @@
 
 namespace tmt::theme {
 
-/**
- * Apply the dark editor theme matching the reference design.
- * Call this after ImGui context is created.
- */
+// Main colors - very dark theme
+constexpr ImVec4 bg_dark = ImVec4(0.098f, 0.098f, 0.098f, 1.0f);           // #191919 - darkest background
+constexpr ImVec4 bg_window = ImVec4(0.118f, 0.118f, 0.118f, 1.0f);         // #1e1e1e - window background
+constexpr ImVec4 bg_child = ImVec4(0.129f, 0.129f, 0.129f, 1.0f);          // #212121 - child window background
+constexpr ImVec4 bg_popup = ImVec4(0.145f, 0.145f, 0.145f, 1.0f);          // #252525 - popup background
+constexpr ImVec4 bg_frame = ImVec4(0.161f, 0.161f, 0.161f, 1.0f);          // #292929 - frame background
+constexpr ImVec4 bg_frame_hovered = ImVec4(0.200f, 0.200f, 0.200f, 1.0f);  // #333333
+constexpr ImVec4 bg_frame_active = ImVec4(0.239f, 0.239f, 0.239f, 1.0f);   // #3d3d3d
+
+// Border colors
+constexpr ImVec4 border_color = ImVec4(0.216f, 0.216f, 0.216f, 1.0f);  // #373737 - subtle borders
+constexpr ImVec4 border_shadow = ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
+
+// Text colors
+constexpr ImVec4 text_color = ImVec4(0.847f, 0.847f, 0.847f, 1.0f);     // #d8d8d8 - main text
+constexpr ImVec4 text_disabled = ImVec4(0.500f, 0.500f, 0.500f, 1.0f);  // #808080 - disabled text
+
+// Header colors (collapsing headers, tree nodes)
+constexpr ImVec4 header_color = ImVec4(0.176f, 0.176f, 0.176f, 1.0f);    // #2d2d2d
+constexpr ImVec4 header_hovered = ImVec4(0.239f, 0.239f, 0.239f, 1.0f);  // #3d3d3d
+constexpr ImVec4 header_active = ImVec4(0.278f, 0.278f, 0.278f, 1.0f);   // #474747
+
+// Button colors
+constexpr ImVec4 button_color = ImVec4(0.200f, 0.200f, 0.200f, 1.0f);    // #333333
+constexpr ImVec4 button_hovered = ImVec4(0.278f, 0.278f, 0.278f, 1.0f);  // #474747
+constexpr ImVec4 button_active = ImVec4(0.318f, 0.318f, 0.318f, 1.0f);   // #515151
+
+// Tab colors
+constexpr ImVec4 tab_color = ImVec4(0.145f, 0.145f, 0.145f, 1.0f);             // #252525
+constexpr ImVec4 tab_hovered = ImVec4(0.278f, 0.278f, 0.278f, 1.0f);           // #474747
+constexpr ImVec4 tab_active = ImVec4(0.200f, 0.200f, 0.200f, 1.0f);            // #333333
+constexpr ImVec4 tab_unfocused = ImVec4(0.118f, 0.118f, 0.118f, 1.0f);         // #1e1e1e
+constexpr ImVec4 tab_unfocused_active = ImVec4(0.176f, 0.176f, 0.176f, 1.0f);  // #2d2d2d
+
+// Title bar colors
+constexpr ImVec4 title_bg = ImVec4(0.098f, 0.098f, 0.098f, 1.0f);            // #191919
+constexpr ImVec4 title_bg_active = ImVec4(0.118f, 0.118f, 0.118f, 1.0f);     // #1e1e1e
+constexpr ImVec4 title_bg_collapsed = ImVec4(0.098f, 0.098f, 0.098f, 1.0f);  // #191919
+
+// Scrollbar colors
+constexpr ImVec4 scrollbar_bg = ImVec4(0.098f, 0.098f, 0.098f, 0.5f);
+constexpr ImVec4 scrollbar_grab = ImVec4(0.318f, 0.318f, 0.318f, 1.0f);
+constexpr ImVec4 scrollbar_grab_hovered = ImVec4(0.400f, 0.400f, 0.400f, 1.0f);
+constexpr ImVec4 scrollbar_grab_active = ImVec4(0.478f, 0.478f, 0.478f, 1.0f);
+
+// Slider/Checkbox/Progress colors
+constexpr ImVec4 slider_grab = ImVec4(0.478f, 0.478f, 0.478f, 1.0f);
+constexpr ImVec4 slider_grab_active = ImVec4(0.600f, 0.600f, 0.600f, 1.0f);
+constexpr ImVec4 check_mark = ImVec4(0.847f, 0.847f, 0.847f, 1.0f);
+
+// Separator
+constexpr ImVec4 separator_color = ImVec4(0.216f, 0.216f, 0.216f, 1.0f);
+constexpr ImVec4 separator_hovered = ImVec4(0.400f, 0.400f, 0.400f, 1.0f);
+constexpr ImVec4 separator_active = ImVec4(0.478f, 0.478f, 0.478f, 1.0f);
+
+// Resize grip
+constexpr ImVec4 resize_grip = ImVec4(0.278f, 0.278f, 0.278f, 0.2f);
+constexpr ImVec4 resize_grip_hovered = ImVec4(0.400f, 0.400f, 0.400f, 0.67f);
+constexpr ImVec4 resize_grip_active = ImVec4(0.478f, 0.478f, 0.478f, 0.95f);
+
+// Docking
+constexpr ImVec4 docking_preview = ImVec4(0.278f, 0.478f, 0.678f, 0.7f);
+constexpr ImVec4 docking_empty_bg = ImVec4(0.098f, 0.098f, 0.098f, 1.0f);
+
+// Menu bar
+constexpr ImVec4 menubar_bg = ImVec4(0.118f, 0.118f, 0.118f, 1.0f);
+
+// Table colors
+constexpr ImVec4 table_header_bg = ImVec4(0.145f, 0.145f, 0.145f, 1.0f);
+constexpr ImVec4 table_border_strong = ImVec4(0.216f, 0.216f, 0.216f, 1.0f);
+constexpr ImVec4 table_border_light = ImVec4(0.176f, 0.176f, 0.176f, 1.0f);
+constexpr ImVec4 table_row_bg = ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
+constexpr ImVec4 table_row_bg_alt = ImVec4(1.0f, 1.0f, 1.0f, 0.02f);
+
+// Nav highlight
+constexpr ImVec4 nav_highlight = ImVec4(0.278f, 0.478f, 0.678f, 1.0f);
+constexpr ImVec4 nav_windowing_highlight = ImVec4(1.0f, 1.0f, 1.0f, 0.70f);
+constexpr ImVec4 nav_windowing_dim_bg = ImVec4(0.8f, 0.8f, 0.8f, 0.20f);
+
+// Modal dim
+constexpr ImVec4 modal_dim = ImVec4(0.0f, 0.0f, 0.0f, 0.5f);
+
 inline void apply_dark_theme() {
     ImGuiStyle& style = ImGui::GetStyle();
-
-    // Main colors - very dark theme
-    constexpr ImVec4 bg_dark = ImVec4(0.098f, 0.098f, 0.098f, 1.0f);           // #191919 - darkest background
-    constexpr ImVec4 bg_window = ImVec4(0.118f, 0.118f, 0.118f, 1.0f);         // #1e1e1e - window background
-    constexpr ImVec4 bg_child = ImVec4(0.129f, 0.129f, 0.129f, 1.0f);          // #212121 - child window background
-    constexpr ImVec4 bg_popup = ImVec4(0.145f, 0.145f, 0.145f, 1.0f);          // #252525 - popup background
-    constexpr ImVec4 bg_frame = ImVec4(0.161f, 0.161f, 0.161f, 1.0f);          // #292929 - frame background
-    constexpr ImVec4 bg_frame_hovered = ImVec4(0.200f, 0.200f, 0.200f, 1.0f);  // #333333
-    constexpr ImVec4 bg_frame_active = ImVec4(0.239f, 0.239f, 0.239f, 1.0f);   // #3d3d3d
-
-    // Border colors
-    constexpr ImVec4 border_color = ImVec4(0.216f, 0.216f, 0.216f, 1.0f);  // #373737 - subtle borders
-    constexpr ImVec4 border_shadow = ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
-
-    // Text colors
-    constexpr ImVec4 text_color = ImVec4(0.847f, 0.847f, 0.847f, 1.0f);     // #d8d8d8 - main text
-    constexpr ImVec4 text_disabled = ImVec4(0.500f, 0.500f, 0.500f, 1.0f);  // #808080 - disabled text
-
-    // Header colors (collapsing headers, tree nodes)
-    constexpr ImVec4 header_color = ImVec4(0.176f, 0.176f, 0.176f, 1.0f);    // #2d2d2d
-    constexpr ImVec4 header_hovered = ImVec4(0.239f, 0.239f, 0.239f, 1.0f);  // #3d3d3d
-    constexpr ImVec4 header_active = ImVec4(0.278f, 0.278f, 0.278f, 1.0f);   // #474747
-
-    // Button colors
-    constexpr ImVec4 button_color = ImVec4(0.200f, 0.200f, 0.200f, 1.0f);    // #333333
-    constexpr ImVec4 button_hovered = ImVec4(0.278f, 0.278f, 0.278f, 1.0f);  // #474747
-    constexpr ImVec4 button_active = ImVec4(0.318f, 0.318f, 0.318f, 1.0f);   // #515151
-
-    // Tab colors
-    constexpr ImVec4 tab_color = ImVec4(0.145f, 0.145f, 0.145f, 1.0f);             // #252525
-    constexpr ImVec4 tab_hovered = ImVec4(0.278f, 0.278f, 0.278f, 1.0f);           // #474747
-    constexpr ImVec4 tab_active = ImVec4(0.200f, 0.200f, 0.200f, 1.0f);            // #333333
-    constexpr ImVec4 tab_unfocused = ImVec4(0.118f, 0.118f, 0.118f, 1.0f);         // #1e1e1e
-    constexpr ImVec4 tab_unfocused_active = ImVec4(0.176f, 0.176f, 0.176f, 1.0f);  // #2d2d2d
-
-    // Title bar colors
-    constexpr ImVec4 title_bg = ImVec4(0.098f, 0.098f, 0.098f, 1.0f);            // #191919
-    constexpr ImVec4 title_bg_active = ImVec4(0.118f, 0.118f, 0.118f, 1.0f);     // #1e1e1e
-    constexpr ImVec4 title_bg_collapsed = ImVec4(0.098f, 0.098f, 0.098f, 1.0f);  // #191919
-
-    // Scrollbar colors
-    constexpr ImVec4 scrollbar_bg = ImVec4(0.098f, 0.098f, 0.098f, 0.5f);
-    constexpr ImVec4 scrollbar_grab = ImVec4(0.318f, 0.318f, 0.318f, 1.0f);
-    constexpr ImVec4 scrollbar_grab_hovered = ImVec4(0.400f, 0.400f, 0.400f, 1.0f);
-    constexpr ImVec4 scrollbar_grab_active = ImVec4(0.478f, 0.478f, 0.478f, 1.0f);
-
-    // Slider/Checkbox/Progress colors
-    constexpr ImVec4 slider_grab = ImVec4(0.478f, 0.478f, 0.478f, 1.0f);
-    constexpr ImVec4 slider_grab_active = ImVec4(0.600f, 0.600f, 0.600f, 1.0f);
-    constexpr ImVec4 check_mark = ImVec4(0.847f, 0.847f, 0.847f, 1.0f);
-
-    // Separator
-    constexpr ImVec4 separator_color = ImVec4(0.216f, 0.216f, 0.216f, 1.0f);
-    constexpr ImVec4 separator_hovered = ImVec4(0.400f, 0.400f, 0.400f, 1.0f);
-    constexpr ImVec4 separator_active = ImVec4(0.478f, 0.478f, 0.478f, 1.0f);
-
-    // Resize grip
-    constexpr ImVec4 resize_grip = ImVec4(0.278f, 0.278f, 0.278f, 0.2f);
-    constexpr ImVec4 resize_grip_hovered = ImVec4(0.400f, 0.400f, 0.400f, 0.67f);
-    constexpr ImVec4 resize_grip_active = ImVec4(0.478f, 0.478f, 0.478f, 0.95f);
-
-    // Docking
-    constexpr ImVec4 docking_preview = ImVec4(0.278f, 0.478f, 0.678f, 0.7f);
-    constexpr ImVec4 docking_empty_bg = ImVec4(0.098f, 0.098f, 0.098f, 1.0f);
-
-    // Menu bar
-    constexpr ImVec4 menubar_bg = ImVec4(0.118f, 0.118f, 0.118f, 1.0f);
-
-    // Table colors
-    constexpr ImVec4 table_header_bg = ImVec4(0.145f, 0.145f, 0.145f, 1.0f);
-    constexpr ImVec4 table_border_strong = ImVec4(0.216f, 0.216f, 0.216f, 1.0f);
-    constexpr ImVec4 table_border_light = ImVec4(0.176f, 0.176f, 0.176f, 1.0f);
-    constexpr ImVec4 table_row_bg = ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
-    constexpr ImVec4 table_row_bg_alt = ImVec4(1.0f, 1.0f, 1.0f, 0.02f);
-
-    // Nav highlight
-    constexpr ImVec4 nav_highlight = ImVec4(0.278f, 0.478f, 0.678f, 1.0f);
-    constexpr ImVec4 nav_windowing_highlight = ImVec4(1.0f, 1.0f, 1.0f, 0.70f);
-    constexpr ImVec4 nav_windowing_dim_bg = ImVec4(0.8f, 0.8f, 0.8f, 0.20f);
-
-    // Modal dim
-    constexpr ImVec4 modal_dim = ImVec4(0.0f, 0.0f, 0.0f, 0.5f);
 
     // Apply colors
     ImVec4* colors = style.Colors;

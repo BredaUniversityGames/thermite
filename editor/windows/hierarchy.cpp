@@ -473,6 +473,11 @@ bool Hierarchy::display_entity(const HierarchyState& state) {
 
     const ImGuiID tree_node_id = ImGui::GetID(name.c_str());
 
+    const int index = state.position.y + state.position.x;
+    if (index % 2 == 0) {
+        // TODO: swithc colors for even/odd
+    }
+
     if (is_prefab) ImGui::PushStyleColor(ImGuiCol_Text, tmt::colors::to_u32(tmt::colors::PREFAB));
     bool open_node = ImGui::TreeNodeBehavior(tree_node_id, flags, name.c_str(), NULL);
     if (is_prefab) ImGui::PopStyleColor();
