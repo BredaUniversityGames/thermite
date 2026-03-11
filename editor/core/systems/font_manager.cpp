@@ -6,7 +6,7 @@
 
 void tmt::FontManager::init() {
     /* Rubrik */
-    load("Rubik", { IO::Location::EDITOR, "fonts/Rubik-Regular.ttf" }, 22.f);
+    load("Rubik", { IO::Location::EDITOR, "fonts/Rubik-Regular.ttf" }, 18.f);
 
     /* Icons */
     const uint16_t glyph_ranges[] = { ICON_MIN_MS, ICON_MAX_MS, 0 };
