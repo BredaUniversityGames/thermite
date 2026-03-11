@@ -71,14 +71,14 @@ public struct Slot {
     }
 
     /* Find the inactivity of the cache slot compared to a reference frame index. */
-    public [ForceInline] [mutating] uint inactivity(const uint frame_index) {
+    public [ForceInline] [mutating] uint inactivity() {
         const uint last = last_sampled();
         set_last_sampled(last + 1u);
         return last;
     }
 
     /* Activate the cache slot for the given frame index. */
-    public [ForceInline] [mutating] void activate(const uint frame_index) {
+    public [ForceInline] [mutating] void activate() {
         set_last_sampled(0u);
     }
 
@@ -110,7 +110,7 @@ public struct Slot {
 };
 
 /* Insert data into the cache. */
-public [ForceInline] void insert(RWStructuredBuffer<cache::Slot> cache, const uint64_t key, const uint frame_index, const float3 diffuse, const float3 specular) {
+public [ForceInline] void insert(RWStructuredBuffer<cache::Slot> cache, const uint64_t key, const float3 diffuse, const float3 specular) {
     /* Modulo the hash to fall within the cache capacity */
     const uint base_hash = voxel_hash(key) % CAPACITY;
     uint slot = base_hash;
@@ -154,7 +154,7 @@ public [ForceInline] void insert(RWStructuredBuffer<cache::Slot> cache, const ui
 }
 
 /* Fetch a slot with a given key from the cache. */
-public [ForceInline] Slot fetch(RWStructuredBuffer<cache::Slot> cache, const uint64_t key, const uint frame_index) {
+public [ForceInline] Slot fetch(RWStructuredBuffer<cache::Slot> cache, const uint64_t key) {
     /* Modulo the hash to fall within the cache capacity */
     uint slot = voxel_hash(key) % CAPACITY;
 
@@ -162,7 +162,7 @@ public [ForceInline] Slot fetch(RWStructuredBuffer<cache::Slot> cache, const uin
     for (uint fuse = 0u; fuse < FUSE_LENGTH; ++fuse) {
         /* Exit if we found a slot which matches our key */
         if (cache[slot].key == key) {
-            cache[slot].activate(frame_index);
+            cache[slot].activate();
             return cache[slot];
         }
 

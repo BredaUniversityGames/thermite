@@ -67,12 +67,38 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
             .read(scene_view.object_indices) /* Voxel object indices buffer */
             .read(scene_view.object_data) /* Voxel objects buffer */
             .read(scene_view.lights_data) /* Lights data buffer */
-            .write(render_view.macrofacet_cache) /* Cache buffer */
+            // .write(render_view.macrofacet_cache) /* Cache buffer */
             .read(render_view.vbuffer.image) /* Visibility buffer */
             .write(render_view.lbuffer.image) /* Luminance buffer */
             .group_size(16, 8)
             .work_size(shading_res.x, shading_res.y);
     }
+
+    const glm::uvec2 quarter_rate = div_up(render_view.gpu_view.resolution, 2u, 2u);
+
+    /* Reflections pass */
+    render_graph.add_compute_pass("reflections pass", "reflections.cs")
+        .read(render_view.render_view_buffer) /* Render view buffer */
+        // .read(scene_view.scene_view) /* Scene view buffer */
+        .read(render_view.blue_noise2d->image) /* Blue noise texture */
+        .read(scene_view.bvh_nodes) /* TLAS nodes buffer */
+        .read(scene_view.object_indices) /* Voxel object indices buffer */
+        .read(scene_view.object_data) /* Voxel objects buffer */
+        // .read(scene_view.lights_data) /* Lights data buffer */
+        // .write(render_view.macrofacet_cache) /* Cache buffer */
+        .read(render_view.vbuffer.image) /* Visibility buffer */
+        .write(render_view.lbuffer.image) /* Luminance buffer */
+        .group_size(16, 8)
+        .work_size(quarter_rate.x, quarter_rate.y);
+
+    /* Cache insert pass */
+    render_graph.add_compute_pass("cache insert pass", "cache_insert.cs")
+        .read(render_view.render_view_buffer) /* Render view buffer */
+        .write(render_view.macrofacet_cache) /* Cache buffer */
+        .read(render_view.vbuffer.image) /* Visibility buffer */
+        .read(render_view.lbuffer.image) /* Luminance buffer */
+        .group_size(16, 8)
+        .work_size(render_res.x, render_res.y);
 
     /* Cache flush pass */
     render_graph.add_compute_pass("cache flush pass", "cache_flush.cs")

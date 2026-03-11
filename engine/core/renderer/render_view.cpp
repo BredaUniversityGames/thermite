@@ -63,7 +63,7 @@ void RenderView::init() {
 
     /* Create the illuminance buffer */
     lbuffer.texture =
-        bank.create_texture("Luminance Buffer Texture", TextureUsage::Storage | TextureUsage::Sampled, TextureFormat::RG11B10Ufloat, render_size).expect("failed to create ibuffer texture.");
+        bank.create_texture("Luminance Buffer Texture", TextureUsage::Storage | TextureUsage::Sampled, TextureFormat::RG11B10Ufloat, view_size).expect("failed to create ibuffer texture.");
     lbuffer.image = bank.create_image("Luminance Buffer Image", lbuffer.texture).expect("failed to create ibuffer image.");
     nbuffer.texture = bank.create_texture("Denoised Luminance Buffer Texture", TextureUsage::Storage | TextureUsage::Sampled, TextureFormat::RG11B10Ufloat, render_size)
                           .expect("failed to create nbuffer texture.");
@@ -205,7 +205,7 @@ void RenderView::resize_textures() {
     bank.resize_texture(viewport.texture, view_size).expect("failed to resize viewport texture.");
     bank.resize_texture(vbuffer.texture, view_size).expect("failed to resize vbuffer texture.");
     bank.resize_texture(dbuffer.texture, view_size).expect("failed to resize depth buffer texture.");
-    bank.resize_texture(lbuffer.texture, render_size).expect("failed to resize lbuffer texture.");
+    bank.resize_texture(lbuffer.texture, view_size).expect("failed to resize lbuffer texture.");
     bank.resize_texture(nbuffer.texture, render_size).expect("failed to resize nbuffer texture.");
 }
 

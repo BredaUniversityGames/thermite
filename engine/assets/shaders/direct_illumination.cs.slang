@@ -22,7 +22,7 @@ StructuredBuffer<VoxelObject> objects;
 /* Lights buffer. */
 StructuredBuffer<Light> lights;
 /* Macrofacet cache buffer. */
-RWStructuredBuffer<cache::Slot> macrofacet_cache;
+// RWStructuredBuffer<cache::Slot> macrofacet_cache;
 /* Visibility buffer. */
 Texture2D<uint2> vbuffer;
 /* Luminance buffer. */
@@ -58,7 +58,7 @@ inline PickedLight pick_light(const float3 point, const float3 normal, inout uin
 }
 
 inline float3 direct_illuminance(const float3 point, const float3 normal, const float3 view_dir, const Material mat, inout uint seed, const float2 noise) {
-    float3 illuminance = 0.0f;
+    float3 illuminance = mat.albedo() * mat.emission();
 
     /* Handle the sun light source */
     if (any(scene_view.sun_luminance > 0.0f)) {
@@ -130,7 +130,10 @@ void main(int2 thread_id: SV_DispatchThreadID) {
     }
 
     /* Bounds check */
-    if (any(pixel_id >= render_view.resolution)) return;
+    if (any(pixel_id >= render_view.resolution)) {
+        lbuffer[thread_id] = 0.0f;
+        return;
+    }
 
     /* Load visibility buffer data */
     const uint64_t facet_key = asuint64(vbuffer[pixel_id]);
@@ -153,9 +156,5 @@ void main(int2 thread_id: SV_DispatchThreadID) {
 
     const float2 noise = r2(blue_noise[pixel_id % 512].rg, render_view.frame_index % 1024u);
 
-    float3 illuminance = direct_illuminance(hit_point, geo.normal, -ray.dir, geo.material, seed, noise);
-
-    /* Insert the sample into the illuminance cache */
-    cache::insert(macrofacet_cache, facet_key, render_view.frame_index, illuminance * 2.0f, 0.0f);
-    lbuffer[thread_id] = illuminance;
+    lbuffer[thread_id] = direct_illuminance(hit_point, geo.normal, -ray.dir, geo.material, seed, noise);
 }

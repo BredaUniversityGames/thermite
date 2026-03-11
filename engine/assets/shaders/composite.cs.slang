@@ -47,7 +47,7 @@ void main(int2 thread_id: SV_DispatchThreadID) {
             return;
         }
     } else {
-        const cache::Slot slot = cache::fetch(macrofacet_cache, packed, render_view.frame_index);
+        const cache::Slot slot = cache::fetch(macrofacet_cache, packed);
 
         if (slot.key == cache::EMPTY_KEY) {
             /* This is bad! */
