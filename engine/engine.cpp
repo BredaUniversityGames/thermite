@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <chrono>
+#include <csignal>
 
 #include "core/logger.hpp"
 #include "core/input/input.hpp"
@@ -75,6 +76,7 @@ void Engine::init(std::unique_ptr<Application> user_app) {
 
     app = std::move(user_app);
     Log::init(app->specs.log_file.string());
+    setup_signals();
 
     IO::init_mounts(app->specs.organization, app->specs.name);
     window.init(app->specs);
@@ -263,6 +265,22 @@ bool tmt::Engine::get_is_running() const {
 
 void tmt::Engine::set_is_running(bool value) {
     is_running = value;
+}
+
+void Engine::setup_signals() {
+    // Set signal functions to be called when certain crashes happen
+    (void)std::signal(SIGABRT, &on_crash_signal);
+    (void)std::signal(SIGFPE, &on_crash_signal);
+    (void)std::signal(SIGILL, &on_crash_signal);
+    (void)std::signal(SIGINT, &on_crash_signal);
+    (void)std::signal(SIGSEGV, &on_crash_signal);
+    (void)std::signal(SIGTERM, &on_crash_signal);
+}
+
+void Engine::on_crash_signal(int signal) {
+    Log::error(tmt::Log::Scope::ENGINE, "Application crashed with signal: {}", signal);
+    engine.player_data.serialize();
+    Log::flush();
 }
 
 }  // namespace tmt

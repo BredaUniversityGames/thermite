@@ -92,6 +92,7 @@ void DragonScene::on_start() {
     }
 
     auto& health = tmt::engine.player_data.get<int>("Health");
+    health = 42;
 }
 
 void DragonScene::on_update(const tmt::FrameData& /*time*/) {}

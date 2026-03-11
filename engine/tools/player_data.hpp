@@ -72,6 +72,16 @@ class PlayerData {
     }
 
     void serialize() {
+        /* Update JSON data from entries */
+        for (const auto& [key, entry] : entries) {
+            try {
+                data->get_parsed_json()[key] = entry.ops.serialize(entry.value);
+            } catch (const std::exception& e) {
+                tmt::Log::error(tmt::Log::Scope::ENGINE, "Failed to serialize key '{}': {}", key, e.what());
+            }
+        }
+
+        /* Write to disk */
         const bool success = IO::write_text_file(Config::FILE_LOCATION, data->get_parsed_json().dump(4));
         if (!success) {
             tmt::Log::error(tmt::Log::Scope::ENGINE, "Failed to write PlayerData to file '{}'", Config::FILE_LOCATION);

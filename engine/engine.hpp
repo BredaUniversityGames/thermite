@@ -88,6 +88,9 @@ class Engine {
     void pause_game();
     void resume_game();
     void end_game();
+
+    void setup_signals();
+    static void on_crash_signal(int signal);
 };
 
 /* Singleton */
