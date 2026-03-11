@@ -9,8 +9,8 @@ add_library(thermite-editor STATIC ${THERMITE_SOURCES})
 # Link editor to engine
 target_link_libraries(thermite-editor PRIVATE thermite-engine)
 
-# Supress SPDLOG warnings
-# "warning C4459: declaration of 'formattable' hides global declaration"
+# Supress external library warnings
+# SPDLOG: "warning C4459: declaration of 'formattable' hides global declaration"
 target_compile_options(thermite-editor PRIVATE /wd4459)
 
 # Add compile definitons
@@ -28,5 +28,5 @@ target_compile_definitions(thermite-editor PRIVATE "IMGUI_DEFINE_MATH_OPERATORS"
 # Add the precompiled header
 target_precompile_headers(thermite-editor PRIVATE "shared/pch.hpp")
 
-# Set warning level
-target_compile_options(thermite-editor PRIVATE /W4 /permissive-)
+# Set warning level (W4 = level 4, WX = warnings as errors)
+target_compile_options(thermite-editor PRIVATE /W4 /permissive- /WX)
