@@ -507,17 +507,17 @@ void NodeHierarchy::drop_hierarchy() {
     const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("VoxelNode");
     if (payload != nullptr) {
         const Entity dropped_entity = *static_cast<Entity*>(payload->Data);
-        Transform& transform = engine.ecs.get_component<Transform>(dropped_entity);
+        Transform& dropped_transform = engine.ecs.get_component<Transform>(dropped_entity);
 
-        if (transform.has_parent()) {
+        if (dropped_transform.has_parent()) {
             // Diffs for parent child relationship undo/redo.
-            ComponentDiff<Transform> parent_diff { transform.get_parent() };
+            ComponentDiff<Transform> parent_diff { dropped_transform.get_parent() };
             ComponentDiff<Transform> dropped_diff { dropped_entity };
 
             parent_diff.before();
             dropped_diff.before();
 
-            transform.clear_parent();
+            dropped_transform.clear_parent();
 
             parent_diff.after();
             dropped_diff.after();
@@ -551,22 +551,26 @@ void NodeHierarchy::drop_node(const Entity entity, Transform& transform) {
             const size_t child_count = transform.get_children().size();
 
             // Diffs for parent child relationship undo/redo.
-            ComponentDiff<Transform> parent_diff { entity };
-            ComponentDiff<Transform> child_diff { dropped_entity };
+            std::vector<ComponentDiff<Transform>> diffs;
+            diffs.emplace_back(entity);
+            diffs.emplace_back(dropped_entity);
 
-            parent_diff.before();
-            child_diff.before();
+            const Transform& dropped_transform = engine.ecs.get_component<Transform>(dropped_entity);
+            if (dropped_transform.has_parent()) diffs.emplace_back(dropped_transform.get_parent());
+
+            for (auto& diff : diffs) {
+                diff.before();
+            }
 
             transform.add_child(dropped_entity);
 
             // Only handle the rest of the diff process if the transform actually got a new child (might not get a new child when trying to parent to child of self).
             if (child_count != transform.get_children().size()) {
-                parent_diff.after();
-                child_diff.after();
-
                 UndoRedoCollection diff_collection;
-                diff_collection.add_action(std::move(parent_diff));
-                diff_collection.add_action(std::move(child_diff));
+                for (auto& diff : diffs) {
+                    diff.after();
+                    diff_collection.add_action(std::move(diff));
+                }
 
                 const auto iterator = std::ranges::find(root_entities, dropped_entity);
                 if (iterator != root_entities.end()) {
