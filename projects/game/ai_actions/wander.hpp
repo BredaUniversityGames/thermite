@@ -5,14 +5,11 @@
 class Wander : public tmt::GoapAction {
    public:
     Wander() {
-        preconditions["player_in_range"] = false;
-        effects["player_in_range"] = true;
+        preconditions["in_aggro_range"] = false;
+        effects["in_aggro_range"] = true;
         cost = 2.f;
     }
 
-    tmt::Entity player = entt::null;
-
-    bool done_walking = false;
     bool has_path = false;
 
     glm::vec3 wander_target;

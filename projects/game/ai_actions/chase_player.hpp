@@ -5,15 +5,12 @@
 class ChasePlayer : public tmt::GoapAction {
    public:
     ChasePlayer() {
-        preconditions["player_in_range"] = true;
-        effects["in_attack_range"] = true;
+        preconditions["in_aggro_range"] = true;
+        effects["in_laser_range"] = true;
         cost = 1.f;
     }
 
     tmt::Entity player = entt::null;
-
-    bool done_walking = false;
-    bool has_path = false;
 
     std::string get_id() const override { return "ChasePlayer"; };
 

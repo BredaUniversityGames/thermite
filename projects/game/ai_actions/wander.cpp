@@ -13,36 +13,16 @@
 
 #include <cstdlib>
 
-void Wander::on_start(tmt::Entity walking_entity) {
-    for (const auto& [camEntity, camera] : tmt::engine.ecs.view<tmt::Camera>().each()) {
-        player = camEntity;
-        break;
-    }
-
-    const auto& walking = tmt::engine.ecs.get_component<game::MediumEnemy>(walking_entity);
-    auto& nav_mesh = tmt::engine.ecs.get_component<tmt::NavMesh>(walking.walkable_asteroid);
-    done_walking = false;
+void Wander::on_start(tmt::Entity enemy_entity) {
     has_path = false;
 }
 
-void Wander::on_tick(tmt::Entity walking_entity, float dt) {
-    auto& walking = tmt::engine.ecs.get_component<game::MediumEnemy>(walking_entity);
-    auto& nav_mesh = tmt::engine.ecs.get_component<tmt::NavMesh>(walking.walkable_asteroid);
+void Wander::on_tick(tmt::Entity enemy_entity, float dt) {
+    auto& enemy = tmt::engine.ecs.get_component<game::MediumEnemy>(enemy_entity);
+    auto& nav_mesh = tmt::engine.ecs.get_component<tmt::NavMesh>(enemy.walkable_asteroid);
 
-    tmt::Transform& walking_transform = tmt::engine.ecs.get_component<tmt::Transform>(walking_entity);
-    const auto& walking_entity_pos = walking_transform.get_world_position();
-    const auto& player_pos = tmt::engine.ecs.get_component<tmt::Transform>(player).get_world_position();
-
-    float dist = glm::length(player_pos - walking_entity_pos);
-
-    // in chase range, update world state
-    if (dist < walking.max_chase_distance) {
-        auto& ecs = tmt::engine.ecs;
-        auto& ws = ecs.get_component<tmt::WorldState>(walking_entity);
-        ws.facts[std::hash<std::string>()("player_in_range")] = true;
-        done_walking = true;
-        return;
-    }
+    tmt::Transform& enemy_transform = tmt::engine.ecs.get_component<tmt::Transform>(enemy_entity);
+    const auto& enemy_entity_pos = enemy_transform.get_world_position();
 
     auto nm_nodes = nav_mesh.nodes_mesh;
 
@@ -58,15 +38,14 @@ void Wander::on_tick(tmt::Entity walking_entity, float dt) {
 
     // follow path toward wander target
     if (has_path) {
-        std::optional<glm::vec3> direction = nav_mesh.follow_path(walking_entity_pos, wander_target);
+        std::optional<glm::vec3> direction = nav_mesh.follow_path(enemy_entity_pos, wander_target);
 
-        if (!direction) {
+        auto velocity = glm::vec3(*direction * enemy.walk_speed);
+        enemy.velocity += velocity;
+        if (glm::abs(enemy.velocity.x) < 0.1f && glm::abs(enemy.velocity.y) < 0.1f && glm::abs(enemy.velocity.z) < 0.1f) {
             has_path = false;  // need a new random destination
             return;
         }
-
-        auto velocity = glm::vec3(*direction * walking.walk_speed);
-        walking.velocity += velocity;
     }
 }
 

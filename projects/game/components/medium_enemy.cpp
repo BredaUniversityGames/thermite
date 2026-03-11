@@ -4,13 +4,48 @@
 #include "engine/core/renderer/renderer.hpp"
 #include "engine/core/polyline.hpp"
 
-void game::MediumEnemy::start() {}
+#include "engine/systems/ai/goap/goap_system.hpp"
+
+void game::MediumEnemy::start() {
+    for (const auto& [CamEntity, camera] : tmt::engine.ecs.view<tmt::Camera>().each()) {
+        player = CamEntity;
+        break;
+    }
+}
 
 void game::MediumEnemy::update(const tmt::FrameData& time) {
     tmt::engine.polyline.use_color(1.0f, 0.0f, 0.0f);
     tmt::engine.polyline.use_line_width(2.0f);
     tmt::engine.polyline.use_depth_testing(false);
     tmt::Transform& walking_transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
+
+    // world state update
+    auto& ws = tmt::engine.ecs.get_component<tmt::WorldState>(entity);
+    const auto& player_pos = tmt::engine.ecs.get_component<tmt::Transform>(player).get_world_position();
+    float dist = glm::length(player_pos - walking_transform.get_world_position());
+    // Stop chasing only if player is too far
+    if (dist > aggro_range) {
+        ws.facts[std::hash<std::string>()("in_aggro_range")] = false;
+    }
+    // in chase range, update world state
+    if (dist < aggro_range) {
+        ws.facts[std::hash<std::string>()("in_aggro_range")] = true;
+    }
+    missile_timer += time.delta_time;
+    if (missile_timer > missile_cooldown) {
+        ws.facts[std::hash<std::string>()("missiles_ready")] = true;
+        ws.facts[std::hash<std::string>()("hit_player")] = false;
+    } 
+    else {
+        ws.facts[std::hash<std::string>()("missiles_ready")] = false;
+    }
+    laser_timer += time.delta_time;
+    if (laser_timer > laser_cooldown) {
+        ws.facts[std::hash<std::string>()("laser_ready")] = true;
+        ws.facts[std::hash<std::string>()("hit_player")] = false;
+    } else {
+        ws.facts[std::hash<std::string>()("laser_ready")] = false;
+    }
 
     // height correction
     auto& nav_mesh = tmt::engine.ecs.get_component<tmt::NavMesh>(walkable_asteroid);
@@ -29,10 +64,10 @@ void game::MediumEnemy::update(const tmt::FrameData& time) {
     glm::vec3 desired_velocity = glm::normalize(move_to - walking_transform.get_world_position()) * walk_speed * 0.5f;
     if (glm::isnan(desired_velocity.x)) {
         tmt::Log::warn("desired vel is nan");
-        return;
+    } else {
+        velocity += desired_velocity;
     }
 
-    velocity += desired_velocity;
 
     // movement
     velocity *= 0.9f;
@@ -62,14 +97,42 @@ void game::MediumEnemy::update(const tmt::FrameData& time) {
         walking_transform.set_world_rotation(rotation);
     }
 
-    // compute end effector positions
-    // Extract object basis from its rotation
-    glm::vec3 forward = glm::normalize(rotation * glm::vec3(0, 0, 1));
-    glm::vec3 right = glm::normalize(rotation * glm::vec3(1, 0, 0));
-    forward -= ground_up * glm::dot(forward, ground_up);
-    right -= ground_up * glm::dot(right, ground_up);
-    forward = glm::normalize(forward);
-    right = glm::normalize(right);
+    // missile update
+    for (int i = missiles.size() - 1; i >= 0; i--) {
+        if (missiles[i].update(time.delta_time, ground_up, player_pos)) {
+            missiles.erase(missiles.begin() + i);
+        }
+    }
 }
 
 void game::MediumEnemy::end() {}
+
+bool Missile::update(float dt, glm::vec3 ground_up, glm::vec3 player_pos) {
+    tmt::engine.polyline.draw_sphere(position, 0.1f);
+    launch_time -= dt;
+    home_time -= dt;
+    if (home_time < 0) return true;
+
+    // fades from full launch up to zero
+    float launch_t = glm::clamp(1.0f - (launch_time / max_launch_time), 0.0f, 1.0f);
+    glm::vec3 launch_contribution = glm::mix(ground_up * launch_speed, glm::vec3(0.0f), launch_t);
+
+    // fades from zero up to full homing speed
+    float home_t = glm::clamp(1.0f - (home_time / max_home_time), 0.0f, 1.0f);
+    glm::vec3 home_contribution(0.0f);
+    glm::vec3 to_player = player_pos - position;
+    to_player = glm::mix(to_player, velocity, home_t);
+    if (glm::dot(to_player, to_player) > 0.0001f) {
+        home_contribution = glm::mix(glm::vec3(0.0f), glm::normalize(to_player) * home_speed, home_t);
+    }
+
+    auto added_vel = launch_contribution + home_contribution;
+    float length = glm::length(added_vel);
+    added_vel += offset;
+    added_vel = glm::normalize(added_vel) * length;
+
+    velocity += added_vel;
+    velocity *= 0.9f;
+    position += velocity * dt;
+    return false;
+}
