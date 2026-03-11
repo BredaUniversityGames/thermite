@@ -7,6 +7,12 @@
 #include "engine/core/resources.hpp"
 #include "engine/core/resources/json.hpp"
 
+#if defined(THERMITE_EDITOR) && !defined(THERMITE_ENGINE)
+    #include <ImReflect.hpp>
+    #include "editor/imgui/types/all.hpp"
+    #include "editor/imgui/components/all.hpp"
+#endif
+
 namespace tmt {
 
 class PlayerData {
@@ -18,6 +24,9 @@ class PlayerData {
         const std::type_info& type_info;
         const std::function<tmt::json(const std::any&)> serialize;
         const std::function<void(const tmt::json&, std::any&)> deserialize;
+#if defined(THERMITE_EDITOR) && !defined(THERMITE_ENGINE)
+        const std::function<void(const char* label, std::any&)> inspect;
+#endif
     };
 
     struct Entry {
@@ -29,44 +38,44 @@ class PlayerData {
     ResourceRef<Json> data;
 
    public:
+    /* Important! Type needs to be reflected */
     template <typename T>
     T& get(const std::string& key, T default_value = {}) {
         /* Check if it's already loaded */
         const bool contains = entries.contains(key);
         if (contains == false) {
-            /* Check if the key exists in the JSON data */
+            /* Default emplace */
+            entries.emplace(
+                key, Entry {
+                         .value = default_value,
+                         .ops = create_ops<T>(),
+                     }
+            );
+
+            /* Check if json, else use default */
             const bool has_json = data && data->get_parsed_json().contains(key);
             if (has_json) {
                 const tmt::json& j = data->get_parsed_json().at(key);
-                entries.emplace(
-                    key,  //
-                    Entry {
-                        .value = std::any(T {}),
-                        .ops = create_ops<T>(),
-                    }
-                );
                 auto& entry = entries.at(key);
                 try {
                     entry.ops.deserialize(j, entry.value);
                 } catch (const std::exception& e) {
-                    tmt::Log::error(tmt::Log::Scope::ENGINE, "Failed to deserialize key '{}': {}", key, e.what());
-                    entry.value = default_value;
+                    tmt::Log::error(tmt::Log::Scope::ENGINE, "Failed to deserialize key '{}': {}. Using default value.", key, e.what());
                 }
-            } else {
-                entries.emplace(
-                    key,  //
-                    Entry {
-                        .value = default_value,
-                        .ops = create_ops<T>(),
-                    }
-                );
             }
         }
 
         auto& entry = entries.at(key);
         if (entry.ops.type_info != typeid(T)) {
-            tmt::Log::error(tmt::Log::Scope::ENGINE, "Type mismatch for key '{}'. Requested type: '{}', actual type: '{}'", key, typeid(T).name(), entry.ops.type_info.name());
-            throw std::runtime_error("Type mismatch for key '" + key + "'. Requested type: '" + typeid(T).name() + "', actual type: '" + entry.ops.type_info.name() + "'.");
+            tmt::Log::error(tmt::Log::Scope::ENGINE, "Type mismatch for key '{}'. Requested type: '{}', actual type: '{}'. Overriding...", key, typeid(T).name(), entry.ops.type_info.name());
+            entries.erase(key);
+            entries.emplace(
+                key, Entry {
+                         .value = default_value,
+                         .ops = create_ops<T>(),
+                     }
+            );
+            return std::any_cast<T&>(entries.at(key).value);
         }
         return std::any_cast<T&>(entry.value);
     }
@@ -97,6 +106,26 @@ class PlayerData {
         }
     }
 
+    void clear() {
+        entries.clear();
+        if (data) {
+            data->get_parsed_json().clear();
+            IO::write_text_file(Config::FILE_LOCATION, "{}");
+        }
+    }
+
+#if defined(THERMITE_EDITOR) && !defined(THERMITE_ENGINE)
+    void inspect() {
+        for (auto& [key, entry] : entries) {
+            try {
+                entry.ops.inspect(key.c_str(), entry.value);
+            } catch (const std::exception& e) {
+                tmt::Log::error(tmt::Log::Scope::ENGINE, "Failed to inspect key '{}': {}", key, e.what());
+            }
+        }
+    }
+#endif
+
    private:
     template <typename T>
     TypeOps create_ops() {
@@ -110,6 +139,12 @@ class PlayerData {
                 //
                 tmt::Serializer::deserialize(j, std::any_cast<T&>(value));
             },
+#if defined(THERMITE_EDITOR) && !defined(THERMITE_ENGINE)
+            [](const char* label, std::any& value) {
+                //
+                ImReflect::Input(label, std::any_cast<T&>(value));
+            },
+#endif
         };
     }
 };
