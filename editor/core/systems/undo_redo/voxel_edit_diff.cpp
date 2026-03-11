@@ -101,7 +101,7 @@ void VoxelNodeDiff::undo() {
         Serializer::deserialize(entity_json, root_entity, engine.ecs);
 
         const Transform& transform = engine.ecs.get_component<Transform>(root_entity);
-        if (!transform.has_parent()) editor.windows[Editor::Mode::VOXEL].get<NodeHierarchy>().root_entities.push_back(root_entity);
+        if (!transform.has_parent()) editor.systems[Editor::Mode::VOXEL].get<NodeHierarchy>().root_entities.push_back(root_entity);
 
         for (const NodeData& data : node_data) {
             engine.ecs.add_component<NodeHierarchy::NodeUUID>(data.entity_id).uuid = data.uuid;
@@ -122,7 +122,7 @@ void VoxelNodeDiff::redo() {
         Serializer::deserialize(entity_json, root_entity, engine.ecs);
 
         const Transform& transform = engine.ecs.get_component<Transform>(root_entity);
-        if (!transform.has_parent()) editor.windows[Editor::Mode::VOXEL].get<NodeHierarchy>().root_entities.push_back(root_entity);
+        if (!transform.has_parent()) editor.systems[Editor::Mode::VOXEL].get<NodeHierarchy>().root_entities.push_back(root_entity);
 
         for (const NodeData& data : node_data) {
             engine.ecs.add_component<NodeHierarchy::NodeUUID>(data.entity_id).uuid = data.uuid;

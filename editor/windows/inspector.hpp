@@ -12,7 +12,7 @@ class Inspector : public IWindow {
     std::string get_title() const override { return ICON_MS_FRAME_INSPECT "  Inspector"; }
     constexpr bool default_open() const override { return true; }
 
-    void display() override;
+    void on_inspect() override;
 
     void on_editor_start() override;
     void on_editor_update(const tmt::FrameData& time) override;

@@ -32,8 +32,8 @@ void Inspector::on_editor_update(const tmt::FrameData&) {}
 
 void Inspector::on_editor_end() {}
 
-void Inspector::display() {
-    const auto& hierarchy = editor.windows[editor.editor_mode].get<Hierarchy>();
+void Inspector::on_inspect() {
+    const auto& hierarchy = editor.systems[editor.editor_mode].get<Hierarchy>();
 
     const MenuContext menu_context {
         .primary_entity = hierarchy.get_first_selected_entity(),

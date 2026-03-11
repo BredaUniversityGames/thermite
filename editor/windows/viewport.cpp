@@ -61,11 +61,11 @@ std::string tmt::Viewport::get_title() const {
 int tmt::Viewport::get_window_flags() const {
     if (engine.game_controller.is_running()) return ImGuiWindowFlags_None;
 
-    const bool is_scene_dirty = editor.windows[editor.editor_mode].get<ScenesWindow>().is_scene_dirty();
+    const bool is_scene_dirty = editor.systems[editor.editor_mode].get<ScenesWindow>().is_scene_dirty();
     return is_scene_dirty ? ImGuiWindowFlags_UnsavedDocument : 0;
 };
 
-void tmt::Viewport::display() {
+void tmt::Viewport::on_inspect() {
     auto size = ImGui::GetContentRegionAvail();
     size = ImVec2(std::max(size.x, 1.0f), std::max(size.y, 1.0f));
     width = size.x;
@@ -86,7 +86,7 @@ void tmt::Viewport::display() {
     mouse_pos.x = imgui_mouse_pos.x - image_pos.x;
     mouse_pos.y = imgui_mouse_pos.y - image_pos.y;
 
-    const std::vector<Entity>& selected_entities = editor.windows[editor.editor_mode].get<Hierarchy>().get_selected_entities();
+    const std::vector<Entity>& selected_entities = editor.systems[editor.editor_mode].get<Hierarchy>().get_selected_entities();
 
     float snap_value = 0.0f;
     const bool ctrl_held = ImGui::IsKeyDown(ImGuiKey_LeftCtrl) || ImGui::IsKeyDown(ImGuiKey_RightCtrl);
@@ -146,7 +146,6 @@ void tmt::Viewport::display() {
         ImGui::SetWindowFocus();
     }
     if (is_hovered && engine.input.get_game_preferred_mouse_lock() && engine.game_controller.is_running() && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
-
         engine.input.lock_mouse(true);
         engine.input.set_mouse_relative_to_window(true);
         engine.input.set_game_preferred_mouse_lock(false);
@@ -154,7 +153,7 @@ void tmt::Viewport::display() {
 }
 
 void tmt::Viewport::snap_to_entity() {
-    const auto* hierarchy = editor.windows[editor.editor_mode].try_get<Hierarchy>();
+    const auto* hierarchy = editor.systems[editor.editor_mode].try_get<Hierarchy>();
     Entity selected_entity = hierarchy->get_first_selected_entity();
     if (hierarchy == nullptr || !engine.ecs.valid(selected_entity)) return;
 
@@ -244,7 +243,7 @@ bool tmt::Viewport::toolbar(const ImVec2& image_pos) {
 void tmt::Viewport::selection_logic(const ImVec2& imgui_mouse_pos, const ImVec2& image_pos, bool toolbar_buttons_hovered) {
     if (!is_hovered || engine.game_controller.is_running()) return;
 
-    auto& hierarchy = editor.windows[Editor::Mode::SCENE].get<Hierarchy>();
+    auto& hierarchy = editor.systems[Editor::Mode::SCENE].get<Hierarchy>();
     const std::vector<Entity>& selected_entities = hierarchy.get_selected_entities();
     auto& imgui_io = ImGui::GetIO();
 
@@ -339,7 +338,7 @@ void tmt::Viewport::selection_logic(const ImVec2& imgui_mouse_pos, const ImVec2&
 }
 
 void tmt::Viewport::force_open_recurse_upwards(Entity entity) {
-    auto& hierarchy = editor.windows[Editor::Mode::SCENE].get<Hierarchy>();
+    auto& hierarchy = editor.systems[Editor::Mode::SCENE].get<Hierarchy>();
 
     hierarchy.add_entity_to_forced_open(entity);
 

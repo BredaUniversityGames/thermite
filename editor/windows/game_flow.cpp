@@ -9,7 +9,7 @@
 
 namespace tmt {
 
-void GameFlow::display() {
+void GameFlow::on_inspect() {
     if (engine.game_controller.is_playing()) {
         if (ImGui::Button("End")) {
             engine.game_controller.end_game();

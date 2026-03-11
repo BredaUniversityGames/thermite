@@ -10,7 +10,7 @@ void Rendering::on_editor_update(const tmt::FrameData&) {}
 
 void Rendering::on_editor_end() {}
 
-void Rendering::display() {}
+void Rendering::on_inspect() {}
 
 void Rendering::on_draw_lines() const {
     draw_lights_overlay();
