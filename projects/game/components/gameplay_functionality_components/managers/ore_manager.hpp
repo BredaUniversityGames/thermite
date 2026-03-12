@@ -20,6 +20,12 @@ struct hash<glm::uvec3> {
 
 namespace game {
 
+struct ThermiteOreSettings {
+    float radius_explosion = 1.0f;
+    float damage_explosion = 10.0f;
+    float cooldown_explosion = 0.5f;
+};
+
 class OreManager : public tmt::GameComponent<OreManager> {
    public:
     using GameComponent::GameComponent;
@@ -32,9 +38,7 @@ class OreManager : public tmt::GameComponent<OreManager> {
 
     void initiate_thermite_explosion(tmt::Entity voxel_entity, glm::uvec3 voxel_position);
 
-    float thermite_ore_explosion_radius = 1.0f;
-    float thermite_ore_explosion_damage = 10.0f;
-    float thermite_ore_explosion_cooldown = 0.5f;
+    ThermiteOreSettings thermite_ore_settings;
 
    private:
     std::unordered_set<glm::uvec3> positions_to_explode;
@@ -42,7 +46,9 @@ class OreManager : public tmt::GameComponent<OreManager> {
     std::unordered_set<tmt::Entity> hit_entities;
     float thermite_ore_explosion_cooldown_timer = 0.0f;
     void process_thermite_ore_explosion(tmt::Entity voxel_entity, glm::uvec3 explosion_center);
+    tmt::Entity player_entity = entt::null;
 };
 
 }  
-TMT_OBJECT(game::OreManager, (thermite_ore_explosion_radius, thermite_ore_explosion_damage, thermite_ore_explosion_cooldown));
+TMT_OBJECT(game::ThermiteOreSettings, (radius_explosion, damage_explosion, cooldown_explosion));
+TMT_OBJECT(game::OreManager, (thermite_ore_settings));

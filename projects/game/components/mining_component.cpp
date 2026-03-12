@@ -117,8 +117,7 @@ void MiningComponent::handle_voxel(const VoxelID& voxel_id) {
     auto ore_toughness = ore_database->at(ore_type).toughness;
 
     switch (ore_type) {
-        case tmt::Material::Type::NONE:
-            break;
+        
         case tmt::Material::Type::THERMITE:
             if (ore_toughness < tmt::engine.frame_data().elapsed_time - mining_voxels.at(voxel_id)) {
                 if (ore_manager) {
@@ -128,8 +127,8 @@ void MiningComponent::handle_voxel(const VoxelID& voxel_id) {
                 }
             }
             break;
+        case tmt::Material::Type::NONE:
         case tmt::Material::Type::COPPER:
-            break;
         case tmt::Material::Type::TITANIUM:
             if (ore_toughness < tmt::engine.frame_data().elapsed_time - mining_voxels.at(voxel_id)) {
                 resource->blas->remove_voxel(voxel_coord.x, voxel_coord.y, voxel_coord.z);
