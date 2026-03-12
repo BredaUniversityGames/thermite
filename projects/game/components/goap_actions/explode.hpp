@@ -23,7 +23,7 @@ class Explode : public tmt::GoapAction {
 
    private:
     tmt::Entity player_entity = entt::null;
-    float max_explosion_range = 10.f;
+    float max_explosion_range = 5.f;
 };
 
 }  // namespace game

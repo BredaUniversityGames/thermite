@@ -2,6 +2,8 @@
 
 #include <glm/glm.hpp>
 
+#include "steering_params.hpp"
+
 /**
  * Enum SteeringMode
  * Defines the current steering behavior of an agent.
@@ -15,6 +17,8 @@
  *  - PERSUE : Predictive chasing of a moving target (not implemented here yet).
  */
 enum class SteeringMode { NONE, SEEK, ARRIVE, FLEE, WANDER, PERSUE };
+
+namespace tmt {
 
 /**
  * Struct WanderData
@@ -51,11 +55,11 @@ struct SteeringRequest {
 
     glm::vec3 target_position = {};
 
-    float arrive_radius = 6.f;
-    float activation_range = 50.f;
-    float min_explosion_range = 2.f;
-
     bool completed = false;
 
     WanderData wander_data;
+
+    const SteeringParams* params = nullptr;
 };
+
+}  // namespace tmt

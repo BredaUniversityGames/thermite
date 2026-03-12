@@ -13,6 +13,8 @@ namespace tmt {
 
 void SteeringSystem::on_start() {
     Log::info("Steering on_start");
+    
+    overrides().load();
 }
 
 /**
@@ -203,7 +205,7 @@ glm::vec3 SteeringSystem::calculate_force(const SteeringAgent& agent, const Stee
             break;
 
         case SteeringMode::ARRIVE:
-            force += arrive(agent, position, request.target_position, request.arrive_radius, body.velocity);
+            force += arrive(agent, position, request.target_position, overrides().params.arrive_radius, body.velocity);
             break;
 
         case SteeringMode::FLEE:
@@ -235,7 +237,7 @@ void SteeringSystem::check_completion(SteeringRequest& request, const Transform&
     float dist = glm::distance(transform.get_world_position(), request.target_position);
 
     // stop movement if close enough
-    if (dist <= request.min_explosion_range) {
+    if (dist <= overrides().params.min_explosion_range) {
         body.velocity = glm::vec3(0);
         body.angular_velocity = glm::vec3(0);
 

@@ -6,6 +6,7 @@
 
 #include "engine/systems/physics/components/voxel_body.hpp"
 #include "engine/systems/ai/steering/components/steering_agent.hpp"
+#include "engine/systems/ai/steering/steering_system.hpp"
 #include "../player.hpp"
 
 namespace game {
@@ -15,7 +16,7 @@ void SteerToPlayer::on_start(tmt::Entity agent) {
         player_entity = tmt::engine.ecs.view<Player>().front().entity;
     }
 
-    SteeringRequest request {};
+    tmt::SteeringRequest request {};
     request.mode = SteeringMode::ARRIVE;
 
     auto* player_transform = tmt::engine.ecs.try_get_component<tmt::Transform>(player_entity);
@@ -24,15 +25,15 @@ void SteerToPlayer::on_start(tmt::Entity agent) {
     }
 
     auto& registry = tmt::engine.ecs.get_registry();
-    registry.emplace_or_replace<SteeringRequest>(agent, request);
+    registry.emplace_or_replace<tmt::SteeringRequest>(agent, request);
 }
 
 void SteerToPlayer::on_fixed_tick(tmt::Entity agent, float /*dt*/) {
     if (!tmt::engine.ecs.valid(player_entity)) return;
 
     auto& registry = tmt::engine.ecs.get_registry();
-    if (!registry.any_of<SteeringRequest>(agent)) return;
-    auto& request = registry.get<SteeringRequest>(agent);
+    if (!registry.any_of<tmt::SteeringRequest>(agent)) return;
+    auto& request = registry.get<tmt::SteeringRequest>(agent);
 
     auto* player_transform = tmt::engine.ecs.try_get_component<tmt::Transform>(player_entity);
     auto* agent_transform = tmt::engine.ecs.try_get_component<tmt::Transform>(agent);
@@ -44,14 +45,21 @@ void SteerToPlayer::on_fixed_tick(tmt::Entity agent, float /*dt*/) {
 
     float distance = glm::length(to_player);
 
+    auto* steering = tmt::engine.ecs.systems.try_get<tmt::SteeringSystem>();
+    if (!steering) return;
+
+    const auto& params = steering->overrides().params;
+
     // update world state
     auto* ws = tmt::engine.ecs.try_get_component<tmt::WorldState>(agent);
     if (ws) {
         uint32_t fact = (uint32_t)std::hash<std::string>()("player_in_range");
-        ws->facts[fact] = distance <= request.activation_range;
+
+        ws->facts[fact] = distance <= params.activation_range;
+        done = distance <= params.min_explosion_range;
     }
 
-    done = distance <= request.min_explosion_range;
+    done = distance <= params.min_explosion_range;
 
     if (distance < 0.01f) return;
 
@@ -74,8 +82,8 @@ bool SteerToPlayer::is_done(tmt::Entity agent) const {
 
 void SteerToPlayer::on_finished(tmt::Entity agent) {
     auto& registry = tmt::engine.ecs.get_registry();
-    if (registry.any_of<SteeringRequest>(agent)) {
-        registry.remove<SteeringRequest>(agent);
+    if (registry.any_of<tmt::SteeringRequest>(agent)) {
+        registry.remove<tmt::SteeringRequest>(agent);
     }
 }
 
