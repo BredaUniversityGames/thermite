@@ -114,7 +114,7 @@ struct RenderView {
 
     /* Prev Frame */
     glm::mat4 prev_world_to_clip = glm::mat4(1.f);
-    glm::vec2 prev_jitter {0.0f};
+    glm::vec2 prev_jitter { 0.0f };
 
    private:
     ShadingRate shading_rate_di = ShadingRate::FULL_RATE;

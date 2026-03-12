@@ -40,8 +40,6 @@ class Renderer {
     RenderView render_view {};
     SceneView scene_view {};
 
-    uint64_t mv_id {};
-
     Sampler linear_sampler {};
     Sampler point_sampler {};
 

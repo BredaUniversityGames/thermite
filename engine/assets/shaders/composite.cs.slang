@@ -59,16 +59,5 @@ void main(int2 thread_id: SV_DispatchThreadID) {
         }
     }
 
-    /* Convert from ACEScg to r709 */
-    //luminance = cs::acescg_to_r709(luminance);
-    //
-    ///* Apply AGX tonemapping */
-    //luminance = cs::agx(luminance);
-    //luminance = cs::agx_look(luminance);
-    //luminance = cs::agx_eotf(luminance);
-    //
-    ///* Output device transform */
-    //luminance = cs::delinearize(luminance);
-
     lbuffer[thread_id] = luminance;
 }
