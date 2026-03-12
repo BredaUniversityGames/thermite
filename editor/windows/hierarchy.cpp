@@ -425,7 +425,7 @@ void Hierarchy::top_bar() {
     }
 }
 
-bool Hierarchy::display_entity(const HierarchyState& state) {
+bool Hierarchy::display_entity(const HierarchyState& state, uint32_t& row) {
     const auto scope_id = ImReflect::Detail::scope_id((int)state.entity);
 
     const bool disabled = engine.ecs.is_disabled(state.entity);
@@ -473,10 +473,14 @@ bool Hierarchy::display_entity(const HierarchyState& state) {
 
     const ImGuiID tree_node_id = ImGui::GetID(name.c_str());
 
-    const int index = state.position.y + state.position.x;
-    if (index % 2 == 0) {
-        // TODO: swithc colors for even/odd
+    /* Draw alternating row background for odd rows */
+    if (row % 2 != 0) {
+        const ImVec2 row_min = ImVec2(ImGui::GetWindowPos().x, ImGui::GetCursorScreenPos().y);
+        const ImVec2 row_max = ImVec2(row_min.x + ImGui::GetWindowWidth(), row_min.y + ImGui::GetFrameHeight());
+        constexpr ImU32 alt_row_color = IM_COL32(255, 255, 255, 8);
+        ImGui::GetWindowDrawList()->AddRectFilled(row_min, row_max, alt_row_color);
     }
+    row++;
 
     if (is_prefab) ImGui::PushStyleColor(ImGuiCol_Text, tmt::colors::to_u32(tmt::colors::PREFAB));
     bool open_node = ImGui::TreeNodeBehavior(tree_node_id, flags, name.c_str(), NULL);
@@ -594,7 +598,7 @@ bool Hierarchy::display_entity(const HierarchyState& state) {
             child_state.position.x = state.depth() + 1;
             child_state.position.y = level_index;
 
-            const bool displayed = display_entity(child_state);
+            const bool displayed = display_entity(child_state, row);
             if (displayed) level_index++;
         }
     }
