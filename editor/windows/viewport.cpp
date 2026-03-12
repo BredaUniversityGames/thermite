@@ -219,14 +219,14 @@ void tmt::Viewport::toolbar() {
 
     ImGuiStyle& style = ImGui::GetStyle();
 
-        // Override button padding back to normal
+    // Override button padding back to normal
     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(style.FramePadding.x, y_frame_padding));
 
     // Vertically center buttons within the (now taller) bar
-    //float bar_height = ImGui::GetCurrentWindow()->MenuBarHeight;
-    //float btn_height = ImGui::GetFrameHeightWithSpacing();  // height with the new smaller padding
-    //float center_y = ImGui::GetCursorPosY() + (bar_height - btn_height) * 0.5f - style.FramePadding.y;
-    //ImGui::SetCursorPosY(center_y);
+    // float bar_height = ImGui::GetCurrentWindow()->MenuBarHeight;
+    // float btn_height = ImGui::GetFrameHeightWithSpacing();  // height with the new smaller padding
+    // float center_y = ImGui::GetCursorPosY() + (bar_height - btn_height) * 0.5f - style.FramePadding.y;
+    // ImGui::SetCursorPosY(center_y);
 
     /* ===== Left side: Gizmo controls ===== */
 
@@ -302,19 +302,21 @@ void tmt::Viewport::toolbar() {
     }
 
     // Pause/Resume button (only shown when playing)
-    if (engine.game_controller.is_playing()) {
-        if (engine.game_controller.is_paused()) {
-            if (ImGui::Button(ICON_MS_PLAY_ARROW "##Resume")) {
-                editor.systems[editor.editor_mode].get<GameFlow>().resume_game();
-            }
-            if (ImGui::IsItemHovered()) ImGui::SetTooltip("Resume");
-        } else {
-            if (ImGui::Button(ICON_MS_PAUSE "##Pause")) {
-                editor.systems[editor.editor_mode].get<GameFlow>().pause_game();
-            }
-            if (ImGui::IsItemHovered()) ImGui::SetTooltip("Pause");
+    const bool can_interact = engine.game_controller.is_playing();
+
+    if (can_interact == false) ImGui::BeginDisabled();
+    if (engine.game_controller.is_paused()) {
+        if (ImGui::Button(ICON_MS_PLAY_ARROW "##Resume")) {
+            editor.systems[editor.editor_mode].get<GameFlow>().resume_game();
         }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Resume");
+    } else {
+        if (ImGui::Button(ICON_MS_PAUSE "##Pause")) {
+            editor.systems[editor.editor_mode].get<GameFlow>().pause_game();
+        }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Pause");
     }
+    if (can_interact == false) ImGui::EndDisabled();
 
     /* ===== Right side: Display info ===== */
     float right_width = ImGui::CalcTextSize(ICON_MS_ASPECT_RATIO " 0000x0000").x + style.ItemSpacing.x + style.FramePadding.x;

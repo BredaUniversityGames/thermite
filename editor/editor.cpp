@@ -267,25 +267,63 @@ void Editor::main_menu_bar() {
             ImGui::EndMenu();
         }
 
-        if (ImGui::BeginMenu("Modeling")) {
-            ImGui::MenuItem("Import Model...");
-            ImGui::MenuItem("Export Model...");
-            ImGui::Separator();
-            ImGui::MenuItem("Mesh Tools");
-            ImGui::EndMenu();
-        }
+        ImGui::Dummy({ 5, 0 });
+        ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
+        ImGui::Dummy({ 5, 0 });
 
-        ImGui::BeginDisabled(engine.game_controller.is_playing());
-        if (ImGui::BeginMenu("Editor Mode")) {
-            for (auto&& [mode, handler] : mode_handlers) {
-                const bool is_selected = (editor_mode == mode);
-                if (!ImGui::MenuItem(handler->get_name().c_str(), nullptr, is_selected) || is_selected) continue;
+        {
+            ImGui::BeginDisabled(engine.game_controller.is_playing());
+            const bool is_scene_mode = (editor_mode == Mode::SCENE);
+            const bool is_voxel_mode = (editor_mode == Mode::VOXEL);
 
-                switch_mode(mode);
+            if (is_scene_mode) {
+                ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
             }
-            ImGui::EndMenu();
+            if (ImGui::Button("Scene##Switch")) {
+                switch_mode(Mode::SCENE);
+            }
+            if (ImGui::IsItemHovered()) ImGui::SetTooltip("Scene Editing Mode");
+            if (is_scene_mode) {
+                ImGui::PopStyleColor();
+            }
+            if (is_voxel_mode) {
+                ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
+            }
+            if (ImGui::Button("Voxel##Switch")) {
+                switch_mode(Mode::VOXEL);
+            }
+            if (ImGui::IsItemHovered()) ImGui::SetTooltip("Voxel Editing Mode");
+            if (is_voxel_mode) {
+                ImGui::PopStyleColor();
+            }
+            ImGui::EndDisabled();
         }
-        ImGui::EndDisabled();
+
+        /* Scene switcher dropdown - right-aligned */
+        {
+            const auto& scenes = engine.scenes.get_registered_scenes();
+            const auto& active_scene = engine.scenes.get_active_scene();
+            const std::string scene_name = active_scene ? std::string(active_scene->get_name()) : "None";
+
+            const float combo_width = 200.0f;
+            const float menu_bar_width = ImGui::GetWindowWidth();
+            const float padding = ImGui::GetStyle().ItemSpacing.x;
+
+            ImGui::SameLine(menu_bar_width - combo_width - padding);
+            ImGui::SetNextItemWidth(combo_width);
+            if (ImGui::BeginCombo("##SceneSwitcher", scene_name.c_str())) {
+                for (const auto& [type_index, scene_info] : scenes) {
+                    bool is_selected = (active_scene && typeid(*active_scene) == type_index);
+                    if (ImGui::Selectable(scene_info.name.c_str(), is_selected)) {
+                        engine.scenes.enqueue_scene(type_index);
+                    }
+                    if (is_selected) {
+                        ImGui::SetItemDefaultFocus();
+                    }
+                }
+                ImGui::EndCombo();
+            }
+        }
 
         ImGui::EndMainMenuBar();
     }
