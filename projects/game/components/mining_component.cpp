@@ -4,14 +4,12 @@
 #include "engine/core/components/voxel_renderer.hpp"
 #include "engine/core/logger.hpp"
 #include "engine/core/polyline.hpp"
-#include "engine/tools/fmt/glm.hpp"
-#include "glm/detail/_noise.hpp"
-#include "glm/detail/_noise.hpp"
-#include "glm/detail/_noise.hpp"
-#include "glm/detail/_noise.hpp"
+#include "engine/systems/physics/physics_system.hpp"
+
+#include <engine/tools/fmt/glm.hpp>
+#include <glm/detail/_noise.hpp>
 
 #include <cmath>
-#include <engine/systems/physics/physics_system.hpp>
 
 using namespace game;
 
@@ -74,9 +72,8 @@ void MiningComponent::draw_debug_lines() const {
     polyline.draw_world_circle(ray_origin, forward, ray_cylinder.base_radius);
     polyline.draw_world_circle(ray_origin + ray_cylinder.ray_distance * forward, forward, ray_cylinder.base_radius);
     if (has_drawn_debug == false) {
-        polyline.draw_line(last_ray.origin, last_ray.origin + last_hit.distance * last_ray.dir, 2.0f);
         for (const glm::vec3& origin : previous_computed_origins) {
-            polyline.draw_line(origin, origin + ray_cylinder.ray_distance * forward, 2.0f);
+            polyline.draw_line(origin, origin + ray_cylinder.ray_distance * forward, time_draw_rays_in_debug);
         }
     }
 }
@@ -88,32 +85,26 @@ void MiningComponent::end() {
 
 void MiningComponent::on_weapon_fired(const WeaponFiredEvent& e) {
     if (e.weapon_entity != entity) return;
+
     mine(e.direction);
 }
 void MiningComponent::on_stop_mining(const ReleaseShootEvent& e) {
     // TODO this will trigger no matter what the entity is for now
-    previous_hit.is_mining = false;
+    stopped_mining = true;
     tmt::Log::info("Stopped mining, reset previous hits");
 }
 
-void MiningComponent::handle_ore(const tmt::Hit& hit) {
-    auto* resource = tmt::engine.ecs.get_component<tmt::VoxelRenderer>(hit.entity).resource.resource.get();
-    tmt::Material* material = resource->blas->get_voxel(hit.coord.x, hit.coord.y, hit.coord.z);
+void MiningComponent::handle_voxel(const VoxelID& voxel_id) {
+    auto* resource = tmt::engine.ecs.get_component<tmt::VoxelRenderer>(voxel_id.entity_id).resource.resource.get();
+    const auto voxel_coord = voxel_id.unpack_coord();
+    tmt::Material* material = resource->blas->get_voxel(voxel_coord.x, voxel_coord.y, voxel_coord.z);
 
     // TODO I have no idea why this triggers
     if (material == nullptr) {
-        tmt::Log::error("Somehow the voxel that was supposed to be destroyed at {}, returns a nullptr", hit.coord);
+        tmt::Log::error("Somehow the voxel that was supposed to be destroyed at {}, returns a nullptr", voxel_coord);
         return;
     }
     auto ore_type = material->type;
-
-    // switched voxel, reset
-    if (previous_hit.is_mining == false || hit.coord != previous_hit.voxel_coord) {
-        previous_hit.mining_time = tmt::engine.frame_data().elapsed_time;
-        previous_hit.voxel_coord = hit.coord;
-        previous_hit.type = ore_type;
-        previous_hit.is_mining = true;
-    }
 
     switch (ore_type) {
         case tmt::Material::Type::NONE:
@@ -121,8 +112,8 @@ void MiningComponent::handle_ore(const tmt::Hit& hit) {
         case tmt::Material::Type::COPPER:
         case tmt::Material::Type::TITANIUM:
             auto ore_toughness = ore_database->at(ore_type).toughness;
-            if (ore_toughness < tmt::engine.frame_data().elapsed_time - previous_hit.mining_time) {
-                resource->blas->remove_voxel(previous_hit.voxel_coord.x, previous_hit.voxel_coord.y, previous_hit.voxel_coord.z);
+            if (ore_toughness < tmt::engine.frame_data().elapsed_time - mining_voxels.at(voxel_id)) {
+                resource->blas->remove_voxel(voxel_coord.x, voxel_coord.y, voxel_coord.z);
                 resource->set_dirty();
                 tmt::Log::info("Destroyed voxel");
             }
@@ -132,12 +123,35 @@ void MiningComponent::handle_ore(const tmt::Hit& hit) {
     has_drawn_debug = false;
 }
 void MiningComponent::mine(const glm::vec3& dir) {
+    // TODO reset all state about voxels that are mined
+    if (stopped_mining == true) {
+        mining_voxels.clear();
+    }
     previous_computed_origins = compute_ray_origins(*get_transform());
-    for (auto& origin : previous_computed_origins) {
+    // Get a list of all unique voxels that we hit this frame
+    UniqueVoxelsSet new_mining_voxel_set {};
+    for (const auto& origin : previous_computed_origins) {
         const tmt::Ray ray_cast = tmt::Ray(origin, dir);
         const tmt::Hit hit = tmt::engine.ecs.systems.get<tmt::Physics>().raycast(ray_cast, ray_mask);
+
         if (hit.miss() == false && hit.distance < ray_cylinder.ray_distance) {
-            handle_ore(hit);
+            new_mining_voxel_set.insert(VoxelID { hit.entity, hit.coord });
+            // handle_ore(hit);
+        }
+    }
+
+    // Comparing with the previous hit we get 3 options
+    // we do not have a voxel that has previously been in the dictionary, but not in this frame of mining, meaning we have to remove it
+
+    std::erase_if(mining_voxels, [&](const auto& pair) { return new_mining_voxel_set.contains(pair.first) == false; });
+    auto current_time = tmt::engine.frame_data().elapsed_time;
+    for (const VoxelID& voxel_id : new_mining_voxel_set) {
+        // we do not find it in the dictionary, we add it to the dictionary with a new timestamp
+
+        auto [it, inserted] = mining_voxels.try_emplace(voxel_id, current_time);
+        // we find it in the dictionary, this means we need to check for time, and destroy it if needed
+        if (inserted == false) {
+            handle_voxel(voxel_id);
         }
     }
 }
