@@ -10,6 +10,7 @@
 namespace ax {
 
 namespace NodeEditor {
+enum class SaveReasonFlags : uint32_t;
 
 struct EditorContext;
 
@@ -66,7 +67,7 @@ struct Transition {
     std::string to;
 
     float transition_time = 0.0f;
-    std::vector<Condition> conditions{};
+    std::vector<Condition> conditions {};
 };
 
 class RigController {
@@ -85,14 +86,16 @@ class RigController {
     std::map<std::string, AnimationState> states = { { "Start", AnimationState {} } };
     std::vector<Transition> transitions;
 
+#ifdef THERMITE_EDITOR
+    ax::NodeEditor::EditorContext* editor_context { nullptr };
+    std::vector<uint8_t> editor_data;
+#endif  // THERMITE_EDITOR
+
    private:
     friend class RigStateController;
     friend class RigModelManager;
 
     std::string current_state = "Start";
-#ifdef THERMITE_EDITOR
-    ax::NodeEditor::EditorContext* editor_context { nullptr };
-#endif  // THERMITE_EDITOR
 
     void remove_state(const std::string& name);
     void remove_parameter(const std::string& name);
@@ -109,4 +112,5 @@ JSON_REFLECT(tmt::Trigger, value);
 JSON_REFLECT(tmt::AnimationState, animation, animation_speed, repeat, transition_on_finish);
 JSON_REFLECT(tmt::Transition, from, to, transition_time, conditions);
 JSON_REFLECT(tmt::Condition, parameter_name, compare_value, compare_type);
+JSON_REFLECT(tmt::RigController, parameters, states, transitions);
 TMT_COMPONENT_NAME(tmt::RigController, "Rig Controller");

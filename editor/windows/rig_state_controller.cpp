@@ -53,6 +53,25 @@ const std::map<tmt::Condition::CompareType, std::string> COMPARE_NAMES {
 
 ImRect grid_rect;
 
+bool save_editor(const char* data, size_t size, ax::NodeEditor::SaveReasonFlags, void* user_pointer) {
+    const auto entity = static_cast<tmt::Entity>(reinterpret_cast<std::uintptr_t>(user_pointer));
+    tmt::RigController& controller = tmt::engine.ecs.get_component<tmt::RigController>(entity);
+
+    controller.editor_data.resize(size);
+    std::memcpy(controller.editor_data.data(), data, size);
+
+    return true;
+}
+
+size_t load_editor(char* data, void* user_pointer) {
+    const auto entity = static_cast<tmt::Entity>(reinterpret_cast<std::uintptr_t>(user_pointer));
+    const tmt::RigController& controller = tmt::engine.ecs.get_component<tmt::RigController>(entity);
+
+    if (data != nullptr) std::memcpy(data, controller.editor_data.data(), controller.editor_data.size());
+
+    return controller.editor_data.size();
+}
+
 }  // namespace
 
 namespace tmt {
@@ -180,7 +199,11 @@ void RigStateController::rig_controller_creation(entt::registry& registry, const
     RigController& controller = registry.get<RigController>(entity);
 
     ax::NodeEditor::Config config {};
+    config.SaveSettings = &save_editor;
+    config.LoadSettings = &load_editor;
+    config.UserPointer = reinterpret_cast<void*>(static_cast<std::uintptr_t>(entity));
     config.NavigateButtonIndex = 2;  // Set the navigation button to the middle mouse (avoids issues with context menus).
+
     controller.editor_context = ax::NodeEditor::CreateEditor(&config);
 }
 
