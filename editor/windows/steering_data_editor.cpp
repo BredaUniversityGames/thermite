@@ -50,6 +50,7 @@ void SteeringDataEditor::display() {
     ImGui::DragFloat("Arrive Radius", &params.arrive_radius, 0.1f, 0.f, 50.f);
     ImGui::DragFloat("Activation Range", &params.activation_range, 0.5f, 0.f, 100.f);
     ImGui::DragFloat("Min Explosion Range", &params.min_explosion_range, 0.1f, 0.f, 50.f);
+    ImGui::DragFloat("Max Explosion Range", &params.max_explosion_range, 0.1f, 0.f, 50.f);
 
     if (ImGui::Button("Reset Defaults")) {
         params = SteeringParams {};

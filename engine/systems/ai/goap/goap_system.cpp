@@ -99,16 +99,162 @@ void Goap::process_agent(Entity entity, WorldState& ws, float /*dt*/) {
  *   - Choose the first goal whose conditions are not satisfied.
  *   - If all goals are satisfied ? pick lowest priority as fallback.
  */
+// void Goap::update_goal(Entity entity, GoapAgent& agent, WorldState& ws) {
+//     // If current goal exists but is no longer relevant, invalidate it
+//     if (agent.has_goal() && !agent.active_goal.is_relevant(ws)) {
+//         if (show_logging) {
+//             Log::info("GOAP: Agent {} invalidating goal '{}' (no longer relevant)", entity, agent.active_goal.name);
+//         }
+//         agent.active_goal.valid = false;
+//     }
+//
+//     // allow higher priority goals to interrupt
+//     if (agent.has_goal()) {
+//         for (const auto& goal : agent.available_goals) {
+//             if (goal.priority > agent.active_goal.priority && goal.is_relevant(ws)) {
+//                 if (show_logging) {
+//                     Log::info("GOAP: Agent {} switching goal '{}' -> '{}'", entity, agent.active_goal.name, goal.name);
+//                 }
+//
+//                 agent.active_goal.valid = false;
+//                 break;
+//             }
+//         }
+//
+//         if (agent.has_goal()) return;
+//     }
+//
+//     if (agent.available_goals.empty()) {
+//         Log::warn("GOAP Agent {} has no goals.", entity);
+//         return;
+//     }
+//
+//     // Higher priority first
+//     std::sort(agent.available_goals.begin(), agent.available_goals.end(), [](const GoapGoal& a, const GoapGoal& b) { return a.priority > b.priority; });
+//
+//     if (show_logging) {
+//         Log::info("GOAP: Agent {} evaluating {} goals", entity, (int)agent.available_goals.size());
+//     }
+//
+//     for (const auto& goal : agent.available_goals) {
+//         if (show_logging) {
+//             Log::info("GOAP: Checking goal '{}' (priority {})", goal.name, goal.priority);
+//         }
+//
+//         if (!goal.is_relevant(ws)) {
+//             if (show_logging) {
+//                 Log::info("  -> Goal '{}' not relevant (already satisfied?)", goal.name);
+//             }
+//             continue;
+//         }
+//
+//         bool has_valid_action = false;
+//
+//         for (auto* action : agent.available_actions) {
+//             if (!action) continue;
+//
+//             const auto* override = action_overrides.find(action->get_id());
+//             auto eff = build_effective_action(*action, override);
+//
+//             // --------------------------------------------------
+//             // Check if action contributes toward this goal
+//             // --------------------------------------------------
+//             bool contributes = false;
+//
+//             for (auto& [effect_fact, effect_val] : eff.effects) {
+//                 uint32_t fact_id = (uint32_t)std::hash<std::string>()(effect_fact);
+//
+//                 for (const auto& goal_fact : goal.desired_state) {
+//                     if (goal_fact.id.id == fact_id && goal_fact.value == effect_val) {
+//                         contributes = true;
+//                         break;
+//                     }
+//                 }
+//
+//                 if (contributes) break;
+//             }
+//
+//             if (!contributes) {
+//                 if (show_logging) {
+//                     Log::info("  -> Action '{}' ignored (does not contribute to goal)", action->get_id());
+//                 }
+//                 continue;
+//             }
+//
+//             // --------------------------------------------------
+//             // Check if preconditions are satisfied
+//             // --------------------------------------------------
+//             bool satisfied = true;
+//
+//             for (auto& [fact, val] : eff.preconditions) {
+//                 uint32_t fact_id = (uint32_t)std::hash<std::string>()(fact);
+//                 auto it = ws.facts.find(fact_id);
+//
+//                 if (it == ws.facts.end() || it->second != val) {
+//                     satisfied = false;
+//                     break;
+//                 }
+//             }
+//
+//             if (satisfied) {
+//                 if (show_logging) {
+//                     Log::info("  -> Action '{}' can start AND contributes to goal", action->get_id());
+//                 }
+//
+//                 has_valid_action = true;
+//                 break;
+//             } else {
+//                 if (show_logging) {
+//                     Log::info("  -> Action '{}' contributes but preconditions not satisfied", action->get_id());
+//                 }
+//             }
+//         }
+//
+//         if (!has_valid_action) {
+//             if (show_logging) {
+//                 Log::info("  -> Goal '{}' skipped (no valid starting action)", goal.name);
+//             }
+//             continue;
+//         }
+//
+//         // --------------------------------------------------
+//         // Assign this goal
+//         // --------------------------------------------------
+//         agent.active_goal = goal;
+//         agent.needs_replan = true;
+//
+//         if (show_logging) {
+//             Log::info("GOAP Agent {} selected goal '{}' with priority {}", entity, goal.name, goal.priority);
+//         }
+//
+//         return;
+//     }
+//
+//     // --------------------------------------------------
+//     // Fallback if no valid goals found
+//     // --------------------------------------------------
+//     agent.active_goal = agent.available_goals.back();
+//     agent.needs_replan = true;
+//
+//     if (show_logging) {
+//         Log::info("GOAP Agent {} selected fallback goal '{}'", entity, agent.active_goal.name);
+//     }
+// }
 void Goap::update_goal(Entity entity, GoapAgent& agent, WorldState& ws) {
-    // If current goal exists but is no longer relevant, invalidate it
+    // ------------------------------------------------------
+    // Invalidate goal if no longer relevant
+    // ------------------------------------------------------
     if (agent.has_goal() && !agent.active_goal.is_relevant(ws)) {
         if (show_logging) {
             Log::info("GOAP: Agent {} invalidating goal '{}' (no longer relevant)", entity, agent.active_goal.name);
         }
+
         agent.active_goal.valid = false;
     }
 
-    // allow higher priority goals to interrupt
+    // ------------------------------------------------------
+    // Allow higher priority goals to interrupt
+    // ------------------------------------------------------
     if (agent.has_goal()) {
         for (const auto& goal : agent.available_goals) {
             if (goal.priority > agent.active_goal.priority && goal.is_relevant(ws)) {
@@ -121,7 +267,10 @@ void Goap::update_goal(Entity entity, GoapAgent& agent, WorldState& ws) {
             }
         }
 
-        if (agent.has_goal()) return;
+        // If we still have a valid goal and plan -> keep pursuing it
+        if (agent.has_goal() && !agent.needs_replan) {
+            return;
+        }
     }
 
     if (agent.available_goals.empty()) {
@@ -129,97 +278,35 @@ void Goap::update_goal(Entity entity, GoapAgent& agent, WorldState& ws) {
         return;
     }
 
-    // Higher priority first
+    // ------------------------------------------------------
+    // Sort goals by priority
+    // ------------------------------------------------------
     std::sort(agent.available_goals.begin(), agent.available_goals.end(), [](const GoapGoal& a, const GoapGoal& b) { return a.priority > b.priority; });
 
     if (show_logging) {
         Log::info("GOAP: Agent {} evaluating {} goals", entity, (int)agent.available_goals.size());
     }
 
+    // ------------------------------------------------------
+    // Pick highest priority relevant goal
+    // ------------------------------------------------------
     for (const auto& goal : agent.available_goals) {
-        if (show_logging) {
-            Log::info("GOAP: Checking goal '{}' (priority {})", goal.name, goal.priority);
-        }
-
         if (!goal.is_relevant(ws)) {
             if (show_logging) {
-                Log::info("  -> Goal '{}' not relevant (already satisfied?)", goal.name);
+                Log::info("GOAP: Goal '{}' skipped (not relevant)", goal.name);
             }
+
             continue;
         }
 
-        bool has_valid_action = false;
-
-        for (auto* action : agent.available_actions) {
-            if (!action) continue;
-
-            const auto* override = action_overrides.find(action->get_id());
-            auto eff = build_effective_action(*action, override);
-
-            // --------------------------------------------------
-            // Check if action contributes toward this goal
-            // --------------------------------------------------
-            bool contributes = false;
-
-            for (auto& [effect_fact, effect_val] : eff.effects) {
-                uint32_t fact_id = (uint32_t)std::hash<std::string>()(effect_fact);
-
-                for (const auto& goal_fact : goal.desired_state) {
-                    if (goal_fact.id.id == fact_id && goal_fact.value == effect_val) {
-                        contributes = true;
-                        break;
-                    }
-                }
-
-                if (contributes) break;
-            }
-
-            if (!contributes) {
-                if (show_logging) {
-                    Log::info("  -> Action '{}' ignored (does not contribute to goal)", action->get_id());
-                }
-                continue;
-            }
-
-            // --------------------------------------------------
-            // Check if preconditions are satisfied
-            // --------------------------------------------------
-            bool satisfied = true;
-
-            for (auto& [fact, val] : eff.preconditions) {
-                uint32_t fact_id = (uint32_t)std::hash<std::string>()(fact);
-                auto it = ws.facts.find(fact_id);
-
-                if (it == ws.facts.end() || it->second != val) {
-                    satisfied = false;
-                    break;
-                }
-            }
-
-            if (satisfied) {
-                if (show_logging) {
-                    Log::info("  -> Action '{}' can start AND contributes to goal", action->get_id());
-                }
-
-                has_valid_action = true;
-                break;
-            } else {
-                if (show_logging) {
-                    Log::info("  -> Action '{}' contributes but preconditions not satisfied", action->get_id());
-                }
-            }
-        }
-
-        if (!has_valid_action) {
-            if (show_logging) {
-                Log::info("  -> Goal '{}' skipped (no valid starting action)", goal.name);
-            }
+        // ------------------------------------------------------
+        // Skip goals that cannot currently produce a plan
+        // ------------------------------------------------------
+        if (!goal_has_valid_plan(goal, agent, ws)) {
+            if (show_logging) Log::info("GOAP: Goal '{}' skipped (no valid plan)", goal.name);
             continue;
         }
 
-        // --------------------------------------------------
-        // Assign this goal
-        // --------------------------------------------------
         agent.active_goal = goal;
         agent.needs_replan = true;
 
@@ -230,15 +317,124 @@ void Goap::update_goal(Entity entity, GoapAgent& agent, WorldState& ws) {
         return;
     }
 
-    // --------------------------------------------------
-    // Fallback if no valid goals found
-    // --------------------------------------------------
+    // ------------------------------------------------------
+    // Fallback goal
+    // ------------------------------------------------------
     agent.active_goal = agent.available_goals.back();
     agent.needs_replan = true;
 
     if (show_logging) {
         Log::info("GOAP Agent {} selected fallback goal '{}'", entity, agent.active_goal.name);
     }
+}
+
+/* helper for checking valid plan for picking goals */
+//bool Goap::goal_has_valid_plan(const GoapGoal& goal, GoapAgent& agent, const WorldState& ws) {
+//    // Try building a plan with this goal temporarily
+//    GoapGoal old_goal = agent.active_goal;
+//    agent.active_goal = goal;
+//    agent.clear_plan();
+//
+//    // Call planner (simplified version) but dont commit the plan
+//    bool plan_found = false;
+//
+//    // mimic what update_plan() does internally without actually setting the agent.plan
+//    std::vector<GoapAction*> actions_to_try;
+//    for (auto* action : agent.available_actions) {
+//        if (!action) continue;
+//        EffectiveGoapAction eff = build_effective_action(*action, action_overrides.find(action->get_id()));
+//        bool satisfied = true;
+//        for (auto& [fact, val] : eff.preconditions) {
+//            uint32_t fact_id = (uint32_t)std::hash<std::string>()(fact);
+//            auto it = ws.facts.find(fact_id);
+//            if (it == ws.facts.end() || it->second != val) {
+//                satisfied = false;
+//                break;
+//            }
+//        }
+//        if (satisfied) actions_to_try.push_back(action);
+//    }
+//
+//    plan_found = !actions_to_try.empty();  // simple heuristic: at least 1 action can start
+//
+//    agent.active_goal = old_goal;          // restore
+//    return plan_found;
+//}
+bool Goap::goal_has_valid_plan(const GoapGoal& goal, GoapAgent& agent, const WorldState& ws) {
+    GoapGoal old_goal = agent.active_goal;
+    agent.active_goal = goal;
+
+    // Use a simple A* search, exactly like update_plan(), but do NOT store the plan in agent.plan
+    struct Node {
+        GoapAction* action;
+        WorldState state;
+        Node* parent;
+        float cost_so_far;
+        Node(GoapAction* a, const WorldState& s, Node* p, float c) : action(a), state(s), parent(p), cost_so_far(c) {}
+    };
+
+    std::vector<Node> nodes;
+    std::priority_queue<Node*, std::vector<Node*>, std::function<bool(Node*, Node*)>> open_list([](Node* a, Node* b) { return (a->cost_so_far) > (b->cost_so_far); });
+    std::unordered_set<GoapAction*> closed;
+
+    // Seed with all actions whose preconditions are satisfied in current world state
+    for (GoapAction* action : agent.available_actions) {
+        if (!action) continue;
+        EffectiveGoapAction eff = build_effective_action(*action, action_overrides.find(action->get_id()));
+        bool satisfied = true;
+        for (auto& [fact, val] : eff.preconditions) {
+            uint32_t id = (uint32_t)std::hash<std::string>()(fact);
+            auto it = ws.facts.find(id);
+            if (it == ws.facts.end() || it->second != val) {
+                satisfied = false;
+                break;
+            }
+        }
+        if (satisfied) {
+            nodes.emplace_back(action, ws, nullptr, eff.cost);
+            open_list.push(&nodes.back());
+        }
+    }
+
+    Node* goal_node = nullptr;
+    while (!open_list.empty()) {
+        Node* current = open_list.top();
+        open_list.pop();
+        if (!current) continue;
+        if (closed.count(current->action)) continue;
+        closed.insert(current->action);
+
+        // Apply effects to get new state
+        WorldState temp = current->state;
+        current->action->apply_effects(temp);
+
+        if (temp.satisfies(goal.desired_state)) {
+            goal_node = current;
+            break;
+        }
+
+        // Expand next actions
+        for (GoapAction* next : agent.available_actions) {
+            if (!next || closed.count(next)) continue;
+            EffectiveGoapAction eff = build_effective_action(*next, action_overrides.find(next->get_id()));
+            bool satisfied = true;
+            for (auto& [fact, val] : eff.preconditions) {
+                uint32_t id = (uint32_t)std::hash<std::string>()(fact);
+                auto it = temp.facts.find(id);
+                if (it == temp.facts.end() || it->second != val) {
+                    satisfied = false;
+                    break;
+                }
+            }
+            if (satisfied) {
+                nodes.emplace_back(next, temp, current, current->cost_so_far + eff.cost);
+                open_list.push(&nodes.back());
+            }
+        }
+    }
+
+    agent.active_goal = old_goal;
+    return goal_node != nullptr;
 }
 
 /**

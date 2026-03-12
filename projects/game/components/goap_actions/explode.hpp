@@ -8,7 +8,7 @@ namespace game {
 class Explode : public tmt::GoapAction {
    public:
     Explode() {
-        preconditions["at_target"] = true;
+        preconditions["ready_to_explode"] = true;
         effects["exploded"] = true;
         cost = 5.f;
     }
@@ -23,7 +23,6 @@ class Explode : public tmt::GoapAction {
 
    private:
     tmt::Entity player_entity = entt::null;
-    float max_explosion_range = 5.f;
 };
 
 }  // namespace game

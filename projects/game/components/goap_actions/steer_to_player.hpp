@@ -9,7 +9,7 @@ class SteerToPlayer : public tmt::GoapAction {
    public:
     SteerToPlayer() {
         preconditions["player_in_range"] = true;
-        effects["at_target"] = true;
+        effects["player_in_explosion_zone"] = true;
         cost = 2.f;
 
         wants_fixed_update = true;
@@ -26,7 +26,7 @@ class SteerToPlayer : public tmt::GoapAction {
 
    private:
     tmt::Entity player_entity = entt::null;
-    bool done = false;
+    //bool done = false;
 };
 
 }  // namespace game

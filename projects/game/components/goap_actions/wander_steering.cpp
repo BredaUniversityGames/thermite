@@ -4,7 +4,6 @@
 #include "engine/core/ecs.hpp"
 #include "engine/core/logger.hpp"
 
-//#include "engine/systems/ai/goap/components/goap_action.hpp"
 #include "engine/systems/ai/steering/steering_system.hpp"
 #include "../player.hpp"
 
@@ -30,29 +29,7 @@ void WanderSteering::on_start(tmt::Entity agent) {
     }
 }
 
-void WanderSteering::on_fixed_tick(tmt::Entity agent, float /*dt*/) {
-    if (!tmt::engine.ecs.valid(player_entity)) return;
-    auto& registry = tmt::engine.ecs.get_registry();
-
-    auto player_transform = tmt::engine.ecs.try_get_component<tmt::Transform>(player_entity);
-    auto agent_transform = tmt::engine.ecs.try_get_component<tmt::Transform>(agent);
-
-    if (player_transform && agent_transform) {
-        float distance = glm::distance(agent_transform->get_world_position(), player_transform->get_world_position());
-
-        auto& request = registry.get<tmt::SteeringRequest>(agent);
-        auto* ws = tmt::engine.ecs.try_get_component<tmt::WorldState>(agent);
-        if (ws) {
-            uint32_t fact = (uint32_t)std::hash<std::string>()("player_in_range");
-            auto* steering = tmt::engine.ecs.systems.try_get<tmt::SteeringSystem>();
-            if (!steering) return;
-
-            const auto& params = steering->overrides().params;
-
-            ws->facts[fact] = distance <= params.activation_range;
-        }
-    }
-}
+void WanderSteering::on_fixed_tick(tmt::Entity agent, float /*dt*/) {}
 
 bool WanderSteering::is_done(tmt::Entity agent) const {
     return false;

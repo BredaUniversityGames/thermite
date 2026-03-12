@@ -1,5 +1,4 @@
 #include "steer_to_player.hpp"
-#include "steer_to_player.hpp"
 
 #include "engine/engine.hpp"
 #include "engine/core/ecs.hpp"
@@ -17,7 +16,7 @@ void SteerToPlayer::on_start(tmt::Entity agent) {
     }
 
     tmt::SteeringRequest request {};
-    request.mode = SteeringMode::ARRIVE;
+    request.mode = SteeringMode::SEEK;
 
     auto* player_transform = tmt::engine.ecs.try_get_component<tmt::Transform>(player_entity);
     if (player_transform) {
@@ -29,55 +28,58 @@ void SteerToPlayer::on_start(tmt::Entity agent) {
 }
 
 void SteerToPlayer::on_fixed_tick(tmt::Entity agent, float /*dt*/) {
-    if (!tmt::engine.ecs.valid(player_entity)) return;
+    //if (!tmt::engine.ecs.valid(player_entity)) return;
+
+    //auto& registry = tmt::engine.ecs.get_registry();
+    //if (!registry.any_of<tmt::SteeringRequest>(agent)) return;
+    //auto& request = registry.get<tmt::SteeringRequest>(agent);
+
+    //auto* player_transform = tmt::engine.ecs.try_get_component<tmt::Transform>(player_entity);
+    //auto* agent_transform = tmt::engine.ecs.try_get_component<tmt::Transform>(agent);
+    //if (!player_transform || !agent_transform) return;
+
+    //glm::vec3 player_pos = player_transform->get_world_position();
+    //glm::vec3 agent_pos = agent_transform->get_world_position();
+    //glm::vec3 to_player = player_pos - agent_pos;
+
+    //float distance = glm::length(to_player);
+
+    //auto* steering = tmt::engine.ecs.systems.try_get<tmt::SteeringSystem>();
+    //if (!steering) return;
+
+    //const auto& params = steering->overrides().params;
+
+    //done = distance <= params.min_explosion_range;
+
+    //if (distance < 0.01f) return;
+
+    //// Always steer toward the player
+    //glm::vec3 diff = request.target_position - player_pos;
+
+    //if (glm::dot(diff, diff) > 0.0001f) {
+    //    request.target_position = player_pos;
+    //}
+}
+
+bool SteerToPlayer::is_done(tmt::Entity agent) const {
+    if (!tmt::engine.ecs.valid(player_entity)) return true;
 
     auto& registry = tmt::engine.ecs.get_registry();
-    if (!registry.any_of<tmt::SteeringRequest>(agent)) return;
+    if (!registry.any_of<tmt::SteeringRequest>(agent)) return true;
     auto& request = registry.get<tmt::SteeringRequest>(agent);
 
     auto* player_transform = tmt::engine.ecs.try_get_component<tmt::Transform>(player_entity);
     auto* agent_transform = tmt::engine.ecs.try_get_component<tmt::Transform>(agent);
-    if (!player_transform || !agent_transform) return;
+    if (!player_transform || !agent_transform) return true;
 
-    glm::vec3 player_pos = player_transform->get_world_position();
-    glm::vec3 agent_pos = agent_transform->get_world_position();
-    glm::vec3 to_player = player_pos - agent_pos;
-
-    float distance = glm::length(to_player);
+    float distance = glm::length(player_transform->get_world_position() - agent_transform->get_world_position());
 
     auto* steering = tmt::engine.ecs.systems.try_get<tmt::SteeringSystem>();
-    if (!steering) return;
+    if (!steering) return true;
 
     const auto& params = steering->overrides().params;
 
-    // update world state
-    auto* ws = tmt::engine.ecs.try_get_component<tmt::WorldState>(agent);
-    if (ws) {
-        uint32_t fact = (uint32_t)std::hash<std::string>()("player_in_range");
-
-        ws->facts[fact] = distance <= params.activation_range;
-        done = distance <= params.min_explosion_range;
-    }
-
-    done = distance <= params.min_explosion_range;
-
-    if (distance < 0.01f) return;
-
-    // Always steer toward the player
-    glm::vec3 diff = request.target_position - player_pos;
-
-    if (glm::dot(diff, diff) > 0.0001f) {
-        request.target_position = player_pos;
-    }
-}
-
-bool SteerToPlayer::is_done(tmt::Entity agent) const {
-    /*auto& registry = tmt::engine.ecs.get_registry();
-    if (!registry.any_of<SteeringRequest>(agent)) return true;
-
-    auto& request = registry.get<SteeringRequest>(agent);
-    return request.completed;*/
-    return done;
+    return distance <= params.max_explosion_range;
 }
 
 void SteerToPlayer::on_finished(tmt::Entity agent) {

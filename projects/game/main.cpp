@@ -48,7 +48,9 @@
 #include "engine/systems/ai/goap/goap_system.hpp"
 #include "components/goap_actions/steer_to_player.hpp"
 #include "components/goap_actions/wander_steering.hpp"
+#include "components/goap_actions/prepare_explode.hpp"
 #include "components/goap_actions/explode.hpp"
+#include "components/goap_actions/sensor_system.hpp"
 
 class Game : public tmt::Application {
    public:
@@ -109,6 +111,11 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
             tmt::engine.ecs.systems.add<tmt::Goap>();
         }
 
+        /* Add sensor system specific for this game */
+        if (!tmt::engine.ecs.systems.try_get<game::SensorsSystem>()) {
+            tmt::engine.ecs.systems.add<game::SensorsSystem>();
+        }
+
         auto& ecs = tmt::engine.ecs;
         auto& goap = ecs.systems.get<tmt::Goap>();
         
@@ -119,6 +126,7 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
         /* Register Actions */
         action_reg.register_action(std::make_unique<game::SteerToPlayer>());
         action_reg.register_action(std::make_unique<game::WanderSteering>());
+        action_reg.register_action(std::make_unique<game::PrepareExplode>());
         action_reg.register_action(std::make_unique<game::Explode>());
 
         /* Register Goals */
@@ -136,7 +144,7 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
         {
             tmt::GoapGoal steer_to_player;
             steer_to_player.name = "g_SteerToPlayer";
-            steer_to_player.desired_state = { { tmt::FactId("at_target"), true } };
+            steer_to_player.desired_state = { { tmt::FactId("player_in_explosion_zone"), true } };
             steer_to_player.priority = 5;
             steer_to_player.valid = true;
             goal_reg.register_goal("g_ReachTarget", steer_to_player);
