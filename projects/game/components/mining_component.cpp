@@ -126,6 +126,7 @@ void MiningComponent::mine(const glm::vec3& dir) {
     // TODO reset all state about voxels that are mined
     if (stopped_mining == true) {
         mining_voxels.clear();
+        stopped_mining = false;
     }
     previous_computed_origins = compute_ray_origins(*get_transform());
     // Get a list of all unique voxels that we hit this frame
