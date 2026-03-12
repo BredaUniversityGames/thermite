@@ -146,7 +146,7 @@ void Renderer::update() {
     vfx_pipeline.enqueue(render_graph, render_view);
 
     /* TAA Resolve */
-    if (engine.renderer.display_mode != DisplayMode::MOTIONVECTORS) {
+    if (engine.renderer.display_mode == DisplayMode::DEFAULT) {
         const uint32_t frame_flag = (render_view.frame_counter & 1) == 0;
         uint32_t taa_flag = engine.renderer.enable_taa ? 1u : 0u;
         render_graph.add_compute_pass("TAA Resolve", "taa_resolve.cs")
