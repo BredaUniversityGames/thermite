@@ -47,9 +47,14 @@ void OreManager::process_thermite_ore_explosion(tmt::Entity voxel_entity, glm::v
                 int distance = static_cast<int>(std::sqrt(dx * dx + dy * dy + dz * dz));
 
                 if (distance <= voxel_level_radius) {
-                    // add if is thermite to thermite_positions
-
+                    auto curr_vox = vox_renderer->resource->blas->get_voxel(x, y, z);
+                    // add if is thermite to new_positions_to_explode
+                    if (curr_vox->type == tmt::Material::Type::THERMITE) {
+                        new_positions_to_explode.insert(glm::vec3(x,y,z));
+                    }
                     // delete
+                    vox_renderer->resource->blas->remove_voxel(x, y, z);
+                    vox_renderer->resource->set_dirty();
                 }
             }
         }
