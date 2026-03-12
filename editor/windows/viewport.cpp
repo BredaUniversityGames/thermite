@@ -56,7 +56,8 @@ void tmt::Viewport::display() {
     width = size.x;
     height = size.y;
 
-    const ImVec2 image_pos = ImGui::GetCursorScreenPos();
+
+    viewport_pos = {ImGui::GetCursorScreenPos().x, ImGui::GetCursorScreenPos().y};
     is_focused = ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows);
 
     if (height <= 0.f) return;
@@ -68,8 +69,9 @@ void tmt::Viewport::display() {
     ImGui::Image((ImTextureRef)engine.renderer.render_view.imgui_viewport, size);
     is_hovered = ImGui::IsItemHovered();
     auto imgui_mouse_pos = ImGui::GetMousePos();
-    mouse_pos.x = imgui_mouse_pos.x - image_pos.x;
-    mouse_pos.y = imgui_mouse_pos.y - image_pos.y;
+    mouse_pos.x = imgui_mouse_pos.x - viewport_pos.x;
+    mouse_pos.y = imgui_mouse_pos.y - viewport_pos.y;
+    viewport_drawlist = ImGui::GetWindowDrawList();
 
     const std::vector<Entity>& selected_entities = editor.windows[editor.editor_mode].get<Hierarchy>().get_selected_entities();
 
@@ -118,12 +120,12 @@ void tmt::Viewport::display() {
     modifiers.uniform_scale = shift_held;    // Shift: maintain aspect ratio
     modifiers.scale_from_center = alt_held;  // Alt: keep center fixed
 
-    const bool gizmo_changed = editor.gizmo.manip(image_pos.x, image_pos.y, width, height, selected_entities, snap_value, modifiers);
+    const bool gizmo_changed = editor.gizmo.manip(viewport_pos.x, viewport_pos.y, width, height, selected_entities, snap_value, modifiers);
     if (gizmo_changed) OnSceneModified::dispatch();
 
-    const bool toolbar_buttons_hovered = toolbar(image_pos);
+    const bool toolbar_buttons_hovered = toolbar(viewport_pos);
 
-    selection_logic(imgui_mouse_pos, image_pos, toolbar_buttons_hovered);
+    selection_logic(imgui_mouse_pos, viewport_pos, toolbar_buttons_hovered);
 
     ImGui::EndChild();
 
@@ -187,7 +189,7 @@ void tmt::Viewport::snap_to_entity() {
     camera.pitch = glm::degrees(asin(dir.y));
 }
 
-bool tmt::Viewport::toolbar(const ImVec2& image_pos) {
+bool tmt::Viewport::toolbar(const glm::vec2& image_pos) {
     ImGuiStyle& style = ImGui::GetStyle();
 
     float btn_w = ImGui::CalcTextSize(ICON_MS_LANGUAGE).x + style.FramePadding.x * 2.0f;
@@ -225,7 +227,7 @@ bool tmt::Viewport::toolbar(const ImVec2& image_pos) {
     return any_button_hovered;
 }
 
-void tmt::Viewport::selection_logic(const ImVec2& imgui_mouse_pos, const ImVec2& image_pos, bool toolbar_buttons_hovered) {
+void tmt::Viewport::selection_logic(const ImVec2& imgui_mouse_pos, const glm::vec2& image_pos, bool toolbar_buttons_hovered) {
     if (!is_hovered || engine.game_controller.is_running()) return;
 
     auto& hierarchy = editor.windows[Editor::Mode::SCENE].get<Hierarchy>();
@@ -248,8 +250,8 @@ void tmt::Viewport::selection_logic(const ImVec2& imgui_mouse_pos, const ImVec2&
         if (abs(delta.x) + abs(delta.y) > 5) {
             using_rect = true;
 
-            ImGui::GetWindowDrawList()->AddRectFilled(first_click_pos, imgui_io.MousePos, ImColor(1.f, 1.f, 1.f, 0.2f));
-            ImGui::GetWindowDrawList()->AddRect(first_click_pos, imgui_io.MousePos, ImColor(1.f, 1.f, 1.f, 0.6f));
+            viewport_drawlist->AddRectFilled(first_click_pos, imgui_io.MousePos, ImColor(1.f, 1.f, 1.f, 0.2f));
+            viewport_drawlist->AddRect(first_click_pos, imgui_io.MousePos, ImColor(1.f, 1.f, 1.f, 0.6f));
 
             glm::ivec2 a = { first_click_pos.x - image_pos.x, first_click_pos.y - image_pos.y };
             glm::ivec2 b = { imgui_mouse_pos.x - image_pos.x, imgui_mouse_pos.y - image_pos.y };

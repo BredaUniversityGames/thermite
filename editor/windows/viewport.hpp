@@ -5,6 +5,7 @@
 #include "engine/events/game.hpp"
 
 struct ImVec2;
+struct ImDrawList;
 
 namespace tmt {
 
@@ -31,13 +32,19 @@ class Viewport : public IWindow, public OnRetrieveMouseState, public OnBlockInpu
     bool get_is_hovered() const { return is_hovered; }
     bool get_is_focused() const { return is_focused; }
     bool is_using_debug_camera() const { return using_debug_camera; }
+    ImDrawList* get_drawlist() const {return viewport_drawlist;}
+
+    float get_width() const {return width;}
+    float get_height() const {return height;}
+    glm::vec2 get_window_pos() const {return viewport_pos;}
+    glm::vec2 get_mouse_pos() const {return mouse_pos;}
 
    private:
     friend class ModelViewer;
 
     void update_debug_camera(const tmt::FrameData& frame_data);
-    bool toolbar(const ImVec2& image_pos);
-    void selection_logic(const ImVec2& imgui_mouse_pos, const ImVec2& image_pos, bool toolbar_buttons_hovered);
+    bool toolbar(const glm::vec2& image_pos);
+    void selection_logic(const ImVec2& imgui_mouse_pos, const glm::vec2& image_pos, bool toolbar_buttons_hovered);
 
     float width = -1;
     float height = -1;
@@ -45,9 +52,12 @@ class Viewport : public IWindow, public OnRetrieveMouseState, public OnBlockInpu
     bool is_hovered = false;
     bool is_focused = false;
     glm::vec2 mouse_pos = { 0.0f, 0.0f };
+    glm::vec2 viewport_pos;
 
     float camera_speed = 4.0f;
     bool using_debug_camera = false;
+
+    ImDrawList* viewport_drawlist = nullptr;
 
     struct Config {
         constexpr static float SPEED_CHANGE_FACTOR = 0.5f;
