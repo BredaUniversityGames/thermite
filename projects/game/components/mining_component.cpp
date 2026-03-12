@@ -5,6 +5,11 @@
 #include "engine/core/logger.hpp"
 #include "engine/core/polyline.hpp"
 #include "engine/tools/fmt/glm.hpp"
+#include "glm/detail/_noise.hpp"
+#include "glm/detail/_noise.hpp"
+#include "glm/detail/_noise.hpp"
+#include "glm/detail/_noise.hpp"
+
 #include <cmath>
 #include <engine/systems/physics/physics_system.hpp>
 
@@ -83,7 +88,7 @@ void MiningComponent::end() {
 
 void MiningComponent::on_weapon_fired(const WeaponFiredEvent& e) {
     if (e.weapon_entity != entity) return;
-    mine(e.origin, e.direction);
+    mine(e.direction);
 }
 void MiningComponent::on_stop_mining(const ReleaseShootEvent& e) {
     // TODO this will trigger no matter what the entity is for now
@@ -126,21 +131,13 @@ void MiningComponent::handle_ore(const tmt::Hit& hit) {
 
     has_drawn_debug = false;
 }
-void MiningComponent::mine(glm::vec3 origin, glm::vec3 dir) {
-    if (!stencil) {
-        tmt::Log::error("Mining component has no valid stencil!");
-        return;
-    }
-
+void MiningComponent::mine(const glm::vec3& dir) {
     previous_computed_origins = compute_ray_origins(*get_transform());
-    /*for (auto& origin : previous_computed_origins) {
-    }*/
-    const tmt::Ray ray_cast = tmt::Ray(origin, dir);
-    const tmt::Hit hit = tmt::engine.ecs.systems.get<tmt::Physics>().raycast(ray_cast, ray_mask);
-    last_ray = ray_cast;
-    last_hit = hit;
-
-    if (hit.miss() == false && hit.distance < ray_cylinder.ray_distance) {
-        handle_ore(hit);
+    for (auto& origin : previous_computed_origins) {
+        const tmt::Ray ray_cast = tmt::Ray(origin, dir);
+        const tmt::Hit hit = tmt::engine.ecs.systems.get<tmt::Physics>().raycast(ray_cast, ray_mask);
+        if (hit.miss() == false && hit.distance < ray_cylinder.ray_distance) {
+            handle_ore(hit);
+        }
     }
 }
