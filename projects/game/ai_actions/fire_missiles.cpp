@@ -47,11 +47,11 @@ void FireMissiles::on_tick(tmt::Entity enemy_entity, float dt) {
         interval_timer -= burst_interval;
         Missile missile;
         missile.position = enemy_entity_pos;
-        missile.max_home_time = enemy.home_duration;
-        missile.home_time = enemy.home_duration;
+        missile.max_life_time = enemy.life_time;
+        missile.start_homing_after = enemy.start_homing_after;
         missile.home_speed = enemy.home_speed;
-        missile.max_launch_time = enemy.launch_duration; 
-        missile.launch_time = enemy.launch_duration;
+        missile.stop_launching_after = enemy.stop_launching_after;
+        missile.life_time = 0.0f;
         missile.launch_speed = enemy.launch_speed;
 
         //set random offset

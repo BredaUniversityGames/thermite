@@ -109,30 +109,34 @@ void game::MediumEnemy::end() {}
 
 bool Missile::update(float dt, glm::vec3 ground_up, glm::vec3 player_pos) {
     tmt::engine.polyline.draw_sphere(position, 0.1f);
-    launch_time -= dt;
-    home_time -= dt;
-    if (home_time < 0) return true;
+    life_time += dt;
+    if (life_time > max_life_time) return true;
 
-    // fades from full launch up to zero
-    float launch_t = glm::clamp(1.0f - (launch_time / max_launch_time), 0.0f, 1.0f);
+    // fades from full launch down to zero
+    float launch_t = glm::clamp((life_time / stop_launching_after), 0.0f, 1.0f);
     glm::vec3 launch_contribution = glm::mix(ground_up * launch_speed, glm::vec3(0.0f), launch_t);
 
     // fades from zero up to full homing speed
-    float home_t = glm::clamp(1.0f - (home_time / max_home_time), 0.0f, 1.0f);
     glm::vec3 home_contribution(0.0f);
-    glm::vec3 to_player = player_pos - position;
-    to_player = glm::mix(to_player, velocity, home_t);
-    if (glm::dot(to_player, to_player) > 0.0001f) {
-        home_contribution = glm::mix(glm::vec3(0.0f), glm::normalize(to_player) * home_speed, home_t);
+    if (life_time > start_homing_after) {
+        float max_home_time = max_life_time - start_homing_after;
+        float home_time = life_time - start_homing_after;
+        float home_t = glm::clamp(home_time / max_home_time, 0.0f, 1.0f);  // was inverted
+
+        glm::vec3 to_player = player_pos - position;
+        if (glm::dot(to_player, to_player) > 0.0001f) {
+            home_contribution = glm::normalize(to_player) * home_speed * home_t;
+        }
     }
 
     auto added_vel = launch_contribution + home_contribution;
     float length = glm::length(added_vel);
-    added_vel += offset;
-    added_vel = glm::normalize(added_vel) * length;
-
+    if (length > 0.0001f && life_time < start_homing_after) {
+        added_vel += offset;
+        added_vel = glm::normalize(added_vel) * length;
+    }
     velocity += added_vel;
-    velocity *= 0.9f;
+    velocity *= 0.7f;
     position += velocity * dt;
     return false;
 }

@@ -7,12 +7,13 @@ struct Missile {
     enum State { LAUNCHED, HOMING } state = LAUNCHED;
     glm::vec3 position = glm::vec3(0, 0, 0);
     glm::vec3 velocity = glm::vec3(0, 0, 0);
-    float max_launch_time = 4.0f;
-    float launch_time = 4.0f;
-    float launch_speed = 0.1f;
-    float max_home_time = 1.0f;
-    float home_time = 1.0f;
-    float home_speed = 0.1f;
+    
+    float max_life_time = 0.0f;
+    float life_time = 0.0f;
+    float start_homing_after = 0.0f;
+    float stop_launching_after = 0.0f;
+    float home_speed = 0.0f;
+    float launch_speed = 0.0f;
     glm::vec3 offset = glm::vec3(0, 0, 0);
     float damage = 10.0f;
 };
@@ -42,22 +43,30 @@ class MediumEnemy : public tmt::GameComponent<MediumEnemy> {
     float stomp_range = 5.0f;
 
     std::vector<Missile> missiles;
+    float stop_launching_after = 0.5f;
+    float start_homing_after = 0.5f;
     float launch_speed = 0.1f;
-    float launch_duration = 0.5f;
     float home_speed = 0.2f;
-    float home_duration = 0.2f;
+    float life_time = 0.2f;
+
     float missile_cooldown = 2.0f;
     float missile_timer = 0.0f;
     int missile_burst = 3;
     float burst_interval = 0.2f;
     float missile_max_randomness = 0.1f;
-
+    
+    enum Mode { LINEAR, EXPONENTIAL } laser_mode;
     float laser_cooldown = 5.0f;
     float laser_timer = 0.0f;
     float laser_duration = 1.0f;
     float laser_accuracy = 0.5f;
     float laser_max_randomness = 1.0f;
+    float laser_prediction_length = 0.0f;
 };
 
 }  // namespace game
-TMT_OBJECT(game::MediumEnemy, (walkable_asteroid, rotation_speed, height_above_ground, walk_speed, aggro_range, laser_range, stomp_range, missile_cooldown, launch_speed, launch_duration, home_speed, home_duration, missile_burst, burst_interval, missile_max_randomness, laser_cooldown, laser_duration, laser_accuracy, laser_max_randomness));
+TMT_OBJECT(
+    game::MediumEnemy,
+    (walkable_asteroid, rotation_speed, height_above_ground, walk_speed, aggro_range, laser_range, stomp_range, missile_cooldown, stop_launching_after, start_homing_after, launch_speed,
+     home_speed, life_time, missile_burst, burst_interval, missile_max_randomness, laser_mode, laser_cooldown, laser_duration, laser_accuracy, laser_max_randomness, laser_prediction_length)
+);

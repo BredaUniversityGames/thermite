@@ -20,7 +20,8 @@ void FireLaser::on_start(tmt::Entity enemy_entity) {
 
     duration = enemy.laser_duration;
     accuracy = enemy.laser_accuracy;
-    accuracy_accum = 0.0f;
+    prediction_length = enemy.laser_prediction_length;
+    mode = static_cast<Mode>(enemy.laser_mode);
 
     tmt::Transform& enemy_transform = tmt::engine.ecs.get_component<tmt::Transform>(enemy_entity);
     const auto& enemy_entity_pos = enemy_transform.get_world_position();
@@ -31,6 +32,12 @@ void FireLaser::on_start(tmt::Entity enemy_entity) {
                     (static_cast<float>(rand()) / RAND_MAX - 0.5f) * enemy.laser_max_randomness
                 );
     direction = glm::normalize(direction);
+    target_pos = player_pos +
+                 glm::vec3(
+                     (static_cast<float>(rand()) / RAND_MAX - 0.5f) * enemy.laser_max_randomness, (static_cast<float>(rand()) / RAND_MAX - 0.5f) * enemy.laser_max_randomness,
+                     (static_cast<float>(rand()) / RAND_MAX - 0.5f) * enemy.laser_max_randomness
+                 );
+    ;
 }
 
 void FireLaser::on_tick(tmt::Entity enemy_entity, float dt) {
@@ -38,16 +45,34 @@ void FireLaser::on_tick(tmt::Entity enemy_entity, float dt) {
     const auto& enemy_entity_pos = enemy_transform.get_world_position();
     const auto& player_pos = tmt::engine.ecs.get_component<tmt::Transform>(player).get_world_position();
 
-    glm::vec3 target_dir = glm::normalize(player_pos - enemy_entity_pos);
-    glm::vec3 axis = glm::cross(direction, target_dir);
-    if (glm::length(axis) > 0.001f) {
-        axis = glm::normalize(axis);
-        float angle = glm::acos(glm::clamp(glm::dot(direction, target_dir), -1.0f, 1.0f));
-        float rotate_by = glm::min(angle, accuracy * dt);
-        direction = glm::normalize(glm::vec3(glm::rotate(glm::mat4(1.0f), rotate_by, axis) * glm::vec4(direction, 0.0f)));
+    switch (mode) {
+        case LINEAR: {
+            glm::vec3 target_dir = glm::normalize(player_pos - enemy_entity_pos);
+            glm::vec3 axis = glm::cross(direction, target_dir);
+            if (glm::length(axis) > 0.001f) {
+                axis = glm::normalize(axis);
+                float angle = glm::acos(glm::clamp(glm::dot(direction, target_dir), -1.0f, 1.0f));
+                float rotate_by = glm::min(angle, accuracy * dt);
+                direction = glm::normalize(glm::vec3(glm::rotate(glm::mat4(1.0f), rotate_by, axis) * glm::vec4(direction, 0.0f)));
+            }
+            break;
+        }
+        case EXPONENTIAL: {
+            glm::vec3 to_player = player_pos - target_pos;
+            float length = glm::length(to_player);
+            if (glm::dot(to_player, to_player) > 0.0001f) {
+                glm::vec3 player_vel = (player_pos - last_player_pos) / dt;
+                last_player_pos = player_pos;
+                target_pos = target_pos + glm::normalize(to_player) * accuracy * length + player_vel * prediction_length;
+            }
+            glm::vec3 target_dir = glm::normalize(target_pos - enemy_entity_pos);
+            direction = target_dir;
+            break;
+        }
+        default: {
+        }
     }
 
-    accuracy_accum += dt;
 
     tmt::engine.polyline.use_line_width(10.0f);
     //tmt::engine.polyline.draw_line(enemy_entity_pos, enemy_entity_pos + direction * 50.0f);
