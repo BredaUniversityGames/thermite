@@ -51,9 +51,9 @@ class RigModel {
     std::string get_next_animation() const { return next_animation; }
     std::string current_animation_playing();
 
-    void animate_translation(Transform& t, Bone& b);
-    void animate_rotation(Transform& t, Bone& b);
-    void animate_scale(Transform& t, Bone& b);
+    void animate_translation(Transform& t, Bone& b) const;
+    void animate_rotation(Transform& t, Bone& b) const;
+    void animate_scale(Transform& t, Bone& b) const;
 
     enum class State : uint8_t { ANIMATE_LOOP, ANIMATE_ONCE, STATIONARY, TRANSFERRING_TO_LOOP, TRANSFERRING_TO_ONCE, TRANSFERRING_TO_STOP } state = State::STATIONARY;
 

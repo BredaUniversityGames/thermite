@@ -16,7 +16,7 @@ void RigModel::init_bones(const Bone& b, Entity p) {
         Log::warn("Parent entity {} has no Transform!", static_cast<uint32_t>(p));
     }
 
-    auto bone = engine.ecs.create_entity();
+    const auto bone = engine.ecs.create_entity();
 
     auto& bone_comp = engine.ecs.add_component<BoneComp>(bone);
     bone_comp.id = b.index;
@@ -29,8 +29,8 @@ void RigModel::init_bones(const Bone& b, Entity p) {
     name_comp.name = b.name;
 
     bone_entities.push_back(bone);
-    for (int i = 0; i < b.children.size(); i++) {
-        init_bones(data->bones[b.children[i]], bone);
+    for (const int i : b.children) {
+        init_bones(data->bones[i], bone);
     }
 }
 
@@ -124,32 +124,23 @@ RigModel::RigModel(const IO::FileLocation&, Entity) {}
 std::string tmt::RigModel::current_animation_playing() {
     switch (state) {
         case tmt::RigModel::State::ANIMATE_LOOP:
-            return current_animation;
-            break;
         case tmt::RigModel::State::ANIMATE_ONCE:
             return current_animation;
-            break;
-        case tmt::RigModel::State::STATIONARY:
-            return "";
-            break;
+
         case tmt::RigModel::State::TRANSFERRING_TO_LOOP:
-            return next_animation;
-            break;
         case tmt::RigModel::State::TRANSFERRING_TO_ONCE:
             return next_animation;
-            break;
+
+        case tmt::RigModel::State::STATIONARY:
         case tmt::RigModel::State::TRANSFERRING_TO_STOP:
             return "";
-            break;
-        default:
-            break;
     }
     return "";
 }
 
 void RigModel::play_animation(const std::string& animation_name, float _transfer_time, bool loop_animation) {
     const auto& animations = data->bones.back().animations;
-    if (animations.find(animation_name) == animations.end()) {
+    if (!animations.contains(animation_name)) {
         Log::warn("invalid animation name: ", animation_name);
 
         return;
@@ -173,50 +164,57 @@ void tmt::RigModel::set_animation_speed(float s) {
     animation_speed = s;
 }
 
-void RigModel::animate_translation(Transform& t, Bone& b) {
-    auto& keyframes = b.animations[get_current_animation()].keyframes_pos;
+void RigModel::animate_translation(Transform& t, Bone& b) const {
+    const auto& keyframes = b.animations[get_current_animation()].keyframes_pos;
     if (keyframes.empty()) return;
 
     int current_frame = (int)keyframes.size() - 1;
-    for (int i = 0; i < keyframes.size(); i++) {
+    for (int i = 0; i < (int)keyframes.size(); i++) {
         if (time < keyframes[i].time) {
             current_frame = std::max(i - 1, 0);
             break;
         }
     }
-    if (current_frame >= keyframes.size() - 1)
+    if (current_frame >= (int)keyframes.size() - 1) {
         t.set_local_position(keyframes[current_frame].position);
-    else {
-        float current_frame_time = keyframes[current_frame].time;
-        float next_frame_time = keyframes[current_frame + 1].time;
-        float interp_time = (time - current_frame_time) / (next_frame_time - current_frame_time);
-
-        glm::vec3 new_position = glm::mix(keyframes[current_frame].position, keyframes[current_frame + 1].position, interp_time);
-
-        // transfer from current frame to first frame of new animation
-        if (is_transferring()) {
-            interp_time = transfer_time / transfer_threshold;
-            new_position = glm::mix(b.animations[get_current_animation()].keyframes_pos[current_frame].position, b.animations[get_next_animation()].keyframes_pos[0].position, interp_time);
-            new_position = glm::mix(glm::mix(t.get_local_position(), b.animations[get_next_animation()].keyframes_pos[0].position, interp_time), new_position, 0.4f);
-        }
-
-        t.set_local_position(new_position);
+        return;
     }
+
+    const float current_frame_time = keyframes[current_frame].time;
+    const float next_frame_time = keyframes[current_frame + 1].time;
+    float interp_time = (time - current_frame_time) / (next_frame_time - current_frame_time);
+
+    glm::vec3 new_position = glm::mix(keyframes[current_frame].position, keyframes[current_frame + 1].position, interp_time);
+
+    // transfer from current frame to first frame of new animation
+    if (is_transferring()) {
+        interp_time = transfer_time / transfer_threshold;
+        new_position = glm::mix(b.animations[get_current_animation()].keyframes_pos[current_frame].position, b.animations[get_next_animation()].keyframes_pos[0].position, interp_time);
+        new_position = glm::mix(glm::mix(t.get_local_position(), b.animations[get_next_animation()].keyframes_pos[0].position, interp_time), new_position, 0.4f);
+    }
+
+    t.set_local_position(new_position);
 }
 
-void RigModel::animate_rotation(Transform& t, Bone& b) {
-    auto& keyframes = b.animations[get_current_animation()].keyframes_rot;
+void RigModel::animate_rotation(Transform& t, Bone& b) const {
+    const auto& keyframes = b.animations[get_current_animation()].keyframes_rot;
     if (keyframes.empty()) return;
 
     int current_frame = (int)keyframes.size() - 1;
-    for (int i = 0; i < keyframes.size(); i++) {
+    for (int i = 0; i < (int)keyframes.size(); i++) {
         if (time < keyframes[i].time) {
             current_frame = std::max(i - 1, 0);
             break;
         }
     }
-    float current_frame_time = keyframes[current_frame].time;
-    float next_frame_time = keyframes[std::min(current_frame + 1, (int)keyframes.size() - 1)].time;
+
+    if (current_frame >= (int)keyframes.size() - 1) {
+        t.set_local_rotation(keyframes[current_frame].rotation);
+        return;
+    }
+
+    const float current_frame_time = keyframes[current_frame].time;
+    const float next_frame_time = keyframes[std::min(current_frame + 1, (int)keyframes.size() - 1)].time;
     float interp_time = (time - current_frame_time) / (next_frame_time - current_frame_time);
 
     glm::quat new_rotation = glm::slerp(keyframes[current_frame].rotation, keyframes[std::min(current_frame + 1, (int)keyframes.size() - 1)].rotation, interp_time);
@@ -228,37 +226,40 @@ void RigModel::animate_rotation(Transform& t, Bone& b) {
         new_rotation = glm::slerp(glm::slerp(t.get_local_rotation(), b.animations[get_next_animation()].keyframes_rot[0].rotation, interp_time), new_rotation, 0.4f);
     }
 
+    assert(!glm::any(glm::isnan(new_rotation)));
     t.set_local_rotation(new_rotation);
 }
 
-void RigModel::animate_scale(Transform& t, Bone& b) {
-    auto& keyframes = b.animations[get_current_animation()].keyframes_scale;
+void RigModel::animate_scale(Transform& t, Bone& b) const {
+    const auto& keyframes = b.animations[get_current_animation()].keyframes_scale;
     if (keyframes.empty()) return;
 
     int current_frame = (int)keyframes.size() - 1;
-    for (int i = 0; i < keyframes.size(); i++) {
+    for (int i = 0; i < (int)keyframes.size(); i++) {
         if (time < keyframes[i].time) {
             current_frame = std::max(i - 1, 0);
             break;
         }
     }
-    if (current_frame >= keyframes.size() - 1)
+
+    if (current_frame >= (int)keyframes.size() - 1) {
         t.set_local_scale(keyframes[current_frame].scale);
-    else {
-        float current_frame_time = keyframes[current_frame].time;
-        float next_frame_time = keyframes[current_frame + 1].time;
-        float interp_time = (time - current_frame_time) / (next_frame_time - current_frame_time);
-
-        glm::vec3 new_scale = glm::mix(keyframes[current_frame].scale, keyframes[current_frame + 1].scale, interp_time);
-
-        // transfer from current frame to first frame of new animation
-        if (is_transferring()) {
-            interp_time = transfer_time / transfer_threshold;
-            new_scale = glm::mix(t.get_local_scale(), b.animations[get_next_animation()].keyframes_scale[0].scale, interp_time);
-        }
-
-        t.set_local_scale(new_scale);
+        return;
     }
+
+    const float current_frame_time = keyframes[current_frame].time;
+    const float next_frame_time = keyframes[current_frame + 1].time;
+    float interp_time = (time - current_frame_time) / (next_frame_time - current_frame_time);
+
+    glm::vec3 new_scale = glm::mix(keyframes[current_frame].scale, keyframes[current_frame + 1].scale, interp_time);
+
+    // transfer from current frame to first frame of new animation
+    if (is_transferring()) {
+        interp_time = transfer_time / transfer_threshold;
+        new_scale = glm::mix(t.get_local_scale(), b.animations[get_next_animation()].keyframes_scale[0].scale, interp_time);
+    }
+
+    t.set_local_scale(new_scale);
 }
 
 }  // namespace tmt
