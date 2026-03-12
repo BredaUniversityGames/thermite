@@ -5,6 +5,7 @@
 #include "engine/core/logger.hpp"
 #include "engine/core/polyline.hpp"
 #include "engine/systems/physics/physics_system.hpp"
+#include "gameplay_functionality_components/managers/ore_manager.hpp"
 
 #include <engine/tools/fmt/glm.hpp>
 #include <glm/detail/_noise.hpp>
@@ -109,6 +110,11 @@ void MiningComponent::handle_voxel(const VoxelID& voxel_id) {
     switch (ore_type) {
         case tmt::Material::Type::NONE:
         case tmt::Material::Type::THERMITE:
+            auto ore_toughness = ore_database->at(ore_type).toughness;
+            if (ore_toughness < tmt::engine.frame_data().elapsed_time - mining_voxels.at(voxel_id)) {
+                std::get<OreManager>(tmt::engine.ecs.view<OreManager>().front().components).initiate_thermite_explosion(voxel_id.entity_id, voxel_coord);
+            }
+            break;
         case tmt::Material::Type::COPPER:
         case tmt::Material::Type::TITANIUM:
             auto ore_toughness = ore_database->at(ore_type).toughness;
