@@ -147,13 +147,16 @@ void Renderer::update() {
 
     /* TAA Resolve */
     if (engine.renderer.display_mode != DisplayMode::MOTIONVECTORS) {
+        const uint32_t frame_flag = (render_view.frame_counter & 1) == 0;
         uint32_t taa_flag = engine.renderer.enable_taa ? 1u : 0u;
         render_graph.add_compute_pass("TAA Resolve", "taa_resolve.cs")
             .read(render_view.render_view_buffer)
             .read(point_sampler)
+            .read(linear_sampler)
             .read(render_view.mbuffer.image)
             .read(render_view.lbuffer.image)
-            .write(render_view.hbuffer.image)
+            .write(frame_flag ? render_view.hbuffer1.image : render_view.hbuffer2.image)
+            .read(frame_flag ? render_view.hbuffer2.image : render_view.hbuffer1.image)
             .write(render_view.get_render_image())
             .push_constants(&taa_flag, 0, sizeof(uint32_t))
             .group_size(16, 8)

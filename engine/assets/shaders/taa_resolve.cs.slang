@@ -3,14 +3,16 @@ import view;
 
 /* Active render view. */
 ConstantBuffer<RenderView> render_view;
-/* Point Sampler. */
+/* Samplers. */
 SamplerState point_sampler;
+SamplerState linear_sampler;
 /* Motion Vectors buffer. */
 Texture2D<float2> mbuffer;
 /* Luminance buffer. */
 Texture2D<float3> lbuffer;
-/* History buffer. */
-RWTexture2D<float4> hbuffer;
+/* History buffers. */
+RWTexture2D<float4> hbuffer1;
+Texture2D<float4> hbuffer2;
 /* Render target. */
 RWTexture2D<float4> render_target;
 
@@ -26,19 +28,9 @@ void main(int2 thread_id: SV_DispatchThreadID) {
     if (taa_flag == 1) {
         const float2 uv = (float2(thread_id) + 0.5f) / float2(render_view.resolution);
 
-        const float2 uv_last = uv + mbuffer.SampleLevel(point_sampler, uv, 0);
+        const float2 uv_last = uv + mbuffer.SampleLevel(point_sampler, uv, 0.0f);
 
-        /* Linear Filtering Alternative :( */
-        const float2 texel = uv_last * float2(render_view.resolution) - 0.5f;
-        const float2 f = frac(texel);
-        const int2 t = int2(floor(texel));
-
-        const float3 tl = hbuffer[t].rgb;
-        const float3 tr = hbuffer[t + int2(1, 0)].rgb;
-        const float3 bl = hbuffer[t + int2(0, 1)].rgb;
-        const float3 br = hbuffer[t + int2(1, 1)].rgb;
-
-        float3 prev_luminance = lerp(lerp(tl, tr, f.x), lerp(bl, br, f.x), f.y);
+        float3 prev_luminance = hbuffer2.SampleLevel(linear_sampler, uv_last, 0.0f).rgb;
 
         /* Neighborhood clamp to prevent ghosting */
         float3 neighbour_min = curr_luminance, neighbour_max = curr_luminance;
@@ -56,7 +48,7 @@ void main(int2 thread_id: SV_DispatchThreadID) {
         const float blend = valid ? 0.95f : 0.0f;
 
         output = lerp(curr_luminance, prev_luminance, blend);
-        hbuffer[thread_id] = float4(output, 1.0f);
+        hbuffer1[thread_id] = float4(output, 1.0f);
 
     } else {
         output = curr_luminance;

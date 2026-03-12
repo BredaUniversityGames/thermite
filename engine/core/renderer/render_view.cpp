@@ -76,10 +76,13 @@ void RenderView::init() {
                           .expect("failed to create nbuffer texture.");
     nbuffer.image = bank.create_image("Denoised Luminance Buffer Image", nbuffer.texture).expect("failed to create nbuffer image.");
 
-    /* History Screen Buffer */
-    hbuffer.texture = bank.create_texture("History Buffer Texture", TextureUsage::ColorAttachment | TextureUsage::Sampled | TextureUsage::Storage, TextureFormat::RGBA16Sfloat, render_size)
-                          .expect("failed to initialize history buffer texture");
-    hbuffer.image = bank.create_image("History Buffer Image", hbuffer.texture).expect("failed to initialize history buffer image.");
+    /* History Screen Buffers */
+    hbuffer1.texture = bank.create_texture("History1 Buffer Texture", TextureUsage::ColorAttachment | TextureUsage::Sampled | TextureUsage::Storage, TextureFormat::RGBA16Sfloat, render_size)
+                           .expect("failed to initialize history buffer texture");
+    hbuffer1.image = bank.create_image("History1 Buffer Image", hbuffer1.texture).expect("failed to initialize history buffer image.");
+    hbuffer2.texture = bank.create_texture("History2 Buffer Texture", TextureUsage::ColorAttachment | TextureUsage::Sampled | TextureUsage::Storage, TextureFormat::RGBA16Sfloat, render_size)
+                           .expect("failed to initialize history buffer texture");
+    hbuffer2.image = bank.create_image("History2 Buffer Image", hbuffer2.texture).expect("failed to initialize history buffer image.");
 
     /* Motion Vector Buffer */
     mbuffer.texture = bank.create_texture("Motion Vector Buffer Texture", TextureUsage::ColorAttachment | TextureUsage::Sampled | TextureUsage::Storage, TextureFormat::RG16Sfloat, render_size)
@@ -180,8 +183,10 @@ void RenderView::deinit() {
     bank.destroy(lbuffer.texture);
     bank.destroy(nbuffer.image);
     bank.destroy(nbuffer.texture);
-    bank.destroy(hbuffer.image);
-    bank.destroy(hbuffer.texture);
+    bank.destroy(hbuffer1.image);
+    bank.destroy(hbuffer1.texture);
+    bank.destroy(hbuffer2.image);
+    bank.destroy(hbuffer2.texture);
     bank.destroy(mbuffer.image);
     bank.destroy(mbuffer.texture);
     bank.destroy(viewport.texture);
@@ -246,7 +251,8 @@ void RenderView::resize_textures() {
     bank.resize_texture(dbuffer.texture, view_size).expect("failed to resize depth buffer texture.");
     bank.resize_texture(lbuffer.texture, render_size).expect("failed to resize lbuffer texture.");
     bank.resize_texture(nbuffer.texture, render_size).expect("failed to resize nbuffer texture.");
-    bank.resize_texture(hbuffer.texture, view_size).expect("failed to resize hbuffer texture.");
+    bank.resize_texture(hbuffer1.texture, view_size).expect("failed to resize hbuffer texture.");
+    bank.resize_texture(hbuffer2.texture, view_size).expect("failed to resize hbuffer texture.");
     bank.resize_texture(mbuffer.texture, view_size).expect("failed to resize mbuffer texture.");
 }
 
