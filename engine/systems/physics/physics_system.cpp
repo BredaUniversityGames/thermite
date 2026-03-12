@@ -211,6 +211,8 @@ void Physics::on_fixed_update(const FrameData&) {
     const entt::basic_group group = engine.ecs.group<VoxelBody>(entt::get<Transform, VoxelRenderer>);
     std::vector<VoxelObject> objects {};
     objects.reserve(group.size());
+    entities = std::vector<Entity>();
+    entities.reserve(group.size());
     {
         TMT_ZONE_SCOPED_N("Build BVH")
         for (auto&& [entity, vb, transform, renderer] : group.each()) {
@@ -226,6 +228,10 @@ void Physics::on_fixed_update(const FrameData&) {
             object.volume = renderer.resource.resource.get();
             object.rcp_tree_width = 1.0f / powf(4.0f, (float)renderer.resource->blas->depth);
             objects.push_back(std::move(object));
+            
+            /* Save the entity id */
+            /* QUICK FIX: This is to get the entity ID from a raycast() */
+            entities.push_back(entity);
         }
 
         bvh.build(objects.data(), (uint32_t)objects.size());
@@ -854,7 +860,9 @@ void Physics::set_rotation(VoxelBody& vb, const glm::quat& rotation) {
  * are ignored during traversal.
  */
 Hit Physics::raycast(const Ray& ray, uint32_t layer_mask) const {
-    return bvh.trace(ray, layer_mask);
+    Hit hit = bvh.trace(ray, layer_mask);
+    if (hit) hit.entity = entities[(uint32_t)hit.entity];
+    return hit;
 }
 
 void Physics::recalculate_physics_data(VoxelBody& vb, VoxelVolume& volume) {
@@ -948,25 +956,25 @@ inline void recurse_recalculate_normals(
             if (empty_sides == 0) {
                 voxel.type = PhysicsVoxelType::INSIDE;
             } else if (empty_sides == 1) {
-                for (size_t i = 1; i < 7; i++) {
-                    if (NORMAL_LUT[i] == normal) {
-                        voxel.normal_index = i;
+                for (size_t lut_idx = 1; lut_idx < 7; lut_idx++) {
+                    if (NORMAL_LUT[lut_idx] == normal) {
+                        voxel.normal_index = lut_idx;
                         break;
                     }
                 }
                 voxel.type = PhysicsVoxelType::FACE;
             } else if (empty_sides == 2) {
-                for (size_t i = 7; i < 19; i++) {
-                    if (NORMAL_LUT[i] == normal) {
-                        voxel.normal_index = i;
+                for (size_t lut_idx = 7; lut_idx < 19; lut_idx++) {
+                    if (NORMAL_LUT[lut_idx] == normal) {
+                        voxel.normal_index = lut_idx;
                         break;
                     }
                 }
                 voxel.type = PhysicsVoxelType::EDGE;
             } else {  // empty_sides >= 3
-                for (size_t i = 19; i < 27; i++) {
-                    if (NORMAL_LUT[i] == normal) {
-                        voxel.normal_index = i;
+                for (size_t lut_idx = 19; lut_idx < 27; lut_idx++) {
+                    if (NORMAL_LUT[lut_idx] == normal) {
+                        voxel.normal_index = lut_idx;
                         break;
                     }
                 }
