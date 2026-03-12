@@ -33,7 +33,7 @@ void OreManager::initiate_thermite_explosion(tmt::Entity voxel_entity, glm::uvec
     positions_to_explode.insert(voxel_position);
 }
 
-void OreManager::process_thermite_ore_explosion(tmt::Entity voxel_entity, glm::vec3 explosion_center) {
+void OreManager::process_thermite_ore_explosion(tmt::Entity voxel_entity, glm::uvec3 explosion_center) {
     auto vox_renderer = tmt::engine.ecs.try_get_component<tmt::VoxelRenderer>(voxel_entity);
     int voxel_level_radius = static_cast<int>(thermite_ore_explosion_radius) * static_cast<int>(VOXELS_PER_UNIT);
 
