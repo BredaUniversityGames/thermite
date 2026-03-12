@@ -34,10 +34,13 @@ void tmt::Viewport::before_begin() {
 
     /* Zero margin */
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+
+    y_frame_padding = ImGui::GetStyle().FramePadding.y;
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(ImGui::GetStyle().FramePadding.x, 8.0f));
 }
 
 void tmt::Viewport::end_display() {
-    ImGui::PopStyleVar();
+    ImGui::PopStyleVar(2);
 }
 
 std::string tmt::Viewport::get_title() const {
@@ -214,6 +217,15 @@ void tmt::Viewport::toolbar() {
 
     ImGuiStyle& style = ImGui::GetStyle();
 
+        // Override button padding back to normal
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(style.FramePadding.x, y_frame_padding));
+
+    // Vertically center buttons within the (now taller) bar
+    float bar_height = ImGui::GetCurrentWindow()->MenuBarHeight;
+    float btn_height = ImGui::GetFrameHeightWithSpacing();  // height with the new smaller padding
+    float center_y = ImGui::GetCursorPosY() + (bar_height - btn_height) * 0.5f - style.FramePadding.y;
+    ImGui::SetCursorPosY(center_y);
+
     /* ===== Left side: Gizmo controls ===== */
 
     /* Gizmo Space Toggle (Global/Local) */
@@ -228,6 +240,7 @@ void tmt::Viewport::toolbar() {
     const bool translate_active = (editor.gizmo.operation == 0);
     const bool rotate_active = (editor.gizmo.operation == 1);
     const bool scale_active = (editor.gizmo.operation == 2);
+    const bool rect_active = (editor.gizmo.operation == 3);
 
     if (translate_active) ImGui::PushStyleColor(ImGuiCol_Button, style.Colors[ImGuiCol_ButtonActive]);
     if (ImGui::Button(ICON_MS_DRAG_PAN "##Translate")) {
@@ -250,39 +263,14 @@ void tmt::Viewport::toolbar() {
     if (ImGui::IsItemHovered()) ImGui::SetTooltip("Scale (R)");
     if (scale_active) ImGui::PopStyleColor();
 
+    if (rect_active) ImGui::PushStyleColor(ImGuiCol_Button, style.Colors[ImGuiCol_ButtonActive]);
+    if (ImGui::Button(ICON_MS_ACTIVITY_ZONE "##Bounds")) {
+        editor.gizmo.operation = 3;
+    }
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Bounds (T, UI only)");
+    if (rect_active) ImGui::PopStyleColor();
+
     ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
-
-    /* View Menu */
-    //if (ImGui::BeginMenu("View")) {
-    //    ImGui::MenuItem("Wireframe");
-    //    ImGui::MenuItem("Solid");
-    //    ImGui::MenuItem("Textured");
-    //    ImGui::Separator();
-    //    ImGui::MenuItem("Show Grid");
-    //    ImGui::MenuItem("Show Gizmos");
-    //    ImGui::EndMenu();
-    //}
-
-    /* Add Menu */
-    //if (ImGui::BeginMenu("Add")) {
-    //    ImGui::MenuItem("Empty Entity");
-    //    ImGui::MenuItem("Cube");
-    //    ImGui::MenuItem("Sphere");
-    //    ImGui::Separator();
-    //    ImGui::MenuItem("Light");
-    //    ImGui::MenuItem("Camera");
-    //    ImGui::EndMenu();
-    //}
-
-    /* Object Menu */
-    //if (ImGui::BeginMenu("Object")) {
-    //    ImGui::MenuItem("Duplicate");
-    //    ImGui::MenuItem("Delete");
-    //    ImGui::Separator();
-    //    ImGui::MenuItem("Group");
-    //    ImGui::MenuItem("Ungroup");
-    //    ImGui::EndMenu();
-    //}
 
     /* ===== Center: Game Flow Controls (icon-only) ===== */
     float icon_btn_width = ImGui::GetFrameHeight();                    // Square buttons
@@ -334,27 +322,12 @@ void tmt::Viewport::toolbar() {
         ImGui::SetCursorPosX(ImGui::GetCursorPosX() + avail - right_width);
     }
 
-    /* Display mode combo */
-    //static const std::vector<std::string> DISPLAY_MODE_LABELS { "Default", "Steps", "Visibility", "Depth", "Normals", "Albedo", "Illuminance" };
-    //static uint32_t display_mode_idx = 6u;
-
-    //ImGui::SetNextItemWidth(100.0f);
-    //if (ImGui::BeginCombo("##DisplayMode", DISPLAY_MODE_LABELS[display_mode_idx].c_str())) {
-    //    for (uint32_t i = 0; i < DISPLAY_MODE_LABELS.size(); ++i) {
-    //        const bool is_selected = (display_mode_idx == i);
-    //        if (ImGui::Selectable(DISPLAY_MODE_LABELS[i].c_str(), is_selected)) {
-    //            display_mode_idx = i;
-    //        }
-    //        if (is_selected) ImGui::SetItemDefaultFocus();
-    //    }
-    //    ImGui::EndCombo();
-    //}
-
     /* Resolution display */
     char res_text[32];
     snprintf(res_text, sizeof(res_text), ICON_MS_ASPECT_RATIO " %dx%d", static_cast<int>(width), static_cast<int>(height));
     ImGui::Text("%s", res_text);
 
+    ImGui::PopStyleVar();  // Pop the FramePadding override
     ImGui::EndMenuBar();
 }
 
