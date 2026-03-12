@@ -50,6 +50,8 @@ struct SceneView {
 
     /* Acceleration structures */
     Bvh2<struct VoxelObject> bvh {};
+    std::vector<uint32_t> uuid_free_list {};
+    uint32_t next_uuid = 0u;
     std::vector<Entity> entities {};
     bool render_outlines = false;
 
@@ -59,6 +61,9 @@ struct SceneView {
 
     /* Collect and upload all lights in the scene. */
     void update_lights(RenderGraph& render_graph, const RenderView& render_view);
+
+    /* EnTT Subscribe Event Callback */
+    void on_entity_destroyed(entt::registry& registry, entt::entity entity);
 };
 
 }  // namespace tmt

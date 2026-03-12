@@ -55,6 +55,9 @@ struct VoxelObject {
      */
     uint32_t mask = 0xFFFFFFFFu;
 
+    /* Unique object identifier. */
+    uint32_t uuid = 0xFFFFFFFFu;
+
     VoxelVolume* volume {};
 
     /* Get the axis-aligned bounding box of this voxel object. */
