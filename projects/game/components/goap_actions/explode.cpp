@@ -25,12 +25,10 @@ void Explode::on_tick(tmt::Entity agent, float) {
     if (player_transform && agent_transform) {
         float distance = glm::distance(agent_transform->get_world_position(), player_transform->get_world_position());
 
-        auto& request = registry.get<SteeringRequest>(agent);
-
         auto* ws = tmt::engine.ecs.try_get_component<tmt::WorldState>(agent);
         if (ws) {
             uint32_t fact = (uint32_t)std::hash<std::string>()("at_target");
-            ws->facts[fact] = distance <= request.max_explosion_range;
+            ws->facts[fact] = distance >= max_explosion_range;
         }
     }
 }

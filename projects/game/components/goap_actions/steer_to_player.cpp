@@ -1,4 +1,5 @@
 #include "steer_to_player.hpp"
+#include "steer_to_player.hpp"
 
 #include "engine/engine.hpp"
 #include "engine/core/ecs.hpp"
@@ -26,10 +27,11 @@ void SteerToPlayer::on_start(tmt::Entity agent) {
     registry.emplace_or_replace<SteeringRequest>(agent, request);
 }
 
-void SteerToPlayer::on_tick(tmt::Entity agent, float /*dt*/) {
+void SteerToPlayer::on_fixed_tick(tmt::Entity agent, float /*dt*/) {
     if (!tmt::engine.ecs.valid(player_entity)) return;
 
     auto& registry = tmt::engine.ecs.get_registry();
+    if (!registry.any_of<SteeringRequest>(agent)) return;
     auto& request = registry.get<SteeringRequest>(agent);
 
     auto* player_transform = tmt::engine.ecs.try_get_component<tmt::Transform>(player_entity);
@@ -49,6 +51,8 @@ void SteerToPlayer::on_tick(tmt::Entity agent, float /*dt*/) {
         ws->facts[fact] = distance <= request.activation_range;
     }
 
+    done = distance <= request.min_explosion_range;
+
     if (distance < 0.01f) return;
 
     // Always steer toward the player
@@ -60,11 +64,12 @@ void SteerToPlayer::on_tick(tmt::Entity agent, float /*dt*/) {
 }
 
 bool SteerToPlayer::is_done(tmt::Entity agent) const {
-    auto& registry = tmt::engine.ecs.get_registry();
+    /*auto& registry = tmt::engine.ecs.get_registry();
     if (!registry.any_of<SteeringRequest>(agent)) return true;
 
     auto& request = registry.get<SteeringRequest>(agent);
-    return request.completed;
+    return request.completed;*/
+    return done;
 }
 
 void SteerToPlayer::on_finished(tmt::Entity agent) {

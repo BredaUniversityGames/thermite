@@ -68,7 +68,7 @@ void SteeringSystem::on_fixed_update(const FrameData& time) {
         float speed = glm::length(body.velocity);
         if (speed > agent.max_speed) body.velocity = (body.velocity / speed) * agent.max_speed;
 
-        check_completion(entity, request, transform, body);
+        check_completion(request, transform, body);
     }
 }
 
@@ -147,7 +147,7 @@ glm::vec3 SteeringSystem::wander(const SteeringAgent& agent, const glm::vec3& po
  *  - Query the Physics system to detect hits, ignoring the enemy layer.
  *  - For each hit within avoidDistance, accumulate a repelling force proportional to proximity.
  */
-glm::vec3 SteeringSystem::collision_avoidance(Entity /* entity */, const SteeringAgent& agent, const glm::vec3& position, const VoxelBody& body) {
+glm::vec3 SteeringSystem::collision_avoidance(const SteeringAgent& agent, const glm::vec3& position, const VoxelBody& body) {
     if (glm::length2(body.velocity) < 0.0001f) return glm::vec3(0);
 
     glm::vec3 forward = glm::normalize(body.velocity);
@@ -212,6 +212,7 @@ glm::vec3 SteeringSystem::calculate_force(const SteeringAgent& agent, const Stee
 
         case SteeringMode::WANDER:
             //force += wander(agent, position, body, request.wander_data, dt);
+            dt;
             break;
 
         default:
@@ -219,7 +220,7 @@ glm::vec3 SteeringSystem::calculate_force(const SteeringAgent& agent, const Stee
     }
 
     // Add avoidance on top
-    force += collision_avoidance(entt::null, agent, position, body);
+    force += collision_avoidance(agent, position, body);
 
     return force;
 }
@@ -228,20 +229,18 @@ glm::vec3 SteeringSystem::calculate_force(const SteeringAgent& agent, const Stee
  * For ARRIVE requests, checks if the agent is within arrive_radius and moving slowly enough.
  * Stops the agent and marks the request as completed.
  */
-void SteeringSystem::check_completion(Entity /* entity */, SteeringRequest& request, const Transform& transform, VoxelBody& body) {
+void SteeringSystem::check_completion(SteeringRequest& request, const Transform& transform, VoxelBody& body) {
     if (request.mode != SteeringMode::ARRIVE) return;
 
     float dist = glm::distance(transform.get_world_position(), request.target_position);
 
-    float speed = glm::length(body.velocity);
-
-    // stop before touching the player
+    // stop movement if close enough
     if (dist <= request.min_explosion_range) {
-        request.completed = true;
-        request.mode = SteeringMode::NONE;
-
         body.velocity = glm::vec3(0);
         body.angular_velocity = glm::vec3(0);
+
+        request.completed = true;           // mark as completed
+        request.mode = SteeringMode::NONE;  // stop steering, but keep the component
     }
 }
 

@@ -1,4 +1,5 @@
 #include "wander_steering.hpp"
+#include "wander_steering.hpp"
 
 #include "engine/engine.hpp"
 #include "engine/core/ecs.hpp"
@@ -29,7 +30,7 @@ void WanderSteering::on_start(tmt::Entity agent) {
     }
 }
 
-void WanderSteering::on_tick(tmt::Entity agent, float /*dt*/) {
+void WanderSteering::on_fixed_tick(tmt::Entity agent, float /*dt*/) {
     if (!tmt::engine.ecs.valid(player_entity)) return;
     auto& registry = tmt::engine.ecs.get_registry();
 

@@ -48,7 +48,7 @@ class SteeringSystem : public ISystem {
      * Calculate collision avoidance force using forward and side rays.
      * Ignores entities on the enemy layer.
      */
-    glm::vec3 collision_avoidance(Entity entity, const SteeringAgent& agent, const glm::vec3& position, const VoxelBody& body);
+    glm::vec3 collision_avoidance(const SteeringAgent& agent, const glm::vec3& position, const VoxelBody& body);
 
     /**
      * Calculate total steering force based on current request and obstacle avoidance.
@@ -58,7 +58,7 @@ class SteeringSystem : public ISystem {
     /**
      * Check if an ARRIVE request is complete and stop the agent.
      */
-    void check_completion(Entity entity, SteeringRequest& request, const Transform& transform, VoxelBody& body);
+    void check_completion(SteeringRequest& request, const Transform& transform, VoxelBody& body);
 };
 
 }  // namespace tmt
