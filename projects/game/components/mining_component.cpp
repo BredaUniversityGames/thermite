@@ -46,6 +46,14 @@ void MiningComponent::start() {
 
     // get a pointer to the database
     assign_database();
+
+    // Set ore manager
+    auto ore_manager_view = tmt::engine.ecs.view<OreManager>();
+    if (!ore_manager_view.empty()) {
+        ore_manager = tmt::engine.ecs.try_get_component<OreManager>(ore_manager_view.front().entity);
+    } else {
+        tmt::Log::warn("No ore manager found in scene, add one if you want to use custom ore behaviour");
+    }
 }
 
 void MiningComponent::update(const tmt::FrameData& time) {
@@ -106,18 +114,23 @@ void MiningComponent::handle_voxel(const VoxelID& voxel_id) {
         return;
     }
     auto ore_type = material->type;
+    auto ore_toughness = ore_database->at(ore_type).toughness;
 
     switch (ore_type) {
         case tmt::Material::Type::NONE:
+            break;
         case tmt::Material::Type::THERMITE:
-            auto ore_toughness = ore_database->at(ore_type).toughness;
             if (ore_toughness < tmt::engine.frame_data().elapsed_time - mining_voxels.at(voxel_id)) {
-                std::get<OreManager>(tmt::engine.ecs.view<OreManager>().front().components).initiate_thermite_explosion(voxel_id.entity_id, voxel_coord);
+                if (ore_manager) {
+                    ore_manager->initiate_thermite_explosion(voxel_id.entity_id, voxel_coord);
+                } else {
+                    tmt::Log::error("Tried to mine thermite ore with no ore manager in scene.");
+                }
             }
             break;
         case tmt::Material::Type::COPPER:
+            break;
         case tmt::Material::Type::TITANIUM:
-            auto ore_toughness = ore_database->at(ore_type).toughness;
             if (ore_toughness < tmt::engine.frame_data().elapsed_time - mining_voxels.at(voxel_id)) {
                 resource->blas->remove_voxel(voxel_coord.x, voxel_coord.y, voxel_coord.z);
                 resource->set_dirty();

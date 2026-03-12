@@ -13,6 +13,7 @@ void OreManager::start() {
 void OreManager::update(const tmt::FrameData& time) {
 
     if (thermite_ore_explosion_cooldown_timer <= 0.0f) {
+        new_positions_to_explode.clear();
         for (auto explosion_center : positions_to_explode) {
             for (auto hit_entity : hit_entities) {
                 process_thermite_ore_explosion(hit_entity, explosion_center);
