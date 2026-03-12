@@ -27,6 +27,7 @@
 
 #include "editor/shared/colors.hpp"
 #include "editor/shared/icons.hpp"
+#include "editor/shared/theme.hpp"
 
 #include "editor/core/systems/undo_redo/entity_diff.hpp"
 #include "editor/core/systems/undo_redo/component_diff.hpp"
@@ -477,7 +478,7 @@ bool Hierarchy::display_entity(const HierarchyState& state, uint32_t& row) {
     if (row % 2 != 0) {
         const ImVec2 row_min = ImVec2(ImGui::GetWindowPos().x, ImGui::GetCursorScreenPos().y);
         const ImVec2 row_max = ImVec2(row_min.x + ImGui::GetWindowWidth(), row_min.y + ImGui::GetFrameHeight());
-        constexpr ImU32 alt_row_color = IM_COL32(255, 255, 255, 8);
+        const ImU32 alt_row_color = ImGui::ColorConvertFloat4ToU32(tmt::theme::table_row_bg_alt);
         ImGui::GetWindowDrawList()->AddRectFilled(row_min, row_max, alt_row_color);
     }
     row++;

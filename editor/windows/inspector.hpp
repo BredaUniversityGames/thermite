@@ -45,6 +45,8 @@ class Inspector : public IWindow {
         const bool right_clicked = false;
     };
     HeaderResponse component_header(const std::string name);
+    void component_body_begin();
+    void component_body_end();
 
     struct ContextMenuResponse {
         bool remove_component = false;
@@ -53,6 +55,10 @@ class Inspector : public IWindow {
         bool paste_values = false;
     };
     ContextMenuResponse context_menu(const std::string& name, const bool open);
+
+    float component_body_start_y = 0.0f;
+    float component_body_x_min = 0.0f;
+    float component_body_x_max = 0.0f;
 };
 
 }  // namespace tmt

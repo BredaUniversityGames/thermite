@@ -13,7 +13,7 @@ void tmt::FontManager::init() {
     ImFontConfig config {};
     config.MergeMode = true;
     config.GlyphOffset.y = 7.f;
-    load("MaterialSymbols", { IO::Location::EDITOR, "fonts/MaterialSymbolsRounded.ttf" }, 32.f, config, glyph_ranges);
+    load("MaterialSymbols", { IO::Location::EDITOR, "fonts/MaterialSymbolsRounded.ttf" }, 24.f, config, glyph_ranges);
 }
 
 void tmt::FontManager::load(const std::string& name, const IO::FileLocation& location, const float size, const ImFontConfig& config, const uint16_t* glyph_ranges) {

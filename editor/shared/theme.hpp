@@ -22,9 +22,9 @@ constexpr ImVec4 text_color = ImVec4(0.847f, 0.847f, 0.847f, 1.0f);     // #d8d8
 constexpr ImVec4 text_disabled = ImVec4(0.500f, 0.500f, 0.500f, 1.0f);  // #808080 - disabled text
 
 // Header colors (collapsing headers, tree nodes)
-constexpr ImVec4 header_color = ImVec4(0.176f, 0.176f, 0.176f, 1.0f);    // #2d2d2d
-constexpr ImVec4 header_hovered = ImVec4(0.239f, 0.239f, 0.239f, 1.0f);  // #3d3d3d
-constexpr ImVec4 header_active = ImVec4(0.278f, 0.278f, 0.278f, 1.0f);   // #474747
+constexpr ImVec4 header_color = ImVec4(0.24f, 0.24f, 0.24f, 1.0f);      // #3d3d3d
+constexpr ImVec4 header_hovered = ImVec4(0.24f, 0.24f, 0.24f, 1.0f);    // #3d3d3d
+constexpr ImVec4 header_active = ImVec4(0.278f, 0.278f, 0.278f, 1.0f);  // #474747
 
 // Button colors
 constexpr ImVec4 button_color = ImVec4(0.200f, 0.200f, 0.200f, 1.0f);    // #333333

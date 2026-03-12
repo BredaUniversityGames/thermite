@@ -253,36 +253,36 @@ void tmt::Viewport::toolbar() {
     ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
 
     /* View Menu */
-    if (ImGui::BeginMenu("View")) {
-        ImGui::MenuItem("Wireframe");
-        ImGui::MenuItem("Solid");
-        ImGui::MenuItem("Textured");
-        ImGui::Separator();
-        ImGui::MenuItem("Show Grid");
-        ImGui::MenuItem("Show Gizmos");
-        ImGui::EndMenu();
-    }
+    //if (ImGui::BeginMenu("View")) {
+    //    ImGui::MenuItem("Wireframe");
+    //    ImGui::MenuItem("Solid");
+    //    ImGui::MenuItem("Textured");
+    //    ImGui::Separator();
+    //    ImGui::MenuItem("Show Grid");
+    //    ImGui::MenuItem("Show Gizmos");
+    //    ImGui::EndMenu();
+    //}
 
     /* Add Menu */
-    if (ImGui::BeginMenu("Add")) {
-        ImGui::MenuItem("Empty Entity");
-        ImGui::MenuItem("Cube");
-        ImGui::MenuItem("Sphere");
-        ImGui::Separator();
-        ImGui::MenuItem("Light");
-        ImGui::MenuItem("Camera");
-        ImGui::EndMenu();
-    }
+    //if (ImGui::BeginMenu("Add")) {
+    //    ImGui::MenuItem("Empty Entity");
+    //    ImGui::MenuItem("Cube");
+    //    ImGui::MenuItem("Sphere");
+    //    ImGui::Separator();
+    //    ImGui::MenuItem("Light");
+    //    ImGui::MenuItem("Camera");
+    //    ImGui::EndMenu();
+    //}
 
     /* Object Menu */
-    if (ImGui::BeginMenu("Object")) {
-        ImGui::MenuItem("Duplicate");
-        ImGui::MenuItem("Delete");
-        ImGui::Separator();
-        ImGui::MenuItem("Group");
-        ImGui::MenuItem("Ungroup");
-        ImGui::EndMenu();
-    }
+    //if (ImGui::BeginMenu("Object")) {
+    //    ImGui::MenuItem("Duplicate");
+    //    ImGui::MenuItem("Delete");
+    //    ImGui::Separator();
+    //    ImGui::MenuItem("Group");
+    //    ImGui::MenuItem("Ungroup");
+    //    ImGui::EndMenu();
+    //}
 
     /* ===== Center: Game Flow Controls (icon-only) ===== */
     float icon_btn_width = ImGui::GetFrameHeight();                    // Square buttons
@@ -327,7 +327,7 @@ void tmt::Viewport::toolbar() {
     }
 
     /* ===== Right side: Display info ===== */
-    float right_width = ImGui::CalcTextSize(ICON_MS_ASPECT_RATIO " 0000x0000").x + 100.0f + style.ItemSpacing.x * 3 + style.FramePadding.x * 4;
+    float right_width = ImGui::CalcTextSize(ICON_MS_ASPECT_RATIO " 0000x0000").x + style.ItemSpacing.x + style.FramePadding.x;
 
     float avail = ImGui::GetContentRegionAvail().x;
     if (avail > right_width) {
@@ -335,20 +335,20 @@ void tmt::Viewport::toolbar() {
     }
 
     /* Display mode combo */
-    static const std::vector<std::string> DISPLAY_MODE_LABELS { "Default", "Steps", "Visibility", "Depth", "Normals", "Albedo", "Illuminance" };
-    static uint32_t display_mode_idx = 6u;
+    //static const std::vector<std::string> DISPLAY_MODE_LABELS { "Default", "Steps", "Visibility", "Depth", "Normals", "Albedo", "Illuminance" };
+    //static uint32_t display_mode_idx = 6u;
 
-    ImGui::SetNextItemWidth(100.0f);
-    if (ImGui::BeginCombo("##DisplayMode", DISPLAY_MODE_LABELS[display_mode_idx].c_str())) {
-        for (uint32_t i = 0; i < DISPLAY_MODE_LABELS.size(); ++i) {
-            const bool is_selected = (display_mode_idx == i);
-            if (ImGui::Selectable(DISPLAY_MODE_LABELS[i].c_str(), is_selected)) {
-                display_mode_idx = i;
-            }
-            if (is_selected) ImGui::SetItemDefaultFocus();
-        }
-        ImGui::EndCombo();
-    }
+    //ImGui::SetNextItemWidth(100.0f);
+    //if (ImGui::BeginCombo("##DisplayMode", DISPLAY_MODE_LABELS[display_mode_idx].c_str())) {
+    //    for (uint32_t i = 0; i < DISPLAY_MODE_LABELS.size(); ++i) {
+    //        const bool is_selected = (display_mode_idx == i);
+    //        if (ImGui::Selectable(DISPLAY_MODE_LABELS[i].c_str(), is_selected)) {
+    //            display_mode_idx = i;
+    //        }
+    //        if (is_selected) ImGui::SetItemDefaultFocus();
+    //    }
+    //    ImGui::EndCombo();
+    //}
 
     /* Resolution display */
     char res_text[32];
