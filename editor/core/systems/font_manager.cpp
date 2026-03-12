@@ -12,7 +12,7 @@ void tmt::FontManager::init() {
     const uint16_t glyph_ranges[] = { ICON_MIN_MS, ICON_MAX_MS, 0 };
     ImFontConfig config {};
     config.MergeMode = true;
-    config.GlyphOffset.y = 7.f;
+    config.GlyphOffset.y = 4.5f;
     load("MaterialSymbols", { IO::Location::EDITOR, "fonts/MaterialSymbolsRounded.ttf" }, 24.f, config, glyph_ranges);
 }
 

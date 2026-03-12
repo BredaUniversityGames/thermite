@@ -295,7 +295,6 @@ void Inspector::display_runtime_components(const MenuContext& menu_context) {
 void Inspector::add_component(const MenuContext& menu_context) {
     if (menu_context.primary_entity == entt::null) return;
 
-
     if (IMGUI_CENTER(ImGui::Button("Add Component"), 20.0f)) {
         ImGui::OpenPopup("AddComponentPopup");
     }
@@ -395,8 +394,6 @@ void Inspector::component_body_end() {
         const ImVec2 rect_min = ImVec2(component_body_x_min, component_body_start_y - rounding);
         const ImVec2 rect_max = ImVec2(component_body_x_max, end_y);
 
-        //const ImU32 body_bg_color = ImGui::ColorConvertFloat4ToU32(tmt::theme::header_color);
-        // get colors[ImGuiCol_Header] color
         const ImU32 body_bg_color = ImGui::GetColorU32(ImGuiCol_Header);
 
         draw_list->ChannelsSetCurrent(0); /* background channel */
@@ -404,6 +401,8 @@ void Inspector::component_body_end() {
     }
 
     draw_list->ChannelsMerge();
+    const float item_spacing_y = ImGui::GetStyle().ItemSpacing.y;
+    ImGui::Dummy(ImVec2(0.0f, item_spacing_y * 0.5f));
 }
 
 Inspector::ContextMenuResponse Inspector::context_menu(const std::string& name, const bool open) {

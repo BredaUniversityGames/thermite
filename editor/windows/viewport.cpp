@@ -20,6 +20,8 @@
 #include "engine/core/components/ui_component.hpp"
 #include "game_flow.hpp"
 
+#include "editor/imgui/tools/buttons.hpp"
+
 void tmt::Viewport::on_editor_start() {}
 
 void tmt::Viewport::on_editor_update(const tmt::FrameData& frame_data) {
@@ -221,10 +223,10 @@ void tmt::Viewport::toolbar() {
     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(style.FramePadding.x, y_frame_padding));
 
     // Vertically center buttons within the (now taller) bar
-    float bar_height = ImGui::GetCurrentWindow()->MenuBarHeight;
-    float btn_height = ImGui::GetFrameHeightWithSpacing();  // height with the new smaller padding
-    float center_y = ImGui::GetCursorPosY() + (bar_height - btn_height) * 0.5f - style.FramePadding.y;
-    ImGui::SetCursorPosY(center_y);
+    //float bar_height = ImGui::GetCurrentWindow()->MenuBarHeight;
+    //float btn_height = ImGui::GetFrameHeightWithSpacing();  // height with the new smaller padding
+    //float center_y = ImGui::GetCursorPosY() + (bar_height - btn_height) * 0.5f - style.FramePadding.y;
+    //ImGui::SetCursorPosY(center_y);
 
     /* ===== Left side: Gizmo controls ===== */
 
@@ -234,7 +236,7 @@ void tmt::Viewport::toolbar() {
         editor.gizmo.space = static_cast<uint8_t>(!editor.gizmo.space);
     }
 
-    ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
+    ImGui::Spacing();
 
     /* Gizmo Operation Buttons (Translate/Rotate/Scale) */
     const bool translate_active = (editor.gizmo.operation == 0);
@@ -270,7 +272,7 @@ void tmt::Viewport::toolbar() {
     if (ImGui::IsItemHovered()) ImGui::SetTooltip("Bounds (T, UI only)");
     if (rect_active) ImGui::PopStyleColor();
 
-    ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
+    ImGui::Spacing();
 
     /* ===== Center: Game Flow Controls (icon-only) ===== */
     float icon_btn_width = ImGui::GetFrameHeight();                    // Square buttons
@@ -287,13 +289,13 @@ void tmt::Viewport::toolbar() {
 
     // Play/Stop button
     if (engine.game_controller.is_playing()) {
-        if (ImGui::Button(ICON_MS_STOP "##Stop", ImVec2(icon_btn_width, 0))) {
+        if (ImGui::Button(ICON_MS_STOP "##Stop")) {
             // end_game();
             editor.systems[editor.editor_mode].get<GameFlow>().end_game();
         }
         if (ImGui::IsItemHovered()) ImGui::SetTooltip("Stop");
     } else {
-        if (ImGui::Button(ICON_MS_PLAY_ARROW "##Play", ImVec2(icon_btn_width, 0))) {
+        if (ImGui::Button(ICON_MS_PLAY_ARROW "##Play")) {
             editor.systems[editor.editor_mode].get<GameFlow>().start_game();
         }
         if (ImGui::IsItemHovered()) ImGui::SetTooltip("Start");
@@ -302,12 +304,12 @@ void tmt::Viewport::toolbar() {
     // Pause/Resume button (only shown when playing)
     if (engine.game_controller.is_playing()) {
         if (engine.game_controller.is_paused()) {
-            if (ImGui::Button(ICON_MS_PLAY_ARROW "##Resume", ImVec2(icon_btn_width, 0))) {
+            if (ImGui::Button(ICON_MS_PLAY_ARROW "##Resume")) {
                 editor.systems[editor.editor_mode].get<GameFlow>().resume_game();
             }
             if (ImGui::IsItemHovered()) ImGui::SetTooltip("Resume");
         } else {
-            if (ImGui::Button(ICON_MS_PAUSE "##Pause", ImVec2(icon_btn_width, 0))) {
+            if (ImGui::Button(ICON_MS_PAUSE "##Pause")) {
                 editor.systems[editor.editor_mode].get<GameFlow>().pause_game();
             }
             if (ImGui::IsItemHovered()) ImGui::SetTooltip("Pause");
