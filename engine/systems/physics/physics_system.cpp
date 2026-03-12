@@ -228,7 +228,7 @@ void Physics::on_fixed_update(const FrameData&) {
             object.volume = renderer.resource.resource.get();
             object.rcp_tree_width = 1.0f / powf(4.0f, (float)renderer.resource->blas->depth);
             objects.push_back(std::move(object));
-            
+
             /* Save the entity id */
             /* QUICK FIX: This is to get the entity ID from a raycast() */
             entities.push_back(entity);

@@ -117,7 +117,6 @@ void MiningComponent::handle_voxel(const VoxelID& voxel_id) {
     auto ore_toughness = ore_database->at(ore_type).toughness;
 
     switch (ore_type) {
-        
         case tmt::Material::Type::THERMITE:
             if (ore_toughness < tmt::engine.frame_data().elapsed_time - mining_voxels.at(voxel_id)) {
                 if (ore_manager) {

@@ -3,7 +3,7 @@
 #include "engine/systems/gameplay/game_component.hpp"
 #include "engine/core/resources/stencil.hpp"
 
-//custom hasher
+// custom hasher
 namespace std {
 
 template <>
@@ -49,6 +49,6 @@ class OreManager : public tmt::GameComponent<OreManager> {
     tmt::Entity player_entity = entt::null;
 };
 
-}  
+}  // namespace game
 TMT_OBJECT(game::ThermiteOreSettings, (radius_explosion, damage_explosion, cooldown_explosion));
 TMT_OBJECT(game::OreManager, (thermite_ore_settings));
