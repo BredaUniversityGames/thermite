@@ -22,11 +22,9 @@ class RigModelManager : public ISystem, OnDrawLines  {
     constexpr std::string OnDrawLines::get_name() const override { return "RigModelManager"; }
 };
 
-class AnimationConstraintSystem : public ISystem 
-{
+class AnimationConstraintSystem : public ISystem {
    public:
-
-// Inherited via ISystem
+    // Inherited via ISystem
     void on_start() override;
     void on_update(const tmt::FrameData& time) override;
     void on_end() override;
@@ -34,4 +32,5 @@ class AnimationConstraintSystem : public ISystem
 
    private:
 };
+
 }  // namespace tmt

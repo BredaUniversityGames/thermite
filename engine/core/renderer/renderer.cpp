@@ -100,6 +100,9 @@ void Renderer::init() {
     vfx_pipeline.init(gpu);
     ui_pipeline.init(gpu);
 
+    /* Initialize the Sampler */
+    linear_sampler = gpu.get_vram_bank().create_sampler("Linear Sampler").expect("failed to initialize linear sampler.");
+
     debug_transform.set_local_position({ 0.0f, 0.0f, -1.0f });
 }
 
@@ -174,6 +177,7 @@ void Renderer::end() {
     di_pipeline.deinit(gpu);
     vfx_pipeline.deinit(gpu);
     ui_pipeline.deinit(gpu);
+    bank.destroy(linear_sampler);
 
     /* Cleanup the VRAM bank & GPU adapter */
     render_graph.deinit().expect("failed to destroy render graph.");
@@ -181,7 +185,11 @@ void Renderer::end() {
     gpu.deinit().expect("failed to destroy gpu adapter.");
 }
 
-Hit Renderer::trace_ray(const Ray& ray) const { return scene_view.bvh.trace(ray); }
+Hit Renderer::trace_ray(const Ray& ray) const { 
+    Hit hit = scene_view.bvh.trace(ray);
+    if (hit) hit.entity = scene_view.entities[(uint32_t)hit.entity];
+    return hit; 
+}
 
 #ifdef THERMITE_EDITOR
 void Renderer::set_imgui(ImGUI* new_imgui) {

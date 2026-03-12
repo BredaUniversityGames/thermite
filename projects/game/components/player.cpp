@@ -83,6 +83,9 @@ void Player::end() {
 void Player::look_camera() const {
     auto& input = tmt::engine.input;
 
+    const bool mouse_locked = input.is_mouse_locked();
+    if (!mouse_locked) return;
+
     auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
     auto& camera = tmt::engine.ecs.get_component<tmt::Camera>(entity);
     const float dx = input.get_mouse_delta_x();
@@ -110,6 +113,7 @@ void Player::move_player() {
     glm::vec3 input_dir = { 0.0f, 0.0f, 0.0f };
     auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
 
+    /* If not locked don't move player */
     if (input.is_action_pressed(action::MOVE_FORWARD)) input_dir += transform.get_forward();
     if (input.is_action_pressed(action::MOVE_BACKWARD)) input_dir -= transform.get_forward();
     if (input.is_action_pressed(action::MOVE_RIGHT)) input_dir += transform.get_right();

@@ -36,7 +36,7 @@ bool tmt::RigData::load() {
     init_bone_fbx(root_node, mesh_connections);
     extract_bone_keyframes_fbx(rig_fbx, rig_fbx, mesh_connections);
 
-    for (auto&& [animation_directory, animation_name] : animation_files) {
+    for (auto& [animation_directory, anim_name] : animation_files) {
         opts = {};
         opts.ignore_geometry = true;
         const std::vector<char>& animation_data = IO::read_file(animation_directory);

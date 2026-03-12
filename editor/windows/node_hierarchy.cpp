@@ -1,7 +1,6 @@
 #include "node_hierarchy.hpp"
 
 #include "editor.hpp"
-#include "editor/core/systems/undo_redo/type_diff.hpp"
 #include "editor/core/systems/undo_redo/component_diff.hpp"
 #include "editor/core/systems/undo_redo/voxel_edit_diff.hpp"
 #include "editor/core/systems/undo_redo/undo_redo_manager.hpp"
@@ -17,6 +16,7 @@
 #include "engine/tools/serializer/all.hpp"
 #include "engine/core/components/transform.hpp"
 #include "engine/core/components/voxel_renderer.hpp"
+#include "engine/systems/physics/physics_system.hpp"
 
 #include <imgui.h>
 #include <imgui_stdlib.h>
@@ -29,6 +29,32 @@
 #include <fstream>
 
 namespace {
+
+void apply_requests(ImGuiMultiSelectIO* io, std::vector<tmt::Entity>& selection, const std::vector<tmt::Entity>& entities) {
+    for (const auto& request : io->Requests) {
+        switch (request.Type) {
+            case ImGuiSelectionRequestType_None:
+                break;
+
+            case ImGuiSelectionRequestType_SetAll:
+                selection.clear();
+                if (request.Selected) selection = entities;
+                break;
+
+            case ImGuiSelectionRequestType_SetRange: {
+                if (request.Selected) {
+                    for (ImGuiSelectionUserData i = request.RangeFirstItem; i <= request.RangeLastItem; i++) {
+                        selection.push_back(entities.at(i));
+                    }
+                } else {
+                    for (ImGuiSelectionUserData i = request.RangeFirstItem; i <= request.RangeLastItem; i++) {
+                        selection.erase(std::ranges::find(selection, *(entities.begin() + i)));
+                    }
+                }
+            } break;
+        }
+    }
+}
 
 void drag3_uint32(const char* label, uint32_t values[3], const float speed = 0.1f, const uint32_t& min = 0u, const uint32_t& max = 0u) {
     ImGui::DragScalarN(label, ImGuiDataType_U32, values, 3, speed, &min, &max, nullptr, ImGuiSliderFlags_ClampOnInput);
@@ -101,16 +127,20 @@ struct NodeResizeData {
 std::unique_ptr<NodeResizeData> node_resize_info;
 
 tmt::Entity recurse_build_scene(
-    const tmt::VoxelSceneNode& node, bool assign_new_uuids, const tmt::Entity parent_entity = entt::null, const glm::mat4& parent_matrix = glm::identity<glm::mat4>()
+    const tmt::VoxelSceneNode& node, bool assign_new_uuids, const std::map<tmt::UUID, tmt::Entity>& previous_entity_mapping, const tmt::Entity parent_entity = entt::null,
+    const glm::mat4& parent_matrix = glm::identity<glm::mat4>()
 ) {
-    const tmt::Entity entity = tmt::engine.ecs.create_entity(node.name);
+    const tmt::UUID uuid = (assign_new_uuids ? tmt::UUIDGenerator::generate() : node.uuid);
+
+    tmt::Entity entity = previous_entity_mapping.contains(uuid) ? previous_entity_mapping.at(uuid) : entt::null;
+    entity = tmt::engine.ecs.create_entity(node.name, entity);
 
     tmt::Transform& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
     transform.set_world_matrix(parent_matrix * node.transform);
     transform.set_parent(parent_entity);
 
     tmt::NodeHierarchy::NodeUUID& uuid_component = tmt::engine.ecs.add_component<tmt::NodeHierarchy::NodeUUID>(entity);
-    uuid_component.uuid = (assign_new_uuids ? tmt::UUIDGenerator::generate() : node.uuid);
+    uuid_component.uuid = uuid;
 
     if (node.tree) {
         tmt::VoxelRenderer& renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(entity);
@@ -122,7 +152,7 @@ tmt::Entity recurse_build_scene(
     }
 
     for (const tmt::VoxelSceneNode& child : node.children) {
-        recurse_build_scene(child, assign_new_uuids, entity, transform.get_world_matrix());
+        recurse_build_scene(child, assign_new_uuids, previous_entity_mapping, entity, transform.get_world_matrix());
     }
 
     return entity;
@@ -151,11 +181,95 @@ void recurse_parse_scene(tmt::Entity entity, const tmt::Transform& transform, tm
     }
 }
 
+tmt::Entity recurse_duplicate_node(const tmt::Entity source_entity, const tmt::Entity parent = entt::null) {
+    const auto& [source_name, source_transform] = tmt::engine.ecs.get_component<tmt::Name, tmt::Transform>(source_entity);
+
+    const tmt::Entity entity = tmt::engine.ecs.create_entity(source_name.name);
+    auto&& [name, transform] = tmt::engine.ecs.get_component<tmt::Name, tmt::Transform>(entity);
+
+    transform.set_world_matrix(source_transform.get_world_matrix());
+    transform.set_parent(parent);
+
+    tmt::NodeHierarchy::NodeUUID& uuid_component = tmt::engine.ecs.add_component<tmt::NodeHierarchy::NodeUUID>(entity);
+    uuid_component.uuid = tmt::UUIDGenerator::generate();
+
+    const tmt::VoxelRenderer* source_renderer = tmt::engine.ecs.try_get_component<tmt::VoxelRenderer>(source_entity);
+    if (source_renderer != nullptr) {
+        tmt::VoxelRenderer& renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(entity);
+
+        // Create a fake voxel resource managed by the voxel editor.
+        const tmt::ResourceRef volume { {}, std::make_shared<tmt::VoxelVolume>(source_renderer->resource, uuid_component.uuid) };
+        renderer.resource = volume;
+    }
+
+    for (const tmt::Entity& child : source_transform.get_children()) {
+        recurse_duplicate_node(child, entity);
+    }
+
+    return entity;
+}
+
 std::atomic_bool model_load_atomic { true };
 
 }  // namespace
 
 namespace tmt {
+
+bool NodeHierarchy::is_entity_selected(Entity entity) {
+    // Linear search because we use an std vector, but we need to keep our own order so there is no good alternative.
+    return std::ranges::find(selected_entities, entity) != selected_entities.end();
+}
+
+Entity NodeHierarchy::get_first_selected_entity() const {
+    if (selected_entities.empty()) return entt::null;
+
+    return *selected_entities.begin();
+}
+
+void NodeHierarchy::add_selected_entity(const Entity entity) {
+    if (entity == entt::null || is_entity_selected(entity)) return;
+
+    NodeVectorDiff diff { selected_entities };
+    diff.before();
+    selected_entities.push_back(entity);
+    diff.after();
+    IUndoRedo::send_to_manager(std::move(diff), "Add Node Selection");
+}
+
+void NodeHierarchy::set_selected_entity(const Entity entity) {
+    if (selected_entities.size() == 1 && selected_entities.front() == entity) return;
+
+    NodeVectorDiff diff { selected_entities };
+    diff.before();
+
+    selected_entities.clear();
+    selected_entities.push_back(entity);
+
+    diff.after();
+    IUndoRedo::send_to_manager(std::move(diff), "Set Node Selection");
+}
+
+void NodeHierarchy::remove_selected_entity(const Entity entity) {
+    const auto iterator = std::ranges::find(selected_entities, entity);
+
+    if (iterator == selected_entities.end()) return;
+
+    NodeVectorDiff diff { selected_entities };
+    diff.before();
+    selected_entities.erase(iterator);
+    diff.after();
+    IUndoRedo::send_to_manager(std::move(diff), "Remove Node Selection");
+}
+
+void NodeHierarchy::clear_selected_entities() {
+    if (selected_entities.empty()) return;
+
+    NodeVectorDiff diff { selected_entities };
+    diff.before();
+    selected_entities.clear();
+    diff.after();
+    IUndoRedo::send_to_manager(std::move(diff), "Clear Node Selection");
+}
 
 void NodeHierarchy::new_svh() {
     clear_hierarchy();
@@ -194,6 +308,8 @@ void NodeHierarchy::save_svh() {
         return;
     }
 
+    recalculate_all_physics();
+
     const std::vector<char> scene_data = encode_voxel_scene();
     IO::write_file(loaded_location, scene_data.data(), scene_data.size());
 }
@@ -203,6 +319,8 @@ void NodeHierarchy::save_svh_as() {
         [this](const IO::FileLocation& location) {
             loaded_location = location;
             if (loaded_location.relative_path.extension() != ".svh") loaded_location.relative_path += ".svh";  // Make sure the saved file has the correct extension.
+
+            recalculate_all_physics();
 
             const std::vector<char> scene_data = encode_voxel_scene();
             IO::write_file(loaded_location, scene_data.data(), scene_data.size());
@@ -307,11 +425,11 @@ void NodeHierarchy::export_file(const std::string& file_description, const std::
     );
 }
 
-void NodeHierarchy::build_scene(const std::span<VoxelSceneNode>& root_nodes, bool assign_new_uuids) {
-    for (VoxelSceneNode& root_node : root_nodes) {
-        const Entity root_entity = recurse_build_scene(root_node, assign_new_uuids);
+void NodeHierarchy::build_scene(const std::span<VoxelSceneNode>& root_nodes, bool assign_new_uuids, const std::map<UUID, Entity>& previous_entity_mapping) {
+    for (const VoxelSceneNode& root_node : root_nodes) {
+        const Entity root_entity = recurse_build_scene(root_node, assign_new_uuids, previous_entity_mapping);
 
-        root_entities.emplace(root_entity);
+        root_entities.push_back(root_entity);
     }
 }
 
@@ -332,7 +450,15 @@ std::vector<char> NodeHierarchy::encode_voxel_scene() const {
     return encode_svh(root_nodes);
 }
 
-void NodeHierarchy::recurse_display_node(const Entity entity, const Name& name, Transform& transform) {
+void NodeHierarchy::recalculate_all_physics() {
+    const entt::basic_group renderer_group = engine.ecs.group<VoxelRenderer>(entt::get<Transform>);
+
+    for (const auto&& [entity, renderer, transform] : renderer_group.each()) {
+        Physics::recalculate_surface_normals(*renderer.resource.resource);
+    }
+}
+
+void NodeHierarchy::recurse_display_node(const Entity entity, const Name& name, Transform& transform, std::vector<Entity>& all_entities) {
     ImGui::PushID(static_cast<int>(entity));
 
     const std::set<Entity>& children = transform.get_children();
@@ -342,7 +468,10 @@ void NodeHierarchy::recurse_display_node(const Entity entity, const Name& name, 
 
     ImGuiTreeNodeFlags flags = default_flags;
     flags |= (children.empty() ? ImGuiTreeNodeFlags_Leaf : 0);
-    flags |= (entity == selected_entity ? ImGuiTreeNodeFlags_Selected : 0);
+    flags |= (is_entity_selected(entity) ? ImGuiTreeNodeFlags_Selected : 0);
+
+    ImGui::SetNextItemSelectionUserData(static_cast<ImGuiSelectionUserData>(all_entities.size()));
+    all_entities.push_back(entity);
 
     const bool tree_open = ImGui::TreeNodeEx(name.name.c_str(), flags);
     node_context_menu(entity);
@@ -350,22 +479,24 @@ void NodeHierarchy::recurse_display_node(const Entity entity, const Name& name, 
     drop_node(entity, transform);
 
     const bool popup_clicked_open = (ImGui::IsMouseReleased(ImGuiMouseButton_Right) && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup));
-    // Both left mouse button selects and opening the popup also selects, this makes it clear what node entity you have opened the popup for.
-    if (ImGui::IsItemClicked(ImGuiMouseButton_Left) || popup_clicked_open) selected_entity = entity;
+    if (popup_clicked_open) set_selected_entity(entity);
     if (tree_open) {
         for (const Entity child : children) {
             auto&& [child_name, child_transform] = engine.ecs.get_component<Name, Transform>(child);
-            recurse_display_node(child, child_name, child_transform);
+            recurse_display_node(child, child_name, child_transform, all_entities);
         }
 
         ImGui::TreePop();
+    } else {
+        const std::set<Entity> all_children = transform.get_all_children();
+        all_entities.insert(all_entities.end(), all_children.begin(), all_children.end());
     }
 
     ImGui::PopID();
 }
 
 void NodeHierarchy::clear_hierarchy() {
-    selected_entity = entt::null;
+    clear_selected_entities();
     root_entities.clear();
     engine.ecs.clear();
 
@@ -380,17 +511,17 @@ void NodeHierarchy::drop_hierarchy() {
     const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("VoxelNode");
     if (payload != nullptr) {
         const Entity dropped_entity = *static_cast<Entity*>(payload->Data);
-        Transform& transform = engine.ecs.get_component<Transform>(dropped_entity);
+        Transform& dropped_transform = engine.ecs.get_component<Transform>(dropped_entity);
 
-        if (transform.has_parent()) {
+        if (dropped_transform.has_parent()) {
             // Diffs for parent child relationship undo/redo.
-            ComponentDiff<Transform> parent_diff { transform.get_parent() };
+            ComponentDiff<Transform> parent_diff { dropped_transform.get_parent() };
             ComponentDiff<Transform> dropped_diff { dropped_entity };
 
             parent_diff.before();
             dropped_diff.before();
 
-            transform.clear_parent();
+            dropped_transform.clear_parent();
 
             parent_diff.after();
             dropped_diff.after();
@@ -399,10 +530,10 @@ void NodeHierarchy::drop_hierarchy() {
             diff_collection.add_action(std::move(parent_diff));
             diff_collection.add_action(std::move(dropped_diff));
 
-            TypeDiff root_diff { &root_entities };
+            NodeVectorDiff root_diff { root_entities };
 
             root_diff.before();
-            root_entities.emplace(dropped_entity);
+            root_entities.push_back(dropped_entity);
             root_diff.after();
 
             diff_collection.add_action(std::move(root_diff));
@@ -424,29 +555,34 @@ void NodeHierarchy::drop_node(const Entity entity, Transform& transform) {
             const size_t child_count = transform.get_children().size();
 
             // Diffs for parent child relationship undo/redo.
-            ComponentDiff<Transform> parent_diff { entity };
-            ComponentDiff<Transform> child_diff { dropped_entity };
+            std::vector<ComponentDiff<Transform>> diffs;
+            diffs.emplace_back(entity);
+            diffs.emplace_back(dropped_entity);
 
-            parent_diff.before();
-            child_diff.before();
+            const Transform& dropped_transform = engine.ecs.get_component<Transform>(dropped_entity);
+            if (dropped_transform.has_parent()) diffs.emplace_back(dropped_transform.get_parent());
+
+            for (auto& diff : diffs) {
+                diff.before();
+            }
 
             transform.add_child(dropped_entity);
 
             // Only handle the rest of the diff process if the transform actually got a new child (might not get a new child when trying to parent to child of self).
             if (child_count != transform.get_children().size()) {
-                parent_diff.after();
-                child_diff.after();
-
                 UndoRedoCollection diff_collection;
-                diff_collection.add_action(std::move(parent_diff));
-                diff_collection.add_action(std::move(child_diff));
+                for (auto& diff : diffs) {
+                    diff.after();
+                    diff_collection.add_action(std::move(diff));
+                }
 
-                if (root_entities.contains(dropped_entity)) {
+                const auto iterator = std::ranges::find(root_entities, dropped_entity);
+                if (iterator != root_entities.end()) {
                     // Diff to add entity back in root entities set.
-                    TypeDiff root_diff { &root_entities };
+                    NodeVectorDiff root_diff { root_entities };
 
                     root_diff.before();
-                    root_entities.erase(dropped_entity);
+                    root_entities.erase(iterator);
                     root_diff.after();
 
                     diff_collection.add_action(std::move(root_diff));
@@ -480,7 +616,7 @@ void NodeHierarchy::popup_create_node() {
         if (node_creation_info->parent != entt::null)
             engine.ecs.get_component<Transform>(new_node_entity).set_parent(node_creation_info->parent);
         else
-            root_entities.emplace(new_node_entity);
+            root_entities.push_back(new_node_entity);
 
         UUID uuid;
         if (has_voxel_grid) {
@@ -631,19 +767,37 @@ void NodeHierarchy::popup_resize_node() {
     ImGui::EndPopup();
 }
 
-void NodeHierarchy::node_context_menu(const Entity node_entity) const {
+void NodeHierarchy::node_context_menu(const Entity node_entity) {
     constexpr ImGuiPopupFlags flags = ImGuiPopupFlags_NoOpenOverExistingPopup | ImGuiPopupFlags_MouseButtonRight;
     if (!ImGui::BeginPopupContextItem(nullptr, flags)) return;
 
-    if (ImGui::MenuItem(ICON_MS_ADD " Add node")) {
+    if (ImGui::MenuItem(ICON_MS_ADD " Add Node")) {
         node_creation_info = std::make_unique<NodeCreationData>();
         node_creation_info->parent = node_entity;
         ImGui::OpenPopupEx(creation_popup_id);
     }
-    if (ImGui::MenuItem(ICON_MS_REMOVE " Delete node")) {
-        VoxelNodeDiff diff { node_entity, false };
+    if (ImGui::MenuItem(ICON_MS_REMOVE " Delete Node")) {
+        NodeVectorDiff selection_diff { selected_entities };
+        selection_diff.before();
+        selected_entities.clear();
+        selection_diff.after();
+
+        VoxelNodeDiff node_diff { node_entity, false };
         engine.ecs.destroy_entity(node_entity);
-        VoxelNodeDiff::send_to_manager(std::move(diff), "Deleted Voxel Node");
+
+        UndoRedoCollection diff_collection;
+        diff_collection.add_action(std::move(node_diff));
+        diff_collection.add_action(std::move(selection_diff));
+        diff_collection.commit("Deleted Voxel Node");
+    }
+
+    if (ImGui::MenuItem(ICON_MS_COPY_ALL " Duplicate Node")) {
+        const Entity parent = engine.ecs.get_component<Transform>(node_entity).get_parent();
+        const Entity new_entity = recurse_duplicate_node(node_entity, parent);
+        if (parent == entt::null) root_entities.push_back(new_entity);
+
+        VoxelNodeDiff diff { new_entity, true };
+        VoxelNodeDiff::send_to_manager(std::move(diff), "Duplicate Voxel Node");
     }
 
     ImGui::Separator();
@@ -667,11 +821,36 @@ void NodeHierarchy::display() {
     popup_create_node();
     popup_resize_node();
 
+    constexpr ImGuiMultiSelectFlags multiselect_flags =
+        ImGuiMultiSelectFlags_ClearOnEscape | ImGuiMultiSelectFlags_ClearOnClickVoid | ImGuiMultiSelectFlags_BoxSelect1d | ImGuiMultiSelectFlags_SelectOnClickRelease;
+
+    // Handle multi selecting entities at the start of the recursive display.
+    std::vector<Entity> all_entities;
+
+    // Built in multi select system in imgui.
+    ImGuiMultiSelectIO* multi_select_io = ImGui::BeginMultiSelect(multiselect_flags, static_cast<int>(selected_entities.size()));
+    // Check if ctrl+A is pressed to select all, this is the only selection event that happens during ImGui::BeginMultiSelect and not during ImGui::EndMultiSelect for some reason.
+    const auto iterator =
+        std::ranges::find_if(multi_select_io->Requests, [](const ImGuiSelectionRequest& request) { return request.Type == ImGuiSelectionRequestType_SetAll && request.Selected == true; });
+    const bool set_all = iterator != multi_select_io->Requests.end();
+
     for (const Entity entity : root_entities) {
         auto&& [transform, name] = engine.ecs.get_component<Transform, Name>(entity);
 
-        recurse_display_node(entity, name, transform);
+        recurse_display_node(entity, name, transform, all_entities);
     }
+
+    NodeVectorDiff diff { selected_entities };
+    diff.before();
+
+    // Handle the selection event request after all the items have been displayed.
+    multi_select_io = multi_select_io = ImGui::EndMultiSelect();
+    apply_requests(multi_select_io, selected_entities, all_entities);
+    if (set_all) selected_entities = all_entities;
+
+    diff.after();
+    if (diff.has_changed()) IUndoRedo::send_to_manager(std::move(diff), "Modified Node Selection");
+
     // Erase all root entities that have been marked for delete.
     std::erase_if(root_entities, [](const Entity& entity) { return !engine.ecs.valid(entity) || engine.ecs.has_component<Delete>(entity); });
 
