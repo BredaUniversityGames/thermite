@@ -15,13 +15,18 @@ class OreManager : public tmt::GameComponent<OreManager> {
     void update(const tmt::FrameData& time) override;
     void end() override;
 
-    void trigger_thermite_explosion(tmt::Entity voxel_entity);
+    void initiate_thermite_explosion(tmt::Entity voxel_entity, glm::uvec3 voxel_position);
 
     float thermite_ore_explosion_radius = 1.0f;
     float thermite_ore_explosion_damage = 10.0f;
+    float thermite_ore_explosion_cooldown = 0.5f;
 
    private:
-
+    std::unordered_set<glm::vec3> positions_to_explode;
+    std::unordered_set<glm::vec3> new_positions_to_explode;
+    std::unordered_set<tmt::Entity> hit_entities;
+    float thermite_ore_explosion_cooldown_timer = 0.0f;
+    void process_thermite_ore_explosion(tmt::Entity voxel_entity, glm::vec3 explosion_center);
 };
 
 }  // namespace game
