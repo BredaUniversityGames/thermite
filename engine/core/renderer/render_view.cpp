@@ -23,7 +23,7 @@ namespace tmt {
 static glm::vec2 r2_sequence(const uint32_t n) {
     /* Improved coefficients from <https://www.martysmods.com/a-better-r2-sequence/> */
     /* (1.0 - original coefficients) */
-    return glm::fract(glm::vec2(n) * glm::vec2(0.2451223337533073f, 0.4301597090019468f));
+    return glm::fract(glm::vec2((float)n) * glm::vec2(0.2451223337533073f, 0.4301597090019468f));
 }
 
 void RenderView::init() {
