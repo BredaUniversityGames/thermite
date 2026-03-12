@@ -88,7 +88,7 @@ class RigController {
 
 #ifdef THERMITE_EDITOR
     ax::NodeEditor::EditorContext* editor_context { nullptr };
-    std::vector<uint8_t> editor_data;
+    std::string editor_data;
 #endif  // THERMITE_EDITOR
 
    private:
