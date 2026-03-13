@@ -64,6 +64,9 @@ struct SceneView {
 
     /* EnTT Subscribe Event Callback */
     void on_renderer_destroyed(entt::registry& registry, entt::entity entity);
+
+    /* Track Prev Frame Transform */
+    std::unordered_map<Entity, glm::mat4> prev_transforms {};
 };
 
 }  // namespace tmt

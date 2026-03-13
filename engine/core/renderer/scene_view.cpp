@@ -146,6 +146,8 @@ void SceneView::update_voxel_objects(RenderGraph& render_graph) {
 
         /* Shared data */
         cpu_object.local_to_world = gpu_object.local_to_world = transform.get_world_matrix();
+        /* Check if the entity had a transform last frame, if not use current frame matrix */
+        gpu_object.prev_local_to_world = prev_transforms.contains(entity) ? prev_transforms.at(entity) : gpu_object.local_to_world;
         cpu_object.world_to_local = gpu_object.world_to_local = glm::inverse(cpu_object.local_to_world);
         cpu_object.size = gpu_object.size = renderer.resource->size;
         cpu_object.rcp_tree_width = gpu_object.rcp_tree_width = 1.0f / powf(4.0f, (float)renderer.resource->blas->depth);
@@ -164,6 +166,9 @@ void SceneView::update_voxel_objects(RenderGraph& render_graph) {
 
         /* Save the entity id */
         entities[renderer.uuid] = entity;
+
+        /* Insert Entity Transform */
+        prev_transforms[entity] = gpu_object.local_to_world;
     }
 
     /* Build a BVH over the scene */
@@ -266,6 +271,9 @@ void SceneView::on_renderer_destroyed(entt::registry& registry, entt::entity ent
     if (voxel_renderer != nullptr) {
         uuid_free_list.push_back(voxel_renderer->uuid);
     }
+
+    /* Remove entity from previous transforms */
+    prev_transforms.erase(entity);
 }
 
 }  // namespace tmt

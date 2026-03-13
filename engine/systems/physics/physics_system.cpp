@@ -291,7 +291,7 @@ void Physics::generate_constraint(int index, const PhysicsGroup& group) {
     std::vector<uint32_t> hits = bvh.overlap(current_aabb);
 
     for (uint32_t hit : hits) {
-        Entity other_entity = group[hit];
+        Entity other_entity = entities[hit]; // group[hit];
         if (other_entity == entity) continue;
 
         VoxelBody& other_vb = group.get<VoxelBody>(other_entity);
