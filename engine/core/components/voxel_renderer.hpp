@@ -13,7 +13,7 @@ struct VoxelRenderer {
     ResourceRef<VoxelVolume> resource {};
 
     /* Unique object identifier. */
-    uint32_t uuid = 0xFFFFFFFFu;
+    uint32_t uuid = 0u;
 
     /* Should this voxel renderer be outlined? */
     bool outlined = false;

@@ -39,8 +39,8 @@ void Bvh2<T>::build(const T* input_prims, const uint32_t input_count) {
     indices = new uint32_t[input_count] {};
     for (uint32_t i = 0u; i < input_count; ++i) {
         /* Initialize primitive indices */
-        if (input_prims[i].uuid != 0xFFFFFFFFu) { 
-            indices[index_count] = index_count;
+        if (input_prims[i].uuid != 0u) { 
+            indices[index_count] = i; // input_prims[i].uuid;
             index_count++;
         }
     }
@@ -53,7 +53,7 @@ void Bvh2<T>::build(const T* input_prims, const uint32_t input_count) {
 
     /* Copy the input primitives */
     prims = new T[input_count] {};
-    bounds = new Aabb[prim_count] {};
+    bounds = new Aabb[input_count] {};
     memcpy(prims, input_prims, prim_count * sizeof(T));
 
     /* Initialize primitive indices */
@@ -67,8 +67,9 @@ void Bvh2<T>::build(const T* input_prims, const uint32_t input_count) {
     root.min_bounds = glm::vec3(BIG_F32);
     root.max_bounds = glm::vec3(-BIG_F32);
     /* Generate all primitive AABBs, and find the root AABB */
-    for (uint32_t i = 0u; i < index_count; ++i) {
-        bounds[i] = prims[indices[i]].aabb();
+    for (uint32_t i = 0u; i < input_count; ++i) {
+        if (prims[i].uuid == 0u) continue;
+        bounds[i] = prims[i].aabb();
         root.min_bounds.x = fminf(root.min_bounds.x, bounds[i].min.x);
         root.min_bounds.y = fminf(root.min_bounds.y, bounds[i].min.y);
         root.min_bounds.z = fminf(root.min_bounds.z, bounds[i].min.z);

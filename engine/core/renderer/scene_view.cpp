@@ -55,7 +55,8 @@ void SceneView::init() {
     scene_view = bank.create_buffer("Scene View Buffer", c, sizeof(GpuSceneView)).expect("failed to create scene view buffer.");
 
     /* Subscribe to EnTT */
-    engine.ecs.get_registry().on_destroy<entt::entity>().connect<&SceneView::on_entity_destroyed>(this);
+    engine.ecs.get_registry().on_destroy<VoxelRenderer>().connect<&SceneView::on_renderer_destroyed>(this);
+    next_uuid = 1u; /* Set the base uuid */
 }
 
 void SceneView::update(RenderGraph& render_graph, const RenderView& render_view) {
@@ -108,7 +109,7 @@ void SceneView::update_voxel_objects(RenderGraph& render_graph) {
     size_t uuid_count = (size_t)next_uuid;
     for (auto&& [entity, renderer, transform] : group.each()) {
         if (uuid_count >= (size_t)MAX_VOXEL_OBJECTS) break;
-        if (renderer.uuid == 0xFFFFFFFFu) uuid_count++;
+        if (renderer.uuid == 0u) uuid_count++;
     }
 
     /* Allocate space for all voxel objects */
@@ -119,9 +120,6 @@ void SceneView::update_voxel_objects(RenderGraph& render_graph) {
 
     /* Iterate over all voxel renderers */
     for (auto&& [entity, renderer, transform] : group.each()) {
-        /* Respect the object limit */
-        // if (cpu_objects.size() >= (size_t)MAX_VOXEL_OBJECTS) break;
-
         /* Don't render objects with a null resource */
         if (renderer.resource == nullptr) continue;
 
@@ -130,13 +128,13 @@ void SceneView::update_voxel_objects(RenderGraph& render_graph) {
         renderer.resource->update_if_dirty();
 
         /* Set the UUID of the object */
-        if (renderer.uuid == 0xFFFFFFFFu) {
+        if (renderer.uuid == 0u) {
             if (uuid_free_list.empty()) {
                 if (next_uuid >= MAX_VOXEL_OBJECTS) continue;
                 renderer.uuid = next_uuid;
                 next_uuid++;
             } else {
-                renderer.uuid = *uuid_free_list.end();
+                renderer.uuid = uuid_free_list.back();
                 uuid_free_list.pop_back();
             }
         }
@@ -262,10 +260,11 @@ void SceneView::update_lights(RenderGraph& render_graph, const RenderView&) {
     render_graph.upload_buffer(scene_view, &gpu_view, 0u, sizeof(GpuSceneView));
 }
 
-void SceneView::on_entity_destroyed(entt::registry&, entt::entity entity) {
+void SceneView::on_renderer_destroyed(entt::registry& registry, entt::entity entity) {
     /* Add now unused uuids to the free list */
-    if (engine.ecs.has_component<VoxelRenderer>(entity)) {
-        uuid_free_list.push_back(engine.ecs.get_component<VoxelRenderer>(entity).uuid);
+    VoxelRenderer* voxel_renderer = registry.try_get<VoxelRenderer>(entity);
+    if (voxel_renderer != nullptr) {
+        uuid_free_list.push_back(voxel_renderer->uuid);
     }
 }
 

@@ -56,7 +56,7 @@ struct VoxelObject {
     uint32_t mask = 0xFFFFFFFFu;
 
     /* Unique object identifier. */
-    uint32_t uuid = 0xFFFFFFFFu;
+    uint32_t uuid = 0u;
 
     VoxelVolume* volume {};
 
