@@ -38,7 +38,7 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
 
     if (cache_init == false) {
         /* Cache init pass */
-        render_graph.add_compute_pass("cache init pass", "cache_init.cs")
+        render_graph.add_compute_pass("cache init pass", "lighting/cache_init.cs")
             .write(render_view.macrofacet_cache) /* Cache buffer */
             .group_size(128)
             .work_size(CACHE_SIZE);
@@ -46,7 +46,7 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
         cache_init = true;
     } else {
         /* Cache eviction pass (amortize over 8 frames) */
-        render_graph.add_compute_pass("cache eviction pass", "cache_evict.cs")
+        render_graph.add_compute_pass("cache eviction pass", "lighting/cache_evict.cs")
             .read(render_view.render_view_buffer) /* Render view buffer */
             .write(render_view.macrofacet_cache) /* Cache buffer */
             .group_size(128)
@@ -59,7 +59,7 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
         if (render_view.get_shading_rate_di() == ShadingRate::QUARTER_RATE) shading_res = div_up(render_view.gpu_view.resolution, 2u, 2u);
 
         /* Direct illumination pass */
-        render_graph.add_compute_pass("direct illumination pass", "direct_illumination.cs")
+        render_graph.add_compute_pass("direct illumination pass", "lighting/direct_illumination.cs")
             .read(render_view.render_view_buffer) /* Render view buffer */
             .read(scene_view.scene_view) /* Scene view buffer */
             .read(render_view.blue_noise2d->image) /* Blue noise texture */
@@ -77,7 +77,7 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
     const glm::uvec2 quarter_rate = div_up(render_view.gpu_view.resolution, 2u, 2u);
 
     /* Reflections pass */
-    render_graph.add_compute_pass("reflections pass", "reflections.cs")
+    render_graph.add_compute_pass("reflections pass", "lighting/reflections.cs")
         .read(render_view.render_view_buffer) /* Render view buffer */
         // .read(scene_view.scene_view) /* Scene view buffer */
         .read(render_view.blue_noise2d->image) /* Blue noise texture */
@@ -92,7 +92,7 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
         .work_size(quarter_rate.x, quarter_rate.y);
 
     /* Cache insert pass */
-    render_graph.add_compute_pass("cache insert pass", "cache_insert.cs")
+    render_graph.add_compute_pass("cache insert pass", "lighting/cache_insert.cs")
         .read(render_view.render_view_buffer) /* Render view buffer */
         .write(render_view.macrofacet_cache) /* Cache buffer */
         .read(render_view.vbuffer.image) /* Visibility buffer */
@@ -101,7 +101,7 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
         .work_size(render_res.x, render_res.y);
 
     /* Cache flush pass */
-    render_graph.add_compute_pass("cache flush pass", "cache_flush.cs")
+    render_graph.add_compute_pass("cache flush pass", "lighting/cache_flush.cs")
         .read(render_view.render_view_buffer) /* Render view buffer */
         .write(render_view.macrofacet_cache) /* Cache buffer */
         .read(render_view.vbuffer.image) /* Visibility buffer */
