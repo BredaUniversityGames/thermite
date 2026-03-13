@@ -39,7 +39,7 @@ void Bvh2<T>::build(const T* input_prims, const uint32_t input_count) {
     indices = new uint32_t[input_count] {};
     for (uint32_t i = 0u; i < input_count; ++i) {
         /* Initialize primitive indices */
-        if (input_prims[i].uuid != 0u) { 
+        if (input_prims[i].uuid != 0u) {
             indices[index_count] = i;
             index_count++;
         }
