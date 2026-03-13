@@ -18,55 +18,55 @@ void Destruction::on_start() {
 }
 
 void Destruction::on_update(const FrameData& time) {
-    //for (const auto& [entity, des, vb] : engine.ecs.view<Destructable, VoxelBody>().each()) {
-    //    engine.polyline.use_depth_testing(false);
-    //    // engine.polyline.use_color(0.1f, 0.3f, 0.9f);
-    //    for (DestructionNode& node : des.nodes) {
-    //        if (node.level == 10) continue;
+    for (const auto& [entity, des, vb] : engine.ecs.view<Destructable, VoxelBody>().each()) {
+        engine.polyline.use_depth_testing(false);
+        // engine.polyline.use_color(0.1f, 0.3f, 0.9f);
+        for (DestructionNode& node : des.nodes) {
+            if (node.level == 10) continue;
 
-    //        const glm::vec3 half_scale = glm::vec3(vb.width, vb.height, vb.depth) * 0.5f;
-    //        const uint32_t node_size = (1u << (node.level * 2u));
-    //        const glm::vec3 pos = (glm::vec3)(node.global_position + (node_size / 2)) * UNITS_PER_VOXEL + vb.position + 0.05f - half_scale;
+            const glm::vec3 half_scale = glm::vec3(vb.width, vb.height, vb.depth) * 0.5f;
+            const uint32_t node_size = (1u << (node.level * 2u));
+            const glm::vec3 pos = (glm::vec3)(node.global_position + (node_size / 2)) * UNITS_PER_VOXEL + vb.position + 0.05f - half_scale;
 
-    //        // uint32_t voxel_count = vb.resource.resource.get()->blas.get()->voxel_count;
-    //        // Log::info("voxels %u", vb.resource.resource.get()->blas.get()->voxel_count);
+            // uint32_t voxel_count = vb.resource.resource.get()->blas.get()->voxel_count;
+            // Log::info("voxels %u", vb.resource.resource.get()->blas.get()->voxel_count);
 
-    //        srand(node.flood_id << 5u);
+            srand(node.flood_id << 5u);
 
-    //        if (node.flood_id == 0)
-    //            engine.polyline.use_color(0.0f, 0.0f, 0.0f);
-    //        else
-    //            engine.polyline.use_color(((float)rand() / (float)RAND_MAX), ((float)rand() / (float)RAND_MAX), ((float)rand() / (float)RAND_MAX));
+            if (node.flood_id == 0)
+                engine.polyline.use_color(0.0f, 0.0f, 0.0f);
+            else
+                engine.polyline.use_color(((float)rand() / (float)RAND_MAX), ((float)rand() / (float)RAND_MAX), ((float)rand() / (float)RAND_MAX));
 
-    //        // Draw connections to neighbors
-    //        for (size_t i = 0; i < 6; i++) {
-    //            for (size_t j = 0; j < node.connections[i].node_indices.size(); j++) {
-    //                uint32_t node_index = node.connections[i].node_indices[j];
+            // Draw connections to neighbors
+            for (size_t i = 0; i < 6; i++) {
+                for (size_t j = 0; j < node.connections[i].node_indices.size(); j++) {
+                    uint32_t node_index = node.connections[i].node_indices[j];
 
-    //                if (des.nodes[node_index].level == 0) continue;
+                    if (des.nodes[node_index].level == 0) continue;
 
-    //                const uint32_t conn_node_size = (1u << (des.nodes[node_index].level * 2u));
-    //                const glm::vec3 connection_pos = (glm::vec3)(des.nodes[node_index].global_position + (conn_node_size / 2)) * UNITS_PER_VOXEL + vb.position + 0.05f - half_scale;
+                    const uint32_t conn_node_size = (1u << (des.nodes[node_index].level * 2u));
+                    const glm::vec3 connection_pos = (glm::vec3)(des.nodes[node_index].global_position + (conn_node_size / 2)) * UNITS_PER_VOXEL + vb.position + 0.05f - half_scale;
 
-    //                const glm::vec3 p1 = pos * 0.75f + connection_pos * 0.25f;
-    //                const glm::vec3 p2 = connection_pos * 0.75f + pos * 0.25f;
-    //                // const glm::vec3 diff = connection_pos - pos;
-    //                // const glm::vec3 dir = glm::normalize(connection_pos - pos);
+                    const glm::vec3 p1 = pos * 0.75f + connection_pos * 0.25f;
+                    const glm::vec3 p2 = connection_pos * 0.75f + pos * 0.25f;
+                    // const glm::vec3 diff = connection_pos - pos;
+                    // const glm::vec3 dir = glm::normalize(connection_pos - pos);
 
-    //                // engine.polyline.draw_arrow(p1, dir, glm::length(diff) * 0.5f);
-    //                engine.polyline.draw_line(p1, p2);
-    //            }
-    //        }
+                    // engine.polyline.draw_arrow(p1, dir, glm::length(diff) * 0.5f);
+                    engine.polyline.draw_line(p1, p2);
+                }
+            }
 
-    //        engine.polyline.draw_circle(pos, 0.033f * (1 << node.level));
+            engine.polyline.draw_circle(pos, 0.033f * (1 << node.level));
 
-    //        // if (node.level == 0) {
-    //        //     engine.polyline.draw_circle(pos, 0.033f);
-    //        // } else {
-    //        //     engine.polyline.draw_circle(pos, 0.033f * 4.0f);
-    //        // }
-    //    }
-    //}
+            // if (node.level == 0) {
+            //     engine.polyline.draw_circle(pos, 0.033f);
+            // } else {
+            //     engine.polyline.draw_circle(pos, 0.033f * 4.0f);
+            // }
+        }
+    }
 }
 
 void Destruction::on_fixed_update(const FrameData& time) {}
@@ -218,7 +218,7 @@ std::vector<Entity> Destruction::find_seperations(Entity entity, const std::vect
     return std::vector<Entity> { entity };
 }
 
-    // -X, +X, -Y, +Y, -Z, +Z
+// -X, +X, -Y, +Y, -Z, +Z
 constexpr glm::ivec3 dirs[6] = { { -1, 0, 0 }, { 1, 0, 0 }, { 0, -1, 0 }, { 0, 1, 0 }, { 0, 0, -1 }, { 0, 0, 1 } };
 
 constexpr uint64_t edge_masks[6] {
@@ -231,6 +231,8 @@ constexpr uint64_t edge_masks[6] {
 };
 
 Svt64Node* get_tree_node_at_position(uint32_t x, uint32_t y, uint32_t z, Svt64* tree, Destructable& graph) {
+    TMT_ZONE_SCOPED
+
     tmt::Svt64Node* node = &tree->nodes[0];
     glm::uvec3 global_pos = glm::uvec3(0);
     // Find the node relavent to that index
@@ -265,76 +267,126 @@ Svt64Node* get_tree_node_at_position(uint32_t x, uint32_t y, uint32_t z, Svt64* 
     return node;
 }
 
+uint64_t flood_fill_64(uint64_t seed, uint64_t solid_mask) {
+    // Mask to only solid voxels
+    uint64_t filled = seed & solid_mask;
+
+    while (true) {
+        uint64_t expanded = filled;
+
+        // +X: shift right by 1, mask out voxels that wrapped across X boundary
+        expanded |= (filled << 1) & 0xEEEEEEEEEEEEEEEEULL;  // x != 0 mask
+        // -X: shift left by 1
+        expanded |= (filled >> 1) & 0x7777777777777777ULL;  // x != 3 mask
+
+        // +Z: shift by 4 (z is bits [2:3]), mask out z boundary wraps
+        expanded |= (filled << 4) & 0xFFF0FFF0FFF0FFF0ULL;  // z != 0 mask
+        // -Z:
+        expanded |= (filled >> 4) & 0x0FFF0FFF0FFF0FFFULL;  // z != 3 mask
+
+        // +Y: shift by 16 (y is bits [4:5])
+        expanded |= (filled << 16) & 0xFFFFFFFFFFFF0000ULL;  // y != 0 mask
+        // -Y:
+        expanded |= (filled >> 16) & 0x0000FFFFFFFFFFFFULL;  // y != 3 mask
+
+        // Only keep solid voxels
+        expanded &= solid_mask;
+
+        // If nothing changed, we're done
+        if (expanded == filled) break;
+        filled = expanded;
+    }
+
+    return filled;
+}
+
 // Forward declare function
 void separation_flood(Destructable& graph, DestructionNode& current_node, uint8_t id, Svt64* tree);
 
 void low_level_separation_flood(Destructable& graph, DestructionNode& current_node, uint8_t id, uint64_t overlap_mask, Svt64* tree) {
     // Get svt64 node
-
     const Svt64Node& tree_node = *get_tree_node_at_position(current_node.global_position.x, current_node.global_position.y, current_node.global_position.z, tree, graph);
-
-    // NOTE: THIS IS PROBABLY WRONG ONCE WE REBUILD THE DESTRUCTION GRAPH
-    // const Svt64Node& tree_node = tree->nodes[current_node.tree_node];
 
     // If there are no solid voxels on the overlap, return
     if ((tree_node.child_mask & overlap_mask) == 0ull) return;
 
     current_node.flood_id |= (1ull << id);
 
-    uint64_t flood_mask = overlap_mask;
+    uint64_t flood_mask = 0u;
 
-    // Loop over flood overlap mask solids
-    while (overlap_mask != 0ull) {
-        // Find index of first set bit
-        const uint32_t i = std::countr_zero(overlap_mask);
+    {
+        TMT_ZONE_SCOPED_N("flood of low level")
 
-        // Continue if bit is already set in the flood mask
-        // if ((flood_mask & (1u << i)) != 0ull) continue;
+        while (overlap_mask != 0ull) {
+            const uint32_t i = std::countr_zero(overlap_mask);
 
-        // Flood fill
-        std::queue<uint8_t> queue;
-        queue.push(i);
-        while (!queue.empty()) {
-            // Get front and remove it
-            const uint8_t index = queue.front();
-            queue.pop();
+            uint64_t seed = 1ull << i;
 
-            // Get local coordinates
-            const uint32_t local_x = (index >> 0u) & 3u;
-            const uint32_t local_y = (index >> 4u) & 3u;
-            const uint32_t local_z = (index >> 2u) & 3u;
-
-            // For all directions
-            for (size_t a = 0; a < 6; a++) {
-                // Range Check
-                if ((local_x == 0u && dirs[a].x == -1) || (local_x == 3u && dirs[a].x == 1)) continue;
-                if ((local_y == 0u && dirs[a].y == -1) || (local_y == 3u && dirs[a].y == 1)) continue;
-                if ((local_z == 0u && dirs[a].z == -1) || (local_z == 3u && dirs[a].z == 1)) continue;
-
-                // Get neighbor position
-                const uint32_t x = local_x + dirs[a].x;
-                const uint32_t y = local_y + dirs[a].y;
-                const uint32_t z = local_z + dirs[a].z;
-
-                // 3d to 1d position
-                const uint8_t neighbor_index = (x << 0u) | (z << 2u) | (y << 4u);
-
-                // Continue if the bit is empty in the tree (no voxel exists there)
-                if ((tree_node.child_mask & (1ull << neighbor_index)) == 0ull) continue;
-
-                // Continue if bit is already set in the flood mask
-                if ((flood_mask & (1ull << neighbor_index)) != 0ull) continue;
-
-                // Add neighboring bit to the mask
-                flood_mask |= (1ull << neighbor_index);
-
-                // Add neighbor to the queue
-                queue.push(neighbor_index);
+            // Skip if already flooded
+            if ((flood_mask & seed) != 0ull) {
+                overlap_mask &= ~seed;
+                continue;
             }
+
+            uint64_t region = flood_fill_64(seed, tree_node.child_mask & ~flood_mask);
+            flood_mask |= region;
+
+            overlap_mask &= ~(1ull << i);
         }
 
-        // Clear bit
-        overlap_mask &= ~(1ull << i);
+        //// Loop over flood overlap mask solids
+        // while (overlap_mask != 0ull) {
+        //     // Find index of first set bit
+        //     const uint32_t i = std::countr_zero(overlap_mask);
+
+        //    // Continue if bit is already set in the flood mask
+        //    // if ((flood_mask & (1u << i)) != 0ull) continue;
+
+        //    // Flood fill
+        //    std::queue<uint8_t> queue;
+        //    queue.push(i);
+        //    while (!queue.empty()) {
+        //        // Get front and remove it
+        //        const uint8_t index = queue.front();
+        //        queue.pop();
+
+        //        // Get local coordinates
+        //        const uint32_t local_x = (index >> 0u) & 3u;
+        //        const uint32_t local_y = (index >> 4u) & 3u;
+        //        const uint32_t local_z = (index >> 2u) & 3u;
+
+        //        // For all directions
+        //        for (size_t a = 0; a < 6; a++) {
+        //            // Range Check
+        //            if ((local_x == 0u && dirs[a].x == -1) || (local_x == 3u && dirs[a].x == 1)) continue;
+        //            if ((local_y == 0u && dirs[a].y == -1) || (local_y == 3u && dirs[a].y == 1)) continue;
+        //            if ((local_z == 0u && dirs[a].z == -1) || (local_z == 3u && dirs[a].z == 1)) continue;
+
+        //            // Get neighbor position
+        //            const uint32_t x = local_x + dirs[a].x;
+        //            const uint32_t y = local_y + dirs[a].y;
+        //            const uint32_t z = local_z + dirs[a].z;
+
+        //            // 3d to 1d position
+        //            const uint8_t neighbor_index = (x << 0u) | (z << 2u) | (y << 4u);
+
+        //            // Continue if the bit is empty in the tree (no voxel exists there)
+        //            if ((tree_node.child_mask & (1ull << neighbor_index)) == 0ull) continue;
+
+        //            // Continue if bit is already set in the flood mask
+        //            if ((flood_mask & (1ull << neighbor_index)) != 0ull) continue;
+
+        //            // Add neighboring bit to the mask
+        //            flood_mask |= (1ull << neighbor_index);
+
+        //            // Add neighbor to the queue
+        //            queue.push(neighbor_index);
+        //        }
+        //    }
+
+        //    // Clear bit
+        //    overlap_mask &= ~(1ull << i);
+        //}
     }
 
     current_node.flood_masks.push_back({ id, flood_mask });
@@ -345,64 +397,62 @@ void low_level_separation_flood(Destructable& graph, DestructionNode& current_no
     // Loop over connections
     // For all directions
     for (size_t i = 0; i < 6; i++) {
-        // If there is no overlap with the on the relavant axis, skip this direction
-        if ((flood_mask & edge_masks[i]) == 0u) continue;
+        // If there is no overlap with the on the relavant axis, skip this direction, or if there are no nodes in this direction
+        if ((flood_mask & edge_masks[i]) == 0u || current_node.connections[i].node_indices.empty()) continue;
 
-        // For all connections in this direction
-        for (size_t j = 0; j < current_node.connections[i].node_indices.size(); j++) {
-            const uint32_t connection_index = current_node.connections[i].node_indices[j];
-            DestructionNode& connected_node = graph.nodes[connection_index];
-            // If we visited this node before, continue
-            //if ((connected_node.flood_id & (1ull << id)) != 0) continue;
+        // For all connections in this direction (can only be per axis 1 on the lowest level)
+        // for (size_t j = 0; j < current_node.connections[i].node_indices.size(); j++) {
 
-            // const Svt64Node& node_neighbor = tree->nodes[connected_node.tree_node];
+        const uint32_t connection_index = current_node.connections[i].node_indices[0];
+        DestructionNode& connected_node = graph.nodes[connection_index];
 
-            // If the node is not a leaf node in the tree, or is fully filled
-            // || node_neighbor.child_mask == ~(0ull)
-            if (connected_node.level != 1 && (connected_node.flood_id & (1ull << id)) != 0) { 
-                separation_flood(graph, connected_node, id, tree);
-                continue;
-            }
-
-            // If the neighboring node is level 1, do low_level_separation_flood
-            // If the neighboring node is not level 1, do separation_flood
-
-            // Flip the mask on the defined axis
-            uint64_t edge_mask = flood_mask;
-            const uint8_t axis = i / 2;
-            // VIBE CODED
-            if (axis == 0) {         // X axis
-                edge_mask = ((edge_mask & 0x1111111111111111ULL) << 3) | ((edge_mask & 0x2222222222222222ULL) << 1) | ((edge_mask & 0x4444444444444444ULL) >> 1) |
-                            ((edge_mask & 0x8888888888888888ULL) >> 3);
-            } else if (axis == 1) {  // Y axis
-                edge_mask = ((edge_mask & 0x000000000000FFFFULL) << 48) | ((edge_mask & 0x00000000FFFF0000ULL) << 16) | ((edge_mask & 0x0000FFFF00000000ULL) >> 16) |
-                            ((edge_mask & 0xFFFF000000000000ULL) >> 48);
-            } else if (axis == 2) {  // Z axis
-                edge_mask = ((edge_mask & 0x000F000F000F000FULL) << 12) | ((edge_mask & 0x00F000F000F000F0ULL) << 4) | ((edge_mask & 0x0F000F000F000F00ULL) >> 4) |
-                            ((edge_mask & 0xF000F000F000F000ULL) >> 12);
-            }
-
-            // Mask the edge (take opposite edge because we flipped the mask)
-            edge_mask &= edge_masks[i ^ 1u];
-
-            // Remove parts that are already on the others mask
-            uint64_t mask_accum = 0ull;
-            for (const auto& filled : connected_node.flood_masks) {
-                if (filled.first != id) continue;
-                mask_accum |= filled.second;
-            }
-
-            edge_mask &= ~mask_accum;
-
-            // Get the mask of the svt64 node, flip it, apply edge mask, give it to
-            low_level_separation_flood(graph, connected_node, id, edge_mask, tree);
+        // If the node is not a leaf node in the tree, or is fully filled
+        if (connected_node.level != 1 && (connected_node.flood_id & (1ull << id)) != 0) {
+            separation_flood(graph, connected_node, id, tree);
+            continue;
         }
+
+        // If the neighboring node is level 1, do low_level_separation_flood
+        // If the neighboring node is not level 1, do separation_flood
+
+        // Flip the mask on the defined axis
+        uint64_t edge_mask = flood_mask;
+        const uint8_t axis = i / 2;
+        // VIBE CODED
+        if (axis == 0) {         // X axis
+            edge_mask = ((edge_mask & 0x1111111111111111ULL) << 3) | ((edge_mask & 0x2222222222222222ULL) << 1) | ((edge_mask & 0x4444444444444444ULL) >> 1) |
+                        ((edge_mask & 0x8888888888888888ULL) >> 3);
+        } else if (axis == 1) {  // Y axis
+            edge_mask = ((edge_mask & 0x000000000000FFFFULL) << 48) | ((edge_mask & 0x00000000FFFF0000ULL) << 16) | ((edge_mask & 0x0000FFFF00000000ULL) >> 16) |
+                        ((edge_mask & 0xFFFF000000000000ULL) >> 48);
+        } else if (axis == 2) {  // Z axis
+            edge_mask = ((edge_mask & 0x000F000F000F000FULL) << 12) | ((edge_mask & 0x00F000F000F000F0ULL) << 4) | ((edge_mask & 0x0F000F000F000F00ULL) >> 4) |
+                        ((edge_mask & 0xF000F000F000F000ULL) >> 12);
+        }
+
+        // Mask the edge (take opposite edge because we flipped the mask)
+        edge_mask &= edge_masks[i ^ 1u];
+
+        // Remove parts that are already on the others mask
+        uint64_t mask_accum = 0ull;
+        for (const auto& filled : connected_node.flood_masks) {
+            if (filled.first != id) continue;
+            mask_accum |= filled.second;
+        }
+
+        edge_mask &= ~mask_accum;
+
+        // Get the mask of the svt64 node, flip it, apply edge mask, give it to
+        low_level_separation_flood(graph, connected_node, id, edge_mask, tree);
     }
+    //}
 }
 
 void separation_flood(Destructable& graph, DestructionNode& current_node, uint8_t id, Svt64* tree) {
     current_node.flood_id |= (1ull << id);
-    const Svt64Node& tree_node = tree->nodes[current_node.tree_node];
+
+    // NOTE: connected_node.tree_node could be wrong!!
+    const Svt64Node& tree_node = *get_tree_node_at_position(current_node.global_position.x, current_node.global_position.y, current_node.global_position.z, tree, graph);
 
     // For all directions
     for (size_t i = 0; i < 6; i++) {
@@ -413,7 +463,8 @@ void separation_flood(Destructable& graph, DestructionNode& current_node, uint8_
             // If we visited this node before, continue
             if ((connected_node.flood_id & (1ull << id)) != 0) continue;
 
-            const Svt64Node& node_neighbor = tree->nodes[connected_node.tree_node];
+            // Pray that compiler optimizes this in the if statement below
+            const Svt64Node& node_neighbor = *get_tree_node_at_position(connected_node.global_position.x, connected_node.global_position.y, connected_node.global_position.z, tree, graph);
 
             // If the node is not a leaf node in the tree, or is fully filled
             if (connected_node.level != 1 || node_neighbor.child_mask == ~(0ull)) {
@@ -445,6 +496,8 @@ void separation_flood(Destructable& graph, DestructionNode& current_node, uint8_
 }
 
 std::vector<Entity> Destruction::find_seperations(Entity entity, const std::vector<glm::uvec3>& edge_indices, Destructable& graph) {
+    TMT_ZONE_SCOPED
+
     VoxelBody& vb = engine.ecs.get_component<VoxelBody>(entity);
     auto* resource = vb.resource.resource.get();
     Svt64* tree = resource->blas.get();
@@ -490,6 +543,8 @@ std::vector<Entity> Destruction::find_seperations(Entity entity, const std::vect
         // If we coulnd't find a node, or it has already been touched by the floodfill
         if (current_node == nullptr || current_node->cleared || (current_node->flood_id & (1ull << flood_id)) != 0) continue;
 
+        // Start flood fill without recursive functions
+
         if (current_node->level != 1 || node->child_mask == ~(0ull)) {
             // Start floodfill from that node
             separation_flood(graph, *current_node, flood_id++, tree);
@@ -518,23 +573,6 @@ std::vector<Entity> Destruction::find_seperations(Entity entity, const std::vect
                 low_level_separation_flood(graph, *current_node, flood_id++, mask, tree);
             }
         }
-
-        //// Lower level flood
-        // if (current_node->level == 1 && !current_node->cleared && node->child_mask != ~(0ull)) {
-        //     // Get position and index
-        //     const uint32_t x_index = (edge_pos.x) & 3u;
-        //     const uint32_t y_index = (edge_pos.y) & 3u;
-        //     const uint32_t z_index = (edge_pos.z) & 3u;
-        //     const uint32_t index = (x_index << 0u) | (z_index << 2u) | (y_index << 4u);
-
-        //    // Make mask from the index
-        //    const uint64_t mask = 1u << index;
-
-        //    low_level_separation_flood(graph, *current_node, flood_id++, mask, tree);
-        //} else if (current_node->flood_id == 0) {
-        //    // Start floodfill from that node
-        //    separation_flood(graph, *current_node, flood_id++, tree);
-        //}
     }
 
     return std::vector<Entity> { entity };
