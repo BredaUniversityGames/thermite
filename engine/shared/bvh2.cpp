@@ -40,7 +40,7 @@ void Bvh2<T>::build(const T* input_prims, const uint32_t input_count) {
     for (uint32_t i = 0u; i < input_count; ++i) {
         /* Initialize primitive indices */
         if (input_prims[i].uuid != 0u) { 
-            indices[index_count] = i; // input_prims[i].uuid;
+            indices[index_count] = i;
             index_count++;
         }
     }
@@ -55,10 +55,6 @@ void Bvh2<T>::build(const T* input_prims, const uint32_t input_count) {
     prims = new T[input_count] {};
     bounds = new Aabb[input_count] {};
     memcpy(prims, input_prims, prim_count * sizeof(T));
-
-    /* Initialize primitive indices */
-    // indices = new uint32_t[prim_count] {};
-    // for (uint32_t i = 0u; i < prim_count; ++i) indices[i] = i;
 
     /* Setup the root node for the BVH */
     Bvh2Node& root = nodes[0];
