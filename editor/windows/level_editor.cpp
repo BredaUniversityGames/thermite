@@ -4,9 +4,14 @@
 #include "editor/windows/viewport.hpp"
 #include "engine/core/renderer/renderer.hpp"
 #include "engine/engine.hpp"
-#include "imgui/imgui/imgui.h"
+#include "imgui.h"
 #include "engine/core/polyline.hpp"
+#include "engine/tools/random.hpp"
 #include "engine/core/logger.hpp"
+#include "engine/tools/prefab_helper.hpp"
+#include "editor/core/systems/undo_redo/level_editor_diff.hpp"
+#include "editor/imgui/types/all.hpp"
+#include <ImReflect.hpp>
 
 namespace tmt {
 
@@ -15,13 +20,81 @@ void tmt::LevelEditor::display() {
     ImGui::Checkbox("Mirror X", &mirror_x);
     ImGui::InputFloat("Cell size", &cell_size);
 
-    static glm::vec4 cell_color(1.f);
-    ImGui::ColorPicker4("Cell color", &cell_color[0]);
+    //cell template picker
+    static const char* preview = "None";
+    if (selected_template >= 0 && selected_template < static_cast<int>(pickable_cell_templates.size())) {
+        preview = pickable_cell_templates[selected_template].name.c_str();
+    }
+    if (ImGui::BeginCombo("Cell Template", preview)) {
+        for (int i = 0; i < static_cast<int>(pickable_cell_templates.size()); ++i) {
+            const bool is_selected = (selected_template == i);
+
+            if (ImGui::Selectable(pickable_cell_templates[i].name.c_str(), is_selected)) {
+                selected_template = i;
+            }
+
+            if (is_selected) {
+                ImGui::SetItemDefaultFocus();
+            }
+        }
+
+        ImGui::EndCombo();
+    }
+    ImReflect::Input("Cell templates", &pickable_cell_templates);
+    if(ImGui::Button("Generate cells"))
+    {
+        auto view = engine.ecs.view<LevelCellGrouperTag>();
+        tmt::Entity grouper_entity;
+        if(view.begin() == view.end()) 
+        {
+            grouper_entity = engine.ecs.create_entity("Level Cell Objects");
+            engine.ecs.add_component<LevelCellGrouperTag>(grouper_entity);
+        }
+        else 
+        {
+            grouper_entity = view.front();
+        }
+
+        for (auto& cell_template : pickable_cell_templates) {
+            cell_template.field.size = { cell_size, cell_template.height, cell_size };
+        }
+
+        for (auto& [coord, cell] : cells) {
+            auto& cell_template = pickable_cell_templates[cell.template_index];
+
+            cell_template.field.size = { cell_size, cell_template.height, cell_size };
+            auto local_points = tmt::get_poisson_points(cell_template.field);
+
+                                                                            
+            glm::vec3 cell_pos = coord_to_world(coord);
+
+            // spawning
+            for (auto& point : local_points) {
+                auto spawn_obj = cell_template.field.layer_entries[point.entry_idx].spawnable;
+                //float size_factor = cell_template.field.layer_entries[point.entry_idx].radius_factor;
+
+                float pitch = Random::rand_range(0.f, 360.f);
+                float yaw = Random::rand_range(0.f, 360.f);
+                float roll = Random::rand_range(0.f, 360.f);
+
+                auto instantiated = tmt::PrefabHelper::instantiate_prefab(spawn_obj->file_location, grouper_entity);
+
+                auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(instantiated);
+
+                glm::vec3 min = cell_pos - glm::vec3(cell_size*0.5f, cell_template.height*0.5f, cell_size*0.5f);
+
+                transform.set_local_position(min + point.pos);
+                transform.set_local_rotation(glm::vec3(pitch, yaw, roll));
+            }
+        }
+    }
 
     auto& viewport = editor.windows[Editor::Mode::SCENE].get<Viewport>();
     ImDrawList* draw_list = viewport.get_drawlist();
+    window_displayed = true;
 
     if (enable_editing) {
+        
         for (auto [coord, cell] : cells) {
             draw_cell(draw_list, coord_to_world(coord), cell);
         }
@@ -30,26 +103,45 @@ void tmt::LevelEditor::display() {
         const float diff_amplitude = 0.15f;
         float alpha = max_alpha - diff_amplitude * (glm::sin(highlight_timer * 2.f) + 1.f) * 0.5f;
 
-        if(viewport.get_is_hovered())
+        if(viewport.get_is_hovered() && selected_template != -1)
         {
             for (const auto& coord : placing_coords) {
-                draw_cell(draw_list, coord_to_world(coord), Cell { .fill_color = glm::vec4(1.f, 1.f, 1.f, alpha), .edge_color = glm::vec4(1.f) });
+                draw_cell(draw_list, coord_to_world(coord), Cell {.template_index = selected_template }, glm::vec4(1.f, 1.f, 1.f, alpha));
             }
 
             if (ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
+
+                //auto& cell_template = pickable_cell_templates[selected_template];
+                LevelEditorDiff level_editor_diff;
+
                 for (const auto& coord : placing_coords) {
-                    cells.try_emplace(coord, Cell { .fill_color = cell_color - glm::vec4(0.1f), .edge_color = cell_color });
+                    auto pair = cells.try_emplace(coord, Cell {.template_index = selected_template});
+                    if(pair.second)
+                    {
+                        level_editor_diff.added_placements.emplace(coord, pair.first->second);
+                    } else 
+                    {
+                        //selection logic
+                    }
                 }
+
+                level_editor_diff.commit("");
             }
         }
     }
 }
 
-void tmt::LevelEditor::on_editor_start() {};
+void tmt::LevelEditor::on_editor_start() 
+{
+};
 
 void tmt::LevelEditor::on_editor_update(const tmt::FrameData& time) {
+    auto& viewport = editor.windows[Editor::Mode::SCENE].get<Viewport>();
+
+    viewport.set_allow_rectangle_select(!enable_editing || !window_displayed);
+    window_displayed = false;
+
     if (enable_editing) {
-        auto& viewport = editor.windows[Editor::Mode::SCENE].get<Viewport>();
         auto& camera = engine.renderer.get_debug_camera();
         auto& camera_transform = engine.renderer.get_debug_transform();
 
@@ -90,10 +182,11 @@ void tmt::LevelEditor::on_editor_update(const tmt::FrameData& time) {
     }
 }
 
-void LevelEditor::draw_cell(ImDrawList* draw_list, glm::vec3 pos, const Cell& cell) {
+void LevelEditor::draw_cell(ImDrawList* draw_list, glm::vec3 pos, const Cell& cell, glm::vec4 col) {
     float extent = cell_size * 0.5f;
-    glm::vec3 local_vertices[8] = { glm::vec3(-extent, -extent, -extent), glm::vec3(extent, -extent, -extent), glm::vec3(extent, extent, -extent), glm::vec3(-extent, extent, -extent),
-                                    glm::vec3(-extent, -extent, extent),  glm::vec3(extent, -extent, extent),  glm::vec3(extent, extent, extent),  glm::vec3(-extent, extent, extent) };
+    float height_extent = pickable_cell_templates[cell.template_index].height * 0.5f;
+    glm::vec3 local_vertices[8] = { glm::vec3(-extent, -height_extent, -extent), glm::vec3(extent, -height_extent, -extent), glm::vec3(extent, height_extent, -extent), glm::vec3(-extent, height_extent, -extent),
+                                    glm::vec3(-extent, -height_extent, extent),  glm::vec3(extent, -height_extent, extent),  glm::vec3(extent, height_extent, extent),  glm::vec3(-extent, height_extent, extent) };
 
     ImVec2 screen_vertices[8];
     for (int i = 0; i < 8; i++) {
@@ -116,19 +209,31 @@ void LevelEditor::draw_cell(ImDrawList* draw_list, glm::vec3 pos, const Cell& ce
 
     // 6 faces of the cube
     static const int faces[6][4] = { { 0, 1, 2, 3 }, { 5, 4, 7, 6 }, { 4, 0, 3, 7 }, { 1, 5, 6, 2 }, { 3, 2, 6, 7 }, { 4, 5, 1, 0 } };
-
-    ImU32 col = ImGui::ColorConvertFloat4ToU32({ cell.fill_color.r, cell.fill_color.g, cell.fill_color.b, cell.fill_color.a });
+    glm::vec4 fill_color;
+    glm::vec4 edge_color;
+    if(glm::dot(col, col) > 0.01f) 
+    {
+        fill_color = col;
+        edge_color = {col.r, col.g, col.b, 1.f};
+    } else
+    {
+        fill_color = pickable_cell_templates[cell.template_index].color.get() - glm::vec4(0.2f);
+        edge_color = pickable_cell_templates[cell.template_index].color.get();
+    }
+    
+    ImU32 pack_col = ImGui::ColorConvertFloat4ToU32({ fill_color.r, fill_color.g, fill_color.b, fill_color.a });
 
     for (int i = 0; i < 6; i++) {
         ImVec2 face_quad[4];
         for (int j = 0; j < 4; j++) {
             face_quad[j] = screen_vertices[faces[i][j]];
         }
-        draw_list->AddConvexPolyFilled(face_quad, 4, col);
+        draw_list->AddConvexPolyFilled(face_quad, 4, pack_col);
     }
 
-    engine.polyline.use_color(cell.edge_color);
-    engine.polyline.draw_aabb({ pos - extent }, { pos + extent });
+    engine.polyline.use_color(edge_color);
+    engine.polyline.use_line_width(5.f);
+    engine.polyline.draw_aabb(pos - glm::vec3(extent, height_extent, extent), { pos + glm::vec3(extent, height_extent, extent) });
 }
 
 glm::vec3 LevelEditor::coord_to_world(glm::ivec2 coord) {

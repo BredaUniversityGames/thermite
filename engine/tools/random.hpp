@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include <random>
-#include "glm/fwd.hpp"
-
+#include "glm/glm.hpp"
+#include "glm/gtc/constants.hpp"
 class Random {
    public:
     static void set_seed(uint32_t seed) { rng() = std::mt19937(seed); }

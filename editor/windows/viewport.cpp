@@ -247,7 +247,7 @@ void tmt::Viewport::selection_logic(const ImVec2& imgui_mouse_pos, const glm::ve
         ImVec2 delta = imgui_io.MousePos - first_click_pos;
 
         // if delta has moved by 5 pixels, start rectangle logic
-        if (abs(delta.x) + abs(delta.y) > 5) {
+        if (abs(delta.x) + abs(delta.y) > 5 && allow_rectangle_select) {
             using_rect = true;
 
             viewport_drawlist->AddRectFilled(first_click_pos, imgui_io.MousePos, ImColor(1.f, 1.f, 1.f, 0.2f));

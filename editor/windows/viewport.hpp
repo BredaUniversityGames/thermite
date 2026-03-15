@@ -28,6 +28,7 @@ class Viewport : public IWindow, public OnRetrieveMouseState, public OnBlockInpu
     int get_window_flags() const override;
     constexpr bool is_closable() const override { return false; };
     constexpr bool default_open() const override { return true; }
+    void set_allow_rectangle_select(bool value) {allow_rectangle_select = value;}
 
     bool get_is_hovered() const { return is_hovered; }
     bool get_is_focused() const { return is_focused; }
@@ -56,6 +57,7 @@ class Viewport : public IWindow, public OnRetrieveMouseState, public OnBlockInpu
 
     float camera_speed = 4.0f;
     bool using_debug_camera = false;
+    bool allow_rectangle_select = true;
 
     ImDrawList* viewport_drawlist = nullptr;
 
