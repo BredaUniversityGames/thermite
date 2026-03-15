@@ -11,6 +11,11 @@ class Destruction : public ISystem {
    public:
     Destruction() = default;
 
+    struct FloodStackEntry {
+        uint32_t node_index;
+        uint64_t edge_mask;  // 0 = high-level path, non-zero = low-level path
+    };
+
     // Inherited via ISystem
     std::string get_name() override { return "Destruction System"; }
     void on_start() override;
@@ -28,6 +33,7 @@ class Destruction : public ISystem {
     std::vector<Entity> find_seperations(Entity entity, const std::vector<glm::uvec3>& edge_indices, Destructable& graph);
     void regenerate_connection_graph(Destructable& graph, Svt64* tree, const Stencil* stencil, glm::ivec3 offset);
     void generate_connection_graph(Destructable& graph, Svt64* tree);
+    //FloodStackEntry separation_flood(Destructable& graph, DestructionNode& current_node, uint8_t id, Svt64* tree);
 
 };
 

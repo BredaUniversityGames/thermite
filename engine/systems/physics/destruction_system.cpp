@@ -18,55 +18,55 @@ void Destruction::on_start() {
 }
 
 void Destruction::on_update(const FrameData& time) {
-    for (const auto& [entity, des, vb] : engine.ecs.view<Destructable, VoxelBody>().each()) {
-        engine.polyline.use_depth_testing(false);
-        // engine.polyline.use_color(0.1f, 0.3f, 0.9f);
-        for (DestructionNode& node : des.nodes) {
-            if (node.level == 10) continue;
+    //for (const auto& [entity, des, vb] : engine.ecs.view<Destructable, VoxelBody>().each()) {
+    //    engine.polyline.use_depth_testing(false);
+    //    // engine.polyline.use_color(0.1f, 0.3f, 0.9f);
+    //    for (DestructionNode& node : des.nodes) {
+    //        if (node.level == 10) continue;
 
-            const glm::vec3 half_scale = glm::vec3(vb.width, vb.height, vb.depth) * 0.5f;
-            const uint32_t node_size = (1u << (node.level * 2u));
-            const glm::vec3 pos = (glm::vec3)(node.global_position + (node_size / 2)) * UNITS_PER_VOXEL + vb.position + 0.05f - half_scale;
+    //        const glm::vec3 half_scale = glm::vec3(vb.width, vb.height, vb.depth) * 0.5f;
+    //        const uint32_t node_size = (1u << (node.level * 2u));
+    //        const glm::vec3 pos = (glm::vec3)(node.global_position + (node_size / 2)) * UNITS_PER_VOXEL + vb.position + 0.05f - half_scale;
 
-            // uint32_t voxel_count = vb.resource.resource.get()->blas.get()->voxel_count;
-            // Log::info("voxels %u", vb.resource.resource.get()->blas.get()->voxel_count);
+    //        // uint32_t voxel_count = vb.resource.resource.get()->blas.get()->voxel_count;
+    //        // Log::info("voxels %u", vb.resource.resource.get()->blas.get()->voxel_count);
 
-            srand(node.flood_id << 5u);
+    //        srand(node.flood_id << 5u);
 
-            if (node.flood_id == 0)
-                engine.polyline.use_color(0.0f, 0.0f, 0.0f);
-            else
-                engine.polyline.use_color(((float)rand() / (float)RAND_MAX), ((float)rand() / (float)RAND_MAX), ((float)rand() / (float)RAND_MAX));
+    //        if (node.flood_id == 0)
+    //            engine.polyline.use_color(0.0f, 0.0f, 0.0f);
+    //        else
+    //            engine.polyline.use_color(((float)rand() / (float)RAND_MAX), ((float)rand() / (float)RAND_MAX), ((float)rand() / (float)RAND_MAX));
 
-            // Draw connections to neighbors
-            for (size_t i = 0; i < 6; i++) {
-                for (size_t j = 0; j < node.connections[i].node_indices.size(); j++) {
-                    uint32_t node_index = node.connections[i].node_indices[j];
+    //        // Draw connections to neighbors
+    //        for (size_t i = 0; i < 6; i++) {
+    //            for (size_t j = 0; j < node.connections[i].node_indices.size(); j++) {
+    //                uint32_t node_index = node.connections[i].node_indices[j];
 
-                    if (des.nodes[node_index].level == 0) continue;
+    //                if (des.nodes[node_index].level == 0) continue;
 
-                    const uint32_t conn_node_size = (1u << (des.nodes[node_index].level * 2u));
-                    const glm::vec3 connection_pos = (glm::vec3)(des.nodes[node_index].global_position + (conn_node_size / 2)) * UNITS_PER_VOXEL + vb.position + 0.05f - half_scale;
+    //                const uint32_t conn_node_size = (1u << (des.nodes[node_index].level * 2u));
+    //                const glm::vec3 connection_pos = (glm::vec3)(des.nodes[node_index].global_position + (conn_node_size / 2)) * UNITS_PER_VOXEL + vb.position + 0.05f - half_scale;
 
-                    const glm::vec3 p1 = pos * 0.75f + connection_pos * 0.25f;
-                    const glm::vec3 p2 = connection_pos * 0.75f + pos * 0.25f;
-                    // const glm::vec3 diff = connection_pos - pos;
-                    // const glm::vec3 dir = glm::normalize(connection_pos - pos);
+    //                const glm::vec3 p1 = pos * 0.75f + connection_pos * 0.25f;
+    //                const glm::vec3 p2 = connection_pos * 0.75f + pos * 0.25f;
+    //                // const glm::vec3 diff = connection_pos - pos;
+    //                // const glm::vec3 dir = glm::normalize(connection_pos - pos);
 
-                    // engine.polyline.draw_arrow(p1, dir, glm::length(diff) * 0.5f);
-                    engine.polyline.draw_line(p1, p2);
-                }
-            }
+    //                // engine.polyline.draw_arrow(p1, dir, glm::length(diff) * 0.5f);
+    //                engine.polyline.draw_line(p1, p2);
+    //            }
+    //        }
 
-            engine.polyline.draw_circle(pos, 0.033f * (1 << node.level));
+    //        engine.polyline.draw_circle(pos, 0.033f * (1 << node.level));
 
-            // if (node.level == 0) {
-            //     engine.polyline.draw_circle(pos, 0.033f);
-            // } else {
-            //     engine.polyline.draw_circle(pos, 0.033f * 4.0f);
-            // }
-        }
-    }
+    //        // if (node.level == 0) {
+    //        //     engine.polyline.draw_circle(pos, 0.033f);
+    //        // } else {
+    //        //     engine.polyline.draw_circle(pos, 0.033f * 4.0f);
+    //        // }
+    //    }
+    //}
 }
 
 void Destruction::on_fixed_update(const FrameData& time) {}
@@ -85,6 +85,19 @@ void Destruction::destroy_voxels(Entity entity, const Stencil* stencil, glm::ive
     auto* resource = vb->resource.resource.get();
     resource->blas->subtract(stencil, offset);
     resource->set_dirty();
+
+    {
+        TMT_ZONE_SCOPED_N("Clear separation data")
+
+        // Clear separation data
+        for (auto& node : des->nodes) {
+            if (node.level == 10) continue;
+
+            node.cleared = false;
+            node.flood_id = 0ull;
+            node.flood_masks.clear();
+        }
+    }
 
     // Get all the voxels positions of the empty voxels on the edge of destructed voxels
     std::vector<glm::uvec3> edge_indices;
@@ -301,9 +314,10 @@ uint64_t flood_fill_64(uint64_t seed, uint64_t solid_mask) {
 }
 
 // Forward declare function
-void separation_flood(Destructable& graph, DestructionNode& current_node, uint8_t id, Svt64* tree);
+// void separation_flood(Destructable& graph, DestructionNode& current_node, uint8_t id, Svt64* tree);
+// , std::vector<Destruction::FloodStackEntry>& stack
 
-void low_level_separation_flood(Destructable& graph, DestructionNode& current_node, uint8_t id, uint64_t overlap_mask, Svt64* tree) {
+void low_level_separation_flood(Destructable& graph, DestructionNode& current_node, uint8_t id, uint64_t overlap_mask, Svt64* tree, std::vector<Destruction::FloodStackEntry>& stack) {
     // Get svt64 node
     const Svt64Node& tree_node = *get_tree_node_at_position(current_node.global_position.x, current_node.global_position.y, current_node.global_position.z, tree, graph);
 
@@ -333,60 +347,6 @@ void low_level_separation_flood(Destructable& graph, DestructionNode& current_no
 
             overlap_mask &= ~(1ull << i);
         }
-
-        //// Loop over flood overlap mask solids
-        // while (overlap_mask != 0ull) {
-        //     // Find index of first set bit
-        //     const uint32_t i = std::countr_zero(overlap_mask);
-
-        //    // Continue if bit is already set in the flood mask
-        //    // if ((flood_mask & (1u << i)) != 0ull) continue;
-
-        //    // Flood fill
-        //    std::queue<uint8_t> queue;
-        //    queue.push(i);
-        //    while (!queue.empty()) {
-        //        // Get front and remove it
-        //        const uint8_t index = queue.front();
-        //        queue.pop();
-
-        //        // Get local coordinates
-        //        const uint32_t local_x = (index >> 0u) & 3u;
-        //        const uint32_t local_y = (index >> 4u) & 3u;
-        //        const uint32_t local_z = (index >> 2u) & 3u;
-
-        //        // For all directions
-        //        for (size_t a = 0; a < 6; a++) {
-        //            // Range Check
-        //            if ((local_x == 0u && dirs[a].x == -1) || (local_x == 3u && dirs[a].x == 1)) continue;
-        //            if ((local_y == 0u && dirs[a].y == -1) || (local_y == 3u && dirs[a].y == 1)) continue;
-        //            if ((local_z == 0u && dirs[a].z == -1) || (local_z == 3u && dirs[a].z == 1)) continue;
-
-        //            // Get neighbor position
-        //            const uint32_t x = local_x + dirs[a].x;
-        //            const uint32_t y = local_y + dirs[a].y;
-        //            const uint32_t z = local_z + dirs[a].z;
-
-        //            // 3d to 1d position
-        //            const uint8_t neighbor_index = (x << 0u) | (z << 2u) | (y << 4u);
-
-        //            // Continue if the bit is empty in the tree (no voxel exists there)
-        //            if ((tree_node.child_mask & (1ull << neighbor_index)) == 0ull) continue;
-
-        //            // Continue if bit is already set in the flood mask
-        //            if ((flood_mask & (1ull << neighbor_index)) != 0ull) continue;
-
-        //            // Add neighboring bit to the mask
-        //            flood_mask |= (1ull << neighbor_index);
-
-        //            // Add neighbor to the queue
-        //            queue.push(neighbor_index);
-        //        }
-        //    }
-
-        //    // Clear bit
-        //    overlap_mask &= ~(1ull << i);
-        //}
     }
 
     current_node.flood_masks.push_back({ id, flood_mask });
@@ -408,9 +368,12 @@ void low_level_separation_flood(Destructable& graph, DestructionNode& current_no
 
         // If the node is not a leaf node in the tree, or is fully filled
         if (connected_node.level != 1 && (connected_node.flood_id & (1ull << id)) != 0) {
-            separation_flood(graph, connected_node, id, tree);
+            //separation_flood(graph, connected_node, id, tree);
+            stack.push_back({ connected_node.id, 0ull });
             continue;
         }
+
+        if (connected_node.cleared) continue;
 
         // If the neighboring node is level 1, do low_level_separation_flood
         // If the neighboring node is not level 1, do separation_flood
@@ -442,13 +405,16 @@ void low_level_separation_flood(Destructable& graph, DestructionNode& current_no
 
         edge_mask &= ~mask_accum;
 
+        if (edge_mask == 0ull) continue;
+
         // Get the mask of the svt64 node, flip it, apply edge mask, give it to
-        low_level_separation_flood(graph, connected_node, id, edge_mask, tree);
+        //low_level_separation_flood(graph, connected_node, id, edge_mask, tree);
+        stack.push_back({ connected_node.id, edge_mask });
     }
     //}
 }
 
-void separation_flood(Destructable& graph, DestructionNode& current_node, uint8_t id, Svt64* tree) {
+void separation_flood(Destructable& graph, DestructionNode& current_node, uint8_t id, Svt64* tree, std::vector<Destruction::FloodStackEntry>& stack) {
     current_node.flood_id |= (1ull << id);
 
     // NOTE: connected_node.tree_node could be wrong!!
@@ -468,7 +434,8 @@ void separation_flood(Destructable& graph, DestructionNode& current_node, uint8_
 
             // If the node is not a leaf node in the tree, or is fully filled
             if (connected_node.level != 1 || node_neighbor.child_mask == ~(0ull)) {
-                separation_flood(graph, connected_node, id, tree);
+                //separation_flood(graph, connected_node, id, tree);
+                stack.push_back({ connected_node.id, 0u });
                 continue;
             }
 
@@ -489,8 +456,11 @@ void separation_flood(Destructable& graph, DestructionNode& current_node, uint8_
             // Mask the edge
             edge_mask &= edge_masks[i];
 
+            if (edge_mask == 0ull) continue;
+
             // Get the mask of the svt64 node, flip it, apply edge mask, give it to
-            low_level_separation_flood(graph, connected_node, id, edge_mask, tree);
+            //low_level_separation_flood(graph, connected_node, id, edge_mask, tree);
+            stack.push_back({ connected_node.id, edge_mask });
         }
     }
 }
@@ -501,7 +471,7 @@ std::vector<Entity> Destruction::find_seperations(Entity entity, const std::vect
     VoxelBody& vb = engine.ecs.get_component<VoxelBody>(entity);
     auto* resource = vb.resource.resource.get();
     Svt64* tree = resource->blas.get();
-
+    size_t max_depth = 0;
     uint8_t flood_id = 0;
     // Loop over edge indices
     for (const glm::uvec3& edge_pos : edge_indices) {
@@ -544,10 +514,13 @@ std::vector<Entity> Destruction::find_seperations(Entity entity, const std::vect
         if (current_node == nullptr || current_node->cleared || (current_node->flood_id & (1ull << flood_id)) != 0) continue;
 
         // Start flood fill without recursive functions
+        std::vector<FloodStackEntry> stack;
+        stack.reserve(graph.node_count);
 
+        // Add first stack entry
         if (current_node->level != 1 || node->child_mask == ~(0ull)) {
             // Start floodfill from that node
-            separation_flood(graph, *current_node, flood_id++, tree);
+            separation_flood(graph, *current_node, flood_id, tree, stack);
         } else {
             // Get position and index
             const uint32_t x_index = (edge_pos.x) & 3u;
@@ -570,9 +543,27 @@ std::vector<Entity> Destruction::find_seperations(Entity entity, const std::vect
 
             // Skip the floodfill if this voxel has already been flooded
             if (!has_flooded) {
-                low_level_separation_flood(graph, *current_node, flood_id++, mask, tree);
+                low_level_separation_flood(graph, *current_node, flood_id, mask, tree, stack);
             }
         }
+
+        while (!stack.empty()) {
+            if (stack.size() > max_depth) max_depth = stack.size();
+
+            // First in last out
+            FloodStackEntry stack_entry = stack.back();
+            stack.pop_back();
+
+            if (stack_entry.edge_mask != 0) {
+                // Bit level floodfill
+                low_level_separation_flood(graph, graph.nodes[stack_entry.node_index], flood_id, stack_entry.edge_mask, tree, stack);
+            } else {
+                // Graph level floodfill
+                separation_flood(graph, graph.nodes[stack_entry.node_index], flood_id, tree, stack);
+            }
+        }
+
+        flood_id++;
     }
 
     return std::vector<Entity> { entity };
