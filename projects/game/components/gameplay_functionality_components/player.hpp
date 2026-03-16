@@ -37,6 +37,7 @@ class Player : public tmt::GameComponent<Player> {
     // Player stats
     PlayerStat health;
     PlayerStat energy;
+    float energy_drain_per_second = 0.5f;
 
     // Helper functions
     tmt::Transform& get_transform() const { return tmt::engine.ecs.get_component<tmt::Transform>(entity); }

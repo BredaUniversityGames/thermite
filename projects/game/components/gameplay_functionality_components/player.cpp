@@ -168,6 +168,7 @@ void Player::update(const tmt::FrameData& time) {
             look_camera();
             move_player();
 
+            drain_energy(time.delta_time);
             break;
         case game::PlayerState::ATTACHED:
             attempt_attach(input);
@@ -205,6 +206,11 @@ void Player::refill(float delta) {
     health.value = glm::min(health.max_value, health.value + delta * health.increase_multiplier);
     energy.value = glm::min(energy.max_value, energy.value + delta * energy.increase_multiplier);
 }
+
+void Player::drain_energy(float delta) {
+    energy.value = glm::min(energy.max_value, energy.value - delta * energy_drain_per_second);
+}
+
 void Player::on_attach(const AttachEvent& event) {
     if (event.entity != entity) {
         return;
