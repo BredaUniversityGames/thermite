@@ -13,7 +13,9 @@ class LevelEditorDiff : public IUndoRedo {
 
     void commit(const std::string& message);
 
+    std::unordered_map<glm::ivec2, LevelEditor::Cell> removed_placements;
     std::unordered_map<glm::ivec2, LevelEditor::Cell> added_placements;
+    std::unordered_map<glm::ivec2, std::pair<LevelEditor::Cell, LevelEditor::Cell>> replaced_placements;
 };
 
 }  // namespace tmt

@@ -59,7 +59,15 @@ class LevelEditor : public IWindow {
     std::vector<CellTemplate> pickable_cell_templates;
     int selected_template = -1;
 
-    int selected_brush_mode = -1;
+    enum class Brush
+    {
+        PLACE,
+        REMOVE,
+        REPLACE,
+        MAX
+    };
+
+    int selected_brush_mode = 0;
 
     bool window_displayed = false;
 
@@ -71,9 +79,11 @@ class LevelEditor : public IWindow {
     float highlight_timer = 0.f;
     std::vector<glm::ivec2> placing_coords;
 
+    //user editable
     bool enable_editing = false;
     bool mirror_x = false;
     float cell_size;
+    glm::vec3 global_field_offset;
     std::unordered_map<glm::ivec2, Cell> cells;
 };
 

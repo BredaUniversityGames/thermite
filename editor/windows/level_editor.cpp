@@ -16,11 +16,32 @@
 namespace tmt {
 
 void tmt::LevelEditor::display() {
+    window_displayed = true;
+
+    auto& viewport = editor.windows[Editor::Mode::SCENE].get<Viewport>();
+
     ImGui::Checkbox("Enable level editing", &enable_editing);
     ImGui::Checkbox("Mirror X", &mirror_x);
-    ImGui::InputFloat("Cell size", &cell_size);
+    ImGui::DragFloat("Cell size", &cell_size);
+    ImGui::DragFloat3("Global field offset", &global_field_offset[0]);
 
-    //cell template picker
+    static const char* brush_previews[static_cast<int>(Brush::MAX)] = { "PLACE", "REMOVE", "REPLACE" };
+    if (ImGui::BeginCombo("Brush Mode", brush_previews[selected_brush_mode])) {
+        for (int brush = 0; brush < static_cast<int>(Brush::MAX); brush++) {
+            const bool is_selected = (selected_brush_mode == brush);
+
+            if (ImGui::Selectable(brush_previews[brush], is_selected)) {
+                selected_brush_mode = brush;
+            }
+
+            if (is_selected) {
+                ImGui::SetItemDefaultFocus();
+            }
+        }
+        ImGui::EndCombo();
+    }
+
+    // cell template picker
     static const char* preview = "None";
     if (selected_template >= 0 && selected_template < static_cast<int>(pickable_cell_templates.size())) {
         preview = pickable_cell_templates[selected_template].name.c_str();
@@ -41,17 +62,13 @@ void tmt::LevelEditor::display() {
         ImGui::EndCombo();
     }
     ImReflect::Input("Cell templates", &pickable_cell_templates);
-    if(ImGui::Button("Generate cells"))
-    {
+    if (ImGui::Button("Generate cells")) {
         auto view = engine.ecs.view<LevelCellGrouperTag>();
         tmt::Entity grouper_entity;
-        if(view.begin() == view.end()) 
-        {
+        if (view.begin() == view.end()) {
             grouper_entity = engine.ecs.create_entity("Level Cell Objects");
             engine.ecs.add_component<LevelCellGrouperTag>(grouper_entity);
-        }
-        else 
-        {
+        } else {
             grouper_entity = view.front();
         }
 
@@ -65,13 +82,12 @@ void tmt::LevelEditor::display() {
             cell_template.field.size = { cell_size, cell_template.height, cell_size };
             auto local_points = tmt::get_poisson_points(cell_template.field);
 
-                                                                            
             glm::vec3 cell_pos = coord_to_world(coord);
 
             // spawning
             for (auto& point : local_points) {
                 auto spawn_obj = cell_template.field.layer_entries[point.entry_idx].spawnable;
-                //float size_factor = cell_template.field.layer_entries[point.entry_idx].radius_factor;
+                // float size_factor = cell_template.field.layer_entries[point.entry_idx].radius_factor;
 
                 float pitch = Random::rand_range(0.f, 360.f);
                 float yaw = Random::rand_range(0.f, 360.f);
@@ -81,7 +97,7 @@ void tmt::LevelEditor::display() {
 
                 auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(instantiated);
 
-                glm::vec3 min = cell_pos - glm::vec3(cell_size*0.5f, cell_template.height*0.5f, cell_size*0.5f);
+                glm::vec3 min = cell_pos - glm::vec3(cell_size * 0.5f, cell_template.height * 0.5f, cell_size * 0.5f);
 
                 transform.set_local_position(min + point.pos);
                 transform.set_local_rotation(glm::vec3(pitch, yaw, roll));
@@ -89,12 +105,9 @@ void tmt::LevelEditor::display() {
         }
     }
 
-    auto& viewport = editor.windows[Editor::Mode::SCENE].get<Viewport>();
     ImDrawList* draw_list = viewport.get_drawlist();
-    window_displayed = true;
 
     if (enable_editing) {
-        
         for (auto [coord, cell] : cells) {
             draw_cell(draw_list, coord_to_world(coord), cell);
         }
@@ -103,27 +116,49 @@ void tmt::LevelEditor::display() {
         const float diff_amplitude = 0.15f;
         float alpha = max_alpha - diff_amplitude * (glm::sin(highlight_timer * 2.f) + 1.f) * 0.5f;
 
-        if(viewport.get_is_hovered() && selected_template != -1)
-        {
+        if (viewport.get_is_hovered() && selected_template != -1) {
             for (const auto& coord : placing_coords) {
-                draw_cell(draw_list, coord_to_world(coord), Cell {.template_index = selected_template }, glm::vec4(1.f, 1.f, 1.f, alpha));
+                draw_cell(draw_list, coord_to_world(coord), Cell { .template_index = selected_template }, glm::vec4(1.f, 1.f, 1.f, alpha));
             }
 
             if (ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
-
-                //auto& cell_template = pickable_cell_templates[selected_template];
                 LevelEditorDiff level_editor_diff;
 
-                for (const auto& coord : placing_coords) {
-                    auto pair = cells.try_emplace(coord, Cell {.template_index = selected_template});
-                    if(pair.second)
-                    {
-                        level_editor_diff.added_placements.emplace(coord, pair.first->second);
-                    } else 
-                    {
-                        //selection logic
-                    }
+                switch (selected_brush_mode) {
+                    case static_cast<int>(Brush::PLACE):
+                        for (const auto& coord : placing_coords) {
+                            auto pair = cells.try_emplace(coord, Cell { .template_index = selected_template });
+                            if (pair.second) {
+                                level_editor_diff.added_placements.emplace(coord, pair.first->second);
+                            }
+                        }
+                        break;
+                    case static_cast<int>(Brush::REMOVE):
+                        for (const auto& coord : placing_coords) {
+                            
+                            if(cells.contains(coord))
+                            {
+                                Cell erased_cell = cells[coord];
+
+                                cells.erase(coord);
+                                level_editor_diff.removed_placements.emplace(coord, erased_cell);
+                            }
+                        }
+                        break;
+                    case static_cast<int>(Brush::REPLACE):
+                        for (const auto& coord : placing_coords) 
+                        {
+                            if(cells.contains(coord) && cells[coord].template_index != selected_template)
+                            {
+                                Cell prev = cells[coord];
+                                cells[coord] = Cell { .template_index = selected_template };
+
+                                level_editor_diff.replaced_placements.emplace(coord, std::make_pair(prev, cells[coord]));
+                            }
+                        }
+                        break;
                 }
+                // auto& cell_template = pickable_cell_templates[selected_template];
 
                 level_editor_diff.commit("");
             }
@@ -131,14 +166,11 @@ void tmt::LevelEditor::display() {
     }
 }
 
-void tmt::LevelEditor::on_editor_start() 
-{
-};
+void tmt::LevelEditor::on_editor_start() {};
 
 void tmt::LevelEditor::on_editor_update(const tmt::FrameData& time) {
     auto& viewport = editor.windows[Editor::Mode::SCENE].get<Viewport>();
-
-    viewport.set_allow_rectangle_select(!enable_editing || !window_displayed);
+    viewport.set_allow_selection((!enable_editing) || (!window_displayed));
     window_displayed = false;
 
     if (enable_editing) {
@@ -185,8 +217,9 @@ void tmt::LevelEditor::on_editor_update(const tmt::FrameData& time) {
 void LevelEditor::draw_cell(ImDrawList* draw_list, glm::vec3 pos, const Cell& cell, glm::vec4 col) {
     float extent = cell_size * 0.5f;
     float height_extent = pickable_cell_templates[cell.template_index].height * 0.5f;
-    glm::vec3 local_vertices[8] = { glm::vec3(-extent, -height_extent, -extent), glm::vec3(extent, -height_extent, -extent), glm::vec3(extent, height_extent, -extent), glm::vec3(-extent, height_extent, -extent),
-                                    glm::vec3(-extent, -height_extent, extent),  glm::vec3(extent, -height_extent, extent),  glm::vec3(extent, height_extent, extent),  glm::vec3(-extent, height_extent, extent) };
+    glm::vec3 local_vertices[8] = { glm::vec3(-extent, -height_extent, -extent), glm::vec3(extent, -height_extent, -extent), glm::vec3(extent, height_extent, -extent),
+                                    glm::vec3(-extent, height_extent, -extent),  glm::vec3(-extent, -height_extent, extent), glm::vec3(extent, -height_extent, extent),
+                                    glm::vec3(extent, height_extent, extent),    glm::vec3(-extent, height_extent, extent) };
 
     ImVec2 screen_vertices[8];
     for (int i = 0; i < 8; i++) {
@@ -211,16 +244,14 @@ void LevelEditor::draw_cell(ImDrawList* draw_list, glm::vec3 pos, const Cell& ce
     static const int faces[6][4] = { { 0, 1, 2, 3 }, { 5, 4, 7, 6 }, { 4, 0, 3, 7 }, { 1, 5, 6, 2 }, { 3, 2, 6, 7 }, { 4, 5, 1, 0 } };
     glm::vec4 fill_color;
     glm::vec4 edge_color;
-    if(glm::dot(col, col) > 0.01f) 
-    {
+    if (glm::dot(col, col) > 0.01f) {
         fill_color = col;
-        edge_color = {col.r, col.g, col.b, 1.f};
-    } else
-    {
+        edge_color = { col.r, col.g, col.b, 1.f };
+    } else {
         fill_color = pickable_cell_templates[cell.template_index].color.get() - glm::vec4(0.2f);
         edge_color = pickable_cell_templates[cell.template_index].color.get();
     }
-    
+
     ImU32 pack_col = ImGui::ColorConvertFloat4ToU32({ fill_color.r, fill_color.g, fill_color.b, fill_color.a });
 
     for (int i = 0; i < 6; i++) {
@@ -237,10 +268,11 @@ void LevelEditor::draw_cell(ImDrawList* draw_list, glm::vec3 pos, const Cell& ce
 }
 
 glm::vec3 LevelEditor::coord_to_world(glm::ivec2 coord) {
-    return glm::vec3(coord.x * cell_size + cell_size * 0.5f, 0.f, coord.y * cell_size + cell_size * 0.5f);
+    return global_field_offset + glm::vec3(coord.x * cell_size + cell_size * 0.5f, 0.f, coord.y * cell_size + cell_size * 0.5f);
 }
 
 glm::ivec2 LevelEditor::world_to_coord(glm::vec3 pos) {
+    pos -= global_field_offset;
     return glm::ivec2(glm::floor(pos.x / cell_size), glm::floor(pos.z / cell_size));
 }
 

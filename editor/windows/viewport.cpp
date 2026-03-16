@@ -125,7 +125,7 @@ void tmt::Viewport::display() {
 
     const bool toolbar_buttons_hovered = toolbar(viewport_pos);
 
-    selection_logic(imgui_mouse_pos, viewport_pos, toolbar_buttons_hovered);
+    if(allow_selection) selection_logic(imgui_mouse_pos, viewport_pos, toolbar_buttons_hovered);
 
     ImGui::EndChild();
 
