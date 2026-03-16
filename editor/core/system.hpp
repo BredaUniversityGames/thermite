@@ -38,7 +38,7 @@ class IEditorSystem : public IEditorSystemBase {
             return {};
         }
     }
-    virtual void deserialize(const tmt::json value) override {
+    virtual void deserialize(const tmt::json& value) override {
         if constexpr (std::is_same_v<Derived, void> == false) {
             Serializer::deserialize(value, static_cast<Derived&>(*this));
         }
