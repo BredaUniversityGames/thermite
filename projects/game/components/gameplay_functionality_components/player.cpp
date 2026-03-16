@@ -168,12 +168,18 @@ void Player::update(const tmt::FrameData& time) {
             look_camera();
             move_player();
 
-            drain_energy(time.delta_time);
+            // Handle recharging and draining
+            if (glm::distance(tmt::engine.ecs.get_component<tmt::Transform>(entity).get_world_position(), tmt::engine.ecs.get_component<tmt::Transform>(barge).get_world_position()) >=
+                recharge_distance) {
+                drain_energy(time.delta_time);
+            } else {
+                refill(time.delta_time);
+            }
             break;
         case game::PlayerState::ATTACHED:
             attempt_attach(input);
             look_camera();
-            refill(tmt::engine.frame_data().delta_time);
+            refill(time.delta_time);
             break;
             // TODO this state might disappear
         case game::PlayerState::PAUSED:
