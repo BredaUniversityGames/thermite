@@ -365,10 +365,14 @@ void handle_brush(const Brush::State brush_state, const ResourceRef<VoxelVolume>
 
             // Calculate the middle point of the selected volume of voxels.
             const glm::vec3 selection_middle = glm::vec3 { start_coord + end_coord + 1u } * VOXEL_SIZE_HALF;
+            
+            // Find the bounded start and end coordinates.
+            const glm::uvec3 start_bounded = glm::min(start_coord, model->size);
+            const glm::uvec3 end_bounded = glm::min(end_coord, model->size);
 
             // Calculate the half extent of the selected volume of voxels (requires min and max to correctly account for the start and end voxels).
-            const glm::uvec3 min = glm::min(start_coord, end_coord);
-            const glm::uvec3 max = glm::max(start_coord, end_coord);
+            const glm::uvec3 min = glm::min(start_bounded, end_bounded);
+            const glm::uvec3 max = glm::max(start_bounded, end_bounded);
             const glm::vec3 select_half_extent = (glm::vec3 { min } - glm::vec3 { max } - 1.0f) * VOXEL_SIZE_HALF;
 
             const Transform& transform = engine.ecs.get_component<Transform>(hit.entity);
