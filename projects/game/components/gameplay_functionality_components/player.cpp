@@ -173,9 +173,9 @@ void Player::update(const tmt::FrameData& time) {
                 if (glm::distance(tmt::engine.ecs.get_component<tmt::Transform>(entity).get_world_position(), tmt::engine.ecs.get_component<tmt::Transform>(barge).get_world_position()) >=
                     recharge_distance) {
                     drain_energy(time.delta_time);
-                    } else {
-                        refill(time.delta_time);
-                    }
+                } else {
+                    refill(time.delta_time);
+                }
             }
             break;
         case game::PlayerState::ATTACHED:
