@@ -3,7 +3,7 @@
 
 namespace tmt {
 
-class UIEditor : public IEditorSystem {
+class UIEditor : public IEditorSystem<> {
    public:
     UIEditor() = default;
     ~UIEditor() = default;

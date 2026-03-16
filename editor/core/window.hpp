@@ -11,7 +11,7 @@ namespace tmt {
  *
  * If your system doesn't need an inspector window, use IEditorSystem directly instead.
  */
-class IWindow : public IEditorSystem {
+class IWindow : public IEditorSystem<> {
    public:
     virtual ~IWindow() = default;
 
