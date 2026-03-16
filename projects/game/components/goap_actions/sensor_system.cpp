@@ -26,7 +26,7 @@ void SensorsSystem::on_start() {
     }
 }
 
-void SensorsSystem::on_update(const tmt::FrameData& time) {
+void SensorsSystem::on_update(const tmt::FrameData& /*time*/) {
     auto& ecs = tmt::engine.ecs;
     auto* steering = ecs.systems.try_get<tmt::SteeringSystem>();
     if (!steering) return;
@@ -37,7 +37,7 @@ void SensorsSystem::on_update(const tmt::FrameData& time) {
     glm::vec3 player_pos = player_transform->get_world_position();
 
     // Update each agent with a SteeringAgent component
-    ecs.view<SteeringAgent>().each([&](tmt::Entity agent, SteeringAgent& sa) {
+    ecs.view<SteeringAgent>().each([&](tmt::Entity agent, SteeringAgent& /*sa*/) {
         auto* agent_transform = ecs.try_get_component<tmt::Transform>(agent);
         if (!agent_transform) return;
 

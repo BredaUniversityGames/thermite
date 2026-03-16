@@ -31,7 +31,7 @@ void WanderSteering::on_start(tmt::Entity agent) {
 
 void WanderSteering::on_fixed_tick(tmt::Entity agent, float /*dt*/) {}
 
-bool WanderSteering::is_done(tmt::Entity agent) const {
+bool WanderSteering::is_done(tmt::Entity /*agent*/) const {
     return false;
 }
 
