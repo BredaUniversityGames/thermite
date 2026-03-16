@@ -54,5 +54,4 @@ void SensorsSystem::on_end() {
     tmt::Log::info("Sensor System on_end");
 }
 
-
 }  // namespace game

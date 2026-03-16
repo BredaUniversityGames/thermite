@@ -176,7 +176,7 @@ std::vector<FactPair> preconditions_to_vector(const std::unordered_map<std::stri
  *   - If all goals are satisfied ? pick lowest priority as fallback.
  */
 void Goap::update_goal(Entity entity, GoapAgent& agent, WorldState& ws) {
-    //if (agent.has_goal()) return;
+    // if (agent.has_goal()) return;
     if (agent.has_goal() && agent.active_goal.valid) return;
 
     if (agent.available_goals.empty()) {
@@ -323,9 +323,7 @@ bool Goap::update_plan(Entity entity, GoapAgent& agent, WorldState& ws) {
             EffectiveGoapAction effective = build_effective_action(*next, override);
 
             auto preconds_vec = preconditions_to_vector(effective.preconditions);
-
             if (!current->state.satisfies(preconds_vec)) continue;
-            //if (!current->state.satisfies(effective.preconditions)) continue;  // fixed hashing
 
             WorldState next_state = current->state;
             next->apply_effects(next_state);

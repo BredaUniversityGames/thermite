@@ -120,7 +120,7 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
 
         auto& ecs = tmt::engine.ecs;
         auto& goap = ecs.systems.get<tmt::Goap>();
-        
+
         auto& action_reg = goap.actions();
         auto& goal_reg = goap.goals();
         auto& type_reg = goap.agent_types();

@@ -18,8 +18,8 @@ struct SteeringParams {
     float max_explosion_range = 5.f;
 
     // agent
-    float max_speed = 5.f; 
-    float max_force = 20.f; 
+    float max_speed = 5.f;
+    float max_force = 20.f;
 };
 
 }  // namespace tmt

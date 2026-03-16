@@ -187,7 +187,7 @@ glm::vec3 SteeringSystem::collision_avoidance(const SteeringAgent& agent, const 
 
         if (hit && hit.distance < avoid_distance) {
             float strength = agent.params->max_force * (avoid_distance - hit.distance) / avoid_distance;
-            //total_avoid += hit.normal * strength;
+            // total_avoid += hit.normal * strength;
             total_avoid += -dir * strength;
         }
     }
@@ -231,7 +231,7 @@ glm::vec3 SteeringSystem::calculate_force(const SteeringAgent& agent, const Stee
 
     // Add avoidance on top
     force += collision_avoidance(agent, position, body) * 2.0f;
-  
+
     return force;
 }
 

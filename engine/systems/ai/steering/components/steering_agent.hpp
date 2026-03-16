@@ -12,5 +12,5 @@
  */
 struct SteeringAgent {
     const tmt::SteeringParams* params = nullptr;
-    bool active = true;      // Whether the agent is currently participating in steering
+    bool active = true;  // Whether the agent is currently participating in steering
 };
