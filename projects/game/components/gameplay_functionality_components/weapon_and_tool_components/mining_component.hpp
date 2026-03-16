@@ -1,10 +1,11 @@
 #pragma once
-#include "debug_line_helper.hpp"
-#include "events.hpp"
-#include "ore_properties.hpp"
+#include "projects/game/components/development_tools/debug_line_helper.hpp"
+#include "projects/game/data_headers/events.hpp"
+#include "projects/game/data_headers/ore_properties.hpp"
 #include "engine/systems/gameplay/game_component.hpp"
 #include "engine/core/resources/stencil.hpp"
 #include "engine/shared/ray.hpp"
+#include "projects/game/components/managers/ore_manager.hpp"
 
 namespace game {
 
@@ -71,6 +72,9 @@ class MiningComponent : public tmt::GameComponent<MiningComponent> {
     using UniqueVoxelsSet = std::unordered_set<VoxelID, VoxelIDHash>;
     VoxelMap mining_voxels {};
     bool stopped_mining = false;
+
+    // Ore manager for custom behaviour of mined ore
+    OreManager* ore_manager = nullptr;
 };
 
 }  // namespace game
