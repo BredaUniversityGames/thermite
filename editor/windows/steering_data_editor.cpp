@@ -57,6 +57,12 @@ void SteeringDataEditor::on_inspect() {
     if (ImGui::Button("Reset Defaults")) {
         params = SteeringParams {};
     }
+
+    // --- Save button ---
+    if (ImGui::Button("Save Steering Paramaters")) {
+        steering->overrides().save();
+        Log::info("Steering override params saved");
+    }
 }
 
 }  // namespace tmt
