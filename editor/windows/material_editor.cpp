@@ -13,9 +13,33 @@
 #include <glm/gtc/packing.hpp>
 #include <imgui.h>
 
+namespace {
+
+template <typename Type>
+void modify_all_palettes(const tmt::MaterialIndex material_index, Type tmt::Material::* member, const Type value) {
+    const entt::basic_group group = tmt::engine.ecs.group<tmt::VoxelRenderer>(entt::get<tmt::Transform>);
+
+    // Loop over every renderer in the scene and modify their palettes.
+    for (const auto&& [entity, renderer, transform] : group.each()) {
+        tmt::Material& material = renderer.resource->blas->palette.entries[material_index];
+
+        // Set the value though member pointer (means I only had to create 1 function for all material members).
+        material.*member = value;
+
+        // Make sure to set all of them dirty.
+        renderer.resource->set_dirty();
+    }
+}
+
+}  // namespace
+
 namespace tmt {
 
 void MaterialEditor::display() {
+    ImGui::Checkbox("Modify all palettes", &edit_all_palettes);
+
+    ImGui::Separator();
+
     const NodeHierarchy& hierarchy = editor.windows[Editor::Mode::VOXEL].get<NodeHierarchy>();
 
     const auto selected_entity = hierarchy.get_first_selected_entity();
@@ -28,7 +52,8 @@ void MaterialEditor::display() {
     if (renderer == nullptr) return;
 
     Palette& palette = editor.windows[Editor::Mode::VOXEL].get<Palette>();
-    Material& material = renderer->resource->blas->palette.entries[palette.get_selected_material_index()];
+    const MaterialIndex material_index = palette.get_selected_material_index();
+    Material& material = renderer->resource->blas->palette.entries[material_index];
 
     ImGui::BeginGroup();
 
@@ -38,28 +63,67 @@ void MaterialEditor::display() {
         palette.update_material_editor = false;
     }
     // We make sure to clamp the Rgb10 color to the range 0.0f-1.0f
-    if (ImGui::ColorWheel3("Albedo", &albedo.x, ImGuiColorWheelFlags_CustomColorSpace)) material.albedo = Rgb10 { glm::clamp(albedo, glm::zero<glm::vec3>(), glm::one<glm::vec3>()) };
+    if (ImGui::ColorWheel3("Albedo", &albedo.x, ImGuiColorWheelFlags_CustomColorSpace)) {
+        const Rgb10 value { glm::clamp(albedo, glm::zero<glm::vec3>(), glm::one<glm::vec3>()) };
+        if (edit_all_palettes)
+            modify_all_palettes(material_index, &Material::albedo, value);
+        else
+            material.albedo = value;
+    }
 
     float roughness = static_cast<float>(material.roughness) / 255.0f;
-    if (ImGui::SliderFloat("Roughness", &roughness, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_ClampOnInput)) material.roughness = static_cast<uint8_t>(roughness * 255.0f);
+    if (ImGui::SliderFloat("Roughness", &roughness, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_ClampOnInput)) {
+        const uint8_t value = static_cast<uint8_t>(roughness * 255.0f);
+        if (edit_all_palettes)
+            modify_all_palettes(material_index, &Material::roughness, value);
+        else
+            material.roughness = value;
+    }
 
     float metallic = static_cast<float>(material.metallic) / 255.0f;
-    if (ImGui::SliderFloat("Metallic", &metallic, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_ClampOnInput)) material.metallic = static_cast<uint8_t>(metallic * 255.0f);
+    if (ImGui::SliderFloat("Metallic", &metallic, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_ClampOnInput)) {
+        const uint8_t value = static_cast<uint8_t>(metallic * 255.0f);
+        if (edit_all_palettes)
+            modify_all_palettes(material_index, &Material::metallic, value);
+        else
+            material.metallic = value;
+    }
 
     float ior = glm::unpackHalf1x16(material.ior);
-    if (ImGui::SliderFloat("IOR", &ior, 1.0f, 3.0f, "%.3f", ImGuiSliderFlags_ClampOnInput)) material.ior = glm::packHalf1x16(ior);
+    if (ImGui::SliderFloat("IOR", &ior, 1.0f, 3.0f, "%.3f", ImGuiSliderFlags_ClampOnInput)) {
+        const uint16_t value = glm::packHalf1x16(ior);
+        if (edit_all_palettes)
+            modify_all_palettes(material_index, &Material::ior, value);
+        else
+            material.ior = value;
+    }
 
     float transmission = static_cast<float>(material.transmission) / 255.0f;
-    if (ImGui::SliderFloat("Transmission", &transmission, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_ClampOnInput)) material.transmission = static_cast<uint8_t>(transmission * 255.0f);
+    if (ImGui::SliderFloat("Transmission", &transmission, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_ClampOnInput)) {
+        const uint8_t value = static_cast<uint8_t>(transmission * 255.0f);
+        if (edit_all_palettes)
+            modify_all_palettes(material_index, &Material::transmission, value);
+        else
+            material.transmission = value;
+    }
 
     float emission = glm::unpackHalf1x16(material.emission);
-    if (ImGui::DragFloat("Emission", &emission, 0.1f, 0.0f, std::numeric_limits<float>::max(), "%.3f", ImGuiSliderFlags_ClampOnInput)) material.emission = glm::packHalf1x16(emission);
+    if (ImGui::DragFloat("Emission", &emission, 0.1f, 0.0f, std::numeric_limits<float>::max(), "%.3f", ImGuiSliderFlags_ClampOnInput)) {
+        const uint16_t value = glm::packHalf1x16(emission);
+        if (edit_all_palettes)
+            modify_all_palettes(material_index, &Material::emission, value);
+        else
+            material.emission = value;
+    }
 
     if (ImGui::BeginCombo("Type", magic_enum::enum_name(material.type).data())) {
         for (const auto& [value, name] : magic_enum::enum_entries<Material::Type>()) {
             if (!ImGui::Selectable(name.data(), material.type == value)) continue;
 
-            material.type = value;
+            if (edit_all_palettes)
+                modify_all_palettes(material_index, &Material::type, value);
+            else
+                material.type = value;
         }
 
         ImGui::EndCombo();
