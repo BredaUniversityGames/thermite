@@ -19,34 +19,27 @@ class IEditorSystemBase {
     virtual void on_editor_fixed_update(const tmt::FrameData& time) { (void)time; };
     virtual void on_editor_end() {};
 
+    virtual std::string get_title() const = 0;
+
     /* Optional, defaults to reflection */
     virtual tmt::json serialize() const { return {}; }
     virtual void deserialize(const tmt::json value) { (void)value; }
 };
 
-template <bool Required>
-struct TitleMixin {
-    virtual std::string get_title() const = 0;
-};
-
-template <>
-struct TitleMixin<false> {
-    virtual std::string get_title() const { return {}; }
-};
-
-struct temp {};
-
-template <typename Derived = temp>
-class IEditorSystem : public IEditorSystemBase, public TitleMixin<!std::is_same_v<Derived, temp>> {
+template <typename Derived = void>
+class IEditorSystem : public IEditorSystemBase {
    public:
+    virtual std::string get_title() const override { return {}; }
+
     virtual tmt::json serialize() const override {
-        if constexpr (std::is_same_v<Derived, temp> == false) {
+        if constexpr (std::is_same_v<Derived, void> == false) {
             return Serializer::serialize(static_cast<const Derived&>(*this));
+        } else {
+            return {};
         }
-        return {};
     }
     virtual void deserialize(const tmt::json value) override {
-        if constexpr (std::is_same_v<Derived, temp> == false) {
+        if constexpr (std::is_same_v<Derived, void> == false) {
             Serializer::deserialize(value, static_cast<Derived&>(*this));
         }
     }

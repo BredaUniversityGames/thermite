@@ -84,7 +84,6 @@ void Editor::switch_mode(Mode new_mode, const std::any& meta_data) {
 void Editor::on_engine_init(const ApplicationSpecs&) {
     tmt::Log::info("Starting Thermite Editor...");
     imgui_manager.init();
-    save_data.load();
     gizmo.init();
 
     mode_handlers[Mode::SCENE] = std::make_unique<SceneMode>();
@@ -141,6 +140,8 @@ void Editor::on_engine_init(const ApplicationSpecs&) {
             system->on_editor_start();
         }
     }
+
+    save_data.load();
 }
 
 void Editor::on_engine_update(const FrameData& time) {

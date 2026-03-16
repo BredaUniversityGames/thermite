@@ -17,6 +17,7 @@ class UI : public ISystem {
     void on_update(const tmt::FrameData& time) override;
     void set_size(tmt::UIComponent& ui_component, const tmt::Transform& transform, const glm::uvec2& screen_size);
     void on_end() override;
+
 };
 
 }  // namespace tmt
