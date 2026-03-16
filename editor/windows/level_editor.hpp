@@ -40,7 +40,7 @@ class LevelEditor : public IWindow<LevelEditor> {
 
         float height = 10.f;
         PoissonField field;
-        RGBA color{glm::vec4(1.f, 0.f, 0.f, 1.f)};
+        RGBA color { glm::vec4(1.f, 0.f, 0.f, 1.f) };
     };
 
     std::unordered_map<glm::ivec2, Cell>& get_cells();
