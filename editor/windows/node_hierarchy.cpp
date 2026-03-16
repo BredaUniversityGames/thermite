@@ -505,7 +505,10 @@ void NodeHierarchy::clear_hierarchy() {
 }
 
 void NodeHierarchy::drop_hierarchy() {
-    const ImRect window_rect { ImGui::GetWindowContentRegionMin(), ImGui::GetWindowContentRegionMax() };
+    const ImVec2 min = ImGui::GetWindowPos() + ImGui::GetStyle().WindowPadding;
+    const ImVec2 max = min + ImGui::GetWindowSize() - ImGui::GetStyle().WindowPadding;
+    const ImRect window_rect { min, max };
+
     if (!ImGui::BeginDragDropTargetCustom(window_rect, ImGui::GetID("NodeEmptyDropArea"))) return;
 
     const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("VoxelNode");
