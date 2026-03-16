@@ -114,7 +114,7 @@ void MainScene::on_start() {
         auto& renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(entity);
         renderer.resource = voxel_volume_piece;
         auto& vb = tmt::engine.ecs.add_component<tmt::VoxelBody>(entity);
-        vb.resource = voxel_volume_piece;
+        //vb.resource = voxel_volume_piece;
         vb.gravity = 0.0f;
         vb.type = tmt::VoxelBody::STATIC;
 

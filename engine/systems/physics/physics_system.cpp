@@ -998,10 +998,10 @@ void Physics::recalculate_surface_normals(VoxelVolume& volume) {
     recurse_recalculate_normals(tree, 0, 0, node_scale, 0, 0, 0);
 }
 
-void Physics::recalculate_edge_normals(VoxelBody& vb, const std::vector<glm::uvec3>& edge_indices) {
+void Physics::recalculate_edge_normals(Svt64* tree, const std::vector<glm::uvec3>& edge_indices) {
     TMT_ZONE_SCOPED
 
-    Svt64* tree = vb.resource.resource->blas.get();
+    //Svt64* tree = vb.resource.resource->blas.get();
 
     for (const glm::uvec3& edge_pos : edge_indices) {
         const uint32_t x = edge_pos.x;

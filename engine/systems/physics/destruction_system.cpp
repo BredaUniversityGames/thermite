@@ -14,12 +14,12 @@
 namespace tmt {
 
 void Destruction::on_start() {
-    for (const auto& [entity, des, vb] : engine.ecs.view<Destructable, VoxelBody>().each()) {
-        generate_connection_graph(des, vb.resource.resource->blas.get());
+    for (const auto& [entity, des, vb, vr] : engine.ecs.view<Destructable, VoxelBody, VoxelRenderer>().each()) {
+        generate_connection_graph(des, vr.resource->blas.get());
     }
 }
 
-void Destruction::on_update(const FrameData& time) {
+void Destruction::on_update(const FrameData&) {
     for (const auto& [entity, des, vb] : engine.ecs.view<Destructable, VoxelBody>().each()) {
         engine.polyline.use_depth_testing(false);
         // engine.polyline.use_color(0.1f, 0.3f, 0.9f);
@@ -33,7 +33,7 @@ void Destruction::on_update(const FrameData& time) {
             // uint32_t voxel_count = vb.resource.resource.get()->blas.get()->voxel_count;
             // Log::info("voxels %u", vb.resource.resource.get()->blas.get()->voxel_count);
 
-            srand(node.flood_id << 5u);
+            //srand(node.flood_id << 5u);
 
             if (node.flood_id == 0)
                 engine.polyline.use_color(0.0f, 0.0f, 0.0f);
@@ -71,7 +71,7 @@ void Destruction::on_update(const FrameData& time) {
     }
 }
 
-void Destruction::on_fixed_update(const FrameData& time) {}
+void Destruction::on_fixed_update(const FrameData&) {}
 
 void Destruction::on_end() {}
 
@@ -79,12 +79,12 @@ void Destruction::destroy_voxels(Entity entity, const Stencil* stencil, glm::ive
     TMT_ZONE_SCOPED_N("Destruction")
 
     // Get voxel body & destructable components
-    VoxelBody* vb = engine.ecs.try_get_component<VoxelBody>(entity);
+    VoxelRenderer* vr = engine.ecs.try_get_component<VoxelRenderer>(entity);
     Destructable* des = engine.ecs.try_get_component<Destructable>(entity);
-    if (vb == nullptr || des == nullptr) return;
+    if (vr == nullptr || des == nullptr) return;
 
     // Subtract voxels from BLAS
-    auto* resource = vb->resource.resource.get();
+    auto* resource = vr->resource.resource.get();
     resource->blas->subtract(stencil, offset);
     resource->set_dirty();
 
@@ -112,14 +112,15 @@ void Destruction::destroy_voxels(Entity entity, const Stencil* stencil, glm::ive
     // Regenerate part of the graph based on the edge indices
     regenerate_connection_graph(*des, resource->blas.get(), stencil, offset);
 
-    // Find where the objects seperate and creates new entities for each part
+    // Find where the objects separate and creates new entities for each part
     std::vector<Entity> seperated_entities = find_seperations(entity, edge_indices, *des);
 
-    // Recalculate physics data for all seperate voxel bodies
+    // Recalculate physics data for all separate voxel bodies
     for (Entity seperate_entity : seperated_entities) {
         VoxelBody& seperate_vb = engine.ecs.get_component<VoxelBody>(seperate_entity);
-        Physics::initialize_voxel_body(seperate_vb);
-        Physics::recalculate_edge_normals(seperate_vb, edge_indices);
+        VoxelRenderer& seperate_vr = engine.ecs.get_component<VoxelRenderer>(seperate_entity);
+        Physics::initialize_voxel_body(seperate_vb, *seperate_vr.resource.resource.get());
+        Physics::recalculate_edge_normals(seperate_vr.resource.resource->blas.get(), edge_indices);
         // Physics::recalculate_physics_data(seperate_vb);
     }
 }
@@ -127,8 +128,8 @@ void Destruction::destroy_voxels(Entity entity, const Stencil* stencil, glm::ive
 void Destruction::fill_edge_indices(std::vector<glm::uvec3>& edge_indices, Entity entity, const Stencil* stencil, glm::ivec3 offset) {
     TMT_ZONE_SCOPED
 
-    VoxelBody& vb = engine.ecs.get_component<VoxelBody>(entity);
-    auto* resource = vb.resource.resource.get();
+    VoxelRenderer& vr = engine.ecs.get_component<VoxelRenderer>(entity);
+    auto* resource = vr.resource.resource.get();
     Svt64* tree = resource->blas.get();
 
     const glm::ivec3 dirs[] = { { -1, 0, 0 }, { 1, 0, 0 }, { 0, -1, 0 }, { 0, 1, 0 }, { 0, 0, -1 }, { 0, 0, 1 } };
@@ -144,7 +145,9 @@ void Destruction::fill_edge_indices(std::vector<glm::uvec3>& edge_indices, Entit
                 glm::ivec3 tree_pos = glm::ivec3(local_x, local_y, local_z) + offset;
 
                 // If the world position of this voxel is outside the bounds of the resource, skip it
-                if (tree_pos.x < 0 || tree_pos.y < 0 || tree_pos.z < 0 || tree_pos.x > resource->size.x - 1 || tree_pos.y > resource->size.y - 1 || tree_pos.z > resource->size.z - 1) continue;
+                if (tree_pos.x < 0 || tree_pos.y < 0 || tree_pos.z < 0 || tree_pos.x > (int)resource->size.x - 1 || tree_pos.y > (int)resource->size.y - 1 ||
+                    tree_pos.z > (int)resource->size.z - 1)
+                    continue;
 
                 const uint32_t edge_vals[] = { 0, stencil->size.x - 1, 0, stencil->size.y - 1, 0, stencil->size.z - 1 };
                 const glm::ivec3 local_pos(local_x, local_y, local_z);
@@ -157,7 +160,7 @@ void Destruction::fill_edge_indices(std::vector<glm::uvec3>& edge_indices, Entit
 
                         // If the world position is outside the bounds of the resource, skip it
                         if (neighbor_pos.x < 0 || neighbor_pos.y < 0 || neighbor_pos.z < 0) continue;
-                        if (neighbor_pos.x >= resource->size.x || neighbor_pos.y >= resource->size.y || neighbor_pos.z >= resource->size.z) continue;
+                        if (neighbor_pos.x >= (int)resource->size.x || neighbor_pos.y >= (int)resource->size.y || neighbor_pos.z >= (int)resource->size.z) continue;
 
                         // If this voxel is empty in the tree, skip it
                         if (tree->get_physics_voxel(neighbor_pos.x, neighbor_pos.y, neighbor_pos.z) == nullptr) continue;
@@ -168,7 +171,7 @@ void Destruction::fill_edge_indices(std::vector<glm::uvec3>& edge_indices, Entit
 
                         // If the world position is outside the bounds of the resource, skip it
                         if (neighbor_pos.x < 0 || neighbor_pos.y < 0 || neighbor_pos.z < 0) continue;
-                        if (neighbor_pos.x >= resource->size.x || neighbor_pos.y >= resource->size.y || neighbor_pos.z >= resource->size.z) continue;
+                        if (neighbor_pos.x >= (int)resource->size.x || neighbor_pos.y >= (int)resource->size.y || neighbor_pos.z >= (int)resource->size.z) continue;
 
                         // If this voxel is empty in the tree, skip it
                         if (tree->get_physics_voxel(neighbor_pos.x, neighbor_pos.y, neighbor_pos.z) == nullptr) continue;
@@ -179,58 +182,6 @@ void Destruction::fill_edge_indices(std::vector<glm::uvec3>& edge_indices, Entit
             }
         }
     }
-}
-
-std::vector<Entity> Destruction::find_seperations(Entity entity, const std::vector<glm::uvec3>& edge_indices, const Stencil* stencil, glm::ivec3 offset) {
-    TMT_ZONE_SCOPED
-
-    VoxelBody& vb = engine.ecs.get_component<VoxelBody>(entity);
-    auto* resource = vb.resource.resource.get();
-    Svt64* tree = resource->blas.get();
-
-    const glm::ivec3 dirs[] = { { -1, 0, 0 }, { 1, 0, 0 }, { 0, -1, 0 }, { 0, 1, 0 }, { 0, 0, -1 }, { 0, 0, 1 } };
-
-    // Loop over all the edge indices and do a flood fill to find all connected voxels
-    // Max size 1.07gb
-    std::vector<uint8_t> flood_grid(resource->size.x * resource->size.y * resource->size.z, 0);
-
-    uint8_t current_mark = 1;
-    for (const glm::uvec3& edge_index : edge_indices) {
-        uint32_t i = edge_index.x + edge_index.y * resource->size.x + edge_index.z * resource->size.x * resource->size.y;
-        // If this voxel is already marked, skip it
-        if (flood_grid[i] != 0) continue;
-
-        // Do a flood fill from this voxel and mark all connected voxels with the same index
-        std::vector<glm::uvec3> stack { edge_index };
-        while (!stack.empty()) {
-            // Get current voxel from stack and remove it
-            glm::uvec3 current = stack.back();
-            stack.pop_back();
-
-            // Calculate index of this voxel in the flood grid
-            uint32_t current_i = current.x + current.y * resource->size.x + current.z * resource->size.x * resource->size.y;
-
-            // If this voxel is already marked, or it does not exist in the tree, skip it
-            if (flood_grid[current_i] != 0 || tree->get_physics_voxel(current.x, current.y, current.z) == nullptr) continue;
-
-            // Mark this voxel
-            flood_grid[current_i] = current_mark;
-
-            // Add neighbors to the stack
-            for (int d = 0; d < 6; d++) {
-                glm::ivec3 neighbor_pos = glm::ivec3(current) + dirs[d];
-                // If the world position is outside the bounds of the resource, skip it
-                if (neighbor_pos.x < 0 || neighbor_pos.y < 0 || neighbor_pos.z < 0) continue;
-                if (neighbor_pos.x >= resource->size.x || neighbor_pos.y >= resource->size.y || neighbor_pos.z >= resource->size.z) continue;
-                stack.push_back((glm::uvec3)neighbor_pos);
-            }
-        }
-        current_mark++;
-    }
-
-    if (current_mark > 2) Log::info("Seperation Found!");
-
-    return std::vector<Entity> { entity };
 }
 
 // -X, +X, -Y, +Y, -Z, +Z
@@ -425,7 +376,7 @@ void low_level_separation_flood(
 
         // Flip the mask on the defined axis
         uint64_t edge_mask = flood_mask;
-        const uint8_t axis = i / 2;
+        const uint8_t axis = (uint8_t)i / 2;
         // VIBE CODED
         if (axis == 0) {         // X axis
             edge_mask = ((edge_mask & 0x1111111111111111ULL) << 3) | ((edge_mask & 0x2222222222222222ULL) << 1) | ((edge_mask & 0x4444444444444444ULL) >> 1) |
@@ -462,8 +413,8 @@ void low_level_separation_flood(
 void separation_flood(Destructable& graph, DestructionNode& current_node, uint8_t id, Svt64* tree, std::vector<Destruction::FloodStackEntry>& stack, std::vector<uint64_t>& tree_masks) {
     current_node.flood_id |= (1ull << id);
 
-    const Svt64Node& tree_node = *get_tree_node_at_position(current_node.global_position.x, current_node.global_position.y, current_node.global_position.z, tree, graph);
-
+    get_tree_node_and_mark(current_node.global_position.x, current_node.global_position.y, current_node.global_position.z, tree, graph, tree_masks, current_node.flood_id);
+    
     // For all directions
     for (size_t i = 0; i < 6; i++) {
         // For all connections in this direction
@@ -484,8 +435,8 @@ void separation_flood(Destructable& graph, DestructionNode& current_node, uint8_
             }
 
             // Flip the mask on the defined axis
-            uint64_t edge_mask = tree->nodes[connected_node.tree_node].child_mask;
-            const uint8_t axis = i / 2;
+            uint64_t edge_mask = node_neighbor.child_mask;
+            const uint8_t axis = (uint8_t)i / 2;
             if (axis == 0) {         // X axis
                 edge_mask = ((edge_mask & 0x1111111111111111ULL) << 3) | ((edge_mask & 0x2222222222222222ULL) << 1) | ((edge_mask & 0x4444444444444444ULL) >> 1) |
                             ((edge_mask & 0x8888888888888888ULL) >> 3);
@@ -512,8 +463,8 @@ void separation_flood(Destructable& graph, DestructionNode& current_node, uint8_
 std::vector<Entity> Destruction::find_seperations(Entity entity, const std::vector<glm::uvec3>& edge_indices, Destructable& graph) {
     TMT_ZONE_SCOPED
 
-    VoxelBody& vb = engine.ecs.get_component<VoxelBody>(entity);
-    auto* resource = vb.resource.resource.get();
+    VoxelRenderer& vr = engine.ecs.get_component<VoxelRenderer>(entity);
+    auto* resource = vr.resource.resource.get();
     Svt64* tree = resource->blas.get();
     size_t max_depth = 0;
     uint8_t flood_id = 0;
@@ -568,7 +519,7 @@ std::vector<Entity> Destruction::find_seperations(Entity entity, const std::vect
         // Add first stack entry
         if (current_node->level != 1 || node->child_mask == ~(0ull)) {
             // Start floodfill from that node
-            separation_flood(graph, *current_node, flood_id, tree, stack);
+            separation_flood(graph, *current_node, flood_id, tree, stack, tree_masks);
         } else {
             // Get position and index
             const uint32_t x_index = (edge_pos.x) & 3u;
@@ -591,7 +542,7 @@ std::vector<Entity> Destruction::find_seperations(Entity entity, const std::vect
 
             // Skip the floodfill if this voxel has already been flooded
             if (!has_flooded) {
-                low_level_separation_flood(graph, *current_node, flood_id, mask, tree, stack);
+                low_level_separation_flood(graph, *current_node, flood_id, mask, tree, stack, tree_masks);
             } else {
                 continue;
             }
@@ -606,10 +557,10 @@ std::vector<Entity> Destruction::find_seperations(Entity entity, const std::vect
 
             if (stack_entry.edge_mask != 0) {
                 // Bit level floodfill
-                low_level_separation_flood(graph, graph.nodes[stack_entry.node_index], flood_id, stack_entry.edge_mask, tree, stack);
+                low_level_separation_flood(graph, graph.nodes[stack_entry.node_index], flood_id, stack_entry.edge_mask, tree, stack, tree_masks);
             } else {
                 // Graph level floodfill
-                separation_flood(graph, graph.nodes[stack_entry.node_index], flood_id, tree, stack);
+                separation_flood(graph, graph.nodes[stack_entry.node_index], flood_id, tree, stack, tree_masks);
             }
         }
 
@@ -623,13 +574,13 @@ std::vector<Entity> Destruction::find_seperations(Entity entity, const std::vect
     entities.resize(flood_id);
 
     for (size_t i = 0; i < flood_id; i++) {
-        entities[i] = engine.ecs.create_entity(std::format("Part %i", flood_id));
-        VoxelRenderer& vr = engine.ecs.add_component<VoxelRenderer>(entities[i]);
-        engine.resources.
+        entities[i] = engine.ecs.create_entity(std::format("Part {}", flood_id));
+        //VoxelRenderer& vr = engine.ecs.add_component<VoxelRenderer>(entities[i]);
+        //vr.resource = { {}, std::make_shared<tmt::VoxelVolume>() };
     }
     
 
-    return ;
+    return std::vector<Entity> { entity };
 }
 
 bool all_children_solid(Svt64* tree, const uint32_t node_index) {
@@ -646,7 +597,7 @@ bool all_children_solid(Svt64* tree, const uint32_t node_index) {
     if (node.is_leaf()) return true;
 
     // Recurse into all chidren
-    for (size_t i = 0; i < 64; i++) {
+    for (uint32_t i = 0; i < 64; i++) {
         if (!all_children_solid(tree, node.abs_ptr() + i)) return false;
     }
 
@@ -691,7 +642,7 @@ void set_lower_level_neighbors(
 }
 
 void set_highest_level_neighbors(
-    Destructable& graph, DestructionNode& connection_node, Svt64* tree, const uint32_t node_index, const uint32_t current_depth, const uint32_t node_scale, const uint32_t global_x,
+    Destructable& graph, DestructionNode& connection_node, Svt64* tree, const uint32_t node_scale, const uint32_t global_x,
     const uint32_t global_y, const uint32_t global_z
 ) {
     {  // -X
@@ -962,7 +913,7 @@ void recurse_generate_connection(
     // Copy mask for iteration
     uint64_t mask = node.child_mask;
 
-    const uint8_t level = tree->depth - current_depth;
+    const uint8_t level = (uint8_t)tree->depth - (uint8_t)current_depth;
 
     // Alwasy skip root node, check if all children are solid (always make a node for leaf nodes)
     if ((current_depth != 0 && all_children_solid(tree, node_index)) || (level == 1 && mask != 0)) {
@@ -976,7 +927,7 @@ void recurse_generate_connection(
         const uint32_t node_id = Destruction::pos_to_node_id(global_x, global_y, global_z);
         graph.nodes_map[node_id] = connection_node.id;
 
-        set_highest_level_neighbors(graph, graph.nodes.back(), tree, node_index, current_depth, node_scale, global_x, global_y, global_z);
+        set_highest_level_neighbors(graph, graph.nodes.back(), tree, node_scale, global_x, global_y, global_z);
         return;
     }
 
@@ -1091,10 +1042,10 @@ void Destruction::regenerate_connection_graph(Destructable& graph, Svt64* tree, 
     //
     glm::uvec3 min = (glm::uvec3)offset;
     glm::uvec3 max = (glm::uvec3)offset + stencil->size;
-    uint16_t node_count = graph.nodes.size();
+    uint16_t node_count = (uint16_t)graph.nodes.size();
     // Loop over all nodes
-    for (size_t i = 0; i < node_count; i++) {
-        DestructionNode& node = graph.nodes[i];
+    for (size_t n = 0; n < node_count; n++) {
+        DestructionNode& node = graph.nodes[n];
 
         if (node.level == 10) continue;
 
