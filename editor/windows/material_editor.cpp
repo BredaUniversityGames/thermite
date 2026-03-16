@@ -35,11 +35,7 @@ void modify_all_palettes(const tmt::MaterialIndex material_index, Type tmt::Mate
 
 namespace tmt {
 
-void MaterialEditor::display() {
-    ImGui::Checkbox("Modify all palettes", &edit_all_palettes);
-
-    ImGui::Separator();
-
+void MaterialEditor::on_inspect() {
     const NodeHierarchy& hierarchy = editor.windows[Editor::Mode::VOXEL].get<NodeHierarchy>();
 
     const auto selected_entity = hierarchy.get_first_selected_entity();
