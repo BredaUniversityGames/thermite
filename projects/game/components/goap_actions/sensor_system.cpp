@@ -43,7 +43,10 @@ void SensorsSystem::on_update(const tmt::FrameData& time) {
 
         // Update facts
         ws->facts[(uint32_t)std::hash<std::string>()("player_in_range")] = distance <= params.activation_range;
-        //ws->facts[(uint32_t)std::hash<std::string>()("player_in_explosion_zone")] = distance <= params.max_explosion_range;
+        ws->facts[(uint32_t)std::hash<std::string>()("player_in_explosion_zone")] = distance <= params.max_explosion_range;
+        if (ws->facts[(uint32_t)std::hash<std::string>()("player_in_explosion_zone")] == false) {
+            ws->facts[(uint32_t)std::hash<std::string>()("ready_to_explode")] = false;
+        }
     });
 }
 
