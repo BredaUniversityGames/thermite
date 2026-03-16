@@ -49,6 +49,12 @@ struct ScreenBuffer {
     Image image {};
 };
 
+struct PostProcessBuffer {
+    TextureMeta meta = TextureMeta();
+    Texture texture {};
+    std::vector<Image> images {};
+};
+
 /* Direct Illumination Shading Rate. */
 enum class ShadingRate : uint32_t {
     FULL_RATE = 0u,    /* Perform shading for every pixel on screen. */
@@ -94,7 +100,7 @@ struct RenderView {
     /* Screen buffers */
     ScreenBuffer vbuffer {};  /* Visibility buffer (WxH, 6->8 bytes) */
     ScreenBuffer dbuffer {};  /* Depth buffer (WxH, 4 bytes) */
-    ScreenBuffer lbuffer {};  /* Raw luminance buffer (WxH, 4 bytes) */
+    PostProcessBuffer lbuffer {};  /* Raw luminance buffer (WxH, 4 bytes) */
     ScreenBuffer nbuffer {};  /* Denoised luminance buffer (WxH, 4 bytes) */
     ScreenBuffer hbuffer1 {}; /* Accumulated (History) frame buffer (WxH, 8 bytes) */
     ScreenBuffer hbuffer2 {}; /* Accumulated (History) frame buffer (WxH, 8 bytes) */

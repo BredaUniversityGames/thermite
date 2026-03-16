@@ -154,7 +154,7 @@ void Renderer::update() {
             .read(point_sampler)
             .read(linear_sampler)
             .read(render_view.mbuffer.image)
-            .read(render_view.lbuffer.image)
+            .read(render_view.lbuffer.images[0])
             .write(frame_flag ? render_view.hbuffer1.image : render_view.hbuffer2.image)
             .read(frame_flag ? render_view.hbuffer2.image : render_view.hbuffer1.image)
             .write(render_view.get_render_image())
