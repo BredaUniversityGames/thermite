@@ -30,7 +30,7 @@ void Goap::on_start() {
         if (registry.any_of<GoapAgent>(entity)) continue;
 
         GoapAgentFactory::spawn_agent_from_type(type_ref.type_id, entity);
-        registry.emplace<SteeringAgent>(entity);
+        // registry.emplace<SteeringAgent>(entity);
     }
 }
 
@@ -270,8 +270,9 @@ bool Goap::update_plan(Entity entity, GoapAgent& agent, WorldState& ws) {
 
     agent.clear_plan();
 
-    std::vector<Node> nodes;
-    nodes.reserve(128);
+    // std::vector<Node> nodes;
+    // nodes.reserve(128);
+    std::deque<Node> nodes;
 
     using NodePtr = Node*;
     auto cmp = [](NodePtr a, NodePtr b) { return a->total_cost() > b->total_cost(); };

@@ -3,6 +3,7 @@
 #include "engine/systems/ai/steering/steering_system.hpp"
 #include "engine/systems/ai/steering/components/steering_agent.hpp"
 #include "engine/systems/ai/goap/components/world_state.hpp"
+#include "engine/systems/ai/goap/components/goap_agent.hpp"
 
 #include "engine/engine.hpp"
 #include "engine/core/ecs.hpp"
@@ -28,6 +29,15 @@ void SensorsSystem::on_start() {
 
 void SensorsSystem::on_update(const tmt::FrameData& /*time*/) {
     auto& ecs = tmt::engine.ecs;
+
+    ecs.view<tmt::WorldState, tmt::GoapAgent>().each([&](tmt::Entity agent_entity, tmt::WorldState& ws, tmt::GoapAgent& agent) {
+        // propagate world state change to agent
+        if (ws.needs_replan) {
+            agent.needs_replan = true;
+            ws.needs_replan = false;
+        }
+    });
+
     auto* steering = ecs.systems.try_get<tmt::SteeringSystem>();
     if (!steering) return;
     if (!ecs.valid(player_entity)) return;
@@ -50,10 +60,17 @@ void SensorsSystem::on_update(const tmt::FrameData& /*time*/) {
         const auto& params = steering->overrides().params;
 
         // Update facts
-        ws->facts[(uint32_t)std::hash<std::string>()("player_in_range")] = distance <= params.activation_range;
-        ws->facts[(uint32_t)std::hash<std::string>()("player_in_explosion_zone")] = distance <= params.max_explosion_range;
-        if (ws->facts[(uint32_t)std::hash<std::string>()("player_in_explosion_zone")] == false) {
-            ws->facts[(uint32_t)std::hash<std::string>()("ready_to_explode")] = false;
+        /*ws->facts[(uint32_t)std::hash<std::string>()("s_player_in_range")] = distance <= params.activation_range;
+        ws->facts[(uint32_t)std::hash<std::string>()("s_player_in_explosion_zone")] = distance <= params.max_explosion_range;
+        if (ws->facts[(uint32_t)std::hash<std::string>()("s_player_in_explosion_zone")] == false) {
+            ws->facts[(uint32_t)std::hash<std::string>()("s_ready_to_explode")] = false;
+        }*/
+
+        ws->set_fact(tmt::FactId("s_player_in_range"), distance <= params.activation_range);
+        ws->set_fact(tmt::FactId("s_player_in_explosion_zone"), distance <= params.max_explosion_range);
+
+        if (!ws->facts[tmt::FactId("s_player_in_explosion_zone").id]) {
+            ws->set_fact(tmt::FactId("s_ready_to_explode"), false);
         }
     });
 }
