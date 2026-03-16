@@ -7,16 +7,16 @@ namespace tmt {
 
 class CenteredControlWrapperT {
    public:
-    explicit CenteredControlWrapperT(bool result) : result_(result) {}
-    operator bool() const { return result_; }
+    explicit CenteredControlWrapperT(bool result) : result(result) {}
+    operator bool() const { return result; }
 
    private:
-    bool result_;
+    bool result;
 };
 
 class CenteredControlT {
    public:
-    CenteredControlT(ImVec2 window_size, float y = 0.f, float s = 0.f, float su = 0.f) : window_size_(window_size), y_offset(y), spacing_below(s), spacing_up(su) {}
+    CenteredControlT(ImVec2 window_size, float y = 0.f, float s = 0.f, float su = 0.f) : window_size(window_size), y_offset(y), spacing_below(s), spacing_up(su) {}
 
     template <typename func>
     CenteredControlWrapperT operator()(func control) const {
@@ -31,9 +31,9 @@ class CenteredControlT {
 
         // Real render pass - centered, result captured
         ImGui::Dummy(ImVec2(0, spacing_up));
-        ImGui::SetCursorPos(ImVec2((window_size_.x - control_size.x) * 0.5f, original_pos.y + y_offset));
+        ImGui::SetCursorPos(ImVec2((window_size.x - control_size.x) * 0.5f, original_pos.y + y_offset));
 
-        bool result = control();  // this is what your `if` checks
+        bool result = control();
 
         ImGui::Dummy(ImVec2(0, spacing_below));
 
@@ -41,7 +41,7 @@ class CenteredControlT {
     }
 
    private:
-    ImVec2 window_size_;
+    ImVec2 window_size;
     float y_offset;
     float spacing_below;
     float spacing_up;
