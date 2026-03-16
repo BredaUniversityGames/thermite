@@ -136,8 +136,8 @@ tmt::Entity recurse_build_scene(
     entity = tmt::engine.ecs.create_entity(node.name, entity);
 
     tmt::Transform& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
-    transform.set_world_matrix(parent_matrix * node.transform);
     transform.set_parent(parent_entity);
+    transform.set_world_matrix(parent_matrix * node.transform);
 
     tmt::NodeHierarchy::NodeUUID& uuid_component = tmt::engine.ecs.add_component<tmt::NodeHierarchy::NodeUUID>(entity);
     uuid_component.uuid = uuid;
