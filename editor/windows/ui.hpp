@@ -4,14 +4,12 @@
 
 namespace tmt {
 
-class UIEditor : public IEditorSystem<UIEditor> {
+class UIEditor : public IEditorSystem<> {
    public:
     UIEditor() = default;
     ~UIEditor() = default;
 
     void on_editor_update(const FrameData& time) override;
-
-    virtual std::string get_title() const override { return "UI Editor"; }
 };
 
 }  // namespace tmt
