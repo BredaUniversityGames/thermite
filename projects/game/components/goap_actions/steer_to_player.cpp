@@ -27,7 +27,19 @@ void SteerToPlayer::on_start(tmt::Entity agent) {
     registry.emplace_or_replace<tmt::SteeringRequest>(agent, request);
 }
 
-void SteerToPlayer::on_fixed_tick(tmt::Entity agent, float /*dt*/) {}
+void SteerToPlayer::on_fixed_tick(tmt::Entity agent, float /*dt*/) {
+    if (!tmt::engine.ecs.valid(player_entity)) return;
+
+    auto& registry = tmt::engine.ecs.get_registry();
+    if (!registry.any_of<tmt::SteeringRequest>(agent)) return;
+
+    auto& request = registry.get<tmt::SteeringRequest>(agent);
+
+    auto* player_transform = tmt::engine.ecs.try_get_component<tmt::Transform>(player_entity);
+    if (!player_transform) return;
+
+    request.target_position = player_transform->get_world_position();
+}
 
 bool SteerToPlayer::is_done(tmt::Entity agent) const {
     if (!tmt::engine.ecs.valid(player_entity)) return true;
