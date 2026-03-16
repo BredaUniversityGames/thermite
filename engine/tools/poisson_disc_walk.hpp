@@ -26,8 +26,6 @@ struct PoissonField {
 
     float spacing_radius = 50.f;
 
-    float space_weight = 1.f;
-
     glm::vec3 size;
 };
 
@@ -51,4 +49,4 @@ bool point_valid(glm::vec3 point, float radius, float max_radius, const SpatialL
 
 }  // namespace tmt
 TMT_OBJECT(tmt::LayerEntry, (spawnable, radius_factor, spawn_weight, belt_bias));
-TMT_OBJECT(tmt::PoissonField, (layer_entries, rejection_samples, spacing_radius, space_weight));
+TMT_OBJECT(tmt::PoissonField, (layer_entries, rejection_samples, spacing_radius));
