@@ -79,11 +79,6 @@ class Game : public tmt::Application {
     void on_end() override {};
 };
 
-class LoekTestScene : public tmt::Scene<LoekTestScene> {
-   public:
-    static constexpr std::string_view scene_name() { return "LoekTestScene"; }
-};
-
 std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs& args) {
     // clang-format off
     tmt::ApplicationSpecs specs {
@@ -92,9 +87,6 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
         .log_file = "mining_game_logs.txt"
     };
     // clang-format on
-
-    /* Register Scenes */
-    tmt::engine.scenes.register_scene<LoekTestScene>();
 
     /* Register Game Components */
     tmt::engine.component_registry.register_component<game::Player>();
