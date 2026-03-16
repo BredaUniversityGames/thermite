@@ -1,7 +1,7 @@
 #include "material_editor.hpp"
 
 #include "editor.hpp"
-#define IM_CUSTOM_COLORSPACE_MATRIX { 0.597314f, 0.073732f, 0.020689f, 0.332820f, 0.917381f, 0.118816f, 0.038138f, 0.017072f, 0.961536f }
+#define IM_CUSTOM_COLORSPACE_MATRIX { 0.613097f, 0.070194f, 0.020616f, 0.339523f, 0.916354f, 0.109570f, 0.047380f, 0.013452f, 0.869815f }
 #include "editor/shared/imgui_color_wheel.hpp"
 #include "editor/windows/node_hierarchy.hpp"
 #include "editor/windows/palette.hpp"
