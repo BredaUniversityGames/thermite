@@ -13,8 +13,9 @@ ConstantBuffer<RenderView> render_view;
 RWStructuredBuffer<cache::Slot> macrofacet_cache;
 /* Visibility buffer. */
 Texture2D<uint2> vbuffer;
-/* Luminance buffer. */
-Texture2D<float3> lbuffer;
+/* Diffuse & Specular buffers. */
+Texture2D<float3> diffuse;
+Texture2D<float3> specular;
 
 [shader("compute")]
 [numthreads(16, 8, 1)]
@@ -28,5 +29,5 @@ void main(int2 thread_id: SV_DispatchThreadID) {
     if (null_visibility(facet_key)) return;
 
     /* Insert luminance into the cache */
-    cache::insert(macrofacet_cache, facet_key, lbuffer[thread_id], 0.0f);
+    cache::insert(macrofacet_cache, facet_key, diffuse[thread_id], specular[thread_id >> 1]);
 }

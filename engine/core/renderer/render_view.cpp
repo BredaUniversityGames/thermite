@@ -69,6 +69,12 @@ void RenderView::init() {
                           .expect("failed to create nbuffer texture.");
     nbuffer.image = bank.create_image("Denoised Luminance Buffer Image", nbuffer.texture).expect("failed to create nbuffer image.");
 
+    /* Quarter size specular buffer */
+    const Size3D quarter_size { view_size.x >> 1, view_size.y >> 1 };
+    spec_buffer.texture =
+        bank.create_texture("Specular Buffer Texture", TextureUsage::Storage | TextureUsage::Sampled, TextureFormat::RG11B10Ufloat, quarter_size).expect("failed to create specular buffer texture.");
+    spec_buffer.image = bank.create_image("Specular Buffer Image", spec_buffer.texture).expect("failed to create specular buffer image.");
+
     /* Create the macrofacet cache */
     const uint64_t cache_size = 10'000'000u; /* 480 MB */
     macrofacet_cache = bank.create_buffer("Macrofacet Cache Buffer", BufferUsage::Storage, cache_size, 48ull /* bytes */).expect("failed to create macrofacet cache buffer.");
@@ -200,6 +206,9 @@ void RenderView::resize_textures() {
         render_size.x = render_size.x >> 1;
         render_size.y = render_size.y >> 1;
     }
+    
+    /* Quarter rate screen size */
+    const Size3D quarter_size { view_size.x >> 1, view_size.y >> 1 };
 
     /* Resize the screen buffers */
     bank.resize_texture(viewport.texture, view_size).expect("failed to resize viewport texture.");
@@ -207,6 +216,7 @@ void RenderView::resize_textures() {
     bank.resize_texture(dbuffer.texture, view_size).expect("failed to resize depth buffer texture.");
     bank.resize_texture(lbuffer.texture, view_size).expect("failed to resize lbuffer texture.");
     bank.resize_texture(nbuffer.texture, render_size).expect("failed to resize nbuffer texture.");
+    bank.resize_texture(spec_buffer.texture, quarter_size).expect("failed to resize specular buffer texture.");
 }
 
 }  // namespace tmt

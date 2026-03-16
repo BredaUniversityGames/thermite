@@ -20,7 +20,7 @@ StructuredBuffer<VoxelObject> objects;
 /* Visibility buffer. */
 Texture2D<uint2> vbuffer;
 /* Luminance buffer. */
-RWTexture2D<float3> lbuffer;
+RWTexture2D<float3> specular;
 
 /* Sample glossy specular lobe using VNDF distribution. */
 /* Source: "Bounded VNDF Sampling for Smith–GGX Reflections" */
@@ -161,7 +161,10 @@ void main(int2 thread_id: SV_DispatchThreadID) {
     const uint64_t facet_key = asuint64(vbuffer[pixel_id]);
 
     /* Exit early if the visibility for this pixel is null */
-    if (null_visibility(facet_key)) return;
+    if (null_visibility(facet_key)) {
+        specular[thread_id] = 0.0f;
+        return;
+    }
 
     /* Generate a ray for our render view */
     const Ray ray = pinhole_ray(render_view, pixel_id);
@@ -169,11 +172,14 @@ void main(int2 thread_id: SV_DispatchThreadID) {
     /* Unpack visibility buffer data */
     const GeoData geo = unpack_geometry(unpack_visibility(facet_key), objects, ray);
     const float eta = geo.material.ior() / 1.0f;
-    if (eta <= 1.0f) return; /* No reflections */
+    if (eta <= 1.0f) {
+        specular[thread_id] = 0.0f;
+        return; /* No reflections */
+    }
 
     const float3 hit_point = ray.origin + ray.dir * geo.depth + geo.normal * 0.001f;
 
-    const float2 noise = r2(blue_noise[pixel_id % 512].rg, render_view.frame_index % 1024u);
+    const float2 noise = r2(blue_noise[thread_id % 512].rg, render_view.frame_index % 1024u);
 
     /* Transform vectors into shading space */
     const float3x3 basis = orthonormal_basis(geo.normal);
@@ -192,13 +198,10 @@ void main(int2 thread_id: SV_DispatchThreadID) {
 
     /* Ignore directions which lie underneath the horizon */
     // if (wi.z <= 0.0f) wi = float3(-wo.x, -wo.y, wo.z);
-    if (wi.z <= 0.0f) {
-        lbuffer[pixel_id + int2(0, 0)] = 0.0f;
-        lbuffer[pixel_id + int2(1, 0)] = 0.0f;
-        lbuffer[pixel_id + int2(0, 1)] = 0.0f;
-        lbuffer[pixel_id + int2(1, 1)] = 0.0f;
-        return;
-    }
+    // if (wi.z <= 0.0f) {
+    //     specular[thread_id] = 0.0f;
+    //     return;
+    // }
     const float3 sample_dir = normalize(mul(transpose(basis), wi));
 
     /* Evaluate the BSDF and PDF of the sample */
@@ -216,9 +219,6 @@ void main(int2 thread_id: SV_DispatchThreadID) {
         luminance = 1.0f;
     }
     luminance *= bsdf;
-    
-    lbuffer[pixel_id + int2(0, 0)] = luminance;
-    lbuffer[pixel_id + int2(1, 0)] = luminance;
-    lbuffer[pixel_id + int2(0, 1)] = luminance;
-    lbuffer[pixel_id + int2(1, 1)] = luminance;
+
+    specular[thread_id] = luminance;
 }

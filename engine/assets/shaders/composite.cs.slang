@@ -57,7 +57,7 @@ void main(int2 thread_id: SV_DispatchThreadID) {
             const VisData vis = unpack_visibility(packed);
             const GeoData geo = unpack_geometry(vis, objects, ray);
 
-            luminance = slot.read_diffuse() * geo.material.albedo();
+            luminance = slot.read_diffuse() * geo.material.albedo() + slot.read_specular();
         }
     }
 
