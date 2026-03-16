@@ -23,7 +23,7 @@ class IEditorSystemBase {
 
     /* Optional, defaults to reflection */
     virtual tmt::json serialize() const { return {}; }
-    virtual void deserialize(const tmt::json value) { (void)value; }
+    virtual void deserialize(const tmt::json& value) { (void)value; }
 };
 
 template <typename Derived = void>
