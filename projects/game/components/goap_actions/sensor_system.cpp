@@ -11,11 +11,11 @@
 namespace game {
 
 void SensorsSystem::on_start() {
-    tmt::Log::info("Sensor system on_start");
+    //tmt::Log::info("Sensor system on_start");
 
-    if (!tmt::engine.ecs.valid(player_entity)) {
-        player_entity = tmt::engine.ecs.view<Player>().front().entity;  // Assuming there's only one player entity in the game
-    }
+    //if (!tmt::engine.ecs.valid(player_entity)) {
+    //    player_entity = tmt::engine.ecs.view<Player>().front().entity;  // Assuming there's only one player entity in the game
+    //}
 }
 
 void SensorsSystem::on_update(const tmt::FrameData& time) {

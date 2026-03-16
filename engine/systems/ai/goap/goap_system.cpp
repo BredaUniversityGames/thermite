@@ -100,169 +100,40 @@ void Goap::process_agent(Entity entity, WorldState& ws, float /*dt*/) {
  *   - If all goals are satisfied ? pick lowest priority as fallback.
  */
 void Goap::update_goal(Entity entity, GoapAgent& agent, WorldState& ws) {
-    // ------------------------------------------------------
-    // Invalidate goal if no longer relevant
-    // ------------------------------------------------------
+    // If current goal exists but is no longer relevant, invalidate it
     if (agent.has_goal() && !agent.active_goal.is_relevant(ws)) {
-        if (show_logging) {
-            Log::info("GOAP: Agent {} invalidating goal '{}' (no longer relevant)", entity, agent.active_goal.name);
-        }
-
-        agent.active_goal.valid = false;
+        agent.active_goal.valid = false;  // force reassignment
     }
-
-    // ------------------------------------------------------
-    // Allow higher priority goals to interrupt
-    // ------------------------------------------------------
-    if (agent.has_goal()) {
-        for (const auto& goal : agent.available_goals) {
-            if (goal.priority > agent.active_goal.priority && goal.is_relevant(ws)) {
-                if (show_logging) {
-                    Log::info("GOAP: Agent {} switching goal '{}' -> '{}'", entity, agent.active_goal.name, goal.name);
-                }
-
-                agent.active_goal.valid = false;
-                break;
-            }
-        }
-
-        // If we still have a valid goal and plan -> keep pursuing it
-        if (agent.has_goal() && !agent.needs_replan) {
-            return;
-        }
-    }
+    if (agent.has_goal()) return;
 
     if (agent.available_goals.empty()) {
         Log::warn("GOAP Agent {} has no goals.", entity);
         return;
     }
 
-    // ------------------------------------------------------
-    // Sort goals by priority
-    // ------------------------------------------------------
+    // Higher priority first
     std::sort(agent.available_goals.begin(), agent.available_goals.end(), [](const GoapGoal& a, const GoapGoal& b) { return a.priority > b.priority; });
 
-    if (show_logging) {
-        Log::info("GOAP: Agent {} evaluating {} goals", entity, (int)agent.available_goals.size());
-    }
-
-    // ------------------------------------------------------
-    // Pick highest priority relevant goal
-    // ------------------------------------------------------
+    // Select first relevant goal
     for (const auto& goal : agent.available_goals) {
-        if (!goal.is_relevant(ws)) {
+        if (goal.is_relevant(ws)) {
+            agent.active_goal = goal;
+            agent.needs_replan = true;
+
             if (show_logging) {
-                Log::info("GOAP: Goal '{}' skipped (not relevant)", goal.name);
+                Log::info("GOAP Agent {} selected goal '{}' with priority {}", entity, agent.active_goal.name, goal.priority);
             }
-
-            continue;
+            return;
         }
-
-        // ------------------------------------------------------
-        // Skip goals that cannot currently produce a plan
-        // ------------------------------------------------------
-        if (!goal_has_valid_plan(goal, agent, ws)) {
-            if (show_logging) Log::info("GOAP: Goal '{}' skipped (no valid plan)", goal.name);
-            continue;
-        }
-
-        agent.active_goal = goal;
-        agent.needs_replan = true;
-
-        if (show_logging) {
-            Log::info("GOAP Agent {} selected goal '{}' with priority {}", entity, goal.name, goal.priority);
-        }
-
-        return;
     }
 
-    // ------------------------------------------------------
-    // Fallback goal
-    // ------------------------------------------------------
+    // If all goals satisfied, pick lowest priority (fallback)
     agent.active_goal = agent.available_goals.back();
     agent.needs_replan = true;
 
     if (show_logging) {
-        Log::info("GOAP Agent {} selected fallback goal '{}'", entity, agent.active_goal.name);
+        Log::info("GOAP Agent {} selected fallback goal.", entity);
     }
-}
-
-/* helper for checking valid plan for picking goals */
-bool Goap::goal_has_valid_plan(const GoapGoal& goal, GoapAgent& agent, const WorldState& ws) {
-    GoapGoal old_goal = agent.active_goal;
-    agent.active_goal = goal;
-
-    // Use a simple A* search, exactly like update_plan(), but do NOT store the plan in agent.plan
-    struct Node {
-        GoapAction* action;
-        WorldState state;
-        Node* parent;
-        float cost_so_far;
-        Node(GoapAction* a, const WorldState& s, Node* p, float c) : action(a), state(s), parent(p), cost_so_far(c) {}
-    };
-
-    std::vector<Node> nodes;
-    std::priority_queue<Node*, std::vector<Node*>, std::function<bool(Node*, Node*)>> open_list([](Node* a, Node* b) { return (a->cost_so_far) > (b->cost_so_far); });
-    std::unordered_set<GoapAction*> closed;
-
-    // Seed with all actions whose preconditions are satisfied in current world state
-    for (GoapAction* action : agent.available_actions) {
-        if (!action) continue;
-        EffectiveGoapAction eff = build_effective_action(*action, action_overrides.find(action->get_id()));
-        bool satisfied = true;
-        for (auto& [fact, val] : eff.preconditions) {
-            uint32_t id = (uint32_t)std::hash<std::string>()(fact);
-            auto it = ws.facts.find(id);
-            if (it == ws.facts.end() || it->second != val) {
-                satisfied = false;
-                break;
-            }
-        }
-        if (satisfied) {
-            nodes.emplace_back(action, ws, nullptr, eff.cost);
-            open_list.push(&nodes.back());
-        }
-    }
-
-    Node* goal_node = nullptr;
-    while (!open_list.empty()) {
-        Node* current = open_list.top();
-        open_list.pop();
-        if (!current) continue;
-        if (closed.count(current->action)) continue;
-        closed.insert(current->action);
-
-        // Apply effects to get new state
-        WorldState temp = current->state;
-        current->action->apply_effects(temp);
-
-        if (temp.satisfies(goal.desired_state)) {
-            goal_node = current;
-            break;
-        }
-
-        // Expand next actions
-        for (GoapAction* next : agent.available_actions) {
-            if (!next || closed.count(next)) continue;
-            EffectiveGoapAction eff = build_effective_action(*next, action_overrides.find(next->get_id()));
-            bool satisfied = true;
-            for (auto& [fact, val] : eff.preconditions) {
-                uint32_t id = (uint32_t)std::hash<std::string>()(fact);
-                auto it = temp.facts.find(id);
-                if (it == temp.facts.end() || it->second != val) {
-                    satisfied = false;
-                    break;
-                }
-            }
-            if (satisfied) {
-                nodes.emplace_back(next, temp, current, current->cost_so_far + eff.cost);
-                open_list.push(&nodes.back());
-            }
-        }
-    }
-
-    agent.active_goal = old_goal;
-    return goal_node != nullptr;
 }
 
 /**
