@@ -22,7 +22,7 @@ namespace tmt {
 class LevelEditor : public IWindow {
    public:
     // Inherited via IWindow
-    void display() override;
+    void on_inspect() override;
 
     void on_editor_start() override;
     void on_editor_update(const tmt::FrameData& time) override;
@@ -37,9 +37,9 @@ class LevelEditor : public IWindow {
     {
         int seed = 42;
         bool random_seed;
-        std::string name;
+        std::string name = "default";
 
-        float height ;
+        float height = 10.f;
         PoissonField field;
         RGBA color;
     };
@@ -88,4 +88,4 @@ class LevelEditor : public IWindow {
 };
 
 }  // namespace tmt
-TMT_OBJECT(tmt::LevelEditor::CellTemplate, (name, seed, height, field, color));
+TMT_OBJECT(tmt::LevelEditor::CellTemplate, (name, random_seed, seed, height, field, color));

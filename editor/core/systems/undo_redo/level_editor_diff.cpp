@@ -4,7 +4,7 @@
 
 void tmt::LevelEditorDiff::undo() 
 {
-	auto level_editor = tmt::editor.windows[Editor::Mode::SCENE].try_get<LevelEditor>();
+	auto level_editor = tmt::editor.systems[Editor::Mode::SCENE].try_get<LevelEditor>();
 	auto& cells = level_editor->get_cells();
 
 	for (auto& [coord, cell] : added_placements) {
@@ -21,7 +21,7 @@ void tmt::LevelEditorDiff::undo()
 
 void tmt::LevelEditorDiff::redo() 
 {
-    auto level_editor = tmt::editor.windows[Editor::Mode::SCENE].try_get<LevelEditor>();
+    auto level_editor = tmt::editor.systems[Editor::Mode::SCENE].try_get<LevelEditor>();
     auto& cells = level_editor->get_cells();
 
     for (auto& [coord, cell] : added_placements) {

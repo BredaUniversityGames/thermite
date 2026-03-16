@@ -15,10 +15,10 @@
 
 namespace tmt {
 
-void tmt::LevelEditor::display() {
+void tmt::LevelEditor::on_inspect() {
     window_displayed = true;
 
-    auto& viewport = editor.windows[Editor::Mode::SCENE].get<Viewport>();
+    auto& viewport = editor.systems[Editor::Mode::SCENE].get<Viewport>();
 
     ImGui::Checkbox("Enable level editing", &enable_editing);
     ImGui::Checkbox("Mirror X", &mirror_x);
@@ -45,7 +45,8 @@ void tmt::LevelEditor::display() {
     static const char* preview = "None";
     if (selected_template >= 0 && selected_template < static_cast<int>(pickable_cell_templates.size())) {
         preview = pickable_cell_templates[selected_template].name.c_str();
-    }
+    } else preview = "None";
+
     if (ImGui::BeginCombo("Cell Template", preview)) {
         for (int i = 0; i < static_cast<int>(pickable_cell_templates.size()); ++i) {
             const bool is_selected = (selected_template == i);
@@ -61,7 +62,26 @@ void tmt::LevelEditor::display() {
 
         ImGui::EndCombo();
     }
-    ImReflect::Input("Cell templates", &pickable_cell_templates);
+
+    auto response = ImReflect::Input("Cell templates", &pickable_cell_templates);
+    if(response.get<std::vector>().has_erased())
+    {
+        size_t erased_idx = response.get<std::vector>().get_erased_index();
+        if(erased_idx == selected_template) selected_template = -1;
+
+        std::vector<glm::ivec2> erasing_coords;
+        for (auto& [coord, cell] : cells) {
+            if(cell.template_index == erased_idx) 
+            {
+                erasing_coords.push_back(coord);
+            }
+        }
+        for(auto& coord : erasing_coords)
+        {
+            cells.erase(coord);
+        }
+    }
+
     if (ImGui::Button("Generate cells")) {
         auto view = engine.ecs.view<LevelCellGrouperTag>();
         tmt::Entity grouper_entity;
@@ -72,6 +92,15 @@ void tmt::LevelEditor::display() {
             grouper_entity = view.front();
         }
 
+        auto& grouper_trans = engine.ecs.get_component<Transform>(grouper_entity);
+        if(grouper_trans.has_children())
+        {
+            for(auto ent : grouper_trans.get_children())
+            {
+                engine.ecs.destroy_entity(ent);
+            }
+        }
+
         for (auto& cell_template : pickable_cell_templates) {
             cell_template.field.size = { cell_size, cell_template.height, cell_size };
         }
@@ -80,6 +109,10 @@ void tmt::LevelEditor::display() {
             auto& cell_template = pickable_cell_templates[cell.template_index];
 
             cell_template.field.size = { cell_size, cell_template.height, cell_size };
+
+            if (cell_template.random_seed) Random::set_seed(Random::irand());
+            else Random::set_seed(cell_template.seed);
+
             auto local_points = tmt::get_poisson_points(cell_template.field);
 
             glm::vec3 cell_pos = coord_to_world(coord);
@@ -169,7 +202,7 @@ void tmt::LevelEditor::display() {
 void tmt::LevelEditor::on_editor_start() {};
 
 void tmt::LevelEditor::on_editor_update(const tmt::FrameData& time) {
-    auto& viewport = editor.windows[Editor::Mode::SCENE].get<Viewport>();
+    auto& viewport = editor.systems[Editor::Mode::SCENE].get<Viewport>();
     viewport.set_allow_selection((!enable_editing) || (!window_displayed));
     window_displayed = false;
 

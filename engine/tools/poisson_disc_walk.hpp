@@ -46,7 +46,7 @@ struct PoissonField {
     int& operator[](int idx) { return grid[idx]; }
     int operator[](int idx) const { return grid[idx]; }
 };
-
+int get_entry_idx(const PoissonField& layer, float cum_spawn_weight);
 std::vector<PoissonPoint> get_poisson_points(const PoissonField& layer);
 bool point_valid(glm::vec3 point, float radius, float max_radius, const SpatialLookupGrid& grid, const std::vector<PoissonPoint>& points);
 }  // namespace tmt

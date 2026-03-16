@@ -1,6 +1,9 @@
 #include "poisson_disc_walk.hpp"
+#include "poisson_disc_walk.hpp"
 #include "glm/glm.hpp"
 #include "random.hpp"
+#include "engine/engine.hpp"
+#include "engine/core/polyline.hpp"
 
 namespace tmt
 {
@@ -17,22 +20,46 @@ SpatialLookupGrid::SpatialLookupGrid(float _cell_size, glm::vec3 _region_size) {
     grid = std::vector<int>(num_grid, -1);
 }
 
+int get_entry_idx(const PoissonField& layer, float cum_spawn_weight) {
+    float rand_weight = Random::rand_range(0.f, cum_spawn_weight);
+    float acc = 0.f;
+    int entry_idx = std::numeric_limits<int>::max();
+    for (int j = 0; j < layer.layer_entries.size(); j++) {
+        acc += layer.layer_entries[j].spawn_weight;
+
+        if (rand_weight < acc) {
+            entry_idx = j;
+            break;
+        }
+    }
+    return entry_idx;
+}
+
 std::vector<PoissonPoint> get_poisson_points(const PoissonField& layer) {
     std::vector<PoissonPoint> radii_points;
 
     if (layer.layer_entries.empty()) return radii_points;
 
     float cell_size = layer.spacing_radius / sqrtf(3.f);
-
     glm::vec3 region_size = layer.size;
 
+    //set up the spatial lookup grid
     SpatialLookupGrid grid(cell_size, region_size);
 
+    //set some initials
     float max_size_factor = 0.f;
     for (auto& layer_entry : layer.layer_entries) {
         if (layer_entry.radius_factor > max_size_factor) max_size_factor = layer_entry.radius_factor;
     }
     float max_radius = layer.spacing_radius * max_size_factor;
+
+    float cum_spawn_weight = 0.f;
+    float cum_belt_weight = 0.f;
+    std::for_each(layer.layer_entries.begin(), layer.layer_entries.end(), [&cum_belt_weight, &cum_spawn_weight](const LayerEntry& entry) {
+        cum_belt_weight += entry.belt_bias;
+        cum_spawn_weight += entry.spawn_weight;
+    });
+
 
     // assign initial point in this layer
     float x0 = Random::rand_range(0.f, grid.region_size.x);
@@ -45,7 +72,9 @@ std::vector<PoissonPoint> get_poisson_points(const PoissonField& layer) {
 
     int init_idx = x * grid.y_dim * grid.z_dim + y * grid.z_dim + z;
 
-    int init_entry_idx = Random::rand_range(0, static_cast<unsigned int>(layer.layer_entries.size() - 1));
+    int init_entry_idx = get_entry_idx(layer, cum_spawn_weight);
+
+    y0 = glm::mix(y0, layer.size.y * 0.5f, layer.layer_entries[init_entry_idx].belt_bias);
 
     PoissonPoint init_point;
     init_point.radius = layer.spacing_radius * layer.layer_entries[init_entry_idx].radius_factor;
@@ -55,17 +84,11 @@ std::vector<PoissonPoint> get_poisson_points(const PoissonField& layer) {
 
     grid.grid[init_idx] = 0;
 
-    // Robert-Bridson disc sampling
+    // Modified Robert-Bridson sphere sampling to suit our needs
     std::vector<int> active_spawn_list;
     active_spawn_list.push_back(0);
 
-    float cum_spawn_weight = 0.f;
-    float cum_belt_weight = 0.f;
-    std::for_each(layer.layer_entries.begin(), layer.layer_entries.end(), [&cum_belt_weight, &cum_spawn_weight](const LayerEntry& entry) {
-        cum_belt_weight += entry.belt_bias;
-        cum_spawn_weight += entry.spawn_weight;
-    });
-
+    
     while (!active_spawn_list.empty()) {
         bool found_candidate = false;
 
@@ -73,29 +96,23 @@ std::vector<PoissonPoint> get_poisson_points(const PoissonField& layer) {
         glm::vec3 selected_p = radii_points[active_spawn_list[idx]].pos;
 
         for (int i = 0; i < layer.rejection_samples; i++) {
-            float rand_weight = Random::rand_range(0.f, cum_spawn_weight);
-            float acc = 0.f;
-            int entry_idx = std::numeric_limits<int>::max();
-            for (int j = 0; j < layer.layer_entries.size(); j++) {
-                acc += layer.layer_entries[j].spawn_weight;
-
-                if (rand_weight < acc) {
-                    entry_idx = j;
-                    break;
-                }
-            }
+            
+            int entry_idx = get_entry_idx(layer, cum_spawn_weight);
 
             glm::vec3 rand_unit_vec = Random::rand_unit_vec();
 
-            float linear_relation = (selected_p.y / (layer.size.y*0.5f * 0.5f)) - 1.f;
-            float belt_tendency = linear_relation;
+            //float linear_relation = (selected_p.y / (layer.size.y*0.5f * 0.5f)) - 1.f;
+            //float belt_tendency = linear_relation;
 
-            rand_unit_vec.y += -belt_tendency * layer.layer_entries[entry_idx].belt_bias;
-            rand_unit_vec = glm::normalize(rand_unit_vec);
+            //rand_unit_vec = glm::normalize(rand_unit_vec);
+
 
             float selected_spacing_radius = radii_points[active_spawn_list[idx]].radius;
             float candidate_radius = layer.layer_entries[entry_idx].radius_factor * layer.spacing_radius;
             glm::vec3 candidate_point = selected_p + rand_unit_vec * Random::rand_range(selected_spacing_radius + candidate_radius, 2.f * (selected_spacing_radius + candidate_radius));
+
+            candidate_point.y = glm::mix(candidate_point.y, layer.size.y * 0.5f, /* belt_tendency * */ layer.layer_entries[entry_idx].belt_bias);
+            //tmt::engine.polyline.draw_sphere(candidate_point, 5.f, 32, 100.f);
 
             if (point_valid(candidate_point, candidate_radius, max_radius, grid, radii_points)) {
                 PoissonPoint a_p;
