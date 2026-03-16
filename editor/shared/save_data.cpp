@@ -22,10 +22,10 @@ void SaveData::load() {
     const json j = json::parse(file_content);
     tmt::Serializer::deserialize(j, *this);
     for (const auto& system : editor.systems[editor.editor_mode]) {
-         const auto name = system->get_title();
-         if (j.contains(name)) {
-             system->deserialize(j[name]);
-         }
+        const auto name = system->get_title();
+        if (j.contains(name)) {
+            system->deserialize(j[name]);
+        }
     }
 }
 
