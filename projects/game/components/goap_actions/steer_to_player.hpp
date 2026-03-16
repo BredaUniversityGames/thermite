@@ -26,7 +26,6 @@ class SteerToPlayer : public tmt::GoapAction {
 
    private:
     tmt::Entity player_entity = entt::null;
-    // bool done = false;
 };
 
 }  // namespace game

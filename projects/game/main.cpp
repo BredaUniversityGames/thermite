@@ -8,6 +8,22 @@
 
 // For custom ImGui logic
 #include "editor/all.hpp"
+
+// GOAP
+#include "engine/systems/ai/goap/goap_system.hpp"
+#include "engine/systems/ai/goap/components/goap_action_registry.hpp"
+#include "engine/systems/ai/goap/components/goap_goal_registry.hpp"
+#include "engine/systems/ai/goap/components/goap_goal.hpp"
+
+//AI actions
+#include "ai_actions/chase_player.hpp"
+#include "ai_actions/wander.hpp"
+#include "ai_actions/fire_missiles.hpp"
+#include "ai_actions/fire_laser.hpp"
+
+//Enemies
+#include "components/gameplay_functionality_components/enemy_components/medium_enemy.hpp"
+
 // Animation
 #include "components/animation_player.hpp"
 // Game Components
@@ -52,12 +68,11 @@ class Game : public tmt::Application {
    public:
     Game(const tmt::ApplicationSpecs& specs) : Application(specs) {}
 
-    void on_start() override {};
+    void on_start() override {  
+    };
     void on_update(const tmt::FrameData& time) override {};
     void on_end() override {};
 };
-
-// Moved scenes to data_headers/scene_list.hpp
 
 std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs& args) {
     // clang-format off
@@ -67,7 +82,7 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
         .log_file = "mining_game_logs.txt"
     };
     // clang-format on
-
+    
     /* Register Scenes */
     tmt::engine.scenes.register_scene<MainMenuScene>();
     tmt::engine.scenes.register_scene<MainGameScene>();
@@ -75,6 +90,7 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     tmt::engine.scenes.register_scene<Gym>();
     tmt::engine.scenes.register_scene<DanielTestScene>();
     tmt::engine.scenes.register_scene<MikaTestScene>();
+    tmt::engine.scenes.register_scene<LoekTestScene>();
 
     /* Register Game Components */
     tmt::engine.component_registry.register_component<game::Player>();
@@ -96,6 +112,7 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     tmt::engine.component_registry.register_component<game::Upgrade>();
     tmt::engine.component_registry.register_component<game::MenuController>();
     tmt::engine.component_registry.register_component<game::FuelComponent>();
+    tmt::engine.component_registry.register_component<game::MediumEnemy>();
     tmt::engine.component_registry.register_component<game::OreProperties>();
     tmt::engine.component_registry.register_component<game::OreManager>();
     /* Register Game UI Components */
@@ -116,6 +133,7 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
         auto& ecs = tmt::engine.ecs;
         auto& goap = ecs.systems.get<tmt::Goap>();
 
+        
         auto& action_reg = goap.actions();
         auto& goal_reg = goap.goals();
         auto& type_reg = goap.agent_types();
@@ -154,6 +172,41 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
             explode.priority = 10;
             explode.valid = true;
             goal_reg.register_goal("g_Explode", explode);
+        }
+
+        //Medium enemy
+        action_reg.register_action(std::make_unique<ChasePlayer>());
+        action_reg.register_action(std::make_unique<Wander>());
+        action_reg.register_action(std::make_unique<FireMissiles>());
+        action_reg.register_action(std::make_unique<FireLaser>());
+
+        {
+            tmt::GoapGoal chase;
+            chase.name = "g_ChasePlayer";
+            chase.desired_state = { { tmt::FactId("m_in_laser_range"), true } };
+            chase.priority = 10;
+            chase.valid = true;
+
+            goal_reg.register_goal("g_ChasePlayer", chase);
+        }
+
+        {
+            tmt::GoapGoal wander;
+            wander.name = "g_Wander";
+            wander.desired_state = { { tmt::FactId("m_wandering"), true } };
+            wander.priority = 1;
+            wander.valid = true;
+
+            goal_reg.register_goal("g_Wander", wander);
+        }
+        {
+            tmt::GoapGoal kill_player;
+            kill_player.name = "g_KillPlayer";
+            kill_player.desired_state = { { tmt::FactId("m_kill_player"), true } };
+            kill_player.priority = 50;
+            kill_player.valid = true;
+
+            goal_reg.register_goal("g_KillPlayer", kill_player);
         }
     }
 
