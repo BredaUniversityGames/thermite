@@ -36,7 +36,11 @@ void modify_all_palettes(const tmt::MaterialIndex material_index, Type tmt::Mate
 namespace tmt {
 
 void MaterialEditor::on_inspect() {
-    const NodeHierarchy& hierarchy = editor.windows[Editor::Mode::VOXEL].get<NodeHierarchy>();
+    ImGui::Checkbox("Modify all palettes", &edit_all_palettes);
+
+    ImGui::Separator();
+
+    const NodeHierarchy& hierarchy = editor.systems[Editor::Mode::VOXEL].get<NodeHierarchy>();
 
     const auto selected_entity = hierarchy.get_first_selected_entity();
     if (selected_entity == entt::null) {
@@ -47,7 +51,7 @@ void MaterialEditor::on_inspect() {
     const VoxelRenderer* renderer = engine.ecs.try_get_component<VoxelRenderer>(selected_entity);
     if (renderer == nullptr) return;
 
-    Palette& palette = editor.windows[Editor::Mode::VOXEL].get<Palette>();
+    Palette& palette = editor.systems[Editor::Mode::VOXEL].get<Palette>();
     const MaterialIndex material_index = palette.get_selected_material_index();
     Material& material = renderer->resource->blas->palette.entries[material_index];
 
