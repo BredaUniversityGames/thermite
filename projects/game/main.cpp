@@ -35,6 +35,7 @@
 #include "components/development_tools/attach_component.hpp"
 // World generation
 #include "components/world_gen/asteroid_field_component.hpp"
+#include "components/world_gen/random_prefab_spawner.hpp"
 // Data Headers
 #include "data_headers/scene_list.hpp"
 #include "data_headers/wallet.hpp"
@@ -74,7 +75,6 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     tmt::engine.component_registry.register_component<game::Spawner>();
     tmt::engine.component_registry.register_component<game::RifleProjectile>();
     tmt::engine.component_registry.register_component<game::ProjectileSpawner>();
-    tmt::engine.component_registry.register_component<game::AsteroidFieldComponent>();
     tmt::engine.component_registry.register_component<game::Wallet>();
     tmt::engine.component_registry.register_component<game::MiningComponent>();
     tmt::engine.component_registry.register_component<game::AnimationPlayer>();
@@ -90,6 +90,9 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     tmt::engine.component_registry.register_component<game::FuelComponent>();
     tmt::engine.component_registry.register_component<game::OreProperties>();
     tmt::engine.component_registry.register_component<game::OreManager>();
+    /* Register World Generation Components */
+    tmt::engine.component_registry.register_component<game::AsteroidFieldComponent>();
+    tmt::engine.component_registry.register_component<game::RandomPrefabSpawner>();
     /* Register Game UI Components */
     tmt::engine.component_registry.register_component<game::SceneSwitchComponent>();
     tmt::engine.component_registry.register_component<game::EntityControlComponent>();
