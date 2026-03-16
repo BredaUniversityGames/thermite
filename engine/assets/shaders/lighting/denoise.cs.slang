@@ -36,7 +36,7 @@ struct Sample {
 
 Sample fetch_sample(const int2 pixel) {
     /* Load visibility buffer data */
-    const uint64_t facet_key = asuint64(vbuffer[pixel]);
+    const uint64_t facet_key = asuint64(vbuffer[pixel << 1]);
 
     /* Exit early if the visibility for this pixel is null */
     if (null_visibility(facet_key)) return Sample();
@@ -131,23 +131,24 @@ void main(int2 thread_id: SV_DispatchThreadID) {
     // if (slot.key == cache::EMPTY_KEY) return;
     // const float variance = abs(cs::acescg_luminance(slot.read_diffuse()) - cs::acescg_luminance(lbuffer_in[thread_id]));
 
-    const int radius = 1;  // 5x5 kernel
-    float2 sigmaVariancePair = float2(0.0f, 0.0f);
-    float sampCount = 0.0f;
-    for (int y = -radius; y <= radius; ++y) {
-        for (int x = -radius; x <= radius; ++x) {
-            int2 p = thread_id + int2(x, y);
-            float3 curColor = lbuffer_in[p];
-            float samp = cs::acescg_luminance(curColor);
-            float sampSquared = samp * samp;
-            sigmaVariancePair += float2(samp, sampSquared);
-            sampCount += 1.0f;
-        }
-    }
-    sigmaVariancePair /= sampCount;
-    float variance = max(0.0f, sigmaVariancePair.y - sigmaVariancePair.x * sigmaVariancePair.x);
+    // const int radius = 1;  // 5x5 kernel
+    // float2 sigmaVariancePair = float2(0.0f, 0.0f);
+    // float sampCount = 0.0f;
+    // for (int y = -radius; y <= radius; ++y) {
+    //     for (int x = -radius; x <= radius; ++x) {
+    //         int2 p = thread_id + int2(x, y);
+    //         float3 curColor = lbuffer_in[p];
+    //         float samp = cs::acescg_luminance(curColor);
+    //         float sampSquared = samp * samp;
+    //         sigmaVariancePair += float2(samp, sampSquared);
+    //         sampCount += 1.0f;
+    //     }
+    // }
+    // sigmaVariancePair /= sampCount;
+    // float variance = max(0.0f, sigmaVariancePair.y - sigmaVariancePair.x * sigmaVariancePair.x);
 
     const Sample center = fetch_sample(thread_id);
+    const float dist = distance(center.position, render_view.origin.xyz);
     float2 noise = r2(blue_noise[thread_id % 512].rg, render_view.frame_index % 1024u);
     float3 sum = 0.0f;
     float cum_weight = 0.0f;
@@ -156,11 +157,11 @@ void main(int2 thread_id: SV_DispatchThreadID) {
 
     /* Take 12 blue noise distributed neighbourhood samples */
     [ForceUnroll] for (uint i = 0u; i < 24u; ++i) {
-        const float adapt_radius = options.sample_radius * saturate(variance);
+        const float adapt_radius = options.sample_radius / dist; // * saturate(variance);
 
         float angle = GoldenAngle * (float)i;
         float radius = sqrt((float)i / 24.0f);
-        const float2 p = float2(cos(angle), sin(angle)) * adapt_radius;
+        const float2 p = float2(cos(angle), sin(angle)) * radius * adapt_radius;
         const int2 pixel = thread_id + int2(p);
 
         /* Sample neighbour */
@@ -169,9 +170,13 @@ void main(int2 thread_id: SV_DispatchThreadID) {
         const Sample sample = fetch_sample(pixel);
         if (dot(sample.normal, center.normal) <= 0.25f) continue;
 
+        const float pos_d = max(0.001f, dot(center.position - sample.position, center.position - sample.position));
+        const float pos_w = exp(-pos_d / 0.5f);
+        const float weight = pos_w;
+
         /* Update sum & cummulative weight */
-        sum += sample.luminance;
-        cum_weight += 1.0f;
+        sum += sample.luminance * weight;
+        cum_weight += weight;
     }
 
     lbuffer_out[thread_id] = sum / cum_weight;

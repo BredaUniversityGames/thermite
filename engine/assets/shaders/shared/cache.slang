@@ -14,7 +14,8 @@ public static const uint INACTIVE_THRESHOLD = 60u;
 /* Number of slots available in the cache. */
 public static const uint CAPACITY = 10000000u;
 
-static const uint TEMPORAL_SAMPLES = 8u;
+static const uint TEMPORAL_DIFF_SAMPLES = 20u;
+static const uint TEMPORAL_SPEC_SAMPLES = 10u;
 
 /* Cache Slot (48 bytes) */
 public struct Slot {
@@ -63,11 +64,12 @@ public struct Slot {
         diffuse.rgb = specular.rgb = 0u;
 
         /* Accumulator warmup factor */
-        if (warmup_counter() < TEMPORAL_SAMPLES) warmup_last += 1u;
+        if (warmup_counter() < max(TEMPORAL_DIFF_SAMPLES, TEMPORAL_SPEC_SAMPLES)) warmup_last += 1u;
 
-        const float alpha = 1.0f / (float)warmup_counter();
-        diffuse.w = encode_rgb9e5(lerp(read_diffuse(), diffuse_accu, alpha));
-        specular.w = encode_rgb9e5(lerp(read_specular(), specular_accu, alpha));
+        const float diff_alpha = 1.0f / min((float)warmup_counter(), TEMPORAL_DIFF_SAMPLES);
+        const float spec_alpha = 1.0f / min((float)warmup_counter(), TEMPORAL_SPEC_SAMPLES);
+        diffuse.w = encode_rgb9e5(lerp(read_diffuse(), diffuse_accu, diff_alpha));
+        specular.w = encode_rgb9e5(lerp(read_specular(), specular_accu, spec_alpha));
     }
 
     /* Find the inactivity of the cache slot compared to a reference frame index. */

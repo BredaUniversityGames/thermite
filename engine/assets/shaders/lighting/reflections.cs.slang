@@ -191,21 +191,21 @@ void main(int2 thread_id: SV_DispatchThreadID) {
 
     /* Importance sample specular lobe */
     const float alpha_2 = alpha * alpha;
-    const float3 wh = sample_vndf_unbounded(wo, alpha, noise);
-    const float3 wi = normalize(reflect(-wo, wh));
-    // const float3 wi = sample_cone(float3(-wo.x, -wo.y, wo.z), cos(0.1f), noise);
-    // const float3 wh = normalize(wi + wo);
+    // const float3 wh = sample_vndf_unbounded(wo, alpha, noise);
+    // const float3 wi = normalize(reflect(-wo, wh));
+    const float3 wi = sample_cone(float3(-wo.x, -wo.y, wo.z), cos(0.1f), noise);
+    const float3 wh = normalize(wi + wo);
 
     /* Ignore directions which lie underneath the horizon */
     // if (wi.z <= 0.0f) wi = float3(-wo.x, -wo.y, wo.z);
-    // if (wi.z <= 0.0f) {
-    //     specular[thread_id] = 0.0f;
-    //     return;
-    // }
+    if (wi.z <= 0.0f) {
+        specular[thread_id] = 0.0f;
+        return;
+    }
     const float3 sample_dir = normalize(mul(transpose(basis), wi));
 
     /* Evaluate the BSDF and PDF of the sample */
-    const float pdf = pdf_vndf_unbounded(wo, wi, alpha); // 1.0f / (2.0f * PI_F32 * (1.0f - cos(0.1f))); // BoundedVNDF_PDF_Isotropic(wo, wi, alpha);
+    const float pdf = 1.0f / (2.0f * PI_F32 * (1.0f - cos(0.1f))); // pdf_vndf_unbounded(wo, wi, alpha); // BoundedVNDF_PDF_Isotropic(wo, wi, alpha);
     const float bsdf = gloss_slab(wi.z, wo.z, wh.z, dot(wo, wh), alpha_2, eta) / pdf;
 
     /* Trace sample direction */
@@ -216,7 +216,7 @@ void main(int2 thread_id: SV_DispatchThreadID) {
         const Material mat = unpack_material(hit, objects);
         luminance = mat.albedo() * mat.emission();
     } else {
-        luminance = 1.0f;
+        luminance = 0.1f;
     }
     luminance *= bsdf;
 

@@ -90,6 +90,7 @@ struct RenderView {
     ScreenBuffer nbuffer {}; /* Denoised luminance buffer (WxH, 4 bytes) */
 
     /* Intermediate specular luminance buffer */
+    ScreenBuffer raw_spec_buffer {};
     ScreenBuffer spec_buffer {};
 
     /* Macrofacet buffers */
