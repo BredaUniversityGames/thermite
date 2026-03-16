@@ -211,7 +211,7 @@ class Ecs : public OnGameStart, public OnGameUpdate, public OnGameFixedUpdate, p
         if constexpr (COUNT == 1) {
             return EcsComponentTraits<Component...>::add_or_get(registry, entity);
         } else {
-            return std::make_tuple(add_or_get_component<Component>(entity)...);
+            return std::forward_as_tuple(add_or_get_component<Component>(entity)...);
         }
     }
 
@@ -331,17 +331,17 @@ class Ecs : public OnGameStart, public OnGameUpdate, public OnGameFixedUpdate, p
 
     Collection<ISystem> systems;
 
+    void on_game_start() override;
+
+    void on_game_end() override;
+
    private:
     Registry registry;
     Dispatcher dispatcher;
 
-    void on_game_start() override;
-
     void on_game_update(const FrameData& time) override;
 
     void on_game_fixed_update(const FrameData& time) override;
-
-    void on_game_end() override;
 
     void on_end_frame() override;
 

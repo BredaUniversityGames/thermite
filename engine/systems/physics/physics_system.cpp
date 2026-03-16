@@ -12,24 +12,25 @@
 #include "engine/tools/profiler.hpp"
 
 #include "components/voxel_body.hpp"
+#include "engine/core/components/voxel_renderer.hpp"
 #include "engine/core/salvo.hpp"
 
 namespace tmt {
 
 void Physics::on_start() {
     Log::info("Physics on_start");
-    for (const auto& [entity, vb, transform] : engine.ecs.view<VoxelBody, Transform>().each()) {
+    for (const auto&& [entity, vb, transform, renderer] : engine.ecs.view<VoxelBody, Transform, VoxelRenderer>().each()) {
         vb.position = transform.get_world_position();
         vb.rotation = transform.get_world_rotation();
 
         if (vb.type == VoxelBody::DYNAMIC) {
-            initialize_voxel_body(vb);
+            initialize_voxel_body(vb, *renderer.resource.resource);
             if (vb.gravity <= 0.0f) {
                 vb.type = VoxelBody::SLEEPING;
                 vb.accumulated_forces = 0.0f;
             }
         } else {
-            glm::uvec3 size = vb.resource->size;
+            glm::uvec3 size = renderer.resource->size;
             vb.width = (float)size.x * UNITS_PER_VOXEL;
             vb.height = (float)size.y * UNITS_PER_VOXEL;
             vb.depth = (float)size.z * UNITS_PER_VOXEL;
@@ -207,12 +208,14 @@ void Physics::on_fixed_update(const FrameData&) {
     engine.salvo.activate_workers();
 
     // Build physics BVH
-    const entt::basic_group group = engine.ecs.group<VoxelBody>(entt::get<Transform>);
+    const entt::basic_group group = engine.ecs.group<VoxelBody>(entt::get<Transform, VoxelRenderer>);
     std::vector<VoxelObject> objects {};
     objects.reserve(group.size());
+    entities = std::vector<Entity>();
+    entities.reserve(group.size());
     {
         TMT_ZONE_SCOPED_N("Build BVH")
-        for (auto&& [entity, vb, transform] : group.each()) {
+        for (auto&& [entity, vb, transform, renderer] : group.each()) {
             // TODO: THIS CAN CAUSE ISSUES WITH MISSING RESOURCES!!!!
 
             // if (vb.resource == nullptr) continue;
@@ -220,10 +223,15 @@ void Physics::on_fixed_update(const FrameData&) {
             VoxelObject object {};
             object.local_to_world = transform.get_world_matrix();
             object.world_to_local = glm::inverse(object.local_to_world);
-            object.size = vb.resource->size;
+            object.size = renderer.resource->size;
             object.mask = (1u << vb.layer);
-            object.volume = vb.resource.resource.get();
+            object.volume = renderer.resource.resource.get();
+            object.rcp_tree_width = 1.0f / powf(4.0f, (float)renderer.resource->blas->depth);
             objects.push_back(std::move(object));
+            
+            /* Save the entity id */
+            /* QUICK FIX: This is to get the entity ID from a raycast() */
+            entities.push_back(entity);
         }
 
         bvh.build(objects.data(), (uint32_t)objects.size());
@@ -262,18 +270,19 @@ void Physics::on_fixed_update(const FrameData&) {
 
 void Physics::generate_constraints() {
     // solver.collisions.resize(MAX_CONTACTS);
-    const PhysicsGroup group = engine.ecs.group<VoxelBody>(entt::get<Transform>);
+    const PhysicsGroup group = engine.ecs.group<VoxelBody>(entt::get<Transform, VoxelRenderer>);
     engine.salvo.parallel_for(group.size(), [this, &group](size_t i) { generate_constraint((int)i, group); });
 }
 
 void Physics::generate_constraint(int index, const PhysicsGroup& group) {
     Entity entity = group[index];
     VoxelBody& vb = group.get<VoxelBody>(entity);
+    VoxelRenderer& renderer = group.get<VoxelRenderer>(entity);
     // Transform& transform = group.get<Transform>(entity);
     // auto& [vb, transform] = group.get<VoxelBody, Transform>(entity);
 
     if (vb.type == VoxelBody::STATIC || vb.type == VoxelBody::SLEEPING) return;
-    if (vb.resource == nullptr) return;
+    if (renderer.resource == nullptr) return;
 
     Aabb current_aabb = vb.aabb();
     std::vector<uint32_t> hits = bvh.overlap(current_aabb);
@@ -283,6 +292,7 @@ void Physics::generate_constraint(int index, const PhysicsGroup& group) {
         if (other_entity == entity) continue;
 
         VoxelBody& other_vb = group.get<VoxelBody>(other_entity);
+        VoxelRenderer& other_renderer = group.get<VoxelRenderer>(other_entity);
         // Transform& other_transform = group.get<Transform>(other_entity);
         // auto& [other_vb, other_transform] = group.get<VoxelBody, Transform>(other_entity);
 
@@ -294,14 +304,14 @@ void Physics::generate_constraint(int index, const PhysicsGroup& group) {
         Collision coll(entity, other_entity);
         coll.contacts.reserve(64);
 
-        auto* tree_a = vb.resource->blas.get();
+        auto* tree_a = renderer.resource->blas.get();
         const float half_extent_a = powf(4.0f, (float)tree_a->depth) * 0.5f * UNITS_PER_VOXEL;
-        const glm::vec3 extents_diff_a = half_extent_a - ((glm::vec3)vb.resource->size * 0.5f * UNITS_PER_VOXEL);
+        const glm::vec3 extents_diff_a = half_extent_a - ((glm::vec3)renderer.resource->size * 0.5f * UNITS_PER_VOXEL);
         const glm::vec3 root_center_a = vb.position + (vb.rotation * extents_diff_a);
 
-        auto* tree_b = other_vb.resource->blas.get();
+        auto* tree_b = other_renderer.resource->blas.get();
         const float half_extent_b = powf(4.0f, (float)tree_b->depth) * 0.5f * UNITS_PER_VOXEL;
-        const glm::vec3 extents_diff_b = half_extent_b - ((glm::vec3)other_vb.resource->size * 0.5f * UNITS_PER_VOXEL);
+        const glm::vec3 extents_diff_b = half_extent_b - ((glm::vec3)other_renderer.resource->size * 0.5f * UNITS_PER_VOXEL);
         const glm::vec3 root_center_b = other_vb.position + (other_vb.rotation * extents_diff_b);
 
         compare_trees(tree_a, root_center_a, vb.rotation, half_extent_a, tree_b, root_center_b, other_vb.rotation, half_extent_b, coll);
@@ -692,18 +702,18 @@ inline void recurse_mass(
     }
 }
 
-inline void calculate_center_of_mass(VoxelBody& vb) {
+inline void calculate_center_of_mass(VoxelBody& vb, const VoxelVolume& volume) {
     // Update voxel body dimensions
-    const glm::vec3 size = (glm::vec3)vb.resource->size * UNITS_PER_VOXEL;
+    const glm::vec3 size = (glm::vec3)volume.size * UNITS_PER_VOXEL;
     vb.width = size.x;
     vb.height = size.y;
     vb.depth = size.z;
     const glm::vec3 half_scale = glm::vec3(vb.width, vb.height, vb.depth) * 0.5f;
 
     // Calculate half extent
-    auto* tree = vb.resource.resource->blas.get();
+    auto* tree = volume.blas.get();
     const float half_extent = powf(4.0f, (float)tree->depth) * 0.5f * UNITS_PER_VOXEL;
-    const glm::vec3 extents_diff = half_extent - ((glm::vec3)vb.resource->size * 0.5f * UNITS_PER_VOXEL);
+    const glm::vec3 extents_diff = half_extent - ((glm::vec3)volume.size * 0.5f * UNITS_PER_VOXEL);
 
     // Recurse tree to calculate the center of mass sum and voxel count
     glm::vec3 mass_center_sum = {};
@@ -766,10 +776,10 @@ inline void recurse_inertia(
     }
 }
 
-inline glm::mat3 calculate_inertia_tensor(VoxelBody& vb) {
-    auto* tree = vb.resource.resource->blas.get();
+inline glm::mat3 calculate_inertia_tensor(VoxelBody& vb, VoxelVolume& volume) {
+    auto* tree = volume.blas.get();
     const float half_extent = powf(4.0f, (float)tree->depth) * 0.5f * UNITS_PER_VOXEL;
-    const glm::vec3 extents_diff = half_extent - ((glm::vec3)vb.resource->size * 0.5f * UNITS_PER_VOXEL);
+    const glm::vec3 extents_diff = half_extent - ((glm::vec3)volume.size * 0.5f * UNITS_PER_VOXEL);
     const glm::vec3 tree_center = glm::vec3(half_extent);
 
     const float voxel_mass = std::powf(UNITS_PER_VOXEL, 3) * vb.density;
@@ -790,14 +800,14 @@ inline glm::mat3 calculate_inertia_tensor(VoxelBody& vb) {
     return inertia_tensor;
 }
 
-void Physics::initialize_voxel_body(VoxelBody& vb) {
+void Physics::initialize_voxel_body(VoxelBody& vb, VoxelVolume& volume) {
     TMT_ZONE_SCOPED
 
     // First calculate mass and COM
-    calculate_center_of_mass(vb);
+    calculate_center_of_mass(vb, volume);
 
     // Then calculate inertia (needs COM)
-    vb.inv_inertia = glm::inverse(calculate_inertia_tensor(vb));
+    vb.inv_inertia = glm::inverse(calculate_inertia_tensor(vb, volume));
 
     vb.center_of_mass = vb.position + (vb.rotation * vb.com_local_offset);
 }
@@ -850,12 +860,14 @@ void Physics::set_rotation(VoxelBody& vb, const glm::quat& rotation) {
  * are ignored during traversal.
  */
 Hit Physics::raycast(const Ray& ray, uint32_t layer_mask) const {
-    return bvh.trace(ray, layer_mask);
+    Hit hit = bvh.trace(ray, layer_mask);
+    if (hit) hit.entity = entities[(uint32_t)hit.entity];
+    return hit;
 }
 
-void Physics::recalculate_physics_data(VoxelBody& vb) {
-    initialize_voxel_body(vb);
-    recalculate_surface_normals(vb);
+void Physics::recalculate_physics_data(VoxelBody& vb, VoxelVolume& volume) {
+    initialize_voxel_body(vb, volume);
+    recalculate_surface_normals(volume);
 }
 
 // Count number of set bits in variable range [0..width]
@@ -943,25 +955,25 @@ inline void recurse_recalculate_normals(
             if (empty_sides == 0) {
                 voxel.type = PhysicsVoxelType::INSIDE;
             } else if (empty_sides == 1) {
-                for (size_t i = 1; i < 7; i++) {
-                    if (NORMAL_LUT[i] == normal) {
-                        voxel.normal_index = i;
+                for (size_t lut_idx = 1; lut_idx < 7; lut_idx++) {
+                    if (NORMAL_LUT[lut_idx] == normal) {
+                        voxel.normal_index = lut_idx;
                         break;
                     }
                 }
                 voxel.type = PhysicsVoxelType::FACE;
             } else if (empty_sides == 2) {
-                for (size_t i = 7; i < 19; i++) {
-                    if (NORMAL_LUT[i] == normal) {
-                        voxel.normal_index = i;
+                for (size_t lut_idx = 7; lut_idx < 19; lut_idx++) {
+                    if (NORMAL_LUT[lut_idx] == normal) {
+                        voxel.normal_index = lut_idx;
                         break;
                     }
                 }
                 voxel.type = PhysicsVoxelType::EDGE;
             } else {  // empty_sides >= 3
-                for (size_t i = 19; i < 27; i++) {
-                    if (NORMAL_LUT[i] == normal) {
-                        voxel.normal_index = i;
+                for (size_t lut_idx = 19; lut_idx < 27; lut_idx++) {
+                    if (NORMAL_LUT[lut_idx] == normal) {
+                        voxel.normal_index = lut_idx;
                         break;
                     }
                 }
@@ -974,8 +986,8 @@ inline void recurse_recalculate_normals(
     }
 }
 
-void Physics::recalculate_surface_normals(VoxelBody& vb) {
-    auto* tree = vb.resource.resource->blas.get();
+void Physics::recalculate_surface_normals(VoxelRenderer& renderer) {
+    auto* tree = renderer.resource.resource->blas.get();
     const uint32_t node_scale = (1u << (tree->depth * 2u));
     recurse_recalculate_normals(tree, 0, 0, node_scale, 0, 0, 0);
 }

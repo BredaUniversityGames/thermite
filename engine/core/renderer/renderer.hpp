@@ -17,13 +17,14 @@ namespace tmt {
 /* Renderer display mode. */
 enum class DisplayMode : uint32_t {
     DEFAULT = 0u,
-    STEPS,       /* Visualize visibility pass step count. (0..128) */
-    VISIBILITY,  /* Visualize visibility buffer data. */
-    DEPTH,       /* Visualize geometric depth data. (0..100) */
-    NORMALS,     /* Visualize geometric normal data. */
-    ALBEDO,      /* Visualize material albedo. */
-    ILLUMINANCE, /* Visualize illuminance from the cache. */
-    CACHE,       /* Visualize cache info. */
+    STEPS,         /* Visualize visibility pass step count. (0..128) */
+    VISIBILITY,    /* Visualize visibility buffer data. */
+    DEPTH,         /* Visualize geometric depth data. (0..100) */
+    NORMALS,       /* Visualize geometric normal data. */
+    ALBEDO,        /* Visualize material albedo. */
+    ILLUMINANCE,   /* Visualize illuminance from the cache. */
+    CACHE,         /* Visualize cache info. */
+    MOTIONVECTORS, /* Visualize motion vectors. */
 };
 
 class Renderer {
@@ -39,8 +40,12 @@ class Renderer {
     RenderView render_view {};
     SceneView scene_view {};
 
+    Sampler linear_sampler {};
+    Sampler point_sampler {};
+
     /* Display mode for debugging */
     DisplayMode display_mode = DisplayMode::DEFAULT;
+    bool enable_taa = true;
 
     /* Pipelines */
     class GeometryPipeline& geometry_pipeline;

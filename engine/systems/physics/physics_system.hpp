@@ -6,12 +6,13 @@
 #include "constraint_solver.hpp"
 #include "physics_layers.hpp"
 #include "components/voxel_body.hpp"
+#include "engine/core/components/voxel_renderer.hpp"
 #include "engine/core/renderer/voxel_object.hpp"
 #include "engine/shared/bvh2.hpp"
 
 namespace tmt {
 
-using PhysicsGroup = decltype(std::declval<Ecs>().group<VoxelBody>(entt::get<Transform>));
+using PhysicsGroup = decltype(std::declval<Ecs>().group<VoxelBody>(entt::get<Transform, VoxelRenderer>));
 
 class Physics : public ISystem {
    public:
@@ -33,6 +34,7 @@ class Physics : public ISystem {
     bool simulating = true;
     ConstraintSolver solver = {};
     Bvh2<VoxelObject> bvh {};
+    std::vector<Entity> entities {};
 
     // Layers
     PhysicsLayers physics_layers;
@@ -48,9 +50,10 @@ class Physics : public ISystem {
         tmt::Svt64* tree_a, const glm::vec3& center_a, const glm::quat& rotation_a, float half_extent_a, tmt::Svt64* tree_b, const glm::vec3& center_b, const glm::quat& rotation_b,
         float half_extent_b, Collision& coll
     );
+
    public:
     // Static utility functions
-    static void initialize_voxel_body(VoxelBody& vb);
+    static void initialize_voxel_body(VoxelBody& vb, VoxelVolume& volume);
     static void add_force(VoxelBody& vb, const glm::vec3& force);
     static void add_torque(VoxelBody& vb, const glm::vec3& torque);
     static void add_force_at_position(VoxelBody& vb, const glm::vec3& force, const glm::vec3& position);
@@ -59,11 +62,11 @@ class Physics : public ISystem {
 
     PhysicsLayers& layers() { return physics_layers; }
     // Raycast against layers in the layer_mask
-    
+
     Hit raycast(const Ray& ray, uint32_t layer_mask) const;
 
-    static void recalculate_physics_data(VoxelBody& vb);
-    static void recalculate_surface_normals(VoxelBody& vb);
+    static void recalculate_physics_data(VoxelBody& vb, VoxelVolume& volume);
+    static void recalculate_surface_normals(VoxelRenderer& renderer);
     static void recalculate_surface_normals(VoxelVolume& volume);
     static void recalculate_edge_normals(VoxelBody& vb, const std::vector<glm::uvec3>& edge_indices);
 };

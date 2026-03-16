@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <chrono>
+#include <csignal>
 
 #include "core/logger.hpp"
 #include "core/input/input.hpp"
@@ -11,8 +12,8 @@
 #include "core/ecs.hpp"
 #include "core/scenes.hpp"
 #include "core/polyline.hpp"
-
 #include "core/renderer/renderer.hpp"
+#include "engine/tools/player_data.hpp"
 
 #include "systems/physics/physics_system.hpp"
 #include "systems/physics/destruction_system.hpp"
@@ -20,6 +21,7 @@
 #include "systems/camera/camera_system.hpp"
 #include "systems/ai/goap/goap_system.hpp"
 #include "systems/ai/navigation/navigation_system.hpp"
+#include "systems/ai/steering/steering_system.hpp"
 #include "systems/gameplay/gameplay.hpp"
 #include "systems/gameplay/game_component_registry.hpp"
 #include "systems/motion_math/motion_math_system.hpp"
@@ -50,10 +52,12 @@ Engine::Engine() :
     salvo(*new Salvo()),
     scenes(*new Scenes()),
     polyline(*new Polyline()),
-    component_registry(*new GameComponentRegistry()) {}
+    component_registry(*new GameComponentRegistry()),
+    player_data(*new PlayerData()) {}
 
 Engine::~Engine() {
     /* Destruction should be in reverse order */
+    delete &player_data;
     delete &component_registry;
     delete &polyline;
     delete &scenes;
@@ -72,20 +76,24 @@ void Engine::init(std::unique_ptr<Application> user_app) {
 
     app = std::move(user_app);
     Log::init(app->specs.log_file.string());
+    setup_signals();
 
-    IO::init_mounts();
+    IO::init_mounts(app->specs.organization, app->specs.name);
     window.init(app->specs);
     input.init();
     renderer.init();
     audio.init();
     salvo.init();
+    player_data.init();
 
     ecs.systems.add<Physics>();
     ecs.systems.add<Destruction>();
     ecs.systems.add<RigModelManager>();
     ecs.systems.add<AnimationConstraintSystem>();
-    ecs.systems.add<Goap>();
+    Goap* goap = ecs.systems.try_get<Goap>();
+    if (!goap) ecs.systems.add<Goap>();
     ecs.systems.add<NavigationSystem>();
+    ecs.systems.add<SteeringSystem>();
     ecs.systems.add<UI>();
     ecs.systems.add<MotionMathSystem>();
     ecs.systems.add<ButtonManager>();
@@ -203,6 +211,7 @@ void Engine::fixed_update_engine(const FrameData& frame_data) {
 void Engine::start_game() {
     TMT_ZONE_SCOPED_N("Engine::start_game")
 
+    input.clear_input_state();
     app->on_start();
     if (scenes.get_active_scene()) scenes.get_active_scene()->on_start();
 
@@ -243,6 +252,7 @@ void Engine::end_game() {
 
     OnSceneEnd::dispatch();
     OnGameEnd::dispatch();
+    player_data.serialize();
 }
 
 const FrameData& tmt::Engine::frame_data() const {
@@ -255,6 +265,22 @@ bool tmt::Engine::get_is_running() const {
 
 void tmt::Engine::set_is_running(bool value) {
     is_running = value;
+}
+
+void Engine::setup_signals() {
+    // Set signal functions to be called when certain crashes happen
+    (void)std::signal(SIGABRT, &on_crash_signal);
+    (void)std::signal(SIGFPE, &on_crash_signal);
+    (void)std::signal(SIGILL, &on_crash_signal);
+    (void)std::signal(SIGINT, &on_crash_signal);
+    (void)std::signal(SIGSEGV, &on_crash_signal);
+    (void)std::signal(SIGTERM, &on_crash_signal);
+}
+
+void Engine::on_crash_signal(int signal) {
+    Log::error(tmt::Log::Scope::ENGINE, "Application crashed with signal: {}", signal);
+    engine.player_data.serialize();
+    Log::flush();
 }
 
 }  // namespace tmt

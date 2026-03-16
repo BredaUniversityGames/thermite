@@ -58,6 +58,8 @@ void game::WeaponManager::check_trigger_shoot_event() {
 
     if (input.is_action_pressed(action::SHOOT)) {
         tmt::engine.ecs.get_dispatcher().trigger(ShootEvent { shooting_entity, false });
+    } else if (input.is_action_just_released(action::SHOOT)) {
+        tmt::engine.ecs.get_dispatcher().trigger(ReleaseShootEvent { shooting_entity });
     }
 }
 
@@ -144,4 +146,5 @@ void game::WeaponManager::unsubscribe_weapon(WeaponType slot) {
     }
     tmt::Log::info("[WeaponManager] Unsubscribed {} (entity: {})", magic_enum::enum_name(slot), static_cast<uint32_t>(e));
     tmt::engine.ecs.get_dispatcher().sink<ShootEvent>().disconnect<&Weapon::on_shoot>(weapon);
+    tmt::engine.ecs.get_dispatcher().trigger(ReleaseShootEvent { shooting_entity });
 }
