@@ -181,9 +181,9 @@ glm::vec3 SteeringSystem::collision_avoidance(const SteeringAgent& agent, const 
         Hit hit = physics->raycast(ray, layer_mask);
 
         // debug draw
-        engine.polyline.use_color(1.0f, 0.0f, 0.0f);
+        /*engine.polyline.use_color(1.0f, 0.0f, 0.0f);
         engine.polyline.use_line_width(0.5f);
-        engine.polyline.draw_line(ray.origin, ray.origin + dir * avoid_distance);
+        engine.polyline.draw_line(ray.origin, ray.origin + dir * avoid_distance);*/
 
         if (hit && hit.distance < avoid_distance) {
             float strength = agent.params->max_force * (avoid_distance - hit.distance) / avoid_distance;
@@ -221,7 +221,7 @@ glm::vec3 SteeringSystem::calculate_force(const SteeringAgent& agent, const Stee
             break;
 
         case SteeringMode::WANDER:
-            // force += wander(agent, position, body, request.wander_data, dt);
+            force += wander(agent, position, body, request.wander_data, dt);
             dt;
             break;
 
