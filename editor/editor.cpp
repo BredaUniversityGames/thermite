@@ -37,6 +37,7 @@
 #include "editor/windows/goap_debugger.hpp"
 #include "editor/windows/goap_action_editor.hpp"
 #include "editor/windows/goap_agent_editor.hpp"
+#include "editor/windows/steering_data_editor.hpp"
 #include "editor/windows/physics_layers_editor.hpp"
 #include "editor/windows/font_control.hpp"
 #include "editor/windows/profiler_tracy.hpp"
@@ -99,6 +100,7 @@ void Editor::on_engine_init(const ApplicationSpecs&) {
     windows[Mode::SCENE].add<GoapDebugger>();
     windows[Mode::SCENE].add<GoapActionEditor>();
     windows[Mode::SCENE].add<GoapAgentEditor>();
+    windows[Mode::SCENE].add<SteeringDataEditor>();
     windows[Mode::SCENE].add<PhysicsLayersEditor>();
     windows[Mode::SCENE].add<FontControl>();
     windows[Mode::SCENE].add<AudioMixer>();

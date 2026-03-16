@@ -60,6 +60,14 @@
 // Data Headers
 #include "data_headers/scene_list.hpp"
 
+// Goap Components
+#include "engine/systems/ai/goap/goap_system.hpp"
+#include "components/goap_actions/steer_to_player.hpp"
+#include "components/goap_actions/wander_steering.hpp"
+#include "components/goap_actions/prepare_explode.hpp"
+#include "components/goap_actions/explode.hpp"
+#include "components/goap_actions/sensor_system.hpp"
+
 class Game : public tmt::Application {
    public:
     Game(const tmt::ApplicationSpecs& specs) : Application(specs) {}
@@ -195,6 +203,61 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     /* Register Game UI Components */
     tmt::engine.component_registry.register_component<game::SceneSwitchComponent>();
     tmt::engine.component_registry.register_component<game::EntityControlComponent>();
+
+    /* Register Goap Components */
+    {
+        if (!tmt::engine.ecs.systems.try_get<tmt::Goap>()) {
+            tmt::engine.ecs.systems.add<tmt::Goap>();
+        }
+
+        /* Add sensor system specific for this game */
+        if (!tmt::engine.ecs.systems.try_get<game::SensorsSystem>()) {
+            tmt::engine.ecs.systems.add<game::SensorsSystem>();
+        }
+
+        auto& ecs = tmt::engine.ecs;
+        auto& goap = ecs.systems.get<tmt::Goap>();
+        
+        auto& action_reg = goap.actions();
+        auto& goal_reg = goap.goals();
+        auto& type_reg = goap.agent_types();
+
+        /* Register Actions */
+        action_reg.register_action(std::make_unique<game::SteerToPlayer>());
+        action_reg.register_action(std::make_unique<game::WanderSteering>());
+        action_reg.register_action(std::make_unique<game::PrepareExplode>());
+        action_reg.register_action(std::make_unique<game::Explode>());
+
+        /* Register Goals */
+
+        // Goal: Wander when player not in range
+        {
+            tmt::GoapGoal wander_steering;
+            wander_steering.name = "g_WanderSteering";
+            wander_steering.desired_state = { { tmt::FactId("wandering"), true } };
+            wander_steering.priority = 1;
+            wander_steering.valid = true;
+            goal_reg.register_goal("g_WanderSteering", wander_steering);
+        }
+        // Goal: Steer to player, get within explosion range
+        {
+            tmt::GoapGoal steer_to_player;
+            steer_to_player.name = "g_SteerToPlayer";
+            steer_to_player.desired_state = { { tmt::FactId("player_in_explosion_zone"), true } };
+            steer_to_player.priority = 5;
+            steer_to_player.valid = true;
+            goal_reg.register_goal("g_ReachTarget", steer_to_player);
+        }
+        // Goal: Explode when in explosion range
+        {
+            tmt::GoapGoal explode;
+            explode.name = "g_Explode";
+            explode.desired_state = { { tmt::FactId("exploded"), true } };
+            explode.priority = 10;
+            explode.valid = true;
+            goal_reg.register_goal("g_Explode", explode);
+        }
+    }
 
     return std::make_unique<Game>(specs);
 }
