@@ -20,31 +20,32 @@ void game::MediumEnemy::update(const tmt::FrameData& time) {
     tmt::Transform& walking_transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
 
     // world state update
-    auto& ws = tmt::engine.ecs.get_component<tmt::WorldState>(entity);
+    auto ws = tmt::engine.ecs.try_get_component<tmt::WorldState>(entity);
+    if (!ws) return;
     const auto& player_pos = tmt::engine.ecs.get_component<tmt::Transform>(player).get_world_position();
     float dist = glm::length(player_pos - walking_transform.get_world_position());
     // Stop chasing only if player is too far
     if (dist > aggro_range) {
-        ws.facts[std::hash<std::string>()("in_aggro_range")] = false;
+        ws->facts[std::hash<std::string>()("m_in_aggro_range")] = false;
     }
     // in chase range, update world state
     if (dist < aggro_range) {
-        ws.facts[std::hash<std::string>()("in_aggro_range")] = true;
+        ws->facts[std::hash<std::string>()("m_in_aggro_range")] = true;
     }
     missile_timer += time.delta_time;
     if (missile_timer > missile_cooldown) {
-        ws.facts[std::hash<std::string>()("missiles_ready")] = true;
-        ws.facts[std::hash<std::string>()("hit_player")] = false;
+        ws->facts[std::hash<std::string>()("m_missiles_ready")] = true;
+        ws->facts[std::hash<std::string>()("m_hit_player")] = false;
     } 
     else {
-        ws.facts[std::hash<std::string>()("missiles_ready")] = false;
+        ws->facts[std::hash<std::string>()("m_missiles_ready")] = false;
     }
     laser_timer += time.delta_time;
     if (laser_timer > laser_cooldown) {
-        ws.facts[std::hash<std::string>()("laser_ready")] = true;
-        ws.facts[std::hash<std::string>()("hit_player")] = false;
+        ws->facts[std::hash<std::string>()("m_laser_ready")] = true;
+        ws->facts[std::hash<std::string>()("m_kill_player")] = false;
     } else {
-        ws.facts[std::hash<std::string>()("laser_ready")] = false;
+        ws->facts[std::hash<std::string>()("m_laser_ready")] = false;
     }
 
     // height correction

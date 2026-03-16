@@ -5,8 +5,8 @@
 class Wander : public tmt::GoapAction {
    public:
     Wander() {
-        preconditions["in_aggro_range"] = false;
-        effects["in_aggro_range"] = true;
+        preconditions["m_in_aggro_range"] = false;
+        effects["m_in_aggro_range"] = true;
         cost = 2.f;
     }
 
@@ -14,7 +14,7 @@ class Wander : public tmt::GoapAction {
 
     glm::vec3 wander_target;
 
-    std::string get_id() const override { return "Wander"; }
+    std::string get_id() const override { return "a_Wander"; }
 
     void on_start(tmt::Entity) override;
     void on_tick(tmt::Entity agent, float dt) override;

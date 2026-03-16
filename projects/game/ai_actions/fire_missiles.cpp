@@ -18,7 +18,6 @@ void FireMissiles::on_start(tmt::Entity enemy_entity) {
     }
     auto& enemy = tmt::engine.ecs.get_component<game::MediumEnemy>(enemy_entity);
     missiles = enemy.missile_burst;
-    burst_interval = enemy.burst_interval;
 
 }
 
@@ -43,16 +42,11 @@ void FireMissiles::on_tick(tmt::Entity enemy_entity, float dt) {
     }
 
     interval_timer += dt;
-    if (interval_timer > burst_interval) {
-        interval_timer -= burst_interval;
+    if (interval_timer > enemy.burst_interval) {
+        interval_timer -= enemy.burst_interval;
         Missile missile;
+        missile = enemy;
         missile.position = enemy_entity_pos;
-        missile.max_life_time = enemy.life_time;
-        missile.start_homing_after = enemy.start_homing_after;
-        missile.home_speed = enemy.home_speed;
-        missile.stop_launching_after = enemy.stop_launching_after;
-        missile.life_time = 0.0f;
-        missile.launch_speed = enemy.launch_speed;
 
         //set random offset
         missile.offset = glm::vec3(
@@ -64,13 +58,16 @@ void FireMissiles::on_tick(tmt::Entity enemy_entity, float dt) {
         missiles--;
         
     }
-}
-
-bool FireMissiles::is_done(tmt::Entity enemy_entity) const {
+    
     if (missiles == 0) {
         auto& enemy = tmt::engine.ecs.get_component<game::MediumEnemy>(enemy_entity);
         enemy.missile_timer = interval_timer * enemy.missile_burst;
-        return true;
+        auto ws = tmt::engine.ecs.try_get_component<tmt::WorldState>(enemy_entity);
+        if (!ws) return;
+        ws->facts[std::hash<std::string>()("m_missiles_ready")] = false;
     }
+}
+
+bool FireMissiles::is_done(tmt::Entity enemy_entity) const {
     return false;
 }

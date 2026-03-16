@@ -5,19 +5,18 @@
 class FireMissiles : public tmt::GoapAction {
    public:
     FireMissiles() {
-        preconditions["in_aggro_range"] = true;
-        preconditions["missiles_ready"] = true;
-        effects["hit_player"] = true;
+        preconditions["m_in_aggro_range"] = true;
+        preconditions["m_missiles_ready"] = true;
+        effects["m_kill_player"] = false;
         cost = 5.f;
     }
 
     tmt::Entity player = entt::null;
     
     int missiles = 0;
-    float burst_interval = 0.2f;
     float interval_timer = 0.0f;
 
-    std::string get_id() const override { return "FireMissiles"; }
+    std::string get_id() const override { return "a_FireMissiles"; }
 
     void on_start(tmt::Entity) override;
     void on_tick(tmt::Entity agent, float dt) override;

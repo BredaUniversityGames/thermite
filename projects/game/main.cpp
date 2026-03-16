@@ -77,59 +77,34 @@ class Game : public tmt::Application {
         action_reg.register_action(std::make_unique<FireMissiles>());
         action_reg.register_action(std::make_unique<FireLaser>());
 
-        tmt::GoapAgentType dragon;
-        dragon.id = "dragon";
-        dragon.action_ids = { "ChasePlayer", "Wander", "FireMissiles", "FireLaser" };
-
-        dragon.default_world_state = {
-            { "in_aggro_range", false },
-            { "in_laser_range", false },
-            { "in_stomp_range", false },
-            { "missiles_ready", false },
-        };
-
         {
             tmt::GoapGoal chase;
-            chase.name = "ChasePlayer";
-            chase.desired_state = { { tmt::FactId("in_laser_range"), true } };
+            chase.name = "g_ChasePlayer";
+            chase.desired_state = { { tmt::FactId("m_in_laser_range"), true } };
             chase.priority = 10;
             chase.valid = true;
 
-            goal_reg.register_goal("ChasePlayer", chase);
+            goal_reg.register_goal("g_ChasePlayer", chase);
         }
 
         {
             tmt::GoapGoal wander;
-            wander.name = "Wander";
-            wander.desired_state = { { tmt::FactId("in_aggro_range"), true } };
+            wander.name = "g_Wander";
+            wander.desired_state = { { tmt::FactId("m_in_aggro_range"), true } };
             wander.priority = 1;
             wander.valid = true;
 
-            goal_reg.register_goal("Wander", wander);
-        }
-
-        {
-            tmt::GoapGoal fire_missiles;
-            fire_missiles.name = "FireMissiles";
-            fire_missiles.desired_state = { { tmt::FactId("hit_player"), true } };
-            fire_missiles.priority = 20;
-            fire_missiles.valid = true;
-
-            goal_reg.register_goal("FireMissiles", fire_missiles);
+            goal_reg.register_goal("g_Wander", wander);
         }
         {
-            tmt::GoapGoal fire_laser;
-            fire_laser.name = "FireLaser";
-            fire_laser.desired_state = { { tmt::FactId("hit_player"), true } };
-            fire_laser.priority = 50;
-            fire_laser.valid = true;
+            tmt::GoapGoal kill_player;
+            kill_player.name = "g_KillPlayer";
+            kill_player.desired_state = { { tmt::FactId("m_kill_player"), true } };
+            kill_player.priority = 50;
+            kill_player.valid = true;
 
-            goal_reg.register_goal("FireLaser", fire_laser);
+            goal_reg.register_goal("g_KillPlayer", kill_player);
         }
-
-        dragon.goal_ids = { "ChasePlayer", "Wander", "FireMissiles", "FireLaser" };
-
-        type_reg.register_type(dragon);
     };
     void on_update(const tmt::FrameData& time) override {};
     void on_end() override {};
