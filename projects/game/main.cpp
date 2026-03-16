@@ -87,6 +87,15 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
         .log_file = "mining_game_logs.txt"
     };
     // clang-format on
+    
+    /* Register Scenes */
+    tmt::engine.scenes.register_scene<MainMenuScene>();
+    tmt::engine.scenes.register_scene<MainGameScene>();
+    tmt::engine.scenes.register_scene<Zoo>();
+    tmt::engine.scenes.register_scene<Gym>();
+    tmt::engine.scenes.register_scene<DanielTestScene>();
+    tmt::engine.scenes.register_scene<MikaTestScene>();
+    tmt::engine.scenes.register_scene<LoekTestScene>();
 
     /* Register Game Components */
     tmt::engine.component_registry.register_component<game::Player>();
