@@ -147,9 +147,9 @@ bool point_valid(glm::vec3 candidate, float candidate_radius, float max_radius, 
         return false;
     }
 
-    const int cell_x = static_cast<int>(candidate.x / grid.cell_size);
-    const int cell_y = static_cast<int>(candidate.y / grid.cell_size);
-    const int cell_z = static_cast<int>(candidate.z / grid.cell_size);
+    const int cell_x = static_cast<int>(std::floor(candidate.x / grid.cell_size));
+    const int cell_y = static_cast<int>(std::floor(candidate.y / grid.cell_size));
+    const int cell_z = static_cast<int>(std::floor(candidate.z / grid.cell_size));
 
     const int search_dim = static_cast<int>(std::ceil(max_radius / grid.cell_size));
 
