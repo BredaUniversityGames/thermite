@@ -47,12 +47,12 @@ void Brush::on_inspect() {
         if (ImGui::IsKeyPressed(ImGuiKey_I)) state.tool = Tool::COLOR_PICKER;
 
         // Attach single voxel hotkey (switches to single voxel mode)
-        if (ImGui::IsKeyPressed(ImGuiKey_B)) { 
+        if (ImGui::IsKeyPressed(ImGuiKey_B)) {
             state.tool = Tool::SINGLE;
             state.mode = Mode::ATTACH;
         }
         // Attach box of voxels hotkey (switches to box of voxels mode)
-        if (ImGui::IsKeyPressed(ImGuiKey_U)) { 
+        if (ImGui::IsKeyPressed(ImGuiKey_U)) {
             state.tool = Tool::BOX;
             state.mode = Mode::ATTACH;
         }
@@ -70,9 +70,11 @@ void Brush::on_inspect() {
         ImGui::BeginDisabled(state.tool == tool);
 
         if (ImGui::Button(info.icon)) state.tool = tool;
-        
-        if (info.shortcut.empty()) tooltip(info.title.data(), info.desc.data());
-        else tooltip(info.title.data(), info.desc.data(), info.shortcut.data());
+
+        if (info.shortcut.empty())
+            tooltip(info.title.data(), info.desc.data());
+        else
+            tooltip(info.title.data(), info.desc.data(), info.shortcut.data());
 
         ImGui::EndDisabled();
     }
@@ -150,8 +152,10 @@ void Brush::on_inspect() {
                 ImGui::BeginDisabled(state.mode == mode);
                 if (ImGui::Button(info.icon, ImVec2 { button_width, 0.0f })) state.mode = mode;
 
-                if (info.shortcut.empty()) tooltip(info.title.data(), info.desc.data());
-                else tooltip(info.title.data(), info.desc.data(), info.shortcut.data());
+                if (info.shortcut.empty())
+                    tooltip(info.title.data(), info.desc.data());
+                else
+                    tooltip(info.title.data(), info.desc.data(), info.shortcut.data());
 
                 ImGui::EndDisabled();
             }

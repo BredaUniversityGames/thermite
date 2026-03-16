@@ -57,7 +57,7 @@ inline void tooltip(const char* title, const char* desc, const char* shortcut, c
         ImGui::PopTextWrapPos();
 
         /* Shortcut */
-        ImGui::Dummy({0, 3});
+        ImGui::Dummy({ 0, 3 });
         ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(170, 170, 170, 255));
         ImGui::PushTextWrapPos(ImGui::GetFontSize() * max_width);
         ImGui::Text("Shortcut: %s", shortcut);
