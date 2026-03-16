@@ -7,11 +7,7 @@
 #include "engine/core/resources.hpp"
 #include "engine/core/components/voxel_renderer.hpp"
 
-namespace {
-
-
-
-}
+namespace {}
 
 namespace tmt {
 
@@ -45,7 +41,7 @@ void RigModel::init(const IO::FileLocation& directory, Entity p) {
     rig_is_loaded = true;
     data = engine.resources.load_resource<RigData>(directory);
 
-    //file_directory = directory;
+    // file_directory = directory;
 
     name = data->name;
 
@@ -72,14 +68,12 @@ void RigModel::recurse(const tmt::VoxelSceneNode& node, tmt::Entity parent_entit
         auto& bone_name = engine.ecs.get_component<Name>(bone_entities[j]);
         auto& bone_transf = engine.ecs.get_component<Transform>(bone_entities[j]);
         if (bone_name.name == node.name) {
-            
             voxel_entity = tmt::engine.ecs.create_entity(node.name);
             auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(voxel_entity);
             transform.set_world_matrix(parent_matrix * node.transform);
             transform.set_parent(parent_entity);
             matrix = transform.get_world_matrix();
 
-            auto& voxel_name = engine.ecs.get_component<Name>(voxel_entity);
             auto& voxel_transf = engine.ecs.get_component<Transform>(voxel_entity);
 
             BoneComp& bone_comp_id = engine.ecs.get_component<BoneComp>(bone_entities[j]);

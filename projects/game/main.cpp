@@ -54,6 +54,11 @@
 #include "components/ore_properties.hpp"
 #include "components/upgrade.hpp"
 #include "components/medium_enemy.hpp"
+#include "components/ui_components/scene_switch_component.hpp"
+#include "components/ui_components/entity_control_component.hpp"
+
+// Data Headers
+#include "data_headers/scene_list.hpp"
 
 class Game : public tmt::Application {
    public:
@@ -153,7 +158,10 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     // clang-format on
 
     /* Register Scenes */
+    tmt::engine.scenes.register_scene<MainMenuScene>();
     tmt::engine.scenes.register_scene<MainGameScene>();
+    tmt::engine.scenes.register_scene<Zoo>();
+    tmt::engine.scenes.register_scene<Gym>();
     tmt::engine.scenes.register_scene<DanielTestScene>();
     tmt::engine.scenes.register_scene<MikaTestScene>();
     tmt::engine.scenes.register_scene<DanielTestScene>();
@@ -184,6 +192,9 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     tmt::engine.component_registry.register_component<game::FuelComponent>();
     tmt::engine.component_registry.register_component<game::MediumEnemy>();
     tmt::engine.component_registry.register_component<game::OreProperties>();
+    /* Register Game UI Components */
+    tmt::engine.component_registry.register_component<game::SceneSwitchComponent>();
+    tmt::engine.component_registry.register_component<game::EntityControlComponent>();
 
     return std::make_unique<Game>(specs);
 }
