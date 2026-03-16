@@ -72,7 +72,7 @@ void FireLaser::on_tick(tmt::Entity enemy_entity, float dt) {
 
     if (duration < 0.0f) {
         auto& enemy = tmt::engine.ecs.get_component<game::MediumEnemy>(enemy_entity);
-        enemy.laser_timer = enemy.laser_duration;
+        enemy.laser_timer = 0.0f;
         auto ws = tmt::engine.ecs.try_get_component<tmt::WorldState>(enemy_entity);
         if (!ws) return;
         ws->facts[std::hash<std::string>()("m_laser_ready")] = false;

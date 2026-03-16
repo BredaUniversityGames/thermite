@@ -32,10 +32,16 @@ void game::MediumEnemy::update(const tmt::FrameData& time) {
     if (dist < aggro_range) {
         ws->facts[std::hash<std::string>()("m_in_aggro_range")] = true;
     }
+    if (dist > laser_range) {
+        ws->facts[std::hash<std::string>()("m_in_laser_range")] = false;
+    }
+    // in chase range, update world state
+    if (dist < laser_range) {
+        ws->facts[std::hash<std::string>()("m_in_laser_range")] = true;
+    }
     missile_timer += time.delta_time;
     if (missile_timer > missile_cooldown) {
         ws->facts[std::hash<std::string>()("m_missiles_ready")] = true;
-        ws->facts[std::hash<std::string>()("m_hit_player")] = false;
     } 
     else {
         ws->facts[std::hash<std::string>()("m_missiles_ready")] = false;
@@ -43,7 +49,6 @@ void game::MediumEnemy::update(const tmt::FrameData& time) {
     laser_timer += time.delta_time;
     if (laser_timer > laser_cooldown) {
         ws->facts[std::hash<std::string>()("m_laser_ready")] = true;
-        ws->facts[std::hash<std::string>()("m_kill_player")] = false;
     } else {
         ws->facts[std::hash<std::string>()("m_laser_ready")] = false;
     }

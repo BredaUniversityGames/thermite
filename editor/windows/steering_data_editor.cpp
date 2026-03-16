@@ -35,7 +35,7 @@ void SteeringDataEditor::on_editor_end() {
     steering->overrides().save();
 }
 
-void SteeringDataEditor::display() {
+void SteeringDataEditor::on_inspect() {
     auto* steering = engine.ecs.systems.try_get<SteeringSystem>();
 
     if (!steering) {

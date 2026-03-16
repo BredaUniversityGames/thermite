@@ -5,7 +5,7 @@
 class FireLaser : public tmt::GoapAction {
    public:
     FireLaser() {
-        preconditions["m_in_aggro_range"] = true;
+        preconditions["m_in_laser_range"] = true;
         preconditions["m_laser_ready"] = true;
         effects["m_kill_player"] = true;
         cost = 2.f;

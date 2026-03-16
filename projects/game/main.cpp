@@ -73,88 +73,15 @@ class Game : public tmt::Application {
    public:
     Game(const tmt::ApplicationSpecs& specs) : Application(specs) {}
 
-    void on_start() override {
-        /* Register actions */
-        if (!tmt::engine.ecs.systems.try_get<tmt::Goap>()) {
-            tmt::engine.ecs.systems.add<tmt::Goap>();
-        }
-
-        auto& ecs = tmt::engine.ecs;
-        auto& goap = ecs.systems.get<tmt::Goap>();
-
-        auto& action_reg = goap.actions();
-        auto& goal_reg = goap.goals();
-        auto& type_reg = goap.agent_types();
-
-        action_reg.register_action(std::make_unique<ChasePlayer>());
-        action_reg.register_action(std::make_unique<Wander>());
-        action_reg.register_action(std::make_unique<FireMissiles>());
-        action_reg.register_action(std::make_unique<FireLaser>());
-
-        {
-            tmt::GoapGoal chase;
-            chase.name = "g_ChasePlayer";
-            chase.desired_state = { { tmt::FactId("m_in_laser_range"), true } };
-            chase.priority = 10;
-            chase.valid = true;
-
-            goal_reg.register_goal("g_ChasePlayer", chase);
-        }
-
-        {
-            tmt::GoapGoal wander;
-            wander.name = "g_Wander";
-            wander.desired_state = { { tmt::FactId("m_in_aggro_range"), true } };
-            wander.priority = 1;
-            wander.valid = true;
-
-            goal_reg.register_goal("g_Wander", wander);
-        }
-        {
-            tmt::GoapGoal kill_player;
-            kill_player.name = "g_KillPlayer";
-            kill_player.desired_state = { { tmt::FactId("m_kill_player"), true } };
-            kill_player.priority = 50;
-            kill_player.valid = true;
-
-            goal_reg.register_goal("g_KillPlayer", kill_player);
-        }
+    void on_start() override {  
     };
     void on_update(const tmt::FrameData& time) override {};
     void on_end() override {};
 };
 
-class MainMenuScene : public tmt::Scene<MainMenuScene> {
-   public:
-    static constexpr std::string_view scene_name() { return "MainMenuScene"; }
-};
-
-class MainGameScene : public tmt::Scene<MainGameScene> {
-   public:
-    static constexpr std::string_view scene_name() { return "MainGameScene"; }
-};
-class Zoo : public tmt::Scene<Zoo> {
-   public:
-    static constexpr std::string_view scene_name() { return "Zoo"; }
-};
-class Gym : public tmt::Scene<Gym> {
-   public:
-    static constexpr std::string_view scene_name() { return "Gym"; }
-};
-
-class DanielTestScene : public tmt::Scene<DanielTestScene> {
-   public:
-    static constexpr std::string_view scene_name() { return "DanielTestScene"; }
-};
-
 class LoekTestScene : public tmt::Scene<LoekTestScene> {
    public:
     static constexpr std::string_view scene_name() { return "LoekTestScene"; }
-};
-
-class MikaTestScene : public tmt::Scene<MikaTestScene> {
-   public:
-    static constexpr std::string_view scene_name() { return "MikaTestScene"; }
 };
 
 std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs& args) {
@@ -167,17 +94,7 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     // clang-format on
 
     /* Register Scenes */
-    tmt::engine.scenes.register_scene<MainMenuScene>();
-    tmt::engine.scenes.register_scene<MainGameScene>();
-    tmt::engine.scenes.register_scene<Zoo>();
-    tmt::engine.scenes.register_scene<Gym>();
-    tmt::engine.scenes.register_scene<DanielTestScene>();
-    tmt::engine.scenes.register_scene<MikaTestScene>();
-    tmt::engine.scenes.register_scene<DanielTestScene>();
     tmt::engine.scenes.register_scene<LoekTestScene>();
-    tmt::engine.scenes.register_scene<MainMenuScene>();
-    tmt::engine.scenes.register_scene<Gym>();
-    tmt::engine.scenes.register_scene<Zoo>();
 
     /* Register Game Components */
     tmt::engine.component_registry.register_component<game::Player>();
@@ -258,6 +175,41 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
             explode.priority = 10;
             explode.valid = true;
             goal_reg.register_goal("g_Explode", explode);
+        }
+
+        //Medium enemy
+        action_reg.register_action(std::make_unique<ChasePlayer>());
+        action_reg.register_action(std::make_unique<Wander>());
+        action_reg.register_action(std::make_unique<FireMissiles>());
+        action_reg.register_action(std::make_unique<FireLaser>());
+
+        {
+            tmt::GoapGoal chase;
+            chase.name = "g_ChasePlayer";
+            chase.desired_state = { { tmt::FactId("m_in_laser_range"), true } };
+            chase.priority = 10;
+            chase.valid = true;
+
+            goal_reg.register_goal("g_ChasePlayer", chase);
+        }
+
+        {
+            tmt::GoapGoal wander;
+            wander.name = "g_Wander";
+            wander.desired_state = { { tmt::FactId("m_wandering"), true } };
+            wander.priority = 1;
+            wander.valid = true;
+
+            goal_reg.register_goal("g_Wander", wander);
+        }
+        {
+            tmt::GoapGoal kill_player;
+            kill_player.name = "g_KillPlayer";
+            kill_player.desired_state = { { tmt::FactId("m_kill_player"), true } };
+            kill_player.priority = 50;
+            kill_player.valid = true;
+
+            goal_reg.register_goal("g_KillPlayer", kill_player);
         }
     }
 

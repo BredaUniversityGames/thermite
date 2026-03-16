@@ -6,7 +6,7 @@ class Wander : public tmt::GoapAction {
    public:
     Wander() {
         preconditions["m_in_aggro_range"] = false;
-        effects["m_in_aggro_range"] = true;
+        effects["m_wandering"] = true;
         cost = 2.f;
     }
 
