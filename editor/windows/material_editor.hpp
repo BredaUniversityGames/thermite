@@ -16,7 +16,7 @@ class MaterialEditor : public IWindow {
     void on_editor_end() override {}
 
    private:
-    bool edit_all_palettes { false };
+    bool edit_all_palettes { true };
 };
 
 }  // namespace tmt
