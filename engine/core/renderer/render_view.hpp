@@ -104,6 +104,13 @@ struct RenderView {
     RenderTarget render_target {};
     glm::uint frame_counter = 0u;
 
+    /* TEMP */
+    float sample_radius = 8.0f;
+    float color_weight = 1.0f;
+    float normal_weight = 1.0f;
+    float pos_weight = 1.0f;
+    /* TEMP */
+
    private:
     ShadingRate shading_rate_di = ShadingRate::FULL_RATE;
     ShadingRate shading_rate_gi = ShadingRate::QUARTER_RATE;

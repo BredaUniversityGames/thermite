@@ -41,7 +41,7 @@ Sample fetch_sample(const int2 vpixel, const int2 lpixel) {
     const uint64_t facet_key = asuint64(vbuffer[vpixel]);
 
     /* Exit early if the visibility for this pixel is null */
-    if (null_visibility(facet_key)) return Sample();
+    if (null_visibility(facet_key)) return Sample(0.0f, 0.0f, 0.0f, 0.0f);
 
     const VisData vis = unpack_visibility(facet_key);
     const VoxelObject object = objects[vis.object_index];
@@ -65,7 +65,7 @@ Sample fetch_sample(const int2 vpixel, const int2 lpixel) {
 
     return Sample(
         lbuffer_in[lpixel],
-        log(1.0f + lbuffer_in[lpixel]),
+        lbuffer_in[lpixel],
         normal,
         world_voxel // ray.origin + ray.dir * depth
     );
@@ -100,23 +100,23 @@ void main(int2 thread_id: SV_DispatchThreadID) {
     float cum_weight = 0.0f;
 
     const float c_phi = 1.0f / ((float)step_size * 1.0f);
-    static const float N_PHI = 0.5f;
+    // static const float N_PHI = 0.01f;
     static const float P_PHI = 0.5f;
 
     [ForceUnroll] for (uint i = 0u; i < 9u; ++i) {
         /* Sample neighbour */
         const int2 lpixel = thread_id + offsets[i] * step_size;
-        const int2 vpixel = (lpixel + offset) >> shift;
+        const int2 vpixel = lpixel; // (lpixel + offset) >> shift;
         const Sample sample = fetch_sample(vpixel, lpixel);
+        if (dot(sample.normal, center.normal) <= 0.01f) continue;
 
         /* Compute edge-stopping weights */
         const float color_d = dot(center.color - sample.color, center.color - sample.color);
         const float color_w = exp(-color_d / c_phi);
-        const float normal_d = dot(center.normal - sample.normal, center.normal - sample.normal);
-        const float normal_w = exp(-normal_d / N_PHI);
-        const float pos_d = dot(center.position - sample.position, center.position - sample.position);
+        const float pos_d = max(0.001f, dot(center.position - sample.position, center.position - sample.position));
         const float pos_w = exp(-pos_d / P_PHI);
-        const float weight = color_w * normal_w * pos_w * weights[i];
+        const float weight = color_w * pos_w * weights[i];
+        // const float weight = weights[i];
 
         /* Update sum & cummulative weight */
         sum += sample.luminance * weight;

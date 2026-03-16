@@ -78,23 +78,23 @@ public struct Material {
 }
 
 /* Fresnel equation. */
-[ForceInline] public float fresnel(float wi_costheta, float eta) {
+[ForceInline] public float fresnel(float wo_dot_wh, float eta) {
     /* If the incoming direction comes from within */
-    if (wi_costheta < 0.0f) {
+    if (wo_dot_wh < 0.0f) {
         /* Invert relative index of refraction, ensuring cos(theta_i) is always positive */
         eta = 1.0f / eta;
-        wi_costheta = -wi_costheta;
+        wo_dot_wh = -wo_dot_wh;
     }
 
     /* Apply Snell's law to find cos(theta_t) */
-    const float i_sintheta_2 = 1.0f - wi_costheta * wi_costheta;
+    const float i_sintheta_2 = 1.0f - wo_dot_wh * wo_dot_wh;
     const float t_sintheta_2 = i_sintheta_2 / (eta * eta);
     // bool t_int = t_sintheta_2 >= 1.0f; /* Total internal reflection */
     const float t_costheta = sqrt(max(0.0f, 1.0f - t_sintheta_2));
 
     /* Fresnel equation */
-    const float r_parl = (eta * wi_costheta - t_costheta) / (eta * wi_costheta + t_costheta);
-    const float r_perp = (wi_costheta - eta * t_costheta) / (wi_costheta + eta * t_costheta);
+    const float r_parl = (eta * wo_dot_wh - t_costheta) / (eta * wo_dot_wh + t_costheta);
+    const float r_perp = (wo_dot_wh - eta * t_costheta) / (wo_dot_wh + eta * t_costheta);
     return (r_parl * r_parl + r_perp * r_perp) * 0.5f;
 }
 
@@ -104,6 +104,7 @@ public struct Material {
     const float wi_costheta, /* incident cos(theta) */
     const float wo_costheta, /* outgoing cos(theta) */
     const float wh_costheta, /* half-way cos(theta) */
+    const float wo_dot_wh,
     const float alpha_2, float eta
 ) {
     /* Trowbridge-Reitz normal distribution function */
@@ -124,7 +125,7 @@ public struct Material {
     const float g = 1.0f / (1.0f + wi_lambda + wo_lambda);
 
     /* Fresnel equation */
-    const float f = fresnel(wi_costheta, eta);
+    const float f = fresnel(wo_dot_wh, eta);
 
     /* Torrance–Sparrow BRDF */
     return (d * g * f) / (4.0f * wo_costheta * wi_costheta);
@@ -133,14 +134,14 @@ public struct Material {
 /* Evaluate opaque base material slab. (diffuse & gloss) */
 [ForceInline] public float3 opaque_base_slab(
     const float wi_costheta, const float wo_costheta, 
-    const float wh_costheta, const Material mat,
+    const float wh_costheta, const float wo_dot_wh, const Material mat,
 ) {
     /* Evaluate the two slabs */
     const float3 diffuse = 1.0f; // diffuse_slab(mat.albedo());
     const float roughness = mat.roughness();
     const float alpha = roughness * roughness;
     const float eta = mat.ior() / 1.0f;
-    const float3 gloss = gloss_slab(wi_costheta, wo_costheta, wh_costheta, alpha * alpha, eta);
+    const float3 gloss = gloss_slab(wi_costheta, wo_costheta, wh_costheta, wo_dot_wh, alpha * alpha, eta);
 
     /* Layer the two slabs, diffuse = substrate, gloss = coating */
     return f_layer(diffuse, gloss);

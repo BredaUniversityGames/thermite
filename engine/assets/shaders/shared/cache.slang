@@ -14,7 +14,7 @@ public static const uint INACTIVE_THRESHOLD = 60u;
 /* Number of slots available in the cache. */
 public static const uint CAPACITY = 10000000u;
 
-static const uint TEMPORAL_SAMPLES = 20u;
+static const uint TEMPORAL_SAMPLES = 8u;
 
 /* Cache Slot (48 bytes) */
 public struct Slot {
