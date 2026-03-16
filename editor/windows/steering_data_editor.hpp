@@ -21,7 +21,7 @@ class SteeringDataEditor : public IWindow {
     void on_editor_update(const FrameData&) override {}
     void on_editor_end() override;
 
-    void display() override;
+    void on_inspect() override;
 };
 
 }  // namespace tmt
