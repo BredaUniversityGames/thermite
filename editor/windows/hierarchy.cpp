@@ -478,7 +478,7 @@ bool Hierarchy::display_entity(const HierarchyState& state, uint32_t& row) {
     if (row % 2 != 0) {
         const ImVec2 row_min = ImVec2(ImGui::GetWindowPos().x, ImGui::GetCursorScreenPos().y);
         const ImVec2 row_max = ImVec2(row_min.x + ImGui::GetWindowWidth(), row_min.y + ImGui::GetFrameHeight());
-        const ImU32 alt_row_color = ImGui::ColorConvertFloat4ToU32(tmt::theme::table_row_bg_alt);
+        const ImU32 alt_row_color = ImGui::ColorConvertFloat4ToU32(tmt::theme::TABLE_ROW_BG_ALT);
         ImGui::GetWindowDrawList()->AddRectFilled(row_min, row_max, alt_row_color);
     }
     row++;
