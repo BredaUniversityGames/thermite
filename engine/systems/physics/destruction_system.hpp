@@ -29,7 +29,7 @@ class Destruction : public ISystem {
 
    private:
     void fill_edge_indices(std::vector<glm::uvec3>& edge_indices, Entity entity, const Stencil* stencil, glm::ivec3 offset);
-    std::vector<Entity> find_seperations(Entity entity, const std::vector<glm::uvec3>& edge_indices, const Stencil* stencil, glm::ivec3 offset);
+    //std::vector<Entity> find_seperations(Entity entity, const std::vector<glm::uvec3>& edge_indices, const Stencil* stencil, glm::ivec3 offset);
     std::vector<Entity> find_seperations(Entity entity, const std::vector<glm::uvec3>& edge_indices, Destructable& graph);
     void regenerate_connection_graph(Destructable& graph, Svt64* tree, const Stencil* stencil, glm::ivec3 offset);
     void generate_connection_graph(Destructable& graph, Svt64* tree);
