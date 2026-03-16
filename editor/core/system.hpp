@@ -1,4 +1,6 @@
 #pragma once
+#include <type_traits>
+
 #include "engine/core/frame_data.hpp"
 #include "engine/tools/json.hpp"
 #include "engine/tools/serializer.hpp"
@@ -18,8 +20,8 @@ class IEditorSystemBase {
     virtual void on_editor_end() {};
 
     /* Optional, defaults to reflection */
-    virtual tmt::json serialize() const;
-    virtual void deserialize(const tmt::json value);
+    virtual tmt::json serialize() const { return {}; }
+    virtual void deserialize(const tmt::json value) { (void)value; }
 };
 
 template <bool Required>
@@ -32,18 +34,19 @@ struct TitleMixin<false> {
     virtual std::string get_title() const { return {}; }
 };
 
-template <typename Derived = void>
-class IEditorSystem : public IEditorSystemBase, public TitleMixin<!std::is_void_v<Derived>> {
-   public:
+struct temp {};
 
-    virtual tmt::json serialize() const {
-        if constexpr (std::is_same_v<Derived, void> == false) {
-            return Serializer::serialize(static_cast<Derived&>(*this));
+template <typename Derived = temp>
+class IEditorSystem : public IEditorSystemBase, public TitleMixin<!std::is_same_v<Derived, temp>> {
+   public:
+    virtual tmt::json serialize() const override {
+        if constexpr (std::is_same_v<Derived, temp> == false) {
+            return Serializer::serialize(static_cast<const Derived&>(*this));
         }
         return {};
     }
-    virtual void deserialize(const tmt::json value) {
-        if constexpr (std::is_same_v<Derived, void> == false) {
+    virtual void deserialize(const tmt::json value) override {
+        if constexpr (std::is_same_v<Derived, temp> == false) {
             Serializer::deserialize(value, static_cast<Derived&>(*this));
         }
     }
