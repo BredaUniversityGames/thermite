@@ -491,6 +491,16 @@ void ModelViewer::on_inspect() {
     NodeHierarchy& node_hierarchy = editor.systems[Editor::Mode::VOXEL].get<NodeHierarchy>();
     const Entity selected_entity = node_hierarchy.get_first_selected_entity();
 
+    // Draw bounding boxes of all selected entities.
+    for (const Entity e : node_hierarchy.get_selected_entities()) {
+        if (e == selected_entity || !engine.ecs.has_component<VoxelRenderer>(e)) continue;
+
+        const Transform& transform = engine.ecs.get_component<Transform>(e);
+        const ResourceRef<VoxelVolume>& resource = engine.ecs.get_component<VoxelRenderer>(e).resource;
+        const glm::vec3 half_extent = glm::vec3 { resource->size } * VOXEL_SIZE_HALF;
+        draw_valid_faces(transform, half_extent);
+    }
+
     if (!engine.ecs.valid(selected_entity) || !engine.ecs.has_component<VoxelRenderer>(selected_entity)) return;
 
     // Get the necessary values for handling selection (entity transform, voxel resource, ray cast for selection, etc).
