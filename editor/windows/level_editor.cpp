@@ -9,6 +9,7 @@
 #include "engine/tools/random.hpp"
 #include "engine/core/logger.hpp"
 #include "engine/tools/prefab_helper.hpp"
+#include "engine/core/scenes.hpp"
 #include "editor/core/systems/undo_redo/level_editor_diff.hpp"
 #include "editor/imgui/types/all.hpp"
 #include <ImReflect.hpp>
@@ -16,6 +17,11 @@
 namespace tmt {
 
 void tmt::LevelEditor::on_inspect() {
+
+    const std::string& scene_name = engine.scenes.get_active_scene_info().name;
+    auto& pickable_cell_templates = scene_pickable_cell_templates[scene_name];
+    auto& cells = scene_cells[scene_name];
+
     window_displayed = true;
 
     auto& viewport = editor.systems[Editor::Mode::SCENE].get<Viewport>();
@@ -142,7 +148,7 @@ void tmt::LevelEditor::on_inspect() {
 
     if (enable_editing) {
         for (auto [coord, cell] : cells) {
-            draw_cell(draw_list, coord_to_world(coord), cell);
+            draw_cell(draw_list, coord_to_world(coord), cell, pickable_cell_templates);
         }
 
         const float max_alpha = 0.2f;
@@ -151,7 +157,7 @@ void tmt::LevelEditor::on_inspect() {
 
         if (viewport.get_is_hovered() && selected_template != -1) {
             for (const auto& coord : placing_coords) {
-                draw_cell(draw_list, coord_to_world(coord), Cell { .template_index = selected_template }, glm::vec4(1.f, 1.f, 1.f, alpha));
+                draw_cell(draw_list, coord_to_world(coord), Cell { .template_index = selected_template }, pickable_cell_templates, glm::vec4(1.f, 1.f, 1.f, alpha));
             }
 
             if (ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
@@ -247,7 +253,7 @@ void tmt::LevelEditor::on_editor_update(const tmt::FrameData& time) {
     }
 }
 
-void LevelEditor::draw_cell(ImDrawList* draw_list, glm::vec3 pos, const Cell& cell, glm::vec4 col) {
+void LevelEditor::draw_cell(ImDrawList* draw_list, glm::vec3 pos, const Cell& cell, const std::vector<CellTemplate>& pickable_cell_templates, glm::vec4 col) {
     float extent = cell_size * 0.5f;
     float height_extent = pickable_cell_templates[cell.template_index].height * 0.5f;
     glm::vec3 local_vertices[8] = { glm::vec3(-extent, -height_extent, -extent), glm::vec3(extent, -height_extent, -extent), glm::vec3(extent, height_extent, -extent),
@@ -310,5 +316,10 @@ glm::ivec2 LevelEditor::world_to_coord(glm::vec3 pos) {
 }
 
 void tmt::LevelEditor::on_editor_end() {}
+
+std::unordered_map<glm::ivec2, LevelEditor::Cell>& LevelEditor::get_cells() {
+   const std::string& scene_name = engine.scenes.get_active_scene_info().name;
+   return scene_cells[scene_name];
+}
 
 }  // namespace tmt

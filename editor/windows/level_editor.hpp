@@ -19,7 +19,7 @@ struct hash<glm::ivec2> {
 
 namespace tmt {
 
-class LevelEditor : public IWindow {
+class LevelEditor : public IWindow<LevelEditor> {
    public:
     // Inherited via IWindow
     void on_inspect() override;
@@ -44,8 +44,10 @@ class LevelEditor : public IWindow {
         RGBA color;
     };
 
-    std::unordered_map<glm::ivec2, Cell>& get_cells() {return cells;}
+    std::unordered_map<glm::ivec2, Cell>& get_cells();
    private:
+
+    BEFRIEND_VISITABLE();
 
     struct ViewportContext {
         float width;
@@ -56,7 +58,7 @@ class LevelEditor : public IWindow {
 
     struct LevelCellGrouperTag {};
 
-    std::vector<CellTemplate> pickable_cell_templates;
+    std::unordered_map<std::string, std::vector<CellTemplate>> scene_pickable_cell_templates;
     int selected_template = -1;
 
     enum class Brush
@@ -71,7 +73,7 @@ class LevelEditor : public IWindow {
 
     bool window_displayed = false;
 
-    void draw_cell(ImDrawList* draw_list, glm::vec3 pos, const Cell& cell, glm::vec4 col = glm::vec4(0.f));
+    void draw_cell(ImDrawList* draw_list, glm::vec3 pos, const Cell& cell, const std::vector<CellTemplate>& pickable_cell_templates, glm::vec4 col = glm::vec4(0.f));
     glm::vec3 coord_to_world(glm::ivec2 coord);
     glm::ivec2 world_to_coord(glm::vec3 coord);
 
@@ -84,8 +86,10 @@ class LevelEditor : public IWindow {
     bool mirror_x = false;
     float cell_size;
     glm::vec3 global_field_offset;
-    std::unordered_map<glm::ivec2, Cell> cells;
+    std::unordered_map<std::string, std::unordered_map<glm::ivec2, Cell>> scene_cells;
 };
 
 }  // namespace tmt
 TMT_OBJECT(tmt::LevelEditor::CellTemplate, (name, random_seed, seed, height, field, color));
+TMT_OBJECT(tmt::LevelEditor::Cell, (template_index));
+TMT_OBJECT(tmt::LevelEditor, (cell_size, global_field_offset, scene_cells, scene_pickable_cell_templates));
