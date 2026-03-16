@@ -9,7 +9,7 @@ struct ImDrawList;
 
 namespace tmt {
 
-class Viewport : public IWindow, public OnRetrieveMouseState, public OnBlockInputRequest, public OnGameStart {
+class Viewport : public IWindow<>, public OnRetrieveMouseState, public OnBlockInputRequest, public OnGameStart {
    public:
     Viewport() = default;
     ~Viewport() = default;

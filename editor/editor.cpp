@@ -85,7 +85,6 @@ void Editor::switch_mode(Mode new_mode, const std::any& meta_data) {
 void Editor::on_engine_init(const ApplicationSpecs&) {
     tmt::Log::info("Starting Thermite Editor...");
     imgui_manager.init();
-    save_data.load();
     gizmo.init();
 
     mode_handlers[Mode::SCENE] = std::make_unique<SceneMode>();
@@ -143,6 +142,8 @@ void Editor::on_engine_init(const ApplicationSpecs&) {
             system->on_editor_start();
         }
     }
+
+    save_data.load();
 }
 
 void Editor::on_engine_update(const FrameData& time) {
@@ -162,7 +163,7 @@ void Editor::on_engine_update(const FrameData& time) {
     // Render windows (only for systems that are IWindow instances)
     auto& open_windows = editor.save_data.open_windows;
     for (const auto& system : systems[editor_mode]) {
-        IWindow* window = dynamic_cast<IWindow*>(system.get());
+        IWindowBase* window = dynamic_cast<IWindowBase*>(system.get());
         if (!window) continue;  // Skip non-window systems
 
         const auto& name = window->get_title();
@@ -216,7 +217,7 @@ void Editor::main_menu_bar() {
 
         if (ImGui::BeginMenu("Windows")) {
             for (const auto& system : systems[editor_mode]) {
-                IWindow* window = dynamic_cast<IWindow*>(system.get());
+                IWindowBase* window = dynamic_cast<IWindowBase*>(system.get());
                 if (!window) continue;  // Only show actual windows in the menu
 
                 const auto& name = window->get_title();
