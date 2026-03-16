@@ -169,11 +169,13 @@ void Player::update(const tmt::FrameData& time) {
             move_player();
 
             // Handle recharging and draining
-            if (glm::distance(tmt::engine.ecs.get_component<tmt::Transform>(entity).get_world_position(), tmt::engine.ecs.get_component<tmt::Transform>(barge).get_world_position()) >=
-                recharge_distance) {
-                drain_energy(time.delta_time);
-            } else {
-                refill(time.delta_time);
+            if (tmt::engine.ecs.valid(barge)) {
+                if (glm::distance(tmt::engine.ecs.get_component<tmt::Transform>(entity).get_world_position(), tmt::engine.ecs.get_component<tmt::Transform>(barge).get_world_position()) >=
+                    recharge_distance) {
+                    drain_energy(time.delta_time);
+                    } else {
+                        refill(time.delta_time);
+                    }
             }
             break;
         case game::PlayerState::ATTACHED:
@@ -191,12 +193,21 @@ void Player::update(const tmt::FrameData& time) {
     // triggers the event for shooting
 
     // TODO events, could also use entt on modifcation component for the UI components
-    if (tmt::engine.ecs.valid(hp_bar_max_entity)) {
-        if (auto componenthpmax = tmt::engine.ecs.try_get_component<tmt::UIComponent>(hp_bar_max_entity)) componenthpmax->size.x = health.max_value + 2.0f;
+
+    if (tmt::engine.ecs.valid(hp_bar_max)) {
+        if (auto componenthpmax = tmt::engine.ecs.try_get_component<tmt::UIComponent>(hp_bar_max)) componenthpmax->size.x = health.max_value + 2.0f;
     }
 
-    if (tmt::engine.ecs.valid(hp_bar_current_entity)) {
-        if (auto componentcurrhp = tmt::engine.ecs.try_get_component<tmt::UIComponent>(hp_bar_current_entity)) componentcurrhp->size.x = health.value;
+    if (tmt::engine.ecs.valid(hp_bar_current)) {
+        if (auto componentcurrhp = tmt::engine.ecs.try_get_component<tmt::UIComponent>(hp_bar_current)) componentcurrhp->size.x = health.value;
+    }
+
+    if (tmt::engine.ecs.valid(energy_bar_max)) {
+        if (auto componenthpmax = tmt::engine.ecs.try_get_component<tmt::UIComponent>(energy_bar_max)) componenthpmax->size.x = energy.max_value + 2.0f;
+    }
+
+    if (tmt::engine.ecs.valid(energy_bar_current)) {
+        if (auto componentcurrhp = tmt::engine.ecs.try_get_component<tmt::UIComponent>(energy_bar_current)) componentcurrhp->size.x = energy.value;
     }
 }
 
