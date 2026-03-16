@@ -6,7 +6,7 @@
 #include "engine/systems/physics/components/voxel_body.hpp"
 #include "engine/systems/ai/steering/components/steering_agent.hpp"
 #include "engine/systems/ai/steering/steering_system.hpp"
-#include "../player.hpp"
+#include "../gameplay_functionality_components/player.hpp"
 
 namespace game {
 

@@ -1,5 +1,5 @@
 #include "sensor_system.hpp"
-#include "../player.hpp"
+#include "../gameplay_functionality_components/player.hpp"
 #include "engine/systems/ai/steering/steering_system.hpp"
 #include "engine/systems/ai/steering/components/steering_agent.hpp"
 #include "engine/systems/ai/goap/components/world_state.hpp"
@@ -14,7 +14,15 @@ void SensorsSystem::on_start() {
     tmt::Log::info("Sensor system on_start");
 
     if (!tmt::engine.ecs.valid(player_entity)) {
-        player_entity = tmt::engine.ecs.view<Player>().front().entity;  // Assuming there's only one player entity in the game
+        auto player_view = tmt::engine.ecs.view<Player>();
+
+        if (!player_view.empty()) {
+            player_entity = player_view.front().entity;  // Only safe if the view is not empty
+            tmt::Log::info("Player entity found: {}", player_entity);
+        } else {
+            player_entity = tmt::Entity {};              // invalid / null entity
+            tmt::Log::info("No player entity found in current scene");
+        }
     }
 }
 

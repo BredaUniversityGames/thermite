@@ -5,7 +5,7 @@
 #include "engine/systems/ai/goap/components/world_state.hpp"
 
 #include "engine/systems/ai/steering/steering_system.hpp"
-#include "../player.hpp"
+#include "../gameplay_functionality_components/player.hpp"
 
 namespace game {
 
