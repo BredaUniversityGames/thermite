@@ -5,6 +5,7 @@
 #include "engine/core/polyline.hpp"
 
 #include "engine/systems/ai/goap/goap_system.hpp"
+#include "engine/systems/ai/navigation/nav_mesh.hpp"
 
 void game::MediumEnemy::start() {
     for (const auto& [CamEntity, camera] : tmt::engine.ecs.view<tmt::Camera>().each()) {
