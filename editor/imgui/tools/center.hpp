@@ -1,23 +1,25 @@
 #pragma once
 #include <imgui.h>
+// Source from: https://github.com/ocornut/imgui/discussions/3862#discussioncomment-8907750
+// with some small modifications
 
 namespace tmt {
 
-class centered_control_wrapper_t {
+class CenteredControlWrapperT {
    public:
-    explicit centered_control_wrapper_t(bool result) : result_(result) {}
+    explicit CenteredControlWrapperT(bool result) : result_(result) {}
     operator bool() const { return result_; }
 
    private:
     bool result_;
 };
 
-class centered_control_t {
+class CenteredControlT {
    public:
-    centered_control_t(ImVec2 window_size, float y = 0.f, float s = 0.f, float su = 0.f) : window_size_(window_size), y_offset(y), spacing_below(s), spacing_up(su) {}
+    CenteredControlT(ImVec2 window_size, float y = 0.f, float s = 0.f, float su = 0.f) : window_size_(window_size), y_offset(y), spacing_below(s), spacing_up(su) {}
 
     template <typename func>
-    centered_control_wrapper_t operator()(func control) const {
+    CenteredControlWrapperT operator()(func control) const {
         // Measurement pass - render offscreen to get widget size
         ImVec2 original_pos = ImGui::GetCursorPos();
         ImGui::SetCursorPos(ImVec2(-10000.0f, -10000.0f));
@@ -35,7 +37,7 @@ class centered_control_t {
 
         ImGui::Dummy(ImVec2(0, spacing_below));
 
-        return centered_control_wrapper_t(result);
+        return CenteredControlWrapperT(result);
     }
 
    private:
@@ -45,6 +47,6 @@ class centered_control_t {
     float spacing_up;
 };
 
-#define IMGUI_CENTER(control, ...) centered_control_t { ImGui::GetWindowSize(), __VA_ARGS__ }([&]() -> bool { return (control); })
+#define IMGUI_CENTER(control, ...) CenteredControlT { ImGui::GetWindowSize(), __VA_ARGS__ }([&]() -> bool { return (control); })
 
 }  // namespace tmt
