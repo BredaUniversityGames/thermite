@@ -41,7 +41,7 @@ void RenderView::init() {
     /* Viewport Texture */
     viewport.texture = bank.create_texture(
                                "Viewport Texture", TextureUsage::ColorAttachment | TextureUsage::Sampled | TextureUsage::Storage, TextureFormat::RGBA8Unorm,
-                               { (uint32_t)engine.window.width, (uint32_t)engine.window.height, 0 }, { 1, 1 }
+                               { (uint32_t)engine.window.width, (uint32_t)engine.window.height, 0 }
     )
                            .expect("failed to initialize attachment texture");
 
@@ -69,8 +69,10 @@ void RenderView::init() {
     }
 
     /* Create the luminance buffer */
-    lbuffer.texture = bank.create_texture("Luminance Buffer Texture", TextureUsage::ColorAttachment | TextureUsage::Storage | TextureUsage::Sampled, TextureFormat::RG11B10Ufloat, render_size)
-                          .expect("failed to create ibuffer texture.");
+    lbuffer.meta = { 7, 1 };  // Set 7 mips
+    lbuffer.texture =
+        bank.create_texture("Luminance Buffer Texture", TextureUsage::ColorAttachment | TextureUsage::Storage | TextureUsage::Sampled, TextureFormat::RG11B10Ufloat, render_size, lbuffer.meta)
+            .expect("failed to create ibuffer texture.");
     lbuffer.image = bank.create_image("Luminance Buffer Image", lbuffer.texture).expect("failed to create ibuffer image.");
     nbuffer.texture = bank.create_texture("Denoised Luminance Buffer Texture", TextureUsage::Storage | TextureUsage::Sampled, TextureFormat::RG11B10Ufloat, render_size)
                           .expect("failed to create nbuffer texture.");
@@ -250,7 +252,7 @@ void RenderView::resize_textures() {
     bank.resize_texture(viewport.texture, view_size).expect("failed to resize viewport texture.");
     bank.resize_texture(vbuffer.texture, view_size).expect("failed to resize vbuffer texture.");
     bank.resize_texture(dbuffer.texture, view_size).expect("failed to resize depth buffer texture.");
-    bank.resize_texture(lbuffer.texture, render_size).expect("failed to resize lbuffer texture.");
+    bank.resize_texture(lbuffer.texture, render_size, lbuffer.meta).expect("failed to resize lbuffer texture.");
     bank.resize_texture(nbuffer.texture, render_size).expect("failed to resize nbuffer texture.");
     bank.resize_texture(hbuffer1.texture, view_size).expect("failed to resize hbuffer texture.");
     bank.resize_texture(hbuffer2.texture, view_size).expect("failed to resize hbuffer texture.");

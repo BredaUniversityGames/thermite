@@ -3,6 +3,7 @@
 #include <glm/glm.hpp>
 
 #include <graphite/resources/handle.hh>
+#include <graphite/resources/texture.hh>
 
 #include "engine/core/entity.hpp"
 #include "engine/core/components/camera.hpp"
@@ -43,6 +44,7 @@ struct GpuView {
 
 /* Screen buffer resource. */
 struct ScreenBuffer {
+    TextureMeta meta = TextureMeta();
     Texture texture {};
     Image image {};
 };
