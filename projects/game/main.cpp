@@ -1,18 +1,9 @@
 #include "engine/entry_point.hpp"
 #include "engine/core/ecs.hpp"
-#include "engine/core/resources.hpp"
-#include "engine/core/resources/voxel_volume.hpp"
-#include "engine/core/components/transform.hpp"
-#include "engine/core/components/camera.hpp"
-#include "engine/core/components/voxel_renderer.hpp"
 #include "engine/core/input/input.hpp"
 #include "engine/core/logger.hpp"
-#include "engine/systems/physics/components/voxel_body.hpp"
-#include "engine/systems/camera/camera_system.hpp"
 
-#include "engine/core/scene.hpp"
 #include "engine/core/scenes.hpp"
-#include "engine/core/renderer/voxel_object.hpp"
 #include "engine/systems/gameplay/game_component.hpp"
 
 // For custom ImGui logic
@@ -20,9 +11,6 @@
 
 // GOAP
 #include "engine/systems/ai/goap/goap_system.hpp"
-#include "engine/systems/ai/goap/components/goap_agent.hpp"
-#include "engine/systems/ai/goap/components/goap_agent_type_registry.hpp"
-#include "engine/systems/ai/goap/components/goap_agent_factory.hpp"
 #include "engine/systems/ai/goap/components/goap_action_registry.hpp"
 #include "engine/systems/ai/goap/components/goap_goal_registry.hpp"
 #include "engine/systems/ai/goap/components/goap_goal.hpp"
@@ -33,33 +21,40 @@
 #include "ai_actions/fire_missiles.hpp"
 #include "ai_actions/fire_laser.hpp"
 
-// Game Components
-#include "components/player.hpp"
-#include "components/wallet.hpp"
-#include "components/asteroid_field_component.hpp"
-#include "components/mining_component.hpp"
+//Enemies
+#include "components/gameplay_functionality_components/enemy_components/medium_enemy.hpp"
+
+// Animation
 #include "components/animation_player.hpp"
-#include "components/attach_component.hpp"
-#include "components/gravity_manipulation_component.hpp"
-#include "components/collision_trigger.hpp"
-#include "components/menu_controller.hpp"
-#include "components/mover_component.hpp"
-#include "components/ore_collector.hpp"
-#include "components/projectile_spawner.hpp"
-#include "components/rifle_projectile.hpp"
-#include "components/spawner.hpp"
-#include "components/text_component.hpp"
-#include "components/weapon.hpp"
-#include "components/fuel.hpp"
-#include "components/ore_properties.hpp"
-#include "components/upgrade.hpp"
-#include "components/medium_enemy.hpp"
+// Game Components
+#include "components/gameplay_functionality_components/player.hpp"
+#include "components/gameplay_functionality_components/mover_component.hpp"
+#include "components/gameplay_functionality_components/ore_collector.hpp"
+#include "components/gameplay_functionality_components/fuel.hpp"
+#include "components/gameplay_functionality_components/upgrade.hpp"
+// Weapons and tools
+#include "components/gameplay_functionality_components/weapon_and_tool_components/projectile_spawner.hpp"
+#include "components/gameplay_functionality_components/weapon_and_tool_components/rifle_projectile.hpp"
+#include "components/gameplay_functionality_components/weapon_and_tool_components/spawner.hpp"
+#include "components/gameplay_functionality_components/weapon_and_tool_components/weapon.hpp"
+#include "components/gameplay_functionality_components/weapon_and_tool_components/mining_component.hpp"
+#include "components/gameplay_functionality_components/weapon_and_tool_components/gravity_manipulation_component.hpp"
+// Ui
+#include "components/ui_components/text_component.hpp"
 #include "components/ui_components/scene_switch_component.hpp"
 #include "components/ui_components/entity_control_component.hpp"
-#include "components/gameplay_functionality_components/managers/ore_manager.hpp"
-
+// Managers
+#include "components/managers/ore_manager.hpp"
+#include "components/managers/menu_controller.hpp"
+// Development tools
+#include "components/development_tools/collision_trigger.hpp"
+#include "components/development_tools/attach_component.hpp"
+// World generation
+#include "components/world_gen/asteroid_field_component.hpp"
 // Data Headers
 #include "data_headers/scene_list.hpp"
+#include "data_headers/wallet.hpp"
+#include "data_headers/ore_properties.hpp"
 
 // Goap Components
 #include "engine/systems/ai/goap/goap_system.hpp"

@@ -1,5 +1,6 @@
 #include "sensor_system.hpp"
-#include "../player.hpp"
+
+#include "../gameplay_functionality_components/player.hpp"
 #include "engine/systems/ai/steering/steering_system.hpp"
 #include "engine/systems/ai/steering/components/steering_agent.hpp"
 #include "engine/systems/ai/goap/components/world_state.hpp"

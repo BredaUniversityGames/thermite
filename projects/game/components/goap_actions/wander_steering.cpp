@@ -5,7 +5,7 @@
 #include "engine/core/logger.hpp"
 
 #include "engine/systems/ai/steering/steering_system.hpp"
-#include "../player.hpp"
+#include "../gameplay_functionality_components/player.hpp"
 
 namespace game {
 

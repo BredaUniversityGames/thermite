@@ -3,7 +3,7 @@
 #include "engine/engine.hpp"
 #include "engine/core/ecs.hpp"
 #include "engine/systems/ai/navigation/nav_mesh.hpp"
-#include "../components/medium_enemy.hpp"
+#include "../components/gameplay_functionality_components/enemy_components/medium_enemy.hpp"
 #include "engine/core/components/camera.hpp"
 #include "engine/engine.hpp"
 
