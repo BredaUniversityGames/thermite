@@ -11,10 +11,7 @@ class Random {
         return dist(rng());
     }
 
-    static int irand() 
-    {
-        return rng()();
-    }
+    static int irand() { return rng()(); }
 
     static float rand_range(float min, float max) {
         std::uniform_real_distribution<float> dist(min, max);

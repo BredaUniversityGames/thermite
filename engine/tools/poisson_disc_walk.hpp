@@ -2,9 +2,8 @@
 #include "engine/core/resource.hpp"
 #include "engine/core/resources/json.hpp"
 
-//variable radius poisson disc walking to achieve poisson distribution
-namespace tmt
-{
+// variable radius poisson disc walking to achieve poisson distribution
+namespace tmt {
 
 struct PoissonPoint {
     glm::vec3 pos;
@@ -32,7 +31,7 @@ struct PoissonField {
     glm::vec3 size;
 };
 
- struct SpatialLookupGrid {
+struct SpatialLookupGrid {
     SpatialLookupGrid(float cell_size, glm::vec3 region_size);
 
     std::vector<int> grid;
@@ -49,8 +48,7 @@ struct PoissonField {
 int get_entry_idx(const PoissonField& layer, float cum_spawn_weight);
 std::vector<PoissonPoint> get_poisson_points(const PoissonField& layer);
 bool point_valid(glm::vec3 point, float radius, float max_radius, const SpatialLookupGrid& grid, const std::vector<PoissonPoint>& points);
+
 }  // namespace tmt
 TMT_OBJECT(tmt::LayerEntry, (spawnable, radius_factor, spawn_weight, belt_bias));
 TMT_OBJECT(tmt::PoissonField, (layer_entries, rejection_samples, spacing_radius, space_weight));
-
-

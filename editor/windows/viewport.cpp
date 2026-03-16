@@ -85,8 +85,7 @@ void tmt::Viewport::on_inspect() {
     width = size.x;
     height = size.y;
 
-
-    viewport_pos = {ImGui::GetCursorScreenPos().x, ImGui::GetCursorScreenPos().y};
+    viewport_pos = { ImGui::GetCursorScreenPos().x, ImGui::GetCursorScreenPos().y };
     is_focused = ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows);
 
     if (height <= 0.f) return;
@@ -152,7 +151,7 @@ void tmt::Viewport::on_inspect() {
     const bool gizmo_changed = editor.gizmo.manip(viewport_pos.x, viewport_pos.y, width, height, selected_entities, snap_value, modifiers);
     if (gizmo_changed) OnSceneModified::dispatch();
 
-    if(allow_selection) selection_logic(imgui_mouse_pos, viewport_pos, false);
+    if (allow_selection) selection_logic(imgui_mouse_pos, viewport_pos, false);
 
     ImGui::EndChild();
 

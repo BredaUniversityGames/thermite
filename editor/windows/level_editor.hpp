@@ -33,8 +33,7 @@ class LevelEditor : public IWindow<LevelEditor> {
     struct Cell {
         int template_index;
     };
-    struct CellTemplate
-    {
+    struct CellTemplate {
         int seed = 42;
         bool random_seed;
         std::string name = "default";
@@ -45,8 +44,8 @@ class LevelEditor : public IWindow<LevelEditor> {
     };
 
     std::unordered_map<glm::ivec2, Cell>& get_cells();
-   private:
 
+   private:
     BEFRIEND_VISITABLE();
 
     struct ViewportContext {
@@ -61,13 +60,7 @@ class LevelEditor : public IWindow<LevelEditor> {
     std::unordered_map<std::string, std::vector<CellTemplate>> scene_pickable_cell_templates;
     int selected_template = -1;
 
-    enum class Brush
-    {
-        PLACE,
-        REMOVE,
-        REPLACE,
-        MAX
-    };
+    enum class Brush { PLACE, REMOVE, REPLACE, MAX };
 
     int selected_brush_mode = 0;
 
@@ -81,7 +74,7 @@ class LevelEditor : public IWindow<LevelEditor> {
     float highlight_timer = 0.f;
     std::vector<glm::ivec2> placing_coords;
 
-    //user editable
+    // user editable
     bool enable_editing = false;
     bool mirror_x = false;
     float cell_size;

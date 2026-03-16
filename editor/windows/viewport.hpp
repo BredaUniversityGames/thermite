@@ -28,8 +28,8 @@ class Viewport : public IWindow<>, public OnRetrieveMouseState, public OnBlockIn
     int get_window_flags() const override;
     constexpr bool is_closable() const override { return false; };
     constexpr bool default_open() const override { return true; }
-    void set_allow_rectangle_select(bool value) {allow_rectangle_select = value;}
-    void set_allow_selection(bool value) {allow_selection = value;}
+    void set_allow_rectangle_select(bool value) { allow_rectangle_select = value; }
+    void set_allow_selection(bool value) { allow_selection = value; }
 
     // Game flow controls (shared with GameFlow window)
     void start_game();
@@ -40,12 +40,12 @@ class Viewport : public IWindow<>, public OnRetrieveMouseState, public OnBlockIn
     bool get_is_hovered() const { return is_hovered; }
     bool get_is_focused() const { return is_focused; }
     bool is_using_debug_camera() const { return using_debug_camera; }
-    ImDrawList* get_drawlist() const {return viewport_drawlist;}
+    ImDrawList* get_drawlist() const { return viewport_drawlist; }
 
-    float get_width() const {return width;}
-    float get_height() const {return height;}
-    glm::vec2 get_window_pos() const {return viewport_pos;}
-    glm::vec2 get_mouse_pos() const {return mouse_pos;}
+    float get_width() const { return width; }
+    float get_height() const { return height; }
+    glm::vec2 get_window_pos() const { return viewport_pos; }
+    glm::vec2 get_mouse_pos() const { return mouse_pos; }
 
    private:
     friend class ModelViewer;

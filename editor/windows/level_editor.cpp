@@ -17,7 +17,6 @@
 namespace tmt {
 
 void tmt::LevelEditor::on_inspect() {
-
     const std::string& scene_name = engine.scenes.get_active_scene_info().name;
     auto& pickable_cell_templates = scene_pickable_cell_templates[scene_name];
     auto& cells = scene_cells[scene_name];
@@ -51,7 +50,8 @@ void tmt::LevelEditor::on_inspect() {
     static const char* preview = "None";
     if (selected_template >= 0 && selected_template < static_cast<int>(pickable_cell_templates.size())) {
         preview = pickable_cell_templates[selected_template].name.c_str();
-    } else preview = "None";
+    } else
+        preview = "None";
 
     if (ImGui::BeginCombo("Cell Template", preview)) {
         for (int i = 0; i < static_cast<int>(pickable_cell_templates.size()); ++i) {
@@ -70,20 +70,17 @@ void tmt::LevelEditor::on_inspect() {
     }
 
     auto response = ImReflect::Input("Cell templates", &pickable_cell_templates);
-    if(response.get<std::vector>().has_erased())
-    {
+    if (response.get<std::vector>().has_erased()) {
         size_t erased_idx = response.get<std::vector>().get_erased_index();
-        if(erased_idx == selected_template) selected_template = -1;
+        if (erased_idx == selected_template) selected_template = -1;
 
         std::vector<glm::ivec2> erasing_coords;
         for (auto& [coord, cell] : cells) {
-            if(cell.template_index == erased_idx) 
-            {
+            if (cell.template_index == erased_idx) {
                 erasing_coords.push_back(coord);
             }
         }
-        for(auto& coord : erasing_coords)
-        {
+        for (auto& coord : erasing_coords) {
             cells.erase(coord);
         }
     }
@@ -99,10 +96,8 @@ void tmt::LevelEditor::on_inspect() {
         }
 
         auto& grouper_trans = engine.ecs.get_component<Transform>(grouper_entity);
-        if(grouper_trans.has_children())
-        {
-            for(auto ent : grouper_trans.get_children())
-            {
+        if (grouper_trans.has_children()) {
+            for (auto ent : grouper_trans.get_children()) {
                 engine.ecs.destroy_entity(ent);
             }
         }
@@ -116,8 +111,10 @@ void tmt::LevelEditor::on_inspect() {
 
             cell_template.field.size = { cell_size, cell_template.height, cell_size };
 
-            if (cell_template.random_seed) Random::set_seed(Random::irand());
-            else Random::set_seed(cell_template.seed);
+            if (cell_template.random_seed)
+                Random::set_seed(Random::irand());
+            else
+                Random::set_seed(cell_template.seed);
 
             auto local_points = tmt::get_poisson_points(cell_template.field);
 
@@ -174,9 +171,7 @@ void tmt::LevelEditor::on_inspect() {
                         break;
                     case static_cast<int>(Brush::REMOVE):
                         for (const auto& coord : placing_coords) {
-                            
-                            if(cells.contains(coord))
-                            {
+                            if (cells.contains(coord)) {
                                 Cell erased_cell = cells[coord];
 
                                 cells.erase(coord);
@@ -185,10 +180,8 @@ void tmt::LevelEditor::on_inspect() {
                         }
                         break;
                     case static_cast<int>(Brush::REPLACE):
-                        for (const auto& coord : placing_coords) 
-                        {
-                            if(cells.contains(coord) && cells[coord].template_index != selected_template)
-                            {
+                        for (const auto& coord : placing_coords) {
+                            if (cells.contains(coord) && cells[coord].template_index != selected_template) {
                                 Cell prev = cells[coord];
                                 cells[coord] = Cell { .template_index = selected_template };
 
@@ -318,8 +311,8 @@ glm::ivec2 LevelEditor::world_to_coord(glm::vec3 pos) {
 void tmt::LevelEditor::on_editor_end() {}
 
 std::unordered_map<glm::ivec2, LevelEditor::Cell>& LevelEditor::get_cells() {
-   const std::string& scene_name = engine.scenes.get_active_scene_info().name;
-   return scene_cells[scene_name];
+    const std::string& scene_name = engine.scenes.get_active_scene_info().name;
+    return scene_cells[scene_name];
 }
 
 }  // namespace tmt

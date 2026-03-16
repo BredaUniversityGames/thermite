@@ -90,7 +90,7 @@ void Editor::on_engine_init(const ApplicationSpecs&) {
     mode_handlers[Mode::SCENE] = std::make_unique<SceneMode>();
     mode_handlers[Mode::VOXEL] = std::make_unique<VoxelMode>();
     mode_handlers[Mode::PREFAB] = std::make_unique<PrefabMode>();
-	
+
     systems[Mode::SCENE].add<Hierarchy>();
     systems[Mode::SCENE].add<GameFlow>();
     systems[Mode::SCENE].add<Inspector>();
@@ -114,7 +114,7 @@ void Editor::on_engine_init(const ApplicationSpecs&) {
     systems[Mode::SCENE].add<EditorSettingsWindow>();
     systems[Mode::SCENE].add<BuildPackager>();
     systems[Mode::SCENE].add<UIEditor>();
-	systems[Mode::SCENE].add<LevelEditor>();
+    systems[Mode::SCENE].add<LevelEditor>();
     systems[Mode::SCENE].add<PlayerDataWindow>();
 
     engine.scenes.register_scene<VoxelEditScene>();
