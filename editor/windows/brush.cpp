@@ -1,8 +1,8 @@
 #include "brush.hpp"
 
-#include <engine/engine.hpp>
-#include <engine/core/ecs.hpp>
-#include <engine/tools/serializer/all.hpp>
+#include "engine/engine.hpp"
+#include "engine/core/ecs.hpp"
+#include "engine/tools/serializer/all.hpp"
 
 #include "editor.hpp"
 #include "editor/imgui/extra.hpp"
@@ -21,24 +21,48 @@ struct ButtonInfo {
     const char* icon;
     std::string_view title;
     std::string_view desc;
+    std::string_view shortcut;
 };
 
 const std::vector<std::pair<Brush::Tool, ButtonInfo>> TOOL_INFOS {
-    { Brush::Tool::GIZMO, { ICON_MS_OPEN_WITH, "Selection Gizmo", "Select, translate, rotate, and scale objects." } },
-    { Brush::Tool::COLOR_PICKER, { ICON_MS_COLORIZE, "Eye Dropper", "Select the palette entry of a voxel." } },
-    { Brush::Tool::SINGLE, { ICON_MS_DEPLOYED_CODE, "Modify Single Voxel", "Add, remove, or paint individual voxels." } },
-    { Brush::Tool::BOX, { ICON_MS_GRID_ON, "Modify Voxel Box", "Add, remove, or paint a 3D area (box) of voxels." } },
+    { Brush::Tool::GIZMO, { ICON_MS_OPEN_WITH, "Selection Gizmo", "Select, translate, rotate, and scale objects.", "Esc" } },
+    { Brush::Tool::COLOR_PICKER, { ICON_MS_COLORIZE, "Eye Dropper", "Select the palette entry of a voxel.", "I" } },
+    { Brush::Tool::SINGLE, { ICON_MS_DEPLOYED_CODE, "Modify Single Voxel", "Add, remove, or paint individual voxels.", "B" } },
+    { Brush::Tool::BOX, { ICON_MS_GRID_ON, "Modify Voxel Box", "Add, remove, or paint a 3D area (box) of voxels.", "U" } },
 };
 
 const std::vector<std::pair<Brush::Mode, ButtonInfo>> MODE_INFOS {
-    { Brush::Mode::ATTACH, { ICON_MS_ADD, "Add", "Add (or replace) voxels." } },
-    { Brush::Mode::REMOVE, { ICON_MS_REMOVE, "Remove", "Remove voxels." } },
-    { Brush::Mode::PAINT, { ICON_MS_BRUSH, "Paint", "Set palette entry of voxels." } },
+    { Brush::Mode::ATTACH, { ICON_MS_ADD, "Add", "Add (or replace) voxels.", "" } },
+    { Brush::Mode::REMOVE, { ICON_MS_REMOVE, "Remove", "Remove voxels.", "E" } },
+    { Brush::Mode::PAINT, { ICON_MS_BRUSH, "Paint", "Set palette entry of voxels.", "G" } },
 };
 
 }  // namespace
 
 void Brush::on_inspect() {
+    if (ImGui::GetIO().WantCaptureKeyboard == false) {
+        // Escape hotkey (returns to gizmo mode)
+        if (ImGui::IsKeyPressed(ImGuiKey_Escape)) state.tool = Tool::GIZMO;
+        // Color picker hotkey
+        if (ImGui::IsKeyPressed(ImGuiKey_I)) state.tool = Tool::COLOR_PICKER;
+
+        // Attach single voxel hotkey (switches to single voxel mode)
+        if (ImGui::IsKeyPressed(ImGuiKey_B)) { 
+            state.tool = Tool::SINGLE;
+            state.mode = Mode::ATTACH;
+        }
+        // Attach box of voxels hotkey (switches to box of voxels mode)
+        if (ImGui::IsKeyPressed(ImGuiKey_U)) { 
+            state.tool = Tool::BOX;
+            state.mode = Mode::ATTACH;
+        }
+
+        // Erase voxels hotkey
+        if (ImGui::IsKeyPressed(ImGuiKey_E)) state.mode = Mode::REMOVE;
+        // Paint voxels hotkey
+        if (ImGui::IsKeyPressed(ImGuiKey_G)) state.mode = Mode::PAINT;
+    }
+
     for (const auto [tool, info] : TOOL_INFOS) {
         // Keep everything on the same line (skip ImGui::SameLine on the first element).
         if (tool != TOOL_INFOS.begin()->first) ImGui::SameLine();
@@ -46,7 +70,9 @@ void Brush::on_inspect() {
         ImGui::BeginDisabled(state.tool == tool);
 
         if (ImGui::Button(info.icon)) state.tool = tool;
-        tooltip(info.title.data(), info.desc.data());
+        
+        if (info.shortcut.empty()) tooltip(info.title.data(), info.desc.data());
+        else tooltip(info.title.data(), info.desc.data(), info.shortcut.data());
 
         ImGui::EndDisabled();
     }
@@ -123,7 +149,10 @@ void Brush::on_inspect() {
 
                 ImGui::BeginDisabled(state.mode == mode);
                 if (ImGui::Button(info.icon, ImVec2 { button_width, 0.0f })) state.mode = mode;
-                tooltip(info.title.data(), info.desc.data());
+
+                if (info.shortcut.empty()) tooltip(info.title.data(), info.desc.data());
+                else tooltip(info.title.data(), info.desc.data(), info.shortcut.data());
+
                 ImGui::EndDisabled();
             }
 
