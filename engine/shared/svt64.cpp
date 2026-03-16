@@ -6,6 +6,7 @@
 #include "engine/shared/ray.hpp"
 #include "engine/core/resources/stencil.hpp"
 #include "engine/core/logger.hpp"
+#include "engine/systems/physics/components/destructable.hpp"
 
 namespace tmt {
 
@@ -120,6 +121,89 @@ Svt64Node Svt64::subdivide(const RawVoxels& raw_data, uint32_t scale, glm::uvec3
             child_mask |= (1ull << i);
             child_nodes[child_count++] = child;
         }
+    }
+
+    /* Create a node */
+    const Svt64Node node = Svt64Node(false, node_count, child_mask);
+
+    /* Add child nodes into the nodes array */
+    memcpy(nodes + node_count, child_nodes, child_count * sizeof(Svt64Node));
+    node_count += child_count;
+    return node;
+}
+
+/* Recursive tree subdivide function. */
+Svt64Node Svt64::subdivide_masked(uint32_t scale, glm::uvec3 index, const Svt64* original_tree, uint32_t node_index, const std::vector<uint64_t>& tree_masks, uint8_t id, const Destructable& graph) {
+    TMT_ZONE_SCOPED
+
+    /* Create a leaf node */
+    if (scale == 2u) {
+        Svt64Node leaf_node = Svt64Node(true, voxel_count, 0x00);
+
+        // Copy voxels from the original tree
+        uint64_t origin_mask = original_tree->nodes[node_index].child_mask;
+
+        // Find out what parts of the node are valid
+
+        while (origin_mask != 0ull) {
+            // Find index of first set bit
+            const uint32_t i = std::countr_zero(origin_mask);
+
+            /* Fetch the voxel data */
+            const uint32_t child_node_offset = (uint32_t)__popcnt64(original_tree->nodes[node_index].child_mask & ((1ull << i) - 1u));
+            const uint32_t child_node_index = original_tree->nodes[node_index].abs_ptr() + child_node_offset;
+
+            const MaterialIndex material = original_tree->materials[child_node_index];
+
+            // Only add it to the tree if its solid
+            if (material != AIR_INDEX) {
+                materials[voxel_count] = material;
+                physics_data[voxel_count++] = original_tree->physics_data[child_node_index];
+                leaf_node.child_mask |= (1ull << i);
+            }
+
+            // Remove looped over bit
+            origin_mask &= ~(1ull << i);
+        }
+
+        return leaf_node;
+    }
+
+    /* Descend */
+    scale -= 2u;
+
+    /* Collect child nodes */
+    Svt64Node child_nodes[64] {};
+    uint64_t child_mask = 0x00u;
+    uint32_t child_count = 0u;
+
+    uint64_t origin_mask = original_tree->nodes[node_index].child_mask;
+    while (origin_mask != 0ull) {
+        // Find index of first set bit
+        const uint32_t i = std::countr_zero(origin_mask);
+
+        /* Subdivide the child node */
+        const glm::uvec3 child_index = glm::uvec3(i >> 0u & 3u, i >> 4u & 3u, i >> 2u & 3u);
+
+        const uint32_t child_node_offset = (uint32_t)__popcnt64(original_tree->nodes[node_index].child_mask & ((1ull << i) - 1u));
+        const uint32_t child_node_index = original_tree->nodes[node_index].abs_ptr() + child_node_offset;
+
+        // Check if the child its masked out before descending deeper
+        if (tree_masks[child_node_index] != 0 && (tree_masks[child_node_index] & (1ull << id)) == 0ull) {
+            origin_mask &= ~(1ull << i);
+            continue;
+        }
+
+        const Svt64Node child = subdivide_masked(scale, index + (child_index << scale), original_tree, child_node_index, tree_masks, id);
+
+        /* If the child is not empty */
+        if (child.child_mask != 0u) {
+            child_mask |= (1ull << i);
+            child_nodes[child_count++] = child;
+        }
+
+        // Remove looped over bit
+        origin_mask &= ~(1ull << i);
     }
 
     /* Create a node */
