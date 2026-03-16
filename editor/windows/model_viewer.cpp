@@ -361,7 +361,7 @@ void handle_brush(const Brush::State brush_state, const ResourceRef<VoxelVolume>
             static glm::uvec3 start_coord { std::numeric_limits<uint32_t>::max() };
             if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) start_coord = hit.coord;
             const glm::uvec3& end_coord = hit.coord;
-            
+
             // Find the bounded start and end coordinates.
             const glm::uvec3 start_bounded = glm::min(start_coord, model->size - 1u);
             const glm::uvec3 end_bounded = glm::min(end_coord, model->size - 1u);
