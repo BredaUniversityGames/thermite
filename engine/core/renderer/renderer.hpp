@@ -53,6 +53,7 @@ class Renderer {
     class PolylinePipeline& polyline_pipeline;
     class VfxPipeline& vfx_pipeline;
     class UiPipeline& ui_pipeline;
+    class PostProcessPipeline& post_process_pipeline;
 
 #ifdef THERMITE_EDITOR
     ImGUI* imgui = nullptr;

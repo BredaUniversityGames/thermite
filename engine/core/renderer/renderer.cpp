@@ -7,19 +7,22 @@
 #include <graphite/nodes/raster_node.hh>
 #include <graphite/nodes/compute_node.hh>
 
+#include "core/io.hpp"
+#include "core/ecs.hpp"
 #include "core/window.hpp"
 #include "core/logger.hpp"
-#include "core/ecs.hpp"
 #include "core/components/camera.hpp"
 #include "core/components/transform.hpp"
 
 #include "engine/engine.hpp"
-#include "engine/core/io.hpp"
-#include "pipelines/geometry_pipeline.hpp"
-#include "pipelines/polyline_pipeline.hpp"
-#include "pipelines/vfx_pipeline.hpp"
+
 #include "pipelines/di_pipeline.hpp"
 #include "pipelines/ui_pipeline.hpp"
+#include "pipelines/vfx_pipeline.hpp"
+#include "pipelines/polyline_pipeline.hpp"
+#include "pipelines/geometry_pipeline.hpp"
+#include "pipelines/post_process_pipeline.hpp"
+
 #include "tools/profiler.hpp"
 
 namespace tmt {
@@ -31,7 +34,8 @@ Renderer::Renderer() :
     di_pipeline(*new DiPipeline()),
     polyline_pipeline(*new PolylinePipeline()),
     vfx_pipeline(*new VfxPipeline()),
-    ui_pipeline(*new UiPipeline()) {}
+    ui_pipeline(*new UiPipeline()),
+    post_process_pipeline(*new PostProcessPipeline()) {}
 
 Renderer::~Renderer() {
     delete &polyline_pipeline;
@@ -39,6 +43,7 @@ Renderer::~Renderer() {
     delete &vfx_pipeline;
     delete &geometry_pipeline;
     delete &ui_pipeline;
+    delete &post_process_pipeline;
 
     delete &render_graph;
     delete &gpu;
@@ -71,8 +76,8 @@ void Renderer::init() {
     bool sync_validation = false;  // Sync validation is enabled only in Debug
     bool gpu_validation = false;   // GPU assisted validation is enabled only in Debug
 #ifdef THERMITE_DEBUG
-    sync_validation = true;
-    gpu_validation = true;
+    sync_validation = false;
+    gpu_validation = false;
 #endif  //
 
     if (const Result r = gpu.init(true, sync_validation, gpu_validation); r.is_err()) {
@@ -99,6 +104,7 @@ void Renderer::init() {
     di_pipeline.init(gpu);
     vfx_pipeline.init(gpu);
     ui_pipeline.init(gpu);
+    post_process_pipeline.init(gpu);
 
     /* Initialize the Samplers */
     linear_sampler = gpu.get_vram_bank().create_sampler("Linear Sampler").expect("failed to initialize linear sampler.");
@@ -164,6 +170,8 @@ void Renderer::update() {
         /* clang-format off */
     }
 
+    post_process_pipeline.enqueue(render_graph, render_view);
+
     polyline_pipeline.enqueue(render_graph, render_view);
     ui_pipeline.enqueue(render_graph, render_view);
 
@@ -197,6 +205,8 @@ void Renderer::end() {
     di_pipeline.deinit(gpu);
     vfx_pipeline.deinit(gpu);
     ui_pipeline.deinit(gpu);
+    post_process_pipeline.deinit(gpu);
+
     bank.destroy(linear_sampler);
     bank.destroy(point_sampler);
 

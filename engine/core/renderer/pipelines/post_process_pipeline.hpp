@@ -20,6 +20,8 @@ class PostProcessPipeline {
     void init(GPUAdapter& gpu);
     void enqueue(RenderGraph& render_graph, RenderView render_view);
     void deinit(GPUAdapter& gpu);
+
+    Sampler down_sampler {};
 };
 
 }  // namespace tmt
