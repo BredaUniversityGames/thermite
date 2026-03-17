@@ -189,6 +189,13 @@ void Player::move_player() {
 
 void Player::update(const tmt::FrameData& time) {
     auto& input = tmt::engine.input;
+    if (input.is_action_pressed(action::BOOST)) {
+        apply_boost();
+        energy.value = glm::min(energy.max_value, energy.value - time.delta_time * boost_cost_per_second);
+    } else {
+        reset_boost();
+    }
+
     switch (state) {
         case game::PlayerState::FREEMOVING:
             attempt_attach(input);
