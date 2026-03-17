@@ -114,10 +114,10 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
         float normal_weight = 1.0f;
         float pos_weight = 1.0f;
     } options;
-    options.sample_radius = render_view.sample_radius;
-    options.color_weight = render_view.color_weight;
-    options.normal_weight = render_view.normal_weight;
-    options.pos_weight = render_view.pos_weight;
+    options.sample_radius = 32.0f;
+    options.color_weight = 1.0f;
+    options.normal_weight = 1.0f;
+    options.pos_weight = 1.0f;
 
     render_graph.add_compute_pass("denoise pass", "lighting/denoise.cs")
         .push_constants(&options, 0u, sizeof(DenoiseOptions))
@@ -184,8 +184,7 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
             .read(scene_view.object_data) /* Voxel objects buffer */
             .read(render_view.vbuffer.image) /* Visibility buffer */
             .write(render_view.macrofacet_cache) /* Cache buffer */
-            .read(diffuse_image) /* Luminance buffer */
-            .write(render_image) /* Render target */
+            .write(diffuse_image) /* Luminance Output */
             .group_size(16, 8)
             .work_size(render_res.x, render_res.y);
     }

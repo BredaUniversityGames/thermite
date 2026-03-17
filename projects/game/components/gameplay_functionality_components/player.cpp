@@ -1,0 +1,430 @@
+﻿#include "player.hpp"
+
+#include "engine/core/polyline.hpp"
+#include "projects/game/data_headers/events.hpp"
+
+#include <glm/glm.hpp>
+#include <glm/gtc/constants.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
+#include "engine/core/input/input.hpp"
+#include "engine/core/components/camera.hpp"
+
+#include "engine/core/window.hpp"
+#include "engine/core/input/input_map.hpp"
+#include "projects/game/data_headers/game_input.hpp"
+#include "engine/core/components/ui_component.hpp"
+#include "engine/shared/ray.hpp"
+#include "engine/systems/physics/physics_system.hpp"
+#include "projects/game/components/development_tools/debug_line_helper.hpp"
+
+// TODO before we have a serializer for input, you can add all the needed keybindings here.
+//  TODO we still have to add the gamepad inputs here
+
+namespace game {
+
+void setup_inputs(tmt::InputMap& input_map) {
+    // movement
+    input_map.add_action(action::MOVE_FORWARD);
+    input_map.add_key_to_action(action::MOVE_FORWARD, tmt::Key::W);
+
+    input_map.add_action(action::MOVE_BACKWARD);
+    input_map.add_key_to_action(action::MOVE_BACKWARD, tmt::Key::S);
+
+    input_map.add_action(action::MOVE_LEFT);
+    input_map.add_key_to_action(action::MOVE_LEFT, tmt::Key::A);
+
+    input_map.add_action(action::MOVE_RIGHT);
+    input_map.add_key_to_action(action::MOVE_RIGHT, tmt::Key::D);
+
+    input_map.add_action(action::MOVE_UP);
+    input_map.add_key_to_action(action::MOVE_UP, tmt::Key::SPACE);
+
+    input_map.add_action(action::MOVE_DOWN);
+    input_map.add_key_to_action(action::MOVE_DOWN, tmt::Key::LEFT_SHIFT);
+
+    input_map.add_action(action::BREAK);
+    input_map.add_key_to_action(action::BREAK, tmt::Key::LEFT_CTRL);
+
+    // combat
+    input_map.add_action(action::SHOOT);
+    input_map.add_action_mouse(action::SHOOT, tmt::MouseButton::LEFT);
+
+    input_map.add_action(action::SWITCH_RIFLE);
+    input_map.add_key_to_action(action::SWITCH_RIFLE, tmt::Key::NUM_1);
+    input_map.add_action(action::SWITCH_GRAVITY);
+    input_map.add_key_to_action(action::SWITCH_GRAVITY, tmt::Key::NUM_2);
+    input_map.add_action(action::SWITCH_MINING);
+    input_map.add_key_to_action(action::SWITCH_MINING, tmt::Key::NUM_3);
+    input_map.add_action(action::SECONDARY_TOOL_USE);
+    input_map.add_action_mouse(action::SECONDARY_TOOL_USE, tmt::MouseButton::RIGHT);
+
+    // menus
+    input_map.add_action(action::OPEN_INVENTORY);
+    input_map.add_key_to_action(action::OPEN_INVENTORY, tmt::Key::I);
+    input_map.add_action(action::OPEN_PAUSE_MENU);
+    input_map.add_key_to_action(action::OPEN_PAUSE_MENU, tmt::Key::P);
+    input_map.add_action(action::OPEN_UPGRADE_MENU);
+    input_map.add_key_to_action(action::OPEN_UPGRADE_MENU, tmt::Key::U);
+    input_map.add_action(action::ATTACH_KEY);
+    input_map.add_key_to_action(action::ATTACH_KEY, tmt::Key::E);
+}
+
+void Player::start() {
+    tmt::engine.input.set_mouse_relative_to_window(true);
+    glm::vec2 screen_size = { tmt::engine.window.width, tmt::engine.window.height };
+    tmt::engine.input.warp_mouse({ screen_size.x / 2.0f, screen_size.y / 2.0f }, true);
+    tmt::engine.input.lock_mouse(true);
+    setup_inputs(tmt::engine.input_map);
+    tmt::engine.ecs.get_dispatcher().sink<AttachEvent>().connect<&Player::on_attach>(this);
+}
+void Player::end() {
+    // tmt::engine.ecs.get_dispatcher().trigger<AttachEvent>({ .entity = entity_that_attaches, .is_attached = is_attached });
+
+    tmt::engine.ecs.get_dispatcher().sink<AttachEvent>().disconnect<&Player::on_attach>(this);
+}
+
+void Player::look_camera() {
+    auto& input = tmt::engine.input;
+
+    // Guard for camera existence
+    auto camera = tmt::engine.ecs.try_get_component<tmt::Camera>(entity);
+    if (!camera) {
+        state = PlayerState::PAUSED;
+        if (input.is_mouse_locked()) {
+            input.lock_mouse(false);
+            input.set_mouse_relative_to_window(false);
+        }
+        return;
+    }
+    const bool mouse_locked = input.is_mouse_locked();
+    if (!mouse_locked) return;
+
+    auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
+
+    // Mouse look
+    const float dx = input.get_mouse_delta_x();
+    const float dy = input.get_mouse_delta_y();
+
+    camera->yaw -= dx * camera_sensitivity;
+    camera->pitch -= dy * camera_sensitivity;
+
+    camera->pitch = glm::clamp(camera->pitch, -89.0f, 89.0f);
+
+    glm::vec3 front = {};
+
+    front.x = cos(glm::radians(camera->yaw)) * cos(glm::radians(camera->pitch));
+    front.y = sin(glm::radians(camera->pitch));
+    front.z = sin(glm::radians(camera->yaw)) * cos(glm::radians(camera->pitch));
+    front = glm::normalize(front);
+    transform.look_at(transform.get_world_position() + front, glm::vec3(0.0f, 1.0f, 0.0f));
+}
+
+tmt::Hit Player::check_collision() const {
+    auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
+    auto& physics = tmt::engine.ecs.systems.get<tmt::Physics>();
+
+    if (glm::length(velocity) < 0.001f) return tmt::Hit {};
+
+    glm::vec3 pos = transform.get_world_position();
+    glm::vec3 vel_dir = glm::normalize(velocity);
+
+    tmt::Hit closest = physics.raycast(tmt::Ray(pos, vel_dir), ray_check.collision_layer);
+
+    glm::vec3 up = glm::vec3(0, 1, 0);
+    if (glm::abs(glm::dot(vel_dir, up)) > 0.99f) up = glm::vec3(1, 0, 0);
+
+    glm::vec3 right = glm::normalize(glm::cross(vel_dir, up));
+    glm::vec3 local_up = glm::cross(right, vel_dir);
+
+    glm::vec3 offsets[] = { right * ray_check.player_radius, -right * ray_check.player_radius, local_up * ray_check.player_radius, -local_up * ray_check.player_radius };
+
+    for (auto& offset : offsets) {
+        auto hit = physics.raycast(tmt::Ray(pos + offset, vel_dir), ray_check.collision_layer);
+        if (!hit.miss() && (closest.miss() || hit.distance < closest.distance)) {
+            closest = hit;
+        }
+    }
+    return closest;
+}
+void Player::apply_impulse(const glm::vec3& direction, float force) {
+    if (glm::length(direction) < 0.001f) return;
+    velocity += glm::normalize(direction) * force;
+}
+void Player::move_player() {
+    auto& input = tmt::engine.input;
+
+    input_dir = glm::vec3 { 0.0f, 0.0f, 0.0f };
+    auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
+
+    /* If not locked don't move player */
+    if (input.is_action_pressed(action::MOVE_FORWARD)) input_dir += transform.get_forward();
+    if (input.is_action_pressed(action::MOVE_BACKWARD)) input_dir -= transform.get_forward();
+    if (input.is_action_pressed(action::MOVE_RIGHT)) input_dir += transform.get_right();
+    if (input.is_action_pressed(action::MOVE_LEFT)) input_dir -= transform.get_right();
+    if (input.is_action_pressed(action::MOVE_UP)) input_dir += glm::vec3(0.0f, 1.0f, 0.0f);
+    if (input.is_action_pressed(action::MOVE_DOWN)) input_dir -= glm::vec3(0.0f, 1.0f, 0.0f);
+
+    // Added button for breaking, port from prototype
+    bool breaking = input.is_action_pressed(action::BREAK);
+
+    auto delta_time = tmt::engine.frame_data().delta_time;
+    // Apply acceleration or drag
+    if (glm::length(input_dir) > 0.0f) {
+        // Accelerate in input direction
+        input_dir = glm::normalize(input_dir);
+        velocity += input_dir * acceleration * delta_time;
+    } else {
+        // Apply drag when no input
+        float current_speed = glm::length(velocity);
+        if (current_speed > 0.0f) {
+            float drag_force = drag * delta_time;
+            float new_speed = glm::max(0.0f, current_speed - drag_force);
+            velocity = glm::normalize(velocity) * new_speed;
+        }
+    }
+
+    // Apply breaking force if breaking
+    if (breaking) {
+        float current_speed = glm::length(velocity);
+        if (current_speed > 0.0f) {
+            float break_force = deceleration * delta_time;
+            float new_speed = glm::max(0.0f, current_speed - break_force);
+            velocity = glm::normalize(velocity) * new_speed;
+        }
+    }
+
+    // Clamp velocity to max speed
+    float current_speed = glm::length(velocity);
+    if (current_speed > max_speed) {
+        velocity = glm::normalize(velocity) * max_speed;
+    }
+
+    auto hit = check_collision();
+    if (!hit.miss() && hit.distance < ray_check.player_radius) {
+        float into_wall = glm::dot(velocity, -hit.normal);
+        if (into_wall > 0.0f) {
+            velocity += hit.normal * into_wall;
+
+            velocity *= ray_check.collision_speed_damping;
+        }
+    }
+
+    // Move
+    transform.translate(velocity * delta_time);
+
+    resolve_penetration();
+
+    prevent_camera_clip();
+}
+// try to get out of inside a voxel
+void Player::resolve_penetration() {
+    auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
+    auto& physics = tmt::engine.ecs.systems.get<tmt::Physics>();
+    glm::vec3 pos = transform.get_world_position();
+
+    constexpr glm::vec3 dirs[] = { { 1, 0, 0 }, { -1, 0, 0 }, { 0, 1, 0 }, { 0, -1, 0 }, { 0, 0, 1 }, { 0, 0, -1 } };
+
+    glm::vec3 push_out { 0.f };
+
+    for (const auto& dir : dirs) {
+        auto hit = physics.raycast(tmt::Ray(pos, dir), ray_check.collision_layer);
+        if (!hit.miss() && hit.distance < ray_check.player_radius) {
+            float penetration = ray_check.player_radius - hit.distance;
+            push_out -= dir * penetration;
+        }
+    }
+
+    if (glm::length(push_out) < 0.0001f) return;
+
+    pos += push_out;
+    transform.set_world_position(pos);
+
+    // Kill velocity component that points into the collision
+    glm::vec3 push_dir = glm::normalize(push_out);
+    float into = glm::dot(velocity, -push_dir);
+    if (into > 0.f) {
+        velocity += push_dir * into;
+    }
+
+    velocity *= ray_check.collision_speed_damping;
+}
+
+void Player::prevent_camera_clip() const {
+    auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
+    auto& physics = tmt::engine.ecs.systems.get<tmt::Physics>();
+
+    glm::vec3 pos = transform.get_world_position();
+    glm::vec3 forward = transform.get_forward();
+
+    const auto hit = physics.raycast(tmt::Ray(pos, forward), ray_check.collision_layer);
+
+    if (!hit.miss() && hit.distance < ray_check.camera_near_distance) {
+        float pushback = ray_check.camera_near_distance - hit.distance;
+        transform.set_world_position(pos - forward * pushback);
+    }
+}
+void Player::update(const tmt::FrameData& time) {
+    auto& input = tmt::engine.input;
+    switch (state) {
+        case game::PlayerState::FREEMOVING:
+            attempt_attach(input);
+            look_camera();
+            move_player();
+
+            // Handle recharging and draining
+            if (tmt::engine.ecs.valid(barge)) {
+                if (glm::distance(tmt::engine.ecs.get_component<tmt::Transform>(entity).get_world_position(), tmt::engine.ecs.get_component<tmt::Transform>(barge).get_world_position()) >=
+                    recharge_distance) {
+                    drain_energy(time.delta_time);
+                } else {
+                    refill(time.delta_time);
+                }
+            }
+            break;
+        case game::PlayerState::ATTACHED:
+            attempt_attach(input);
+            look_camera();
+            refill(time.delta_time);
+            break;
+            // TODO this state might disappear
+        case game::PlayerState::PAUSED:
+            break;
+        default:
+            break;
+    }
+    // TODO state will be much easier to handle
+    // triggers the event for shooting
+
+    // TODO events, could also use entt on modifcation component for the UI components
+
+    if (tmt::engine.ecs.valid(hp_bar_max)) {
+        if (auto componenthpmax = tmt::engine.ecs.try_get_component<tmt::UIComponent>(hp_bar_max)) componenthpmax->size.x = health.max_value + 2.0f;
+    }
+
+    if (tmt::engine.ecs.valid(hp_bar_current)) {
+        if (auto componentcurrhp = tmt::engine.ecs.try_get_component<tmt::UIComponent>(hp_bar_current)) componentcurrhp->size.x = health.value;
+    }
+
+    if (tmt::engine.ecs.valid(energy_bar_max)) {
+        if (auto componenthpmax = tmt::engine.ecs.try_get_component<tmt::UIComponent>(energy_bar_max)) componenthpmax->size.x = energy.max_value + 2.0f;
+    }
+
+    if (tmt::engine.ecs.valid(energy_bar_current)) {
+        if (auto componentcurrhp = tmt::engine.ecs.try_get_component<tmt::UIComponent>(energy_bar_current)) componentcurrhp->size.x = energy.value;
+    }
+}
+void Player::draw_debug_lines() const {
+    const auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
+    const auto& physics = tmt::engine.ecs.systems.get<tmt::Physics>();
+    const auto pos = transform.get_world_position();
+
+    // player radius
+    {
+        game::DebugLineConfig cf;
+        cf.color = tmt::RGBA { glm::vec4 { 0.2f, 0.8f, 0.2f, 0.5f } };  // soft green
+        cf.set_values();
+        tmt::engine.polyline.draw_sphere(pos, ray_check.player_radius);
+    }
+
+    // Green  = clear (no geometry within radius)
+    // Yellow = surface nearby but outside radius
+    // Red    = penetrating (surface closer than player_radius)
+    {
+        constexpr glm::vec3 dirs[] = { { 1, 0, 0 }, { -1, 0, 0 }, { 0, 1, 0 }, { 0, -1, 0 }, { 0, 0, 1 }, { 0, 0, -1 } };
+
+        for (const auto& dir : dirs) {
+            auto hit = physics.raycast(tmt::Ray(pos, dir), ray_check.collision_layer);
+
+            game::DebugLineConfig cf;
+            if (!hit.miss() && hit.distance < ray_check.player_radius) {
+                // Penetrating — red
+                cf.color = tmt::RGBA { glm::vec4 { 1.0f, 0.0f, 0.0f, 1.0f } };
+            } else if (!hit.miss() && hit.distance < ray_check.player_radius * 2.0f) {
+                // Close but not penetrating — yellow warning
+                cf.color = tmt::RGBA { glm::vec4 { 1.0f, 1.0f, 0.0f, 0.8f } };
+            } else {
+                // Clear — green
+                cf.color = tmt::RGBA { glm::vec4 { 0.0f, 1.0f, 0.0f, 0.5f } };
+            }
+            cf.set_values();
+
+            // Draw ray out to player_radius length
+            tmt::engine.polyline.draw_arrow(pos, dir, ray_check.player_radius);
+
+            // If there's a hit, draw a small cross at the hit point
+            if (!hit.miss() && hit.distance < ray_check.player_radius * 2.0f) {
+                glm::vec3 hit_point = pos + dir * hit.distance;
+                glm::vec3 up = glm::abs(dir.y) > 0.9f ? glm::vec3 { 1, 0, 0 } : glm::vec3 { 0, 1, 0 };
+                glm::vec3 perp_a = glm::normalize(glm::cross(dir, up));
+                glm::vec3 perp_b = glm::cross(dir, perp_a);
+                float cross_size = 0.05f;
+                tmt::engine.polyline.draw_line(hit_point - perp_a * cross_size, hit_point + perp_a * cross_size);
+                tmt::engine.polyline.draw_line(hit_point - perp_b * cross_size, hit_point + perp_b * cross_size);
+            }
+        }
+    }
+
+    // camera check
+    {
+        glm::vec3 forward = transform.get_forward();
+        auto hit = physics.raycast(tmt::Ray(pos, forward), ray_check.collision_layer);
+
+        game::DebugLineConfig cf;
+        if (!hit.miss() && hit.distance < ray_check.camera_near_distance) {
+            cf.color = tmt::RGBA { glm::vec4 { 1.0f, 0.0f, 1.0f, 1.0f } };  // magenta = clipping
+        } else {
+            cf.color = tmt::RGBA { glm::vec4 { 0.0f, 1.0f, 1.0f, 0.6f } };  // cyan = clear
+        }
+        cf.set_values();
+        tmt::engine.polyline.draw_arrow(pos, forward, ray_check.camera_near_distance);
+    }
+
+    // velocity
+    if (glm::length(velocity) > 0.001f) {
+        const auto arrow_origin = pos + transform.get_forward() - glm::vec3 { 0.0f, 0.1f, 0.0f };
+
+        game::DebugLineConfig cf;
+        auto hit = check_collision();
+        if (!hit.miss() && hit.distance < ray_check.player_radius) {
+            cf.color = tmt::RGBA { glm::vec4 { 1.0f, 0.0f, 0.0f, 1.0f } };  // red = blocked
+        } else if (!hit.miss() && hit.distance < ray_check.player_radius * 1.5f) {
+            cf.color = tmt::RGBA { glm::vec4 { 1.0f, 0.5f, 0.0f, 1.0f } };  // orange = close
+        } else {
+            cf.color = tmt::RGBA { glm::vec4 { 1.0f, 1.0f, 1.0f, 0.6f } };  // white = clear
+        }
+        cf.set_values();
+
+        tmt::engine.polyline.draw_arrow(arrow_origin, glm::normalize(velocity), ray_check.player_radius * 2.0f);
+    }
+}
+
+void Player::attempt_attach(tmt::Input& input) {
+    if (input.is_action_just_pressed(action::ATTACH_KEY)) {
+        tmt::engine.ecs.get_dispatcher().trigger<AttachAttemptEvent>({ .entity = entity });
+    }
+}
+
+void Player::refill(float delta) {
+    // TODO probably an event here for audio, graphics etc.
+
+    health.value = glm::min(health.max_value, health.value + delta * health.increase_multiplier);
+    energy.value = glm::min(energy.max_value, energy.value + delta * energy.increase_multiplier);
+}
+
+void Player::drain_energy(float delta) {
+    energy.value = glm::min(energy.max_value, energy.value - delta * energy_drain_per_second);
+}
+
+void Player::on_attach(const AttachEvent& event) {
+    if (event.entity != entity) {
+        return;
+    }
+    if (event.is_attached) {
+        state = PlayerState::ATTACHED;
+    } else {
+        state = PlayerState::FREEMOVING;
+    }
+}
+
+}  // namespace game

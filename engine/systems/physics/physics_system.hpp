@@ -26,6 +26,7 @@ class Physics : public ISystem {
     void on_end() override;
 
     const Bvh2<VoxelObject>& get_bvh() { return bvh; }
+    const std::vector<Entity>& get_entities() { return entities; }
 
    private:
     // Simulation data
@@ -34,6 +35,7 @@ class Physics : public ISystem {
     bool simulating = true;
     ConstraintSolver solver = {};
     Bvh2<VoxelObject> bvh {};
+    std::vector<Entity> entities {};
 
     // Layers
     PhysicsLayers physics_layers;

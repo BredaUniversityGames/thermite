@@ -18,12 +18,12 @@ struct ProfilerSettings {
     std::string address = "127.0.0.1";
 };
 // This implementation is windows specific
-class Profiler : public IWindow {
+class Profiler : public IWindow<> {
    public:
     void on_editor_start() override;
     void on_editor_update(const tmt::FrameData& time) override;
     void on_editor_end() override;
-    void display() override;
+    void on_inspect() override;
     constexpr std::string get_title() const override { return ICON_MS_BAR_CHART_4_BARS " Profiler"; }
 
     class Config {
