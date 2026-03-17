@@ -91,16 +91,17 @@ void Player::look_camera() const {
     if (!mouse_locked) return;
 
     auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
-    auto& camera = tmt::engine.ecs.get_component<tmt::Camera>(entity);
+
+    auto camera = tmt::engine.ecs.try_get_component<tmt::Camera>(entity);
     const float dx = input.get_mouse_delta_x();
     const float dy = input.get_mouse_delta_y();
 
     // Mouse Look (unchanged)
+    if (!camera) return;
+    camera->yaw -= dx * camera_sensitivity;
+    camera->pitch -= dy * camera_sensitivity;
 
-    camera.yaw -= dx * camera_sensitivity;
-    camera.pitch -= dy * camera_sensitivity;
-
-    camera.pitch = glm::clamp(camera.pitch, -89.0f, 89.0f);
+    camera->pitch = glm::clamp(camera.pitch, -89.0f, 89.0f);
 
     glm::vec3 front = {};
 
