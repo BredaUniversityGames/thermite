@@ -111,7 +111,7 @@ struct WorldState {
      *
      * If a fact does not exist yet, it will be created.
      * Existing facts are overwritten.
-     * 
+     *
      * Sets needs_replan to true.
      */
     void apply(const std::vector<FactPair>& effects) {

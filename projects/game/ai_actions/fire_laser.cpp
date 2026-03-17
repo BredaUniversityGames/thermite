@@ -75,7 +75,7 @@ void FireLaser::on_tick(tmt::Entity enemy_entity, float dt) {
         auto ws = tmt::engine.ecs.try_get_component<tmt::WorldState>(enemy_entity);
         if (!ws) return;
         // ws->facts[std::hash<std::string>()("m_laser_ready")] = false;
-        ws->set_fact(tmt::FactId("m_laser_ready"), false); 
+        ws->set_fact(tmt::FactId("m_laser_ready"), false);
     }
 
     tmt::engine.polyline.use_line_width(10.0f);
