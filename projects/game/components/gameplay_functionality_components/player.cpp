@@ -4,7 +4,6 @@
 #include "projects/game/data_headers/events.hpp"
 
 #include <glm/glm.hpp>
-#include <glm/gtc/constants.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "engine/core/input/input.hpp"
@@ -45,6 +44,9 @@ void setup_inputs(tmt::InputMap& input_map) {
 
     input_map.add_action(action::BREAK);
     input_map.add_key_to_action(action::BREAK, tmt::Key::LEFT_CTRL);
+
+    input_map.add_action(action::BOOST);
+    input_map.add_key_to_action(action::BOOST, tmt::Key::R);
 
     // combat
     input_map.add_action(action::SHOOT);
