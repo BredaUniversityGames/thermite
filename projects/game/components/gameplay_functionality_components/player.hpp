@@ -44,8 +44,8 @@ class Player : public tmt::GameComponent<Player> {
     float max_speed = 10.0f;
 
     // Movement boost parameters
-    float boost_max_speed_multiplier = 1.2f;
-    float boost_acceleration_multiplier = 1.2f;
+    float boost_max_speed_multiplier = 2.0f;
+    float boost_acceleration_multiplier = 4.0f;
     float boost_cost_per_second = 1.0f;
 
     // Player stats
