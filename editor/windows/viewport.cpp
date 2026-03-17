@@ -57,6 +57,10 @@ int tmt::Viewport::get_window_flags() const {
         const bool is_scene_dirty = editor.systems[editor.editor_mode].get<ScenesWindow>().is_scene_dirty();
         if (is_scene_dirty) flags |= ImGuiWindowFlags_UnsavedDocument;
     }
+    if (engine.game_controller.is_running()) {
+        const bool fullscreen = editor.systems[editor.editor_mode].get<GameFlow>().is_fullscreen();
+        if (fullscreen) flags |= ImGuiWindowFlags_NoTitleBar;
+    }
 
     return flags;
 }
@@ -297,7 +301,8 @@ void tmt::Viewport::toolbar() {
         if (ImGui::IsItemHovered()) ImGui::SetTooltip("Stop");
     } else {
         if (ImGui::Button(ICON_MS_PLAY_ARROW "##Play")) {
-            editor.systems[editor.editor_mode].get<GameFlow>().start_game();
+            const bool shift_down = ImGui::IsKeyDown(ImGuiKey_LeftShift) || ImGui::IsKeyDown(ImGuiKey_RightShift);
+            editor.systems[editor.editor_mode].get<GameFlow>().start_game(shift_down);
         }
         if (ImGui::IsItemHovered()) ImGui::SetTooltip("Start");
     }

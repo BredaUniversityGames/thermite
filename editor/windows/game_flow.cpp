@@ -7,6 +7,11 @@
 #include "engine/tools/serializer/ecs.hpp"
 #include "engine/core/input/input.hpp"
 
+#include "editor/editor.hpp"
+#include "editor/core//window.hpp"
+
+#include "editor/windows/viewport.hpp"
+
 namespace tmt {
 
 void GameFlow::pause_game() {
@@ -22,9 +27,20 @@ void GameFlow::resume_game() {
     }
 }
 
-void GameFlow::start_game() {
+void GameFlow::start_game(const bool fullscreen_) {
     working_scene = engine.scenes.get_active_scene_type();
     cached_scene = Serializer::serialize(engine.ecs);
+    fullscreen = fullscreen_;
+    if (fullscreen_) {
+        open_windows_before = editor.save_data.open_windows;
+
+        const auto& viewport_name = editor.systems[editor.editor_mode].get<Viewport>().get_title();
+        for (auto& [name, open] : editor.save_data.open_windows) {
+            if (name != viewport_name) {
+                open = false;
+            }
+        }
+    }
 
     engine.game_controller.start_game();
 }
@@ -48,11 +64,12 @@ void GameFlow::on_editor_update(const FrameData&) {
     /* Ctrl + P to start / stop game */
     const bool ctrl_down = ImGui::IsKeyDown(ImGuiKey_LeftCtrl) || ImGui::IsKeyDown(ImGuiKey_RightCtrl);
     const bool p_down = ImGui::IsKeyPressed(ImGuiKey_P, false);
+    const bool shift_down = ImGui::IsKeyDown(ImGuiKey_LeftShift) || ImGui::IsKeyDown(ImGuiKey_RightShift);
     if (ctrl_down && p_down) {
         if (engine.game_controller.is_playing()) {
             end_game();
         } else {
-            start_game();
+            start_game(shift_down);
         }
     }
 }
@@ -74,6 +91,8 @@ void GameFlow::on_game_end() {
 
     if (has_ended == false) return;
     engine.scenes.enqueue_scene(working_scene);
+    editor.save_data.open_windows = open_windows_before;
+    fullscreen = false;
 }
 
 void GameFlow::on_pre_load_scene(PreLoadSceneEvent& event) {
