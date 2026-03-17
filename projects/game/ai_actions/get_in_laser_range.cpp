@@ -1,4 +1,4 @@
-#include "get_in_lazer_range.hpp"
+#include "get_in_laser_range.hpp"
 #include "engine/engine.hpp"
 #include "engine/core/ecs.hpp"
 #include "engine/systems/ai/navigation/nav_mesh.hpp"
@@ -11,14 +11,14 @@
 
 #include <cstdlib>
 
-void GetInLazerRange::on_start(tmt::Entity enemy_entity) {
+void GetInLaserRange::on_start(tmt::Entity enemy_entity) {
     for (const auto& [CamEntity, camera] : tmt::engine.ecs.view<tmt::Camera>().each()) {
         player = CamEntity;
         break;
     }
 }
 
-void GetInLazerRange::on_tick(tmt::Entity enemy_entity, float dt) {
+void GetInLaserRange::on_tick(tmt::Entity enemy_entity, float dt) {
     auto& enemy = tmt::engine.ecs.get_component<game::MediumEnemy>(enemy_entity);
     auto& nav_mesh = tmt::engine.ecs.get_component<tmt::NavMesh>(enemy.walkable_asteroid);
 
@@ -39,6 +39,6 @@ void GetInLazerRange::on_tick(tmt::Entity enemy_entity, float dt) {
     }
 }
 
-bool GetInLazerRange::is_done(tmt::Entity) const {
+bool GetInLaserRange::is_done(tmt::Entity) const {
     return false;
 }

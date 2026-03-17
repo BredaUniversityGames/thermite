@@ -20,7 +20,7 @@
 #include "ai_actions/wander.hpp"
 #include "ai_actions/fire_missiles.hpp"
 #include "ai_actions/fire_laser.hpp"
-#include "ai_actions/get_in_lazer_range.hpp"
+#include "ai_actions/get_in_laser_range.hpp"
 
 // Enemies
 #include "components/gameplay_functionality_components/enemy_components/medium_enemy.hpp"
@@ -182,7 +182,7 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
         action_reg.register_action(std::make_unique<Wander>());
         action_reg.register_action(std::make_unique<FireMissiles>());
         action_reg.register_action(std::make_unique<FireLaser>());
-        action_reg.register_action(std::make_unique<GetInLazerRange>());
+        action_reg.register_action(std::make_unique<GetInLaserRange>());
 
         {
             tmt::GoapGoal chase;
