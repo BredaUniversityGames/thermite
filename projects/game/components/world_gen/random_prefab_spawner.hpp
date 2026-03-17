@@ -4,7 +4,7 @@
 namespace game {
 
 struct RandomPrefabSpawner : public tmt::GameComponent<RandomPrefabSpawner> {
-public:
+   public:
     using GameComponent::GameComponent;
 
     static std::string_view get_name() { return "Random Prefab Spawner"; }
@@ -16,7 +16,7 @@ public:
 
     std::vector<tmt::ResourceRef<tmt::Json>> prefabs;
 
-private:
+   private:
     void spawn_prefab(const tmt::ResourceRef<tmt::Json>& prefab) const;
 };
 

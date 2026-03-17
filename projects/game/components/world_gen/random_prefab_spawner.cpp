@@ -19,13 +19,9 @@ void game::RandomPrefabSpawner::start() {
     spawn_prefab(prefabs[random_index]);
 }
 
-void game::RandomPrefabSpawner::update(const tmt::FrameData& time) {
-    
-}
+void game::RandomPrefabSpawner::update(const tmt::FrameData& time) {}
 
-void game::RandomPrefabSpawner::end() {
-    
-}
+void game::RandomPrefabSpawner::end() {}
 
 void game::RandomPrefabSpawner::spawn_prefab(const tmt::ResourceRef<tmt::Json>& prefab) const {
     auto instantiated = tmt::PrefabHelper::instantiate_prefab(prefab->file_location);
