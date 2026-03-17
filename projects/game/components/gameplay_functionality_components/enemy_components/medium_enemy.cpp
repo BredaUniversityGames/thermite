@@ -43,8 +43,7 @@ void game::MediumEnemy::update(const tmt::FrameData& time) {
     missile_timer += time.delta_time;
     if (missile_timer > missile_cooldown) {
         ws->facts[std::hash<std::string>()("m_missiles_ready")] = true;
-    } 
-    else {
+    } else {
         ws->facts[std::hash<std::string>()("m_missiles_ready")] = false;
     }
     laser_timer += time.delta_time;
@@ -59,7 +58,7 @@ void game::MediumEnemy::update(const tmt::FrameData& time) {
     auto nodes = nav_mesh.nodes_mesh;
     if (nodes->empty()) return;
     int closest_node = nav_mesh.find_closest_node(walking_transform.get_world_position());
-    
+
     auto& normal = (*nodes)[closest_node].normal;
 
     tmt::Ray ray;
@@ -74,7 +73,6 @@ void game::MediumEnemy::update(const tmt::FrameData& time) {
     } else {
         velocity += desired_velocity;
     }
-
 
     // movement
     velocity *= 0.9f;

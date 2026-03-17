@@ -12,27 +12,27 @@
 namespace game {
 
 void SensorsSystem::on_start() {
-    //tmt::Log::info("Sensor system on_start");
+    // tmt::Log::info("Sensor system on_start");
 
-    //if (!tmt::engine.ecs.valid(player_entity)) {
-    //    player_entity = tmt::engine.ecs.view<Player>().front().entity;  // Assuming there's only one player entity in the game
-    //}
+    // if (!tmt::engine.ecs.valid(player_entity)) {
+    //     player_entity = tmt::engine.ecs.view<Player>().front().entity;  // Assuming there's only one player entity in the game
+    // }
 }
 
 void SensorsSystem::on_update(const tmt::FrameData& time) {
-    //auto& ecs = tmt::engine.ecs;
-    //auto* steering = ecs.systems.try_get<tmt::SteeringSystem>();
-    //if (!steering) return;
-    //if (!ecs.valid(player_entity)) return;
+    // auto& ecs = tmt::engine.ecs;
+    // auto* steering = ecs.systems.try_get<tmt::SteeringSystem>();
+    // if (!steering) return;
+    // if (!ecs.valid(player_entity)) return;
 
-    //auto* player_transform = ecs.try_get_component<tmt::Transform>(player_entity);
-    //if (!player_transform) return;
-    //glm::vec3 player_pos = player_transform->get_world_position();
+    // auto* player_transform = ecs.try_get_component<tmt::Transform>(player_entity);
+    // if (!player_transform) return;
+    // glm::vec3 player_pos = player_transform->get_world_position();
 
     //// Update each agent with a SteeringAgent component
-    //ecs.view<SteeringAgent>().each([&](tmt::Entity agent, SteeringAgent& sa) {
-    //    auto* agent_transform = ecs.try_get_component<tmt::Transform>(agent);
-    //    if (!agent_transform) return;
+    // ecs.view<SteeringAgent>().each([&](tmt::Entity agent, SteeringAgent& sa) {
+    //     auto* agent_transform = ecs.try_get_component<tmt::Transform>(agent);
+    //     if (!agent_transform) return;
 
     //    auto* ws = ecs.try_get_component<tmt::WorldState>(agent);
     //    if (!ws) return;
@@ -54,6 +54,5 @@ void SensorsSystem::on_update(const tmt::FrameData& time) {
 void SensorsSystem::on_end() {
     tmt::Log::info("Sensor System on_end");
 }
-
 
 }  // namespace game

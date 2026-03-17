@@ -15,13 +15,13 @@
 #include "engine/systems/ai/goap/components/goap_goal_registry.hpp"
 #include "engine/systems/ai/goap/components/goap_goal.hpp"
 
-//AI actions
+// AI actions
 #include "ai_actions/chase_player.hpp"
 #include "ai_actions/wander.hpp"
 #include "ai_actions/fire_missiles.hpp"
 #include "ai_actions/fire_laser.hpp"
 
-//Enemies
+// Enemies
 #include "components/gameplay_functionality_components/enemy_components/medium_enemy.hpp"
 
 // Animation
@@ -68,8 +68,7 @@ class Game : public tmt::Application {
    public:
     Game(const tmt::ApplicationSpecs& specs) : Application(specs) {}
 
-    void on_start() override {  
-    };
+    void on_start() override {};
     void on_update(const tmt::FrameData& time) override {};
     void on_end() override {};
 };
@@ -82,7 +81,7 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
         .log_file = "mining_game_logs.txt"
     };
     // clang-format on
-    
+
     /* Register Scenes */
     tmt::engine.scenes.register_scene<MainMenuScene>();
     tmt::engine.scenes.register_scene<MainGameScene>();
@@ -132,7 +131,7 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
 
         auto& ecs = tmt::engine.ecs;
         auto& goap = ecs.systems.get<tmt::Goap>();
-        
+
         auto& action_reg = goap.actions();
         auto& goal_reg = goap.goals();
         auto& type_reg = goap.agent_types();
@@ -173,7 +172,7 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
             goal_reg.register_goal("g_Explode", explode);
         }
 
-        //Medium enemy
+        // Medium enemy
         action_reg.register_action(std::make_unique<ChasePlayer>());
         action_reg.register_action(std::make_unique<Wander>());
         action_reg.register_action(std::make_unique<FireMissiles>());
