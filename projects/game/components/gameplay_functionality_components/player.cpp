@@ -189,18 +189,36 @@ void Player::move_player() {
 
 void Player::update(const tmt::FrameData& time) {
     auto& input = tmt::engine.input;
-    if (input.is_action_pressed(action::BOOST)) {
-        apply_boost();
-        energy.value = glm::min(energy.max_value, energy.value - time.delta_time * boost_cost_per_second);
-    } else {
-        reset_boost();
-    }
+
 
     switch (state) {
         case game::PlayerState::FREEMOVING:
+            // Handle player movement boost (initial cost)
+            if (energy.value > boost_initial_cost) {
+                boost_available = true;
+            } else {
+                boost_available = false;
+            }
+
+            if (input.is_action_just_pressed(action::BOOST) && boost_available) {
+                energy.value = glm::min(energy.max_value, energy.value - boost_initial_cost);
+            }
+            if (input.is_action_pressed(action::BOOST) && boost_available) {
+                apply_boost();
+            } else {
+                reset_boost();
+            }
+
             attempt_attach(input);
             look_camera();
             move_player();
+
+            // Handle energy drain for boost
+            if (boost_was_applied) {
+                float current_speed = glm::length(velocity);
+                energy.value =
+                    glm::min(energy.max_value, energy.value - time.delta_time * boost_cost_per_second_per_additional_speed_above_max * glm::max(0.0f, current_speed - max_speed) );
+            }
 
             // Handle recharging and draining
             if (tmt::engine.ecs.valid(barge)) {
@@ -228,6 +246,7 @@ void Player::update(const tmt::FrameData& time) {
 
     // TODO events, could also use entt on modifcation component for the UI components
 
+    // UI bar updates
     if (tmt::engine.ecs.valid(hp_bar_max)) {
         if (auto componenthpmax = tmt::engine.ecs.try_get_component<tmt::UIComponent>(hp_bar_max)) componenthpmax->size.x = health.max_value + 2.0f;
     }
@@ -242,6 +261,15 @@ void Player::update(const tmt::FrameData& time) {
 
     if (tmt::engine.ecs.valid(energy_bar_current)) {
         if (auto componentcurrhp = tmt::engine.ecs.try_get_component<tmt::UIComponent>(energy_bar_current)) componentcurrhp->size.x = energy.value;
+    }
+
+    // UI boost availability
+    if (tmt::engine.ecs.valid(boost_availability)) {
+        if (!boost_available || boost_was_applied) {
+            tmt::engine.ecs.disable(boost_availability);
+        } else {
+            tmt::engine.ecs.enable(boost_availability);
+        }
     }
 }
 void Player::draw_debug_lines() const {
@@ -292,11 +320,13 @@ void Player::on_attach(const AttachEvent& event) {
 void Player::apply_boost() {
     max_speed_calculated = max_speed * boost_max_speed_multiplier;
     acceleration_calculated = acceleration * boost_acceleration_multiplier;
+    boost_was_applied = true;
 }
 
 void Player::reset_boost() {
     max_speed_calculated = max_speed;
     acceleration_calculated = acceleration;
+    boost_was_applied = false;
 }
 
 }  // namespace game
