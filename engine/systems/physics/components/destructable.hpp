@@ -50,6 +50,15 @@ struct Destructable {
         return nullptr;
     }
 
+    const DestructionNode* get_node(uint32_t x, uint32_t y, uint32_t z) const {
+        uint32_t key = x + (y << 10) + (z << 20);
+        auto it = nodes_map.find(key);
+        if (it != nodes_map.end()) {
+            return &nodes[it->second];
+        }
+        return nullptr;
+    }
+
     void clear() {
         node_count = 0;
         nodes_map.clear();

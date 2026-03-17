@@ -463,7 +463,7 @@ void separation_flood(Destructable& graph, DestructionNode& current_node, uint8_
     }
 }
 
-void fill_volumes(const Svt64* original_tree, const std::vector<uint64_t>& tree_masks, std::vector<Entity>& entities) {
+void fill_volumes(const Svt64* original_tree, const std::vector<uint64_t>& tree_masks, std::vector<Entity>& entities, const Destructable& graph) {
     for (size_t i = 0; i < entities.size(); i++) {
         VoxelRenderer& vr = engine.ecs.get_component<VoxelRenderer>(entities[i]);
         Svt64* tree = vr.resource.resource->blas.get();
@@ -479,7 +479,7 @@ void fill_volumes(const Svt64* original_tree, const std::vector<uint64_t>& tree_
         tree->voxel_count = 0u;
         tree->palette = original_tree->palette;
 
-        tree->nodes[0] = tree->subdivide_masked(tree->depth * 2u, glm::uvec3(0u), original_tree, 0u, tree_masks, (uint8_t)i);
+        tree->nodes[0] = tree->subdivide_masked(tree->depth * 2u, glm::uvec3(0u), original_tree, 0u, tree_masks, (uint8_t)i, graph);
 
         vr.resource->set_dirty();
         ///* Begin the recursive build */
@@ -614,7 +614,7 @@ std::vector<Entity> Destruction::find_seperations(Entity entity, const std::vect
         // vr.resource = { {}, std::make_shared<tmt::VoxelVolume>() };
     }
 
-    fill_volumes(tree, tree_masks, entities);
+    fill_volumes(tree, tree_masks, entities, graph);
 
     engine.ecs.destroy_entity(entity);
 

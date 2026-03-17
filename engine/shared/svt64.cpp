@@ -133,7 +133,9 @@ Svt64Node Svt64::subdivide(const RawVoxels& raw_data, uint32_t scale, glm::uvec3
 }
 
 /* Recursive tree subdivide function. */
-Svt64Node Svt64::subdivide_masked(uint32_t scale, glm::uvec3 index, const Svt64* original_tree, uint32_t node_index, const std::vector<uint64_t>& tree_masks, uint8_t id, const Destructable& graph) {
+Svt64Node Svt64::subdivide_masked(
+    uint32_t scale, glm::uvec3 index, const Svt64* original_tree, uint32_t node_index, const std::vector<uint64_t>& tree_masks, uint8_t id, const Destructable& graph
+) {
     TMT_ZONE_SCOPED
 
     /* Create a leaf node */
@@ -143,7 +145,19 @@ Svt64Node Svt64::subdivide_masked(uint32_t scale, glm::uvec3 index, const Svt64*
         // Copy voxels from the original tree
         uint64_t origin_mask = original_tree->nodes[node_index].child_mask;
 
-        // Find out what parts of the node are valid
+        // Get destruction node, and check if it exists
+        const DestructionNode* destruction_node = graph.get_node(index.x, index.y, index.z);
+        if (destruction_node != nullptr && destruction_node->level == 1u) {
+            // Add the filled parts connected to the id to mask_accum
+            uint64_t mask_accum = 0ull;
+            for (const auto& filled : destruction_node->flood_masks) {
+                if (filled.first != id) continue;
+                mask_accum |= filled.second;
+            }
+
+            // Apply mask
+            origin_mask &= mask_accum;
+        }
 
         while (origin_mask != 0ull) {
             // Find index of first set bit
@@ -194,7 +208,7 @@ Svt64Node Svt64::subdivide_masked(uint32_t scale, glm::uvec3 index, const Svt64*
             continue;
         }
 
-        const Svt64Node child = subdivide_masked(scale, index + (child_index << scale), original_tree, child_node_index, tree_masks, id);
+        const Svt64Node child = subdivide_masked(scale, index + (child_index << scale), original_tree, child_node_index, tree_masks, id, graph);
 
         /* If the child is not empty */
         if (child.child_mask != 0u) {
