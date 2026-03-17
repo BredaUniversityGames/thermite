@@ -9,13 +9,13 @@ struct ImVec2;
 
 namespace tmt {
 
-class RigStateController : public IWindow {
+class RigStateController : public IWindow<> {
    public:
     constexpr std::string get_title() const override { return ICON_MS_STAT_0 " Rig State Controller"; }
 
     void before_begin() override {}
     void end_display() override {}
-    void display() override;
+    void on_inspect() override;
 
     void on_editor_start() override;
     void on_editor_update(const FrameData&) override;

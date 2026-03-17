@@ -2,7 +2,6 @@
 
 #include <imgui.h>
 #include <imgui_internal.h>
-#include <imgui/imgui/misc/cpp/imgui_stdlib.h>
 #include <imgui_node_editor.h>
 
 #include <engine/tools/serializer/containers.hpp>
@@ -96,8 +95,8 @@ void RigStateController::on_editor_update(const FrameData&) {
     }
 }
 
-void RigStateController::display() {
-    const Entity selected = editor.windows[Editor::Mode::SCENE].get<Hierarchy>().get_first_selected_entity();
+void RigStateController::on_inspect() {
+    const Entity selected = editor.systems[Editor::Mode::SCENE].get<Hierarchy>().get_first_selected_entity();
     auto [model, controller] = engine.ecs.get_registry().try_get<RigModel, RigController>(selected);
 
     const bool valid_controller = (model != nullptr && controller != nullptr && model->data);
