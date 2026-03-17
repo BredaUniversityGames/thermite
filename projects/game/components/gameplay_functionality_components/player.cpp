@@ -93,6 +93,7 @@ void Player::look_camera() {
         state = PlayerState::PAUSED;
         if (input.is_mouse_locked()) {
             input.lock_mouse(false);
+            input.set_mouse_relative_to_window(false);
         }
         return;
     }
