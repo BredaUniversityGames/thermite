@@ -87,20 +87,23 @@ void Player::end() {
 void Player::look_camera() {
     auto& input = tmt::engine.input;
 
+    // Guard for camera existence
+    auto camera = tmt::engine.ecs.try_get_component<tmt::Camera>(entity);
+    if (!camera) {
+        state = PlayerState::PAUSED;
+        if (input.is_mouse_locked()) {
+            input.lock_mouse(false);
+        }
+        return;
+    }
     const bool mouse_locked = input.is_mouse_locked();
     if (!mouse_locked) return;
 
     auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
 
-    auto camera = tmt::engine.ecs.try_get_component<tmt::Camera>(entity);
+    // Mouse look
     const float dx = input.get_mouse_delta_x();
     const float dy = input.get_mouse_delta_y();
-
-    // Mouse Look (unchanged)
-    if (!camera) {
-        state = PlayerState::PAUSED;
-        return;
-    }
 
     camera->yaw -= dx * camera_sensitivity;
     camera->pitch -= dy * camera_sensitivity;
