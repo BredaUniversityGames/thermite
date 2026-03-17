@@ -67,7 +67,15 @@ void GameFlow::on_editor_update(const FrameData&) {
     const bool shift_down = ImGui::IsKeyDown(ImGuiKey_LeftShift) || ImGui::IsKeyDown(ImGuiKey_RightShift);
     if (ctrl_down && p_down) {
         if (engine.game_controller.is_playing()) {
-            end_game();
+            if (shift_down) {
+                if (engine.game_controller.is_paused()) {
+                    resume_game();
+                } else {
+                    pause_game();
+                }
+            } else {
+                end_game();
+            }
         } else {
             start_game(shift_down);
         }
