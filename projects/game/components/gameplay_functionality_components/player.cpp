@@ -281,8 +281,8 @@ void Player::on_attach(const AttachEvent& event) {
 }
 
 void Player::apply_boost() {
-    max_speed_calculated = max_speed * boost_multiplicator;
-    acceleration_calculated = acceleration * boost_multiplicator;
+    max_speed_calculated = max_speed * boost_max_speed_multiplier;
+    acceleration_calculated = acceleration * boost_acceleration_multiplier;
 }
 
 void Player::reset_boost() {

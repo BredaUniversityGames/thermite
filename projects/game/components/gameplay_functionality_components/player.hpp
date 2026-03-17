@@ -44,7 +44,8 @@ class Player : public tmt::GameComponent<Player> {
     float max_speed = 10.0f;
 
     // Movement boost parameters
-    float boost_multiplicator = 1.2f;
+    float boost_max_speed_multiplier = 1.2f;
+    float boost_acceleration_multiplier = 1.2f;
     float boost_cost_per_second = 1.0f;
 
     // Player stats
@@ -86,7 +87,8 @@ class Player : public tmt::GameComponent<Player> {
 TMT_OBJECT(game::PlayerStat, (max_value, value, increase_multiplier));
 TMT_OBJECT(game::RayCollisionCheck, (ray_distance, collision_layer, bump_force));
 TMT_OBJECT(
-    game::Player, (camera_sensitivity, acceleration, deceleration, drag, max_speed, boost_multiplicator, boost_cost_per_second, health, energy, energy_drain_per_second, hp_bar_max,
+    game::Player, (camera_sensitivity, acceleration, deceleration, drag, max_speed, boost_max_speed_multiplier, boost_acceleration_multiplier, boost_cost_per_second, health, energy,
+                   energy_drain_per_second, hp_bar_max,
                    hp_bar_current, energy_bar_max,
                    energy_bar_current,
                    barge, recharge_distance, ray_check)
