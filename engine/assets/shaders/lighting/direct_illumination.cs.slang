@@ -99,8 +99,8 @@ inline float3 direct_illuminance(const float3 point, const float3 normal, const 
         attenuation *= spot * spot;
     }
 
-    const ShadingFrame sf = create_shading_frame(normal, light_sample.dir, view_dir);
-    const float3 brdf = opaque_base_slab(sf.wi.z, sf.wo.z, sf.wh.z, dot(sf.wo, sf.wh), mat);
+    // const ShadingFrame sf = create_shading_frame(normal, light_sample.dir, view_dir);
+    const float3 brdf = 1.0f; // opaque_base_slab(sf.wi.z, sf.wo.z, sf.wh.z, dot(sf.wo, sf.wh), mat);
 
     /* Calculate light illuminance */
     const float ndotl = max(0.0f, dot(normal, light_sample.dir));

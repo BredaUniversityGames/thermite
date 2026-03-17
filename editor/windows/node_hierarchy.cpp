@@ -413,6 +413,7 @@ void NodeHierarchy::export_file(const std::string& file_description, const std::
                         const Material& material = tree->palette.entries[i];
                         const glm::vec3 albedo = material.albedo.unpack();
 
+                        // mtl_file << std::format("Ka {} {} {}", 1.0f, 1.0f, 1.0f) << '\n';
                         mtl_file << std::format("Kd {} {} {}", cs::linearize(albedo.r), cs::linearize(albedo.g), cs::linearize(albedo.b)) << '\n';
                         mtl_file << "d 1.0" << '\n';
                     }

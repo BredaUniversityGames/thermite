@@ -16,7 +16,7 @@ StructuredBuffer<float4> tlas_nodes;
 StructuredBuffer<uint> object_indices;
 StructuredBuffer<VoxelObject> objects;
 /* Macrofacet cache buffer. */
-// RWStructuredBuffer<cache::Slot> macrofacet_cache;
+RWStructuredBuffer<cache::Slot> macrofacet_cache;
 /* Visibility buffer. */
 Texture2D<uint2> vbuffer;
 /* Luminance buffer. */
@@ -191,10 +191,10 @@ void main(int2 thread_id: SV_DispatchThreadID) {
 
     /* Importance sample specular lobe */
     const float alpha_2 = alpha * alpha;
-    // const float3 wh = sample_vndf_unbounded(wo, alpha, noise);
-    // const float3 wi = normalize(reflect(-wo, wh));
-    const float3 wi = sample_cone(float3(-wo.x, -wo.y, wo.z), cos(0.1f), noise);
-    const float3 wh = normalize(wi + wo);
+    const float3 wh = SampleBoundedVNDF_Isotropic(wo, alpha, noise);
+    const float3 wi = normalize(reflect(-wo, wh));
+    // const float3 wi = sample_cone(float3(-wo.x, -wo.y, wo.z), cos(0.1f), noise);
+    // const float3 wh = normalize(wi + wo);
 
     /* Ignore directions which lie underneath the horizon */
     // if (wi.z <= 0.0f) wi = float3(-wo.x, -wo.y, wo.z);
@@ -205,7 +205,7 @@ void main(int2 thread_id: SV_DispatchThreadID) {
     const float3 sample_dir = normalize(mul(transpose(basis), wi));
 
     /* Evaluate the BSDF and PDF of the sample */
-    const float pdf = 1.0f / (2.0f * PI_F32 * (1.0f - cos(0.1f))); // pdf_vndf_unbounded(wo, wi, alpha); // BoundedVNDF_PDF_Isotropic(wo, wi, alpha);
+    const float pdf = BoundedVNDF_PDF_Isotropic(wo, wi, alpha);
     const float bsdf = gloss_slab(wi.z, wo.z, wh.z, dot(wo, wh), alpha_2, eta) / pdf;
 
     /* Trace sample direction */
@@ -215,6 +215,8 @@ void main(int2 thread_id: SV_DispatchThreadID) {
     if (hit.t < BIG_F32) {
         const Material mat = unpack_material(hit, objects);
         luminance = mat.albedo() * mat.emission();
+        const cache::Slot slot = cache::fetch(macrofacet_cache, pack_visibility(hit));
+        if (slot.key != cache::EMPTY_KEY) luminance += slot.read_diffuse();
     } else {
         luminance = 0.1f;
     }

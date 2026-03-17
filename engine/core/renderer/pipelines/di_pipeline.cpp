@@ -88,7 +88,7 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
         .read(scene_view.object_indices) /* Voxel object indices buffer */
         .read(scene_view.object_data) /* Voxel objects buffer */
         // .read(scene_view.lights_data) /* Lights data buffer */
-        // .write(render_view.macrofacet_cache) /* Cache buffer */
+        .write(render_view.macrofacet_cache) /* Cache buffer */
         .read(render_view.vbuffer.image) /* Visibility buffer */
         .write(raw_specular_image) /* Specular buffer */
         .group_size(16, 8)
