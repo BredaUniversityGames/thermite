@@ -194,29 +194,6 @@ void Physics::on_fixed_update(const FrameData&) {
 
     // Update Forces
     for (const auto& [entity, vb, transform, vr] : engine.ecs.view<VoxelBody, Transform, VoxelRenderer>().each()) {
-        // if (!transform.is_enabled()) continue;
-
-        if (vb.initialized == false) {
-            vb.position = transform.get_world_position();
-            vb.rotation = transform.get_world_rotation();
-
-            if (vb.type == VoxelBody::DYNAMIC) {
-                initialize_voxel_body(vb, *vr.resource.resource);
-                if (vb.gravity <= 0.0f) {
-                    vb.type = VoxelBody::SLEEPING;
-                    vb.accumulated_forces = 0.0f;
-                }
-            } else {
-                glm::uvec3 size = vr.resource->size;
-                vb.width = (float)size.x * UNITS_PER_VOXEL;
-                vb.height = (float)size.y * UNITS_PER_VOXEL;
-                vb.depth = (float)size.z * UNITS_PER_VOXEL;
-                vb.center_of_mass = vb.position + (vb.rotation * vb.com_local_offset);
-            }
-
-            vb.initialized = true;
-        }
-
         // Add stored forces
         vb.velocity += vb.stored_velocity;
         vb.stored_velocity = glm::vec3(0);
