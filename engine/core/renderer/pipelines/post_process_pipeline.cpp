@@ -31,6 +31,40 @@ void PostProcessPipeline::enqueue(RenderGraph& render_graph, RenderView render_v
                     .work_size(mip_w, mip_h);
         /* clang-format on */
     }
+
+    for (int32_t curr_mip = (int32_t)render_view.lbuffer.meta.mips - 2; curr_mip >= 0; curr_mip--) {
+        const uint32_t mip_w = shading_res.x >> curr_mip;
+        const uint32_t mip_h = shading_res.y >> curr_mip;
+
+        struct UpsampleConstants {
+            uint32_t curr_mip_level;
+            float bloom_radius;
+        } upsample_constants;
+
+        upsample_constants.curr_mip_level = curr_mip;
+        upsample_constants.bloom_radius = 0.85f;
+
+        /* clang-format off */
+        render_graph.add_compute_pass("Bloom Upsample", "bloom/upsample.cs")
+                    .read(render_view.render_view_buffer)
+                    .read(down_sampler)
+                    .write(render_view.lbuffer.images[curr_mip])
+                    .read(render_view.lbuffer.images[curr_mip + 1])
+                    .push_constants(&upsample_constants, 0u, sizeof(UpsampleConstants))
+                    .group_size(16, 8)
+                    .work_size(mip_w, mip_h);
+        /* clang-format on */
+    }
+
+    /* Color Grading and Tonemapping */
+    /* clang-format off */
+    render_graph.add_compute_pass("Color Grading and Tonemapping", "cg_tonemap.cs")
+        //.read(render_view.render_view_buffer)
+        .read(render_view.lbuffer.images[0])
+        .write(render_view.get_render_image())
+        .group_size(16, 8)
+        .work_size(render_view.gpu_view.resolution.x, render_view.gpu_view.resolution.y);
+    /* clang-format on */
 }
 
 void PostProcessPipeline::deinit(GPUAdapter& gpu) {

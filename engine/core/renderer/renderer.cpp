@@ -160,10 +160,9 @@ void Renderer::update() {
             .read(point_sampler)
             .read(linear_sampler)
             .read(render_view.mbuffer.image)
-            .read(render_view.lbuffer.images[0])
+            .write(render_view.lbuffer.images[0])
             .write(frame_flag ? render_view.hbuffer1.image : render_view.hbuffer2.image)
             .read(frame_flag ? render_view.hbuffer2.image : render_view.hbuffer1.image)
-            .write(render_view.get_render_image())
             .push_constants(&taa_flag, 0, sizeof(uint32_t))
             .group_size(16, 8)
             .work_size(render_view.gpu_view.resolution.x, render_view.gpu_view.resolution.y);
