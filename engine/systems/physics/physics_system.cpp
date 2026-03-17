@@ -193,7 +193,7 @@ void Physics::on_fixed_update(const FrameData&) {
     TMT_ZONE_SCOPED_N("Physics")
 
     // Update Forces
-    for (const auto& [entity, vb, transform, vr] : engine.ecs.view<VoxelBody, Transform, VoxelRenderer>().each()) {
+    for (const auto& [entity, vb, transform] : engine.ecs.view<VoxelBody, Transform>().each()) {
         // Add stored forces
         vb.velocity += vb.stored_velocity;
         vb.stored_velocity = glm::vec3(0);
