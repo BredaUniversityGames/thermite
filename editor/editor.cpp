@@ -38,6 +38,7 @@
 #include "editor/windows/goap_debugger.hpp"
 #include "editor/windows/goap_action_editor.hpp"
 #include "editor/windows/goap_agent_editor.hpp"
+#include "editor/windows/steering_data_editor.hpp"
 #include "editor/windows/physics_layers_editor.hpp"
 #include "editor/windows/font_control.hpp"
 #include "editor/windows/profiler_tracy.hpp"
@@ -57,6 +58,7 @@
 #include "editor/windows/brush.hpp"
 #include "editor/windows/editor_settings.hpp"
 #include "editor/windows/ui.hpp"
+#include "editor/windows/level_editor.hpp"
 #include "editor/windows/player_data.hpp"
 
 /* Singleton */
@@ -85,7 +87,6 @@ void Editor::switch_mode(Mode new_mode, const std::any& meta_data) {
 void Editor::on_engine_init(const ApplicationSpecs&) {
     tmt::Log::info("Starting Thermite Editor...");
     imgui_manager.init();
-    save_data.load();
     gizmo.init();
 
     mode_handlers[Mode::SCENE] = std::make_unique<SceneMode>();
@@ -101,6 +102,7 @@ void Editor::on_engine_init(const ApplicationSpecs&) {
     systems[Mode::SCENE].add<GoapActionEditor>();
     systems[Mode::SCENE].add<GoapAgentEditor>();
     systems[Mode::SCENE].add<PhysicsLayersEditor>();
+    systems[Mode::SCENE].add<SteeringDataEditor>();
     systems[Mode::SCENE].add<FontControl>();
     systems[Mode::SCENE].add<AudioMixer>();
     systems[Mode::SCENE].add<ScenesWindow>();
@@ -115,6 +117,7 @@ void Editor::on_engine_init(const ApplicationSpecs&) {
     systems[Mode::SCENE].add<EditorSettingsWindow>();
     systems[Mode::SCENE].add<BuildPackager>();
     systems[Mode::SCENE].add<UIEditor>();
+    systems[Mode::SCENE].add<LevelEditor>();
     systems[Mode::SCENE].add<PlayerDataWindow>();
 
     engine.scenes.register_scene<VoxelEditScene>();
@@ -142,6 +145,8 @@ void Editor::on_engine_init(const ApplicationSpecs&) {
             system->on_editor_start();
         }
     }
+
+    save_data.load();
 }
 
 void Editor::on_engine_update(const FrameData& time) {
@@ -161,7 +166,7 @@ void Editor::on_engine_update(const FrameData& time) {
     // Render windows (only for systems that are IWindow instances)
     auto& open_windows = editor.save_data.open_windows;
     for (const auto& system : systems[editor_mode]) {
-        IWindow* window = dynamic_cast<IWindow*>(system.get());
+        IWindowBase* window = dynamic_cast<IWindowBase*>(system.get());
         if (!window) continue;  // Skip non-window systems
 
         const auto& name = window->get_title();
@@ -175,8 +180,9 @@ void Editor::on_engine_update(const FrameData& time) {
 
         if (open) {
             window->before_begin();
-            ImGui::Begin(name.c_str(), window->is_closable() ? &open : nullptr, flags);
-            window->on_inspect();
+            if (ImGui::Begin(name.c_str(), window->is_closable() ? &open : nullptr, flags)) {
+                window->on_inspect();
+            }
             ImGui::End();
             window->end_display();
         }
@@ -215,7 +221,7 @@ void Editor::main_menu_bar() {
 
         if (ImGui::BeginMenu("Windows")) {
             for (const auto& system : systems[editor_mode]) {
-                IWindow* window = dynamic_cast<IWindow*>(system.get());
+                IWindowBase* window = dynamic_cast<IWindowBase*>(system.get());
                 if (!window) continue;  // Only show actual windows in the menu
 
                 const auto& name = window->get_title();
