@@ -140,12 +140,12 @@ class Resources {
     std::unordered_map<IO::FileLocation, ResourceCollection, IO::FileLocationHash> resources;
 
     template <typename T>
-    const ResourceRef<T> fallback(const tmt::IO::FileLocation& file_location, std::shared_ptr<T>& resource) {
+    ResourceRef<T> fallback(const tmt::IO::FileLocation& file_location, std::shared_ptr<T>& resource) {
         tmt::Log::error(tmt::Log::Scope::ENGINE, "[Resources] Failed to load resource: {}", file_location);
 
         const bool fallback_success = resource->fallback(FallbackReason::LOAD_FAILED);
         if (fallback_success == false) {
-            tmt::Log::error(tmt::Log::Scope::ENGINE, "[Resources] [CRITICAL ERROR] Failed to load fallback (REALLY BAD): {}", file_location);
+            tmt::Log::error(tmt::Log::Scope::ENGINE, "[Resources] [CRITICAL ERROR] Failed to load fallback (REALLY BAD).");
             throw std::runtime_error("Failed to load resource and fallback failed: " + file_location.get_absolute_path().string());
         }
 

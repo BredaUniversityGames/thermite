@@ -7,7 +7,7 @@
 
 namespace tmt {
 
-enum FallbackReason : uint8_t {
+enum class FallbackReason : uint8_t {
     FILE_NOT_FOUND,
     LOAD_FAILED,
     RELOAD_FAILED,
