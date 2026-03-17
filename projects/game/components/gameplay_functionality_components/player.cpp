@@ -1,5 +1,6 @@
 #include "player.hpp"
 
+#include "engine/core/polyline.hpp"
 #include "projects/game/data_headers/events.hpp"
 
 #include <glm/glm.hpp>
@@ -13,6 +14,9 @@
 #include "engine/core/input/input_map.hpp"
 #include "projects/game/data_headers/game_input.hpp"
 #include "engine/core/components/ui_component.hpp"
+#include "engine/shared/ray.hpp"
+#include "engine/systems/physics/physics_system.hpp"
+#include "projects/game/components/development_tools/debug_line_helper.hpp"
 
 // TODO before we have a serializer for input, you can add all the needed keybindings here.
 //  TODO we still have to add the gamepad inputs here
@@ -107,10 +111,22 @@ void Player::look_camera() const {
     transform.look_at(transform.get_world_position() + front, glm::vec3(0.0f, 1.0f, 0.0f));
 }
 
+bool Player::is_colliding() const {
+    auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
+
+    tmt::Transform temp_transform { tmt::engine.ecs.get_component<tmt::Transform>(entity) };
+    temp_transform.translate(input_dir * tmt::engine.frame_data().elapsed_time);
+    auto dir = temp_transform.get_world_position() - transform.get_world_position();
+
+    const tmt::Ray ray = tmt::Ray(transform.get_world_position(), glm::normalize(dir));
+
+    const tmt::Hit hit = tmt::engine.ecs.systems.get<tmt::Physics>().raycast(ray, ray_check.collision_layer);
+    return hit.miss() == false && hit.distance < ray_check.ray_distance;
+}
 void Player::move_player() {
     auto& input = tmt::engine.input;
 
-    glm::vec3 input_dir = { 0.0f, 0.0f, 0.0f };
+    input_dir = glm::vec3 { 0.0f, 0.0f, 0.0f };
     auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
 
     /* If not locked don't move player */
@@ -157,6 +173,9 @@ void Player::move_player() {
     }
 
     // Apply velocity to position
+    if (is_colliding() == true) {
+        velocity = glm::vec3 { 0.0f };
+    }
     transform.translate(velocity * delta_time);
 }
 
@@ -209,6 +228,22 @@ void Player::update(const tmt::FrameData& time) {
     if (tmt::engine.ecs.valid(energy_bar_current)) {
         if (auto componentcurrhp = tmt::engine.ecs.try_get_component<tmt::UIComponent>(energy_bar_current)) componentcurrhp->size.x = energy.value;
     }
+}
+void Player::draw_debug_lines() const {
+    if (glm::length(input_dir) < 0.001f) {
+        return;
+    }
+    const auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
+    const auto world_pos = transform.get_world_position();
+    const auto arrow_origin = world_pos + transform.get_forward() - glm::vec3 { 0.0f, 0.1f, 0.0f };
+
+    game::DebugLineConfig cf;
+    if (is_colliding()) {
+        cf.color = tmt::RGBA { { glm::vec4 { 1.0f, 0.0f, 0.0f, 1.0f } } };
+    }
+    cf.set_values();
+
+    tmt::engine.polyline.draw_arrow(arrow_origin, glm::normalize(velocity), ray_check.ray_distance);
 }
 
 void Player::attempt_attach(tmt::Input& input) {

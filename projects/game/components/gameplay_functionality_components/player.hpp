@@ -10,6 +10,10 @@ struct PlayerStat {
     float value = 100.f;
     float increase_multiplier = 1.0f;
 };
+struct RayCollisionCheck {
+    float ray_distance = 1.0f;
+    uint32_t collision_layer = 1;
+};
 enum class PlayerState { FREEMOVING, ATTACHED, PAUSED };
 
 class Player : public tmt::GameComponent<Player> {
@@ -20,8 +24,10 @@ class Player : public tmt::GameComponent<Player> {
 
     void start() override;
     void look_camera() const;
+    bool is_colliding() const;
     void move_player();
     void update(const tmt::FrameData& time) override;
+    void draw_debug_lines() const override;
     void attempt_attach(tmt::Input& input);
     void on_attach(const AttachEvent& event);
     void end() override;
@@ -55,16 +61,20 @@ class Player : public tmt::GameComponent<Player> {
     tmt::Entity barge = entt::null;
 
     float recharge_distance = 20.0f;
+    RayCollisionCheck ray_check;
 
    private:
     void refill(float delta);
     void drain_energy(float delta);
     PlayerState state = PlayerState::FREEMOVING;
     glm::vec3 velocity = { 0.0f, 0.0f, 0.0f };
+    glm::vec3 input_dir { 0.0f };
 };
 
 }  // namespace game
 TMT_OBJECT(game::PlayerStat, (max_value, value, increase_multiplier));
+TMT_OBJECT(game::RayCollisionCheck, (ray_distance, collision_layer));
 TMT_OBJECT(
-    game::Player, (camera_sensitivity, acceleration, deceleration, drag, max_speed, health, energy, hp_bar_max, hp_bar_current, energy_bar_max, energy_bar_current, barge, recharge_distance)
+    game::Player,
+    (camera_sensitivity, acceleration, deceleration, drag, max_speed, health, energy, hp_bar_max, hp_bar_current, energy_bar_max, energy_bar_current, barge, recharge_distance, ray_check)
 );
