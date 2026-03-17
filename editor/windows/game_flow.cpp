@@ -9,28 +9,6 @@
 
 namespace tmt {
 
-void GameFlow::on_inspect() {
-    if (engine.game_controller.is_playing()) {
-        if (ImGui::Button("End")) {
-            end_game();
-        }
-    } else {
-        if (ImGui::Button("Start")) {
-            start_game();
-        }
-    }
-    ImGui::SameLine();
-    if (engine.game_controller.is_paused()) {
-        if (ImGui::Button("Resume")) {
-            resume_game();
-        }
-    } else {
-        if (ImGui::Button("Pause")) {
-            pause_game();
-        }
-    }
-}
-
 void GameFlow::pause_game() {
     engine.game_controller.pause_game();
     was_mouse_locked = engine.input.is_mouse_locked();
@@ -59,11 +37,22 @@ void GameFlow::end_game() {
 void GameFlow::on_editor_start() {}
 
 void GameFlow::on_editor_update(const FrameData&) {
-    // if (engine.input.is_keyboard_button_just_pressed(Key::F1)) {
+    /* Release Mouse */
     if (ImGui::IsKeyPressed(ImGuiKey_F1)) {
         if (engine.input.is_mouse_locked()) {
             engine.input.set_game_preferred_mouse_lock(true);
             unlock_mouse();
+        }
+    }
+
+    /* Ctrl + P to start / stop game */
+    const bool ctrl_down = ImGui::IsKeyDown(ImGuiKey_LeftCtrl) || ImGui::IsKeyDown(ImGuiKey_RightCtrl);
+    const bool p_down = ImGui::IsKeyPressed(ImGuiKey_P, false);
+    if (ctrl_down && p_down) {
+        if (engine.game_controller.is_playing()) {
+            end_game();
+        } else {
+            start_game();
         }
     }
 }
