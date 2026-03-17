@@ -6,11 +6,12 @@
 #include <graphite/nodes/raster_node.hh>
 #include <graphite/nodes/compute_node.hh>
 
-#include "engine.hpp"
-#include "core/ecs.hpp"
-#include "core/logger.hpp"
-#include "core/renderer/renderer.hpp"
-#include "core/components/emitter.hpp"
+#include "engine/engine.hpp"
+#include "engine/core/ecs.hpp"
+#include "engine/core/logger.hpp"
+#include "engine/core/renderer/renderer.hpp"
+#include "engine/core/components/emitter.hpp"
+#include "engine/core/resources.hpp"
 
 namespace tmt {
 
@@ -120,6 +121,9 @@ void VfxPipeline::init(GPUAdapter& gpu) {
 
     /* Initialize the Sampler */
     point_sampler = bank.create_sampler("[Particles] Linear Sampler", Filter::Nearest).expect("failed to initialize linear sampler.");
+
+    /* Fallback texture */
+    fallback_texture = engine.resources.load_resource<Texture2D>({ tmt::IO::Location::ENGINE, "missing.png" });
 }
 
 void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
@@ -147,6 +151,9 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
 
         for (auto& effect : emitter.effects) {
             if (!effect.active && !effect.should_burst) continue;
+            
+            /* Use fallback texture if texture is missing */
+            if (!effect.texture) effect.texture = fallback_texture;
 
             effect.should_burst = !effect.should_burst;
 
@@ -245,11 +252,11 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
 
 
     const glm::uvec2 render_res = render_view.gpu_view.resolution;
-    RasterNode& line_pass = render_graph.add_raster_pass("billboard pass", "billboard.vx", "billboard.px")
+    RasterNode& billboard_pass = render_graph.add_raster_pass("billboard pass", "billboard.vx", "billboard.px")
                                 .topology(Topology::TriangleList)
                                 .attribute(AttrFormat::XY32_SFloat)  // Position
                                 .attribute(AttrFormat::XY32_SFloat)  // UVs
-                                .read(render_view.render_view_buffer, ShaderStages::Vertex)
+                                .read(render_view.render_view_buffer, ShaderStages::Vertex | ShaderStages::Pixel)
                                 .read(particle_buffer, ShaderStages::Vertex)
                                 .read(alive_list, ShaderStages::Vertex)
                                 .read(render_view.blue_noise1d->image, ShaderStages::Pixel)
@@ -257,9 +264,10 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
                                 .depth_stencil(render_view.dbuffer.image, true, true)
                                 .load_op_depth(LoadOp::Load)
                                 .load_op_color(LoadOp::Load)
-                                .attach(render_image)
+                                .attach(render_view.lbuffer.image)
+                                .attach(render_view.mbuffer.image)
                                 .raster_extent(render_res.x, render_res.y);
-    line_pass.draw_indirect(billboard_vertices, instanced_draw_args_buffer);
+    billboard_pass.draw_indirect(billboard_vertices, instanced_draw_args_buffer);
 
     /* clang-format on */
 }

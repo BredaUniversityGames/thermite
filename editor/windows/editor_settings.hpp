@@ -3,9 +3,9 @@
 
 namespace tmt {
 
-class EditorSettingsWindow : public IWindow {
+class EditorSettingsWindow : public IWindow<> {
    public:
-    virtual void display() override;
+    virtual void on_inspect() override;
 
     constexpr virtual std::string get_title() const override { return ICON_MS_SETTINGS " Editor Settings"; }
 };

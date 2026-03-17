@@ -5,10 +5,11 @@
 #include "engine/events/game.hpp"
 
 struct ImVec2;
+struct ImDrawList;
 
 namespace tmt {
 
-class Viewport : public IWindow, public OnRetrieveMouseState, public OnBlockInputRequest, public OnGameStart {
+class Viewport : public IWindow<>, public OnRetrieveMouseState, public OnBlockInputRequest, public OnGameStart {
    public:
     Viewport() = default;
     ~Viewport() = default;
@@ -19,7 +20,7 @@ class Viewport : public IWindow, public OnRetrieveMouseState, public OnBlockInpu
     void on_editor_end() override;
 
     void before_begin() override;
-    void display() override;
+    void on_inspect() override;
     void snap_to_entity();
     void end_display() override;
 
@@ -27,17 +28,31 @@ class Viewport : public IWindow, public OnRetrieveMouseState, public OnBlockInpu
     int get_window_flags() const override;
     constexpr bool is_closable() const override { return false; };
     constexpr bool default_open() const override { return true; }
+    void set_allow_rectangle_select(bool value) { allow_rectangle_select = value; }
+    void set_allow_selection(bool value) { allow_selection = value; }
+
+    // Game flow controls (shared with GameFlow window)
+    void start_game();
+    void end_game();
+    void pause_game();
+    void resume_game();
 
     bool get_is_hovered() const { return is_hovered; }
     bool get_is_focused() const { return is_focused; }
     bool is_using_debug_camera() const { return using_debug_camera; }
+    ImDrawList* get_drawlist() const { return viewport_drawlist; }
+
+    float get_width() const { return width; }
+    float get_height() const { return height; }
+    glm::vec2 get_window_pos() const { return viewport_pos; }
+    glm::vec2 get_mouse_pos() const { return mouse_pos; }
 
    private:
     friend class ModelViewer;
 
     void update_debug_camera(const tmt::FrameData& frame_data);
-    bool toolbar(const ImVec2& image_pos);
-    void selection_logic(const ImVec2& imgui_mouse_pos, const ImVec2& image_pos, bool toolbar_buttons_hovered);
+    void toolbar();
+    void selection_logic(const ImVec2& imgui_mouse_pos, const glm::vec2& image_pos, bool toolbar_buttons_hovered);
 
     float width = -1;
     float height = -1;
@@ -45,9 +60,16 @@ class Viewport : public IWindow, public OnRetrieveMouseState, public OnBlockInpu
     bool is_hovered = false;
     bool is_focused = false;
     glm::vec2 mouse_pos = { 0.0f, 0.0f };
+    glm::vec2 viewport_pos;
 
     float camera_speed = 4.0f;
     bool using_debug_camera = false;
+    bool allow_rectangle_select = true;
+    bool allow_selection = true;
+
+    ImDrawList* viewport_drawlist = nullptr;
+
+    float y_frame_padding = 0.0f;
 
     struct Config {
         constexpr static float SPEED_CHANGE_FACTOR = 0.5f;

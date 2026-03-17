@@ -12,7 +12,7 @@ struct Transform;
 
 class VoxelVolume;
 
-class NodeHierarchy : public IWindow {
+class NodeHierarchy : public IWindow<> {
    public:
     struct NodeUUID {
         UUID uuid { NULL_UUID };
@@ -37,7 +37,7 @@ class NodeHierarchy : public IWindow {
     void import_file(const std::string& file_description, const std::string& file_extension);
     void export_file(const std::string& file_description, const std::string& file_extension) const;
 
-    void build_scene(const std::span<VoxelSceneNode>& root_nodes, bool assign_new_uuids = false);
+    void build_scene(const std::span<VoxelSceneNode>& root_nodes, bool assign_new_uuids = false, const std::map<UUID, Entity>& previous_entity_mapping = {});
 
     [[nodiscard]] std::vector<char> encode_voxel_scene() const;
     void clear_root_entities() { root_entities.clear(); }
@@ -56,7 +56,7 @@ class NodeHierarchy : public IWindow {
     void popup_resize_node();
     void node_context_menu(Entity node_entity);
 
-    void display() override;
+    void on_inspect() override;
 
     void on_editor_start() override {}
     void on_editor_update(const FrameData&) override;

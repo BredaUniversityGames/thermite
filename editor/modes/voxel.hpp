@@ -25,9 +25,9 @@ class VoxelMode : public IEditorMode {
    private:
     Camera cached_editor_camera;
     Transform cached_editor_transform;
-    DisplayMode cached_display_mode;
 
     std::vector<char> edit_data;
+    std::map<UUID, Entity> old_entity_mapping;
 };
 
 }  // namespace tmt
