@@ -11,6 +11,12 @@ class FireLaser : public tmt::GoapAction {
         cost = 2.f;
     }
 
+    enum State {
+        SITTING_DOWN,
+        WINDING_UP,
+        FIRING,
+    } state = SITTING_DOWN;
+
     tmt::Entity player = entt::null;
 
     float duration = 0.0f;
