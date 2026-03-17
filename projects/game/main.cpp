@@ -87,6 +87,7 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     /* Register Scenes */
     tmt::engine.scenes.register_scene<MainMenuScene>();
     tmt::engine.scenes.register_scene<MainGameScene>();
+    tmt::engine.scenes.register_scene<HubScene>();
     tmt::engine.scenes.register_scene<Zoo>();
     tmt::engine.scenes.register_scene<Gym>();
     tmt::engine.scenes.register_scene<DanielTestScene>();
