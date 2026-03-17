@@ -1,6 +1,7 @@
 #pragma once
 #include "engine/systems/gameplay/game_component.hpp"
 #include "engine/core/entity.hpp"
+#include "../../../editor/all.hpp"
 
 struct Missile;
 
