@@ -54,6 +54,7 @@ struct EcsComponentTraits {
     }
 };
 
+/* Ecs traits for empty components like Disable and DisableFlag */
 template <typename T>
 struct EcsComponentTraits<T, std::enable_if_t<std::is_empty_v<T>>> {
     static constexpr bool IS_GAME_COMPONENT = false;
@@ -66,14 +67,14 @@ struct EcsComponentTraits<T, std::enable_if_t<std::is_empty_v<T>>> {
 
     static void remove(Registry& registry, Entity entity) { registry.remove<T>(entity); }
 
-    static T& get(Registry& registry, Entity entity) {
+    static T& get(Registry&, Entity) {
         static T instance {};
         return instance;
     }
 
-    static const T& get(const Registry& registry, Entity entity) {
-        static const T instance {};
-        return instance;
+    static const T& get(const Registry&, Entity) {
+        static const T INSTANCE {};
+        return INSTANCE;
     }
 
     static bool has(const Registry& registry, Entity entity) { return registry.all_of<T>(entity); }
@@ -90,8 +91,8 @@ struct EcsComponentTraits<T, std::enable_if_t<std::is_empty_v<T>>> {
     }
 
     static const T* try_get(const Registry& registry, Entity entity) {
-        static const T instance {};
-        return registry.all_of<T>(entity) ? &instance : nullptr;
+        static const T INSTANCE {};
+        return registry.all_of<T>(entity) ? &INSTANCE : nullptr;
     }
 
     template <typename... Rest, typename... Excludes>
@@ -210,7 +211,7 @@ class Ecs : public OnGameStart, public OnGameUpdate, public OnGameFixedUpdate, p
         if constexpr (COUNT == 1) {
             return EcsComponentTraits<Component...>::add_or_get(registry, entity);
         } else {
-            return std::make_tuple(add_or_get_component<Component>(entity)...);
+            return std::forward_as_tuple(add_or_get_component<Component>(entity)...);
         }
     }
 
@@ -330,17 +331,17 @@ class Ecs : public OnGameStart, public OnGameUpdate, public OnGameFixedUpdate, p
 
     Collection<ISystem> systems;
 
+    void on_game_start() override;
+
+    void on_game_end() override;
+
    private:
     Registry registry;
     Dispatcher dispatcher;
 
-    void on_game_start() override;
-
     void on_game_update(const FrameData& time) override;
 
     void on_game_fixed_update(const FrameData& time) override;
-
-    void on_game_end() override;
 
     void on_end_frame() override;
 

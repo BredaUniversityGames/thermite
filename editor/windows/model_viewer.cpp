@@ -10,12 +10,12 @@
 #include "engine/core/resources.hpp"
 #include "engine/core/renderer/renderer.hpp"
 #include "engine/core/components/voxel_renderer.hpp"
-#include "engine/core/input/input.hpp"
 #include "engine/tools/file_dialog.hpp"
 
 #include "editor/windows/palette.hpp"
 #include "editor/windows/node_hierarchy.hpp"
 #include "editor/windows/brush.hpp"
+#include "editor/shared/colors.hpp"
 
 namespace tmt {
 
@@ -84,7 +84,7 @@ FaceData calculate_face_info(const int32_t face_index, const Transform& transfor
 }
 
 // Draw a single face of a voxel grid bounding box.
-bool draw_face(const FaceData& info, const Transform& transform, const glm::vec3& half_extent) {
+bool draw_face(const FaceData& info, const Transform& transform, const glm::vec3& half_extent, const glm::vec3 color = glm::vec3(1.0f)) {
     const glm::vec3 camera_position = engine.renderer.get_debug_transform().get_world_position();
     if (glm::dot(info.world_normal, camera_position - info.face_center) >= 0.0f) return false;
 
@@ -118,7 +118,7 @@ bool draw_face(const FaceData& info, const Transform& transform, const glm::vec3
 
     // Draw the lines between the points to make the grid face.
     engine.polyline.use_line_width(2.0f, true);
-    engine.polyline.use_color(glm::vec4 { 0.8f, 0.8f, 0.8f, 1.0f });
+    engine.polyline.use_color(color);
 
     engine.polyline.draw_line(p0, p1);
     engine.polyline.draw_line(p1, p2);
@@ -171,13 +171,13 @@ void draw_selection(const Hit& hit, const glm::vec3& half_extent, const Transfor
     engine.polyline.draw_obb(world_voxel_pos, VOXEL_SIZE_HALF * local_scale, transform.get_world_rotation());
 }
 
-std::vector<FaceData> draw_valid_faces(const Transform& transform, const glm::vec3& half_extent) {
+std::vector<FaceData> draw_valid_faces(const Transform& transform, const glm::vec3& half_extent, const glm::vec3 color = glm::vec3(1.0f)) {
     std::vector<FaceData> valid_faces;
 
     for (int32_t i = 0; i < 6; i++) {
         FaceData face = calculate_face_info(i, transform, half_extent);
 
-        if (draw_face(face, transform, half_extent)) valid_faces.push_back(face);  // Don't add the face to the vector if `draw_face` returned false aka we can't see it.
+        if (draw_face(face, transform, half_extent, color)) valid_faces.push_back(face);  // Don't add the face to the vector if `draw_face` returned false aka we can't see it.
     }
 
     return valid_faces;
@@ -201,7 +201,7 @@ bool handle_selection(
     if (!is_face_hit) {
         if (brush_state.tool != Brush::Tool::COLOR_PICKER && brush_state.mode == Brush::Mode::ATTACH) {
             // If we can hit a face, that means we want to work on top of the voxel the mouse is pointing at, we get the voxel coord by adjusting it here.
-            const glm::vec3 local_normal = world_to_local_matrix * glm::vec4 { hit.normal, 0.0f };
+            const glm::vec3 local_normal = glm::normalize(glm::vec3(world_to_local_matrix * glm::vec4 { hit.normal, 0.0f }));
             const glm::uvec3 voxel_grid_normal { glm::round(local_normal) };
             hit.coord += voxel_grid_normal;
         }
@@ -321,18 +321,18 @@ void modify_voxel_volume(const ResourceRef<VoxelVolume>& model, const Brush::Mod
 void handle_brush(const Brush::State brush_state, const ResourceRef<VoxelVolume>& model, const Hit& hit, const MaterialIndex material_index) {
     switch (brush_state.tool) {
         case Brush::Tool::COLOR_PICKER: {
-            if (!engine.input.is_mouse_button_pressed(MouseButton::LEFT)) break;
+            if (!ImGui::IsMouseClicked(ImGuiMouseButton_Left)) break;
 
             const Material* picked_material = model->blas->get_voxel(hit.coord.x, hit.coord.y, hit.coord.z);
             if (picked_material == nullptr) break;
 
-            Palette& palette = editor.windows[Editor::Mode::VOXEL].get<Palette>();
+            Palette& palette = editor.systems[Editor::Mode::VOXEL].get<Palette>();
             palette.set_selected_material_index(model->blas->palette.material_to_index(picked_material));
             break;
         }
 
         case Brush::Tool::SINGLE: {
-            if (!engine.input.is_mouse_button_just_pressed(MouseButton::LEFT)) break;
+            if (!ImGui::IsMouseClicked(ImGuiMouseButton_Left)) break;
 
             VoxelEditDiff diff { model->uuid };
             switch (brush_state.mode) {
@@ -357,32 +357,35 @@ void handle_brush(const Brush::State brush_state, const ResourceRef<VoxelVolume>
         }
 
         case Brush::Tool::BOX: {
-            if (!engine.input.is_mouse_button_pressed(MouseButton::LEFT) && !engine.input.is_mouse_button_just_released(MouseButton::LEFT)) break;
+            if (!ImGui::IsMouseDown(ImGuiMouseButton_Left) && !ImGui::IsMouseReleased(ImGuiMouseButton_Left)) break;
 
             static glm::uvec3 start_coord { std::numeric_limits<uint32_t>::max() };
-            if (engine.input.is_mouse_button_just_pressed(MouseButton::LEFT)) start_coord = hit.coord;
-
+            if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) start_coord = hit.coord;
             const glm::uvec3& end_coord = hit.coord;
 
-            // Calculate the middle point of the selected volume of voxels.
-            const glm::vec3 selection_middle = glm::vec3 { start_coord + end_coord + 1u } * VOXEL_SIZE_HALF;
+            // Find the bounded start and end coordinates.
+            const glm::uvec3 start_bounded = glm::min(start_coord, model->size - 1u);
+            const glm::uvec3 end_bounded = glm::min(end_coord, model->size - 1u);
 
             // Calculate the half extent of the selected volume of voxels (requires min and max to correctly account for the start and end voxels).
-            const glm::uvec3 min = glm::min(start_coord, end_coord);
-            const glm::uvec3 max = glm::max(start_coord, end_coord);
-            const glm::vec3 select_half_extent = (glm::vec3 { min } - glm::vec3 { max } - 1.0f) * VOXEL_SIZE_HALF;
+            const glm::uvec3 min = glm::min(start_bounded, end_bounded);
+            const glm::uvec3 max = glm::max(start_bounded, end_bounded);
 
             const Transform& transform = engine.ecs.get_component<Transform>(hit.entity);
             const glm::vec3 half_extent = glm::vec3 { model->size } * VOXEL_SIZE_HALF;
-            const glm::vec3 world_position = transform.get_world_matrix() * glm::vec4 { selection_middle - half_extent, 1.0f };
 
-            engine.polyline.draw_obb(world_position, select_half_extent, transform.get_world_rotation());
+            // Find the world min and max position, use those to find the center and half extent.
+            const glm::vec3 world_min = transform.get_world_matrix() * glm::vec4 { glm::vec3(min) * UNITS_PER_VOXEL - half_extent, 1.0f };
+            const glm::vec3 world_max = transform.get_world_matrix() * glm::vec4 { glm::vec3(max + 1u) * UNITS_PER_VOXEL - half_extent, 1.0f };
+            const glm::vec3 select_half_extent = glm::vec3(max - min + 1u) * VOXEL_SIZE_HALF * transform.get_world_scale();
+            const glm::vec3 select_center = (world_min + world_max) * 0.5f;
+
+            engine.polyline.draw_obb(select_center, select_half_extent, transform.get_world_rotation());
 
             // Releasing the mouse button to modify the area.
-            if (!engine.input.is_mouse_button_just_released(MouseButton::LEFT)) break;
+            if (!ImGui::IsMouseReleased(ImGuiMouseButton_Left)) break;
 
             modify_voxel_volume(model, brush_state.mode, min, max, material_index);
-
             break;
         }
 
@@ -391,9 +394,59 @@ void handle_brush(const Brush::State brush_state, const ResourceRef<VoxelVolume>
     }
 }
 
+void use_gizmo(const NodeHierarchy& hierarchy, const ImVec2& window_pos, const ImVec2& window_size) {
+    const std::vector<Entity>& selected_entities = hierarchy.get_selected_entities();
+
+    float snap_value = 0.0f;
+    const bool ctrl_held = ImGui::IsKeyDown(ImGuiKey_LeftCtrl) || ImGui::IsKeyDown(ImGuiKey_RightCtrl);
+    const bool shift_held = ImGui::IsKeyDown(ImGuiKey_LeftShift) || ImGui::IsKeyDown(ImGuiKey_RightShift);
+    const bool alt_held = ImGui::IsKeyDown(ImGuiKey_LeftAlt) || ImGui::IsKeyDown(ImGuiKey_RightAlt);
+
+    if (ctrl_held) {
+        const auto operation = Gizmo::OPERATIONS[editor.gizmo.operation];
+        switch (operation) {
+            case ImGuizmo::OPERATION::TRANSLATE:
+                snap_value = editor.save_data.snap_values.move;
+                break;
+            case ImGuizmo::OPERATION::ROTATE:
+                snap_value = editor.save_data.snap_values.rotation;
+                break;
+            case ImGuizmo::OPERATION::SCALE:
+                snap_value = editor.save_data.snap_values.scale;
+                break;
+            case ImGuizmo::OPERATION::BOUNDS:
+                snap_value = editor.save_data.snap_values.move;  // Use move snap for bounds
+                break;
+            default:
+                break;
+        }
+    }
+
+    const bool is_using_camera = editor.systems[Editor::Mode::SCENE].get<Viewport>().is_using_debug_camera();
+    const bool wants_to_capture_keyboard = ImGui::GetIO().WantCaptureKeyboard;
+    if (wants_to_capture_keyboard == false && !is_using_camera) {
+        if (ImGui::IsKeyPressed(ImGuiKey_W, false)) {
+            editor.gizmo.operation = 0;  // Translate
+        } else if (ImGui::IsKeyPressed(ImGuiKey_E, false)) {
+            editor.gizmo.operation = 1;  // Rotate
+        } else if (ImGui::IsKeyPressed(ImGuiKey_R, false)) {
+            editor.gizmo.operation = 2;  // Scale
+        } else if (ImGui::IsKeyPressed(ImGuiKey_T, false)) {
+            editor.gizmo.operation = 3;  // Bounds
+        }
+    }
+
+    // Build modifiers for bounds manipulation
+    BoundsModifiers modifiers;
+    modifiers.uniform_scale = shift_held;    // Shift: maintain aspect ratio
+    modifiers.scale_from_center = alt_held;  // Alt: keep center fixed
+
+    editor.gizmo.manip(window_pos.x, window_pos.y, window_size.x, window_size.y, selected_entities, snap_value, modifiers);
+}
+
 }  // namespace
 
-void ModelViewer::display() {
+void ModelViewer::on_inspect() {
     const ImVec2 content_start { 0.0f, ImGui::GetFrameHeight() };
     ImGui::SetCursorPos(content_start);
 
@@ -405,32 +458,52 @@ void ModelViewer::display() {
     engine.renderer.render_view.set_viewport_size(static_cast<uint32_t>(size.x), static_cast<uint32_t>(size.y));
     ImGui::Image(engine.renderer.render_view.imgui_viewport, size);
 
-    const Brush::State brush_state = editor.windows[Editor::Mode::VOXEL].get<Brush>().get_brush_state();
+    const Brush::State brush_state = editor.systems[Editor::Mode::VOXEL].get<Brush>().get_brush_state();
     const bool is_tool_gizmo = brush_state.tool == Brush::Tool::GIZMO;
     if (is_tool_gizmo) {
-        const Entity selected_entity = editor.windows[Editor::Mode::VOXEL].get<NodeHierarchy>().get_selected_entity();
+        NodeHierarchy& hierarchy = editor.systems[Editor::Mode::VOXEL].get<NodeHierarchy>();
 
-        editor.gizmo.manip(window_pos.x, window_pos.y, size.x, size.y, { &selected_entity, &selected_entity + 1 }, 0.0f, {});
+        use_gizmo(hierarchy, window_pos, size);
 
         const bool can_select = (ImGui::IsWindowHovered() && !ImGuizmo::IsOver());
-        if (can_select && engine.input.is_mouse_button_just_pressed(MouseButton::LEFT)) {
+        if (can_select && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
             const Ray mouse_ray = engine.renderer.render_view.pixel_ray(mouse_position);
             const Hit hit = engine.renderer.trace_ray(mouse_ray);
 
-            editor.windows[Editor::Mode::VOXEL].get<NodeHierarchy>().set_selected_entity(hit.entity);
+            if (!ImGui::GetIO().KeyCtrl) {
+                if (hit.miss())
+                    hierarchy.clear_selected_entities();
+                else
+                    hierarchy.set_selected_entity(hit.entity);
+            } else {
+                if (!hierarchy.is_entity_selected(hit.entity))
+                    editor.systems[Editor::Mode::VOXEL].get<NodeHierarchy>().add_selected_entity(hit.entity);
+                else
+                    editor.systems[Editor::Mode::VOXEL].get<NodeHierarchy>().remove_selected_entity(hit.entity);
+            }
         }
     }
 
     // Set up the window and mouse variables in the viewport to update the camera movement in the update function later.
-    Viewport& viewport = editor.windows[Editor::Mode::SCENE].get<Viewport>();
+    Viewport& viewport = editor.systems[Editor::Mode::SCENE].get<Viewport>();
     viewport.is_hovered = ImGui::IsItemHovered();
     const ImVec2 mouse_pos = ImGui::GetMousePos() - ImGui::GetWindowPos();
     mouse_position.x = viewport.mouse_pos.x = mouse_pos.x - content_start.x;
     mouse_position.y = viewport.mouse_pos.y = mouse_pos.y - content_start.y;
 
     // Get the selected entity in the hierarchy and return early if it's invalid.
-    NodeHierarchy& node_hierarchy = editor.windows[Editor::Mode::VOXEL].get<NodeHierarchy>();
-    const Entity selected_entity = node_hierarchy.get_selected_entity();
+    NodeHierarchy& node_hierarchy = editor.systems[Editor::Mode::VOXEL].get<NodeHierarchy>();
+    const Entity selected_entity = node_hierarchy.get_first_selected_entity();
+
+    // Draw bounding boxes of all selected entities.
+    for (const Entity e : node_hierarchy.get_selected_entities()) {
+        if (e == selected_entity || !engine.ecs.has_component<VoxelRenderer>(e)) continue;
+
+        const Transform& transform = engine.ecs.get_component<Transform>(e);
+        const ResourceRef<VoxelVolume>& resource = engine.ecs.get_component<VoxelRenderer>(e).resource;
+        const glm::vec3 half_extent = glm::vec3 { resource->size } * VOXEL_SIZE_HALF;
+        draw_valid_faces(transform, half_extent, colors::SELECTED);
+    }
 
     if (!engine.ecs.valid(selected_entity) || !engine.ecs.has_component<VoxelRenderer>(selected_entity)) return;
 
@@ -444,7 +517,7 @@ void ModelViewer::display() {
 
     if (glm::any(glm::greaterThanEqual(hit.coord, resource->size))) hit.entity = entt::null;
 
-    const std::vector<FaceData> valid_faces = draw_valid_faces(transform, half_extent);
+    const std::vector<FaceData> valid_faces = draw_valid_faces(transform, half_extent, colors::SELECTED);
 
     // Don't calculate voxel hits when the cursor isn't over the window or using gizmo.
     if (!ImGui::IsWindowHovered() || is_tool_gizmo) return;
@@ -452,7 +525,7 @@ void ModelViewer::display() {
     // Return early if no valid voxel was selected.
     if (!handle_selection(valid_faces, brush_state, mouse_ray, hit, selected_entity, transform, half_extent)) return;
 
-    const MaterialIndex material_index = editor.windows[Editor::Mode::VOXEL].get<Palette>().get_selected_material_index();
+    const MaterialIndex material_index = editor.systems[Editor::Mode::VOXEL].get<Palette>().get_selected_material_index();
     const Material& material = resource->blas->palette.entries[material_index];
     draw_selection(hit, half_extent, transform, material.albedo.unpack());
 
@@ -460,7 +533,7 @@ void ModelViewer::display() {
 }
 
 void ModelViewer::on_editor_update(const FrameData& time) {
-    editor.windows[Editor::Mode::SCENE].get<Viewport>().update_debug_camera(time);
+    editor.systems[Editor::Mode::SCENE].get<Viewport>().update_debug_camera(time);
 }
 
 }  // namespace tmt

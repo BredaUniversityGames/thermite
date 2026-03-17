@@ -15,6 +15,7 @@
 #include "implot.h"
 #include "editor/editor.hpp"
 #include "editor/windows/viewport.hpp"
+#include "editor/shared/theme.hpp"
 
 namespace tmt {
 
@@ -34,6 +35,9 @@ void ImGuiManager::init() {
     auto& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     io.ConfigWindowsMoveFromTitleBarOnly = true;
+
+    /* Apply custom dark theme */
+    theme::apply_dark_theme();
 
     const auto ini_location = IO::FileLocation(IO::Location::EDITOR, "save_data/imgui.ini");
     /* Needs static storage duration */
@@ -69,20 +73,6 @@ void ImGuiManager::deinit() {
 
 void ImGuiManager::on_sdl_event(internal::SdlEvent& event) {
     ImGui_ImplSDL3_ProcessEvent(&event.event);
-    const auto* viewport = editor.windows[editor.editor_mode].try_get<Viewport>();
-
-    if (viewport == nullptr) {
-        return;
-    }
-
-    if (viewport->get_is_hovered()) {
-        /* Don't let imgui capture input if hovering viewport */
-        event.imgui_capture_mouse = false;
-        event.imgui_capture_keyboard = false;
-    } else {
-        event.imgui_capture_mouse = ImGui::GetIO().WantCaptureMouse;
-        event.imgui_capture_keyboard = ImGui::GetIO().WantCaptureKeyboard;
-    }
 }
 
 void ImGuiManager::on_engine_update(const FrameData&) {}

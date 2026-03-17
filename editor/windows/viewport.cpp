@@ -1,5 +1,6 @@
 #include "viewport.hpp"
 #include <imgui.h>
+#include <imgui_internal.h>
 #include <ImGuizmo.h>
 #include "editor/editor.hpp"
 #include "editor/gizmo.hpp"
@@ -17,23 +18,11 @@
 #include "editor/events/scene.hpp"
 #include "editor/windows/scenes.hpp"
 #include "engine/core/components/ui_component.hpp"
+#include "game_flow.hpp"
 
-void tmt::Viewport::on_editor_start() {
-    // Setup Input Actions
-    register_input_actions();
-}
+#include "editor/imgui/tools/buttons.hpp"
 
-void tmt::Viewport::register_input_actions() {
-    engine.input_map.add_action_keys(Config::SPRINT, Key::LEFT_SHIFT);
-    engine.input_map.add_action_keys(Config::FORWARD, Key::W);
-    engine.input_map.add_action_keys(Config::BACKWARD, Key::S);
-    engine.input_map.add_action_keys(Config::RIGHT, Key::D);
-    engine.input_map.add_action_keys(Config::LEFT, Key::A);
-    engine.input_map.add_action_keys(Config::UP, Key::E);
-    engine.input_map.add_action_keys(Config::DOWN, Key::Q);
-    engine.input_map.add_action_keys(Config::UP, Key::SPACE);
-    engine.input_map.add_action_keys(Config::DOWN, Key::LEFT_CTRL);
-}
+void tmt::Viewport::on_editor_start() {}
 
 void tmt::Viewport::on_editor_update(const tmt::FrameData& frame_data) {
     update_debug_camera(frame_data);
@@ -47,10 +36,13 @@ void tmt::Viewport::before_begin() {
 
     /* Zero margin */
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+
+    y_frame_padding = ImGui::GetStyle().FramePadding.y;
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(ImGui::GetStyle().FramePadding.x, 8.0f));
 }
 
 void tmt::Viewport::end_display() {
-    ImGui::PopStyleVar();
+    ImGui::PopStyleVar(2);
 }
 
 std::string tmt::Viewport::get_title() const {
@@ -59,19 +51,42 @@ std::string tmt::Viewport::get_title() const {
     return scene_name + window_id;
 }
 int tmt::Viewport::get_window_flags() const {
-    if (engine.game_controller.is_running()) return ImGuiWindowFlags_None;
+    int flags = ImGuiWindowFlags_MenuBar;
 
-    const bool is_scene_dirty = editor.windows[editor.editor_mode].get<ScenesWindow>().is_scene_dirty();
-    return is_scene_dirty ? ImGuiWindowFlags_UnsavedDocument : 0;
-};
+    if (!engine.game_controller.is_running()) {
+        const bool is_scene_dirty = editor.systems[editor.editor_mode].get<ScenesWindow>().is_scene_dirty();
+        if (is_scene_dirty) flags |= ImGuiWindowFlags_UnsavedDocument;
+    }
 
-void tmt::Viewport::display() {
+    return flags;
+}
+
+void tmt::Viewport::start_game() {
+    engine.game_controller.start_game();
+}
+
+void tmt::Viewport::end_game() {
+    engine.game_controller.end_game();
+}
+
+void tmt::Viewport::pause_game() {
+    engine.game_controller.pause_game();
+}
+
+void tmt::Viewport::resume_game() {
+    engine.game_controller.resume_game();
+}
+
+void tmt::Viewport::on_inspect() {
+    toolbar();
+
     auto size = ImGui::GetContentRegionAvail();
     size = ImVec2(std::max(size.x, 1.0f), std::max(size.y, 1.0f));
     width = size.x;
     height = size.y;
 
-    const ImVec2 image_pos = ImGui::GetCursorScreenPos();
+    viewport_pos = { ImGui::GetCursorScreenPos().x, ImGui::GetCursorScreenPos().y };
+    is_focused = ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows);
 
     if (height <= 0.f) return;
 
@@ -82,10 +97,11 @@ void tmt::Viewport::display() {
     ImGui::Image((ImTextureRef)engine.renderer.render_view.imgui_viewport, size);
     is_hovered = ImGui::IsItemHovered();
     auto imgui_mouse_pos = ImGui::GetMousePos();
-    mouse_pos.x = imgui_mouse_pos.x - image_pos.x;
-    mouse_pos.y = imgui_mouse_pos.y - image_pos.y;
+    mouse_pos.x = imgui_mouse_pos.x - viewport_pos.x;
+    mouse_pos.y = imgui_mouse_pos.y - viewport_pos.y;
+    viewport_drawlist = ImGui::GetWindowDrawList();
 
-    const std::vector<Entity>& selected_entities = editor.windows[editor.editor_mode].get<Hierarchy>().get_selected_entities();
+    const std::vector<Entity>& selected_entities = editor.systems[editor.editor_mode].get<Hierarchy>().get_selected_entities();
 
     float snap_value = 0.0f;
     const bool ctrl_held = ImGui::IsKeyDown(ImGuiKey_LeftCtrl) || ImGui::IsKeyDown(ImGuiKey_RightCtrl);
@@ -132,24 +148,27 @@ void tmt::Viewport::display() {
     modifiers.uniform_scale = shift_held;    // Shift: maintain aspect ratio
     modifiers.scale_from_center = alt_held;  // Alt: keep center fixed
 
-    const bool gizmo_changed = editor.gizmo.manip(image_pos.x, image_pos.y, width, height, selected_entities, snap_value, modifiers);
+    const bool gizmo_changed = editor.gizmo.manip(viewport_pos.x, viewport_pos.y, width, height, selected_entities, snap_value, modifiers);
     if (gizmo_changed) OnSceneModified::dispatch();
 
-    const bool toolbar_buttons_hovered = toolbar(image_pos);
-
-    selection_logic(imgui_mouse_pos, image_pos, toolbar_buttons_hovered);
+    if (allow_selection) selection_logic(imgui_mouse_pos, viewport_pos, false);
 
     ImGui::EndChild();
 
     if (ImGui::IsItemHovered() && ImGui::IsMouseDown(ImGuiMouseButton_Right)) {
         ImGui::SetWindowFocus();
     }
+    if (is_hovered && engine.input.get_game_preferred_mouse_lock() && engine.game_controller.is_running() && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+        engine.input.lock_mouse(true);
+        engine.input.set_mouse_relative_to_window(true);
+        engine.input.set_game_preferred_mouse_lock(false);
+    }
 }
 
 void tmt::Viewport::snap_to_entity() {
-    const auto* hierarchy = editor.windows[editor.editor_mode].try_get<Hierarchy>();
-    if (hierarchy == nullptr) return;
+    const auto* hierarchy = editor.systems[editor.editor_mode].try_get<Hierarchy>();
     Entity selected_entity = hierarchy->get_first_selected_entity();
+    if (hierarchy == nullptr || !engine.ecs.valid(selected_entity)) return;
 
     auto& transform = engine.ecs.get_component<Transform>(selected_entity);
     glm::vec3 target_pos = transform.get_world_position();
@@ -196,48 +215,131 @@ void tmt::Viewport::snap_to_entity() {
     camera.pitch = glm::degrees(asin(dir.y));
 }
 
-bool tmt::Viewport::toolbar(const ImVec2& image_pos) {
+void tmt::Viewport::toolbar() {
+    if (!ImGui::BeginMenuBar()) return;
+
     ImGuiStyle& style = ImGui::GetStyle();
 
-    float btn_w = ImGui::CalcTextSize(ICON_MS_LANGUAGE).x + style.FramePadding.x * 2.0f;
-    float btn_h = ImGui::GetFrameHeight();
-    float total_w = btn_w * 3.0f + style.ItemSpacing.x;
+    // Override button padding back to normal
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(style.FramePadding.x, y_frame_padding));
 
-    // Small padding from the image border
-    float pad = 4.0f;
-    ImVec2 btn_pos = ImVec2(image_pos.x + width - total_w - pad, image_pos.y + pad);
+    // Vertically center buttons within the (now taller) bar
+    // float bar_height = ImGui::GetCurrentWindow()->MenuBarHeight;
+    // float btn_height = ImGui::GetFrameHeightWithSpacing();  // height with the new smaller padding
+    // float center_y = ImGui::GetCursorPosY() + (bar_height - btn_height) * 0.5f - style.FramePadding.y;
+    // ImGui::SetCursorPosY(center_y);
 
-    bool any_button_hovered = false;
+    /* ===== Left side: Gizmo controls ===== */
 
-    ImGui::SetCursorScreenPos(btn_pos);
-    const char* space_button_icon = editor.gizmo.space ? ICON_MS_LANGUAGE : ICON_MS_VIEW_IN_AR;
-    if (ImGui::Button(space_button_icon, ImVec2(btn_w, btn_h))) {
+    /* Gizmo Space Toggle (Global/Local) */
+    const char* space_label = editor.gizmo.space ? ICON_MS_LANGUAGE " Global" : ICON_MS_VIEW_IN_AR " Local";
+    if (ImGui::Button(space_label)) {
         editor.gizmo.space = static_cast<uint8_t>(!editor.gizmo.space);
     }
-    any_button_hovered |= ImGui::IsItemHovered();
 
-    ImGui::SameLine();
-    const char* mode_button_icon = Gizmo::gizmo_op_icons[editor.gizmo.operation];
-    if (ImGui::Button(mode_button_icon, ImVec2(btn_w, btn_h))) {
-        ++editor.gizmo.operation;
-        if (editor.gizmo.operation == Gizmo::GIZMO_OP_COUNT) editor.gizmo.operation = 0;
+    ImGui::Spacing();
+
+    /* Gizmo Operation Buttons (Translate/Rotate/Scale) */
+    const bool translate_active = (editor.gizmo.operation == 0);
+    const bool rotate_active = (editor.gizmo.operation == 1);
+    const bool scale_active = (editor.gizmo.operation == 2);
+    const bool rect_active = (editor.gizmo.operation == 3);
+
+    if (translate_active) ImGui::PushStyleColor(ImGuiCol_Button, style.Colors[ImGuiCol_ButtonActive]);
+    if (ImGui::Button(ICON_MS_DRAG_PAN "##Translate")) {
+        editor.gizmo.operation = 0;
     }
-    any_button_hovered |= ImGui::IsItemHovered();
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Translate (W)");
+    if (translate_active) ImGui::PopStyleColor();
 
-    ImGui::SameLine();
-    const char* multi_button_icon = editor.gizmo.multiselect_mode ? ICON_MS_FILTER_NONE : ICON_MS_FILTER_1;
-    if (ImGui::Button(multi_button_icon, ImVec2(btn_w, btn_h))) {
-        editor.gizmo.multiselect_mode = static_cast<uint8_t>(!editor.gizmo.multiselect_mode);
+    if (rotate_active) ImGui::PushStyleColor(ImGuiCol_Button, style.Colors[ImGuiCol_ButtonActive]);
+    if (ImGui::Button(ICON_MS_ROTATE_RIGHT "##Rotate")) {
+        editor.gizmo.operation = 1;
     }
-    any_button_hovered |= ImGui::IsItemHovered();
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Rotate (E)");
+    if (rotate_active) ImGui::PopStyleColor();
 
-    return any_button_hovered;
+    if (scale_active) ImGui::PushStyleColor(ImGuiCol_Button, style.Colors[ImGuiCol_ButtonActive]);
+    if (ImGui::Button(ICON_MS_ZOOM_OUT_MAP "##Scale")) {
+        editor.gizmo.operation = 2;
+    }
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Scale (R)");
+    if (scale_active) ImGui::PopStyleColor();
+
+    if (rect_active) ImGui::PushStyleColor(ImGuiCol_Button, style.Colors[ImGuiCol_ButtonActive]);
+    if (ImGui::Button(ICON_MS_ACTIVITY_ZONE "##Bounds")) {
+        editor.gizmo.operation = 3;
+    }
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Bounds (T, UI only)");
+    if (rect_active) ImGui::PopStyleColor();
+
+    ImGui::Spacing();
+
+    /* ===== Center: Game Flow Controls (icon-only) ===== */
+    float icon_btn_width = ImGui::GetFrameHeight();                    // Square buttons
+    float game_flow_width = icon_btn_width * 2 + style.ItemSpacing.x;  // Play + Pause buttons
+
+    float left_cursor = ImGui::GetCursorPosX();
+    float menu_bar_width = ImGui::GetWindowWidth();
+    float center_pos = (menu_bar_width - game_flow_width) * 0.5f;
+
+    // Only center if there's enough space
+    if (center_pos > left_cursor) {
+        ImGui::SetCursorPosX(center_pos);
+    }
+
+    // Play/Stop button
+    if (engine.game_controller.is_playing()) {
+        if (ImGui::Button(ICON_MS_STOP "##Stop")) {
+            // end_game();
+            editor.systems[editor.editor_mode].get<GameFlow>().end_game();
+        }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Stop");
+    } else {
+        if (ImGui::Button(ICON_MS_PLAY_ARROW "##Play")) {
+            editor.systems[editor.editor_mode].get<GameFlow>().start_game();
+        }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Start");
+    }
+
+    // Pause/Resume button (only shown when playing)
+    const bool can_interact = engine.game_controller.is_playing();
+
+    if (can_interact == false) ImGui::BeginDisabled();
+    if (engine.game_controller.is_paused()) {
+        if (ImGui::Button(ICON_MS_PLAY_ARROW "##Resume")) {
+            editor.systems[editor.editor_mode].get<GameFlow>().resume_game();
+        }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Resume");
+    } else {
+        if (ImGui::Button(ICON_MS_PAUSE "##Pause")) {
+            editor.systems[editor.editor_mode].get<GameFlow>().pause_game();
+        }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Pause");
+    }
+    if (can_interact == false) ImGui::EndDisabled();
+
+    /* ===== Right side: Display info ===== */
+    float right_width = ImGui::CalcTextSize(ICON_MS_ASPECT_RATIO " 0000x0000").x + style.ItemSpacing.x + style.FramePadding.x;
+
+    float avail = ImGui::GetContentRegionAvail().x;
+    if (avail > right_width) {
+        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + avail - right_width);
+    }
+
+    /* Resolution display */
+    char res_text[32];
+    snprintf(res_text, sizeof(res_text), ICON_MS_ASPECT_RATIO " %dx%d", static_cast<int>(width), static_cast<int>(height));
+    ImGui::Text("%s", res_text);
+
+    ImGui::PopStyleVar();  // Pop the FramePadding override
+    ImGui::EndMenuBar();
 }
 
-void tmt::Viewport::selection_logic(const ImVec2& imgui_mouse_pos, const ImVec2& image_pos, bool toolbar_buttons_hovered) {
+void tmt::Viewport::selection_logic(const ImVec2& imgui_mouse_pos, const glm::vec2& image_pos, bool toolbar_buttons_hovered) {
     if (!is_hovered || engine.game_controller.is_running()) return;
 
-    auto& hierarchy = editor.windows[Editor::Mode::SCENE].get<Hierarchy>();
+    auto& hierarchy = editor.systems[Editor::Mode::SCENE].get<Hierarchy>();
     const std::vector<Entity>& selected_entities = hierarchy.get_selected_entities();
     auto& imgui_io = ImGui::GetIO();
 
@@ -254,11 +356,11 @@ void tmt::Viewport::selection_logic(const ImVec2& imgui_mouse_pos, const ImVec2&
         ImVec2 delta = imgui_io.MousePos - first_click_pos;
 
         // if delta has moved by 5 pixels, start rectangle logic
-        if (abs(delta.x) + abs(delta.y) > 5) {
+        if (abs(delta.x) + abs(delta.y) > 5 && allow_rectangle_select) {
             using_rect = true;
 
-            ImGui::GetWindowDrawList()->AddRectFilled(first_click_pos, imgui_io.MousePos, ImColor(1.f, 1.f, 1.f, 0.2f));
-            ImGui::GetWindowDrawList()->AddRect(first_click_pos, imgui_io.MousePos, ImColor(1.f, 1.f, 1.f, 0.6f));
+            viewport_drawlist->AddRectFilled(first_click_pos, imgui_io.MousePos, ImColor(1.f, 1.f, 1.f, 0.2f));
+            viewport_drawlist->AddRect(first_click_pos, imgui_io.MousePos, ImColor(1.f, 1.f, 1.f, 0.6f));
 
             glm::ivec2 a = { first_click_pos.x - image_pos.x, first_click_pos.y - image_pos.y };
             glm::ivec2 b = { imgui_mouse_pos.x - image_pos.x, imgui_mouse_pos.y - image_pos.y };
@@ -332,7 +434,7 @@ void tmt::Viewport::selection_logic(const ImVec2& imgui_mouse_pos, const ImVec2&
 }
 
 void tmt::Viewport::force_open_recurse_upwards(Entity entity) {
-    auto& hierarchy = editor.windows[Editor::Mode::SCENE].get<Hierarchy>();
+    auto& hierarchy = editor.systems[Editor::Mode::SCENE].get<Hierarchy>();
 
     hierarchy.add_entity_to_forced_open(entity);
 
@@ -349,13 +451,24 @@ void tmt::Viewport::on_retrieve_mouse_state(MouseOverride& event) {
     event.handled = true;
 }
 
+void tmt::Viewport::on_block_input_request(OnBlockInputEvent& event) {
+    if (is_focused == false) {
+        event.block = true;
+    }
+    event.handled = true;
+}
+
+void tmt::Viewport::on_game_start() {
+    ImGui::SetWindowFocus(get_title().c_str());
+}
+
 void tmt::Viewport::update_debug_camera(const tmt::FrameData& time) {
     if (engine.game_controller.is_running() || is_hovered == false) return;
     // Gather Variables to be used
     auto& input = engine.input;
 
-    const bool enable_mouse_look = input.is_action_pressed(action::RIGHT_CLICK);
-    const bool is_2d_axis_movement = input.is_action_pressed(action::LEFT_CLICK);
+    const bool enable_mouse_look = ImGui::IsMouseDown(ImGuiMouseButton_Right);
+    const bool is_2d_axis_movement = ImGui::IsMouseDown(ImGuiMouseButton_Left);
 
     if (!enable_mouse_look) {
         /* Show mouse cursor */
@@ -375,8 +488,11 @@ void tmt::Viewport::update_debug_camera(const tmt::FrameData& time) {
     Camera& camera = engine.renderer.get_debug_camera();
     Transform& transform = engine.renderer.get_debug_transform();
 
-    const float dx = input.get_mouse_delta_x();
-    const float dy = input.get_mouse_delta_y();
+    // const float dx = ImGui::GetIO().MouseDelta.x;
+    // const float dy = ImGui::GetIO().MouseDelta.y;
+    // printf("Mouse Delta: %f, %f\n", dx, dy);
+    const float dx = input.get_mouse_delta_engine_x();
+    const float dy = input.get_mouse_delta_engine_y();
 
     if (is_2d_axis_movement == false) {
         // Mouse Look
@@ -392,7 +508,7 @@ void tmt::Viewport::update_debug_camera(const tmt::FrameData& time) {
         transform.look_at(transform.get_world_position() + front, glm::vec3(0.0f, 1.0f, 0.0f));
     }
 
-    const float mouse_wheel_y_delta = input.get_mouse_wheel_y();
+    const float mouse_wheel_y_delta = ImGui::GetIO().MouseWheel;
     camera_speed *= std::pow(2.0f, mouse_wheel_y_delta * 0.15f);
     camera_speed = glm::clamp(camera_speed, Config::MIN_BASE_SPEED, Config::MAX_BASE_SPEED);
 
@@ -400,7 +516,7 @@ void tmt::Viewport::update_debug_camera(const tmt::FrameData& time) {
 
     if (is_2d_axis_movement) {
         // 2D Axis Movement
-        const bool sprint = input.is_action_pressed(Config::SPRINT);
+        const bool sprint = ImGui::IsKeyDown(ImGuiKey_LeftShift) || ImGui::IsKeyDown(ImGuiKey_RightShift);
         const glm::vec3 horizontal_move = transform.get_right() * dx * Config::MOUSE_SENSITIVITY * 0.1f;
         const glm::vec3 direction = sprint ? transform.get_forward() : transform.get_up();
         const glm::vec3 vertical_move = direction * -dy * Config::MOUSE_SENSITIVITY * 0.1f;
@@ -408,12 +524,14 @@ void tmt::Viewport::update_debug_camera(const tmt::FrameData& time) {
     } else {
         // Movement (WASD + QE)
         glm::vec3 move_dir = { 0.0f, 0.0f, 0.0f };
-        if (input.is_action_pressed(Config::FORWARD)) move_dir += transform.get_forward();
-        if (input.is_action_pressed(Config::BACKWARD)) move_dir -= transform.get_forward();
-        if (input.is_action_pressed(Config::LEFT)) move_dir -= transform.get_right();
-        if (input.is_action_pressed(Config::RIGHT)) move_dir += transform.get_right();
-        if (input.is_action_pressed(Config::UP)) move_dir += transform.get_up();
-        if (input.is_action_pressed(Config::DOWN)) move_dir -= transform.get_up();
+        if (ImGui::IsKeyDown(ImGuiKey_W)) move_dir += transform.get_forward();
+        if (ImGui::IsKeyDown(ImGuiKey_S)) move_dir -= transform.get_forward();
+        if (ImGui::IsKeyDown(ImGuiKey_A)) move_dir -= transform.get_right();
+        if (ImGui::IsKeyDown(ImGuiKey_D)) move_dir += transform.get_right();
+        if (ImGui::IsKeyDown(ImGuiKey_E)) move_dir += transform.get_up();
+        if (ImGui::IsKeyDown(ImGuiKey_Space)) move_dir += transform.get_up();
+        if (ImGui::IsKeyDown(ImGuiKey_Q)) move_dir -= transform.get_up();
+        if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl)) move_dir -= transform.get_up();
 
         if (glm::length(move_dir) > 0.0f) pos += glm::normalize(move_dir) * camera_speed * time.delta_time;
     }

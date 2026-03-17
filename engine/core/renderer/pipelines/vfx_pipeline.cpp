@@ -6,11 +6,12 @@
 #include <graphite/nodes/raster_node.hh>
 #include <graphite/nodes/compute_node.hh>
 
-#include "engine.hpp"
-#include "core/ecs.hpp"
-#include "core/logger.hpp"
-#include "core/renderer/renderer.hpp"
-#include "core/components/emitter.hpp"
+#include "engine/engine.hpp"
+#include "engine/core/ecs.hpp"
+#include "engine/core/logger.hpp"
+#include "engine/core/renderer/renderer.hpp"
+#include "engine/core/components/emitter.hpp"
+#include "engine/core/resources.hpp"
 
 namespace tmt {
 
@@ -120,6 +121,9 @@ void VfxPipeline::init(GPUAdapter& gpu) {
 
     /* Initialize the Sampler */
     point_sampler = bank.create_sampler("[Particles] Linear Sampler", Filter::Nearest).expect("failed to initialize linear sampler.");
+
+    /* Fallback texture */
+    fallback_texture = engine.resources.load_resource<Texture2D>({ tmt::IO::Location::ENGINE, "missing.png" });
 }
 
 void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
@@ -142,11 +146,14 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
         emitter.should_burst = !emitter.should_burst;
 
         GpuEmitter em {};
-        em.effects_count = emitter.effects.size();
-        em.effects_offset = effects.size();
+        em.effects_count = static_cast<uint32_t>(emitter.effects.size());
+        em.effects_offset = static_cast<uint32_t>(effects.size());
 
         for (auto& effect : emitter.effects) {
             if (!effect.active && !effect.should_burst) continue;
+            
+            /* Use fallback texture if texture is missing */
+            if (!effect.texture) effect.texture = fallback_texture;
 
             effect.should_burst = !effect.should_burst;
 
@@ -166,8 +173,15 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
                 }
             }
 
-            eff.pos = transform.get_world_position() + effect.pos_offset;
-            eff.dir = glm::normalize(effect.dir);
+            // Convert from deg to dir vector
+            const glm::quat local_rot = glm::quat(glm::radians(effect.dir));
+            const glm::vec3 local_dir = local_rot * glm::vec3(0.0f, 0.0f, 1.0f);
+
+            // Get emitter's world rotation
+            const glm::quat world_rot = transform.get_world_rotation();
+
+            eff.pos = transform.get_world_position() + world_rot * effect.pos_offset;
+            eff.dir = glm::normalize(world_rot * local_dir);
             eff.cone_angle = glm::cos(glm::radians(effect.cone_angle));
             eff.start_speed = effect.start_speed;
             eff.end_speed = effect.end_speed;
@@ -238,11 +252,11 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
 
 
     const glm::uvec2 render_res = render_view.gpu_view.resolution;
-    RasterNode& line_pass = render_graph.add_raster_pass("billboard pass", "billboard.vx", "billboard.px")
+    RasterNode& billboard_pass = render_graph.add_raster_pass("billboard pass", "billboard.vx", "billboard.px")
                                 .topology(Topology::TriangleList)
                                 .attribute(AttrFormat::XY32_SFloat)  // Position
                                 .attribute(AttrFormat::XY32_SFloat)  // UVs
-                                .read(render_view.render_view_buffer, ShaderStages::Vertex)
+                                .read(render_view.render_view_buffer, ShaderStages::Vertex | ShaderStages::Pixel)
                                 .read(particle_buffer, ShaderStages::Vertex)
                                 .read(alive_list, ShaderStages::Vertex)
                                 .read(render_view.blue_noise1d->image, ShaderStages::Pixel)
@@ -250,9 +264,10 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
                                 .depth_stencil(render_view.dbuffer.image, true, true)
                                 .load_op_depth(LoadOp::Load)
                                 .load_op_color(LoadOp::Load)
-                                .attach(render_image)
+                                .attach(render_view.lbuffer.image)
+                                .attach(render_view.mbuffer.image)
                                 .raster_extent(render_res.x, render_res.y);
-    line_pass.draw_indirect(billboard_vertices, instanced_draw_args_buffer);
+    billboard_pass.draw_indirect(billboard_vertices, instanced_draw_args_buffer);
 
     /* clang-format on */
 }

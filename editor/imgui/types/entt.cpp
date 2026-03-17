@@ -1,5 +1,14 @@
 #include "entt.hpp"
 
+#include "engine/engine.hpp"
+#include "engine/core/ecs.hpp"
+#include "engine/core/logger.hpp"
+#include "engine/core/components/name.hpp"
+#include "engine/core/components/transform.hpp"
+
+#include "editor/font/icon_lookups.hpp"
+#include "editor/windows/hierarchy.hpp"
+
 /* Check if entity or any of its descendants match the search filter */
 bool entity_matches_search(entt::entity entity, const std::string& filter) {
     if (!tmt::engine.ecs.valid(entity)) return false;
@@ -129,7 +138,7 @@ bool entity_drag_drop_target(entt::entity& value, ImReflect::type_response<entt:
 }
 
 /* Main input implementation for mutable entity reference */
-void tag_invoke(ImReflect::ImInput_t, const char* label, entt::entity& value, ImSettings& settings, ImResponse& response) {
+void tag_invoke(ImReflect::ImInput_t, const char* label, entt::entity& value, ImSettings& /*settings*/, ImResponse& response) {
     auto& entity_response = response.get<entt::entity>();
     const auto entity_id = static_cast<uint32_t>(value);
     const bool is_null = (value == entt::null);
@@ -235,7 +244,7 @@ void tag_invoke(ImReflect::ImInput_t, const char* label, entt::entity& value, Im
 }
 
 /* Const version - read only display */
-void tag_invoke(ImReflect::ImInput_t, const char* label, const entt::entity& value, ImSettings& settings, ImResponse& response) {
+void tag_invoke(ImReflect::ImInput_t, const char* label, const entt::entity& value, ImSettings& /*settings*/, ImResponse& response) {
     auto& entity_response = response.get<entt::entity>();
     const auto entity_id = static_cast<uint32_t>(value);
     const bool is_null = (value == entt::null);

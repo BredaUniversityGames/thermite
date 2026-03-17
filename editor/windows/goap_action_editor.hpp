@@ -17,7 +17,7 @@ namespace tmt {
  *
  * Integrates with GoapActionOverrides.
  */
-class GoapActionEditor : public IWindow {
+class GoapActionEditor : public IWindow<> {
    public:
     constexpr std::string get_title() const override { return "GOAP Actions"; }
 
@@ -25,7 +25,7 @@ class GoapActionEditor : public IWindow {
     void on_editor_update(const FrameData&) override {}
     void on_editor_end() override;
 
-    void display() override;
+    void on_inspect() override;
 };
 
 }  // namespace tmt

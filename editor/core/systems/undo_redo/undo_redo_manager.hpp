@@ -49,7 +49,7 @@ class UndoRedoCollection : public IUndoRedo {
     std::vector<std::shared_ptr<IUndoRedo>> actions;
 };
 
-class UndoRedoManager : public IWindow, public OnEngineEnd {
+class UndoRedoManager : public IWindow<>, public OnEngineEnd {
    public:
     UndoRedoManager() = default;
     ~UndoRedoManager() override = default;
@@ -68,7 +68,7 @@ class UndoRedoManager : public IWindow, public OnEngineEnd {
     // Inherited via OnEngineEnd
     void on_engine_end() override { clear(); }
 
-    void display() override;
+    void on_inspect() override;
 
     void on_editor_start() override;
     void on_editor_update(const tmt::FrameData& time) override;

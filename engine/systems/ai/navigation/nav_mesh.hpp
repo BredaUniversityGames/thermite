@@ -27,6 +27,18 @@ struct NavVoxel {
     VoxelType type = VoxelType::EMPTY;
 };
 
+enum class NavMeshGenerationState {
+    UNINITIALISED,
+    INITIALISING_VOLUME,
+    GENERATING_MESH,
+    FINISHED_LOWER_LOD,
+    GENERATING_NORMALS,
+    AVERAGING_NORMALS1,
+    AVERAGING_NORMALS2,
+    FINISHED_AVERAGING_NORMALS,
+    FINISHED
+};
+
 class NavNode {
    public:
     glm::vec3 local_pos;
@@ -53,21 +65,25 @@ class NavMesh {
         delete buffer_b;
     };
 
+    NavMeshGenerationState generation_state = NavMeshGenerationState::UNINITIALISED;
     std::vector<NavNode>* nodes_mesh;
+    std::vector<NavNode>* generating_nodes = nullptr;
     std::vector<int> path;
 
     tmt::ResourceRef<tmt::VoxelVolume> voxel_volume;
     int lod_level = 0;
     glm::vec3 inflation = glm::vec3(1.0f);
 
-    bool generating = false;
-    bool initialized = false;
+    bool draw_nodes = false;
+    bool draw_gen_nodes = false;
+    bool draw_path = false;
+
    private:
     std::unordered_map<uint32_t, int>* node_map;
     Volume volume;
+
     int generating_lod = 0;
-    int iteration_nmg = 0;
-    bool entered_loop = false;
+    int generation_iteration = 0;
 
     void init() {
         delete node_map;
@@ -82,15 +98,13 @@ class NavMesh {
     std::vector<NavNode>* buffer_a = nullptr;
     std::vector<NavNode>* buffer_b = nullptr;
 
-    std::vector<NavNode>* generating_nodes = nullptr;
-
    public:
     glm::mat4 world_matrix = glm::mat4(1.f);
-    glm::vec3 compute_normal(NavNode& node);
-    
-    void average_neighbor_normals();
+    void compute_normals(int iterations = std::numeric_limits<int>::max());
+
+    void average_neighbor_normals(int iterations = std::numeric_limits<int>::max());
     void generate_mesh_over_time();
-    void generate_mesh(int iterations = 1e34);
+    void generate_mesh(int iterations = std::numeric_limits<int>::max());
     std::vector<int> find_path(const int starting_node_id, const int ending_node_id);
     int find_closest_node(const glm::vec3& position);
     std::optional<glm::vec3> follow_path(glm::vec3 start, glm::vec3 end);
@@ -98,4 +112,4 @@ class NavMesh {
 };
 
 }  // namespace tmt
-TMT_COMPONENT(tmt::NavMesh, "Navigation Mesh", (voxel_volume, lod_level));
+TMT_COMPONENT(tmt::NavMesh, "Navigation Mesh", (voxel_volume, lod_level, draw_nodes, draw_gen_nodes, draw_path));

@@ -11,11 +11,11 @@ inline void tag_invoke(ImReflect::ImInput_t, const char*, tmt::ParticleEffect& e
     ImReflect::Input("Active", effect.active, type_settings, type_response);
     ImReflect::Input("Lifetime", effect.particle_lifetime, type_settings, type_response);
     ImReflect::Input("Pos Offset", effect.pos_offset, type_settings, type_response);
-    ImReflect::Input("Direction", effect.dir, type_settings, type_response);
+    ImReflect::Input("Dir (Degrees)", effect.dir, type_settings, type_response);
     ImReflect::Input("Cone Angle", effect.cone_angle, type_settings, type_response);
     ImReflect::Input("Spawn Count", effect.spawn_count, type_settings, type_response);
     ImReflect::Input("Spawn Interval", effect.spawn_interval, type_settings, type_response);
-    
+
     ImReflect::Input("Animation Speed", effect.anim_speed, type_settings, type_response);
     ImReflect::Input("Dither Scale", effect.dither_scale, type_settings, type_response);
 
@@ -120,8 +120,7 @@ inline void tag_invoke(ImReflect::ImInput_t, const char*, tmt::ParticleEmitter& 
 
             /* Editable name field */
             char name_buf[128];
-            strncpy(name_buf, effect.name.c_str(), sizeof(name_buf));
-            name_buf[sizeof(name_buf) - 1] = '\0';
+            strncpy_s(name_buf, sizeof(name_buf), effect.name.c_str(), _TRUNCATE);
             if (ImGui::InputText("Name", name_buf, sizeof(name_buf))) {
                 effect.name = name_buf;
             }

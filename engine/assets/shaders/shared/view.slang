@@ -5,7 +5,9 @@ import math;
 /* Represents a renderable view in the scene. */
 public struct RenderView {
     /* World-space to clip-space transformation matrix. */
-    public float4x4 world_to_clip;
+    public float4x4 world_to_clip; 
+    /* Prev frame world-space to clip-space transformation matrix. */
+    public float4x4 prev_world_to_clip;
     /* Clip-space to world-space transformation matrix. */
     public float4x4 clip_to_world;
     /* Origin of the view in world-space. */
@@ -20,6 +22,10 @@ public struct RenderView {
     public uint shading_rate_di;
     /* 0 = FullRate, 1 = HalfRate, 2 = QuarterRate */
     public uint shading_rate_gi;
+    /* Current frame jitter offset */
+    public float2 jitter;
+    /* Prev frame jitter offset */
+    public float2 prev_jitter;
 };
 
 /* Holds information about the active scene. */
@@ -32,6 +38,10 @@ public struct SceneView {
     public float3 sun_luminance;
     /* Number of lights present in the scene. */
     public uint light_count;
+    /* Environment map (full) bindless handle. */
+    public uint envmap_full_handle;
+    /* Environment map (filtered) bindless handle. */
+    public uint envmap_filtered_handle;
 };
 
 /* Represents a ray that can be traced. */

@@ -17,9 +17,11 @@
 #include "engine/core/components/prefab.hpp"
 #include "engine/core/components/light.hpp"
 #include "engine/core/components/emitter.hpp"
+#include "engine/core/components/cell_grouper_tag.hpp"
 #include "engine/core/components/ui_component.hpp"
 #include "engine/core/components/image_renderer.hpp"
 #include "engine/core/components/button.hpp"
+#include "engine/core/components/environment.hpp"
 #include "engine/systems/animation/rig_model.hpp"
 #include "engine/tools/uuid.hpp"
 #include "engine/systems/ai/goap/components/goap_agent_type_ref.hpp"
@@ -34,10 +36,12 @@ namespace tmt {
 using SerializeComponents = ComponentRegistry<
 	/* Order in which components are serialized */
 	Prefab,
-	Name, 
+	Name,
 	Transform, 
 	DisableFlag,
+	tmt::LevelCellGrouperTag,
 	VoxelRenderer, 
+	Environment,
 	Camera,
 	VoxelBody,
 	ComponentCollection,
@@ -70,6 +74,7 @@ using InspectComponents = ComponentRegistry<
 	Name, 
 	Transform,
 	VoxelRenderer, 
+	Environment,
 	Camera,
 	VoxelBody,
 	NavMesh,
@@ -96,6 +101,6 @@ using InspectComponents = ComponentRegistry<
 
 }  // namespace tmt
 
-//template <typename T>
-//requires(tmt::SerializeComponents::contains<T>())
-//struct JsonReflect::Detail::delta_serialize<T> : std::true_type {};
+// template <typename T>
+// requires(tmt::SerializeComponents::contains<T>())
+// struct JsonReflect::Detail::delta_serialize<T> : std::true_type {};

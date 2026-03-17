@@ -100,6 +100,10 @@ void Renderer::init() {
     vfx_pipeline.init(gpu);
     ui_pipeline.init(gpu);
 
+    /* Initialize the Samplers */
+    linear_sampler = gpu.get_vram_bank().create_sampler("Linear Sampler").expect("failed to initialize linear sampler.");
+    point_sampler = gpu.get_vram_bank().create_sampler("Point Sampler", Filter::Nearest).expect("failed to initialize linear sampler.");
+
     debug_transform.set_local_position({ 0.0f, 0.0f, -1.0f });
 }
 
@@ -137,11 +141,30 @@ void Renderer::update() {
             .write(render_view.get_render_image())
             .group_size(16, 8)
             .work_size(render_view.gpu_view.resolution.x, render_view.gpu_view.resolution.y);
+    }
+
+    vfx_pipeline.enqueue(render_graph, render_view);
+
+    /* TAA Resolve */
+    if (engine.renderer.display_mode == DisplayMode::DEFAULT) {
+        const uint32_t frame_flag = (render_view.frame_counter & 1) == 0;
+        uint32_t taa_flag = engine.renderer.enable_taa ? 1u : 0u;
+        render_graph.add_compute_pass("TAA Resolve", "taa_resolve.cs")
+            .read(render_view.render_view_buffer)
+            .read(point_sampler)
+            .read(linear_sampler)
+            .read(render_view.mbuffer.image)
+            .read(render_view.lbuffer.image)
+            .write(frame_flag ? render_view.hbuffer1.image : render_view.hbuffer2.image)
+            .read(frame_flag ? render_view.hbuffer2.image : render_view.hbuffer1.image)
+            .write(render_view.get_render_image())
+            .push_constants(&taa_flag, 0, sizeof(uint32_t))
+            .group_size(16, 8)
+            .work_size(render_view.gpu_view.resolution.x, render_view.gpu_view.resolution.y);
         /* clang-format off */
     }
 
     polyline_pipeline.enqueue(render_graph, render_view);
-    vfx_pipeline.enqueue(render_graph, render_view);
     ui_pipeline.enqueue(render_graph, render_view);
 
 #ifdef THERMITE_EDITOR
@@ -174,6 +197,8 @@ void Renderer::end() {
     di_pipeline.deinit(gpu);
     vfx_pipeline.deinit(gpu);
     ui_pipeline.deinit(gpu);
+    bank.destroy(linear_sampler);
+    bank.destroy(point_sampler);
 
     /* Cleanup the VRAM bank & GPU adapter */
     render_graph.deinit().expect("failed to destroy render graph.");
@@ -181,7 +206,11 @@ void Renderer::end() {
     gpu.deinit().expect("failed to destroy gpu adapter.");
 }
 
-Hit Renderer::trace_ray(const Ray& ray) const { return scene_view.bvh.trace(ray); }
+Hit Renderer::trace_ray(const Ray& ray) const { 
+    Hit hit = scene_view.bvh.trace(ray);
+    if (hit) hit.entity = scene_view.entities[(uint32_t)hit.entity];
+    return hit; 
+}
 
 #ifdef THERMITE_EDITOR
 void Renderer::set_imgui(ImGUI* new_imgui) {

@@ -27,6 +27,17 @@ void GoapAgentEditor::on_editor_start() {
         config.SettingsFile = "agent_editor.json";
         g_ContextAgentEditor = ignode::CreateEditor(&config);
     }
+
+    Goap* goap = engine.ecs.systems.try_get<Goap>();
+
+    if (!goap) {
+        Log::warn("GOAP system not active.");
+        return;
+    }
+
+    auto& types = goap->agent_types();
+
+    types.load();
 }
 
 void GoapAgentEditor::on_editor_end() {
@@ -49,7 +60,7 @@ struct AgentTypeEditorState {
  *   - Left panel: list of existing agent types, add/delete functionality
  *   - Right panel: node editor for editing the selected agent type
  */
-void GoapAgentEditor::display() {
+void GoapAgentEditor::on_inspect() {
     static AgentTypeEditorState state;
 
     auto* goap = engine.ecs.systems.try_get<Goap>();

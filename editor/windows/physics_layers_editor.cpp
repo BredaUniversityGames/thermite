@@ -40,13 +40,15 @@ static PhysicsLayerEditorState g_state;
  *   - Split UI into left panel (layer list) and right panel (collision matrix)
  *   - Render interactive controls for creating, renaming, and removing layers
  */
-void PhysicsLayersEditor::display() {
+void PhysicsLayersEditor::on_inspect() {
     auto* physics = engine.ecs.systems.try_get<Physics>();
     if (!physics) return;
 
     PhysicsLayers& layers = physics->layers();
 
     ImGui::Begin("Physics Layers");
+
+    if (ImGui::Button("Save Physics Layers")) physics->layers().save();
 
     ImGui::BeginChild("LayerList", ImVec2(250, 0), true);
     draw_layer_list(layers);
@@ -82,8 +84,7 @@ void PhysicsLayersEditor::draw_layer_list(PhysicsLayers& layers) {
             g_state.selected_layer = i;
 
             // Copy current name into rename buffer
-            strncpy(g_state.rename_buffer, name.c_str(), sizeof(g_state.rename_buffer) - 1);
-            g_state.rename_buffer[sizeof(g_state.rename_buffer) - 1] = '\0';
+            strncpy_s(g_state.rename_buffer, sizeof(g_state.rename_buffer), name.c_str(), _TRUNCATE);
         }
     }
 

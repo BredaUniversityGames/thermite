@@ -31,7 +31,7 @@ void for_each_component(Func&& func) {
 
 void Gameplay::on_start() {
     TMT_ZONE_SCOPED_NS("Start Gameplay Components");
-    for_each_component([](const Entity entity, IGameComponent& component) {
+    for_each_component([](const Entity /* entity */, IGameComponent& component) {
         component.start();
         component.started = true;
     });
@@ -40,7 +40,6 @@ void Gameplay::on_start() {
 void Gameplay::on_update(const tmt::FrameData& time) {
     TMT_ZONE_SCOPED_NS("Update Gameplay Components");
     for_each_component([&](const Entity entity, IGameComponent& component) {
-
         if (to_enable.contains(entity)) {
             component.on_entity_enabled();
             to_enable.erase(entity);
@@ -66,7 +65,7 @@ void Gameplay::on_update(const tmt::FrameData& time) {
 
 void Gameplay::on_end() {
     TMT_ZONE_SCOPED_NS("End Gameplay Components");
-    for_each_component([](const Entity entity, IGameComponent& component) {
+    for_each_component([](const Entity /* entity */, IGameComponent& component) {
         /* end */
         if (component.started) {
             component.end();

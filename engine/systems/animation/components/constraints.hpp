@@ -18,15 +18,14 @@ struct LocalRestPose {
     std::vector<LocalRestPose> children_rest_poses;
 };
 
-struct DampedTransformConstraint{
+struct DampedTransformConstraint {
     float damp = 0.f;
-    LocalRestPose local_rest_pose; // root
+    LocalRestPose local_rest_pose;  // root
 };
-struct TwoBoneIKConstraint
-{
-    //automatically set
+struct TwoBoneIKConstraint {
+    // automatically set
     tmt::Entity parent = entt::null;
-    //automatically set
+    // automatically set
     tmt::Entity root;
 
     tmt::Entity mid;
@@ -35,8 +34,7 @@ struct TwoBoneIKConstraint
     tmt::Entity target_position_entity;
     tmt::Entity bend_position_entity;
 };
-struct EffectorWalkCycle
-{
+struct EffectorWalkCycle {
     // step after how much time?
     float step_time;
 
