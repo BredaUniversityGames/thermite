@@ -190,7 +190,6 @@ void Player::move_player() {
 void Player::update(const tmt::FrameData& time) {
     auto& input = tmt::engine.input;
 
-
     switch (state) {
         case game::PlayerState::FREEMOVING:
             // Handle player movement boost (initial cost)
@@ -216,8 +215,7 @@ void Player::update(const tmt::FrameData& time) {
             // Handle energy drain for boost
             if (boost_was_applied) {
                 float current_speed = glm::length(velocity);
-                energy.value =
-                    glm::min(energy.max_value, energy.value - time.delta_time * boost_cost_per_second_per_additional_speed_above_max * glm::max(0.0f, current_speed - max_speed) );
+                energy.value = glm::min(energy.max_value, energy.value - time.delta_time * boost_cost_per_second_per_additional_speed_above_max * glm::max(0.0f, current_speed - max_speed));
             }
 
             // Handle recharging and draining

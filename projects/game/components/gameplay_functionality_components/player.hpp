@@ -95,10 +95,6 @@ TMT_OBJECT(game::RayCollisionCheck, (ray_distance, collision_layer, bump_force))
 TMT_OBJECT(
     game::Player,
     (camera_sensitivity, acceleration, deceleration, drag, max_speed, boost_max_speed_multiplier, boost_acceleration_multiplier, boost_cost_per_second_per_additional_speed_above_max,
-     boost_initial_cost, health,
-     energy,
-                   energy_drain_per_second, hp_bar_max,
-                   hp_bar_current, energy_bar_max, energy_bar_current, boost_availability,
-                   barge, recharge_distance, ray_check)
+     boost_initial_cost, health, energy, energy_drain_per_second, hp_bar_max, hp_bar_current, energy_bar_max, energy_bar_current, boost_availability, barge, recharge_distance, ray_check)
 
 );
