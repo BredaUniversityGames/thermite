@@ -85,10 +85,11 @@ target_include_directories(JsonReflect
     ${CMAKE_CURRENT_SOURCE_DIR}/ImReflect/imgui/imgui/misc/cpp
 )
 
-# STB Image
-# https://github.com/nothings/stb
+# STB
+# STB Image - https://github.com/nothings/stb
+# STB Truetype - https://github.com/nothings/stb/blob/master/stb_truetype.h
 target_include_directories(thermite-engine
-    PRIVATE "./stb_image"
+    PRIVATE "./stb"
 )
 
 if (THERMITE_EDITOR_BUILD)

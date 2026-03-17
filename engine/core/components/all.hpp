@@ -20,6 +20,7 @@
 #include "engine/core/components/cell_grouper_tag.hpp"
 #include "engine/core/components/ui_component.hpp"
 #include "engine/core/components/image_renderer.hpp"
+#include "engine/core/components/text_renderer.hpp"
 #include "engine/core/components/button.hpp"
 #include "engine/core/components/environment.hpp"
 #include "engine/systems/animation/rig_model.hpp"
@@ -59,6 +60,7 @@ using SerializeComponents = ComponentRegistry<
 	ParticleEmitter,
 	UIComponent,
 	ImageRenderer,
+	TextRenderer,
 	Button,
 	RigModel,
 	GoapAgentType,
@@ -91,6 +93,7 @@ using InspectComponents = ComponentRegistry<
 	ParticleEmitter,
 	UIComponent,
 	ImageRenderer,
+	TextRenderer,
 	Button,
 	RigModel,
 	GoapAgentType,

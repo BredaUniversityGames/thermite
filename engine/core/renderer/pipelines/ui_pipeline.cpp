@@ -8,10 +8,14 @@
 #include <glm/gtx/matrix_decompose.hpp>
 
 #include "engine.hpp"
+#include "engine/systems/ui/text_layout.hpp"
+
 #include "core/ecs.hpp"
 #include "core/logger.hpp"
+#include "core/resources/font.hpp"
 #include "core/components/ui_component.hpp"
 #include "core/components/image_renderer.hpp"
+#include "core/components/text_renderer.hpp"
 
 namespace tmt {
 
@@ -64,6 +68,21 @@ void UiPipeline::init(GPUAdapter& gpu) {
 
     /* Create UI image sampler */
     image_sampler = bank.create_sampler("[UI] Image Sampler").expect("failed to create ui image sampler.");
+
+     /* Create Text Glyphs Buffer */
+    glyphs_buffer =
+        bank.create_buffer("[UI] Glyphs Buffer", BufferUsage::Storage | BufferUsage::TransferDst, MAX_UI_GLYPHS, sizeof(GpuGlyph)).expect("failed to initialise the glyphs buffer.");
+
+    /* Create Glyph Vertex Buffer (shares quad vertices with images) */
+    glyph_vertex_buffer =
+        bank.create_buffer("[UI] Glyph Vertex Buffer", BufferUsage::Vertex | BufferUsage::TransferDst, 6u, sizeof(ImageVertex)).expect("failed to initialise the glyph vertex buffer.");
+    bank.upload_buffer(glyph_vertex_buffer, quad_vertices, 0u, sizeof(quad_vertices));
+
+    /* Create Text sampler with linear filtering for SDF */
+    text_sampler = bank.create_sampler("[UI] Text Sampler", Filter::Linear).expect("failed to create text sampler.");
+
+    /* Initialize font manager for default font */
+    FontManager::init();
 }
 
 /* Decompose a transform world matrix into the attribute we need for image instances. */
@@ -89,6 +108,15 @@ static inline void decompose_matrix(const glm::mat4& m, glm::vec2& pos, glm::vec
 void UiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view) {
     if (!render_ui_pipeline) return;
 
+    enqueue_images(render_graph, render_view);
+
+    /* Render text on top */
+    if (render_text) {
+        enqueue_text(render_graph, render_view);
+    }
+}
+
+void UiPipeline::enqueue_images(RenderGraph& render_graph, RenderView& render_view) {
     /* Temporary list of image instances */
     std::vector<GpuImage> images {};
 
@@ -123,6 +151,8 @@ void UiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view) {
         }
     }
 
+     if (images.empty()) return;
+
     /* Upload the image instances */
     render_graph.upload_buffer(images_buffer, images.data(), 0u, images.size() * sizeof(GpuImage));
     image_count = (uint32_t)images.size();
@@ -151,6 +181,137 @@ void UiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view) {
 
     /* Draw all images with 1 draw call, using instancing & bindless textures. */
     image_pass.draw(image_vertex_buffer, 6u, 0u, image_count);
+}
+
+void UiPipeline::enqueue_text(RenderGraph& render_graph, RenderView& render_view) {
+    std::vector<GpuGlyph> glyphs {};
+
+    { /* Collect all the text in the scene (Game ECS) */
+        const entt::basic_view view = engine.ecs.view<TextRenderer, UIComponent, Transform>();
+
+        // sort by z order
+        std::vector<entt::entity> sorted_entities(view.begin(), view.end());
+        std::sort(sorted_entities.begin(), sorted_entities.end(), [&view](entt::entity a, entt::entity b) {
+            return view.get<Transform>(a).get_world_position().z < view.get<Transform>(b).get_world_position().z;
+        });
+
+        for (const auto entity : sorted_entities) {
+            /* Get the components for this entity */
+            auto& text_renderer = engine.ecs.get_component<TextRenderer>(entity);
+            const auto& ui_component = engine.ecs.get_component<UIComponent>(entity);
+            const auto& transform = engine.ecs.get_component<Transform>(entity);
+
+            /* Skip empty text */
+            if (text_renderer.text.empty()) continue;
+
+            /* Sync max_width/max_height with UIComponent size if enabled */
+            if (text_renderer.use_ui_component_size) {
+                text_renderer.max_width = ui_component.size.x;
+                text_renderer.max_height = ui_component.size.y;
+            }
+
+            /* Get the font (use default if none specified) */
+            const Font* font = nullptr;
+            if (text_renderer.font && text_renderer.font.resource) {
+                font = text_renderer.font.resource.get();
+            }
+            if (!font || !font->is_valid()) {
+                font = FontManager::get_default_font().get();
+            }
+            if (!font || !font->is_valid()) {
+                continue; /* No font available */
+            }
+
+            /* Calculate the base position from transform */
+            glm::vec2 base_pos = glm::vec2(transform.get_world_position());
+            glm::vec2 anchor_offset = AnchorHelper::calculate_anchor_offset(entity);
+            base_pos += anchor_offset;
+
+            /* Apply pivot offset */
+            glm::vec2 pivot_offset = ui_component.pivot * ui_component.size;
+            base_pos -= pivot_offset;
+
+            /* Calculate container size for text layout */
+            glm::vec2 container_size = ui_component.size;
+
+            /* Perform text layout */
+            TextLayoutResult layout = TextLayout::layout(text_renderer, font, container_size);
+
+            /* Convert layout glyphs to GPU format */
+            for (const auto& glyph : layout.glyphs) {
+                if (glyphs.size() >= MAX_UI_GLYPHS) {
+                    Log::warn(Log::Scope::RENDERER, "Max UI glyphs reached ({})", MAX_UI_GLYPHS);
+                    break;
+                }
+
+                GpuGlyph& gpu_glyph = glyphs.emplace_back();
+
+                /* Position and size */
+                gpu_glyph.pos_size.x = base_pos.x + glyph.position.x;
+                gpu_glyph.pos_size.y = base_pos.y + glyph.position.y;
+                gpu_glyph.pos_size.z = glyph.size.x;
+                gpu_glyph.pos_size.w = glyph.size.y;
+
+                /* UV coordinates */
+                gpu_glyph.uv_rect = glyph.uv_rect;
+
+                /* Colors */
+                gpu_glyph.color = glyph.color;
+                gpu_glyph.outline_color = glyph.outline_color;
+
+                /* SDF parameters */
+                gpu_glyph.params.x = *reinterpret_cast<const float*>(&glyph.atlas_index);
+                gpu_glyph.params.y = glyph.outline_width;
+                gpu_glyph.params.z = glyph.softness;
+                gpu_glyph.params.w = glyph.boldness;
+
+                /* Shadow parameters */
+                gpu_glyph.shadow_params.x = text_renderer.shadow_offset.x;
+                gpu_glyph.shadow_params.y = text_renderer.shadow_offset.y;
+                gpu_glyph.shadow_params.z = text_renderer.shadow_softness;
+                gpu_glyph.shadow_params.w = 0.0f;
+                gpu_glyph.shadow_color = text_renderer.shadow_color;
+
+                /* Glow parameters */
+                gpu_glyph.glow_params.x = text_renderer.glow_width;
+                gpu_glyph.glow_params.y = 0.0f;
+                gpu_glyph.glow_params.z = 0.0f;
+                gpu_glyph.glow_params.w = 0.0f;
+                gpu_glyph.glow_color = text_renderer.glow_color;
+            }
+        }
+    }
+
+    if (glyphs.empty()) return;
+
+    /* Upload the glyph instances */
+    render_graph.upload_buffer(glyphs_buffer, glyphs.data(), 0u, glyphs.size() * sizeof(GpuGlyph));
+    glyph_count = (uint32_t)glyphs.size();
+
+    /* Get Render Image */
+    const BindHandle render_image = render_view.get_render_image();
+
+    /* Get Render Resolution */
+    const glm::uvec2 render_res = render_view.gpu_view.resolution;
+
+    /* Text rendering pass */
+    /* clang-format off */
+    RasterNode& text_pass = render_graph.add_raster_pass("ui text", "ui/ui_text.vx", "ui/ui_text.px")
+        /* Vertex stage */
+        .topology(Topology::TriangleList)
+        .attribute(AttrFormat::XYZ32_SFloat) /* Position */
+        .attribute(AttrFormat::XY32_SFloat)  /* UV */
+        .read(render_view.render_view_buffer, ShaderStages::Vertex)
+        /* Pixel stage */
+        .read(glyphs_buffer, ShaderStages::Vertex | ShaderStages::Pixel)
+        .read(text_sampler, ShaderStages::Pixel)
+        .alpha_blending(true)
+        .attach(render_image)
+        .raster_extent(render_res.x, render_res.y);
+    /* clang-format on */
+
+    /* Draw all glyphs with 1 draw call, using instancing & bindless textures. */
+    text_pass.draw(glyph_vertex_buffer, 6u, 0u, glyph_count);
 }
 
 void UiPipeline::deinit(GPUAdapter& gpu) {
