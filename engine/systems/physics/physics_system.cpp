@@ -24,6 +24,12 @@ void Physics::on_start() {
         vb.rotation = transform.get_world_rotation();
 
         if (vb.type == VoxelBody::DYNAMIC) {
+            if (renderer.resource.resource == nullptr) {
+                Name& name = engine.ecs.get_component<Name>(entity);
+                Log::error("No volume found on `{}`, could not initialize the voxel body.", name.name);
+                continue;
+            }
+
             initialize_voxel_body(vb, *renderer.resource.resource);
             if (vb.gravity <= 0.0f) {
                 vb.type = VoxelBody::SLEEPING;
@@ -116,6 +122,12 @@ void Physics::on_update(const FrameData&) {
             vb.rotation = transform.get_world_rotation();
 
             if (vb.type == VoxelBody::DYNAMIC) {
+                if (vr.resource.resource == nullptr) {
+                    Name& name = engine.ecs.get_component<Name>(entity);
+                    Log::error("No volume found on `{}`, could not initialize the voxel body.", name.name);
+                    continue;
+                }
+
                 initialize_voxel_body(vb, *vr.resource.resource);
                 if (vb.gravity <= 0.0f) {
                     vb.type = VoxelBody::SLEEPING;
