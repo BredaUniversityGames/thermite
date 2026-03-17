@@ -27,30 +27,43 @@ void game::MediumEnemy::update(const tmt::FrameData& time) {
     float dist = glm::length(player_pos - walking_transform.get_world_position());
     // Stop chasing only if player is too far
     if (dist > aggro_range) {
-        ws->facts[std::hash<std::string>()("m_in_aggro_range")] = false;
+        // ws->facts[tmt::FactId("m_in_aggro_range").id] = false;
+        ws->set_fact(tmt::FactId("m_in_aggro_range"), false);
     }
+
     // in chase range, update world state
     if (dist < aggro_range) {
-        ws->facts[std::hash<std::string>()("m_in_aggro_range")] = true;
+        // ws->facts[tmt::FactId("m_in_aggro_range").id] = true;
+        ws->set_fact(tmt::FactId("m_in_aggro_range"), true);
     }
+
     if (dist > laser_range) {
-        ws->facts[std::hash<std::string>()("m_in_laser_range")] = false;
+        // ws->facts[tmt::FactId("m_in_laser_range").id] = false;
+        ws->set_fact(tmt::FactId("m_in_laser_range"), false);
     }
-    // in chase range, update world state
+
+    // in laser range, update world state
     if (dist < laser_range) {
-        ws->facts[std::hash<std::string>()("m_in_laser_range")] = true;
+        // ws->facts[tmt::FactId("m_in_laser_range").id] = true;
+        ws->set_fact(tmt::FactId("m_in_laser_range"), true);
     }
+
     missile_timer += time.delta_time;
     if (missile_timer > missile_cooldown) {
-        ws->facts[std::hash<std::string>()("m_missiles_ready")] = true;
+        // ws->facts[tmt::FactId("m_missiles_ready").id] = true;
+        ws->set_fact(tmt::FactId("m_missiles_ready"), true);
     } else {
-        ws->facts[std::hash<std::string>()("m_missiles_ready")] = false;
+        // ws->facts[tmt::FactId("m_missiles_ready").id] = false;
+        ws->set_fact(tmt::FactId("m_missiles_ready"), false);
     }
+
     laser_timer += time.delta_time;
     if (laser_timer > laser_cooldown) {
-        ws->facts[std::hash<std::string>()("m_laser_ready")] = true;
+        // ws->facts[tmt::FactId("m_laser_ready").id] = true;
+        ws->set_fact(tmt::FactId("m_laser_ready"), true);
     } else {
-        ws->facts[std::hash<std::string>()("m_laser_ready")] = false;
+        // ws->facts[tmt::FactId("m_laser_ready").id] = false;
+        ws->set_fact(tmt::FactId("m_laser_ready"), false);
     }
 
     // height correction

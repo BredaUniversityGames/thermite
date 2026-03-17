@@ -74,12 +74,13 @@ void FireLaser::on_tick(tmt::Entity enemy_entity, float dt) {
         enemy.laser_timer = 0.0f;
         auto ws = tmt::engine.ecs.try_get_component<tmt::WorldState>(enemy_entity);
         if (!ws) return;
-        ws->facts[std::hash<std::string>()("m_laser_ready")] = false;
+        // ws->facts[std::hash<std::string>()("m_laser_ready")] = false;
+        ws->set_fact(tmt::FactId("m_laser_ready"), false);
     }
 
     tmt::engine.polyline.use_line_width(10.0f);
     // tmt::engine.polyline.draw_line(enemy_entity_pos, enemy_entity_pos + direction * 50.0f);
-    //  draw spheres along the line for better visibility
+    // draw spheres along the line for better visibility
     for (float i = 0; i < 50.0f; i += 0.1f) {
         tmt::engine.polyline.draw_sphere(enemy_entity_pos + direction * i, .01f);
     }

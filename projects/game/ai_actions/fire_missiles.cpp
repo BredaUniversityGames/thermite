@@ -62,7 +62,8 @@ void FireMissiles::on_tick(tmt::Entity enemy_entity, float dt) {
         enemy.missile_timer = interval_timer * enemy.missile_burst;
         auto ws = tmt::engine.ecs.try_get_component<tmt::WorldState>(enemy_entity);
         if (!ws) return;
-        ws->facts[std::hash<std::string>()("m_missiles_ready")] = false;
+        // ws->facts[std::hash<std::string>()("m_missiles_ready")] = false;
+        ws->set_fact(tmt::FactId("m_missiles_ready"), false);
     }
 }
 
