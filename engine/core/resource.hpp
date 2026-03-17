@@ -31,7 +31,7 @@ class Resource {
     virtual bool fallback(const FallbackReason reason) {
         (void)reason;
         tmt::Log::error(tmt::Log::Scope::ENGINE, "[Resource] No fallback implemented for resource with fallback reason: {}", reason);
-        return false;
+        return true;
     }
 
     bool is_loaded() const { return loaded; }

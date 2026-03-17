@@ -60,12 +60,12 @@ class Resources {
         // load() success checking
         const bool file_exists = resource->last_modified_time != TimeStamp::min();
         if (file_exists == false) {
-            return fallback(file_location, resource);
-        }
-
-        const bool load_success = resource->load();
-        if (load_success == false) {
-            return fallback(file_location, resource);
+            fallback(file_location, resource);
+        } else {
+            const bool load_success = resource->load();
+            if (load_success == false) {
+                fallback(file_location, resource);
+            }
         }
         resource->loaded = true;
 
@@ -95,7 +95,7 @@ class Resources {
         std::shared_ptr<T> resource = std::make_shared<T>(file_resource.resource, std::forward<Args>(args)...);
 
         if (!resource->load()) {
-            return fallback(file_resource.file_location, resource);
+            fallback(file_resource.file_location, resource);
         }
         resource->loaded = true;
 
@@ -140,7 +140,7 @@ class Resources {
     std::unordered_map<IO::FileLocation, ResourceCollection, IO::FileLocationHash> resources;
 
     template <typename T>
-    ResourceRef<T> fallback(const tmt::IO::FileLocation& file_location, std::shared_ptr<T>& resource) {
+    static void fallback(const tmt::IO::FileLocation& file_location, std::shared_ptr<T>& resource) {
         tmt::Log::error(tmt::Log::Scope::ENGINE, "[Resources] Failed to load resource: {}", file_location);
 
         const bool fallback_success = resource->fallback(FallbackReason::LOAD_FAILED);
@@ -151,7 +151,6 @@ class Resources {
 
         resource->loaded = fallback_success;
         ResourceRef<T> ref(file_location);
-        return ref;
     }
 };
 
