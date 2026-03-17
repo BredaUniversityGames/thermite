@@ -73,9 +73,13 @@ class Player : public tmt::GameComponent<Player> {
    private:
     void refill(float delta);
     void drain_energy(float delta);
+    void apply_boost();
+    void reset_boost();
     PlayerState state = PlayerState::FREEMOVING;
     glm::vec3 velocity = { 0.0f, 0.0f, 0.0f };
     glm::vec3 input_dir { 0.0f };
+    float max_speed_calculated = max_speed;
+    float acceleration_calculated = acceleration;
 };
 
 }  // namespace game

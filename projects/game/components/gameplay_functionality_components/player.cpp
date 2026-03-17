@@ -145,7 +145,7 @@ void Player::move_player() {
     if (glm::length(input_dir) > 0.0f) {
         // Accelerate in input direction
         input_dir = glm::normalize(input_dir);
-        velocity += input_dir * acceleration * delta_time;
+        velocity += input_dir * acceleration_calculated * delta_time;
     } else {
         // Apply drag when no input
         float current_speed = glm::length(velocity);
@@ -168,8 +168,8 @@ void Player::move_player() {
 
     // Clamp velocity to max speed
     float current_speed = glm::length(velocity);
-    if (current_speed > max_speed) {
-        velocity = glm::normalize(velocity) * max_speed;
+    if (current_speed > max_speed_calculated) {
+        velocity = glm::normalize(velocity) * max_speed_calculated;
     }
 
     // Stop or even bump in the opposite direction of velocity
@@ -278,6 +278,16 @@ void Player::on_attach(const AttachEvent& event) {
     } else {
         state = PlayerState::FREEMOVING;
     }
+}
+
+void Player::apply_boost() {
+    max_speed_calculated = max_speed * boost_multiplicator;
+    acceleration_calculated = acceleration * boost_multiplicator;
+}
+
+void Player::reset_boost() {
+    max_speed_calculated = max_speed;
+    acceleration_calculated = acceleration;
 }
 
 }  // namespace game
