@@ -23,7 +23,7 @@ class GameFlow : public IEditorSystem<>, public OnGameEnd, public OnPreLoadScene
     void on_editor_update(const tmt::FrameData& time) override;
     void on_editor_end() override;
 
-    const bool is_fullscreen() const { return fullscreen; }
+    bool is_fullscreen() const { return fullscreen; }
 
    private:
     SceneIndex working_scene = NULL_SCENE;
