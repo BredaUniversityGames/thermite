@@ -107,29 +107,6 @@ glm::vec3 SteeringSystem::arrive(const SteeringAgent& agent, const glm::vec3& po
  *  - Project target forward by wanderDistance.
  *  - Calculate desired velocity toward the resulting world target.
  */
-//glm::vec3 SteeringSystem::wander(const SteeringAgent& agent, const glm::vec3& position, const VoxelBody& body, WanderData wander, float dt) {
-//    glm::vec3 velocity_dir = glm::normalize(body.velocity);
-//    if (glm::length2(body.velocity) < 0.0001f) {
-//        // if agent is almost stationary, pick some default forward
-//        velocity_dir = glm::vec3(0, 0, 1);
-//    }
-//
-//    // Add random jitter to wanderTarget
-//    glm::vec3 jitter(
-//        (glm::linearRand(-1.0f, 1.0f)) * wander.wander_jitter * dt, (glm::linearRand(-1.0f, 1.0f)) * wander.wander_jitter * dt, (glm::linearRand(-1.0f, 1.0f)) * wander.wander_jitter * dt
-//    );
-//    wander.wander_target += jitter;
-//
-//    wander.wander_target = glm::normalize(wander.wander_target) * wander.wander_radius;
-//
-//    // Calculate target in world space
-//    glm::vec3 target_in_front = velocity_dir * wander.wander_distance;
-//    glm::vec3 world_target = position + target_in_front + wander.wander_target;
-//
-//    // Seek toward worldTarget
-//    glm::vec3 desired_velocity = glm::normalize(world_target - position) * agent.params->max_speed;
-//    return desired_velocity - body.velocity;
-//}
 glm::vec3 SteeringSystem::wander(const SteeringAgent& agent, const glm::vec3& position, const VoxelBody& body, WanderData wander, float dt) {
     glm::vec3 velocity_dir = glm::normalize(body.velocity);
     if (glm::length2(body.velocity) < 0.0001f) {
