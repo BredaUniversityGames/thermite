@@ -88,11 +88,11 @@ void GameFlow::lock_mouse() {
 
 void GameFlow::on_game_end() {
     unlock_mouse();
+    editor.save_data.open_windows = open_windows_before;
+    fullscreen = false;
 
     if (has_ended == false) return;
     engine.scenes.enqueue_scene(working_scene);
-    editor.save_data.open_windows = open_windows_before;
-    fullscreen = false;
 }
 
 void GameFlow::on_pre_load_scene(PreLoadSceneEvent& event) {

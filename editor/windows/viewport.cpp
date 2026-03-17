@@ -57,10 +57,6 @@ int tmt::Viewport::get_window_flags() const {
         const bool is_scene_dirty = editor.systems[editor.editor_mode].get<ScenesWindow>().is_scene_dirty();
         if (is_scene_dirty) flags |= ImGuiWindowFlags_UnsavedDocument;
     }
-    if (engine.game_controller.is_running()) {
-        const bool fullscreen = editor.systems[editor.editor_mode].get<GameFlow>().is_fullscreen();
-        if (fullscreen) flags |= ImGuiWindowFlags_NoTitleBar;
-    }
 
     return flags;
 }
