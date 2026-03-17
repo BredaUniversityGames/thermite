@@ -20,6 +20,7 @@
 #include "ai_actions/wander.hpp"
 #include "ai_actions/fire_missiles.hpp"
 #include "ai_actions/fire_laser.hpp"
+#include "ai_actions/get_in_lazer_range.hpp"
 
 // Enemies
 #include "components/gameplay_functionality_components/enemy_components/medium_enemy.hpp"
@@ -180,12 +181,13 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
         action_reg.register_action(std::make_unique<Wander>());
         action_reg.register_action(std::make_unique<FireMissiles>());
         action_reg.register_action(std::make_unique<FireLaser>());
+        action_reg.register_action(std::make_unique<GetInLazerRange>());
 
         {
             tmt::GoapGoal chase;
             chase.name = "g_ChasePlayer";
-            chase.desired_state = { { tmt::FactId("m_in_laser_range"), true } };
-            chase.priority = 10;
+            chase.desired_state = { { tmt::FactId("m_get_close_to_player"), true } };
+            chase.priority = 5;
             chase.valid = true;
 
             goal_reg.register_goal("g_ChasePlayer", chase);
@@ -208,6 +210,16 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
             kill_player.valid = true;
 
             goal_reg.register_goal("g_KillPlayer", kill_player);
+        }
+
+        {
+            tmt::GoapGoal get_in_lazer_range;
+            get_in_lazer_range.name = "g_GetInLazerrRange";
+            get_in_lazer_range.desired_state = { { tmt::FactId("m_in_laser_range"), true } };
+            get_in_lazer_range.priority = 10;
+            get_in_lazer_range.valid = true;
+
+            goal_reg.register_goal("g_GetInLazerrRange", get_in_lazer_range);
         }
     }
 

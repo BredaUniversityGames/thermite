@@ -262,10 +262,18 @@ bool Goap::update_plan(Entity entity, GoapAgent& agent, WorldState& ws) {
     };
 
     // Interrupt current action if any
-    if (agent.current_action) {
+    /*if (agent.current_action) {
         agent.current_action->on_interrupt(entity);
         agent.current_action->is_running = false;
         agent.current_action = nullptr;
+    }*/
+    if (agent.current_action) {
+        // If we're replanning or the plan changed, interrupt
+        if (agent.needs_replan || agent.plan[agent.current_index] != agent.current_action) {
+            agent.current_action->on_interrupt(entity);
+            agent.current_action->is_running = false;
+            agent.current_action = nullptr;
+        }
     }
 
     agent.clear_plan();
