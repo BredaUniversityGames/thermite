@@ -276,6 +276,8 @@ void Editor::main_menu_bar() {
                 engine.renderer.enable_taa = !engine.renderer.enable_taa;
             }
 
+            ImGui::SliderFloat("Bloom Radius", &engine.renderer.bloom_radius, 0.0f, 1.0f);
+
             ImGui::EndMenu();
         }
 

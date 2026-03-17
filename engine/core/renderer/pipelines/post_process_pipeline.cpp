@@ -5,12 +5,16 @@
 #include <graphite/render_graph.hh>
 #include <graphite/nodes/compute_node.hh>
 
+#include "engine.hpp"
+#include "core/renderer/renderer.hpp"
+
 namespace tmt {
 
 void PostProcessPipeline::init(GPUAdapter& gpu) {
     VRAMBank& bank = gpu.get_vram_bank();
 
     down_sampler = bank.create_sampler("Down Sampler", Filter::Linear, AddressMode::ClampToBorder).expect("failed to create down sampler.");
+    up_sampler = bank.create_sampler("Up Sampler", Filter::Linear, AddressMode::ClampToEdge).expect("failed to create up sampler.");
 }
 
 void PostProcessPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
@@ -42,12 +46,12 @@ void PostProcessPipeline::enqueue(RenderGraph& render_graph, RenderView render_v
         } upsample_constants;
 
         upsample_constants.curr_mip_level = curr_mip;
-        upsample_constants.bloom_radius = 0.85f;
+        upsample_constants.bloom_radius = engine.renderer.bloom_radius;
 
         /* clang-format off */
         render_graph.add_compute_pass("Bloom Upsample", "bloom/upsample.cs")
                     .read(render_view.render_view_buffer)
-                    .read(down_sampler)
+                    .read(up_sampler)
                     .write(render_view.lbuffer.images[curr_mip])
                     .read(render_view.lbuffer.images[curr_mip + 1])
                     .push_constants(&upsample_constants, 0u, sizeof(UpsampleConstants))
@@ -57,20 +61,22 @@ void PostProcessPipeline::enqueue(RenderGraph& render_graph, RenderView render_v
     }
 
     /* Color Grading and Tonemapping */
-    /* clang-format off */
-    render_graph.add_compute_pass("Color Grading and Tonemapping", "cg_tonemap.cs")
-        //.read(render_view.render_view_buffer)
-        .read(render_view.lbuffer.images[0])
-        .write(render_view.get_render_image())
-        .group_size(16, 8)
-        .work_size(render_view.gpu_view.resolution.x, render_view.gpu_view.resolution.y);
-    /* clang-format on */
+    {
+        /* clang-format off */
+        render_graph.add_compute_pass("Color Grading and Tonemapping", "cg_tonemap.cs")
+                    .read(render_view.lbuffer.images[0])
+                    .write(render_view.get_render_image())
+                    .group_size(16, 8)
+                    .work_size(render_view.gpu_view.resolution.x, render_view.gpu_view.resolution.y);
+        /* clang-format on */
+    }
 }
 
 void PostProcessPipeline::deinit(GPUAdapter& gpu) {
     VRAMBank& bank = gpu.get_vram_bank();
 
     bank.destroy(down_sampler);
+    bank.destroy(up_sampler);
 }
 
 }  // namespace tmt

@@ -22,6 +22,7 @@ class PostProcessPipeline {
     void deinit(GPUAdapter& gpu);
 
     Sampler down_sampler {};
+    Sampler up_sampler {};
 };
 
 }  // namespace tmt
