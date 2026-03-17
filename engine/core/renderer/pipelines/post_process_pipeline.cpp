@@ -7,6 +7,7 @@
 
 #include "engine.hpp"
 #include "core/renderer/renderer.hpp"
+#include "tools/player_data.hpp"
 
 namespace tmt {
 
@@ -40,13 +41,15 @@ void PostProcessPipeline::enqueue(RenderGraph& render_graph, RenderView render_v
         const uint32_t mip_w = shading_res.x >> curr_mip;
         const uint32_t mip_h = shading_res.y >> curr_mip;
 
+        RendererSettings& settings = engine.player_data.get<RendererSettings>("RendererSettings");
+
         struct UpsampleConstants {
             uint32_t curr_mip_level;
             float bloom_radius;
         } upsample_constants;
 
         upsample_constants.curr_mip_level = curr_mip;
-        upsample_constants.bloom_radius = engine.renderer.bloom_radius;
+        upsample_constants.bloom_radius = settings.bloom_radius;
 
         /* clang-format off */
         render_graph.add_compute_pass("Bloom Upsample", "bloom/upsample.cs")

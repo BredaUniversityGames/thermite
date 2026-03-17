@@ -1,9 +1,5 @@
 #pragma once
 
-#include <vector>
-
-#include <glm/gtc/quaternion.hpp>
-
 #include "render_view.hpp"
 #include "scene_view.hpp"
 
@@ -25,6 +21,10 @@ enum class DisplayMode : uint32_t {
     ILLUMINANCE,   /* Visualize illuminance from the cache. */
     CACHE,         /* Visualize cache info. */
     MOTIONVECTORS, /* Visualize motion vectors. */
+};
+
+struct RendererSettings {
+    float bloom_radius = 0.25f;
 };
 
 class Renderer {
@@ -90,3 +90,5 @@ class Renderer {
 };
 
 }  // namespace tmt
+
+TMT_OBJECT(tmt::RendererSettings, (bloom_radius));
