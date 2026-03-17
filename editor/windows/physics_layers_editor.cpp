@@ -40,13 +40,15 @@ static PhysicsLayerEditorState g_state;
  *   - Split UI into left panel (layer list) and right panel (collision matrix)
  *   - Render interactive controls for creating, renaming, and removing layers
  */
-void PhysicsLayersEditor::display() {
+void PhysicsLayersEditor::on_inspect() {
     auto* physics = engine.ecs.systems.try_get<Physics>();
     if (!physics) return;
 
     PhysicsLayers& layers = physics->layers();
 
     ImGui::Begin("Physics Layers");
+
+    if (ImGui::Button("Save Physics Layers")) physics->layers().save();
 
     ImGui::BeginChild("LayerList", ImVec2(250, 0), true);
     draw_layer_list(layers);

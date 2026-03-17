@@ -18,6 +18,7 @@ class Salvo;
 class Scenes;
 class GameComponentRegistry;
 class Polyline;
+class PlayerData;
 
 class Engine {
    public:
@@ -58,11 +59,13 @@ class Engine {
     Scenes& scenes;
     GameComponentRegistry& component_registry;
     Polyline& polyline;
+    PlayerData& player_data;
 
     GameController game_controller;
 
     struct Config {
         constexpr static float FIXED_TIME_STEP = 1.0f / 60.0f;
+        constexpr static uint32_t MAX_FIXED_UPDATES_PER_FRAME = 3;
     };
 
     const FrameData& frame_data() const;
@@ -86,6 +89,9 @@ class Engine {
     void pause_game();
     void resume_game();
     void end_game();
+
+    void setup_signals();
+    static void on_crash_signal(int signal);
 };
 
 /* Singleton */

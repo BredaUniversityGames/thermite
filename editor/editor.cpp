@@ -37,6 +37,7 @@
 #include "editor/windows/goap_debugger.hpp"
 #include "editor/windows/goap_action_editor.hpp"
 #include "editor/windows/goap_agent_editor.hpp"
+#include "editor/windows/steering_data_editor.hpp"
 #include "editor/windows/physics_layers_editor.hpp"
 #include "editor/windows/font_control.hpp"
 #include "editor/windows/profiler_tracy.hpp"
@@ -57,6 +58,8 @@
 #include "editor/windows/editor_settings.hpp"
 #include "editor/windows/rig_state_controller.hpp"
 #include "editor/windows/ui.hpp"
+#include "editor/windows/level_editor.hpp"
+#include "editor/windows/player_data.hpp"
 
 /* Singleton */
 tmt::Editor tmt::editor;
@@ -84,63 +87,67 @@ void Editor::switch_mode(Mode new_mode, const std::any& meta_data) {
 void Editor::on_engine_init(const ApplicationSpecs&) {
     tmt::Log::info("Starting Thermite Editor...");
     imgui_manager.init();
-    save_data.load();
     gizmo.init();
 
     mode_handlers[Mode::SCENE] = std::make_unique<SceneMode>();
     mode_handlers[Mode::VOXEL] = std::make_unique<VoxelMode>();
     mode_handlers[Mode::PREFAB] = std::make_unique<PrefabMode>();
 
-    windows[Mode::SCENE].add<Hierarchy>();
-    windows[Mode::SCENE].add<GameFlow>();
-    windows[Mode::SCENE].add<Inspector>();
-    windows[Mode::SCENE].add<Viewport>();
-    windows[Mode::SCENE].add<Profiler>();
-    windows[Mode::SCENE].add<GoapDebugger>();
-    windows[Mode::SCENE].add<GoapActionEditor>();
-    windows[Mode::SCENE].add<GoapAgentEditor>();
-    windows[Mode::SCENE].add<PhysicsLayersEditor>();
-    windows[Mode::SCENE].add<FontControl>();
-    windows[Mode::SCENE].add<AudioMixer>();
-    windows[Mode::SCENE].add<ScenesWindow>();
-    windows[Mode::SCENE].add<AssetBrowser>();
-    windows[Mode::SCENE].add<Console>();
-    windows[Mode::SCENE].add<ImguiDemo>();
-    windows[Mode::SCENE].add<MotionMathPreview>();
-    windows[Mode::SCENE].add<DebugLines>();
-    windows[Mode::SCENE].add<EcsInspector>();
-    windows[Mode::SCENE].add<Rendering>();
-    windows[Mode::SCENE].add<UndoRedoManager>();
-    windows[Mode::SCENE].add<EditorSettingsWindow>();
-    windows[Mode::SCENE].add<BuildPackager>();
-    windows[Mode::SCENE].add<RigStateController>();
-    windows[Mode::SCENE].add<UIEditor>();
+    systems[Mode::SCENE].add<Hierarchy>();
+    systems[Mode::SCENE].add<GameFlow>();
+    systems[Mode::SCENE].add<Inspector>();
+    systems[Mode::SCENE].add<Viewport>();
+    systems[Mode::SCENE].add<Profiler>();
+    systems[Mode::SCENE].add<GoapDebugger>();
+    systems[Mode::SCENE].add<GoapActionEditor>();
+    systems[Mode::SCENE].add<GoapAgentEditor>();
+    systems[Mode::SCENE].add<PhysicsLayersEditor>();
+    systems[Mode::SCENE].add<SteeringDataEditor>();
+    systems[Mode::SCENE].add<FontControl>();
+    systems[Mode::SCENE].add<AudioMixer>();
+    systems[Mode::SCENE].add<ScenesWindow>();
+    systems[Mode::SCENE].add<AssetBrowser>();
+    systems[Mode::SCENE].add<Console>();
+    systems[Mode::SCENE].add<ImguiDemo>();
+    systems[Mode::SCENE].add<MotionMathPreview>();
+    systems[Mode::SCENE].add<DebugLines>();
+    systems[Mode::SCENE].add<EcsInspector>();
+    systems[Mode::SCENE].add<Rendering>();
+    systems[Mode::SCENE].add<UndoRedoManager>();
+    systems[Mode::SCENE].add<EditorSettingsWindow>();
+    systems[Mode::SCENE].add<BuildPackager>();
+    systems[Mode::SCENE].add<UIEditor>();
+    systems[Mode::SCENE].add<LevelEditor>();
+    systems[Mode::SCENE].add<PlayerDataWindow>();
+    systems[Mode::SCENE].add<RigStateController>();
 
     engine.scenes.register_scene<VoxelEditScene>();
-    windows[Mode::VOXEL].add<ModelViewer>();
-    windows[Mode::VOXEL].add<NodeHierarchy>();
-    windows[Mode::VOXEL].add<Palette>();
-    windows[Mode::VOXEL].add<MaterialEditor>();
-    windows[Mode::VOXEL].add<Brush>();
-    windows[Mode::VOXEL].add<Console>();
-    windows[Mode::VOXEL].add<UndoRedoManager>();
+    systems[Mode::VOXEL].add<ModelViewer>();
+    systems[Mode::VOXEL].add<NodeHierarchy>();
+    systems[Mode::VOXEL].add<Palette>();
+    systems[Mode::VOXEL].add<MaterialEditor>();
+    systems[Mode::VOXEL].add<Brush>();
+    systems[Mode::VOXEL].add<Console>();
+    systems[Mode::VOXEL].add<UndoRedoManager>();
 
     engine.scenes.register_scene<PrefabEditScene>();
-    windows[Mode::PREFAB].add<Hierarchy>();
-    windows[Mode::PREFAB].add<Inspector>();
-    windows[Mode::PREFAB].add<Viewport>();
-    windows[Mode::PREFAB].add<AssetBrowser>();
-    windows[Mode::PREFAB].add<Console>();
-    windows[Mode::PREFAB].add<ScenesWindow>();
-    windows[Mode::PREFAB].add<UndoRedoManager>();
-    windows[Mode::PREFAB].add<UIEditor>();
-    windows[Mode::PREFAB].add<DebugLines>();
+    systems[Mode::PREFAB].add<Hierarchy>();
+    systems[Mode::PREFAB].add<Inspector>();
+    systems[Mode::PREFAB].add<Viewport>();
+    systems[Mode::PREFAB].add<AssetBrowser>();
+    systems[Mode::PREFAB].add<Console>();
+    systems[Mode::PREFAB].add<ScenesWindow>();
+    systems[Mode::PREFAB].add<UndoRedoManager>();
+    systems[Mode::PREFAB].add<UIEditor>();
+    systems[Mode::PREFAB].add<DebugLines>();
 
-    for (auto& [mode, collection] : windows) {
-        for (const auto& window : collection) {
-            window->on_editor_start();
+    for (auto& [mode, collection] : systems) {
+        for (const auto& system : collection) {
+            system->on_editor_start();
         }
     }
+
+    save_data.load();
 }
 
 void Editor::on_engine_update(const FrameData& time) {
@@ -152,12 +159,17 @@ void Editor::on_engine_update(const FrameData& time) {
 
     main_menu_bar();
 
-    for (const auto& window : windows[editor_mode]) {
-        window->on_editor_update(time);
+    // Call on_editor_update for all systems
+    for (const auto& system : systems[editor_mode]) {
+        system->on_editor_update(time);
     }
 
+    // Render windows (only for systems that are IWindow instances)
     auto& open_windows = editor.save_data.open_windows;
-    for (const auto& window : windows[editor_mode]) {
+    for (const auto& system : systems[editor_mode]) {
+        IWindowBase* window = dynamic_cast<IWindowBase*>(system.get());
+        if (!window) continue;  // Skip non-window systems
+
         const auto& name = window->get_title();
         TMT_ZONE_SCOPED_STRING(name);
 
@@ -169,8 +181,9 @@ void Editor::on_engine_update(const FrameData& time) {
 
         if (open) {
             window->before_begin();
-            ImGui::Begin(name.c_str(), window->is_closable() ? &open : nullptr, flags);
-            window->display();
+            if (ImGui::Begin(name.c_str(), window->is_closable() ? &open : nullptr, flags)) {
+                window->on_inspect();
+            }
             ImGui::End();
             window->end_display();
         }
@@ -183,17 +196,17 @@ void Editor::on_engine_update(const FrameData& time) {
 }
 
 void Editor::on_engine_fixed_update(const FrameData& time) {
-    for (const auto& window : windows[editor_mode]) {
-        window->on_editor_fixed_update(time);
+    for (const auto& system : systems[editor_mode]) {
+        system->on_editor_fixed_update(time);
     }
 }
 
 void Editor::on_engine_end() {
     mode_handlers.clear();
 
-    for (auto& [mode, collection] : windows) {
-        for (const auto& window : collection) {
-            window->on_editor_end();
+    for (auto& [mode, collection] : systems) {
+        for (const auto& system : collection) {
+            system->on_editor_end();
         }
     }
 
@@ -204,10 +217,14 @@ void Editor::on_engine_end() {
 
 void Editor::main_menu_bar() {
     if (ImGui::BeginMainMenuBar()) {
+        /* Mode-specific menu (Scene, Prefab, etc.) */
         mode_handlers[editor_mode]->display_main_menu();
 
         if (ImGui::BeginMenu("Windows")) {
-            for (const auto& window : windows[editor_mode]) {
+            for (const auto& system : systems[editor_mode]) {
+                IWindowBase* window = dynamic_cast<IWindowBase*>(system.get());
+                if (!window) continue;  // Only show actual windows in the menu
+
                 const auto& name = window->get_title();
                 bool& open = save_data.open_windows[name];
                 ImGui::MenuItem(name.c_str(), nullptr, &open);
@@ -217,7 +234,8 @@ void Editor::main_menu_bar() {
 
         if (ImGui::BeginMenu("Renderer")) {
             /* List of display mode labels */
-            static const std::vector<std::string> DISPLAY_MODE_LABELS { "Default", "Steps (0..128)", "Visibility", "Depth (0..100)", "Normals", "Albedo", "Illuminance", "Cache" };
+            static const std::vector<std::string> DISPLAY_MODE_LABELS { "Default", "Steps (0..128)", "Visibility", "Depth (0..100)", "Normals",
+                                                                        "Albedo",  "Illuminance",    "Cache",      "Motion Vectors" };
 
             const uint32_t display_mode_index = (uint32_t)magic_enum::enum_index<DisplayMode>(engine.renderer.display_mode).value_or(0u);
             const std::string& display_mode = DISPLAY_MODE_LABELS[display_mode_index];
@@ -232,6 +250,11 @@ void Editor::main_menu_bar() {
                     }
                 }
                 ImGui::EndMenu();
+            }
+            if (engine.renderer.display_mode == DisplayMode::DEFAULT || engine.renderer.display_mode == DisplayMode::MOTIONVECTORS) {
+                engine.renderer.enable_taa = true;
+            } else {
+                engine.renderer.enable_taa = false;
             }
 
             /* List of shading rate labels */
@@ -257,20 +280,70 @@ void Editor::main_menu_bar() {
                 engine.renderer.ui_pipeline.render_ui_pipeline = !engine.renderer.ui_pipeline.render_ui_pipeline;
             }
 
-            ImGui::EndMenu();
-        }
-
-        ImGui::BeginDisabled(engine.game_controller.is_playing());
-        if (ImGui::BeginMenu("Editor Mode")) {
-            for (auto&& [mode, handler] : mode_handlers) {
-                const bool is_selected = (editor_mode == mode);
-                if (!ImGui::MenuItem(handler->get_name().c_str(), nullptr, is_selected) || is_selected) continue;
-
-                switch_mode(mode);
+            if (ImGui::MenuItem("Toggle TAA", nullptr, engine.renderer.enable_taa)) {
+                engine.renderer.enable_taa = !engine.renderer.enable_taa;
             }
+
             ImGui::EndMenu();
         }
-        ImGui::EndDisabled();
+
+        ImGui::Dummy({ 5, 0 });
+        ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
+        ImGui::Dummy({ 5, 0 });
+
+        {
+            ImGui::BeginDisabled(engine.game_controller.is_playing());
+            const bool is_scene_mode = (editor_mode == Mode::SCENE);
+            const bool is_voxel_mode = (editor_mode == Mode::VOXEL);
+
+            if (is_scene_mode) {
+                ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
+            }
+            if (ImGui::Button("Scene##Switch")) {
+                switch_mode(Mode::SCENE);
+            }
+            if (ImGui::IsItemHovered()) ImGui::SetTooltip("Scene Editing Mode");
+            if (is_scene_mode) {
+                ImGui::PopStyleColor();
+            }
+            if (is_voxel_mode) {
+                ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
+            }
+            if (ImGui::Button("Voxel##Switch")) {
+                switch_mode(Mode::VOXEL);
+            }
+            if (ImGui::IsItemHovered()) ImGui::SetTooltip("Voxel Editing Mode");
+            if (is_voxel_mode) {
+                ImGui::PopStyleColor();
+            }
+            ImGui::EndDisabled();
+        }
+
+        /* Scene switcher dropdown - right-aligned */
+        {
+            const auto& scenes = engine.scenes.get_registered_scenes();
+            const auto& active_scene = engine.scenes.get_active_scene();
+            const std::string scene_name = active_scene ? std::string(active_scene->get_name()) : "None";
+
+            const float combo_width = 200.0f;
+            const float menu_bar_width = ImGui::GetWindowWidth();
+            const float padding = ImGui::GetStyle().ItemSpacing.x;
+
+            ImGui::SameLine(menu_bar_width - combo_width - padding);
+            ImGui::SetNextItemWidth(combo_width);
+            if (ImGui::BeginCombo("##SceneSwitcher", scene_name.c_str())) {
+                for (const auto& [type_index, scene_info] : scenes) {
+                    bool is_selected = (active_scene && typeid(*active_scene) == type_index);
+                    if (ImGui::Selectable(scene_info.name.c_str(), is_selected)) {
+                        engine.scenes.enqueue_scene(type_index);
+                    }
+                    if (is_selected) {
+                        ImGui::SetItemDefaultFocus();
+                    }
+                }
+                ImGui::EndCombo();
+            }
+        }
 
         ImGui::EndMainMenuBar();
     }

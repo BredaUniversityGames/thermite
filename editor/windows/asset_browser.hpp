@@ -10,13 +10,13 @@
 
 namespace tmt {
 
-class AssetBrowser : public internal::OnSdlEvent, public IWindow {
+class AssetBrowser : public internal::OnSdlEvent, public IWindow<> {
    public:
     constexpr std::string get_title() const override { return ICON_MS_FOLDER " Asset Browser"; }
     constexpr int get_window_flags() const override { return ImGuiWindowFlags_MenuBar; }
     constexpr bool default_open() const override { return true; }
 
-    void display() override;
+    void on_inspect() override;
 
     void on_editor_start() override;
     void on_editor_update(const FrameData&) override;

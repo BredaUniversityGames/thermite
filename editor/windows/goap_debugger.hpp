@@ -17,7 +17,7 @@ namespace tmt {
  *
  * It runs inside the editor's windowing system and updates per frame.
  */
-class GoapDebugger : public IWindow {
+class GoapDebugger : public IWindow<> {
    public:
     constexpr std::string get_title() const override { return "GOAP Debugger"; }
 
@@ -25,7 +25,7 @@ class GoapDebugger : public IWindow {
     void on_editor_update(const FrameData&) override {}
     void on_editor_end() override;
 
-    void display() override;
+    void on_inspect() override;
 
    private:
     // Draws a detailed view of a single GOAP agent.

@@ -136,8 +136,8 @@ tmt::Entity recurse_build_scene(
     entity = tmt::engine.ecs.create_entity(node.name, entity);
 
     tmt::Transform& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
-    transform.set_world_matrix(parent_matrix * node.transform);
     transform.set_parent(parent_entity);
+    transform.set_world_matrix(parent_matrix * node.transform);
 
     tmt::NodeHierarchy::NodeUUID& uuid_component = tmt::engine.ecs.add_component<tmt::NodeHierarchy::NodeUUID>(entity);
     uuid_component.uuid = uuid;
@@ -501,11 +501,14 @@ void NodeHierarchy::clear_hierarchy() {
     engine.ecs.clear();
 
     // Clear the undo/redo stack so the user doesn't try to undo changes to an old file in the newly loaded one.
-    editor.windows[Editor::Mode::VOXEL].get<UndoRedoManager>().clear();
+    editor.systems[Editor::Mode::VOXEL].get<UndoRedoManager>().clear();
 }
 
 void NodeHierarchy::drop_hierarchy() {
-    const ImRect window_rect { ImGui::GetWindowContentRegionMin(), ImGui::GetWindowContentRegionMax() };
+    const ImVec2 min = ImGui::GetWindowPos() + ImGui::GetStyle().WindowPadding;
+    const ImVec2 max = min + ImGui::GetWindowSize() - ImGui::GetStyle().WindowPadding;
+    const ImRect window_rect { min, max };
+
     if (!ImGui::BeginDragDropTargetCustom(window_rect, ImGui::GetID("NodeEmptyDropArea"))) return;
 
     const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("VoxelNode");
@@ -815,7 +818,7 @@ void NodeHierarchy::node_context_menu(const Entity node_entity) {
     ImGui::EndPopup();
 }
 
-void NodeHierarchy::display() {
+void NodeHierarchy::on_inspect() {
     model_load_atomic.wait(false);
 
     popup_create_node();
@@ -844,7 +847,7 @@ void NodeHierarchy::display() {
     diff.before();
 
     // Handle the selection event request after all the items have been displayed.
-    multi_select_io = multi_select_io = ImGui::EndMultiSelect();
+    multi_select_io = ImGui::EndMultiSelect();
     apply_requests(multi_select_io, selected_entities, all_entities);
     if (set_all) selected_entities = all_entities;
 

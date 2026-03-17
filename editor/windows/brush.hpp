@@ -4,7 +4,7 @@
 
 namespace tmt {
 
-class Brush : public IWindow {
+class Brush : public IWindow<> {
    public:
     enum class Tool : uint8_t { GIZMO, COLOR_PICKER, SINGLE, BOX };
     enum class Mode : uint8_t { ATTACH, REMOVE, PAINT };
@@ -26,7 +26,7 @@ class Brush : public IWindow {
     void on_editor_update(const FrameData&) override {}
     void on_editor_end() override {}
 
-    void display() override;
+    void on_inspect() override;
 
     State state;
 };

@@ -97,6 +97,9 @@ struct GpuParticle {
     float anim_speed {};
     float dither_scale {};
     float pad3 {};
+
+    glm::vec3 prev_pos {};
+    float pad4 {};
 };
 
 struct Counters {
@@ -135,6 +138,8 @@ class VfxPipeline {
     Buffer emitter_buffer {};
     Buffer particle_effects_buffer {};
     Buffer billboard_vertices {};
+
+    ResourceRef<Texture2D> fallback_texture {};
 
     Sampler point_sampler {};
 };
