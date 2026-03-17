@@ -184,8 +184,7 @@ void RenderView::deinit() {
     bank.destroy(vbuffer.texture);
     bank.destroy(dbuffer.image);
     bank.destroy(dbuffer.texture);
-    for (auto& limage : lbuffer.images)
-        bank.destroy(limage);
+    for (auto& limage : lbuffer.images) bank.destroy(limage);
     bank.destroy(lbuffer.texture);
     bank.destroy(nbuffer.image);
     bank.destroy(nbuffer.texture);

@@ -68,10 +68,10 @@ void generate_e_lut(Texture&, const uint32_t resolution) {
     }
 
     ///* Create and upload look-up texture resource */
-    //VRAMBank& bank = engine.renderer.vram_bank();
-    //out_texture = bank.create_texture("Directional Albedo LUT Texture", TextureUsage::Sampled | TextureUsage::TransferDst, TextureFormat::R32Sfloat, Size3D(resolution, resolution))
-    //                  .expect("failed to create directional albedo lut texture.");
-    //bank.upload_texture(out_texture, lut, resolution * resolution * sizeof(float));
+    // VRAMBank& bank = engine.renderer.vram_bank();
+    // out_texture = bank.create_texture("Directional Albedo LUT Texture", TextureUsage::Sampled | TextureUsage::TransferDst, TextureFormat::R32Sfloat, Size3D(resolution, resolution))
+    //                   .expect("failed to create directional albedo lut texture.");
+    // bank.upload_texture(out_texture, lut, resolution * resolution * sizeof(float));
 
     /* Free the LUT */
     delete[] lut;
