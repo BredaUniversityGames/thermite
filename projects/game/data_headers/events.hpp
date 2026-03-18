@@ -44,23 +44,23 @@ struct AttachEvent {
 };
 struct PlayerMaxHealthChanged {
     tmt::Entity player_entity;
-    float previous_value;
     float new_value;
+    float previous_value;
 };
 struct PlayerHealthChanged {
     tmt::Entity player_entity;
-    float previous_value;
     float new_value;
+    float previous_value;
 };
 struct PlayerMaxEnergyChanged {
     tmt::Entity player_entity;
-    float previous_value;
     float new_value;
+    float previous_value;
 };
 struct PlayerEnergyChanged {
     tmt::Entity player_entity;
-    float previous_value;
     float new_value;
+    float previous_value;
 };
 struct EndRun {
     bool player_dead;
