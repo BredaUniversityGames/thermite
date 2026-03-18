@@ -352,7 +352,7 @@ void Physics::generate_constraint(int index, const PhysicsGroup& group) {
     }
 }
 
-void Physics::on_end() {}
+void Physics::on_end() {bvh.build(nullptr, 0);}
 
 void Physics::compare_trees(
     tmt::Svt64* tree_a, const glm::vec3& center_a, const glm::quat& rotation_a, float half_extent_a, tmt::Svt64* tree_b, const glm::vec3& center_b, const glm::quat& rotation_b,

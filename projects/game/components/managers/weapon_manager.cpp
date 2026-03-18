@@ -3,6 +3,13 @@
 #include "projects/game/components/gameplay_functionality_components/weapon_and_tool_components/weapon.hpp"
 #include "engine/core/input/input.hpp"
 #include "engine/core/logger.hpp"
+#include "engine/core/renderer/renderer.hpp"
+#include "engine/core/polyline.hpp"
+#include "engine/tools/second_order_solver.hpp"
+#include "engine/systems/physics/physics_system.hpp"
+#define GLM_ENABLE_EXPERIMENTAL
+#include "glm/gtx/norm.hpp"
+
 
 void game::WeaponManager::switch_to(WeaponType weapon_slot) {
     if (weapon_slot == current_weapon) {
@@ -16,10 +23,22 @@ void game::WeaponManager::switch_to(WeaponType weapon_slot) {
         unsubscribe_weapon(current_weapon);
     }
 
+
     // the new subscription happens when the switching is done
     switching_remaining_time = switching_time;
     pending_weapon = weapon_slot;
     switching = true;
+
+    auto& weapon_procanim_data = weapons.at(weapon_slot).proc_anim_data;
+    if(tmt::engine.ecs.valid(weapon_procanim_data.root)) 
+    {
+        auto& root_eff_trans = tmt::engine.ecs.get_component<tmt::Transform>(weapon_procanim_data.root);
+        
+        target_pos = root_eff_trans.get_local_position();
+    } else 
+    {
+        tmt::Log::info("[WeaponManager] Weapon Proc Anim should have a root effector entity set!");
+    }
 }
 
 void game::WeaponManager::set_new_weapon(game::WeaponType weapon_slot) {
@@ -30,6 +49,24 @@ void game::WeaponManager::set_new_weapon(game::WeaponType weapon_slot) {
 void game::WeaponManager::start() {
     current_weapon = starting_weapon;
     tmt::Log::info("[WeaponManager] Starting with weapon: {}", magic_enum::enum_name(starting_weapon));
+
+
+   
+    for (auto& [type, weapon] : weapons) {
+        auto& weapon_procanim_data = weapon.proc_anim_data;
+        if (tmt::engine.ecs.valid(weapon_procanim_data.root)) {
+
+            auto root_eff_trans = tmt::engine.ecs.try_get_component<tmt::Transform>(weapons[type].proc_anim_data.root);
+
+            if (root_eff_trans) {
+                if (type == current_weapon) {
+                    target_pos = root_eff_trans->get_local_position();
+                }
+                rest_poses[type] = { .translation = root_eff_trans->get_local_position(), .rotation = root_eff_trans->get_local_rotation() };
+            }
+        }
+    }
+   
 
     subscribe_weapon(current_weapon);
 
@@ -43,7 +80,7 @@ void game::WeaponManager::end() {
 }
 
 void game::WeaponManager::on_overheat(const game::WeaponFiredEvent& event) {
-    auto weapon_entity = weapons.at(current_weapon);
+    auto weapon_entity = weapons.at(current_weapon).entity;
     if (event.weapon_entity != weapon_entity) {
         return;
     }
@@ -68,17 +105,16 @@ void game::WeaponManager::complete_switch() {
     switching = false;
     subscribe_weapon(current_weapon);
 }
+
 void game::WeaponManager::update(const tmt::FrameData& time) {
     // TODO replace with proper state
-
     if (switching) {
         switching_remaining_time -= tmt::engine.frame_data().delta_time;
 
         if (switching_remaining_time < 0.0f) {
             complete_switch();
         }
-    }
-    if (switching == false) {
+    } else {
         switch (current_weapon) {
             case game::WeaponType::RIFLE:
                 check_trigger_shoot_event();
@@ -98,6 +134,28 @@ void game::WeaponManager::update(const tmt::FrameData& time) {
                 break;
         }
     }
+    auto& weapon_procanim_data = weapons.at(current_weapon).proc_anim_data;
+    auto* root_eff_transform = tmt::engine.ecs.try_get_component<tmt::Transform>(weapon_procanim_data.root);
+
+    if(root_eff_transform)
+    {
+        auto aa_rottrans = animate_antioverlap();
+
+        target_pos = aa_rottrans.translation;
+        auto target_rot = aa_rottrans.rotation;
+
+        static tmt::SecondOrderSolver::State<glm::vec3> state { .current_state = rest_poses[current_weapon].translation };
+        static tmt::SecondOrderSolver::State<glm::quat> rot_state {.current_state = rest_poses[current_weapon].rotation};
+
+        tmt::SecondOrderSolver::solve(state, target_pos, 1.f, 1.f, 0.f, time.delta_time);
+        tmt::SecondOrderSolver::solve(rot_state, target_rot, 1.f, 1.f, 0.f, time.delta_time);
+
+        root_eff_transform->set_local_position(state.current_state);
+        root_eff_transform->set_local_rotation(rot_state.current_state);
+    }
+    
+
+    
 
     transition_to_other_weapons();
 
@@ -119,7 +177,7 @@ void game::WeaponManager::transition_to_other_weapons() {
 }
 
 void game::WeaponManager::subscribe_weapon(WeaponType slot) {
-    auto e = weapons.at(slot);
+    auto e = weapons.at(slot).entity;
     if (e == entt::null) {
         tmt::Log::warn("[WeaponManager] subscribe_weapon({}): entity is null", magic_enum::enum_name(slot));
         return;
@@ -134,7 +192,7 @@ void game::WeaponManager::subscribe_weapon(WeaponType slot) {
 }
 
 void game::WeaponManager::unsubscribe_weapon(WeaponType slot) {
-    auto e = weapons.at(slot);
+    auto e = weapons.at(slot).entity;
     if (e == entt::null) {
         tmt::Log::warn("[WeaponManager] unsubscribe_weapon({}): entity is null", magic_enum::enum_name(slot));
         return;
@@ -147,4 +205,88 @@ void game::WeaponManager::unsubscribe_weapon(WeaponType slot) {
     tmt::Log::info("[WeaponManager] Unsubscribed {} (entity: {})", magic_enum::enum_name(slot), static_cast<uint32_t>(e));
     tmt::engine.ecs.get_dispatcher().sink<ShootEvent>().disconnect<&Weapon::on_shoot>(weapon);
     tmt::engine.ecs.get_dispatcher().trigger(ReleaseShootEvent { shooting_entity });
+}
+
+void game::WeaponManager::draw_debug_lines() const 
+{
+    auto& weapon_procanim_data = weapons.at(starting_weapon).proc_anim_data;
+
+    auto root_effector_transform = tmt::engine.ecs.try_get_component<tmt::Transform>(weapon_procanim_data.root);
+    if (!root_effector_transform || rest_poses.empty()) {
+        return;
+    }
+    auto parent = root_effector_transform->get_parent();
+    auto& parent_world = tmt::engine.ecs.get_component<tmt::Transform>(parent).get_world_matrix();
+
+    const RotTrans& rest_pose = rest_poses.at(current_weapon);
+
+    glm::vec3 fwd = glm::quat_cast(parent_world * glm::mat4_cast(rest_pose.rotation)) * glm::vec3(0.f, 0.f, 1.f);
+    glm::vec3 start = glm::vec3(parent_world * glm::vec4(rest_pose.translation, 1.f)) + fwd * weapon_procanim_data.start_offset;
+
+
+
+    tmt::engine.polyline.use_color(glm::vec4(0.f, 1.f, 0.f, 1.f));
+    tmt::engine.polyline.use_line_width(2.f);
+    tmt::engine.polyline.draw_line(start, start + fwd * weapon_procanim_data.anti_overlap_check_length);
+}
+
+game::WeaponManager::RotTrans game::WeaponManager::animate_antioverlap() {
+    auto& weapon_procanim_data = weapons.at(current_weapon).proc_anim_data;
+
+    auto root_effector_transform = tmt::engine.ecs.try_get_component<tmt::Transform>(weapon_procanim_data.root);
+    if (!root_effector_transform) 
+    {
+        tmt::Log::info("[WeaponManager] no root effector transform assigned, can't do procanim");
+        return {};
+    }
+    auto parent = root_effector_transform->get_parent();
+    auto& parent_world = tmt::engine.ecs.get_component<tmt::Transform>(parent).get_world_matrix();
+    
+    glm::quat world_rot = glm::quat_cast(parent_world * glm::mat4_cast(rest_poses[current_weapon].rotation)); 
+    glm::vec3 fwd = world_rot * glm::vec3(0.f, 0.f, 1.f);
+    glm::vec3 up = world_rot * glm::vec3(0.f, 1.f, 0.f);
+    glm::vec3 right = world_rot * glm::vec3(1.f, 0.f, 1.f);
+    glm::vec3 start = glm::vec3(parent_world * glm::vec4(rest_poses[current_weapon].translation,1.f)) + fwd * weapon_procanim_data.start_offset;
+    
+    tmt::Physics& phys_sys = tmt::engine.ecs.systems.get<tmt::Physics>();
+
+    static const int aa_ray_count = 4;
+    float flipper = 1.f;
+    tmt::Hit aa_hits[aa_ray_count];
+    for (int i = 0; i < aa_ray_count; i++) {
+
+        float angle = atan(weapon_procanim_data.anti_overlap_scan_extent / weapon_procanim_data.anti_overlap_check_length);
+        const glm::vec3& axis = i >= (aa_ray_count / 2) ? up : right;
+        auto rot = glm::angleAxis(angle * flipper, axis);
+        flipper *= -1.f;
+
+        tmt::Ray aa_ray(start, rot * fwd);
+
+        aa_hits[i] = phys_sys.raycast(aa_ray, 1);
+    }
+
+    float closest_dist = std::numeric_limits<float>::max();
+    for (int i = 0; i < aa_ray_count; i++) {
+        if(aa_hits[i].distance < closest_dist) closest_dist = aa_hits[i].distance;
+    }
+
+    if(closest_dist < weapon_procanim_data.anti_overlap_check_length) 
+    {
+        float diff = weapon_procanim_data.anti_overlap_check_length - closest_dist;
+
+        //target pos constrained
+        glm::vec3 safe_world_pos = start - fwd * diff;
+
+        glm::vec3 safe_local_pos = glm::inverse(parent_world) * glm::vec4(safe_world_pos, 1.f);
+        glm::quat safe_rot = rest_poses[current_weapon].rotation;
+
+        bool shoulder = glm::distance2( rest_poses[current_weapon].translation, safe_local_pos) >= weapon_procanim_data.length_to_shoulder;
+        if(shoulder) 
+        {
+            safe_rot = glm::quat(glm::radians(weapon_procanim_data.shoulder_eulers)) * safe_rot;
+        }
+
+        return RotTrans{.translation = safe_local_pos, .rotation = safe_rot};
+
+    } else return rest_poses[current_weapon];
 }
