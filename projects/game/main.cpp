@@ -20,6 +20,7 @@
 #include "ai_actions/wander.hpp"
 #include "ai_actions/fire_missiles.hpp"
 #include "ai_actions/fire_laser.hpp"
+#include "ai_actions/get_in_laser_range.hpp"
 
 // Enemies
 #include "components/gameplay_functionality_components/enemy_components/medium_enemy.hpp"
@@ -51,6 +52,7 @@
 #include "components/development_tools/attach_component.hpp"
 // World generation
 #include "components/world_gen/asteroid_field_component.hpp"
+#include "components/world_gen/random_prefab_spawner.hpp"
 // Data Headers
 #include "data_headers/scene_list.hpp"
 #include "data_headers/wallet.hpp"
@@ -85,6 +87,7 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     /* Register Scenes */
     tmt::engine.scenes.register_scene<MainMenuScene>();
     tmt::engine.scenes.register_scene<MainGameScene>();
+    tmt::engine.scenes.register_scene<HubScene>();
     tmt::engine.scenes.register_scene<Zoo>();
     tmt::engine.scenes.register_scene<Gym>();
     tmt::engine.scenes.register_scene<DanielTestScene>();
@@ -97,7 +100,6 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     tmt::engine.component_registry.register_component<game::Spawner>();
     tmt::engine.component_registry.register_component<game::RifleProjectile>();
     tmt::engine.component_registry.register_component<game::ProjectileSpawner>();
-    tmt::engine.component_registry.register_component<game::AsteroidFieldComponent>();
     tmt::engine.component_registry.register_component<game::Wallet>();
     tmt::engine.component_registry.register_component<game::MiningComponent>();
     tmt::engine.component_registry.register_component<game::AnimationPlayer>();
@@ -114,6 +116,9 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     tmt::engine.component_registry.register_component<game::MediumEnemy>();
     tmt::engine.component_registry.register_component<game::OreProperties>();
     tmt::engine.component_registry.register_component<game::OreManager>();
+    /* Register World Generation Components */
+    tmt::engine.component_registry.register_component<game::AsteroidFieldComponent>();
+    tmt::engine.component_registry.register_component<game::RandomPrefabSpawner>();
     /* Register Game UI Components */
     tmt::engine.component_registry.register_component<game::SceneSwitchComponent>();
     tmt::engine.component_registry.register_component<game::EntityControlComponent>();
@@ -177,12 +182,13 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
         action_reg.register_action(std::make_unique<Wander>());
         action_reg.register_action(std::make_unique<FireMissiles>());
         action_reg.register_action(std::make_unique<FireLaser>());
+        action_reg.register_action(std::make_unique<GetInLaserRange>());
 
         {
             tmt::GoapGoal chase;
             chase.name = "g_ChasePlayer";
-            chase.desired_state = { { tmt::FactId("m_in_laser_range"), true } };
-            chase.priority = 10;
+            chase.desired_state = { { tmt::FactId("m_get_close_to_player"), true } };
+            chase.priority = 5;
             chase.valid = true;
 
             goal_reg.register_goal("g_ChasePlayer", chase);
@@ -205,6 +211,16 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
             kill_player.valid = true;
 
             goal_reg.register_goal("g_KillPlayer", kill_player);
+        }
+
+        {
+            tmt::GoapGoal get_in_lazer_range;
+            get_in_lazer_range.name = "g_GetInLazerRange";
+            get_in_lazer_range.desired_state = { { tmt::FactId("m_in_laser_range"), true } };
+            get_in_lazer_range.priority = 10;
+            get_in_lazer_range.valid = true;
+
+            goal_reg.register_goal("g_GetInLazerRange", get_in_lazer_range);
         }
     }
 

@@ -6,7 +6,7 @@ class ChasePlayer : public tmt::GoapAction {
    public:
     ChasePlayer() {
         preconditions["m_in_aggro_range"] = true;
-        effects["m_in_laser_range"] = true;
+        effects["m_get_close_to_player"] = true;
         cost = 1.f;
     }
 
