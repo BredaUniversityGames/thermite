@@ -22,24 +22,11 @@ void SceneMode::display_main_menu() {
             const bool succes = engine.scenes.serialize_active_scene();
             if (succes == false) {
                 // clang-format off
-                //PopUp::create()
-                //    .severity(Severity::ERROR)
-                //    .title("Failed to Save Scene")
-                //    .message("An error occurred while saving the scene. Please check the logs for more details.")
-                //    .add_button("OK")
-                //    .add_button("No")
-                //    .add_button("Yes");
                 Notification::create()
                     .severity(Severity::ERROR)
+                    .duration(5.0f)
                     .title("Failed to Save Scene")
-                    .message("An error occurred while saving the scene. Please check the logs for more details.");
-                Notification::create()
-                    .severity(Severity::INFO)
-                    .message("Foo bar");
-                Notification::create()
-                    .severity(Severity::WARNING)
-                    .title("Important warning");
-
+                    .message("An error occurred while saving the scene. Check the logs for more details.");
                 // clang-format on
             }
         }
