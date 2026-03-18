@@ -1,7 +1,7 @@
 #pragma once
 #include "editor/core/window.hpp"
 #include "engine/core/scenes.hpp"
-#include "engine/events/Game.hpp"
+#include "engine/events/game.hpp"
 #include "engine/events/scene.hpp"
 
 namespace tmt {
