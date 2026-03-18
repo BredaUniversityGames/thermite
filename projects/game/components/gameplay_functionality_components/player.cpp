@@ -304,7 +304,7 @@ void Player::update(const tmt::FrameData& time) {
     previous_max_health = health.max_value;
     // Update UI
     if (tmt::engine.ecs.valid(hp_bar_max)) {
-        if (auto componenthpmax = tmt::engine.ecs.try_get_component<tmt::UIComponent>(hp_bar_max)) componenthpmax->size.x = health.max_value + 2.0f;
+        if (auto component_hp_max = tmt::engine.ecs.try_get_component<tmt::UIComponent>(hp_bar_max)) component_hp_max->size.x = health.max_value + 2.0f;
     }
 
     // Fire event health changed
@@ -314,7 +314,7 @@ void Player::update(const tmt::FrameData& time) {
     previous_health = health.value;
     //Update UI
     if (tmt::engine.ecs.valid(hp_bar_current)) {
-        if (auto componentcurrhp = tmt::engine.ecs.try_get_component<tmt::UIComponent>(hp_bar_current)) componentcurrhp->size.x = health.value;
+        if (auto component_curr_hp = tmt::engine.ecs.try_get_component<tmt::UIComponent>(hp_bar_current)) component_curr_hp->size.x = health.value;
     }
 
     // Fire event max energy changed
@@ -324,7 +324,7 @@ void Player::update(const tmt::FrameData& time) {
     previous_max_energy = energy.max_value;
     // Update UI
     if (tmt::engine.ecs.valid(energy_bar_max)) {
-        if (auto componenthpmax = tmt::engine.ecs.try_get_component<tmt::UIComponent>(energy_bar_max)) componenthpmax->size.x = energy.max_value + 2.0f;
+        if (auto component_energy_max = tmt::engine.ecs.try_get_component<tmt::UIComponent>(energy_bar_max)) component_energy_max->size.x = energy.max_value + 2.0f;
     }
 
     // Fire event energy changed
@@ -334,7 +334,7 @@ void Player::update(const tmt::FrameData& time) {
     previous_energy = energy.value;
     // Update UI
     if (tmt::engine.ecs.valid(energy_bar_current)) {
-        if (auto componentcurrhp = tmt::engine.ecs.try_get_component<tmt::UIComponent>(energy_bar_current)) componentcurrhp->size.x = energy.value;
+        if (auto component_curr_energy = tmt::engine.ecs.try_get_component<tmt::UIComponent>(energy_bar_current)) component_curr_energy->size.x = energy.value;
     }
 
     if (health.value <= 0.0f) {
