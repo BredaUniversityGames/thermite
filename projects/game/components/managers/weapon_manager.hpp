@@ -4,6 +4,11 @@
 #include "projects/game/data_headers/events.hpp"
 namespace game {
 
+struct WeaponEntities {
+    tmt::Entity weapon_entity = entt::null;
+    tmt::Entity model_entity = entt::null;
+};
+
 enum class WeaponType { RIFLE, GRAVITY, MINING };
 class WeaponManager : public tmt::GameComponent<WeaponManager> {
    public:
@@ -20,7 +25,7 @@ class WeaponManager : public tmt::GameComponent<WeaponManager> {
     void subscribe_weapon(WeaponType slot);
     void unsubscribe_weapon(WeaponType slot);
 
-    std::unordered_map<WeaponType, tmt::Entity> weapons;
+    std::unordered_map<WeaponType, WeaponEntities> weapons;
     WeaponType starting_weapon { WeaponType::RIFLE };
 
     tmt::Entity shooting_entity;
@@ -46,4 +51,5 @@ class WeaponManager : public tmt::GameComponent<WeaponManager> {
 };
 
 }  // namespace game
+TMT_OBJECT(game::WeaponEntities, (weapon_entity, model_entity));
 TMT_OBJECT(game::WeaponManager, (weapons, starting_weapon, shooting_entity, overheat_time, switching_time));
