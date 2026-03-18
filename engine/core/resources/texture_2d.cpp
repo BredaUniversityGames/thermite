@@ -41,6 +41,7 @@ bool Texture2D::load() {
     std::string image_name = name + " Image";
     image = bank.create_image(image_name.c_str(), texture).expect("failed to initialize image.");
 
+    /* Upload texture data */
     bank.upload_texture(image, data, tex_width * tex_height * 4).expect("failed to upload texture.");
     free(data);
 
