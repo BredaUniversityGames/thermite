@@ -84,7 +84,6 @@ class Player : public tmt::GameComponent<Player> {
     float previous_energy = energy.value;
     float out_of_energy_timer = 0.0f;
     bool player_ended_run = false;
-
 };
 
 }  // namespace game
@@ -92,7 +91,6 @@ TMT_OBJECT(game::PlayerStat, (max_value, value, increase_multiplier));
 TMT_OBJECT(game::RayCollisionCheck, (collision_layer, player_radius, collision_speed_damping, camera_near_distance));
 TMT_OBJECT(
     game::Player, (camera_sensitivity, acceleration, deceleration, drag, max_speed, health, energy, energy_drain_per_second, out_of_energy_time_till_death, hp_bar_max, hp_bar_current,
-                   energy_bar_max, energy_bar_current,
-                   barge, recharge_distance, ray_check)
+                   energy_bar_max, energy_bar_current, barge, recharge_distance, ray_check)
 
 );

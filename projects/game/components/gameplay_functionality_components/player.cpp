@@ -299,7 +299,7 @@ void Player::update(const tmt::FrameData& time) {
     // TODO events, could also use entt on modifcation component for the UI components
     // Fire event max health changed
     if (previous_max_health != health.max_value) {
-        tmt::engine.ecs.get_dispatcher().trigger(PlayerMaxHealthChanged {entity, health.max_value, previous_max_health});
+        tmt::engine.ecs.get_dispatcher().trigger(PlayerMaxHealthChanged { entity, health.max_value, previous_max_health });
     }
     previous_max_health = health.max_value;
     // Update UI
@@ -312,7 +312,7 @@ void Player::update(const tmt::FrameData& time) {
         tmt::engine.ecs.get_dispatcher().trigger(PlayerHealthChanged { entity, health.value, previous_health });
     }
     previous_health = health.value;
-    //Update UI
+    // Update UI
     if (tmt::engine.ecs.valid(hp_bar_current)) {
         if (auto component_curr_hp = tmt::engine.ecs.try_get_component<tmt::UIComponent>(hp_bar_current)) component_curr_hp->size.x = health.value;
     }
