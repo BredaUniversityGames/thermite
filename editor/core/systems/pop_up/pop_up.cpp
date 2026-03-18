@@ -38,21 +38,21 @@ void PopUpManager::update() {
     /* Center pop-up */
     ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
 
-    ImGui::OpenPopup(first_pop_up.title_.c_str());
+    ImGui::OpenPopup(first_pop_up.title_text.c_str());
 
     auto flags = ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse;
 
     bool open = true;
-    if (ImGui::BeginPopupModal(first_pop_up.title_.c_str(), &open, flags)) {
-        const auto color = severity_colors[static_cast<int>(first_pop_up.severity_)];
-        const auto icon = severity_icons[static_cast<int>(first_pop_up.severity_)];
+    if (ImGui::BeginPopupModal(first_pop_up.title_text.c_str(), &open, flags)) {
+        const auto color = severity_colors[static_cast<int>(first_pop_up.severity_level)];
+        const auto icon = severity_icons[static_cast<int>(first_pop_up.severity_level)];
 
         ImGui::PushFont(NULL, ImGui::GetStyle().FontSizeBase * 2.0f);
         ImGui::TextColored(color, "%s", icon);
         ImGui::PopFont();
 
         ImGui::SameLine();
-        ImGui::Text("%s", first_pop_up.message_.c_str());
+        ImGui::Text("%s", first_pop_up.message_text.c_str());
 
         {
             /* Code to center buttons, copied from Claudia */
@@ -96,8 +96,8 @@ void NotificationManager::update(const float delta_time) {
                            ImGuiWindowFlags_NoFocusOnAppearing | /*ImGuiWindowFlags_NoBringToFrontOnFocus |*/ ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoDecoration |
                            ImGuiWindowFlags_NoNav;
 
-        const bool has_title = notification.title_.empty() == false;
-        const bool has_message = notification.message_.empty() == false;
+        const bool has_title = notification.title_text.empty() == false;
+        const bool has_message = notification.message_text.empty() == false;
         if (has_title == false && has_message == false) {
             continue;
         }
@@ -109,12 +109,12 @@ void NotificationManager::update(const float delta_time) {
         const float close_button_padding = 10.0f;
         const float title_margin = 20.0f;
 
-        const auto color = severity_colors[static_cast<int>(notification.severity_)];
-        const auto icon = severity_icons[static_cast<int>(notification.severity_)];
-        const auto severity_name = severity_names[static_cast<int>(notification.severity_)];
+        const auto color = severity_colors[static_cast<int>(notification.severity_level)];
+        const auto icon = severity_icons[static_cast<int>(notification.severity_level)];
+        const auto severity_name = severity_names[static_cast<int>(notification.severity_level)];
 
         const auto icon_text = icon;
-        const auto title_text = has_title ? notification.title_.c_str() : severity_name;
+        const auto title_text = has_title ? notification.title_text.c_str() : severity_name;
         const auto close_button_text = ICON_MS_CLOSE;
 
         const float icon_width = ImGui::CalcTextSize(icon_text).x;
@@ -136,7 +136,7 @@ void NotificationManager::update(const float delta_time) {
         /* Rounded corners */
         ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, window_rounding);
 
-        const std::string window_name = fmt::format("{}##{}", notification.title_, index);
+        const std::string window_name = fmt::format("{}##{}", notification.title_text, index);
         ImGui::Begin(window_name.c_str(), nullptr, flags);
 
         ImGui::PushTextWrapPos(window_size.x / notification_ratio);
@@ -156,7 +156,7 @@ void NotificationManager::update(const float delta_time) {
         if (has_message) {
             ImGui::Separator();
 
-            ImGui::TextWrapped("%s", notification.message_.c_str());
+            ImGui::TextWrapped("%s", notification.message_text.c_str());
         }
 
         offset += ImGui::GetWindowHeight() + window_spacing;
@@ -165,8 +165,8 @@ void NotificationManager::update(const float delta_time) {
         ImGui::End();
         ImGui::PopStyleVar();
 
-        notification.duration_ -= delta_time;
-        close |= (notification.duration_ <= 0.0f);
+        notification.duration_seconds -= delta_time;
+        close |= (notification.duration_seconds <= 0.0f);
         if (close) {
             queue.erase(queue.begin() + index);
             --index;

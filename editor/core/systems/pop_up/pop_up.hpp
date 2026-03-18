@@ -15,12 +15,12 @@ class Title {
    public:
     template <typename... Args>
     T& title(fmt::format_string<Args...> fmt, Args&&... args) {
-        title_ = fmt::format(fmt, std::forward<Args>(args)...);
+        title_text = fmt::format(fmt, std::forward<Args>(args)...);
         return static_cast<T&>(*this);
     }
 
    protected:
-    std::string title_ = "";
+    std::string title_text = "";
 };
 
 template <typename T>
@@ -28,24 +28,24 @@ class Message {
    public:
     template <typename... Args>
     T& message(fmt::format_string<Args...> fmt, Args&&... args) {
-        message_ = fmt::format(fmt, std::forward<Args>(args)...);
+        message_text = fmt::format(fmt, std::forward<Args>(args)...);
         return static_cast<T&>(*this);
     }
 
    protected:
-    std::string message_ = "";
+    std::string message_text = "";
 };
 
 template <typename T>
 class SeverityMixin {
    public:
     T& severity(Severity severity) {
-        severity_ = severity;
+        severity_level = severity;
         return static_cast<T&>(*this);
     }
 
    protected:
-    Severity severity_ = Severity::INFO;
+    Severity severity_level = Severity::INFO;
 };
 
 }  // namespace detail
@@ -87,7 +87,7 @@ class PopUp : public detail::Title<PopUp>, public detail::Message<PopUp>, public
     }
 
     /* Only needed if you store a pop-up and want to reuse it */
-    void add() { PopUpManager::add_pop_up(*this); }
+    void add() const { PopUpManager::add_pop_up(*this); }
 
    private:
     struct Button {
@@ -135,17 +135,17 @@ class Notification : public detail::Title<Notification>, public detail::Message<
     static Notification& create() { return NotificationManager::create_notification(); }
 
     Notification& duration(float seconds) {
-        duration_ = seconds;
+        duration_seconds = seconds;
         return *this;
     }
 
-    void add() { NotificationManager::add_notification(*this); }
+    void add() const { NotificationManager::add_notification(*this); }
 
    private:
     friend class NotificationManager;
 
     /* In Seconds*/
-    float duration_ = 3.0f;
+    float duration_seconds = 3.0f;
 };
 
 }  // namespace tmt
