@@ -19,7 +19,9 @@ class FireLaser : public tmt::GoapAction {
 
     tmt::Entity player = entt::null;
 
-    float duration = 0.0f;
+    float time = 0.0f;
+    float original_height = 0.0f;
+    float dist_between_laser_spheres = 10.0f;
     glm::vec3 direction = glm::vec3(0, 0, 0);
     glm::vec3 target_pos = glm::vec3(0, 0, 0);
     glm::vec3 last_player_pos = glm::vec3(0, 0, 0);

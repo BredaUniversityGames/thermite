@@ -3,9 +3,15 @@
 
 void tag_invoke(ImReflect::ImInput_t, const char* name, game::MediumEnemy& value, ImSettings& settings, ImResponse& response) {
     using namespace game;
-    ImReflect::Detail::imgui_input_visit_field(name, value, settings, response);
+    //ImReflect::Detail::imgui_input_visit_field(name, value, settings, response);
     auto& type_settings = settings.get<MediumEnemy>();
     auto& type_response = response.get<MediumEnemy>();
+
+    auto help = [](const char* desc) {
+        ImGui::SameLine();
+        ImGui::TextDisabled("(?)");
+        if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayShort)) ImGui::SetTooltip("%s", desc);
+    };
 
     /* ── Entity References ───────────────────────────── */
     ImReflect::Input("Walkable Asteroid", value.walkable_asteroid, type_settings, type_response);
@@ -39,37 +45,51 @@ void tag_invoke(ImReflect::ImInput_t, const char* name, game::MediumEnemy& value
         if (ImGui::TreeNode("Missiles")) {
             ImReflect::Input("Missile Cooldown", value.missile_cooldown, type_settings, type_response);
             ImReflect::Input("Missile Burst", value.missile_burst, type_settings, type_response);
+            help("Number of missiles launched in one burst");
             ImReflect::Input("Burst Interval", value.burst_interval, type_settings, type_response);
+            help("Time between missiles in a burst");
             ImReflect::Input("Max Randomness", value.missile_max_randomness, type_settings, type_response);
+            help("Maximum random offset added to each missile's trajectory during launching");
 
             ImGui::Spacing();
             ImGui::TextDisabled("Per-Missile Settings");
             ImGui::Spacing();
 
             ImReflect::Input("Launch Speed", value.launch_speed, type_settings, type_response);
+            help("Initial speed of the missile when launched, decaying towards 0 (launching direction will be the up of the enemy)");
             ImReflect::Input("Stop Launching After", value.stop_launching_after, type_settings, type_response);
+            help("Amount of time the missile will take to go from launch speed to 0 (Note: the velocity won't be zero, but no more force in the enemies' up direction will be added)");
             ImReflect::Input("Home Speed", value.home_speed, type_settings, type_response);
+            help("Maximum speed the missile will reach when homing. home speed will start at 0 and reach it's maximum at the end of the missiles lifetime");
             ImReflect::Input("Start Homing After", value.start_homing_after, type_settings, type_response);
+            help("Amount of time after the missile was created before the missile starts homing towards the player");
             ImReflect::Input("Lifetime", value.life_time, type_settings, type_response);
             ImGui::TreePop();
         }
 
         /* Laser */
         if (ImGui::TreeNode("Laser")) {
-            const char* mode_labels[] = { "Linear", "Exponential" };
-            int mode = static_cast<int>(value.laser_mode);
-            if (ImGui::Combo("Mode", &mode, mode_labels, IM_ARRAYSIZE(mode_labels))) {
-                value.laser_mode = static_cast<MediumEnemy::Mode>(mode);
-            }
-
-            ImGui::Spacing();
-
             ImReflect::Input("Laser Range", value.laser_range, type_settings, type_response);
             ImReflect::Input("Laser Cooldown", value.laser_cooldown, type_settings, type_response);
-            ImReflect::Input("Laser Duration", value.laser_duration, type_settings, type_response);
-            ImReflect::Input("Accuracy", value.laser_accuracy, type_settings, type_response);
+            ImReflect::Input("Laser Firing Time", value.laser_firing_time, type_settings, type_response);
+            ImReflect::Input("Laser Sitting Down Time", value.laser_sitting_down_time, type_settings, type_response);
+            ImReflect::Input("Laser Winding Up Time", value.laser_winding_up_time, type_settings, type_response);
+
+            ImGui::Spacing();
+            ImGui::TextDisabled("Laser Advanced Settings");
+            ImGui::Spacing();
+
+            ImReflect::Input("Exponential Speed", value.laser_exponential_speed, type_settings, type_response);
+            help("The laser starts by following the player exponentially, where the greater the distance is between the laser's target position and the player, the faster it will move");
+            ImReflect::Input("Linear Speed", value.laser_linear_speed, type_settings, type_response);
+            help("The laser ends by following the player linearly, where the laser moves towards the player's position at a constant speed");
+            ImReflect::Input("Linear Threshold", value.laser_linear_threshold, type_settings, type_response);
+            help("The higher this value, the longer it takes for linear following to become stronger than the exponential following"); 
             ImReflect::Input("Max Randomness", value.laser_max_randomness, type_settings, type_response);
+            help("Max randomness is the maximum random offset added to the laser's initial direction when firing");
             ImReflect::Input("Prediction Length", value.laser_prediction_length, type_settings, type_response);
+            help("Length of the offset added to the laser's target position, in the direction the player is moving");
+
             ImGui::TreePop();
         }
 
