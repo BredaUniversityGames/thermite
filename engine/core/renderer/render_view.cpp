@@ -78,11 +78,11 @@ void RenderView::init() {
 
     /* Quarter size specular buffer */
     const Size3D quarter_size { view_size.x >> 1, view_size.y >> 1 };
-    raw_spec_buffer.texture =
-        bank.create_texture("Raw Specular Buffer Texture", TextureUsage::Storage | TextureUsage::Sampled, TextureFormat::RG11B10Ufloat, quarter_size).expect("failed to create raw specular buffer texture.");
+    raw_spec_buffer.texture = bank.create_texture("Raw Specular Buffer Texture", TextureUsage::Storage | TextureUsage::Sampled, TextureFormat::RG11B10Ufloat, quarter_size)
+                                  .expect("failed to create raw specular buffer texture.");
     raw_spec_buffer.image = bank.create_image("Raw Specular Buffer Image", raw_spec_buffer.texture).expect("failed to create raw specular buffer image.");
-    spec_buffer.texture =
-        bank.create_texture("Specular Buffer Texture", TextureUsage::Storage | TextureUsage::Sampled, TextureFormat::RG11B10Ufloat, quarter_size).expect("failed to create specular buffer texture.");
+    spec_buffer.texture = bank.create_texture("Specular Buffer Texture", TextureUsage::Storage | TextureUsage::Sampled, TextureFormat::RG11B10Ufloat, quarter_size)
+                              .expect("failed to create specular buffer texture.");
     spec_buffer.image = bank.create_image("Specular Buffer Image", spec_buffer.texture).expect("failed to create specular buffer image.");
 
     /* History Screen Buffers */
@@ -258,7 +258,7 @@ void RenderView::resize_textures() {
         render_size.x = render_size.x >> 1;
         render_size.y = render_size.y >> 1;
     }
-    
+
     /* Quarter rate screen size */
     const Size3D quarter_size { view_size.x >> 1, view_size.y >> 1 };
 
