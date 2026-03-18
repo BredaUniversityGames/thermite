@@ -1,9 +1,11 @@
-﻿#include "medium_enemy.hpp"
-#include "../components/gameplay_functionality_components/enemy_components/medium_enemy.hpp"
+﻿#if THERMITE_EDITOR
+
+    #include "medium_enemy.hpp"
+    #include "../components/gameplay_functionality_components/enemy_components/medium_enemy.hpp"
 
 void tag_invoke(ImReflect::ImInput_t, const char* name, game::MediumEnemy& value, ImSettings& settings, ImResponse& response) {
     using namespace game;
-    //ImReflect::Detail::imgui_input_visit_field(name, value, settings, response);
+    // ImReflect::Detail::imgui_input_visit_field(name, value, settings, response);
     auto& type_settings = settings.get<MediumEnemy>();
     auto& type_response = response.get<MediumEnemy>();
 
@@ -91,7 +93,7 @@ void tag_invoke(ImReflect::ImInput_t, const char* name, game::MediumEnemy& value
             ImReflect::Input("Linear Speed", value.laser_linear_speed, type_settings, type_response);
             help("The laser ends by following the player linearly, where the laser moves towards the player's position at a constant speed");
             ImReflect::Input("Linear Threshold", value.laser_linear_threshold, type_settings, type_response);
-            help("The higher this value, the longer it takes for linear following to become stronger than the exponential following"); 
+            help("The higher this value, the longer it takes for linear following to become stronger than the exponential following");
             ImReflect::Input("Max Randomness", value.laser_max_randomness, type_settings, type_response);
             help("Max randomness is the maximum random offset added to the laser's initial direction when firing");
             ImReflect::Input("Prediction Length", value.laser_prediction_length, type_settings, type_response);
@@ -104,3 +106,4 @@ void tag_invoke(ImReflect::ImInput_t, const char* name, game::MediumEnemy& value
         ImGui::TreePop();
     }
 }
+#endif
