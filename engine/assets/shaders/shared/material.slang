@@ -31,6 +31,8 @@ public struct Material {
 
     /* Material base color (ACEScg) */
     public [ForceInline] float3 albedo() { return decode_rgb10(packed_albedo); };
+    /* Material edge tint (ACEScg) */
+    public [ForceInline] float3 edge_tint() { return decode_rgb10(packed_edge_tint); };
     /* Material index of refraction [1,3] */
     public [ForceInline] float ior() { return unpackHalf2x16ToFloat(ior_emission).x; };
     /* Material emission factor [0,INF] */
@@ -149,7 +151,7 @@ public struct Material {
     const float metallic = m.metallic();
     float3 f = 0.0f;
     if (metallic < 1.0f) f += (1.0f - metallic) * dielectric_fresnel(wo_dot_wh, m.ior());
-    if (metallic > 0.0f) f += metallic * conductor_fresnel(wo_dot_wh, m.albedo(), m.albedo());
+    if (metallic > 0.0f) f += metallic * conductor_fresnel(wo_dot_wh, m.albedo(), m.edge_tint());
 
     /* Torrance–Sparrow BRDF */
     return (d * g * f) / (4.0f * wo_costheta * wi_costheta);
