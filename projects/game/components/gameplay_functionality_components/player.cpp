@@ -68,6 +68,9 @@ void setup_inputs(tmt::InputMap& input_map) {
     input_map.add_key_to_action(action::OPEN_UPGRADE_MENU, tmt::Key::U);
     input_map.add_action(action::ATTACH_KEY);
     input_map.add_key_to_action(action::ATTACH_KEY, tmt::Key::E);
+
+    input_map.add_action(action::TRIGGER_BARGE_MOVEMENT);
+    input_map.add_key_to_action(action::TRIGGER_BARGE_MOVEMENT, tmt::Key::SPACE);
 }
 
 void Player::start() {
@@ -217,6 +220,11 @@ void Player::move_player() {
 
     prevent_camera_clip();
 }
+void Player::trigger_barge_movement() {
+    auto& input = tmt::engine.input;
+    if (input.get_action_duration(action::TRIGGER_BARGE_MOVEMENT)) {
+    }
+}
 // try to get out of inside a voxel
 void Player::resolve_penetration() {
     auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
@@ -286,6 +294,7 @@ void Player::update(const tmt::FrameData& time) {
             attempt_attach(input);
             look_camera();
             refill(time.delta_time);
+            trigger_barge_movement();
             break;
             // TODO this state might disappear
         case game::PlayerState::PAUSED:
@@ -299,7 +308,7 @@ void Player::update(const tmt::FrameData& time) {
     // TODO events, could also use entt on modifcation component for the UI components
     // Fire event max health changed
     if (previous_max_health != health.max_value) {
-        tmt::engine.ecs.get_dispatcher().trigger(PlayerMaxHealthChanged {entity, health.max_value, previous_max_health});
+        tmt::engine.ecs.get_dispatcher().trigger(PlayerMaxHealthChanged { entity, health.max_value, previous_max_health });
     }
     previous_max_health = health.max_value;
     // Update UI
@@ -312,7 +321,7 @@ void Player::update(const tmt::FrameData& time) {
         tmt::engine.ecs.get_dispatcher().trigger(PlayerHealthChanged { entity, health.value, previous_health });
     }
     previous_health = health.value;
-    //Update UI
+    // Update UI
     if (tmt::engine.ecs.valid(hp_bar_current)) {
         if (auto componentcurrhp = tmt::engine.ecs.try_get_component<tmt::UIComponent>(hp_bar_current)) componentcurrhp->size.x = health.value;
     }
@@ -338,8 +347,8 @@ void Player::update(const tmt::FrameData& time) {
     }
 
     if (health.value <= 0.0f) {
-        // player ded -> call end run event with player ded 
-        tmt::engine.ecs.get_dispatcher().trigger(EndRun {true});
+        // player ded -> call end run event with player ded
+        tmt::engine.ecs.get_dispatcher().trigger(EndRun { true });
     }
 }
 void Player::draw_debug_lines() const {
@@ -444,12 +453,19 @@ void Player::drain_energy(float delta) {
     energy.value = glm::min(energy.max_value, energy.value - delta * energy_drain_per_second);
 }
 
+void Player::reset_action_time(std::string_view action_name) {
+    auto& input_map = tmt::engine.input_map;
+    auto* action = input_map.get_action(std::string { action_name });
+    action->time_since_being_pressed = 0.0f;
+}
 void Player::on_attach(const AttachEvent& event) {
     if (event.entity != entity) {
         return;
     }
     if (event.is_attached) {
         state = PlayerState::ATTACHED;
+        // reset the time the player has held the button
+
     } else {
         state = PlayerState::FREEMOVING;
     }

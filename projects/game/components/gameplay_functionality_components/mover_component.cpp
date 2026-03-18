@@ -1,6 +1,7 @@
 #include "mover_component.hpp"
 
 #include "engine/core/polyline.hpp"
+#include <projects/game/data_headers/events.hpp>
 
 void game::MoverComponent::draw_debug_lines() const {
     cfg.set_values();
@@ -9,7 +10,7 @@ void game::MoverComponent::draw_debug_lines() const {
     tmt::engine.polyline.draw_arrow(transform.get_world_position(), transform.get_forward(), movement_speed);
 }
 
-void game::MoverComponent::update_movement(const TriggerMovementEvent& event) {
+void game::MoverComponent::update_movement(const TriggerMovementEvent& event) const {
     if (event.trigger != trigger_entity) {
         return;
     }

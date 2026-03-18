@@ -20,6 +20,7 @@ constexpr auto OPEN_INVENTORY = "open_inventory";
 constexpr auto OPEN_UPGRADE_MENU = "open_upgrade_menu";
 
 constexpr auto ATTACH_KEY = "attach_key";
+constexpr auto TRIGGER_BARGE_MOVEMENT = "trigger_barge_movement";
 
 }  // namespace action
 }  // namespace game
