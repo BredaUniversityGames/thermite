@@ -515,8 +515,8 @@
         },
         "1048597": {
             "local_position": {
-                "x": 14.0001220703125,
-                "y": -10.999908447265625,
+                "x": 16.0,
+                "y": -50.0,
                 "z": 0.25
             },
             "local_rotation": {
@@ -957,12 +957,12 @@
             },
             "pivot": {
                 "x": 0.5,
-                "y": 0.5
+                "y": 5.0
             },
             "block_raycasts": false,
             "scale_with_parent_x": false,
             "scale_with_parent_y": false,
-            "aspect_mode": "STRETCH",
+            "aspect_mode": "FIT",
             "aspect_ratio": {
                 "x": 1.0,
                 "y": 1.0
@@ -988,7 +988,7 @@
                     "last_char": 126
                 }
             },
-            "font_size": 120.0,
+            "font_size": 185.0,
             "color": {
                 "x": 1.0,
                 "y": 1.0,
@@ -1005,30 +1005,30 @@
             "max_height": 50.0,
             "overflow": "VISIBLE",
             "use_ui_component_size": true,
-            "outline_width": 0.10000000149011612,
+            "outline_width": 0.0,
             "outline_color": {
-                "x": 0.9893238544464111,
+                "x": 0.0,
                 "y": 0.0,
                 "z": 0.0,
-                "w": 1.0
+                "w": 0.0
             },
             "shadow_offset": {
-                "x": 1.0,
-                "y": 1.0
+                "x": 0.0,
+                "y": 0.0
             },
             "shadow_color": {
                 "x": 0.0,
                 "y": 0.0,
-                "z": 1.0,
-                "w": 1.0
+                "z": 0.0,
+                "w": 0.0
             },
             "shadow_softness": 0.0,
-            "glow_width": 0.4000000059604645,
+            "glow_width": 0.0,
             "glow_color": {
-                "x": 0.8042705059051514,
-                "y": 1.0,
+                "x": 0.0,
+                "y": 0.0,
                 "z": 0.0,
-                "w": 1.0
+                "w": 0.0
             },
             "softness": 0.0,
             "boldness": 0.0,

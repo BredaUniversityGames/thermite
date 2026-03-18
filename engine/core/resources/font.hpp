@@ -58,8 +58,8 @@ class Font : public FileResource {
     Image atlas_image {};
 
     /* Atlas dimensions (read-only, set during generation) */
-    uint32_t atlas_width = 0;
-    uint32_t atlas_height = 0;
+    int atlas_width = 0;
+    int atlas_height = 0;
 
     /* ===== Atlas Generation Settings (editable in editor) ===== */
 
@@ -92,6 +92,9 @@ class Font : public FileResource {
 
     /* Generate SDF atlas from font data */
     bool generate_sdf_atlas(const unsigned char* font_data, size_t font_size);
+
+    /* Generate MSDF atlas from font file */
+    bool generate_msdf_atlas(const char* font_file);
 
     /* Font metrics */
     FontMetrics metrics {};

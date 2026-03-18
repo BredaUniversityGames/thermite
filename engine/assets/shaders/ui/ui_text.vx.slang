@@ -1,10 +1,3 @@
-/*
- * Text Vertex Shader
- * 
- * Transforms glyph quad vertices from screen space to NDC.
- * Each glyph is rendered as an instanced quad.
- */
-
 import view;
 import ui_text;
 

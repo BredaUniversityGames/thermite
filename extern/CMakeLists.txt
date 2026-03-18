@@ -214,6 +214,55 @@ add_subdirectory(zlib)
 
 set_target_properties(zlibstatic PROPERTIES UNITY_BUILD OFF)
 
+# Make zlib visible to find_package(ZLIB)
+add_library(ZLIB::ZLIB ALIAS zlibstatic)
+
+# Provide variables for FindZLIB (libpng needs this)
+set(ZLIB_LIBRARY zlibstatic)
+set(ZLIB_INCLUDE_DIR
+    ${CMAKE_CURRENT_SOURCE_DIR}/zlib
+)
+
+# libpng
+# https://github.com/pnggroup/libpng
+set(PNG_SHARED OFF CACHE BOOL "" FORCE)
+set(PNG_STATIC ON CACHE BOOL "" FORCE)
+set(PNG_TESTS OFF CACHE BOOL "" FORCE)
+set(SKIP_INSTALL_ALL ON CACHE BOOL "" FORCE)
+add_subdirectory(libpng)
+set(SKIP_INSTALL_ALL OFF CACHE BOOL "" FORCE)
+
+# Create expected target alias
+if (TARGET png_static)
+    add_library(PNG::PNG ALIAS png_static)
+    set(PNG_LIBRARY png_static)
+elseif(TARGET png)
+    add_library(PNG::PNG ALIAS png)
+    set(PNG_LIBRARY png)
+endif()
+
+# Include dir (adjust if needed)
+set(PNG_PNG_INCLUDE_DIR
+    ${CMAKE_CURRENT_SOURCE_DIR}/libpng
+)
+
+# FreeType 
+# https://github.com/freetype/freetype
+set(FT_DISABLE_ZLIB OFF CACHE BOOL "" FORCE)
+set(FT_DISABLE_PNG OFF CACHE BOOL "" FORCE)
+set(SKIP_INSTALL_ALL ON CACHE BOOL "" FORCE)
+add_subdirectory(freetype)
+set(SKIP_INSTALL_ALL OFF CACHE BOOL "" FORCE)
+add_library(Freetype::Freetype ALIAS freetype)
+
+# MSDF Atlas Gen
+# https://github.com/Chlumsky/msdf-atlas-gen
+set(MSDF_ATLAS_USE_SKIA OFF CACHE BOOL "" FORCE)
+# Force dynamic runtime to match the rest of the project
+set(MSDF_ATLAS_USE_VCPKG OFF CACHE BOOL "" FORCE)
+set(MSDF_ATLAS_DYNAMIC_RUNTIME ON CACHE BOOL "" FORCE)
+add_subdirectory(msdf-atlas-gen)
+
 # fmod - audio engine
 set(FMOD_POSTFIX "$<$<CONFIG:Debug>:L>")
 target_include_directories(thermite-engine
@@ -250,6 +299,9 @@ target_link_libraries(thermite-engine
     visit_struct
     nlohmann_json::nlohmann_json
     ZLIB::ZLIBSTATIC
+    PNG::PNG
+    freetype
+    msdf-atlas-gen
 )
 
 if (THERMITE_EDITOR_BUILD)

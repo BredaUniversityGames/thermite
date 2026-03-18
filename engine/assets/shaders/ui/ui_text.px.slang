@@ -1,14 +1,3 @@
-/*
- * Text Pixel Shader
- * 
- * Renders SDF (Signed Distance Field) text with support for:
- *   - Anti-aliased edges
- *   - Outlines
- *   - Shadows
- *   - Glow effects
- *   - Boldness adjustment
- */
-
 import bindless;
 import ui_text;
 
@@ -17,6 +6,10 @@ import ui_text;
 StructuredBuffer<GlyphInstance> glyphs;
 [[vk::binding(2, 0)]]
 SamplerState text_sampler;
+
+float median(float r, float g, float b) {
+    return max(min(r, g), min(max(r, g), b));
+}
 
 [shader("pixel")]
 float4 main(TextVertexOutput input) : SV_Target {
@@ -31,85 +24,97 @@ float4 main(TextVertexOutput input) : SV_Target {
     }
     
     const Texture2D<float4> atlas = bindless::texture_sampled<Texture2D<float4>>(atlas_idx);
+
+    float3 msdf = atlas.Sample(text_sampler, input.uvs).rgb;
+    float sd = median(msdf.r, msdf.g, msdf.b);
+    float opacity = smoothstep(0.5f - fwidth(sd), 0.5f + fwidth(sd), sd);
+
+    return float4(glyph.color.rgb, glyph.color.a * opacity);
+
+    ///* Sample the SDF value from the font atlas */
+    ///* The atlas stores distance in the red/alpha channel */
+    ///* Values > 0.5 are inside the glyph, < 0.5 are outside */
+    //float dist = atlas.SampleLevel(text_sampler, input.uvs, 0).r;
+    //
+    //float fill_alpha = sdf_alpha(dist, 0.0f, 0.0f);
+    //float4 fill = glyph.color;
+    //fill.a *= fill_alpha;
+    //
+    //return fill;
+
+    ///* Get SDF parameters */
+    //float softness = glyph.softness();
+    //float boldness = glyph.boldness();
+    //float outline_width = glyph.outline_width();
+    //float glow_width = glyph.glow_width();
     
-    /* Sample the SDF value from the font atlas */
-    /* The atlas stores distance in the red/alpha channel */
-    /* Values > 0.5 are inside the glyph, < 0.5 are outside */
-    float dist = atlas.SampleLevel(text_sampler, input.uvs, 0).r;
+    ///* Auto-calculate softness for anti-aliasing based on screen-space derivatives */
+    ///* The idea: compute how much the UV changes per pixel to determine edge width */
+    //float2 dpdx = ddx(input.uvs);
+    //float2 dpdy = ddy(input.uvs);
+    //float uv_per_pixel = length(float2(length(dpdx), length(dpdy)));
     
-    /* Get SDF parameters */
-    float softness = glyph.softness();
-    float boldness = glyph.boldness();
-    float outline_width = glyph.outline_width();
-    float glow_width = glyph.glow_width();
+    ///* Scale factor to convert UV-space distance to SDF-space smoothing */
+    ///* Larger values = softer edges, smaller = sharper (more aliased) */
+    //float auto_softness = uv_per_pixel * 0.7;
     
-    /* Auto-calculate softness for anti-aliasing based on screen-space derivatives */
-    /* The idea: compute how much the UV changes per pixel to determine edge width */
-    float2 dpdx = ddx(input.uvs);
-    float2 dpdy = ddy(input.uvs);
-    float uv_per_pixel = length(float2(length(dpdx), length(dpdy)));
+    ///* Use auto-softness if no explicit softness specified, otherwise blend them */
+    //if (softness <= 0.0) {
+    //    softness = auto_softness;
+    //} else {
+    //    /* Ensure minimum softness for anti-aliasing even when explicit value is set */
+    //    softness = max(softness, auto_softness * 0.5);
+    //}
     
-    /* Scale factor to convert UV-space distance to SDF-space smoothing */
-    /* Larger values = softer edges, smaller = sharper (more aliased) */
-    float auto_softness = uv_per_pixel * 0.7;
+    ///* Start with transparent */
+    //float4 result = float4(0.0, 0.0, 0.0, 0.0);
     
-    /* Use auto-softness if no explicit softness specified, otherwise blend them */
-    if (softness <= 0.0) {
-        softness = auto_softness;
-    } else {
-        /* Ensure minimum softness for anti-aliasing even when explicit value is set */
-        softness = max(softness, auto_softness * 0.5);
-    }
+    ///* Layer 1: Shadow (rendered first, behind everything) */
+    //if (glyph.shadow_color.a > 0.0 && (glyph.shadow_offset().x != 0.0 || glyph.shadow_offset().y != 0.0)) {
+    //    /* Sample shadow at offset position */
+    //    /* Note: We'd need to pass proper offset UVs, for now use same position with softened edge */
+    //    float shadow_soft = softness + glyph.shadow_softness() * 0.1;
+    //    float shadow_alpha = sdf_alpha(dist, shadow_soft, boldness - 0.1);
+    //    float4 shadow = glyph.shadow_color;
+    //    shadow.a *= shadow_alpha;
+    //    result = shadow;
+    //}
     
-    /* Start with transparent */
-    float4 result = float4(0.0, 0.0, 0.0, 0.0);
-    
-    /* Layer 1: Shadow (rendered first, behind everything) */
-    if (glyph.shadow_color.a > 0.0 && (glyph.shadow_offset().x != 0.0 || glyph.shadow_offset().y != 0.0)) {
-        /* Sample shadow at offset position */
-        /* Note: We'd need to pass proper offset UVs, for now use same position with softened edge */
-        float shadow_soft = softness + glyph.shadow_softness() * 0.1;
-        float shadow_alpha = sdf_alpha(dist, shadow_soft, boldness - 0.1);
-        float4 shadow = glyph.shadow_color;
-        shadow.a *= shadow_alpha;
-        result = shadow;
-    }
-    
-    /* Layer 2: Glow (behind outline and fill) */
-    if (glow_width > 0.0 && glyph.glow_color.a > 0.0) {
-        float glow_alpha = sdf_glow_alpha(dist, glow_width, softness);
-        float4 glow = glyph.glow_color;
-        glow.a *= glow_alpha;
+    ///* Layer 2: Glow (behind outline and fill) */
+    //if (glow_width > 0.0 && glyph.glow_color.a > 0.0) {
+    //    float glow_alpha = sdf_glow_alpha(dist, glow_width, softness);
+    //    float4 glow = glyph.glow_color;
+    //    glow.a *= glow_alpha;
         
-        /* Blend glow over shadow */
-        result = lerp(result, glow, glow.a);
-    }
+    //    /* Blend glow over shadow */
+    //    result = lerp(result, glow, glow.a);
+    //}
     
-    /* Layer 3: Outline (between glow and fill) */
-    if (outline_width > 0.0 && glyph.outline_color.a > 0.0) {
-        /* Outline is the region between (0.5 - outline_width) and 0.5 */
-        float outer_edge = 0.5 - outline_width;
-        float inner_edge = 0.5 - boldness * 0.25;
+    ///* Layer 3: Outline (between glow and fill) */
+    //if (outline_width > 0.0 && glyph.outline_color.a > 0.0) {
+    //    /* Outline is the region between (0.5 - outline_width) and 0.5 */
+    //    float outer_edge = 0.5 - outline_width;
+    //    float inner_edge = 0.5 - boldness * 0.25;
         
-        /* Smooth outer edge of outline */
-        float outline_outer = smoothstep(outer_edge - softness, outer_edge + softness, dist);
+    //    /* Smooth outer edge of outline */
+    //    float outline_outer = smoothstep(outer_edge - softness, outer_edge + softness, dist);
         
-        /* Full outline color */
-        float4 outline = glyph.outline_color;
-        outline.a *= outline_outer;
+    //    /* Full outline color */
+    //    float4 outline = glyph.outline_color;
+    //    outline.a *= outline_outer;
         
-        /* Blend outline over glow */
-        result = lerp(result, outline, outline.a);
-    }
+    //    /* Blend outline over glow */
+    //    result = lerp(result, outline, outline.a);
+    //}
     
     /* Layer 4: Fill (the actual text, on top) */
-    float fill_alpha = sdf_alpha(dist, softness, boldness);
-    float4 fill = glyph.color;
-    fill.a *= fill_alpha;
+    //float fill_alpha = sdf_alpha(dist, 0.0f, 0.0f);
+    //float4 fill = glyph.color;
+    //fill.a *= fill_alpha;
     
-    /* Blend fill over outline/glow/shadow */
-    result = lerp(result, fill, fill.a);
-    
-    /* Premultiplied alpha output */
-    return result;
+    ///* Blend fill over outline/glow/shadow */
+    //result = lerp(result, fill, fill.a);
+    //
+    ///* Premultiplied alpha output */
+    //return result;
 }

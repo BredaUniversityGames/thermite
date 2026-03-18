@@ -1,11 +1,16 @@
 #include "font.hpp"
 
-#define STB_TRUETYPE_IMPLEMENTATION
-#include <stb_truetype.h>
-
 #include <fstream>
 #include <cmath>
 #include <algorithm>
+
+#define STB_TRUETYPE_IMPLEMENTATION
+#include <stb_truetype.h>
+
+#pragma warning(disable : 4458)
+#pragma warning(disable : 4508)
+#pragma warning(disable : 4505)
+#include <msdf-atlas-gen/msdf-atlas-gen.h>
 
 #include <graphite/vram_bank.hh>
 
@@ -39,7 +44,8 @@ bool Font::load() {
 
     name = file_location.get_relative_path().stem().string();
 
-    return generate_sdf_atlas(font_data.data(), file_size);
+    // return generate_sdf_atlas(font_data.data(), file_size);
+    return generate_msdf_atlas(file_location.get_absolute_path().string().c_str());
 }
 
 bool Font::load_from_memory(const unsigned char* data, size_t size, const std::string& font_name) {
@@ -108,9 +114,9 @@ bool Font::generate_sdf_atlas(const unsigned char* font_data, size_t) {
 
     std::vector<uint8_t> atlas_data(atlas_width * atlas_height, 0);
 
-    uint32_t current_x = 0;
-    uint32_t current_y = 0;
-    uint32_t row_height = 0;
+    int current_x = 0;
+    int current_y = 0;
+    int row_height = 0;
 
     for (auto& rect : glyph_rects) {
         if (rect.width == 0 || rect.height == 0) {
@@ -223,7 +229,7 @@ bool Font::generate_sdf_atlas(const unsigned char* font_data, size_t) {
         glyph.valid = true;
 
         /* Advance position */
-        row_height = std::max(row_height, static_cast<uint32_t>(rect.height));
+        row_height = std::max(row_height, rect.height);
         current_x += rect.width;
     }
 
@@ -253,8 +259,8 @@ bool Font::generate_sdf_atlas(const unsigned char* font_data, size_t) {
 
     /* Convert single-channel SDF data to RGBA format */
     std::vector<uint8_t> rgba_atlas_data(atlas_width * atlas_height * 4);
-    for (uint32_t y = 0; y < atlas_height; ++y) {
-        for (uint32_t x = 0; x < atlas_width; ++x) {
+    for (int y = 0; y < atlas_height; ++y) {
+        for (int x = 0; x < atlas_width; ++x) {
             size_t src_idx = y * atlas_width + x;
             size_t dst_idx = (y * atlas_width + x) * 4;
             rgba_atlas_data[dst_idx + 0] = atlas_data[src_idx]; /* R = SDF value */
@@ -265,8 +271,9 @@ bool Font::generate_sdf_atlas(const unsigned char* font_data, size_t) {
     }
 
     std::string texture_name = name + " Atlas Texture";
-    atlas_texture = bank.create_texture(texture_name.c_str(), TextureUsage::Sampled | TextureUsage::TransferDst, TextureFormat::RGBA8Unorm, { atlas_width, atlas_height, 0 })
-                        .expect("Failed to create font atlas texture.");
+    atlas_texture =
+        bank.create_texture(texture_name.c_str(), TextureUsage::Sampled | TextureUsage::TransferDst, TextureFormat::RGBA8Unorm, { (uint32_t)atlas_width, (uint32_t)atlas_height, 0 })
+            .expect("Failed to create font atlas texture.");
 
     bank.upload_texture(atlas_texture, rgba_atlas_data.data(), rgba_atlas_data.size()).expect("Failed to upload font atlas texture.");
 
@@ -277,6 +284,172 @@ bool Font::generate_sdf_atlas(const unsigned char* font_data, size_t) {
     Log::info(Log::Scope::ENGINE, "Loaded font: {} ({} glyphs)", name, glyphs.size());
 
     return true;
+}
+
+// source: https://github.com/Chlumsky/msdf-atlas-gen/tree/v1.4?tab=readme-ov-file#generating-whole-atlas-at-once
+bool Font::generate_msdf_atlas(const char* font_file) {
+    bool success = false;
+
+    if (msdfgen::FreetypeHandle* ft = msdfgen::initializeFreetype()) {
+        if (msdfgen::FontHandle* font = msdfgen::loadFont(ft, font_file)) {
+            // Storage for glyph geometry and their coordinates in the atlas
+            std::vector<msdf_atlas::GlyphGeometry> glyphs_geo;
+
+            // FontGeometry is a helper class that loads a set of glyphs from a single font.
+            // It can also be used to get additional font metrics, kerning information, etc.
+            msdf_atlas::FontGeometry fontGeometry(&glyphs_geo);
+
+            // Load a set of character glyphs:
+            // The second argument can be ignored unless you mix different font sizes in one atlas.
+            // In the last argument, you can specify a charset other than ASCII.
+            // To load specific glyph indices, use loadGlyphs instead.
+            fontGeometry.loadCharset(font, 1.0, msdf_atlas::Charset::ASCII);
+
+            // Apply MSDF edge coloring. See edge-coloring.h for other coloring strategies.
+            const double maxCornerAngle = 3.0;
+            for (msdf_atlas::GlyphGeometry& glyph : glyphs_geo) glyph.edgeColoring(&msdfgen::edgeColoringInkTrap, maxCornerAngle, 0);
+
+            // TightAtlasPacker class computes the layout of the atlas.
+            msdf_atlas::TightAtlasPacker packer;
+
+            // Set atlas parameters:
+            // setDimensions or setDimensionsConstraint to find the best value
+            packer.setDimensionsConstraint(msdf_atlas::DimensionsConstraint::SQUARE);
+            packer.setDimensions(512, 512);
+
+            // setScale for a fixed size or setMinimumScale to use the largest that fits
+            packer.setMinimumScale(24.0);
+
+            // setPixelRange or setUnitRange
+            packer.setPixelRange(2.0);
+            packer.setMiterLimit(1.0);
+
+            // Compute atlas layout - pack glyphs
+            packer.pack(glyphs_geo.data(), (int)glyphs_geo.size());
+
+            // Get final atlas dimensions
+            packer.getDimensions(atlas_width, atlas_height);
+
+            // The ImmediateAtlasGenerator class facilitates the generation of the atlas bitmap.
+            msdf_atlas::ImmediateAtlasGenerator<
+                float,                                   // pixel type of buffer for individual glyphs depends on generator function
+                3,                                       // number of atlas color channels
+                msdf_atlas::msdfGenerator,               // function to generate bitmaps for individual glyphs
+                msdf_atlas::BitmapAtlasStorage<byte, 3>  // class that stores the atlas bitmap
+                // For example, a custom atlas storage class that stores it in VRAM can be used.
+                >
+                generator(atlas_width, atlas_height);
+
+            // GeneratorAttributes can be modified to change the generator's default settings.
+            msdf_atlas::GeneratorAttributes attributes;
+            generator.setAttributes(attributes);
+            generator.setThreadCount(4);
+
+            // Generate atlas bitmap
+            generator.generate(glyphs_geo.data(), (int)glyphs_geo.size());
+
+            /* Store font metrics */
+            auto msdf_metrics = fontGeometry.getMetrics();
+            metrics.ascender = (float)msdf_metrics.ascenderY;
+            metrics.descender = (float)msdf_metrics.descenderY;
+            metrics.line_height = (float)msdf_metrics.lineHeight;
+            metrics.base_size = base_font_size;
+
+            /* Store glyph info */
+            for (const auto& glyph_geo : glyphs_geo) {
+                uint32_t codepoint = glyph_geo.getCodepoint();
+
+                GlyphInfo glyph_info {};
+
+                // Atlas UV rect (pixel bounds in atlas)
+                double al, ab, ar, at;
+                glyph_geo.getQuadAtlasBounds(al, ab, ar, at);
+
+                glyph_info.uv_rect = glm::vec4(
+                    (float)al / atlas_width,
+                    (float)(atlas_height - at) / atlas_height,  // top in flipped space
+                    (float)ar / atlas_width,
+                    (float)(atlas_height - ab) / atlas_height   // bottom in flipped space
+                );
+
+                // Glyph size and bearing from plane bounds (in em units)
+                double pl, pb, pr, pt;
+                glyph_geo.getQuadPlaneBounds(pl, pb, pr, pt);
+
+                // Scale from em units to pixel size
+                float scale = (float)base_font_size;
+                glyph_info.size = glm::vec2((pr - pl) * scale, (pt - pb) * scale);
+                glyph_info.bearing = glm::vec2((float)pl * scale, (float)pt * scale);
+                glyph_info.advance = (float)glyph_geo.getAdvance() * scale;
+                glyph_info.valid = true;
+
+                glyphs[codepoint] = glyph_info;
+            }
+
+            /* Store kerning pairs */
+            for (const auto& glyph1 : glyphs_geo) {
+                for (const auto& glyph2 : glyphs_geo) {
+                    double advance;
+                    if (fontGeometry.getAdvance(advance, glyph1.getCodepoint(), glyph2.getCodepoint())) {
+                        double default_advance = glyph1.getAdvance();
+                        double kern = advance - default_advance;
+                        if (kern != 0.0) {
+                            uint32_t key = (glyph1.getCodepoint() << 16) | glyph2.getCodepoint();
+                            kerning_pairs[key] = (float)kern * base_font_size;
+                        }
+                    }
+                }
+            }
+
+            /* Fallback glyph */
+            if (glyphs.count('?')) {
+                fallback_glyph = glyphs['?'];
+            } else if (!glyphs.empty()) {
+                fallback_glyph = glyphs.begin()->second;
+            }
+
+            // Get bitmap
+            auto bitmap = (msdfgen::BitmapConstRef<byte, 3>)generator.atlasStorage();
+
+            /* Convert RGB -> RGBA */
+            /* Convert RGB -> RGBA (with vertical flip) */
+            std::vector<byte> rgba_atlas_data(atlas_width * atlas_height * 4);
+            for (int y = 0; y < atlas_height; ++y) {
+                int flipped_y = atlas_height - 1 - y;
+                for (int x = 0; x < atlas_width; ++x) {
+                    int src = (flipped_y * atlas_width + x) * 3;
+                    int dst = (y * atlas_width + x) * 4;
+                    rgba_atlas_data[dst + 0] = bitmap.pixels[src + 0];
+                    rgba_atlas_data[dst + 1] = bitmap.pixels[src + 1];
+                    rgba_atlas_data[dst + 2] = bitmap.pixels[src + 2];
+                    rgba_atlas_data[dst + 3] = 255;
+                }
+            }
+
+            /* Upload atlas texture to GPU */
+            auto& bank = engine.renderer.vram_bank();
+
+            std::string texture_name = name + " Atlas Texture";
+            atlas_texture =
+                bank.create_texture(texture_name.c_str(), TextureUsage::Sampled | TextureUsage::TransferDst, TextureFormat::RGBA8Unorm, { (uint32_t)atlas_width, (uint32_t)atlas_height, 0 })
+                    .expect("Failed to create font atlas texture.");
+
+            bank.upload_texture(atlas_texture, rgba_atlas_data.data(), rgba_atlas_data.size()).expect("Failed to upload font atlas texture.");
+
+            std::string image_name = name + " Atlas Image";
+            atlas_image = bank.create_image(image_name.c_str(), atlas_texture).expect("Failed to create font atlas image.");
+
+            valid = true;
+            Log::info(Log::Scope::ENGINE, "Loaded font: {} ({} glyphs)", name, glyphs.size());
+
+            // Cleanup
+            msdfgen::destroyFont(font);
+
+            success = true;
+        }
+        msdfgen::deinitializeFreetype(ft);
+    }
+    return success;
 }
 
 void Font::unload() {

@@ -69,7 +69,7 @@ void UiPipeline::init(GPUAdapter& gpu) {
     /* Create UI image sampler */
     image_sampler = bank.create_sampler("[UI] Image Sampler").expect("failed to create ui image sampler.");
 
-     /* Create Text Glyphs Buffer */
+    /* Create Text Glyphs Buffer */
     glyphs_buffer =
         bank.create_buffer("[UI] Glyphs Buffer", BufferUsage::Storage | BufferUsage::TransferDst, MAX_UI_GLYPHS, sizeof(GpuGlyph)).expect("failed to initialise the glyphs buffer.");
 
@@ -151,7 +151,7 @@ void UiPipeline::enqueue_images(RenderGraph& render_graph, RenderView& render_vi
         }
     }
 
-     if (images.empty()) return;
+    if (images.empty()) return;
 
     /* Upload the image instances */
     render_graph.upload_buffer(images_buffer, images.data(), 0u, images.size() * sizeof(GpuImage));
@@ -320,6 +320,10 @@ void UiPipeline::deinit(GPUAdapter& gpu) {
     bank.destroy(images_buffer);
     bank.destroy(image_vertex_buffer);
     bank.destroy(image_sampler);
+
+    bank.destroy(glyphs_buffer);
+    bank.destroy(glyph_vertex_buffer);
+    bank.destroy(text_sampler);
 }
 
 }  // namespace tmt
