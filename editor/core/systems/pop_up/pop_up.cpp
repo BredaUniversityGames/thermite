@@ -64,7 +64,7 @@ void PopUpManager::update() {
             for (const auto& button : first_pop_up.buttons) {
                 if (ImGui::Button(button.label.c_str())) {
                     if (button.callback) button.callback();
-                    if (button.closes_pop_up) queue.erase(queue.begin());
+                    if (button.closes_pop_up) open = false;
                 }
                 ImGui::SameLine();
             }
