@@ -17,7 +17,7 @@ class MediumEnemy : public tmt::GameComponent<MediumEnemy> {
     void update(const tmt::FrameData& time) override;
     void end() override;
 
-    void follow_player() const;
+    void kite_player() const;
 
     tmt::Entity player = entt::null;
     tmt::Entity walkable_asteroid = entt::null;

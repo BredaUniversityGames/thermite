@@ -27,7 +27,7 @@ void FireMissiles::on_tick(tmt::Entity enemy_entity, float dt) {
 
     tmt::Transform& enemy_transform = tmt::engine.ecs.get_component<tmt::Transform>(enemy_entity);
     const auto& enemy_entity_pos = enemy_transform.get_world_position();
-    enemy.follow_player();
+    enemy.kite_player();
 
     interval_timer += dt;
     if (interval_timer > enemy.burst_interval) {

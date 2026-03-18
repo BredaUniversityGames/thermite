@@ -126,7 +126,7 @@ void game::MediumEnemy::update(const tmt::FrameData& time) {
 
 void game::MediumEnemy::end() {}
 
-void game::MediumEnemy::follow_player() const {
+void game::MediumEnemy::kite_player() const {
     auto& enemy = tmt::engine.ecs.get_component<MediumEnemy>(entity);
     auto& nav_mesh = tmt::engine.ecs.get_component<tmt::NavMesh>(enemy.walkable_asteroid);
 

@@ -22,6 +22,7 @@
 #include "ai_actions/fire_laser.hpp"
 #include "ai_actions/get_in_laser_range.hpp"
 #include "ai_actions/stomp.hpp"
+#include "ai_actions/flee.hpp"
 
 // Enemies
 #include "components/gameplay_functionality_components/enemy_components/medium_enemy.hpp"
@@ -185,6 +186,7 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
         action_reg.register_action(std::make_unique<FireLaser>());
         action_reg.register_action(std::make_unique<GetInLaserRange>());
         action_reg.register_action(std::make_unique<Stomp>());
+        action_reg.register_action(std::make_unique<Flee>());
 
         {
             tmt::GoapGoal chase;
@@ -223,6 +225,16 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
             get_in_lazer_range.valid = true;
 
             goal_reg.register_goal("g_GetInLazerRange", get_in_lazer_range);
+        }
+
+        {
+            tmt::GoapGoal stay_safe;
+            stay_safe.name = "g_StaySafe";
+            stay_safe.desired_state = { { tmt::FactId("m_stay_safe"), true } };
+            stay_safe.priority = 40;
+            stay_safe.valid = true;
+
+            goal_reg.register_goal("g_StaySafe", stay_safe);
         }
     }
 

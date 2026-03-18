@@ -20,7 +20,7 @@ void GetInLaserRange::on_start(tmt::Entity enemy_entity) {
 
 void GetInLaserRange::on_tick(tmt::Entity enemy_entity, float dt) {
     auto& enemy = tmt::engine.ecs.get_component<game::MediumEnemy>(enemy_entity);
-    enemy.follow_player();
+    enemy.kite_player();
 }
 
 bool GetInLaserRange::is_done(tmt::Entity) const {
