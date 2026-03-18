@@ -8,9 +8,6 @@
 
 namespace tmt {
 
-constexpr unsigned char* const DEFAULT_FONT_DATA = nullptr;
-constexpr size_t DEFAULT_FONT_DATA_SIZE = 0;
-
 /* Information about a single glyph in the font atlas */
 struct GlyphInfo {
     glm::vec4 uv_rect {};  // UV coordinates in atlas (min_u, min_v, max_u, max_v)

@@ -514,16 +514,6 @@ void FontManager::init() {
     /* Create default font from embedded data */
     default_font = std::make_shared<Font>(IO::FileLocation { IO::Location::ENGINE, "fonts/Rubik-Regular.ttf" });
 
-    if (DEFAULT_FONT_DATA != nullptr && DEFAULT_FONT_DATA_SIZE > 0) {
-        if (!default_font->load_from_memory(DEFAULT_FONT_DATA, DEFAULT_FONT_DATA_SIZE, "Default")) {
-            Log::warn(Log::Scope::ENGINE, "Failed to load default font from embedded data");
-            default_font = nullptr;
-        }
-    } else {
-        Log::warn(Log::Scope::ENGINE, "No default font data available");
-        default_font = nullptr;
-    }
-
     initialized = true;
 }
 
