@@ -98,7 +98,7 @@ void MainScene::on_start() {
     // auto voxel_volume_ass7 = tmt::engine.resources.copy_resource<tmt::VoxelVolume>(voxel_file_ass7);
 
     {
-        auto voxel_file = tmt::engine.resources.load_resource<tmt::VoxelScene>({ tmt::IO::Location::PROJECT, "cube64_subtract.vengi" });
+        auto voxel_file = tmt::engine.resources.load_resource<tmt::VoxelScene>({ tmt::IO::Location::PROJECT, "cube32.vengi" });
         // volume_cube16 = tmt::engine.resources.copy_resource<tmt::VoxelVolume>(voxel_file);
         stencil = tmt::engine.resources.copy_resource<tmt::Stencil>(voxel_file);
     }

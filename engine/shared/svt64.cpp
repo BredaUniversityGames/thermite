@@ -147,7 +147,7 @@ Svt64Node Svt64::subdivide_masked(
 
         // Get destruction node, and check if it exists
         const DestructionNode* destruction_node = graph.get_node(index.x, index.y, index.z);
-        if (destruction_node != nullptr && destruction_node->level == 1u) {
+        if (destruction_node != nullptr && destruction_node->level == 1u && !destruction_node->cleared) {
             // Add the filled parts connected to the id to mask_accum
             uint64_t mask_accum = 0ull;
             for (const auto& filled : destruction_node->flood_masks) {

@@ -20,55 +20,55 @@ void Destruction::on_start() {
 }
 
 void Destruction::on_update(const FrameData&) {
-    for (const auto& [entity, des, vb] : engine.ecs.view<Destructable, VoxelBody>().each()) {
-        engine.polyline.use_depth_testing(false);
-        // engine.polyline.use_color(0.1f, 0.3f, 0.9f);
-        for (DestructionNode& node : des.nodes) {
-            if (node.level == 10) continue;
+    //for (const auto& [entity, des, vb] : engine.ecs.view<Destructable, VoxelBody>().each()) {
+    //    engine.polyline.use_depth_testing(false);
+    //    // engine.polyline.use_color(0.1f, 0.3f, 0.9f);
+    //    for (DestructionNode& node : des.nodes) {
+    //        if (node.level == 10) continue;
 
-            const glm::vec3 half_scale = glm::vec3(vb.width, vb.height, vb.depth) * 0.5f;
-            const uint32_t node_size = (1u << (node.level * 2u));
-            const glm::vec3 pos = (glm::vec3)(node.global_position + (node_size / 2)) * UNITS_PER_VOXEL + vb.position + 0.05f - half_scale;
+    //        const glm::vec3 half_scale = glm::vec3(vb.width, vb.height, vb.depth) * 0.5f;
+    //        const uint32_t node_size = (1u << (node.level * 2u));
+    //        const glm::vec3 pos = (glm::vec3)(node.global_position + (node_size / 2)) * UNITS_PER_VOXEL + vb.position + 0.05f - half_scale;
 
-            // uint32_t voxel_count = vb.resource.resource.get()->blas.get()->voxel_count;
-            // Log::info("voxels %u", vb.resource.resource.get()->blas.get()->voxel_count);
+    //        // uint32_t voxel_count = vb.resource.resource.get()->blas.get()->voxel_count;
+    //        // Log::info("voxels %u", vb.resource.resource.get()->blas.get()->voxel_count);
 
-            srand((unsigned int)(node.flood_id << 5u));
+    //        srand((unsigned int)(node.flood_id << 5u));
 
-            if (node.flood_id == 0)
-                engine.polyline.use_color(0.0f, 0.0f, 0.0f);
-            else
-                engine.polyline.use_color(((float)rand() / (float)RAND_MAX), ((float)rand() / (float)RAND_MAX), ((float)rand() / (float)RAND_MAX));
+    //        if (node.flood_id == 0)
+    //            engine.polyline.use_color(0.0f, 0.0f, 0.0f);
+    //        else
+    //            engine.polyline.use_color(((float)rand() / (float)RAND_MAX), ((float)rand() / (float)RAND_MAX), ((float)rand() / (float)RAND_MAX));
 
-            // Draw connections to neighbors
-            for (size_t i = 0; i < 6; i++) {
-                for (size_t j = 0; j < node.connections[i].node_indices.size(); j++) {
-                    uint32_t node_index = node.connections[i].node_indices[j];
+    //        // Draw connections to neighbors
+    //        for (size_t i = 0; i < 6; i++) {
+    //            for (size_t j = 0; j < node.connections[i].node_indices.size(); j++) {
+    //                uint32_t node_index = node.connections[i].node_indices[j];
 
-                    if (des.nodes[node_index].level == 0) continue;
+    //                if (des.nodes[node_index].level == 0) continue;
 
-                    const uint32_t conn_node_size = (1u << (des.nodes[node_index].level * 2u));
-                    const glm::vec3 connection_pos = (glm::vec3)(des.nodes[node_index].global_position + (conn_node_size / 2)) * UNITS_PER_VOXEL + vb.position + 0.05f - half_scale;
+    //                const uint32_t conn_node_size = (1u << (des.nodes[node_index].level * 2u));
+    //                const glm::vec3 connection_pos = (glm::vec3)(des.nodes[node_index].global_position + (conn_node_size / 2)) * UNITS_PER_VOXEL + vb.position + 0.05f - half_scale;
 
-                    const glm::vec3 p1 = pos * 0.75f + connection_pos * 0.25f;
-                    const glm::vec3 p2 = connection_pos * 0.75f + pos * 0.25f;
-                    // const glm::vec3 diff = connection_pos - pos;
-                    // const glm::vec3 dir = glm::normalize(connection_pos - pos);
+    //                const glm::vec3 p1 = pos * 0.75f + connection_pos * 0.25f;
+    //                const glm::vec3 p2 = connection_pos * 0.75f + pos * 0.25f;
+    //                // const glm::vec3 diff = connection_pos - pos;
+    //                // const glm::vec3 dir = glm::normalize(connection_pos - pos);
 
-                    // engine.polyline.draw_arrow(p1, dir, glm::length(diff) * 0.5f);
-                    engine.polyline.draw_line(p1, p2);
-                }
-            }
+    //                // engine.polyline.draw_arrow(p1, dir, glm::length(diff) * 0.5f);
+    //                engine.polyline.draw_line(p1, p2);
+    //            }
+    //        }
 
-            engine.polyline.draw_circle(pos, 0.033f * (1 << node.level));
+    //        engine.polyline.draw_circle(pos, 0.033f * (1 << node.level));
 
-            // if (node.level == 0) {
-            //     engine.polyline.draw_circle(pos, 0.033f);
-            // } else {
-            //     engine.polyline.draw_circle(pos, 0.033f * 4.0f);
-            // }
-        }
-    }
+    //        // if (node.level == 0) {
+    //        //     engine.polyline.draw_circle(pos, 0.033f);
+    //        // } else {
+    //        //     engine.polyline.draw_circle(pos, 0.033f * 4.0f);
+    //        // }
+    //    }
+    //}
 }
 
 void Destruction::on_fixed_update(const FrameData&) {}
@@ -600,17 +600,27 @@ std::vector<Entity> Destruction::find_seperations(Entity entity, const std::vect
     // Log::info("Shapes found: {}", flood_id);
 
     // num of trees = flood_id
+    // 
     if (flood_id <= 1) return std::vector<Entity> { entity };
 
     std::vector<Entity> entities;
     entities.resize(flood_id);
 
-    for (size_t i = 0; i < flood_id; i++) {
-        entities[i] = engine.ecs.create_entity(std::format("Part {}", (int)i));
+    std::string original_name = engine.ecs.get_component<Name>(entity).name;
+
+    for (size_t i = 0; i < entities.size(); i++) {
+        entities[i] = engine.ecs.create_entity(std::format("{} part {}", original_name, (int) i));
         // engine.ecs.add_component<VoxelRenderer>(entities[i]);
         // engine.ecs.add_component<VoxelBody>(entities[i]);
+
         VoxelRenderer& new_vr = engine.ecs.add_component<VoxelRenderer>(entities[i]);
         new_vr.resource = { {}, std::make_shared<VoxelVolume>(vr.resource->size) };
+
+        engine.ecs.add_component<Destructable>(entities[i]);
+        VoxelBody& vb = engine.ecs.add_component<VoxelBody>(entities[i]);
+        vb.gravity = 0.0f;
+        if (i == 1) vb.gravity = 9.0f;
+        vb.type = VoxelBody::DYNAMIC;
         // vr.resource = { {}, std::make_shared<tmt::VoxelVolume>() };
     }
 
@@ -618,7 +628,7 @@ std::vector<Entity> Destruction::find_seperations(Entity entity, const std::vect
 
     engine.ecs.destroy_entity(entity);
 
-    return std::vector<Entity> {};
+    return entities;
 }
 
 bool all_children_solid(Svt64* tree, const uint32_t node_index) {
