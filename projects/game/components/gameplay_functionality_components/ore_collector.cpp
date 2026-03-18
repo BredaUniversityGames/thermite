@@ -2,6 +2,7 @@
 
 #include "projects/game/components/development_tools/collision_trigger.hpp"
 #include "engine/core/polyline.hpp"
+#include "engine/core/components/voxel_renderer.hpp"
 void game::OreCollector::start() {
     tmt::engine.ecs.get_dispatcher().sink<TriggerCollisionEvent>().connect<&OreCollector::on_collision_trigger>(this);
 }
@@ -19,7 +20,45 @@ void game::OreCollector::on_collision_trigger(const TriggerCollisionEvent& trigg
     if (!tmt::engine.ecs.valid(trigger.other_object)) {
         return;
     }
-    tmt::engine.ecs.destroy_entity(trigger.other_object);
 
-    tmt::Log::info("Ore count is {}", ++ore_count);
+    auto* vr = tmt::engine.ecs.try_get_component<tmt::VoxelRenderer>(trigger.other_object);
+    if (vr == nullptr) {
+        tmt::Log::error("Entity has no voxel rebderer and is collected!", trigger.other_object);
+        tmt::engine.ecs.destroy_entity(trigger.other_object);
+
+        return;
+    }
+
+    auto* voxel_tree = vr->resource.resource.get();
+    if (voxel_tree == nullptr) {
+        tmt::Log::error("Entity has no voxel body and is collected!", trigger.other_object);
+        tmt::engine.ecs.destroy_entity(trigger.other_object);
+
+        return;
+    }
+    auto& blas = voxel_tree->blas;
+    // deframent, danger it might be very slow
+    voxel_tree->blas->defrag();
+    std::array<uint32_t, magic_enum::enum_count<tmt::Material::Type>()> type_counts {};
+    type_counts.fill(0);
+
+    for (uint32_t i = 0; i < blas->node_count; ++i) {
+        // search for actual voxels only
+        if (!blas->nodes[i].is_leaf()) continue;
+
+        // get the actual voxel material ptr
+        const uint32_t ptr = blas->nodes[i].abs_ptr();
+        // just how many materials there are in that memory
+        const uint32_t count = __popcnt64(blas->nodes[i].child_mask);
+
+        for (uint32_t j = 0; j < count; ++j) {
+            auto type = blas->palette.entries[blas->materials[ptr + j]].type;
+            type_counts[static_cast<uint8_t>(type)]++;
+        }
+    }
+    for (auto type : magic_enum::enum_values<tmt::Material::Type>()) {
+        auto count = type_counts[static_cast<uint8_t>(type)];
+        tmt::Log::info("Ore count is {}, for {}", count, magic_enum::enum_name(type));
+    }
+    tmt::engine.ecs.destroy_entity(trigger.other_object);
 }
