@@ -8,6 +8,8 @@
 
 #include <imgui.h>
 
+#include "editor/core/systems/pop_up/pop_up.hpp"
+
 namespace tmt {
 
 SceneMode::SceneMode() : previous_scene_type(engine.scenes.get_active_scene_type()) {}
@@ -17,7 +19,18 @@ void SceneMode::display_main_menu() {
         const bool is_playing = engine.game_controller.is_playing();
         if (is_playing) ImGui::BeginDisabled();
         if (ImGui::MenuItem("Save Scene") && is_playing == false) {
-            engine.scenes.serialize_active_scene();
+            const bool succes = engine.scenes.serialize_active_scene();
+            if (succes == false) {
+                // clang-format off
+                PopUp::create()
+                    .severity(Severity::ERROR)
+                    .title("Failed to Save Scene")
+                    .message("An error occurred while saving the scene. Please check the logs for more details.")
+                    .add_button("OK")
+                    .add_button("No")
+                    .add_button("Yes");
+                // clang-format on
+            }
         }
         if (is_playing) ImGui::EndDisabled();
         ImGui::EndMenu();
