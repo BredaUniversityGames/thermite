@@ -42,5 +42,13 @@ struct AttachEvent {
     tmt::Entity entity;
     bool is_attached;
 };
+struct PlayerHealthChanged {
+    tmt::Entity player_entity;
+    float previous_health;
+    float new_health;
+};
+struct EndRun {
+    bool player_dead;
+};
 
 }  // namespace game
