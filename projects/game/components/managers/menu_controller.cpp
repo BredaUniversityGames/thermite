@@ -113,11 +113,6 @@ void MenuController::disable_upgrade_menu() const {
 }
 
 void MenuController::enable_end_of_game_menu(const EndRun& event) const {
-    // Disable all other menus
-    disable_inventory_menu();
-    disable_pause_menu();
-    disable_upgrade_menu();
-
     // Open end of game menu
     if (event.player_dead) {
         if (death_menu_entity == entt::null) {
