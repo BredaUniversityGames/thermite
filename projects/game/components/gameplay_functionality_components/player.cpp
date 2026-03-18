@@ -336,6 +336,11 @@ void Player::update(const tmt::FrameData& time) {
     if (tmt::engine.ecs.valid(energy_bar_current)) {
         if (auto componentcurrhp = tmt::engine.ecs.try_get_component<tmt::UIComponent>(energy_bar_current)) componentcurrhp->size.x = energy.value;
     }
+
+    if (health.value <= 0.0f) {
+        // player ded -> call end run event with player ded 
+        tmt::engine.ecs.get_dispatcher().trigger(EndRun {true});
+    }
 }
 void Player::draw_debug_lines() const {
     const auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
