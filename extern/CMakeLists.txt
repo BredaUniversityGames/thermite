@@ -263,6 +263,7 @@ set(MSDF_ATLAS_USE_SKIA OFF CACHE BOOL "" FORCE)
 set(MSDF_ATLAS_USE_VCPKG OFF CACHE BOOL "" FORCE)
 set(MSDF_ATLAS_DYNAMIC_RUNTIME ON CACHE BOOL "" FORCE)
 add_subdirectory(msdf-atlas-gen)
+target_compile_definitions(msdfgen-core PRIVATE _USE_MATH_DEFINES)
 
 # fmod - audio engine
 set(FMOD_POSTFIX "$<$<CONFIG:Debug>:L>")

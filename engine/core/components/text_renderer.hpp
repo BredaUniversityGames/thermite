@@ -102,8 +102,8 @@ struct TextRenderer {
 
     /* Constructors */
     TextRenderer() = default;
-    TextRenderer(const std::string& text) : text(text) {}
-    TextRenderer(const std::string& text, ResourceRef<Font> font) : text(text), font(std::move(font)) {}
+    TextRenderer(std::string text) : text(std::move(text)) {}
+    TextRenderer(std::string text, ResourceRef<Font> font) : text(std::move(text)), font(std::move(font)) {}
     ~TextRenderer() = default;
 };
 
