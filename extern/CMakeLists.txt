@@ -231,6 +231,7 @@ set(PNG_TESTS OFF CACHE BOOL "" FORCE)
 set(SKIP_INSTALL_ALL ON CACHE BOOL "" FORCE)
 add_subdirectory(libpng)
 set(SKIP_INSTALL_ALL OFF CACHE BOOL "" FORCE)
+set_target_properties(png_static PROPERTIES UNITY_BUILD OFF)
 
 # Create expected target alias
 if (TARGET png_static)
