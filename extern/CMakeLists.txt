@@ -255,6 +255,7 @@ set(SKIP_INSTALL_ALL ON CACHE BOOL "" FORCE)
 add_subdirectory(freetype)
 set(SKIP_INSTALL_ALL OFF CACHE BOOL "" FORCE)
 add_library(Freetype::Freetype ALIAS freetype)
+set_target_properties(freetype PROPERTIES UNITY_BUILD OFF)
 
 # MSDF Atlas Gen
 # https://github.com/Chlumsky/msdf-atlas-gen
