@@ -313,7 +313,7 @@ void Player::update(const tmt::FrameData& time) {
     previous_max_health = health.max_value;
     // Update UI
     if (tmt::engine.ecs.valid(hp_bar_max)) {
-        if (auto componenthpmax = tmt::engine.ecs.try_get_component<tmt::UIComponent>(hp_bar_max)) componenthpmax->size.x = health.max_value + 2.0f;
+        if (auto component_hp_max = tmt::engine.ecs.try_get_component<tmt::UIComponent>(hp_bar_max)) component_hp_max->size.x = health.max_value + 2.0f;
     }
 
     // Fire event health changed
@@ -323,7 +323,7 @@ void Player::update(const tmt::FrameData& time) {
     previous_health = health.value;
     // Update UI
     if (tmt::engine.ecs.valid(hp_bar_current)) {
-        if (auto componentcurrhp = tmt::engine.ecs.try_get_component<tmt::UIComponent>(hp_bar_current)) componentcurrhp->size.x = health.value;
+        if (auto component_curr_hp = tmt::engine.ecs.try_get_component<tmt::UIComponent>(hp_bar_current)) component_curr_hp->size.x = health.value;
     }
 
     // Fire event max energy changed
@@ -333,7 +333,7 @@ void Player::update(const tmt::FrameData& time) {
     previous_max_energy = energy.max_value;
     // Update UI
     if (tmt::engine.ecs.valid(energy_bar_max)) {
-        if (auto componenthpmax = tmt::engine.ecs.try_get_component<tmt::UIComponent>(energy_bar_max)) componenthpmax->size.x = energy.max_value + 2.0f;
+        if (auto component_energy_max = tmt::engine.ecs.try_get_component<tmt::UIComponent>(energy_bar_max)) component_energy_max->size.x = energy.max_value + 2.0f;
     }
 
     // Fire event energy changed
@@ -343,7 +343,31 @@ void Player::update(const tmt::FrameData& time) {
     previous_energy = energy.value;
     // Update UI
     if (tmt::engine.ecs.valid(energy_bar_current)) {
-        if (auto componentcurrhp = tmt::engine.ecs.try_get_component<tmt::UIComponent>(energy_bar_current)) componentcurrhp->size.x = energy.value;
+        if (auto component_curr_energy = tmt::engine.ecs.try_get_component<tmt::UIComponent>(energy_bar_current)) component_curr_energy->size.x = energy.value;
+    }
+
+    // Death handling logic
+
+    // Energy death (timer)
+    if (energy.value <= 0.0f) {
+        out_of_energy_timer += time.delta_time;
+    } else {
+        // reset out of battery timer
+        out_of_energy_timer = 0.0f;
+    }
+
+    if (out_of_energy_timer >= out_of_energy_time_till_death) {
+        tmt::engine.ecs.get_dispatcher().trigger(EndRun { true });
+        player_ended_run = true;
+        state = PlayerState::PAUSED;
+    }
+
+    // Health death (instant)
+    if (health.value <= 0.0f && !player_ended_run) {
+        // player ded -> call end run event with player ded
+        tmt::engine.ecs.get_dispatcher().trigger(EndRun { true });
+        player_ended_run = true;
+        state = PlayerState::PAUSED;
     }
 
     if (health.value <= 0.0f) {
