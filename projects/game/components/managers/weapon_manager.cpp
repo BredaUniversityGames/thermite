@@ -50,7 +50,11 @@ void game::WeaponManager::start() {
     current_weapon = starting_weapon;
     tmt::Log::info("[WeaponManager] Starting with weapon: {}", magic_enum::enum_name(starting_weapon));
 
-
+    auto shooter_camera = tmt::engine.ecs.try_get_component<tmt::Camera>(shooting_entity);
+    if (shooter_camera) {
+        last_pitch = shooter_camera->pitch;
+        last_yaw = shooter_camera->yaw;
+    }
    
     for (auto& [type, weapon] : weapons) {
         auto& weapon_procanim_data = weapon.proc_anim_data;
@@ -141,14 +145,54 @@ void game::WeaponManager::update(const tmt::FrameData& time) {
     {
         auto aa_rottrans = animate_antioverlap();
 
+        if(tmt::engine.ecs.valid(shooting_entity)) 
+        {
+            auto shooter_camera = tmt::engine.ecs.try_get_component<tmt::Camera>(shooting_entity);
+            if(shooter_camera)
+            {
+                float d_pitch = shooter_camera->pitch - last_pitch;
+                float d_yaw = shooter_camera->yaw - last_yaw;
+
+                if(d_pitch || d_yaw)
+                {
+                    
+                    glm::vec3 displaced_vec = glm::vec3{d_yaw, -d_pitch, 0.f} * 0.1f;
+                    
+                    float displaced_mag = std::min(glm::length(displaced_vec) * 0.001f * weapon_procanim_data.look_sensitivity, 1.f);
+
+                    aa_rottrans.translation.x -= displaced_vec.x * weapon_procanim_data.look_displacement;
+                    aa_rottrans.translation.y -= displaced_vec.y * weapon_procanim_data.look_displacement;
+                    
+                    auto parent = root_eff_transform->get_parent();
+                    auto& parent_world = tmt::engine.ecs.get_component<tmt::Transform>(parent).get_world_matrix();
+
+                    const RotTrans& rest_pose = rest_poses.at(current_weapon);
+
+                    glm::vec3 fwd = glm::quat_cast(parent_world * glm::mat4_cast(rest_pose.rotation)) * glm::vec3(0.f, 0.f, 1.f);
+
+
+                    auto target_rot = glm::quatLookAt(glm::normalize(displaced_vec), glm::vec3(0.f, 1.f, 0.f));
+                    aa_rottrans.rotation *= glm::slerp(aa_rottrans.rotation, target_rot, weapon_procanim_data.look_max_rotation_factor * displaced_mag);
+                    aa_rottrans.rotation *= glm::angleAxis(glm::radians(d_yaw) * weapon_procanim_data.look_roll_factor, glm::vec3(0.f, 0.f, 1.f));
+                }
+                
+
+                last_pitch = shooter_camera->pitch;
+                last_yaw = shooter_camera->yaw;
+            }
+        } 
+
         target_pos = aa_rottrans.translation;
         auto target_rot = aa_rottrans.rotation;
 
         static tmt::SecondOrderSolver::State<glm::vec3> state { .current_state = rest_poses[current_weapon].translation };
         static tmt::SecondOrderSolver::State<glm::quat> rot_state {.current_state = rest_poses[current_weapon].rotation};
 
-        tmt::SecondOrderSolver::solve(state, target_pos, 1.f, 1.f, 0.f, time.delta_time);
-        tmt::SecondOrderSolver::solve(rot_state, target_rot, 1.f, 1.f, 0.f, time.delta_time);
+        auto& rot_motion = weapon_procanim_data.rotational_motion;
+        auto& pos_motion = weapon_procanim_data.displacement_motion;
+
+        tmt::SecondOrderSolver::solve(state, target_pos, pos_motion.frequency, pos_motion.damping, pos_motion.initial_response, time.delta_time);
+        tmt::SecondOrderSolver::solve(rot_state, target_rot, rot_motion.frequency, rot_motion.damping, rot_motion.initial_response, time.delta_time);
 
         root_eff_transform->set_local_position(state.current_state);
         root_eff_transform->set_local_rotation(rot_state.current_state);
