@@ -16,7 +16,7 @@ void MenuController::update(const tmt::FrameData& time) {
             return;
         }
 
-        if (tmt::engine.ecs.is_disabled(inventory_menu_entity)) {
+        if (tmt::engine.ecs.is_disabled(inventory_menu_entity) && tmt::engine.ecs.is_disabled(end_run_menu_entity)) {
             enable_inventory_menu();
         } else {
             disable_inventory_menu();
@@ -29,7 +29,7 @@ void MenuController::update(const tmt::FrameData& time) {
             return;
         }
 
-        if (tmt::engine.ecs.is_disabled(pause_menu_entity)) {
+        if (tmt::engine.ecs.is_disabled(pause_menu_entity) && tmt::engine.ecs.is_disabled(end_run_menu_entity)) {
             enable_pause_menu();
         } else {
             disable_pause_menu();
@@ -42,7 +42,7 @@ void MenuController::update(const tmt::FrameData& time) {
             return;
         }
 
-        if (tmt::engine.ecs.is_disabled(upgrade_menu_entity)) {
+        if (tmt::engine.ecs.is_disabled(upgrade_menu_entity) && tmt::engine.ecs.is_disabled(end_run_menu_entity)) {
             enable_upgrade_menu();
         } else {
             disable_upgrade_menu();
@@ -153,6 +153,7 @@ bool MenuController::check_for_open_menus() const {
     if (tmt::engine.ecs.is_enabled(pause_menu_entity)) return true;
     if (tmt::engine.ecs.is_enabled(upgrade_menu_entity)) return true;
     if (tmt::engine.ecs.is_enabled(inventory_menu_entity)) return true;
+    if (tmt::engine.ecs.is_enabled(end_run_menu_entity)) return true;
     return false;
 }
 
