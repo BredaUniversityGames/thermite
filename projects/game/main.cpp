@@ -218,13 +218,13 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
         }
 
         {
-            tmt::GoapGoal get_in_lazer_range;
-            get_in_lazer_range.name = "g_GetInLazerRange";
-            get_in_lazer_range.desired_state = { { tmt::FactId("m_in_laser_range"), true } };
-            get_in_lazer_range.priority = 10;
-            get_in_lazer_range.valid = true;
+            tmt::GoapGoal get_in_laser_range;
+            get_in_laser_range.name = "g_GetInLaserRange";
+            get_in_laser_range.desired_state = { { tmt::FactId("m_in_laser_range"), true } };
+            get_in_laser_range.priority = 10;
+            get_in_laser_range.valid = true;
 
-            goal_reg.register_goal("g_GetInLazerRange", get_in_lazer_range);
+            goal_reg.register_goal("g_GetInLaserRange", get_in_laser_range);
         }
 
         {
