@@ -50,39 +50,90 @@ void MenuController::update(const tmt::FrameData& time) {
     }
 }
 
-void MenuController::start() {}
+void MenuController::start() {
+    // Bind end run to event
+    tmt::engine.ecs.get_dispatcher().sink<EndRun>().connect<&MenuController::enable_end_of_game_menu>(this);
+}
 
 void MenuController::enable_pause_menu() const {
+    if (pause_menu_entity == entt::null) {
+        tmt::Log::error("No pause menu found, please add the menu to the menu controller.");
+        return;
+    }
     if (check_for_open_menus()) return;
     unlock_mouse();
     tmt::engine.ecs.enable(pause_menu_entity);
 }
 
 void MenuController::disable_pause_menu() const {
+    if (pause_menu_entity == entt::null) {
+        tmt::Log::error("No pause menu found, please add the menu to the menu controller.");
+        return;
+    }
     lock_mouse();
     tmt::engine.ecs.disable(pause_menu_entity);
 }
 
 void MenuController::enable_inventory_menu() const {
+    if (inventory_menu_entity == entt::null) {
+        tmt::Log::error("No inventory menu found, please add the menu to the menu controller.");
+        return;
+    }
     if (check_for_open_menus()) return;
     unlock_mouse();
     tmt::engine.ecs.enable(inventory_menu_entity);
 }
 
 void MenuController::disable_inventory_menu() const {
+    if (inventory_menu_entity == entt::null) {
+        tmt::Log::error("No inventory menu found, please add the menu to the menu controller.");
+        return;
+    }
     lock_mouse();
     tmt::engine.ecs.disable(inventory_menu_entity);
 }
 
 void MenuController::enable_upgrade_menu() const {
+    if (upgrade_menu_entity == entt::null) {
+        tmt::Log::error("No upgrade menu found, please add the menu to the menu controller.");
+        return;
+    }
     if (check_for_open_menus()) return;
     unlock_mouse();
     tmt::engine.ecs.enable(upgrade_menu_entity);
 }
 
 void MenuController::disable_upgrade_menu() const {
+    if (upgrade_menu_entity == entt::null) {
+        tmt::Log::error("No upgrade menu found, please add the menu to the menu controller.");
+        return;
+    }
     lock_mouse();
     tmt::engine.ecs.disable(upgrade_menu_entity);
+}
+
+void MenuController::enable_end_of_game_menu(const EndRun& event) const {
+    // Disable all other menus
+    disable_inventory_menu();
+    disable_pause_menu();
+    disable_upgrade_menu();
+
+    // Open end of game menu
+    if (event.player_dead) {
+        if (death_menu_entity == entt::null) {
+            tmt::Log::error("No death menu found, please add the menu to the menu controller.");
+            return;
+        }
+        unlock_mouse();
+        tmt::engine.ecs.enable(death_menu_entity);
+    } else {
+        if (end_run_menu_entity == entt::null) {
+            tmt::Log::error("No end run menu found, please add the menu to the menu controller.");
+            return;
+        }
+        unlock_mouse();
+        tmt::engine.ecs.enable(end_run_menu_entity);
+    }
 }
 
 void MenuController::lock_mouse() {

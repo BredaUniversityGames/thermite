@@ -337,9 +337,28 @@ void Player::update(const tmt::FrameData& time) {
         if (auto component_curr_energy = tmt::engine.ecs.try_get_component<tmt::UIComponent>(energy_bar_current)) component_curr_energy->size.x = energy.value;
     }
 
-    if (health.value <= 0.0f) {
-        // player ded -> call end run event with player ded 
-        tmt::engine.ecs.get_dispatcher().trigger(EndRun {true});
+    // Death handling logic
+
+    // Energy death (timer)
+    if (energy.value <= 0.0f) {
+        out_of_energy_timer += time.delta_time;
+    } else {
+        // reset out of battery timer
+        out_of_energy_timer = 0.0f;
+    }
+
+    if (out_of_energy_timer >= out_of_energy_time_till_death) {
+        tmt::engine.ecs.get_dispatcher().trigger(EndRun { true });
+        player_ended_run = true;
+        state = PlayerState::PAUSED;
+    }
+
+    // Health death (instant)
+    if (health.value <= 0.0f && !player_ended_run) {
+        // player ded -> call end run event with player ded
+        tmt::engine.ecs.get_dispatcher().trigger(EndRun { true });
+        player_ended_run = true;
+        state = PlayerState::PAUSED;
     }
 }
 void Player::draw_debug_lines() const {
