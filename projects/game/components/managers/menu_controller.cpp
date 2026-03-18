@@ -154,6 +154,7 @@ bool MenuController::check_for_open_menus() const {
     if (tmt::engine.ecs.is_enabled(upgrade_menu_entity)) return true;
     if (tmt::engine.ecs.is_enabled(inventory_menu_entity)) return true;
     if (tmt::engine.ecs.is_enabled(end_run_menu_entity)) return true;
+    if (tmt::engine.ecs.is_enabled(death_menu_entity)) return true;
     return false;
 }
 
