@@ -77,6 +77,10 @@ class Player : public tmt::GameComponent<Player> {
     PlayerState state = PlayerState::FREEMOVING;
     glm::vec3 velocity = { 0.0f, 0.0f, 0.0f };
     glm::vec3 input_dir { 0.0f };
+    float previous_max_health = health.max_value;
+    float previous_health = health.value;
+    float previous_max_energy = energy.max_value;
+    float previous_energy = energy.value;
 };
 
 }  // namespace game

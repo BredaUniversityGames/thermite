@@ -297,21 +297,49 @@ void Player::update(const tmt::FrameData& time) {
     // triggers the event for shooting
 
     // TODO events, could also use entt on modifcation component for the UI components
-
+    // Fire event max health changed
+    if (previous_max_health != health.max_value) {
+        tmt::engine.ecs.get_dispatcher().trigger(PlayerMaxHealthChanged {entity, health.max_value, previous_max_health});
+    }
+    previous_max_health = health.max_value;
+    // Update UI
     if (tmt::engine.ecs.valid(hp_bar_max)) {
         if (auto componenthpmax = tmt::engine.ecs.try_get_component<tmt::UIComponent>(hp_bar_max)) componenthpmax->size.x = health.max_value + 2.0f;
     }
 
+    // Fire event health changed
+    if (previous_health != health.value) {
+        tmt::engine.ecs.get_dispatcher().trigger(PlayerHealthChanged { entity, health.value, previous_health });
+    }
+    previous_health = health.value;
+    //Update UI
     if (tmt::engine.ecs.valid(hp_bar_current)) {
         if (auto componentcurrhp = tmt::engine.ecs.try_get_component<tmt::UIComponent>(hp_bar_current)) componentcurrhp->size.x = health.value;
     }
 
+    // Fire event max energy changed
+    if (previous_max_energy != energy.max_value) {
+        tmt::engine.ecs.get_dispatcher().trigger(PlayerMaxEnergyChanged { entity, energy.max_value, previous_max_energy });
+    }
+    previous_max_energy = energy.max_value;
+    // Update UI
     if (tmt::engine.ecs.valid(energy_bar_max)) {
         if (auto componenthpmax = tmt::engine.ecs.try_get_component<tmt::UIComponent>(energy_bar_max)) componenthpmax->size.x = energy.max_value + 2.0f;
     }
 
+    // Fire event energy changed
+    if (previous_energy != energy.value) {
+        tmt::engine.ecs.get_dispatcher().trigger(PlayerMaxHealthChanged { entity, energy.value, previous_energy });
+    }
+    previous_energy = energy.value;
+    // Update UI
     if (tmt::engine.ecs.valid(energy_bar_current)) {
         if (auto componentcurrhp = tmt::engine.ecs.try_get_component<tmt::UIComponent>(energy_bar_current)) componentcurrhp->size.x = energy.value;
+    }
+
+    if (health.value <= 0.0f) {
+        // player ded -> call end run event with player ded 
+        tmt::engine.ecs.get_dispatcher().trigger(EndRun {true});
     }
 }
 void Player::draw_debug_lines() const {
