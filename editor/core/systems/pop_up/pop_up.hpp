@@ -105,7 +105,7 @@ class PopUp : public detail::Title<PopUp>, public detail::Message<PopUp>, public
 
     bool close_button = true;
 
-    std::vector<Button> buttons = { { true, "Close" } };
+    std::vector<Button> buttons;
 };
 
 /* =================== Notification =================== */
@@ -121,7 +121,7 @@ class NotificationManager {
 
     static void add_notification(const Notification& notification) { queue.push_back(notification); }
 
-    static void update();
+    static void update(const float delta_time);
 
    private:
     inline static std::vector<Notification> queue;

@@ -190,6 +190,7 @@ void Editor::on_engine_update(const FrameData& time) {
     }
 
     PopUpManager::update();
+    NotificationManager::update(time.delta_time);
 
     {
         TMT_ZONE_SCOPED_N("ImGui End Frame");

@@ -12,14 +12,21 @@ static const ImVec4 severity_colors[] = {
     ImVec4(1.0f, 1.0f, 1.0f, 1.0f),  // INFO
     ImVec4(1.0f, 1.0f, 0.0f, 1.0f),  // WARNING
     ImVec4(1.0f, 0.0f, 0.0f, 1.0f),  // ERROR
-    ImVec4(1.0f, 0.5f, 0.0f, 1.0f)   // CRITICAL
+    ImVec4(1.0f, 0.5f, 0.0f, 1.0f),  // CRITICAL
 };
 
 static const char* severity_icons[] = {
-    ICON_MS_INFO,      // INFO
-    ICON_MS_WARNING,   // WARNING
-    ICON_MS_ERROR,     // ERROR
-    ICON_MS_DANGEROUS  // CRITICAL
+    ICON_MS_INFO,       // INFO
+    ICON_MS_WARNING,    // WARNING
+    ICON_MS_ERROR,      // ERROR
+    ICON_MS_DANGEROUS,  // CRITICAL
+};
+
+static const char* severity_names[] = {
+    "Info",
+    "Warning",
+    "Error",
+    "Critical",
 };
 
 void PopUpManager::update() {
@@ -79,6 +86,94 @@ void PopUpManager::update() {
     }
 }
 
-void NotificationManager::update() {}
+void NotificationManager::update(const float delta_time) {
+    if (queue.empty()) return;
+
+    uint32_t index = 0;
+    float offset = 0.0f;
+    for (auto& notification : queue) {
+        const auto flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings |
+                           ImGuiWindowFlags_NoFocusOnAppearing | /*ImGuiWindowFlags_NoBringToFrontOnFocus |*/ ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoDecoration |
+                           ImGuiWindowFlags_NoNav;
+
+        const bool has_title = notification.title_.empty() == false;
+        const bool has_message = notification.message_.empty() == false;
+        if (has_title == false && has_message == false) {
+            continue;
+        }
+
+        const ImVec2 padding(10.0f, 10.0f);
+        const float window_spacing = 10.0f;
+        const float notification_ratio = 6.0f;
+        const float window_rounding = 10.0f;
+        const float close_button_padding = 10.0f;
+        const float title_margin = 20.0f;
+
+        const auto color = severity_colors[static_cast<int>(notification.severity_)];
+        const auto icon = severity_icons[static_cast<int>(notification.severity_)];
+        const auto severity_name = severity_names[static_cast<int>(notification.severity_)];
+
+        const auto icon_text = icon;
+        const auto title_text = has_title ? notification.title_.c_str() : severity_name;
+        const auto close_button_text = ICON_MS_CLOSE;
+
+        const float icon_width = ImGui::CalcTextSize(icon_text).x;
+        const float title_width = ImGui::CalcTextSize(title_text).x;
+        const float button_width = ImGui::CalcTextSize(close_button_text).x + ImGui::GetStyle().FramePadding.x * 2;
+        const float min_window_width = icon_width + title_width + title_margin + button_width + padding.x * 2 + close_button_padding;
+
+        bool close = false;
+
+        /* Position at the bottom right of the screen, with some padding and offset */
+        ImGuiIO& io = ImGui::GetIO();
+        const ImVec2 window_size = io.DisplaySize;
+        const ImVec2 window_pos = ImVec2(window_size.x - padding.x, window_size.y - padding.y - offset);
+        ImGui::SetNextWindowPos(window_pos, ImGuiCond_Always, ImVec2(1.0f, 1.0f));
+
+        /* min width */
+        ImGui::SetNextWindowSizeConstraints(ImVec2(min_window_width, 0.0f), ImVec2(FLT_MAX, FLT_MAX));
+
+        /* Rounded corners */
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, window_rounding);
+
+        const std::string window_name = fmt::format("{}##{}", notification.title_, index);
+        ImGui::Begin(window_name.c_str(), nullptr, flags);
+
+        ImGui::PushTextWrapPos(window_size.x / notification_ratio);
+
+        ImGui::TextColored(color, "%s", icon_text);
+        ImGui::SameLine();
+        ImGui::Text("%s", title_text);
+
+        const float window_width = ImGui::GetWindowWidth();
+        const float button_pos = window_width - button_width - close_button_padding;
+        ImGui::SameLine();
+        ImGui::SetCursorPosX(button_pos);
+        if (ImGui::SmallButton(close_button_text)) {
+            close = true;
+        }
+
+        if (has_message) {
+            ImGui::Separator();
+
+            ImGui::TextWrapped("%s", notification.message_.c_str());
+        }
+
+        offset += ImGui::GetWindowHeight() + window_spacing;
+
+        ImGui::PopTextWrapPos();
+        ImGui::End();
+        ImGui::PopStyleVar();
+
+        notification.duration_ -= delta_time;
+        close |= (notification.duration_ <= 0.0f);
+        if (close) {
+            queue.erase(queue.begin() + index);
+            --index;
+        }
+
+        index++;
+    }
+}
 
 }  // namespace tmt
