@@ -35,7 +35,6 @@ class Player : public tmt::GameComponent<Player> {
     void resolve_penetration();
     void prevent_camera_clip() const;
     void move_player();
-    void trigger_barge_movement();
     void update(const tmt::FrameData& time) override;
     void draw_debug_lines() const override;
     void attempt_attach(tmt::Input& input);
