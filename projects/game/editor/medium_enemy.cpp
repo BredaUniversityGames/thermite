@@ -24,8 +24,12 @@ void tag_invoke(ImReflect::ImInput_t, const char* name, game::MediumEnemy& value
     if (ImGui::TreeNodeEx("Movement & Detection", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImReflect::Input("Walk Speed", value.walk_speed, type_settings, type_response);
         ImReflect::Input("Rotation Speed", value.rotation_speed, type_settings, type_response);
+        help("Speed at which the enemy adjusts its rotation relative to the ground and its velocity");
         ImReflect::Input("Height Above Ground", value.height_above_ground, type_settings, type_response);
         ImReflect::Input("Aggro Range", value.aggro_range, type_settings, type_response);
+        help("When the player enters aggro range, the enemy will start chasing and firing missiles");
+        ImReflect::Input("Back Off Distance", value.back_off_distance, type_settings, type_response);
+        help("Back Off Distance is the distance at which the enemy will change from trying to get closer to the player to backing away");
         ImGui::TreePop();
     }
 
@@ -38,6 +42,9 @@ void tag_invoke(ImReflect::ImInput_t, const char* name, game::MediumEnemy& value
         /* Stomp */
         if (ImGui::TreeNode("Stomp")) {
             ImReflect::Input("Stomp Range", value.stomp_range, type_settings, type_response);
+            ImReflect::Input("Stomp Cooldown", value.stomp_cooldown, type_settings, type_response);
+            ImReflect::Input("Stomp Windup", value.stomp_windup, type_settings, type_response);
+            ImReflect::Input("Stomp Radius", value.stomp_radius, type_settings, type_response);
             ImGui::TreePop();
         }
 

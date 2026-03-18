@@ -17,6 +17,8 @@ class MediumEnemy : public tmt::GameComponent<MediumEnemy> {
     void update(const tmt::FrameData& time) override;
     void end() override;
 
+    void follow_player() const;
+
     tmt::Entity player = entt::null;
     tmt::Entity walkable_asteroid = entt::null;
     glm::vec3 velocity = glm::vec3(0, 0, 0);
@@ -25,6 +27,7 @@ class MediumEnemy : public tmt::GameComponent<MediumEnemy> {
     float height_above_ground = 0.2f;
     float height_above_ground_offset = 0.0f;
     float walk_speed = 5.0f;
+    float back_off_distance = 5.0f;
 
     float aggro_range = 50.0f;
     float laser_range = 30.0f;
@@ -54,6 +57,11 @@ class MediumEnemy : public tmt::GameComponent<MediumEnemy> {
     float laser_linear_threshold = 0.5f;
     float laser_max_randomness = 1.0f;
     float laser_prediction_length = 0.0f;
+
+    float stomp_cooldown = 3.0f;
+    float stomp_timer = 0.0f;
+    float stomp_windup = 0.5f;
+    float stomp_radius = 1.0f;
 };
 
 }  // namespace game

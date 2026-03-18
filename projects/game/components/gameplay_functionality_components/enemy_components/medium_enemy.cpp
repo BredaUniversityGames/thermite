@@ -25,25 +25,27 @@ void game::MediumEnemy::update(const tmt::FrameData& time) {
     if (!ws) return;
     const auto& player_pos = tmt::engine.ecs.get_component<tmt::Transform>(player).get_world_position();
     float dist = glm::length(player_pos - walking_transform.get_world_position());
-    // Stop chasing only if player is too far
+
+    // ranges
     if (dist > aggro_range) {
         ws->set_fact(tmt::FactId("m_in_aggro_range"), false);
-    }
-
-    // in chase range, update world state
-    if (dist < aggro_range) {
+    } else {
         ws->set_fact(tmt::FactId("m_in_aggro_range"), true);
     }
 
     if (dist > laser_range) {
         ws->set_fact(tmt::FactId("m_in_laser_range"), false);
-    }
-
-    // in laser range, update world state
-    if (dist < laser_range) {
+    } else {
         ws->set_fact(tmt::FactId("m_in_laser_range"), true);
     }
 
+    if (dist > stomp_range) {
+        ws->set_fact(tmt::FactId("m_in_stomp_range"), false);
+    } else {
+        ws->set_fact(tmt::FactId("m_in_stomp_range"), true);
+    }
+
+    // cooldowns
     missile_timer += time.delta_time;
     if (missile_timer > missile_cooldown) {
         ws->set_fact(tmt::FactId("m_missiles_ready"), true);
@@ -56,6 +58,13 @@ void game::MediumEnemy::update(const tmt::FrameData& time) {
         ws->set_fact(tmt::FactId("m_laser_ready"), true);
     } else {
         ws->set_fact(tmt::FactId("m_laser_ready"), false);
+    }
+
+    stomp_timer += time.delta_time;
+    if (stomp_timer > stomp_cooldown) {
+        ws->set_fact(tmt::FactId("m_stomp_ready"), true);
+    } else {
+        ws->set_fact(tmt::FactId("m_stomp_ready"), false);
     }
 
     // height correction
@@ -116,6 +125,29 @@ void game::MediumEnemy::update(const tmt::FrameData& time) {
 }
 
 void game::MediumEnemy::end() {}
+
+void game::MediumEnemy::follow_player() const {
+    auto& enemy = tmt::engine.ecs.get_component<MediumEnemy>(entity);
+    auto& nav_mesh = tmt::engine.ecs.get_component<tmt::NavMesh>(enemy.walkable_asteroid);
+
+    tmt::Transform& enemy_transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
+    const auto& enemy_entity_pos = enemy_transform.get_world_position();
+    const auto& player_pos = tmt::engine.ecs.get_component<tmt::Transform>(player).get_world_position();
+    float distance = glm::distance(enemy_entity_pos, player_pos);
+
+    if (std::optional<glm::vec3> direction = nav_mesh.follow_path(enemy_entity_pos, player_pos)) {
+        if (distance < back_off_distance) {
+            glm::vec3 target_pos = enemy_entity_pos - *direction;
+            direction = nav_mesh.follow_path(enemy_entity_pos, target_pos);
+            enemy.velocity += glm::vec3(*direction * enemy.walk_speed);
+        } else {
+            enemy.velocity += glm::vec3(*direction * enemy.walk_speed);
+        }
+    } else {
+        // Close enough to consider node reached, force path recompute
+        nav_mesh.path.clear();
+    }
+}
 
 bool Missile::update(float dt, glm::vec3 ground_up, glm::vec3 player_pos) {
     tmt::engine.polyline.draw_sphere(position, 0.1f);
