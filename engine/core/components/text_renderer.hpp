@@ -9,53 +9,40 @@ namespace tmt {
 
 /* Horizontal text alignment */
 enum class HorizontalAlign : uint8_t {
-    LEFT,    // Align to left edge
-    CENTER,  // Center horizontally
-    RIGHT    // Align to right edge
+    LEFT,   /* Align to left edge */
+    CENTER, /* Center horizontally */
+    RIGHT   /* Align to right edge */
 };
 
 /* Vertical text alignment */
 enum class VerticalAlign : uint8_t {
-    TOP,     // Align to top edge
-    MIDDLE,  // Center vertically
-    BOTTOM   // Align to bottom edge
+    TOP,    /* Align to top edge */
+    MIDDLE, /* Center vertically */
+    BOTTOM  /* Align to bottom edge */
 };
 
 /* Text overflow behavior */
 enum class TextOverflow : uint8_t {
-    VISIBLE,   // Text extends beyond bounds
-    CLIP,      // Clip text at bounds
-    ELLIPSIS,  // Add "..." when text exceeds bounds
-    WRAP       // Wrap to next line (same as word_wrap=true)
+    VISIBLE,  /* Text extends beyond bounds */
+    CLIP,     /* Clip text at bounds */
+    ELLIPSIS, /* Add "..." when text exceeds bounds */
+    WRAP      /* Wrap to next line (same as word_wrap=true) */
 };
 
 /* Font style for rich text */
 enum class FontStyle : uint8_t { NORMAL = 0, BOLD = 1 << 0, ITALIC = 1 << 1, BOLD_ITALIC = BOLD | ITALIC };
 
-/*
- * TextRenderer Component
- *
- * Renders text using SDF (Signed Distance Field) fonts.
- * Supports rich text formatting with inline tags:
- *   <b>bold</b>, <i>italic</i>, <color=#RRGGBB>colored</color>,
- *   <size=N>sized</size>, <br> (line break)
- *
- * Usage:
- *   - Add TextRenderer component to an entity with UIComponent and Transform
- *   - Set the text content and font reference
- *   - Configure styling properties as needed
- */
 struct TextRenderer {
-    /* Text content - supports rich text tags */
+    /* Text content (supports rich text tags) */
     std::string text {};
 
-    /* Font resource - if null, uses default font */
+    /* Font resource, if null, uses default font */
     ResourceRef<Font> font {};
 
     /* Base font size in pixels */
     float font_size = 16.0f;
 
-    /* Text color (can be overridden by rich text tags) */
+    /* Text color (Rec.709) */
     RGBA color = RGBA(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
 
     /* Layout properties */
@@ -78,27 +65,8 @@ struct TextRenderer {
      * to follow the UI element's size. */
     bool use_ui_component_size = true;
 
-    /* SDF Effects - these work because we use signed distance field fonts */
-
-    /* Outline effect */
-    float outline_width = 0.0f;  // Outline thickness (0 = no outline)
-    RGBA outline_color = RGBA(glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
-
-    /* Shadow effect */
-    glm::vec2 shadow_offset = glm::vec2(0.0f);  // Shadow offset in pixels
-    RGBA shadow_color = RGBA(glm::vec4(0.0f, 0.0f, 0.0f, 0.5f));
-    float shadow_softness = 0.0f;               // Shadow blur amount
-
-    /* Glow effect */
-    float glow_width = 0.0f;  // Glow radius (0 = no glow)
-    RGBA glow_color = RGBA(glm::vec4(1.0f, 1.0f, 1.0f, 0.5f));
-
-    /* SDF rendering parameters */
-    float softness = 0.0f;  // Edge softness (anti-aliasing, auto-calculated if 0)
-    float boldness = 0.0f;  // Thicken/thin the text (-1 to 1)
-
     /* Rich text parsing */
-    bool rich_text_enabled = true;  // Enable parsing of rich text tags
+    bool rich_text_enabled = true;
 
     /* Constructors */
     TextRenderer() = default;
@@ -112,5 +80,5 @@ struct TextRenderer {
 TMT_COMPONENT(
     tmt::TextRenderer, "TextRenderer",
     (text, font, font_size, color, line_spacing, letter_spacing, paragraph_spacing, horizontal_align, vertical_align, word_wrap, max_width, max_height, overflow, use_ui_component_size,
-     outline_width, outline_color, shadow_offset, shadow_color, shadow_softness, glow_width, glow_color, softness, boldness, rich_text_enabled)
+     rich_text_enabled)
 );

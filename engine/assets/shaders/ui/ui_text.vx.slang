@@ -25,6 +25,5 @@ TextVertexOutput main(TextVertexInput input, int instance_id: SV_InstanceID) {
     output.pos = float4(ndc * 2.0f - 1.0f, 0.0f, 1.0f);
     output.uvs = uvs;
     output.instance_id = instance_id;
-    
     return output;
 }

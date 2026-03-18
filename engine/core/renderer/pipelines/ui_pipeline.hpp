@@ -11,39 +11,8 @@ class RenderGraph;
 
 namespace tmt {
 
-constexpr uint32_t MAX_UI_IMAGES = 256;
-constexpr uint32_t MAX_UI_GLYPHS = 4096;
-
-struct ImageVertex {
-    glm::vec3 pos {};
-    glm::vec2 uvs {};
-};
-
-struct GpuImage {
-    glm::vec2 pos {};
-    glm::vec2 extent {};
-    glm::vec4 color {};
-    glm::vec3 angles {};
-    uint32_t image_index {};
-    glm::vec2 pivot {};
-    float d0 = {}, d1 = {}; /* dummies */
-};
-
-/*
- * GPU data for a single text glyph.
- * Must match the GlyphInstance struct in ui_text.slang
- */
-struct GpuGlyph {
-    glm::vec4 pos_size {};      /* .xy = screen position, .zw = glyph size */
-    glm::vec4 uv_rect {};       /* .xy = min UV, .zw = max UV */
-    glm::vec4 color {};         /* text color RGBA */
-    glm::vec4 outline_color {}; /* outline color RGBA */
-    glm::vec4 params {};        /* .x = atlas_index, .y = outline_width, .z = softness, .w = boldness */
-    glm::vec4 shadow_params {}; /* .xy = shadow_offset, .z = shadow_softness, .w = unused */
-    glm::vec4 shadow_color {};  /* shadow color RGBA */
-    glm::vec4 glow_params {};   /* .x = glow_width, .yzw = unused */
-    glm::vec4 glow_color {};    /* glow color RGBA */
-};
+constexpr uint32_t MAX_UI_IMAGES = 256u;
+constexpr uint32_t MAX_UI_GLYPHS = 4096u;
 
 class UiPipeline {
    private:
@@ -51,13 +20,13 @@ class UiPipeline {
     Buffer images_buffer {};
     Buffer image_vertex_buffer {};
     Sampler image_sampler {};
-    uint32_t image_count = 0;
+    uint32_t image_count = 0u;
 
     /* Text Rendering */
     Buffer glyphs_buffer {};
     Buffer glyph_vertex_buffer {};
     Sampler text_sampler {};
-    uint32_t glyph_count = 0;
+    uint32_t glyph_count = 0u;
 
    public:
     void init(GPUAdapter& gpu);

@@ -19,39 +19,41 @@
 
 namespace tmt {
 
-/* Vertices that make up a quad */
+/* clang-format off */
+/* Vertices that make up a quad. */
 const float quad_vertices[] {
     /*    pos     */ /*  uv  */
-    0.0f,
-    0.0f,
-    0.0f,
-    0.0f,
-    0.0f,
-    1.0f,
-    0.0f,
-    0.0f,
-    1.0f,
-    0.0f,
-    0.0f,
-    1.0f,
-    0.0f,
-    0.0f,
-    1.0f,
-    1.0f,
-    0.0f,
-    0.0f,
-    1.0f,
-    0.0f,
-    1.0f,
-    1.0f,
-    0.0f,
-    1.0f,
-    1.0f,
-    0.0f,
-    1.0f,
-    0.0f,
-    0.0f,
-    1.0f,
+    0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+    1.0f, 0.0f, 0.0f, 1.0f, 0.0f,
+    0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
+    1.0f, 0.0f, 0.0f, 1.0f, 0.0f,
+    1.0f, 1.0f, 0.0f, 1.0f, 1.0f,
+    0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
+};
+/* clang-format on */
+
+struct ImageVertex {
+    glm::vec3 pos {};
+    glm::vec2 uvs {};
+};
+
+/* GPU data for a single image instance. */
+struct GpuImage {
+    glm::vec2 pos {};
+    glm::vec2 extent {};
+    glm::vec4 color {};
+    glm::vec3 angles {};
+    uint32_t image_index {};
+    glm::vec2 pivot {};
+    float d0 = {}, d1 = {}; /* dummies */
+};
+
+/* GPU data for a single text glyph (char) instance. */
+struct GpuGlyph {
+    glm::vec4 pos_size {}; /* .xy = screen position, .zw = glyph size */
+    glm::vec4 uv_rect {};  /* .xy = min UV, .zw = max UV */
+    glm::vec4 color {};    /* Text color (RGBA Rec.709) */
+    glm::vec4 params {};   /* .x = atlas_index, .yzw = unused */
 };
 
 void UiPipeline::init(GPUAdapter& gpu) {
@@ -189,7 +191,7 @@ void UiPipeline::enqueue_text(RenderGraph& render_graph, RenderView& render_view
     { /* Collect all the text in the scene (Game ECS) */
         const entt::basic_view view = engine.ecs.view<TextRenderer, UIComponent, Transform>();
 
-        // sort by z order
+        /* Z ordering */
         std::vector<entt::entity> sorted_entities(view.begin(), view.end());
         std::sort(sorted_entities.begin(), sorted_entities.end(), [&view](entt::entity a, entt::entity b) {
             return view.get<Transform>(a).get_world_position().z < view.get<Transform>(b).get_world_position().z;
@@ -244,40 +246,15 @@ void UiPipeline::enqueue_text(RenderGraph& render_graph, RenderView& render_view
                     break;
                 }
 
+                /* Fill in the GPU glyph struct */
                 GpuGlyph& gpu_glyph = glyphs.emplace_back();
-
-                /* Position and size */
                 gpu_glyph.pos_size.x = base_pos.x + glyph.position.x;
                 gpu_glyph.pos_size.y = base_pos.y + glyph.position.y;
                 gpu_glyph.pos_size.z = glyph.size.x;
                 gpu_glyph.pos_size.w = glyph.size.y;
-
-                /* UV coordinates */
                 gpu_glyph.uv_rect = glyph.uv_rect;
-
-                /* Colors */
                 gpu_glyph.color = glyph.color;
-                gpu_glyph.outline_color = glyph.outline_color;
-
-                /* SDF parameters */
                 gpu_glyph.params.x = *reinterpret_cast<const float*>(&glyph.atlas_index);
-                gpu_glyph.params.y = glyph.outline_width;
-                gpu_glyph.params.z = glyph.softness;
-                gpu_glyph.params.w = glyph.boldness;
-
-                /* Shadow parameters */
-                gpu_glyph.shadow_params.x = text_renderer.shadow_offset.x;
-                gpu_glyph.shadow_params.y = text_renderer.shadow_offset.y;
-                gpu_glyph.shadow_params.z = text_renderer.shadow_softness;
-                gpu_glyph.shadow_params.w = 0.0f;
-                gpu_glyph.shadow_color = text_renderer.shadow_color;
-
-                /* Glow parameters */
-                gpu_glyph.glow_params.x = text_renderer.glow_width;
-                gpu_glyph.glow_params.y = 0.0f;
-                gpu_glyph.glow_params.z = 0.0f;
-                gpu_glyph.glow_params.w = 0.0f;
-                gpu_glyph.glow_color = text_renderer.glow_color;
             }
         }
     }
@@ -290,8 +267,6 @@ void UiPipeline::enqueue_text(RenderGraph& render_graph, RenderView& render_view
 
     /* Get Render Image */
     const BindHandle render_image = render_view.get_render_image();
-
-    /* Get Render Resolution */
     const glm::uvec2 render_res = render_view.gpu_view.resolution;
 
     /* Text rendering pass */

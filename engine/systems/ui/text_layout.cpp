@@ -38,12 +38,6 @@ TextLayoutResult TextLayout::layout(const TextRenderer& text_renderer, const Fon
     /* Track max_height for overflow handling - prefer explicit value, fall back to container */
     float effective_max_height = text_renderer.max_height > 0 ? text_renderer.max_height : container_size.y;
 
-    /* SDF effects */
-    state.outline_width = text_renderer.outline_width;
-    state.outline_color = text_renderer.outline_color;
-    state.softness = text_renderer.softness;
-    state.boldness = text_renderer.boldness;
-
     /* Initialize cursor */
     state.cursor_x = 0.0f;
     state.cursor_y = 0.0f;
@@ -211,12 +205,6 @@ void TextLayout::process_char(uint32_t codepoint, const TextSegment& segment, La
     instance.color = segment.color;
     instance.atlas_index = font->atlas_image.get_index();
     instance.size_scale = segment.size_scale;
-
-    /* SDF effects */
-    instance.outline_width = state.outline_width;
-    instance.outline_color = state.outline_color;
-    instance.softness = state.softness;
-    instance.boldness = state.boldness;
 
     /* Don't add glyphs for spaces (but still advance cursor) */
     if (codepoint != ' ') {

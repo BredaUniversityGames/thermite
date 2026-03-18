@@ -19,12 +19,6 @@ struct GlyphInstance {
     glm::vec4 color {};       // RGBA color
     uint32_t atlas_index {};  // Bindless texture index
     float size_scale = 1.0f;  // Scale factor from rich text
-
-    /* SDF effects parameters */
-    float outline_width = 0.0f;
-    glm::vec4 outline_color {};
-    float softness = 0.0f;
-    float boldness = 0.0f;
 };
 
 /* A line of text with its metrics */
