@@ -6,10 +6,13 @@ import bvh2;
 import cache;
 import lights;
 import material;
+import bindless;
 
 /* Active render & scene view. */
 ConstantBuffer<RenderView> render_view;
-// ConstantBuffer<SceneView> scene_view;
+ConstantBuffer<SceneView> scene_view;
+/* Environment map sampler. */
+SamplerState envmap_sampler;
 Texture2D<float4> blue_noise;
 /* Voxel objects buffers. */
 StructuredBuffer<float4> tlas_nodes;
@@ -147,6 +150,51 @@ float pdf_vndf_unbounded(float3 i, float3 o, float alpha) {
     return ndf * (t - i.z) / (2.0f * len2);
 }
 
+float3 sample_vndf_isotropic(float2 u, float3 wi, float alpha, float3 n)
+{
+    // decompose the floattor in parallel and perpendicular components
+    float3 wi_z = -n * dot(wi, n);
+    float3 wi_xy = wi + wi_z;
+
+    // warp to the hemisphere configuration
+    float3 wiStd = -normalize(alpha * wi_xy + wi_z);
+
+    // sample a spherical cap in (-wiStd.z, 1]
+    float wiStd_z = dot(wiStd, n);
+    float z = 1.0 - u.y * (1.0 + wiStd_z);
+    float sinTheta = sqrt(saturate(1.0f - z * z));
+    float phi = PI_F32 * 2.0f * u.x - PI_F32;
+    float x = sinTheta * cos(phi);
+    float y = sinTheta * sin(phi);
+    float3 cStd = float3(x, y, z);
+
+    // reflect sample to align with normal
+    float3 up = float3(0, 0, 1.000001);  // Used for the singularity
+    float3 wr = n + up;
+    float3 c = dot(wr, cStd) * wr / wr.z - cStd;
+
+    // compute halfway direction as standard normal
+    float3 wmStd = c + wiStd;
+    float3 wmStd_z = n * dot(n, wmStd);
+    float3 wmStd_xy = wmStd_z - wmStd;
+
+    // return final normal
+    return normalize(alpha * wmStd_xy + wmStd_z);
+}
+
+float pdf_vndf_isotropic(float3 wo, float3 wi, float alpha, float3 n)
+{
+    float alphaSquare = alpha * alpha;
+    float3 wm = normalize(wo + wi);
+    float zm = dot(wm, n);
+    float zi = dot(wi, n);
+    float nrm = rsqrt((zi * zi) * (1.0f - alphaSquare) + alphaSquare);
+    float sigmaStd = (zi * nrm) * 0.5f + 0.5f;
+    float sigmaI = sigmaStd / nrm;
+    float nrmN = (zm * zm) * (alphaSquare - 1.0f) + 1.0f;
+    return alphaSquare / (PI_F32 * 4.0f * nrmN * nrmN * sigmaI);
+}
+
 [shader("compute")]
 [numthreads(16, 8, 1)]
 void main(int2 thread_id: SV_DispatchThreadID) {
@@ -191,34 +239,40 @@ void main(int2 thread_id: SV_DispatchThreadID) {
 
     /* Importance sample specular lobe */
     const float alpha_2 = alpha * alpha;
-    const float3 wh = SampleBoundedVNDF_Isotropic(wo, alpha, noise);
+    const float3 wh = sample_vndf_bounded(wo, alpha, alpha_2, noise);
     const float3 wi = normalize(reflect(-wo, wh));
     // const float3 wi = sample_cone(float3(-wo.x, -wo.y, wo.z), cos(0.1f), noise);
     // const float3 wh = normalize(wi + wo);
 
     /* Ignore directions which lie underneath the horizon */
     // if (wi.z <= 0.0f) wi = float3(-wo.x, -wo.y, wo.z);
-    if (wi.z <= 0.0f) {
-        specular[thread_id] = 0.0f;
-        return;
-    }
+    // if (wi.z <= 0.0f) {
+    //     specular[thread_id] = 0.0f;
+    //     return;
+    // }
     const float3 sample_dir = normalize(mul(transpose(basis), wi));
 
     /* Evaluate the BSDF and PDF of the sample */
-    const float pdf = BoundedVNDF_PDF_Isotropic(wo, wi, alpha);
-    const float bsdf = gloss_slab(wi.z, wo.z, wh.z, dot(wo, wh), alpha_2, eta) / pdf;
+    const float pdf = 1.0f;  // pdf_vndf_isotropic(wo, wi, alpha, float3(0, 0, 1));
+    const float3 bsdf = specular_brdf(wi.z, wo.z, wh.z, dot(wo, wh), geo.material) / pdf;
+    // float3 wi;
+    // const float3 bsdf = ImportanceSampleGgxD(wo, wi, alpha, eta, noise);
 
     /* Trace sample direction */
     const Hit hit = trace_bvh2<false>(tlas_nodes, object_indices, objects, custom_ray(hit_point, sample_dir), BIG_F32);
 
     float3 luminance;
     if (hit.t < BIG_F32) {
+        /* Sample material emission */
         const Material mat = unpack_material(hit, objects);
         luminance = mat.albedo() * mat.emission();
+
+        /* Sample surface cache for diffuse reflection */
         const cache::Slot slot = cache::fetch(macrofacet_cache, pack_visibility(hit));
-        if (slot.key != cache::EMPTY_KEY) luminance += slot.read_diffuse();
+        if (slot.key != cache::EMPTY_KEY) luminance += mat.albedo() * slot.read_diffuse();
     } else {
-        luminance = 0.1f;
+        const float2 uv = dir_to_latlong(sample_dir);
+        luminance = bindless::texture_sampled<Texture2D<float4>>(scene_view.envmap_full_handle).SampleLevel(envmap_sampler, uv, 0).rgb;
     }
     luminance *= bsdf;
 

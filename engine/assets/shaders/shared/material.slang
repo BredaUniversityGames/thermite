@@ -35,6 +35,8 @@ public struct Material {
     public [ForceInline] float emission() { return unpackHalf2x16ToFloat(ior_emission).y; };
     /* Material microfacet roughness [0,1] */
     public [ForceInline] float roughness() { return float(roughness_metallic_transmission & 0xFFu) * (1.0f / 0xFFu); };
+    /* Material microfacet metallic [0,1] */
+    public [ForceInline] float metallic() { return float((roughness_metallic_transmission >> 8) & 0xFFu) * (1.0f / 0xFFu); };
 };
 
 /* f_layer(ωi,ωo) = f_coat(ωi,ωo) + (1 - E_coat(ωo)) * f_sub(ωi,ωo) */
@@ -77,8 +79,8 @@ public struct Material {
     return albedo * RCP_PI_F32;
 }
 
-/* Fresnel equation. */
-[ForceInline] public float fresnel(float wo_dot_wh, float eta) {
+/* Dielectric Fresnel equations. */
+[ForceInline] public float dielectric_fresnel(float wo_dot_wh, float eta) {
     /* If the incoming direction comes from within */
     if (wo_dot_wh < 0.0f) {
         /* Invert relative index of refraction, ensuring cos(theta_i) is always positive */
@@ -89,13 +91,66 @@ public struct Material {
     /* Apply Snell's law to find cos(theta_t) */
     const float i_sintheta_2 = 1.0f - wo_dot_wh * wo_dot_wh;
     const float t_sintheta_2 = i_sintheta_2 / (eta * eta);
-    // bool t_int = t_sintheta_2 >= 1.0f; /* Total internal reflection */
     const float t_costheta = sqrt(max(0.0f, 1.0f - t_sintheta_2));
 
-    /* Fresnel equation */
+    /* Fresnel equations */
     const float r_parl = (eta * wo_dot_wh - t_costheta) / (eta * wo_dot_wh + t_costheta);
     const float r_perp = (wo_dot_wh - eta * t_costheta) / (wo_dot_wh + eta * t_costheta);
     return (r_parl * r_parl + r_perp * r_perp) * 0.5f;
+}
+
+/* Conductor Fresnel equations. */
+[ForceInline] public float3 conductor_fresnel(float wo_dot_wh, float3 fr, float3 fg) {
+    /* Prepare parameters for Fresnel */
+    const float3 n_min = (1.0f - fr) / (1.0f + fr);
+    const float3 n_max = (1.0f + sqrt(fr)) / (1.0f - sqrt(fr));
+    const float3 n = n_min * fg + (1.0f - fg) * n_max;
+    const float3 nr = (n + 1.0f) * (n + 1.0f) * fr - (n - 1.0f) * (n - 1.0f);
+    const float3 k2 = nr / (1.0f - fr);
+
+    /* Fresnel equations */
+    const float3 rs_num = n * n + k2 - 2.0f * n * wo_dot_wh + wo_dot_wh * wo_dot_wh;
+    const float3 rs_den = n * n + k2 + 2.0f * n * wo_dot_wh + wo_dot_wh * wo_dot_wh;
+    const float3 rs = rs_num / rs_den;
+    const float3 rp_num = (n * n + k2) * wo_dot_wh * wo_dot_wh - 2.0f * n * wo_dot_wh + 1.0f;
+    const float3 rp_den = (n * n + k2) * wo_dot_wh * wo_dot_wh + 2.0f * n * wo_dot_wh + 1.0f;
+    const float3 rp = rp_num / rp_den;
+    return 0.5f * (rs + rp);
+}
+
+/* Torrance–Sparrow Microfacet BRDF. */
+/* Source: https://www.pbr-book.org/4ed/Reflection_Models */
+[ForceInline] public float3 specular_brdf(
+    const float wi_costheta, /* incident cos(theta) */
+    const float wo_costheta, /* outgoing cos(theta) */
+    const float wh_costheta, /* half-way cos(theta) */
+    const float wo_dot_wh, const Material m
+) {
+    /* Unpack material roughness */
+    const float roughness = m.roughness();
+    const float a = roughness * roughness;
+    const float a2 = a * a;
+
+    /* We leave out the NDF because we are importance sampling it */
+    const float d = 1.0f;
+
+    /* Trowbridge-Reitz masking and shadowing function */
+    const float wi_sintheta_2 = 1.0f - wi_costheta * wi_costheta;
+    const float wi_tantheta_2 = wi_sintheta_2 / (wi_costheta * wi_costheta);
+    const float wi_lambda = (-1.0f + sqrt(1.0f + a2 * wi_tantheta_2)) * 0.5f;
+    const float wo_sintheta_2 = 1.0f - wo_costheta * wo_costheta;
+    const float wo_tantheta_2 = wo_sintheta_2 / (wo_costheta * wo_costheta);
+    const float wo_lambda = (-1.0f + sqrt(1.0f + a2 * wo_tantheta_2)) * 0.5f;
+    const float g = 1.0f / (1.0f + wi_lambda + wo_lambda);
+
+    /* Fresnel equations */
+    const float metallic = m.metallic();
+    float3 f = 0.0f;
+    if (metallic < 1.0f) f += (1.0f - metallic) * dielectric_fresnel(wo_dot_wh, m.ior());
+    if (metallic > 0.0f) f += metallic * conductor_fresnel(wo_dot_wh, m.albedo(), m.albedo());
+
+    /* Torrance–Sparrow BRDF */
+    return (d * g * f) / (4.0f * wo_costheta * wi_costheta);
 }
 
 /* Torrance–Sparrow Microfacet BRDF. */
@@ -125,7 +180,7 @@ public struct Material {
     const float g = 1.0f / (1.0f + wi_lambda + wo_lambda);
 
     /* Fresnel equation */
-    const float f = fresnel(wo_dot_wh, eta);
+    const float f = dielectric_fresnel(wo_dot_wh, eta);
 
     /* Torrance–Sparrow BRDF */
     return (d * g * f) / (4.0f * wo_costheta * wi_costheta);

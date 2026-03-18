@@ -82,7 +82,8 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
     /* Reflections pass */
     render_graph.add_compute_pass("reflections pass", "lighting/reflections.cs")
         .read(render_view.render_view_buffer) /* Render view buffer */
-        // .read(scene_view.scene_view) /* Scene view buffer */
+        .read(scene_view.scene_view) /* Scene view buffer */
+        .read(engine.renderer.linear_sampler)
         .read(render_view.blue_noise2d->image) /* Blue noise texture */
         .read(scene_view.bvh_nodes) /* TLAS nodes buffer */
         .read(scene_view.object_indices) /* Voxel object indices buffer */
@@ -94,42 +95,42 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
         .group_size(16, 8)
         .work_size(quarter_rate.x, quarter_rate.y);
     
-    // for (uint32_t i = 0u; i < 6u; ++i) {
-    //     /* Denoising pass */
-    //     uint32_t step_size = 1u << i;
-    //     render_graph.add_compute_pass("denoise pass", "lighting/wavelet_denoise.cs")
-    //         .push_constants(&step_size, 0u, sizeof(uint32_t))
-    //         .read(render_view.render_view_buffer) /* Render view buffer */
-    //         .read(scene_view.object_data) /* Voxel objects buffer */
-    //         .read(render_view.vbuffer.image) /* Visibility buffer */
-    //         .read(((i & 0b1u) == 0u) ? diffuse_image : render_view.nbuffer.image) /* Luminance buffer */
-    //         .write(((i & 0b1u) == 0u) ? render_view.nbuffer.image : diffuse_image) /* Luminance buffer */
-    //         .group_size(16, 8)
-    //         .work_size(render_res.x, render_res.y);
-    // }
+    for (uint32_t i = 0u; i < 6u; ++i) {
+        /* Denoising pass */
+        uint32_t step_size = 1u << i;
+        render_graph.add_compute_pass("denoise pass", "lighting/wavelet_denoise.cs")
+            .push_constants(&step_size, 0u, sizeof(uint32_t))
+            .read(render_view.render_view_buffer) /* Render view buffer */
+            .read(scene_view.object_data) /* Voxel objects buffer */
+            .read(render_view.vbuffer.image) /* Visibility buffer */
+            .read(((i & 0b1u) == 0u) ? raw_specular_image : specular_image) /* Luminance buffer */
+            .write(((i & 0b1u) == 0u) ? specular_image : raw_specular_image) /* Luminance buffer */
+            .group_size(16, 8)
+            .work_size(quarter_rate.x, quarter_rate.y);
+    }
 
-    struct DenoiseOptions {
-        float sample_radius = 8.0f;
-        float color_weight = 1.0f;
-        float normal_weight = 1.0f;
-        float pos_weight = 1.0f;
-    } options;
-    options.sample_radius = 32.0f;
-    options.color_weight = 1.0f;
-    options.normal_weight = 1.0f;
-    options.pos_weight = 1.0f;
+    // struct DenoiseOptions {
+    //     float sample_radius = 8.0f;
+    //     float color_weight = 1.0f;
+    //     float normal_weight = 1.0f;
+    //     float pos_weight = 1.0f;
+    // } options;
+    // options.sample_radius = 32.0f;
+    // options.color_weight = 1.0f;
+    // options.normal_weight = 1.0f;
+    // options.pos_weight = 1.0f;
 
-    render_graph.add_compute_pass("denoise pass", "lighting/denoise.cs")
-        .push_constants(&options, 0u, sizeof(DenoiseOptions))
-        .read(render_view.render_view_buffer) /* Render view buffer */
-        .read(render_view.blue_noise2d->image) /* Blue noise texture */
-        .read(scene_view.object_data) /* Voxel objects buffer */
-        .write(render_view.macrofacet_cache) /* Cache buffer */
-        .read(render_view.vbuffer.image) /* Visibility buffer */
-        .read(raw_specular_image) /* Luminance buffer */
-        .write(specular_image) /* Luminance buffer */
-        .group_size(16, 8)
-        .work_size(quarter_rate.x, quarter_rate.y);
+    // render_graph.add_compute_pass("denoise pass", "lighting/denoise.cs")
+    //     .push_constants(&options, 0u, sizeof(DenoiseOptions))
+    //     .read(render_view.render_view_buffer) /* Render view buffer */
+    //     .read(render_view.blue_noise2d->image) /* Blue noise texture */
+    //     .read(scene_view.object_data) /* Voxel objects buffer */
+    //     .write(render_view.macrofacet_cache) /* Cache buffer */
+    //     .read(render_view.vbuffer.image) /* Visibility buffer */
+    //     .read(raw_specular_image) /* Luminance buffer */
+    //     .write(specular_image) /* Luminance buffer */
+    //     .group_size(16, 8)
+    //     .work_size(quarter_rate.x, quarter_rate.y);
 
     // render_graph.add_compute_pass("blit pass", "blit.cs")
     //     .read(render_view.nbuffer.image) /* Luminance buffer */
