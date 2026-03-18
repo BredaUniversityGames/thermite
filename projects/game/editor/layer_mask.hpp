@@ -9,6 +9,7 @@
 #pragma once
 #include <ImReflect.hpp>
 #include "engine/systems/physics/physics_layers.hpp"
+#include "engine/systems/physics/physics_system.hpp"
 #include "projects/game/data_headers/layer_mask.hpp"
 
 inline void tag_invoke(ImReflect::ImInput_t, const char* name, game::LayerMask& mask, ImSettings& settings, ImResponse& response) {
@@ -20,6 +21,10 @@ inline void tag_invoke(ImReflect::ImInput_t, const char* name, game::LayerMask& 
     constexpr float group_gap = 6.0f;  // extra gap every 8 columns
 
     ImGui::TextUnformatted(name);
+    ImGui::SameLine();
+    if (ImGui::SmallButton("All")) mask.bits = 0xFFFFFFFF;
+    ImGui::SameLine();
+    if (ImGui::SmallButton("None")) mask.bits = 0;
     ImGui::SameLine();
 
     ImVec2 origin = ImGui::GetCursorScreenPos();
@@ -68,7 +73,13 @@ inline void tag_invoke(ImReflect::ImInput_t, const char* name, game::LayerMask& 
             // Tooltip on hover
             if (hovered) {
                 ImGui::BeginTooltip();
-                ImGui::Text("Layer %u: %s", bit, on ? "ON" : "OFF");
+                auto& layers = tmt::engine.ecs.systems.get<tmt::Physics>().layers();
+
+                auto& ln = layers.get_layer_name(bit);
+                if (!ln.empty())
+                    ImGui::Text("[%u] %s: %s", bit, ln.c_str(), on ? "ON" : "OFF");
+                else
+                    ImGui::Text("Layer %u: %s", bit, on ? "ON" : "OFF");
                 ImGui::EndTooltip();
             }
         }
