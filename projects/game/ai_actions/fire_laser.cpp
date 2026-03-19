@@ -64,9 +64,9 @@ void FireLaser::on_tick(tmt::Entity enemy_entity, float dt) {
 
             tmt::engine.polyline.use_color(0.5f, 0.1f, 0.1f);
             tmt::engine.polyline.use_line_width(8.0f);
-            constexpr float start_dist = 5.0f;
+            constexpr float START_DIST = 5.0f;
             float t = glm::clamp(time / enemy.laser_winding_up_time, 0.0f, 1.0f);
-            dist_between_laser_spheres = glm::mix(start_dist, 0.03f, t);
+            dist_between_laser_spheres = glm::mix(START_DIST, 0.03f, t);
 
             for (float i = 0; i < 50.0f; i += dist_between_laser_spheres) {
                 tmt::engine.polyline.draw_sphere(laser_pos + direction * i, .01f);
@@ -129,6 +129,6 @@ void FireLaser::on_tick(tmt::Entity enemy_entity, float dt) {
     time += dt;
 }
 
-bool FireLaser::is_done(tmt::Entity enemy_entity) const {
+bool FireLaser::is_done(tmt::Entity /*enemy_entity*/) const {
     return false;
 }
