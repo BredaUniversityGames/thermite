@@ -41,7 +41,6 @@ void RigModel::init(const IO::FileLocation& directory, Entity p) {
     }
 
     armature_entity = p;
-    rig_is_loaded = true;
     data = engine.resources.load_resource<RigData>(directory);
 
     // file_directory = directory;
@@ -102,7 +101,6 @@ void RigModel::recurse(const ResourceRef<VoxelScene>& scene, const VoxelSceneNod
 };
 
 void RigModel::attach_voxel_objects() {
-    vox_is_loaded = true;
 
     // Load the voxel scene and populate entities by recursing through nodes
     const auto voxel_file = engine.resources.load_resource<VoxelScene>(vox_path);
@@ -111,6 +109,8 @@ void RigModel::attach_voxel_objects() {
     for (const VoxelSceneNode& root_node : voxel_file->root_nodes) {
         recurse(voxel_file, root_node, glm::identity<glm::mat4>(), armature_pos);
     }
+
+    vox_is_loaded = true;
 }
 
 RigModel::RigModel(const IO::FileLocation&, Entity) {}

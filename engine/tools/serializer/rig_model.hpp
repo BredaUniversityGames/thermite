@@ -15,7 +15,7 @@ inline void tag_invoke(JsonReflect::deserialize_t, const JsonReflect::json& j, t
     // Reload to get the animations from the separate animation files.
     value.data->reload();
 
-    if (!value.rig_is_loaded) return;
+    if (!value.data) return;
 
     const tmt::Transform& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
     const std::set<tmt::Entity>& children = transform.get_all_children();

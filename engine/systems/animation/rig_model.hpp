@@ -21,7 +21,6 @@ class RigModel {
     // todo: change this to Resource ref
     void init(const IO::FileLocation& directory, Entity p);
 
-    bool rig_is_loaded = false;
     bool vox_is_loaded = false;
     IO::FileLocation vox_path = {};
     ResourceRef<RigData> data;
@@ -69,4 +68,4 @@ class RigModel {
 }  // namespace tmt
 
 JSON_REFLECT(tmt::BoneComp, id);
-TMT_COMPONENT(tmt::RigModel, "Animated Rig", (rig_is_loaded, vox_is_loaded, vox_path, data));
+TMT_COMPONENT(tmt::RigModel, "Animated Rig", (vox_is_loaded, vox_path, data));
