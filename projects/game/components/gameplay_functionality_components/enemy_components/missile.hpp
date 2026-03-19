@@ -17,10 +17,12 @@ struct Missile : public tmt::GameComponent<Missile> {
     void update(const tmt::FrameData& time) override;
     void end() override;
 
+    void explode(const tmt::Hit& hit);
+
     enum State { LAUNCHED, HOMING } state = LAUNCHED;
     glm::vec3 velocity = glm::vec3(0, 0, 0);
 
-    tmt::Entity player_entity;
+    tmt::ResourceRef<tmt::Stencil> stencil;
     tmt::Entity enemy_entity;
 
     float life_time = 0.0f;

@@ -31,7 +31,6 @@ void FireMissiles::on_tick(tmt::Entity enemy_entity, float dt) {
         interval_timer -= enemy.burst_interval;
         auto missile_entity = tmt::engine.ecs.create_entity();
         auto& missile_comp = tmt::engine.ecs.add_component<game::Missile>(missile_entity);
-        missile_comp.player_entity = player;
         missile_comp.enemy_entity = enemy_entity;
         missiles--;
     }
