@@ -7,10 +7,20 @@
 #include "engine/systems/ai/goap/goap_system.hpp"
 #include "engine/systems/ai/navigation/nav_mesh.hpp"
 
+#include "engine\core\components\voxel_renderer.hpp"
+
 void game::MediumEnemy::start() {
     for (const auto& [CamEntity, camera] : tmt::engine.ecs.view<tmt::Camera>().each()) {
         player = CamEntity;
         break;
+    }
+    
+    // Set ore manager
+    auto ore_manager_view = tmt::engine.ecs.view<OreManager>();
+    if (!ore_manager_view.empty()) {
+        ore_manager = tmt::engine.ecs.try_get_component<OreManager>(ore_manager_view.front().entity);
+    } else {
+        tmt::Log::warn("No ore manager found in scene, missiles wont explode");
     }
 }
 
