@@ -36,8 +36,6 @@ class Resource {
         return true;
     }
 
-    bool is_loaded() const { return loaded; }
-
    private:
     friend class Resources;
     /* Managed by Resources system */
