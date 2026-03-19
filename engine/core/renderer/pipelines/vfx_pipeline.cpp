@@ -230,6 +230,8 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
                 .group_size(1, 1, 1)
                 .work_size(1, 1, 1);
 
+    uint32_t kill_particles = engine.renderer.kill_particles ? 1u : 0u;
+    if (engine.renderer.kill_particles) engine.renderer.kill_particles = false;
     render_graph.add_compute_pass("Simulate Particles", "vfx/particle_sim.cs")
                 .read(render_view.render_view_buffer)
                 .write(particle_buffer)
@@ -237,6 +239,7 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
                 .write(alive_list_new)
                 .write(dead_list)
                 .write(counter_buffer)
+                .push_constants(&kill_particles, 0, sizeof(uint32_t))
                 .indirect_size(dispatch_args_buffer);
 
     render_graph.add_compute_pass("Particle End Update", "vfx/particle_end_update.cs")

@@ -46,6 +46,7 @@ class Renderer {
     /* Display mode for debugging */
     DisplayMode display_mode = DisplayMode::DEFAULT;
     bool enable_taa = true;
+    bool kill_particles = false;
     float bloom_radius = 0.25f;
 
     /* Pipelines */
