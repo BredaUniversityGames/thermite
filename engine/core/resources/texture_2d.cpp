@@ -85,7 +85,7 @@ bool Texture2D::fallback(FallbackReason) {
 
     bank.upload_texture(image, data, tex_width * tex_height * 4).expect("failed to upload texture.");
     free(data);
-    
+
     return true;
 }
 
