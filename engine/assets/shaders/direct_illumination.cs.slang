@@ -156,6 +156,6 @@ void main(int2 thread_id: SV_DispatchThreadID) {
     float3 illuminance = direct_illuminance(hit_point, geo.normal, -ray.dir, geo.material, seed, noise);
 
     /* Insert the sample into the illuminance cache */
-    cache::insert(macrofacet_cache, facet_key, render_view.frame_index, illuminance * 2.0f, 0.0f);
+    cache::insert(macrofacet_cache, facet_key, render_view.frame_index, illuminance, 0.0f);
     lbuffer[thread_id] = illuminance;
 }
