@@ -7,10 +7,20 @@
 #include "engine/systems/ai/goap/goap_system.hpp"
 #include "engine/systems/ai/navigation/nav_mesh.hpp"
 
+#include "engine\core\components\voxel_renderer.hpp"
+
 void game::MediumEnemy::start() {
     for (const auto& [CamEntity, camera] : tmt::engine.ecs.view<tmt::Camera>().each()) {
         player = CamEntity;
         break;
+    }
+    
+    // Set ore manager
+    auto ore_manager_view = tmt::engine.ecs.view<OreManager>();
+    if (!ore_manager_view.empty()) {
+        ore_manager = tmt::engine.ecs.try_get_component<OreManager>(ore_manager_view.front().entity);
+    } else {
+        tmt::Log::warn("No ore manager found in scene, missiles wont explode");
     }
 }
 
@@ -180,5 +190,19 @@ bool Missile::update(float dt, glm::vec3 ground_up, glm::vec3 player_pos) {
     velocity += added_vel;
     velocity *= 0.7f;
     position += velocity * dt;
+
+    // collision check
+    const tmt::Ray ray_cast = tmt::Ray(position, glm::normalize(velocity));
+    const tmt::Hit hit = tmt::engine.renderer.trace_ray(ray_cast);
+
+    // TODO this is very dumb code that should be updated when we have proper raycasts check
+    if (hit.entity != entt::null && hit.distance < 0.5f /*&& hit.entity != entity*/) {
+        // tmt::Log::info("Would collide with entity {} at distance {}, step {}", hit.entity, hit.distance, step_distance);
+        auto* resource = tmt::engine.ecs.get_component<tmt::VoxelRenderer>(hit.entity).resource.resource.get();
+        //ore_manager->initiate_thermite_explosion(voxelentity, thermite position uvec3);
+        resource->blas->subtract(stencil.resource.get(), hit.coord);
+        resource->set_dirty();
+        return true;
+    }
     return false;
 }

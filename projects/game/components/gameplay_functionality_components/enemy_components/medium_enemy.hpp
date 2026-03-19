@@ -2,6 +2,9 @@
 #include "engine/systems/gameplay/game_component.hpp"
 #include "engine/core/entity.hpp"
 #include "../../../editor/all.hpp"
+#include "engine/core/resources/stencil.hpp"
+
+#include "projects/game/components/managers/ore_manager.hpp"
 
 struct Missile;
 
@@ -23,6 +26,8 @@ class MediumEnemy : public tmt::GameComponent<MediumEnemy> {
     tmt::Entity walkable_asteroid = entt::null;
     tmt::Entity missile_origin = entt::null;
     tmt::Entity laser_origin = entt::null;
+    game::OreManager* ore_manager;
+    tmt::ResourceRef<tmt::Stencil> stencil;
     glm::vec3 velocity = glm::vec3(0, 0, 0);
     glm::quat rotation = glm::quat(1, 0, 0, 0);
     float rotation_speed = 2.5f;
@@ -70,6 +75,10 @@ class MediumEnemy : public tmt::GameComponent<MediumEnemy> {
 
 struct Missile {
     bool update(float dt, glm::vec3 ground_up, glm::vec3 player_pos);
+    void collide(const tmt::Hit& hit);
+
+    game::OreManager* ore_manager;
+    tmt::ResourceRef<tmt::Stencil> stencil;
     enum State { LAUNCHED, HOMING } state = LAUNCHED;
     glm::vec3 position = glm::vec3(0, 0, 0);
     glm::vec3 velocity = glm::vec3(0, 0, 0);
@@ -85,6 +94,8 @@ struct Missile {
 
     //= operator for medium enemy to update missile data in-place
     Missile& operator=(const game::MediumEnemy& other) {
+        ore_manager = other.ore_manager;
+        stencil = other.stencil;
         max_life_time = other.life_time;
         start_homing_after = other.start_homing_after;
         stop_launching_after = other.stop_launching_after;
@@ -95,7 +106,7 @@ struct Missile {
 };
 
 TMT_OBJECT(
-    game::MediumEnemy, (walkable_asteroid, laser_origin, missile_origin, rotation_speed, height_above_ground, walk_speed, aggro_range, laser_range, stomp_range, missile_cooldown,
+    game::MediumEnemy, (walkable_asteroid, laser_origin, missile_origin, stencil, rotation_speed, height_above_ground, walk_speed, aggro_range, laser_range, stomp_range, missile_cooldown,
                         stop_launching_after, start_homing_after, launch_speed, home_speed, life_time, missile_burst, burst_interval, missile_max_randomness, laser_cooldown, laser_firing_time,
                         laser_sitting_down_time, laser_winding_up_time, laser_linear_speed, laser_exponential_speed, laser_linear_threshold, laser_max_randomness, laser_prediction_length)
 );
