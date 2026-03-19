@@ -396,8 +396,8 @@ Entity recurse_instantiate_scene(
     const Entity entity = engine.ecs.create_entity(node.name);
 
     Transform& transform = engine.ecs.get_component<Transform>(entity);
-    transform.set_world_matrix(parent_matrix * node.transform);
     transform.set_parent(parent_entity);
+    transform.set_world_matrix(parent_matrix * node.transform);
 
     if (node.tree != nullptr) {
         VoxelRenderer& renderer = engine.ecs.add_component<VoxelRenderer>(entity);
