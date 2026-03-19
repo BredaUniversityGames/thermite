@@ -210,7 +210,7 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
     for (uint32_t i = 0; i < emitters.size(); i++) {
         const GpuEmitter& em = emitters[i];
 
-        render_graph.add_compute_pass("Emit Particles", "emit.cs")
+        render_graph.add_compute_pass("Emit Particles", "vfx/emit.cs")
                 .push_constants(&i, 0, sizeof(i))
                 .read(render_view.render_view_buffer)
                 .read(emitter_buffer)
@@ -224,13 +224,13 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
                 .work_size(em.total_spawn_count, 1, 1);
     }
 
-    render_graph.add_compute_pass("Particle Begin Update", "particle_begin_update.cs")
+    render_graph.add_compute_pass("Particle Begin Update", "vfx/particle_begin_update.cs")
                 .write(counter_buffer)
                 .write(dispatch_args_buffer)
                 .group_size(1, 1, 1)
                 .work_size(1, 1, 1);
 
-    render_graph.add_compute_pass("Simulate Particles", "particle_sim.cs")
+    render_graph.add_compute_pass("Simulate Particles", "vfx/particle_sim.cs")
                 .read(render_view.render_view_buffer)
                 .write(particle_buffer)
                 .write(alive_list)
@@ -239,7 +239,7 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
                 .write(counter_buffer)
                 .indirect_size(dispatch_args_buffer);
 
-    render_graph.add_compute_pass("Particle End Update", "particle_end_update.cs")
+    render_graph.add_compute_pass("Particle End Update", "vfx/particle_end_update.cs")
                 .read(counter_buffer)
                 .write(instanced_draw_args_buffer)
                 .group_size(1, 1, 1)
@@ -247,7 +247,7 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
 
 
     const glm::uvec2 render_res = render_view.gpu_view.resolution;
-    RasterNode& billboard_pass = render_graph.add_raster_pass("billboard pass", "billboard.vx", "billboard.px")
+    RasterNode& billboard_pass = render_graph.add_raster_pass("billboard pass", "vfx/billboard.vx", "vfx/billboard.px")
                                 .topology(Topology::TriangleList)
                                 .attribute(AttrFormat::XY32_SFloat)  // Position
                                 .attribute(AttrFormat::XY32_SFloat)  // UVs
