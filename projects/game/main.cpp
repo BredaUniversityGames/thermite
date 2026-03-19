@@ -20,6 +20,9 @@
 #include "ai_actions/wander.hpp"
 #include "ai_actions/fire_missiles.hpp"
 #include "ai_actions/fire_laser.hpp"
+#include "ai_actions/get_in_laser_range.hpp"
+#include "ai_actions/stomp.hpp"
+#include "ai_actions/flee.hpp"
 
 // Enemies
 #include "components/gameplay_functionality_components/enemy_components/medium_enemy.hpp"
@@ -181,12 +184,15 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
         action_reg.register_action(std::make_unique<Wander>());
         action_reg.register_action(std::make_unique<FireMissiles>());
         action_reg.register_action(std::make_unique<FireLaser>());
+        action_reg.register_action(std::make_unique<GetInLaserRange>());
+        action_reg.register_action(std::make_unique<Stomp>());
+        action_reg.register_action(std::make_unique<Flee>());
 
         {
             tmt::GoapGoal chase;
             chase.name = "g_ChasePlayer";
-            chase.desired_state = { { tmt::FactId("m_in_laser_range"), true } };
-            chase.priority = 10;
+            chase.desired_state = { { tmt::FactId("m_get_close_to_player"), true } };
+            chase.priority = 5;
             chase.valid = true;
 
             goal_reg.register_goal("g_ChasePlayer", chase);
@@ -209,6 +215,26 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
             kill_player.valid = true;
 
             goal_reg.register_goal("g_KillPlayer", kill_player);
+        }
+
+        {
+            tmt::GoapGoal get_in_laser_range;
+            get_in_laser_range.name = "g_GetInLaserRange";
+            get_in_laser_range.desired_state = { { tmt::FactId("m_in_laser_range"), true } };
+            get_in_laser_range.priority = 10;
+            get_in_laser_range.valid = true;
+
+            goal_reg.register_goal("g_GetInLaserRange", get_in_laser_range);
+        }
+
+        {
+            tmt::GoapGoal stay_safe;
+            stay_safe.name = "g_StaySafe";
+            stay_safe.desired_state = { { tmt::FactId("m_stay_safe"), true } };
+            stay_safe.priority = 40;
+            stay_safe.valid = true;
+
+            goal_reg.register_goal("g_StaySafe", stay_safe);
         }
     }
 
