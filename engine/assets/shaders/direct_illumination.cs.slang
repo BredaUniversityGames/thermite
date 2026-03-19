@@ -36,25 +36,29 @@ struct PickedLight {
 /* Pick a light to sample for a given sample point using reservoir sampling. */
 inline PickedLight pick_light(const float3 point, const float3 normal, inout uint seed, const float2 noise) {
     /* Reservoir state */
-    uint i = uint::maxValue;
-    float w_sum = 0.0f, w_i = BIG_F32;
+    // uint i = uint::maxValue;
+    // float w_sum = 0.0f, w_i = BIG_F32;
     // float r = frac(noise.x + GOLDEN_RATIO_F32);
 
-    for (uint l = 0u; l < scene_view.light_count; ++l) {
-        /* Calculate light weight */
-        const float w = evaluate_weight(point, normal, lights[l]);
+    const uint light_index = uint(rand_float(seed) * (float)scene_view.light_count);
+    const float rcp_pdf = scene_view.light_count;
 
-        w_sum += w; /* Update the reservoir */
-        if (rand_float(seed) * w_sum <= w) {
-            i = l;
-            w_i = w;
-        }
+    // for (uint l = 0u; l < scene_view.light_count; ++l) {
+    //     /* Calculate light weight */
+    //     const float w = evaluate_weight(point, normal, lights[l]);
 
-        /* Move to the next element in the sequence */
-        // r = frac(noise.x + GOLDEN_RATIO_F32);
-    }
+    //     w_sum += w; /* Update the reservoir */
+    //     if (rand_float(seed) * w_sum <= w) {
+    //         i = l;
+    //         w_i = w;
+    //     }
 
-    return PickedLight(i, w_sum / w_i);
+    //     /* Move to the next element in the sequence */
+    //     // r = frac(noise.x + GOLDEN_RATIO_F32);
+    // }
+
+    // return PickedLight(i, w_sum / w_i);
+    return PickedLight(light_index, rcp_pdf);
 }
 
 inline float3 direct_illuminance(const float3 point, const float3 normal, const float3 view_dir, const Material mat, inout uint seed, const float2 noise) {

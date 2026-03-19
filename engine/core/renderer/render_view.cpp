@@ -16,6 +16,7 @@
 
 #include "core/components/camera.hpp"
 #include "core/components/transform.hpp"
+#include "engine/tools/player_data.hpp"
 
 namespace tmt {
 
@@ -61,12 +62,12 @@ void RenderView::init() {
 
     /* Calculate the render size (based on shading rate) */
     Size3D render_size { view_size.x, view_size.y };
-    if (shading_rate_di == ShadingRate::HALF_RATE) {
-        render_size.x = render_size.x >> 1;
-    } else if (shading_rate_di == ShadingRate::QUARTER_RATE) {
-        render_size.x = render_size.x >> 1;
-        render_size.y = render_size.y >> 1;
-    }
+    // if (shading_rate_di == ShadingRate::HALF_RATE) {
+    //     render_size.x = render_size.x >> 1;
+    // } else if (shading_rate_di == ShadingRate::QUARTER_RATE) {
+    //     render_size.x = render_size.x >> 1;
+    //     render_size.y = render_size.y >> 1;
+    // }
 
     /* Create the luminance buffer */
     lbuffer.meta = { 7, 1 };  // Set 7 mips, 1 array layer
@@ -130,6 +131,7 @@ void RenderView::update() {
 
 void RenderView::update_gpu_view(RenderGraph& render_graph, const Camera& camera, const Transform& transform) {
     const float aspect_ratio = (float)gpu_view.resolution.x / (float)gpu_view.resolution.y;
+    const RendererSettings& settings = engine.player_data.get<RendererSettings>("RendererSettings");
 
     /* Calculate camera jitter */
     const glm::vec2 r2 = r2_sequence(frame_counter);  // [0, 1) range
@@ -154,8 +156,8 @@ void RenderView::update_gpu_view(RenderGraph& render_graph, const Camera& camera
     gpu_view.origin = glm::vec4(transform.get_world_position(), 0.0f);
     gpu_view.frame_index = frame_counter;
     gpu_view.dt = engine.frame_data().delta_time;
-    gpu_view.shading_rate_di = (uint32_t)shading_rate_di;
-    gpu_view.shading_rate_gi = (uint32_t)shading_rate_gi;
+    gpu_view.diff_shading_rate = (uint32_t)settings.diff_shading_rate;
+    gpu_view.spec_shading_rate = (uint32_t)settings.spec_shading_rate;
     gpu_view.jitter = pixel_offset;
     gpu_view.prev_jitter = prev_jitter;
 
@@ -243,12 +245,12 @@ void RenderView::resize_textures() {
 
     /* Calculate the render size (based on shading rate) */
     Size3D render_size { view_size.x, view_size.y };
-    if (shading_rate_di == ShadingRate::HALF_RATE) {
-        render_size.x = render_size.x >> 1;
-    } else if (shading_rate_di == ShadingRate::QUARTER_RATE) {
-        render_size.x = render_size.x >> 1;
-        render_size.y = render_size.y >> 1;
-    }
+    // if (shading_rate_di == ShadingRate::HALF_RATE) {
+    //     render_size.x = render_size.x >> 1;
+    // } else if (shading_rate_di == ShadingRate::QUARTER_RATE) {
+    //     render_size.x = render_size.x >> 1;
+    //     render_size.y = render_size.y >> 1;
+    // }
 
     /* Resize the screen buffers */
     bank.resize_texture(viewport.texture, view_size).expect("failed to resize viewport texture.");
