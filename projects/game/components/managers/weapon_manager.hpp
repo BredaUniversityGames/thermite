@@ -51,7 +51,7 @@ class WeaponManager : public tmt::GameComponent<WeaponManager> {
     std::unordered_map<WeaponType, WeaponEntry> weapons;
     WeaponType starting_weapon { WeaponType::RIFLE };
 
-    tmt::Entity shooting_entity;
+    tmt::Entity shooting_entity = entt::null;
 
     float overheat_time = .8f;
     float switching_time = .5f;

@@ -251,7 +251,7 @@ void Physics::on_fixed_update(const FrameData&) {
             object.world_to_local = glm::inverse(object.local_to_world);
             object.size = renderer.resource->size;
             object.mask = (1u << vb.layer);
-            object.volume = renderer.resource.resource.get();
+            object.volume = renderer.resource;
             object.rcp_tree_width = 1.0f / powf(4.0f, (float)renderer.resource->blas->depth);
             object.uuid = (uint32_t)objects.size() + 1u; /* Element 0 is unused */
             objects.push_back(std::move(object));

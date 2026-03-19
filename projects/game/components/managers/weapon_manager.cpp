@@ -226,6 +226,7 @@ void game::WeaponManager::subscribe_weapon(WeaponType slot) {
         tmt::Log::warn("[WeaponManager] subscribe_weapon({}): entity is null", magic_enum::enum_name(slot));
         return;
     }
+    tmt::engine.ecs.enable(e);
     auto* weapon = tmt::engine.ecs.try_get_component<Weapon>(e);
     if (!weapon) {
         tmt::Log::warn("[WeaponManager] subscribe_weapon({}): entity {} has no Weapon component", magic_enum::enum_name(slot), static_cast<uint32_t>(e));
@@ -241,6 +242,7 @@ void game::WeaponManager::unsubscribe_weapon(WeaponType slot) {
         tmt::Log::warn("[WeaponManager] unsubscribe_weapon({}): entity is null", magic_enum::enum_name(slot));
         return;
     }
+    tmt::engine.ecs.disable(e);
     auto* weapon = tmt::engine.ecs.try_get_component<Weapon>(e);
     if (!weapon) {
         tmt::Log::warn("[WeaponManager] unsubscribe_weapon({}): entity {} has no Weapon component", magic_enum::enum_name(slot), static_cast<uint32_t>(e));
