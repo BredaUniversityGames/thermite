@@ -36,29 +36,29 @@ struct PickedLight {
 /* Pick a light to sample for a given sample point using reservoir sampling. */
 inline PickedLight pick_light(const float3 point, const float3 normal, inout uint seed, const float2 noise) {
     /* Reservoir state */
-    // uint i = uint::maxValue;
-    // float w_sum = 0.0f, w_i = BIG_F32;
+    uint i = uint::maxValue;
+    float w_sum = 0.0f, w_i = BIG_F32;
     // float r = frac(noise.x + GOLDEN_RATIO_F32);
 
-    const uint light_index = uint(rand_float(seed) * (float)scene_view.light_count);
-    const float rcp_pdf = scene_view.light_count;
+    // const uint light_index = uint(rand_float(seed) * (float)scene_view.light_count);
+    // const float rcp_pdf = scene_view.light_count;
 
-    // for (uint l = 0u; l < scene_view.light_count; ++l) {
-    //     /* Calculate light weight */
-    //     const float w = evaluate_weight(point, normal, lights[l]);
+    for (uint l = 0u; l < scene_view.light_count; ++l) {
+        /* Calculate light weight */
+        const float w = evaluate_weight(point, normal, lights[l]);
 
-    //     w_sum += w; /* Update the reservoir */
-    //     if (rand_float(seed) * w_sum <= w) {
-    //         i = l;
-    //         w_i = w;
-    //     }
+        w_sum += w; /* Update the reservoir */
+        if (rand_float(seed) * w_sum <= w) {
+            i = l;
+            w_i = w;
+        }
 
-    //     /* Move to the next element in the sequence */
-    //     // r = frac(noise.x + GOLDEN_RATIO_F32);
-    // }
+        /* Move to the next element in the sequence */
+        // r = frac(noise.x + GOLDEN_RATIO_F32);
+    }
 
-    // return PickedLight(i, w_sum / w_i);
-    return PickedLight(light_index, rcp_pdf);
+    return PickedLight(i, w_sum / w_i);
+    // return PickedLight(light_index, rcp_pdf);
 }
 
 inline float3 direct_illuminance(const float3 point, const float3 normal, const float3 view_dir, const Material mat, inout uint seed, const float2 noise) {
@@ -115,29 +115,9 @@ inline float3 direct_illuminance(const float3 point, const float3 normal, const 
 [shader("compute")]
 [numthreads(16, 8, 1)]
 void main(int2 thread_id: SV_DispatchThreadID) {
-    int2 pixel_id = thread_id;
-    int2 resolution = render_view.resolution;
-    if (render_view.shading_rate_di == 1u) {
-        /* Half-rate */
-        /*  [ XY ]  */
-        /*  [ YX ]  */
-        const int offset = (pixel_id.y + render_view.frame_index) & 0b1;
-        pixel_id.x = (pixel_id.x << 1) + offset;
-        resolution.x = resolution.x >> 1;
-    } else if (render_view.shading_rate_di == 2u) {
-        /* Quarter-rate */
-        /*  [ XY ]  */
-        /*  [ ZW ]  */
-        const int2 offset = int2(render_view.frame_index & 0b1, (render_view.frame_index >> 1) & 0b1);
-        pixel_id = (pixel_id << 1) + offset;
-        resolution = resolution >> 1;
-    }
-
     /* Bounds check */
-    if (any(pixel_id >= render_view.resolution)) {
-        lbuffer[thread_id] = 0.0f;
-        return;
-    }
+    const int2 pixel_id = rate_to_full(thread_id, render_view.diff_shading_rate);
+    if (any(pixel_id >= render_view.resolution)) return;
 
     /* Load visibility buffer data */
     const uint64_t facet_key = asuint64(vbuffer[pixel_id]);
@@ -164,7 +144,7 @@ void main(int2 thread_id: SV_DispatchThreadID) {
     const float3 hit_point = ray.origin + ray.dir * geo.depth + geo.normal * 0.001f;
 
     /* Generate a seed for the current pixel */
-    uint seed = thread_id.x + thread_id.y * resolution.x + (render_view.frame_index * (resolution.x * resolution.y));
+    uint seed = pixel_id.x + pixel_id.y * render_view.resolution.x + (render_view.frame_index * (render_view.resolution.x * render_view.resolution.y));
 
     const float2 noise = r2(blue_noise[pixel_id % 512].rg, render_view.frame_index % 1024u);
     const float3 diffuse = direct_illuminance(hit_point, geo.normal, -ray.dir, geo.material, seed, noise);

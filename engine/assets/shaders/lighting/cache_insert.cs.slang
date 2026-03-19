@@ -28,6 +28,9 @@ void main(int2 thread_id: SV_DispatchThreadID) {
     /* Exit early if the visibility for this pixel is null */
     if (null_visibility(facet_key)) return;
 
-    /* Insert luminance into the cache */
-    cache::insert(macrofacet_cache, facet_key, diffuse[thread_id], specular[thread_id >> 1]);
+    /* Insert diffuse and specular luminance into the cache */
+    cache::insert(macrofacet_cache, facet_key, 
+        diffuse[full_to_rate(thread_id, render_view.diff_shading_rate)], 
+        specular[full_to_rate(thread_id, render_view.spec_shading_rate)]
+    );
 }
