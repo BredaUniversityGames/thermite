@@ -43,7 +43,7 @@ struct GpuParticleEffect {
     Range end_opacity {};
     GpuBezierCurve opacity_curve {};
 
-    Range rotation {};
+    Range rotation_speed {};
     Range pos_jitter {};
 
     float jitter_speed {};
@@ -53,7 +53,8 @@ struct GpuParticleEffect {
 
     uint32_t spawn_count {};
     uint32_t tex_index {};
-    glm::vec2 pad {};
+    float rotation {};
+    uint32_t pad {};
 };
 
 struct GpuEmitter {

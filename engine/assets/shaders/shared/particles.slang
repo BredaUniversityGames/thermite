@@ -32,7 +32,7 @@ public struct ParticleEffect {
     public Range end_opacity;
     public BezierCurve opacity_curve;
 
-    public Range rotation;
+    public Range rotation_speed;
     public Range pos_jitter;
 
     public float jitter_speed;
@@ -42,6 +42,7 @@ public struct ParticleEffect {
 
     public uint32_t spawn_count;
     public uint32_t tex_index;
+    public float rotation;
 };
 
 public struct ParticleEmitter {
