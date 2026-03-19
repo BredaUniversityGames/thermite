@@ -133,11 +133,11 @@ void Physics::on_update(const FrameData&) {
         }
     }
 
-    //for (const auto& [entity, vb, transform] : engine.ecs.view<VoxelBody, Transform>().each()) {
-    //    // auto* tree_a = vb.resource->blas.get();
-    //    // const float half_extent_a = powf(4.0f, (float)tree_a->depth) * 0.5f * UNITS_PER_VOXEL;
-    //    // const glm::vec3 extents_diff_a = half_extent_a - ((glm::vec3)vb.resource->size * 0.5f * UNITS_PER_VOXEL);
-    //    // const glm::vec3 root_center_a = vb.position + (vb.rotation * extents_diff_a);
+    // for (const auto& [entity, vb, transform] : engine.ecs.view<VoxelBody, Transform>().each()) {
+    //     // auto* tree_a = vb.resource->blas.get();
+    //     // const float half_extent_a = powf(4.0f, (float)tree_a->depth) * 0.5f * UNITS_PER_VOXEL;
+    //     // const glm::vec3 extents_diff_a = half_extent_a - ((glm::vec3)vb.resource->size * 0.5f * UNITS_PER_VOXEL);
+    //     // const glm::vec3 root_center_a = vb.position + (vb.rotation * extents_diff_a);
 
     //    // draw_solids(tree_a, 0u, 0u, half_extent_a, root_center_a + glm::vec3(10, 0, 0), extents_diff_a, vb.rotation);
 
@@ -251,7 +251,7 @@ void Physics::on_fixed_update(const FrameData&) {
             object.world_to_local = glm::inverse(object.local_to_world);
             object.size = renderer.resource->size;
             object.mask = (1u << vb.layer);
-            object.volume = renderer.resource.resource.get();
+            object.volume = renderer.resource;
             object.rcp_tree_width = 1.0f / powf(4.0f, (float)renderer.resource->blas->depth);
             object.uuid = (uint32_t)objects.size() + 1u; /* Element 0 is unused */
             objects.push_back(std::move(object));
@@ -352,7 +352,7 @@ void Physics::generate_constraint(int index, const PhysicsGroup& group) {
     }
 }
 
-void Physics::on_end() {}
+void Physics::on_end() {bvh.build(nullptr, 0);}
 
 void Physics::compare_trees(
     tmt::Svt64* tree_a, const glm::vec3& center_a, const glm::quat& rotation_a, float half_extent_a, tmt::Svt64* tree_b, const glm::vec3& center_b, const glm::quat& rotation_b,
@@ -890,6 +890,12 @@ Hit Physics::raycast(const Ray& ray, uint32_t layer_mask) const {
     Hit hit = bvh.trace(ray, layer_mask);
     if (hit) hit.entity = entities[(uint32_t)hit.entity];
     return hit;
+}
+
+std::vector<uint32_t> Physics::overlap(const Aabb& aabb, uint32_t layer_mask) const {
+    auto hits = bvh.overlap(aabb, layer_mask);
+
+    return hits;
 }
 
 void Physics::recalculate_physics_data(VoxelBody& vb, VoxelVolume& volume) {
