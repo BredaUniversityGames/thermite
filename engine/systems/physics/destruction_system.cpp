@@ -474,6 +474,17 @@ void separation_flood(Destructable& graph, DestructionNode& current_node, uint8_
     }
 }
 
+void shrink_tree(Svt64* tree, Svt64Node& current_node) {
+    // Replace root node
+    tree->nodes[0] = current_node;
+    tree->node_count--;
+
+    if ((uint32_t)__popcnt64(current_node.child_mask) == 1u && !current_node.is_leaf()) {
+        // Recurse into first (and only) node
+        shrink_tree(tree, tree->nodes[current_node.abs_ptr()]);
+    }
+}
+
 void fill_volumes(const Svt64* original_tree, const std::vector<uint64_t>& tree_masks, std::vector<Entity>& entities, const Destructable& graph) {
     for (size_t i = 0; i < entities.size(); i++) {
         VoxelRenderer& vr = engine.ecs.get_component<VoxelRenderer>(entities[i]);
@@ -492,6 +503,17 @@ void fill_volumes(const Svt64* original_tree, const std::vector<uint64_t>& tree_
         tree->palette = original_tree->palette;
 
         tree->nodes[0] = tree->subdivide_masked(tree->depth * 2u, glm::uvec3(0u), original_tree, 0u, tree_masks, (uint8_t)i, graph);
+
+        // Shrink tree
+//        shrink_tree(tree, tree->nodes[0]);
+
+        //    /* Reallocate the nodes to save memory */
+        //nodes = (Svt64Node*)realloc(nodes, (node_count + SVT64_BUFFER_MEMORY) * sizeof(Svt64Node));
+        //nodes_capacity = node_count + SVT64_BUFFER_MEMORY;
+
+        // Get max bounds
+        
+        // Update size
 
         vr.resource->set_dirty();
         ///* Begin the recursive build */
