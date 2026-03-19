@@ -34,7 +34,7 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
 
     /* Get Render Image */
     const BindHandle render_image = render_view.get_render_image();
-    const BindHandle diffuse_image = render_view.lbuffer.image;
+    const BindHandle diffuse_image = render_view.lbuffer.images[0];
     const BindHandle raw_specular_image = render_view.raw_spec_buffer.image;
     const BindHandle specular_image = render_view.spec_buffer.image;
     const glm::uvec2 render_res = render_view.gpu_view.resolution;
