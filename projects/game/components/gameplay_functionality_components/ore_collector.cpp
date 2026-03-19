@@ -3,8 +3,12 @@
 #include "projects/game/components/development_tools/collision_trigger.hpp"
 #include "engine/core/polyline.hpp"
 #include "engine/core/components/voxel_renderer.hpp"
+#include "projects/game/data_headers/wallet.hpp"
 void game::OreCollector::start() {
     tmt::engine.ecs.get_dispatcher().sink<TriggerCollisionEvent>().connect<&OreCollector::on_collision_trigger>(this);
+    if (wallet_entity == entt::null) {
+        wallet_entity = entity;
+    }
 }
 void game::OreCollector::update(const tmt::FrameData& time) {}
 
@@ -23,7 +27,7 @@ void game::OreCollector::on_collision_trigger(const TriggerCollisionEvent& trigg
 
     auto* vr = tmt::engine.ecs.try_get_component<tmt::VoxelRenderer>(trigger.other_object);
     if (vr == nullptr) {
-        tmt::Log::error("Entity has no voxel rebderer and is collected!", trigger.other_object);
+        tmt::Log::error("Entity has no voxel renderer and is collected!", trigger.other_object);
         tmt::engine.ecs.destroy_entity(trigger.other_object);
 
         return;
@@ -39,7 +43,7 @@ void game::OreCollector::on_collision_trigger(const TriggerCollisionEvent& trigg
     auto& blas = voxel_tree->blas;
     // deframent, danger it might be very slow
     voxel_tree->blas->defrag();
-    std::array<uint32_t, magic_enum::enum_count<tmt::Material::Type>()> type_counts {};
+    std::array<uint64_t, magic_enum::enum_count<tmt::Material::Type>()> type_counts {};
     type_counts.fill(0);
 
     for (uint32_t i = 0; i < blas->node_count; ++i) {
@@ -61,4 +65,26 @@ void game::OreCollector::on_collision_trigger(const TriggerCollisionEvent& trigg
         tmt::Log::info("Ore count is {}, for {}", count, magic_enum::enum_name(type));
     }
     tmt::engine.ecs.destroy_entity(trigger.other_object);
+
+    // update the wallet
+    auto* wallet = tmt::engine.ecs.try_get_component<Wallet>(wallet_entity);
+    if (wallet == nullptr) {
+        tmt::Log::error("No Wallet component found");
+
+        return;
+    }
+    auto ore_view = tmt::engine.ecs.view<OreProperties>();
+    if (ore_view.begin() == ore_view.end()) {
+        tmt::Log::error("No OreProperties found");
+        return;
+    }
+
+    auto& ore_properties = ore_view.front().get<OreProperties>();
+    for (auto& [mat_type, ore] : ore_properties.ores) {
+        auto count = type_counts[static_cast<uint8_t>(mat_type)];
+        if (count == 0) continue;
+
+        auto idx = static_cast<uint8_t>(ore.ore_resource);
+        wallet->resource_counts[idx] += count * ore.resource_per_voxel;
+    }
 }
