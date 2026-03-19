@@ -17,7 +17,7 @@ class Wallet : public tmt::GameComponent<Wallet> {
     // Currencies
     float dollars = 0.0f;
 
-    std::unordered_map<OreProperties::OreResources, uint64_t> resource_counts;
+    std::unordered_map<OreProperties::OreResources, uint64_t> resource_counts = {};
 };
 
 }  // namespace game
