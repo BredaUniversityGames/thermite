@@ -3,8 +3,6 @@
 #include "engine/core/entity.hpp"
 #include "../../../editor/all.hpp"
 
-struct Missile;
-
 namespace game {
 
 class MediumEnemy : public tmt::GameComponent<MediumEnemy> {
@@ -35,7 +33,6 @@ class MediumEnemy : public tmt::GameComponent<MediumEnemy> {
     float laser_range = 30.0f;
     float stomp_range = 5.0f;
 
-    std::vector<Missile> missiles;
     float stop_launching_after = 0.5f;
     float start_homing_after = 0.5f;
     float launch_speed = 0.1f;
@@ -67,32 +64,6 @@ class MediumEnemy : public tmt::GameComponent<MediumEnemy> {
 };
 
 }  // namespace game
-
-struct Missile {
-    bool update(float dt, glm::vec3 ground_up, glm::vec3 player_pos);
-    enum State { LAUNCHED, HOMING } state = LAUNCHED;
-    glm::vec3 position = glm::vec3(0, 0, 0);
-    glm::vec3 velocity = glm::vec3(0, 0, 0);
-
-    float max_life_time = 0.0f;
-    float life_time = 0.0f;
-    float start_homing_after = 0.0f;
-    float stop_launching_after = 0.0f;
-    float home_speed = 0.0f;
-    float launch_speed = 0.0f;
-    glm::vec3 offset = glm::vec3(0, 0, 0);
-    float damage = 10.0f;
-
-    //= operator for medium enemy to update missile data in-place
-    Missile& operator=(const game::MediumEnemy& other) {
-        max_life_time = other.life_time;
-        start_homing_after = other.start_homing_after;
-        stop_launching_after = other.stop_launching_after;
-        home_speed = other.home_speed;
-        launch_speed = other.launch_speed;
-        return *this;
-    }
-};
 
 TMT_OBJECT(
     game::MediumEnemy, (walkable_asteroid, laser_origin, missile_origin, rotation_speed, height_above_ground, walk_speed, aggro_range, laser_range, stomp_range, missile_cooldown,

@@ -115,13 +115,6 @@ void game::MediumEnemy::update(const tmt::FrameData& time) {
         rotation = glm::normalize(rotation);
         walking_transform.set_world_rotation(rotation);
     }
-
-    // missile update
-    for (int i = missiles.size() - 1; i >= 0; i--) {
-        if (missiles[i].update(time.delta_time, ground_up, player_pos)) {
-            missiles.erase(missiles.begin() + i);
-        }
-    }
 }
 
 void game::MediumEnemy::end() {}
@@ -147,38 +140,4 @@ void game::MediumEnemy::kite_player() const {
         // Close enough to consider node reached, force path recompute
         nav_mesh.path.clear();
     }
-}
-
-bool Missile::update(float dt, glm::vec3 ground_up, glm::vec3 player_pos) {
-    tmt::engine.polyline.draw_sphere(position, 0.1f);
-    life_time += dt;
-    if (life_time > max_life_time) return true;
-
-    // fades from full launch down to zero
-    float launch_t = glm::clamp((life_time / stop_launching_after), 0.0f, 1.0f);
-    glm::vec3 launch_contribution = glm::mix(ground_up * launch_speed, glm::vec3(0.0f), launch_t);
-
-    // fades from zero up to full homing speed
-    glm::vec3 home_contribution(0.0f);
-    if (life_time > start_homing_after) {
-        float max_home_time = max_life_time - start_homing_after;
-        float home_time = life_time - start_homing_after;
-        float home_t = glm::clamp(home_time / max_home_time, 0.0f, 1.0f);  // was inverted
-
-        glm::vec3 to_player = player_pos - position;
-        if (glm::dot(to_player, to_player) > 0.0001f) {
-            home_contribution = glm::normalize(to_player) * home_speed * home_t;
-        }
-    }
-
-    auto added_vel = launch_contribution + home_contribution;
-    float length = glm::length(added_vel);
-    if (length > 0.0001f && life_time < start_homing_after) {
-        added_vel += offset;
-        added_vel = glm::normalize(added_vel) * length;
-    }
-    velocity += added_vel;
-    velocity *= 0.7f;
-    position += velocity * dt;
-    return false;
 }

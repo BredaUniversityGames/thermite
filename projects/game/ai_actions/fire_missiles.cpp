@@ -4,6 +4,7 @@
 #include "engine/systems/ai/navigation/nav_mesh.hpp"
 // todo: make projects not have to use realtive paths
 #include "../components/gameplay_functionality_components/enemy_components/medium_enemy.hpp"
+#include "../components/gameplay_functionality_components/enemy_components/missile.hpp"
 #include "engine/core/components/camera.hpp"
 
 #include "engine/core/polyline.hpp"
@@ -23,29 +24,15 @@ void FireMissiles::on_start(tmt::Entity enemy_entity) {
 
 void FireMissiles::on_tick(tmt::Entity enemy_entity, float dt) {
     game::MediumEnemy& enemy = tmt::engine.ecs.get_component<game::MediumEnemy>(enemy_entity);
-    glm::vec3 enemy_pos = tmt::engine.ecs.get_component<tmt::Transform>(enemy_entity).get_world_position();
-    glm::vec3 missile_pos = enemy_pos;
-    if (tmt::engine.ecs.valid(enemy.missile_origin)) {
-        tmt::Transform& laser_origin = tmt::engine.ecs.get_component<tmt::Transform>(enemy.missile_origin);
-        missile_pos = laser_origin.get_world_position();
-    }
-
     enemy.kite_player();
 
     interval_timer += dt;
     if (interval_timer > enemy.burst_interval) {
         interval_timer -= enemy.burst_interval;
-        Missile missile;
-        missile = enemy;
-        missile.position = missile_pos;
-
-        // set random offset
-        missile.offset = glm::vec3(
-            (static_cast<float>(rand()) / RAND_MAX - 0.5f) * enemy.missile_max_randomness, (static_cast<float>(rand()) / RAND_MAX - 0.5f) * enemy.missile_max_randomness,
-            (static_cast<float>(rand()) / RAND_MAX - 0.5f) * enemy.missile_max_randomness
-        );
-
-        enemy.missiles.emplace_back(missile);
+        auto missile_entity = tmt::engine.ecs.create_entity();
+        auto& missile_comp = tmt::engine.ecs.add_component<game::Missile>(missile_entity);
+        missile_comp.player_entity = player;
+        missile_comp.enemy_entity = enemy_entity;
         missiles--;
     }
 
