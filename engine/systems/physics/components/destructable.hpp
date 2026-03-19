@@ -35,6 +35,7 @@ struct DestructionNode {
 };
 
 struct Destructable {
+    bool initialized = false;
     uint32_t node_count = 0;
 
     // svt64 tree node index to destruction node index

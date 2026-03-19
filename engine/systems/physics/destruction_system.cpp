@@ -14,12 +14,16 @@
 namespace tmt {
 
 void Destruction::on_start() {
-    for (const auto& [entity, des, vb, vr] : engine.ecs.view<Destructable, VoxelBody, VoxelRenderer>().each()) {
-        generate_connection_graph(des, vr.resource->blas.get());
-    }
 }
 
 void Destruction::on_update(const FrameData&) {
+    for (const auto& [entity, des, vb, vr] : engine.ecs.view<Destructable, VoxelBody, VoxelRenderer>().each()) {
+        if (des.initialized) continue;
+
+        des.initialized = true;
+        generate_connection_graph(des, vr.resource->blas.get());
+    }
+
     //for (const auto& [entity, des, vb] : engine.ecs.view<Destructable, VoxelBody>().each()) {
     //    engine.polyline.use_depth_testing(false);
     //    // engine.polyline.use_color(0.1f, 0.3f, 0.9f);
@@ -349,8 +353,15 @@ void low_level_separation_flood(
 
     current_node.flood_masks.push_back({ id, flood_mask });
 
+    // Add up all flood masks
+    uint64_t all_masks = 0ull;
+    for (const auto& filled : current_node.flood_masks) {
+        if (filled.first != id) continue;
+        all_masks |= filled.second;
+    }
+
     // When flood only touched part of the mask
-    if (flood_mask == tree_node.child_mask) current_node.cleared = true;
+    if (all_masks == tree_node.child_mask) current_node.cleared = true;
 
     // Loop over connections
     // For all directions
@@ -364,14 +375,14 @@ void low_level_separation_flood(
         const uint32_t connection_index = current_node.connections[i].node_indices[0];
         DestructionNode& connected_node = graph.nodes[connection_index];
 
+        if (connected_node.cleared) continue;
+
         // If the node is not a leaf node in the tree, or is fully filled
-        if (connected_node.level != 1 && (connected_node.flood_id & (1ull << id)) != 0) {
+        if (connected_node.level != 1 && (connected_node.flood_id & (1ull << id)) == 0) {
             // separation_flood(graph, connected_node, id, tree);
             stack.push_back({ connected_node.id, 0ull });
             continue;
         }
-
-        if (connected_node.cleared) continue;
 
         // If the neighboring node is level 1, do low_level_separation_flood
         // If the neighboring node is not level 1, do separation_flood
@@ -451,8 +462,8 @@ void separation_flood(Destructable& graph, DestructionNode& current_node, uint8_
                             ((edge_mask & 0xF000F000F000F000ULL) >> 12);
             }
 
-            // Mask the edge
-            edge_mask &= edge_masks[i];
+            // Mask the edge (NOTE: CHECK IF THIS IS CORRECT!)
+            edge_mask &= edge_masks[i ^ 1u];
 
             if (edge_mask == 0ull) continue;
 
@@ -476,6 +487,7 @@ void fill_volumes(const Svt64* original_tree, const std::vector<uint64_t>& tree_
         tree->materials = new MaterialIndex[original_tree->voxel_count];
         tree->physics_data = new PhysicsVoxel[original_tree->voxel_count];
         tree->voxels_capacity = original_tree->voxel_count;
+        tree->nodes_capacity = original_tree->node_count;
         tree->voxel_count = 0u;
         tree->palette = original_tree->palette;
 
@@ -585,6 +597,8 @@ std::vector<Entity> Destruction::find_seperations(Entity entity, const std::vect
             FloodStackEntry stack_entry = stack.back();
             stack.pop_back();
 
+            if (graph.nodes[stack_entry.node_index].cleared) continue;
+
             if (stack_entry.edge_mask != 0) {
                 // Bit level floodfill
                 low_level_separation_flood(graph, graph.nodes[stack_entry.node_index], flood_id, stack_entry.edge_mask, tree, stack, tree_masks);
@@ -600,7 +614,6 @@ std::vector<Entity> Destruction::find_seperations(Entity entity, const std::vect
     // Log::info("Shapes found: {}", flood_id);
 
     // num of trees = flood_id
-    // 
     if (flood_id <= 1) return std::vector<Entity> { entity };
 
     std::vector<Entity> entities;
@@ -619,7 +632,7 @@ std::vector<Entity> Destruction::find_seperations(Entity entity, const std::vect
         engine.ecs.add_component<Destructable>(entities[i]);
         VoxelBody& vb = engine.ecs.add_component<VoxelBody>(entities[i]);
         vb.gravity = 0.0f;
-        if (i == 1) vb.gravity = 9.0f;
+        //if (i == 1) vb.gravity = 9.0f;
         vb.type = VoxelBody::DYNAMIC;
         // vr.resource = { {}, std::make_shared<tmt::VoxelVolume>() };
     }
