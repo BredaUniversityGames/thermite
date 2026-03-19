@@ -84,7 +84,6 @@ void game::OreCollector::on_collision_trigger(const TriggerCollisionEvent& trigg
         auto count = type_counts[static_cast<uint8_t>(mat_type)];
         if (count == 0) continue;
 
-        auto idx = static_cast<uint8_t>(ore.ore_resource);
-        wallet->resource_counts[idx] += count * ore.resource_per_voxel;
+        wallet->resource_counts[ore.ore_resource] += count * ore.resource_per_voxel;
     }
 }
