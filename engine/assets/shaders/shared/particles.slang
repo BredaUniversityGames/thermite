@@ -42,7 +42,6 @@ public struct ParticleEffect {
 
     public uint32_t spawn_count;
     public uint32_t tex_index;
-    public float rotation;
 };
 
 public struct ParticleEmitter {

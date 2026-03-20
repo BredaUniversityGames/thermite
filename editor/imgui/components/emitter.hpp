@@ -40,7 +40,7 @@ inline void tag_invoke(ImReflect::ImInput_t, const char*, tmt::ParticleEffect& e
         ImGui::TreePop();
     }
 
-    ImReflect::Input("Rotation", effect.rotation, type_settings, type_response);
+    ImReflect::Input("Rotation Speed", effect.rotation_speed, type_settings, type_response);
     ImReflect::Input("Position Jitter", effect.pos_jitter, type_settings, type_response);
     ImReflect::Input("Jitter Speed", effect.jitter_speed, type_settings, type_response);
     ImReflect::Input("Texture", effect.texture, type_settings, type_response);

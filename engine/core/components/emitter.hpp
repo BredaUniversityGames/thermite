@@ -36,7 +36,6 @@ struct ParticleEffect {
     BezierCurve opacity_curve {};
 
     Range rotation_speed { 0.0f, 0.0f };
-    float rotation = 0.0f;
 
     Range pos_jitter { 0.0f, 0.0f };
     float jitter_speed = 1.0f;

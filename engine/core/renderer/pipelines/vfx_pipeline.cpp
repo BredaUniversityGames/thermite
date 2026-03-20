@@ -188,7 +188,6 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
             eff.end_opacity = effect.end_opacity;
             eff.opacity_curve.points = effect.opacity_curve.get_vec4();
             eff.rotation_speed = effect.rotation_speed;
-            eff.rotation = atan2(2.0f * (world_rot.w * world_rot.x + world_rot.y * world_rot.z), 1.0f - 2.0f * (world_rot.x * world_rot.x + world_rot.y * world_rot.y));
             eff.pos_jitter = effect.pos_jitter;
             eff.jitter_speed = effect.jitter_speed;
             eff.tex_index = effect.texture.resource->image.get_index();

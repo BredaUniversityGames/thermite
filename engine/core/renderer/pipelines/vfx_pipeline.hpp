@@ -53,8 +53,7 @@ struct GpuParticleEffect {
 
     uint32_t spawn_count {};
     uint32_t tex_index {};
-    float rotation {};
-    uint32_t pad {};
+    glm::vec2 pad {};
 };
 
 struct GpuEmitter {
