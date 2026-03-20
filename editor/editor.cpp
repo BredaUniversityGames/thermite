@@ -285,6 +285,7 @@ void Editor::main_menu_bar() {
 
             RendererSettings& settings = engine.player_data.get<RendererSettings>("RendererSettings");
             ImGui::SliderFloat("Bloom Radius", &settings.bloom_radius, 0.0f, 1.0f);
+            ImGui::SliderFloat("Bloom Threshold", &settings.bloom_threshold, 0.0f, 10.0f);
 
             ImGui::EndMenu();
         }
