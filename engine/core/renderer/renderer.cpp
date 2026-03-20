@@ -138,6 +138,14 @@ void Renderer::update() {
     di_pipeline.enqueue(render_graph, render_view, scene_view);
     vfx_pipeline.enqueue(render_graph, render_view);
 
+    if (engine.renderer.display_mode == DisplayMode::MOTIONVECTORS) {
+        render_graph.add_compute_pass("[debug] motion vectors pass", "debug/motion_vectors.cs")
+            .read(render_view.mbuffer.image)
+            .write(render_view.get_render_image())
+            .group_size(16, 8)
+            .work_size(render_view.gpu_view.resolution.x, render_view.gpu_view.resolution.y);
+    }
+
     /* TAA Resolve */
     if (engine.renderer.display_mode == DisplayMode::DEFAULT) {
         const uint32_t frame_flag = (render_view.frame_counter & 1) == 0;
