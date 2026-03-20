@@ -31,6 +31,7 @@ void Rendering::on_inspect() {
 
     ImGui::TextColored(ImVec4(0.60f, 0.60f, 0.60f, 1.0f), "VFX Statistics");
     ImGui::Text("Emitters: %d", engine.renderer.vfx_pipeline.emitter_count);
+    ImGui::Text("Effects: %d", engine.renderer.vfx_pipeline.effects_count);
 
     ImGui::Spacing();
 

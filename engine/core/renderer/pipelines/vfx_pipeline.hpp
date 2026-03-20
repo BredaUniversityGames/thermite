@@ -127,6 +127,7 @@ class VfxPipeline {
     void deinit(GPUAdapter& gpu);
 
     uint32_t emitter_count = 0u;
+    uint32_t effects_count = 0u;
 
     /* Buffers */
     Buffer counter_buffer {};
