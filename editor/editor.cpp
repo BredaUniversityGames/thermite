@@ -25,6 +25,8 @@
 #include "engine/tools/file_dialog.hpp"
 #include "editor/gizmo.hpp"
 
+#include "editor/core/systems/pop_up/pop_up.hpp"
+
 /* Modes */
 #include "editor/modes/scene.hpp"
 #include "editor/modes/voxel.hpp"
@@ -157,6 +159,7 @@ void Editor::on_engine_update(const FrameData& time) {
     }
 
     main_menu_bar();
+    main_status_bar();
 
     // Call on_editor_update for all systems
     for (const auto& system : systems[editor_mode]) {
@@ -187,6 +190,9 @@ void Editor::on_engine_update(const FrameData& time) {
             window->end_display();
         }
     }
+
+    PopUpManager::update();
+    NotificationManager::update(time.delta_time);
 
     {
         TMT_ZONE_SCOPED_N("ImGui End Frame");
@@ -336,8 +342,15 @@ void Editor::main_menu_bar() {
             ImGui::SetNextItemWidth(combo_width);
             if (ImGui::BeginCombo("##SceneSwitcher", scene_name.c_str())) {
                 for (const auto& [type_index, scene_info] : scenes) {
+                    if (type_index == typeid(VoxelEditScene)) continue;
+                    if (type_index == typeid(PrefabEditScene)) continue;
+
                     bool is_selected = (active_scene && typeid(*active_scene) == type_index);
                     if (ImGui::Selectable(scene_info.name.c_str(), is_selected)) {
+                        auto current_mode = editor_mode;
+                        if (current_mode != Mode::SCENE) {
+                            switch_mode(Mode::SCENE);
+                        }
                         engine.scenes.enqueue_scene(type_index);
                     }
                     if (is_selected) {
@@ -350,6 +363,37 @@ void Editor::main_menu_bar() {
 
         ImGui::EndMainMenuBar();
     }
+}
+
+void Editor::main_status_bar() {
+    const auto flags =
+        ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav;
+
+    const float font_size_multiplier = 0.75f;
+    ImGui::PushFont(NULL, ImGui::GetStyle().FontSizeBase * font_size_multiplier);
+
+    const auto text_height = ImGui::GetTextLineHeightWithSpacing() + ImGui::GetStyle().FramePadding.y * 2.0f;
+
+    if (ImGui::BeginViewportSideBar("##StatusBar", NULL, ImGuiDir_Down, text_height, flags)) {
+        ImGui::Text("Thermite Editor");
+        ImGui::SameLine();
+        ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
+        ImGui::SameLine();
+        ImGui::Text("%s", engine.app_specs().name.c_str());
+        ImGui::SameLine();
+        ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
+        ImGui::SameLine();
+        const float fps_anchor_x = ImGui::GetCursorPosX();
+        const float fps_reserved = ImGui::CalcTextSize("FPS: 999").x + ImGui::GetStyle().ItemSpacing.x;
+        ImGui::Text("fps: %.0f", ImGui::GetIO().Framerate);
+        ImGui::SameLine(fps_anchor_x + fps_reserved);
+        ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
+        ImGui::SameLine();
+        ImGui::Text("ms: %.2f", 1000.0f / ImGui::GetIO().Framerate);
+        ImGui::End();
+    }
+
+    ImGui::PopFont();
 }
 
 }  // namespace tmt
