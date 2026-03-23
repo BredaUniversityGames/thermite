@@ -119,6 +119,8 @@ class Svt64 {
         uint32_t scale, glm::uvec3 index, const Svt64* original_tree, uint32_t node_index, const std::vector<uint64_t>& tree_masks, uint8_t id, const Destructable& graph
     );
 
+    glm::uvec3 get_max();
+
    private:
     /* Recursive function to remove voxels from the tree */
     void subtract_recursive(uint32_t node_id, glm::ivec3 node_pos, uint32_t node_scale, const Stencil* stencil, glm::ivec3 offset);
