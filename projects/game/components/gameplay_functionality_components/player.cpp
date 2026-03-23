@@ -4,7 +4,6 @@
 #include "projects/game/data_headers/events.hpp"
 
 #include <glm/glm.hpp>
-#include <glm/gtc/constants.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "engine/core/input/input.hpp"
@@ -46,6 +45,9 @@ void setup_inputs(tmt::InputMap& input_map) {
     input_map.add_action(action::BREAK);
     input_map.add_key_to_action(action::BREAK, tmt::Key::LEFT_CTRL);
 
+    input_map.add_action(action::BOOST);
+    input_map.add_key_to_action(action::BOOST, tmt::Key::R);
+
     // combat
     input_map.add_action(action::SHOOT);
     input_map.add_action_mouse(action::SHOOT, tmt::MouseButton::LEFT);
@@ -68,6 +70,10 @@ void setup_inputs(tmt::InputMap& input_map) {
     input_map.add_key_to_action(action::OPEN_UPGRADE_MENU, tmt::Key::U);
     input_map.add_action(action::ATTACH_KEY);
     input_map.add_key_to_action(action::ATTACH_KEY, tmt::Key::E);
+    input_map.add_action(action::TRIGGER_BARGE_MOVEMENT);
+    input_map.add_key_to_action(action::TRIGGER_BARGE_MOVEMENT, tmt::Key::SPACE);
+    input_map.add_action(action::TRIGGER_RUN_END);
+    input_map.add_key_to_action(action::TRIGGER_RUN_END, tmt::Key::LEFT_CTRL);
 }
 
 void Player::start() {
@@ -173,7 +179,7 @@ void Player::move_player() {
     if (glm::length(input_dir) > 0.0f) {
         // Accelerate in input direction
         input_dir = glm::normalize(input_dir);
-        velocity += input_dir * acceleration * delta_time;
+        velocity += input_dir * acceleration_calculated * delta_time;
     } else {
         // Apply drag when no input
         float current_speed = glm::length(velocity);
@@ -196,8 +202,8 @@ void Player::move_player() {
 
     // Clamp velocity to max speed
     float current_speed = glm::length(velocity);
-    if (current_speed > max_speed) {
-        velocity = glm::normalize(velocity) * max_speed;
+    if (current_speed > max_speed_calculated) {
+        velocity = glm::normalize(velocity) * max_speed_calculated;
     }
 
     auto hit = check_collision();
@@ -266,11 +272,34 @@ void Player::prevent_camera_clip() const {
 }
 void Player::update(const tmt::FrameData& time) {
     auto& input = tmt::engine.input;
+
     switch (state) {
         case game::PlayerState::FREEMOVING:
+            // Handle player movement boost (initial cost)
+            if (energy.value > boost_initial_cost) {
+                boost_available = true;
+            } else {
+                boost_available = false;
+            }
+
+            if (input.is_action_just_pressed(action::BOOST) && boost_available) {
+                energy.value = glm::min(energy.max_value, energy.value - boost_initial_cost);
+            }
+            if (input.is_action_pressed(action::BOOST) && boost_available) {
+                apply_boost();
+            } else {
+                reset_boost();
+            }
+
             attempt_attach(input);
             look_camera();
             move_player();
+
+            // Handle energy drain for boost
+            if (boost_was_applied) {
+                float current_speed = glm::length(velocity);
+                energy.value = glm::min(energy.max_value, energy.value - time.delta_time * boost_cost_per_second_per_additional_speed_above_max * glm::max(0.0f, current_speed - max_speed));
+            }
 
             // Handle recharging and draining
             if (tmt::engine.ecs.valid(barge)) {
@@ -298,20 +327,78 @@ void Player::update(const tmt::FrameData& time) {
 
     // TODO events, could also use entt on modifcation component for the UI components
 
+    // UI bar updates
+    // Fire event max health changed
+    if (previous_max_health != health.max_value) {
+        tmt::engine.ecs.get_dispatcher().trigger(PlayerMaxHealthChanged { entity, health.max_value, previous_max_health });
+    }
+    previous_max_health = health.max_value;
+    // Update UI
     if (tmt::engine.ecs.valid(hp_bar_max)) {
-        if (auto componenthpmax = tmt::engine.ecs.try_get_component<tmt::UIComponent>(hp_bar_max)) componenthpmax->size.x = health.max_value + 2.0f;
+        if (auto component_hp_max = tmt::engine.ecs.try_get_component<tmt::UIComponent>(hp_bar_max)) component_hp_max->size.x = health.max_value + 2.0f;
     }
 
+    // Fire event health changed
+    if (previous_health != health.value) {
+        tmt::engine.ecs.get_dispatcher().trigger(PlayerHealthChanged { entity, health.value, previous_health });
+    }
+    previous_health = health.value;
+    // Update UI
     if (tmt::engine.ecs.valid(hp_bar_current)) {
-        if (auto componentcurrhp = tmt::engine.ecs.try_get_component<tmt::UIComponent>(hp_bar_current)) componentcurrhp->size.x = health.value;
+        if (auto component_curr_hp = tmt::engine.ecs.try_get_component<tmt::UIComponent>(hp_bar_current)) component_curr_hp->size.x = health.value;
     }
 
+    // Fire event max energy changed
+    if (previous_max_energy != energy.max_value) {
+        tmt::engine.ecs.get_dispatcher().trigger(PlayerMaxEnergyChanged { entity, energy.max_value, previous_max_energy });
+    }
+    previous_max_energy = energy.max_value;
+    // Update UI
     if (tmt::engine.ecs.valid(energy_bar_max)) {
-        if (auto componenthpmax = tmt::engine.ecs.try_get_component<tmt::UIComponent>(energy_bar_max)) componenthpmax->size.x = energy.max_value + 2.0f;
+        if (auto component_energy_max = tmt::engine.ecs.try_get_component<tmt::UIComponent>(energy_bar_max)) component_energy_max->size.x = energy.max_value + 2.0f;
     }
 
+    // Fire event energy changed
+    if (previous_energy != energy.value) {
+        tmt::engine.ecs.get_dispatcher().trigger(PlayerMaxHealthChanged { entity, energy.value, previous_energy });
+    }
+    previous_energy = energy.value;
+    // Update UI
     if (tmt::engine.ecs.valid(energy_bar_current)) {
-        if (auto componentcurrhp = tmt::engine.ecs.try_get_component<tmt::UIComponent>(energy_bar_current)) componentcurrhp->size.x = energy.value;
+        if (auto component_curr_energy = tmt::engine.ecs.try_get_component<tmt::UIComponent>(energy_bar_current)) component_curr_energy->size.x = energy.value;
+    }
+
+    // Death handling logic
+
+    // Energy death (timer)
+    if (energy.value <= 0.0f) {
+        out_of_energy_timer += time.delta_time;
+    } else {
+        // reset out of battery timer
+        out_of_energy_timer = 0.0f;
+    }
+
+    if (out_of_energy_timer >= out_of_energy_time_till_death) {
+        tmt::engine.ecs.get_dispatcher().trigger(EndRun { true });
+        player_ended_run = true;
+        state = PlayerState::PAUSED;
+    }
+
+    // Health death (instant)
+    if (health.value <= 0.0f && !player_ended_run) {
+        // player ded -> call end run event with player ded
+        tmt::engine.ecs.get_dispatcher().trigger(EndRun { true });
+        player_ended_run = true;
+        state = PlayerState::PAUSED;
+    }
+
+    // UI boost availability
+    if (tmt::engine.ecs.valid(boost_availability)) {
+        if (!boost_available || boost_was_applied) {
+            tmt::engine.ecs.disable(boost_availability);
+        } else {
+            tmt::engine.ecs.enable(boost_availability);
+        }
     }
 }
 void Player::draw_debug_lines() const {
@@ -422,9 +509,30 @@ void Player::on_attach(const AttachEvent& event) {
     }
     if (event.is_attached) {
         state = PlayerState::ATTACHED;
+        // this is used so if the player was already holding the button, it does not instantly move
+        reset_action_time(action::TRIGGER_BARGE_MOVEMENT);
+        reset_action_time(action::TRIGGER_RUN_END);
     } else {
         state = PlayerState::FREEMOVING;
     }
+}
+
+void Player::apply_boost() {
+    max_speed_calculated = max_speed * boost_max_speed_multiplier;
+    acceleration_calculated = acceleration * boost_acceleration_multiplier;
+    boost_was_applied = true;
+}
+
+void Player::reset_boost() {
+    max_speed_calculated = max_speed;
+    acceleration_calculated = acceleration;
+    boost_was_applied = false;
+}
+
+void Player::reset_action_time(std::string_view action_name) {
+    auto& input_map = tmt::engine.input_map;
+    auto* action = input_map.get_action(std::string { action_name });
+    action->time_since_being_pressed = 0.0f;
 }
 
 }  // namespace game
