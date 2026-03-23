@@ -142,6 +142,13 @@ public float r1(const uint n) {
 }
 
 /* R1 quasi-random sequence. [0, 1) */
+public float r1(const float noise) {
+    /* Improved coefficients from <https://www.martysmods.com/a-better-r2-sequence/> */
+    /* (1.0 - original coefficients) */
+    return frac(noise + 0.38196601125010515179366115080745f);
+}
+
+/* R1 quasi-random sequence. [0, 1) */
 public float r1(const float noise, const uint n) {
     /* Improved coefficients from <https://www.martysmods.com/a-better-r2-sequence/> */
     /* (1.0 - original coefficients) */
