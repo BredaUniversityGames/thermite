@@ -255,12 +255,11 @@ void Editor::main_menu_bar() {
                     }
                 }
                 ImGui::EndMenu();
-                
+
                 if (engine.renderer.display_mode != DisplayMode::DEFAULT) {
-                    engine.renderer.enable_taa = false;    
+                    engine.renderer.enable_taa = false;
                 }
             }
-            
 
             /* List of shading rate labels */
             static const std::vector<std::string> SHADING_RATE_LABELS { "Full-Rate", "Half-Rate (1:2)", "Quarter-Rate (1:4)" };
