@@ -164,7 +164,9 @@ void Renderer::update() {
             .work_size(render_view.gpu_view.resolution.x, render_view.gpu_view.resolution.y);
     }
 
-    post_process_pipeline.enqueue(render_graph, render_view);
+    if (engine.renderer.display_mode == DisplayMode::DEFAULT) {
+        post_process_pipeline.enqueue(render_graph, render_view);
+    }
 
     if (scene_view.render_outlines) {
         /* Object outline render pass */

@@ -76,16 +76,14 @@ void PostProcessPipeline::enqueue(RenderGraph& render_graph, RenderView render_v
     }
 
     /* Bloom Addition, Color Grading and Tonemapping */
-    if (engine.renderer.display_mode == DisplayMode::DEFAULT) {
-        /* clang-format off */
+    /* clang-format off */
         render_graph.add_compute_pass("Color Grading and Tonemapping", "cg_tonemap.cs")
                     .read(render_view.lbuffer.image)
                     .read(render_view.tbuffer.images[0])
                     .write(render_view.get_render_image())
                     .group_size(16, 8)
                     .work_size(render_view.gpu_view.resolution.x, render_view.gpu_view.resolution.y);
-        /* clang-format on */
-    }
+    /* clang-format on */
 }
 
 void PostProcessPipeline::deinit(GPUAdapter& gpu) {
