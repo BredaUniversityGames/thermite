@@ -45,7 +45,7 @@ void GoapDebugger::on_editor_end() {
  *       - Available goals and actions
  *   - Render a visual graph of the agent's plan and available actions/goals.
  */
-void GoapDebugger::display() {
+void GoapDebugger::on_inspect() {
     auto& ecs = engine.ecs.get_registry();
     static Entity selected_agent = entt::null;
 
@@ -211,7 +211,8 @@ void GoapDebugger::draw_details_view(GoapAgent& agent, WorldState& ws) {
 
             bool can_run = true;
             for (auto& [fact, val] : effective.preconditions) {
-                auto it = ws.facts.find((uint32_t)std::hash<std::string>()(fact));
+                // auto it = ws.facts.find((uint32_t)std::hash<std::string>()(fact));
+                auto it = ws.facts.find(FactId(fact).id);
                 if (it == ws.facts.end() || it->second != val) {
                     can_run = false;
                     break;

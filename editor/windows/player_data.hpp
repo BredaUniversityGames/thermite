@@ -3,10 +3,10 @@
 
 namespace tmt {
 
-class PlayerDataWindow : public IWindow {
+class PlayerDataWindow : public IWindow<> {
    public:
     std::string get_title() const override { return "Player Data"; };
-    void display() override;
+    void on_inspect() override;
 };
 
 }  // namespace tmt

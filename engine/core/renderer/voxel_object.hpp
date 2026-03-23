@@ -57,7 +57,10 @@ struct VoxelObject {
      */
     uint32_t mask = 0xFFFFFFFFu;
 
-    VoxelVolume* volume {};
+    /* Unique object identifier. */
+    uint32_t uuid = 0u;
+
+    ResourceRef<VoxelVolume> volume {};
 
     /* Get the axis-aligned bounding box of this voxel object. */
     inline Aabb aabb() const {

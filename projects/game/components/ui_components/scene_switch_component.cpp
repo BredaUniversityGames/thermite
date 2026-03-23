@@ -42,6 +42,11 @@ void SceneSwitchComponent::switch_scene() {
         case TargetSceneEnum::MIKA_TEST:
             tmt::engine.scenes.enqueue_scene<MikaTestScene>();
             break;
+        case TargetSceneEnum::HUB:
+            tmt::engine.scenes.enqueue_scene<HubScene>();
+            break;
+        case TargetSceneEnum::WEAPON_MOTION_TEST:
+            tmt::engine.scenes.enqueue_scene<WeaponMotionTest>();
         default:
             tmt::engine.scenes.enqueue_scene<MainMenuScene>();
             break;

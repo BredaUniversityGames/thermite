@@ -6,11 +6,12 @@
 #include <graphite/nodes/raster_node.hh>
 #include <graphite/nodes/compute_node.hh>
 
-#include "engine.hpp"
-#include "core/ecs.hpp"
-#include "core/logger.hpp"
-#include "core/renderer/renderer.hpp"
-#include "core/components/emitter.hpp"
+#include "engine/engine.hpp"
+#include "engine/core/ecs.hpp"
+#include "engine/core/logger.hpp"
+#include "engine/core/renderer/renderer.hpp"
+#include "engine/core/components/emitter.hpp"
+#include "engine/core/resources.hpp"
 
 namespace tmt {
 
@@ -147,7 +148,7 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
 
         for (auto& effect : emitter.effects) {
             if (!effect.active && !effect.should_burst) continue;
-
+            
             effect.should_burst = !effect.should_burst;
 
             uint32_t actual_spawn_count = 0u;
@@ -257,7 +258,7 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
                                 .depth_stencil(render_view.dbuffer.image, true, true)
                                 .load_op_depth(LoadOp::Load)
                                 .load_op_color(LoadOp::Load)
-                                .attach(render_view.lbuffer.image)
+                                .attach(render_view.lbuffer.images[0])
                                 .attach(render_view.mbuffer.image)
                                 .raster_extent(render_res.x, render_res.y);
     billboard_pass.draw_indirect(billboard_vertices, instanced_draw_args_buffer);

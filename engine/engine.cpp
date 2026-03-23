@@ -78,6 +78,10 @@ void Engine::init(std::unique_ptr<Application> user_app) {
     Log::init(app->specs.log_file.string());
     setup_signals();
 
+    std::string build_ver = BUILD_VERSION;
+    if (build_ver == "") build_ver = "dev";
+    Log::info(Log::Scope::GLOBAL, "Build version: {}", build_ver);
+
     IO::init_mounts(app->specs.organization, app->specs.name);
     window.init(app->specs);
     input.init();
@@ -152,7 +156,13 @@ void Engine::run() {
         audio.update();
 
         accumulator += current_frame_data.delta_time;
+        uint32_t fixed_update_count = 0;
         while (accumulator >= Config::FIXED_TIME_STEP) {
+            if (fixed_update_count >= Config::MAX_FIXED_UPDATES_PER_FRAME) {
+                accumulator = 0.0f;
+                break;
+            }
+
             accumulator -= Config::FIXED_TIME_STEP;
 
             TMT_ZONE_SCOPED_N("Fixed Update")
@@ -162,6 +172,7 @@ void Engine::run() {
                 fixed_update_game(FrameData { .delta_time = Config::FIXED_TIME_STEP });
             }
             fixed_update_engine(FrameData { .delta_time = Config::FIXED_TIME_STEP });
+            fixed_update_count++;
         }
 
         OnEndFrame::dispatch();
@@ -188,6 +199,7 @@ void Engine::end() {
     ecs.clear();
     scenes.end();
     audio.end();  // Needs to be ended after the ecs.
+    player_data.serialize();
     resources.force_unload_all();
     renderer.end();
     Log::info("Engine finished shutdown");

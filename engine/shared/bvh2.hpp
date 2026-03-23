@@ -55,6 +55,7 @@ class Bvh2 {
     /* Nodes & primitive indices */
     Bvh2Node* nodes = nullptr;
     uint32_t* indices = nullptr;
+    uint32_t index_count = 0u;
     uint32_t node_count = 0u;
 
     /* Nodes optimized for gpu traversal */
@@ -72,6 +73,8 @@ class Bvh2 {
 
     /* Find all primitives overlapping an AABB. */
     std::vector<uint32_t> overlap(const Aabb& aabb) const;
+    /* Find only the primitives in layer_mask overlapping with an AABB */
+    std::vector<uint32_t> overlap(const Aabb& aabb, uint32_t layer_mask) const;
 
     /* Trace the acceleration structure. */
     Hit trace(const Ray& ray) const;

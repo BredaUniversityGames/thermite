@@ -10,7 +10,7 @@ namespace tmt {
 
 class VoxelVolume;
 
-class Palette : public IWindow {
+class Palette : public IWindow<> {
    public:
     constexpr std::string get_title() const override { return ICON_MS_PALETTE " Palette"; }
     constexpr bool default_open() const override { return true; }
@@ -20,7 +20,7 @@ class Palette : public IWindow {
 
     void before_begin() override;
     void end_display() override;
-    void display() override;
+    void on_inspect() override;
 
     void on_editor_start() override {}
     void on_editor_update(const FrameData&) override {}

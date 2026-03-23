@@ -2,6 +2,7 @@
 #include "engine/events/engine.hpp"
 
 #include "engine/core/collection.hpp"
+#include "editor/core/system.hpp"
 #include "editor/core/window.hpp"
 #include "editor/shared/save_data.hpp"
 #include "editor/gizmo.hpp"
@@ -30,7 +31,7 @@ class Editor : public OnEngineInit, public OnEngineUpdate, public OnEngineFixedU
 
     Mode editor_mode { Mode::SCENE };
     std::map<Mode, std::unique_ptr<IEditorMode>> mode_handlers;
-    std::map<Mode, Collection<IWindow>> windows;
+    std::map<Mode, Collection<IEditorSystemBase>> systems;
     ImGuiManager& imgui_manager;
 
     SaveData save_data;
@@ -43,6 +44,7 @@ class Editor : public OnEngineInit, public OnEngineUpdate, public OnEngineFixedU
     void on_engine_end() override;
 
     void main_menu_bar();
+    void main_status_bar();
 };
 
 /* Singleton */

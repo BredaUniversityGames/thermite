@@ -1,23 +1,18 @@
 #pragma once
-#include "editor/events/editor.hpp"
+#include "editor/core/system.hpp"
 #include <string>
 namespace tmt {
 
-class IWindow : public IEditorEvents {
+class IWindowBase {
    public:
-    virtual ~IWindow() = default;
+    virtual ~IWindowBase() = default;
 
     /* [Required] */
-    virtual void display() = 0;
+    virtual void on_inspect() = 0;
 
     /* [Optional] */
     virtual void before_begin() {};
     virtual void end_display() {};
-
-    /* IEditorEvents made optional */
-    virtual void on_editor_start() {};
-    virtual void on_editor_update(const tmt::FrameData& time) { (void)time; };
-    virtual void on_editor_end() {};
 
     /* [Required] */
     constexpr virtual std::string get_title() const = 0;
@@ -28,5 +23,8 @@ class IWindow : public IEditorEvents {
     constexpr virtual bool is_closable() const { return true; }
     constexpr virtual bool default_open() const { return false; }
 };
+
+template <typename Derived = void>
+class IWindow : public IEditorSystem<Derived>, public IWindowBase {};
 
 }  // namespace tmt
