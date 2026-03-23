@@ -26,6 +26,7 @@
 
 // Enemies
 #include "components/gameplay_functionality_components/enemy_components/medium_enemy.hpp"
+#include "components/gameplay_functionality_components/enemy_components/small_enemy.hpp"
 
 // Animation
 #include "components/animation_player.hpp"
@@ -95,6 +96,7 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     tmt::engine.scenes.register_scene<DanielTestScene>();
     tmt::engine.scenes.register_scene<MikaTestScene>();
     tmt::engine.scenes.register_scene<LoekTestScene>();
+    tmt::engine.scenes.register_scene<AnneTestScene>();
 
     /* Register Game Components */
     tmt::engine.component_registry.register_component<game::Player>();
@@ -116,6 +118,7 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     tmt::engine.component_registry.register_component<game::MenuController>();
     tmt::engine.component_registry.register_component<game::FuelComponent>();
     tmt::engine.component_registry.register_component<game::MediumEnemy>();
+    tmt::engine.component_registry.register_component<game::SmallEnemy>();
     tmt::engine.component_registry.register_component<game::OreProperties>();
     tmt::engine.component_registry.register_component<game::OreManager>();
     /* Register World Generation Components */

@@ -51,9 +51,22 @@ void SteeringDataEditor::on_inspect() {
     ImGui::DragFloat("Max Force", &params.max_force, 0.1f, 0.f, 100.f);
     ImGui::DragFloat("Arrive Radius", &params.arrive_radius, 0.1f, 0.f, 50.f);
     ImGui::DragFloat("Activation Range", &params.activation_range, 0.5f, 0.f, 100.f);
+    ImGui::DragFloat("Max Wander Distance", &params.wander_radius_limit, 0.1f, 0.f, 100.f);
+
+    ImGui::SeparatorText("Explosion Parameters");
+
+    ImGui::Text(
+        "Min and Max explosion range are the paramaters where the agent will move to for the explosion, and where the agent will start to follow you again if u move out of that range and it "
+        "is not done charging yet."
+    );
+    ImGui::Text("Explosion range is the actual range of the explosion.");
+
     ImGui::DragFloat("Min Explosion Range", &params.min_explosion_range, 0.1f, 0.f, 50.f);
     ImGui::DragFloat("Max Explosion Range", &params.max_explosion_range, 0.1f, 0.f, 50.f);
-    ImGui::DragFloat("Max Wander Distance", &params.wander_radius_limit, 0.1f, 0.f, 100.f);
+    ImGui::DragFloat("Explosion Range", &params.explosion_range, 0.1f, 0.f, 50.f);
+    ImGui::DragFloat("Explosion Damage", &params.explosion_damage, 0.1f, 0.f, 50.f);
+    ImGui::DragFloat("Explosion Force", &params.explosion_damage, 0.1f, 0.f, 50.f);
+    ImGui::DragFloat("Charge Up Time", &params.charge_time, 0.1f, 0.f, 10.f);
 
     if (ImGui::Button("Reset Defaults")) {
         params = SteeringParams {};

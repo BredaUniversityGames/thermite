@@ -15,7 +15,7 @@ namespace tmt {
  */
 class SteeringDataEditor : public IWindow<> {
    public:
-    constexpr std::string get_title() const override { return "Steering data"; }
+    constexpr std::string get_title() const override { return "Steering Agent"; }
 
     void on_editor_start() override;
     void on_editor_update(const FrameData&) override {}

@@ -59,13 +59,6 @@ void SensorsSystem::on_update(const tmt::FrameData& /*time*/) {
 
         const auto& params = steering->overrides().params;
 
-        // Update facts
-        /*ws->facts[(uint32_t)std::hash<std::string>()("s_player_in_range")] = distance <= params.activation_range;
-        ws->facts[(uint32_t)std::hash<std::string>()("s_player_in_explosion_zone")] = distance <= params.max_explosion_range;
-        if (ws->facts[(uint32_t)std::hash<std::string>()("s_player_in_explosion_zone")] == false) {
-            ws->facts[(uint32_t)std::hash<std::string>()("s_ready_to_explode")] = false;
-        }*/
-
         ws->set_fact(tmt::FactId("s_player_in_range"), distance <= params.activation_range);
         ws->set_fact(tmt::FactId("s_player_in_explosion_zone"), distance <= params.max_explosion_range);
 

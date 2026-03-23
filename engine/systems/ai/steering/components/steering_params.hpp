@@ -19,8 +19,16 @@ struct SteeringParams {
     float max_speed = 5.f;             // Max movement speed
     float max_force = 20.f;            // Max turn speed
     float wander_radius_limit = 25.f;  // Max distance it can wander
+
+    float charge_time = 1.5f;          // Time it takes to charge up the explosion
+    float explosion_range = 10.f;      // Range of the explosion
+    float explosion_damage = 10.f;     // Damage of the explosion
+    float explosion_force = 10.f;      // Force of the explosion
 };
 
 }  // namespace tmt
 
-TMT_OBJECT(tmt::SteeringParams, (arrive_radius, activation_range, min_explosion_range, max_explosion_range, max_speed, max_force, wander_radius_limit));
+TMT_OBJECT(
+    tmt::SteeringParams,
+    (arrive_radius, activation_range, min_explosion_range, max_explosion_range, max_speed, max_force, wander_radius_limit, charge_time, explosion_range, explosion_damage, explosion_force)
+);
