@@ -31,7 +31,7 @@ class Editor : public OnEngineInit, public OnEngineUpdate, public OnEngineFixedU
 
     Mode editor_mode { Mode::SCENE };
     std::map<Mode, std::unique_ptr<IEditorMode>> mode_handlers;
-    std::map<Mode, Collection<IEditorSystem>> systems;
+    std::map<Mode, Collection<IEditorSystemBase>> systems;
     ImGuiManager& imgui_manager;
 
     SaveData save_data;
@@ -44,6 +44,7 @@ class Editor : public OnEngineInit, public OnEngineUpdate, public OnEngineFixedU
     void on_engine_end() override;
 
     void main_menu_bar();
+    void main_status_bar();
 };
 
 /* Singleton */
