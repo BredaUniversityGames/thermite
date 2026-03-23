@@ -80,7 +80,9 @@ void RenderView::init() {
     /* Create the thresholded luminance buffer */
     tbuffer.meta = { 7, 1 };  // Set 7 mips, 1 array layer
     tbuffer.texture =
-        bank.create_texture("Thresholded Luminance Buffer Texture", TextureUsage::ColorAttachment | TextureUsage::Storage | TextureUsage::Sampled, TextureFormat::RG11B10Ufloat, render_size, tbuffer.meta)
+        bank.create_texture(
+                "Thresholded Luminance Buffer Texture", TextureUsage::ColorAttachment | TextureUsage::Storage | TextureUsage::Sampled, TextureFormat::RG11B10Ufloat, render_size, tbuffer.meta
+        )
             .expect("failed to create tbuffer texture.");
     for (uint32_t curr_mip = 0; curr_mip < tbuffer.meta.mips; curr_mip++)
         tbuffer.images.push_back(bank.create_image("Thresholded Luminance Buffer Image", tbuffer.texture, curr_mip).expect("failed to create tbuffer image."));

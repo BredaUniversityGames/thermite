@@ -73,7 +73,7 @@ inline void tag_invoke(ImReflect::ImInput_t, const char*, tmt::ParticleEmitter& 
     int move_up_idx = -1;
     int move_down_idx = -1;
 
-    for (int i = 0; i < value.effects.size(); i++) {
+    for (int i = 0; i < (int)value.effects.size(); i++) {
         auto& effect = value.effects[i];
         ImGui::PushID(i);
 
@@ -90,7 +90,7 @@ inline void tag_invoke(ImReflect::ImInput_t, const char*, tmt::ParticleEmitter& 
         ImGui::SameLine(ImGui::GetContentRegionAvail().x - total_width + ImGui::GetStyle().ItemSpacing.x);
 
         bool can_move_up = i > 0;
-        bool can_move_down = i < value.effects.size() - 1;
+        bool can_move_down = i < (int)value.effects.size() - 1;
 
         ImGui::BeginDisabled(!can_move_up);
         if (ImGui::ArrowButton("##up", ImGuiDir_Up)) {
@@ -152,7 +152,7 @@ inline void tag_invoke(ImReflect::ImInput_t, const char*, tmt::ParticleEmitter& 
     if (move_up_idx > 0) {
         std::swap(value.effects[move_up_idx], value.effects[move_up_idx - 1]);
     }
-    if (move_down_idx >= 0 && move_down_idx < value.effects.size() - 1) {
+    if (move_down_idx >= 0 && move_down_idx < (int)value.effects.size() - 1) {
         std::swap(value.effects[move_down_idx], value.effects[move_down_idx + 1]);
     }
 }
