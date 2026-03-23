@@ -12,6 +12,7 @@
         18,
         19,
         20,
+        22,
         1048576,
         1048577,
         1048578,
@@ -57,6 +58,9 @@
         },
         "20": {
             "name": "Test Emitter"
+        },
+        "22": {
+            "name": "Entity_22"
         },
         "1048576": {
             "name": "Camera"
@@ -313,6 +317,28 @@
             "parent": 4294967295,
             "children": []
         },
+        "22": {
+            "local_position": {
+                "x": 22.06256103515625,
+                "y": 31.983734130859375,
+                "z": 0.1625000238418579
+            },
+            "local_rotation": {
+                "w": 1.0,
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "local_scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "parent": 4294967295,
+            "children": [
+                1048597
+            ]
+        },
         "1048576": {
             "local_position": {
                 "x": 0.0,
@@ -515,22 +541,22 @@
         },
         "1048597": {
             "local_position": {
-                "x": 16.0,
-                "y": -150.00003051757813,
+                "x": 0.0,
+                "y": 0.0,
                 "z": 0.25
             },
             "local_rotation": {
-                "w": 1.0,
-                "x": 0.0,
+                "w": -0.13052614033222198,
+                "x": 0.9914448857307434,
                 "y": 0.0,
                 "z": 0.0
             },
             "local_scale": {
                 "x": 1.0,
-                "y": 1.0,
-                "z": 1.0
+                "y": 1.0000005960464478,
+                "z": 1.0000005960464478
             },
-            "parent": 4294967295,
+            "parent": 22,
             "children": []
         }
     },
@@ -950,19 +976,38 @@
         }
     },
     "UIComponent": {
-        "1048597": {
+        "22": {
             "size": {
-                "x": 50.0,
-                "y": 50.0
+                "x": 256.2731628417969,
+                "y": 515.576416015625
             },
             "pivot": {
                 "x": 0.5,
-                "y": 1.0
+                "y": 0.5
             },
             "block_raycasts": false,
             "scale_with_parent_x": false,
             "scale_with_parent_y": false,
-            "aspect_mode": "FIT",
+            "aspect_mode": "STRETCH",
+            "aspect_ratio": {
+                "x": 1.0,
+                "y": 1.0
+            },
+            "anchor": "MIDDLE_CENTER"
+        },
+        "1048597": {
+            "size": {
+                "x": 256.2731628417969,
+                "y": 515.576416015625
+            },
+            "pivot": {
+                "x": 0.5,
+                "y": 0.5
+            },
+            "block_raycasts": false,
+            "scale_with_parent_x": true,
+            "scale_with_parent_y": true,
+            "aspect_mode": "STRETCH",
             "aspect_ratio": {
                 "x": 1.0,
                 "y": 1.0
@@ -970,9 +1015,26 @@
             "anchor": "MIDDLE_CENTER"
         }
     },
+    "ImageRenderer": {
+        "22": {
+            "texture": {
+                "file_location": {
+                    "sub_location": "PROJECT",
+                    "relative_path": ""
+                },
+                "data": null
+            },
+            "color": {
+                "x": 0.4483985900878906,
+                "y": 0.4483985900878906,
+                "z": 0.4483985900878906,
+                "w": 1.0
+            }
+        }
+    },
     "TextRenderer": {
         "1048597": {
-            "text": "Hello World",
+            "text": "aaaaaa bbbbbb ccccc",
             "font": {
                 "file_location": {
                     "sub_location": "ENGINE",
@@ -988,50 +1050,23 @@
                     "last_char": 126
                 }
             },
-            "font_size": 185.0,
+            "font_size": 17.0,
             "color": {
                 "x": 1.0,
                 "y": 1.0,
                 "z": 1.0,
                 "w": 1.0
             },
-            "line_spacing": 1.0,
+            "line_spacing": 65.0,
             "letter_spacing": 0.0,
             "paragraph_spacing": 0.0,
             "horizontal_align": "CENTER",
             "vertical_align": "MIDDLE",
-            "word_wrap": false,
-            "max_width": 50.0,
-            "max_height": 50.0,
+            "word_wrap": true,
+            "max_width": 256.2731628417969,
+            "max_height": 515.576416015625,
             "overflow": "VISIBLE",
             "use_ui_component_size": true,
-            "outline_width": 0.0,
-            "outline_color": {
-                "x": 0.0,
-                "y": 0.0,
-                "z": 0.0,
-                "w": 0.0
-            },
-            "shadow_offset": {
-                "x": 0.0,
-                "y": 0.0
-            },
-            "shadow_color": {
-                "x": 0.0,
-                "y": 0.0,
-                "z": 0.0,
-                "w": 0.0
-            },
-            "shadow_softness": 0.0,
-            "glow_width": 0.0,
-            "glow_color": {
-                "x": 0.0,
-                "y": 0.0,
-                "z": 0.0,
-                "w": 0.0
-            },
-            "softness": 0.0,
-            "boldness": 0.0,
             "rich_text_enabled": true
         }
     },
