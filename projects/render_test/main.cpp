@@ -14,6 +14,8 @@
 
 #include "engine/systems/gameplay/game_component.hpp"
 
+#include "engine/tools/tweening.hpp"
+
 class Game : public tmt::Application {
    public:
     Game(const tmt::ApplicationSpecs& specs) : Application(specs) {}
@@ -77,16 +79,26 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     return std::make_unique<Game>(specs);
 }
 
+static float test_float = 0.0f;
+
 void MainScene::on_start() {
     /* Load the throwable box model */
     const tmt::ResourceRef box_scene = tmt::engine.resources.load_resource<tmt::VoxelScene>({ tmt::IO::Location::PROJECT, "box-10.vengi" });
     box_model = tmt::engine.resources.copy_resource<tmt::VoxelVolume>(box_scene);
+
+    auto camera = tmt::Camera::get_active_camera();
+
+    Tweening::tween(camera);
+
+    Tweening::tween(test_float).from(-5.0f).to(5.0f).duration(2.0f);
 }
 
 void MainScene::on_update(const tmt::FrameData& time) {
     /* Update the time elapsed and cooldown timer */
     time_passed += time.delta_time;
     cooldown -= time.delta_time;
+
+    tmt::Log::info("{}", test_float);
 
     // Use to test the logging please
     /*  static int i = 0;

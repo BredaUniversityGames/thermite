@@ -35,6 +35,7 @@
 #include "core/input/input_map.hpp"
 #include "tools/profiler.hpp"
 #include "tools/timer.hpp"
+#include "tools/tweening.hpp"
 
 /* Singleton */
 tmt::Engine tmt::engine;
@@ -233,6 +234,8 @@ void Engine::start_game() {
 
 void Engine::update_game(const FrameData& frame_data) {
     TMT_ZONE_SCOPED_N("Engine::update_game")
+
+    Tweening::update(frame_data.delta_time);
 
     app->on_update(frame_data);
     if (scenes.get_active_scene()) scenes.get_active_scene()->on_update(frame_data);
