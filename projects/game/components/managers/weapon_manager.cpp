@@ -7,6 +7,8 @@
 #include "engine/core/polyline.hpp"
 #include "engine/tools/second_order_solver.hpp"
 #include "engine/systems/physics/physics_system.hpp"
+#include "engine/tools/random.hpp"
+
 #define GLM_ENABLE_EXPERIMENTAL
 #include "glm/gtx/norm.hpp"
 
@@ -98,7 +100,11 @@ void game::WeaponManager::check_trigger_shoot_event() {
     auto& input = tmt::engine.input;
 
     if (input.is_action_pressed(action::SHOOT)) {
+        fired = true;
+        upward_response = true;
+
         tmt::engine.ecs.get_dispatcher().trigger(ShootEvent { shooting_entity, false });
+        
     } else if (input.is_action_just_released(action::SHOOT)) {
         tmt::engine.ecs.get_dispatcher().trigger(ReleaseShootEvent { shooting_entity });
     }
@@ -138,68 +144,8 @@ void game::WeaponManager::update(const tmt::FrameData& time) {
                 break;
         }
     }
-    auto& weapon_procanim_data = weapons.at(current_weapon).proc_anim_data;
-    auto* root_eff_transform = tmt::engine.ecs.try_get_component<tmt::Transform>(weapon_procanim_data.root);
-
-    if(root_eff_transform)
-    {
-        auto aa_rottrans = animate_antioverlap();
-
-        if(tmt::engine.ecs.valid(shooting_entity)) 
-        {
-            auto shooter_camera = tmt::engine.ecs.try_get_component<tmt::Camera>(shooting_entity);
-            if(shooter_camera)
-            {
-                float d_pitch = shooter_camera->pitch - last_pitch;
-                float d_yaw = shooter_camera->yaw - last_yaw;
-
-                if(d_pitch || d_yaw)
-                {
-                    
-                    glm::vec3 displaced_vec = glm::vec3{d_yaw, -d_pitch, 0.f} * 0.1f;
-                    
-                    float displaced_mag = std::min(glm::length(displaced_vec) * 0.001f * weapon_procanim_data.look_sensitivity, 1.f);
-
-                    aa_rottrans.translation.x -= displaced_vec.x * weapon_procanim_data.look_displacement;
-                    aa_rottrans.translation.y -= displaced_vec.y * weapon_procanim_data.look_displacement;
-                    
-                    auto parent = root_eff_transform->get_parent();
-                    auto& parent_world = tmt::engine.ecs.get_component<tmt::Transform>(parent).get_world_matrix();
-
-                    const RotTrans& rest_pose = rest_poses.at(current_weapon);
-
-                    glm::vec3 fwd = glm::quat_cast(parent_world * glm::mat4_cast(rest_pose.rotation)) * glm::vec3(0.f, 0.f, 1.f);
-
-
-                    auto target_rot = glm::quatLookAt(glm::normalize(displaced_vec), glm::vec3(0.f, 1.f, 0.f));
-                    aa_rottrans.rotation *= glm::slerp(aa_rottrans.rotation, target_rot, weapon_procanim_data.look_max_rotation_factor * displaced_mag);
-                    aa_rottrans.rotation *= glm::angleAxis(glm::radians(d_yaw) * weapon_procanim_data.look_roll_factor, glm::vec3(0.f, 0.f, 1.f));
-                }
-                
-
-                last_pitch = shooter_camera->pitch;
-                last_yaw = shooter_camera->yaw;
-            }
-        } 
-
-        target_pos = aa_rottrans.translation;
-        auto target_rot = aa_rottrans.rotation;
-
-        static tmt::SecondOrderSolver::State<glm::vec3> state { .current_state = rest_poses[current_weapon].translation };
-        static tmt::SecondOrderSolver::State<glm::quat> rot_state {.current_state = rest_poses[current_weapon].rotation};
-
-        auto& rot_motion = weapon_procanim_data.rotational_motion;
-        auto& pos_motion = weapon_procanim_data.displacement_motion;
-
-        tmt::SecondOrderSolver::solve(state, target_pos, pos_motion.frequency, pos_motion.damping, pos_motion.initial_response, time.delta_time);
-        tmt::SecondOrderSolver::solve(rot_state, target_rot, rot_motion.frequency, rot_motion.damping, rot_motion.initial_response, time.delta_time);
-
-        root_eff_transform->set_local_position(state.current_state);
-        root_eff_transform->set_local_rotation(rot_state.current_state);
-    }
     
-
-    
+    update_procedural_motion(time.delta_time);
 
     transition_to_other_weapons();
 
@@ -267,13 +213,11 @@ void game::WeaponManager::draw_debug_lines() const
     const RotTrans& rest_pose = rest_poses.at(current_weapon);
 
     glm::vec3 fwd = glm::quat_cast(parent_world * glm::mat4_cast(rest_pose.rotation)) * glm::vec3(0.f, 0.f, 1.f);
-    glm::vec3 start = glm::vec3(parent_world * glm::vec4(rest_pose.translation, 1.f)) + fwd * weapon_procanim_data.start_offset;
-
-
+    glm::vec3 start = glm::vec3(parent_world * glm::vec4(rest_pose.translation, 1.f)) + fwd * weapon_procanim_data.anti_overlap.start_offset;
 
     tmt::engine.polyline.use_color(glm::vec4(0.f, 1.f, 0.f, 1.f));
     tmt::engine.polyline.use_line_width(2.f);
-    tmt::engine.polyline.draw_line(start, start + fwd * weapon_procanim_data.anti_overlap_check_length);
+    tmt::engine.polyline.draw_line(start, start + fwd * weapon_procanim_data.anti_overlap.check_length);
 }
 
 game::WeaponManager::RotTrans game::WeaponManager::animate_antioverlap() {
@@ -292,7 +236,7 @@ game::WeaponManager::RotTrans game::WeaponManager::animate_antioverlap() {
     glm::vec3 fwd = world_rot * glm::vec3(0.f, 0.f, 1.f);
     glm::vec3 up = world_rot * glm::vec3(0.f, 1.f, 0.f);
     glm::vec3 right = world_rot * glm::vec3(1.f, 0.f, 1.f);
-    glm::vec3 start = glm::vec3(parent_world * glm::vec4(rest_poses[current_weapon].translation,1.f)) + fwd * weapon_procanim_data.start_offset;
+    glm::vec3 start = glm::vec3(parent_world * glm::vec4(rest_poses[current_weapon].translation,1.f)) + fwd * weapon_procanim_data.anti_overlap.start_offset;
     
     tmt::Physics& phys_sys = tmt::engine.ecs.systems.get<tmt::Physics>();
 
@@ -301,7 +245,7 @@ game::WeaponManager::RotTrans game::WeaponManager::animate_antioverlap() {
     tmt::Hit aa_hits[aa_ray_count];
     for (int i = 0; i < aa_ray_count; i++) {
 
-        float angle = atan(weapon_procanim_data.anti_overlap_scan_extent / weapon_procanim_data.anti_overlap_check_length);
+        float angle = atan(weapon_procanim_data.anti_overlap.scan_extent / weapon_procanim_data.anti_overlap.check_length);
         const glm::vec3& axis = i >= (aa_ray_count / 2) ? up : right;
         auto rot = glm::angleAxis(angle * flipper, axis);
         flipper *= -1.f;
@@ -316,9 +260,9 @@ game::WeaponManager::RotTrans game::WeaponManager::animate_antioverlap() {
         if(aa_hits[i].distance < closest_dist) closest_dist = aa_hits[i].distance;
     }
 
-    if(closest_dist < weapon_procanim_data.anti_overlap_check_length) 
+    if(closest_dist < weapon_procanim_data.anti_overlap.check_length) 
     {
-        float diff = weapon_procanim_data.anti_overlap_check_length - closest_dist;
+        float diff = weapon_procanim_data.anti_overlap.check_length - closest_dist;
 
         //target pos constrained
         glm::vec3 safe_world_pos = start - fwd * diff;
@@ -326,13 +270,118 @@ game::WeaponManager::RotTrans game::WeaponManager::animate_antioverlap() {
         glm::vec3 safe_local_pos = glm::inverse(parent_world) * glm::vec4(safe_world_pos, 1.f);
         glm::quat safe_rot = rest_poses[current_weapon].rotation;
 
-        bool shoulder = glm::distance2( rest_poses[current_weapon].translation, safe_local_pos) >= weapon_procanim_data.length_to_shoulder;
+        bool shoulder = glm::distance2( rest_poses[current_weapon].translation, safe_local_pos) >= weapon_procanim_data.anti_overlap.length_to_shoulder;
         if(shoulder) 
         {
-            safe_rot = glm::quat(glm::radians(weapon_procanim_data.shoulder_eulers)) * safe_rot;
+            safe_rot = glm::quat(glm::radians(weapon_procanim_data.anti_overlap.shoulder_eulers)) * safe_rot;
         }
 
         return RotTrans{.translation = safe_local_pos, .rotation = safe_rot};
 
     } else return rest_poses[current_weapon];
+}
+
+game::WeaponManager::RotTrans game::WeaponManager::animate_sway(RotTrans aa_rottrans, tmt::Transform* root_eff_transform, const WeaponProcAnimData& weapon_procanim_data) {
+    if (tmt::engine.ecs.valid(shooting_entity)) {
+        auto shooter_camera = tmt::engine.ecs.try_get_component<tmt::Camera>(shooting_entity);
+        if (shooter_camera) {
+            float d_pitch = (shooter_camera->pitch - last_pitch);
+            float d_yaw = (shooter_camera->yaw - last_yaw);
+
+            if (d_pitch || d_yaw) {
+                glm::vec3 displaced_vec = glm::vec3 { d_yaw, -d_pitch, 0.f } * 0.1f;
+
+                float displaced_mag = std::min(glm::length(displaced_vec) * 0.001f * weapon_procanim_data.sway.look_sensitivity, 1.f);
+
+                aa_rottrans.translation.x -= displaced_vec.x * weapon_procanim_data.sway.look_displacement;
+                aa_rottrans.translation.y -= displaced_vec.y * weapon_procanim_data.sway.look_displacement;
+
+                auto parent = root_eff_transform->get_parent();
+                auto& parent_world = tmt::engine.ecs.get_component<tmt::Transform>(parent).get_world_matrix();
+
+                const RotTrans& rest_pose = rest_poses.at(current_weapon);
+
+                glm::vec3 fwd = glm::quat_cast(parent_world * glm::mat4_cast(rest_pose.rotation)) * glm::vec3(0.f, 0.f, 1.f);
+
+                auto target_rot = glm::quatLookAt(glm::normalize(displaced_vec), glm::vec3(0.f, 1.f, 0.f));
+                aa_rottrans.rotation = glm::slerp(aa_rottrans.rotation, target_rot, weapon_procanim_data.sway.look_max_rotation_factor * displaced_mag);
+                aa_rottrans.rotation *= glm::angleAxis(glm::radians(d_yaw) * weapon_procanim_data.sway.look_roll_factor, glm::vec3(0.f, 0.f, 1.f));
+            }
+
+            last_pitch = shooter_camera->pitch;
+            last_yaw = shooter_camera->yaw;
+
+            return aa_rottrans;
+        }
+        return {};
+    }
+    return {};
+}
+
+void game::WeaponManager::update_procedural_motion(float dt) 
+{
+    auto& weapon_procanim_data = weapons.at(current_weapon).proc_anim_data;
+    if (fired || updating_recoil_impulse) {
+        static tmt::SecondOrderSolver::State<glm::quat> rot_state { .current_state = recoil_impulse.rotation };
+        static tmt::SecondOrderSolver::State<glm::vec3> pos_state { .current_state = recoil_impulse.translation };
+        static float upward_timer = 0.f;
+
+        if(fired)
+        {
+            upward_timer = 0.f;
+            shot_rand_roll = Random::rand_range(weapon_procanim_data.recoil.min_max_roll_deviation.x, weapon_procanim_data.recoil.min_max_roll_deviation.y);
+            shot_rand_yaw = Random::rand_range(weapon_procanim_data.recoil.min_max_yaw_deviation.x, weapon_procanim_data.recoil.min_max_yaw_deviation.y);
+        }
+
+        fired = false;
+        updating_recoil_impulse = true;
+
+       
+
+        if (upward_response) {
+            auto& recoil_pos_motion = weapon_procanim_data.recoil.displacement_motion;
+            auto& recoil_rot_motion = weapon_procanim_data.recoil.rotational_motion;
+
+            if (upward_timer > weapon_procanim_data.recoil.upward_allowed_time) {
+                upward_response = false;
+                upward_timer = 0.f;
+            }
+
+            if(upward_timer > weapon_procanim_data.recoil.rot_time_offset) tmt::SecondOrderSolver::solve(rot_state, glm::quat(glm::radians(weapon_procanim_data.recoil.angle_impulse + glm::vec3{0.f, shot_rand_yaw, shot_rand_roll})), recoil_rot_motion.frequency, recoil_rot_motion.damping, recoil_rot_motion.initial_response, dt);
+            tmt::SecondOrderSolver::solve(pos_state, weapon_procanim_data.recoil.pos_impulse, recoil_pos_motion.frequency, recoil_pos_motion.damping, recoil_pos_motion.initial_response, dt);
+            upward_timer += dt;
+        } else {
+            auto& recoil_pos_motion = weapon_procanim_data.recoil.out_displacement_motion;
+            auto& recoil_rot_motion = weapon_procanim_data.recoil.out_rotational_motion;
+
+            tmt::SecondOrderSolver::solve(rot_state, glm::identity<glm::quat>(), recoil_rot_motion.frequency, recoil_rot_motion.damping, recoil_rot_motion.initial_response, dt);
+            tmt::SecondOrderSolver::solve(pos_state, glm::vec3(0.f, 0.f, 0.f), recoil_pos_motion.frequency, recoil_pos_motion.damping, recoil_pos_motion.initial_response, dt);
+        }
+
+        recoil_impulse.rotation = rot_state.current_state;
+        recoil_impulse.translation = pos_state.current_state;
+    }
+
+    auto* root_eff_transform = tmt::engine.ecs.try_get_component<tmt::Transform>(weapon_procanim_data.root);
+    if (root_eff_transform) {
+        auto aa_rottrans = animate_antioverlap();
+        auto sway_rottrans = animate_sway(aa_rottrans, root_eff_transform, weapon_procanim_data);
+
+        target_pos = sway_rottrans.translation;
+        auto target_rot = sway_rottrans.rotation;
+
+        static tmt::SecondOrderSolver::State<glm::vec3> state { .current_state = rest_poses[current_weapon].translation };
+        static tmt::SecondOrderSolver::State<glm::quat> rot_state { .current_state = rest_poses[current_weapon].rotation };
+
+        auto& rot_motion = weapon_procanim_data.sway.rotational_motion;
+        auto& pos_motion = weapon_procanim_data.sway.displacement_motion;
+
+        tmt::SecondOrderSolver::solve(state, target_pos, pos_motion.frequency, pos_motion.damping, pos_motion.initial_response, dt);
+        tmt::SecondOrderSolver::solve(rot_state, target_rot, rot_motion.frequency, rot_motion.damping, rot_motion.initial_response, dt);
+
+        root_eff_transform->set_local_position(state.current_state + recoil_impulse.translation);
+        root_eff_transform->set_local_rotation(rot_state.current_state * recoil_impulse.rotation);
+    }
+
+    
 }
