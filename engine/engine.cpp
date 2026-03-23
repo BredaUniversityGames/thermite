@@ -79,7 +79,7 @@ void Engine::init(std::unique_ptr<Application> user_app) {
     setup_signals();
 
     std::string build_ver = BUILD_VERSION;
-    if(build_ver == "") build_ver = "dev"; 
+    if (build_ver == "") build_ver = "dev";
     Log::info(Log::Scope::GLOBAL, "Build version: {}", build_ver);
 
     IO::init_mounts(app->specs.organization, app->specs.name);
