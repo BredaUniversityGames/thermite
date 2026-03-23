@@ -102,6 +102,12 @@ void RenderView::init() {
                           .expect("failed to initialize motion vector buffer texture");
     mbuffer.image = bank.create_image("Motion Vector Buffer Image", mbuffer.texture).expect("failed to initialize motion vector buffer image.");
 
+    /* Light Cascades debug image */
+    light_cascades.texture =
+        bank.create_texture("Light Cascades Buffer Texture", TextureUsage::ColorAttachment | TextureUsage::Sampled | TextureUsage::Storage, TextureFormat::RGBA8Unorm, render_size)
+            .expect("failed to initialize motion vector buffer texture");
+    light_cascades.image = bank.create_image("Light Cascades Buffer Image", light_cascades.texture).expect("failed to initialize motion vector buffer image.");
+
     /* Create the macrofacet cache */
     const uint64_t cache_size = 10'000'000u; /* 480 MB */
     macrofacet_cache = bank.create_buffer("Macrofacet Cache Buffer", BufferUsage::Storage, cache_size, 48ull /* bytes */).expect("failed to create macrofacet cache buffer.");
@@ -210,6 +216,9 @@ void RenderView::deinit() {
     bank.destroy(viewport.texture);
     bank.destroy(viewport.image);
 
+    bank.destroy(light_cascades.texture);
+    bank.destroy(light_cascades.image);
+
     bank.destroy(render_view_buffer);
     bank.destroy(render_target);
 }
@@ -277,6 +286,8 @@ void RenderView::resize_textures() {
     bank.resize_texture(hbuffer1.texture, view_size).expect("failed to resize hbuffer texture.");
     bank.resize_texture(hbuffer2.texture, view_size).expect("failed to resize hbuffer texture.");
     bank.resize_texture(mbuffer.texture, view_size).expect("failed to resize mbuffer texture.");
+
+    bank.resize_texture(light_cascades.texture, view_size).expect("failed to resize light cascades texture.");
 }
 
 }  // namespace tmt

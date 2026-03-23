@@ -73,6 +73,7 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
             // .write(render_view.macrofacet_cache) /* Cache buffer */
             .read(render_view.vbuffer.image) /* Visibility buffer */
             .write(diffuse_image) /* Diffuse buffer */
+            .write(render_view.light_cascades.image)
             .group_size(16, 8)
             .work_size(shading_res.x, shading_res.y);
     }
