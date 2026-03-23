@@ -19,6 +19,7 @@ struct GlyphInstance {
     glm::vec4 color {};       // RGBA color
     uint32_t atlas_index {};  // Bindless texture index
     float size_scale = 1.0f;  // Scale factor from rich text
+    float y_offset = 0.0f;    // Y offset from line top to glyph top (for wrap repositioning)
 };
 
 /* A line of text with its metrics */

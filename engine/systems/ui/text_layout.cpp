@@ -194,12 +194,15 @@ void TextLayout::process_char(uint32_t codepoint, const TextSegment& segment, La
     instance.position.x = state.cursor_x + glyph.bearing.x * scale_factor;
     /* Position glyph relative to the baseline (Y-down coordinate system, Y=0 at top):
      * - cursor_y is the top of the line
-     * - ascender is the distance from baseline to top of line (positive)
+     * - ascender is the distance from baseline to top of line
+     * (positive)
      * - bearing.y is how far above the baseline the top of the glyph sits
      * - For baseline alignment: the baseline is at cursor_y + ascender
-     * - The glyph top should be at baseline - bearing.y = cursor_y + ascender - bearing.y
+     * - The glyph top
+     * should be at baseline - bearing.y = cursor_y + ascender - bearing.y
      * - But in Y-down, "above" means smaller Y, so: glyph_y = cursor_y + (ascender - bearing.y) */
-    instance.position.y = state.cursor_y + (metrics.ascender - glyph.bearing.y) * scale_factor;
+    instance.y_offset = (metrics.ascender - glyph.bearing.y) * scale_factor;
+    instance.position.y = state.cursor_y + instance.y_offset;
     instance.size = glyph.size * scale_factor;
     instance.uv_rect = glyph.uv_rect;
     instance.color = segment.color;
@@ -291,8 +294,8 @@ void TextLayout::break_word(LayoutState& state, TextLayoutResult& result) {
     /* Move glyphs from word start to new line */
     for (size_t i = state.word_start_glyph; i < result.glyphs.size(); ++i) {
         result.glyphs[i].position.x -= offset_x;
-        result.glyphs[i].position.y =
-            state.cursor_y + (metrics.ascender - result.glyphs[i].position.y / (state.base_font_size / metrics.base_size)) * (state.base_font_size / metrics.base_size);
+        /* Recalculate Y position on the new line using stored y_offset */
+        result.glyphs[i].position.y = state.cursor_y + result.glyphs[i].y_offset;
     }
 
     /* Update cursor position */
