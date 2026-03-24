@@ -382,11 +382,10 @@ class TweenBase : public EaseMixin<Derived>, /*<br>*/
     }
 
     bool is_done() const {
-        if (this->is_keep_alive()) return false;
         if (this->get_repeat_count() < 0) return false;  // infinite
 
-        /* Ping pong's full cycle is 2x the duration*/
         const float cycle = (this->get_loop_mode() == LoopMode::PING_PONG) ? this->get_duration() * 2.0f : this->get_duration();
+
         return this->get_elapsed_time() >= cycle * (this->get_repeat_count() + 1);
     }
 
@@ -461,7 +460,7 @@ class TweenCollection {
             tween.tick(delta_time);
         }
 
-        std::erase_if(tweens, [](const TweenType& tween) { return tween.is_done(); });
+        std::erase_if(tweens, [](const TweenType& tween) { return tween.is_done() && !tween.is_keep_alive(); });
     }
 
    private:
