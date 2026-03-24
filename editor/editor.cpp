@@ -256,11 +256,6 @@ void Editor::main_menu_bar() {
                 }
                 ImGui::EndMenu();
             }
-            if (engine.renderer.display_mode == DisplayMode::DEFAULT || engine.renderer.display_mode == DisplayMode::MOTIONVECTORS) {
-                engine.renderer.enable_taa = true;
-            } else {
-                engine.renderer.enable_taa = false;
-            }
 
             /* List of shading rate labels */
             static const std::vector<std::string> SHADING_RATE_LABELS { "Full-Rate", "Half-Rate (1:2)", "Quarter-Rate (1:4)" };
@@ -382,6 +377,13 @@ void Editor::main_status_bar() {
         ImGui::SameLine();
         ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
         ImGui::SameLine();
+        constexpr const char* version = BUILD_VERSION;
+        if (version[0] != '\0') {
+            ImGui::Text("%s", version);
+        } else {
+            ImGui::TextDisabled("dev (no version provided)");
+        }
+        ImGui::SameLine();
         const float fps_anchor_x = ImGui::GetCursorPosX();
         const float fps_reserved = ImGui::CalcTextSize("FPS: 999").x + ImGui::GetStyle().ItemSpacing.x;
         ImGui::Text("fps: %.0f", ImGui::GetIO().Framerate);
@@ -389,6 +391,8 @@ void Editor::main_status_bar() {
         ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
         ImGui::SameLine();
         ImGui::Text("ms: %.2f", 1000.0f / ImGui::GetIO().Framerate);
+        ImGui::SameLine();
+
         ImGui::End();
     }
 
