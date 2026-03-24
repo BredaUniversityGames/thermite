@@ -77,10 +77,8 @@ void OreManager::process_thermite_ore_explosion(tmt::Entity voxel_entity, glm::u
                         new_positions_to_explode.insert(glm::vec3(x, y, z));
                     }
                     // delete
-                    else {
-                        vox_renderer->resource->blas->remove_voxel(x, y, z);
-                        vox_renderer->resource->set_dirty();
-                    }
+                    vox_renderer->resource->blas->remove_voxel(x, y, z);
+                    vox_renderer->resource->set_dirty();
                 }
             }
         }
