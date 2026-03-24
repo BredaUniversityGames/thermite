@@ -897,6 +897,11 @@ std::vector<uint32_t> Physics::overlap(const Aabb& aabb, uint32_t layer_mask) co
 
     return hits;
 }
+std::vector<std::pair<uint32_t, std::vector<std::pair<float, glm::uvec3>>>> Physics::overlap_sphere(const glm::vec3& center, float radius, uint32_t layer_mask)
+{
+    auto data = bvh.overlap_sphere(center, radius, layer_mask);
+    return data;
+}
 
 void Physics::recalculate_physics_data(VoxelBody& vb, VoxelVolume& volume) {
     initialize_voxel_body(vb, volume);

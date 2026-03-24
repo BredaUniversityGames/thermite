@@ -487,6 +487,28 @@ Hit Bvh2<T>::trace(const Ray& ray, uint32_t ray_mask) const {
 }
 
 template <typename T>
+std::vector<std::pair<uint32_t, std::vector<std::pair<float, glm::uvec3>>>> Bvh2<T>::overlap_sphere(const glm::vec3& center, float radius, uint32_t layer_mask)
+{
+    Aabb sphere_aabb(center - radius, center + radius);
+
+    std::vector<uint32_t> candidates = overlap(sphere_aabb, layer_mask);
+    
+    std::vector<std::pair<uint32_t, std::vector<std::pair<float, glm::uvec3>>>> return_data;
+
+    for (uint32_t i = 0; i < candidates.size(); i++) {
+        const T& prim = prims[candidates[i]];
+        const std::vector<std::pair<float, glm::uvec3>> hit_voxels = prim.sphere_overlap(center, radius);
+
+        if(!hit_voxels.empty()) 
+        {
+            return_data.push_back( std::make_pair(candidates[i], hit_voxels));
+        }
+    }
+
+    return return_data;
+}
+
+template <typename T>
 Bvh2<T>::~Bvh2() {
     if (node_count > 0u) {
         delete[] nodes;
