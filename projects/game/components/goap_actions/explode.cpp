@@ -52,15 +52,15 @@ void Explode::on_tick(tmt::Entity agent, float dt) {
         auto* small_enemy = tmt::engine.ecs.try_get_component<SmallEnemy>(agent);
 
         // try get small enemy component, and the core entity
-        if (!small_enemy || !tmt::engine.ecs.valid(small_enemy->core)) {
+        if (!small_enemy || !tmt::engine.ecs.valid(small_enemy->thermite)) {
             tmt::Log::warn("Enemy doesnt have small enemy component OR a core assigned.");
             return;  // nothing to explode
         }
 
-        tmt::Entity core = small_enemy->core;
+        tmt::Entity thermite = small_enemy->thermite;
 
         // get core entity transform world position
-        auto& core_transform = tmt::engine.ecs.get_component<tmt::Transform>(core);
+        auto& core_transform = tmt::engine.ecs.get_component<tmt::Transform>(thermite);
         glm::vec3 explosion_center = core_transform.get_world_position();
 
         // Get everything (with voxel body) within radius and push away
@@ -89,17 +89,6 @@ void Explode::on_tick(tmt::Entity agent, float dt) {
             }
         }
 
-        //// Damage player
-        //if (tmt::engine.ecs.valid(player_entity)) {
-        //    auto& player_transform = tmt::engine.ecs.get_component<tmt::Transform>(player_entity);
-
-        //    float dist = glm::length(player_transform.get_world_position() - explosion_center);
-        //    
-        //    if (dist <= steering_agent.params->explosion_range) {
-        //        tmt::engine.ecs.get_component<Player>(player_entity).health.value -= steering_agent.params->explosion_damage;
-        //    }
-        //}
-
         if (tmt::engine.ecs.valid(player_entity)) {
             auto& player_transform = tmt::engine.ecs.get_component<tmt::Transform>(player_entity);
             auto& player = tmt::engine.ecs.get_component<Player>(player_entity);
@@ -110,7 +99,6 @@ void Explode::on_tick(tmt::Entity agent, float dt) {
             float dist = glm::length(dir);
 
             if (dist <= radius && dist > 0.001f) {
-
                 // damage
                 player.health.value -= steering_agent.params->explosion_damage;
 
@@ -118,7 +106,7 @@ void Explode::on_tick(tmt::Entity agent, float dt) {
 
                 // same falloff as physics bodies
                 float strength = 1.0f - (dist / radius);
-                
+
                 // push player
                 float player_force = steering_agent.params->explosion_force;
                 player.apply_impulse(normal, player_force * strength);
@@ -130,14 +118,13 @@ void Explode::on_tick(tmt::Entity agent, float dt) {
          * wait 0.2s before removing voxels*/
 
         // destroy core entity
-        tmt::engine.ecs.destroy_entity(core);
+        tmt::engine.ecs.destroy_entity(thermite);
 
         // remove GOAP so it doesn't keep acting
         tmt::engine.ecs.remove_component<tmt::GoapAgent>(agent);
 
         exploded = true;
     }
-
 }
 
 bool Explode::is_done(tmt::Entity agent) const {

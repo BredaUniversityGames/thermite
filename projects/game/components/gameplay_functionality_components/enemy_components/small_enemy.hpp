@@ -3,8 +3,6 @@
 #include "engine/core/entity.hpp"
 #include "../../../editor/all.hpp"
 
-struct Missile;
-
 namespace game {
 
 class SmallEnemy : public tmt::GameComponent<SmallEnemy> {
@@ -16,9 +14,13 @@ class SmallEnemy : public tmt::GameComponent<SmallEnemy> {
     void start() override {}
     void update(const tmt::FrameData& time) override {}
     void end() override {}
+
+    void die();
+
+    tmt::Entity thermite = entt::null;
     tmt::Entity core = entt::null;
 };
 
 }  // namespace game
 
-TMT_OBJECT(game::SmallEnemy, (core));
+TMT_OBJECT(game::SmallEnemy, (thermite, core));
