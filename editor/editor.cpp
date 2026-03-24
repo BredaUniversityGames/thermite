@@ -59,6 +59,7 @@
 #include "editor/windows/material_editor.hpp"
 #include "editor/windows/brush.hpp"
 #include "editor/windows/editor_settings.hpp"
+#include "editor/windows/rig_state_controller.hpp"
 #include "editor/windows/ui.hpp"
 #include "editor/windows/level_editor.hpp"
 #include "editor/windows/player_data.hpp"
@@ -121,6 +122,7 @@ void Editor::on_engine_init(const ApplicationSpecs&) {
     systems[Mode::SCENE].add<UIEditor>();
     systems[Mode::SCENE].add<LevelEditor>();
     systems[Mode::SCENE].add<PlayerDataWindow>();
+    systems[Mode::SCENE].add<RigStateController>();
 
     engine.scenes.register_scene<VoxelEditScene>();
     systems[Mode::VOXEL].add<ModelViewer>();
@@ -255,6 +257,10 @@ void Editor::main_menu_bar() {
                     }
                 }
                 ImGui::EndMenu();
+
+                if (engine.renderer.display_mode != DisplayMode::DEFAULT) {
+                    engine.renderer.enable_taa = false;
+                }
             }
 
             /* List of shading rate labels */
@@ -286,6 +292,7 @@ void Editor::main_menu_bar() {
 
             RendererSettings& settings = engine.player_data.get<RendererSettings>("RendererSettings");
             ImGui::SliderFloat("Bloom Radius", &settings.bloom_radius, 0.0f, 1.0f);
+            ImGui::SliderFloat("Bloom Threshold", &settings.bloom_threshold, 0.0f, 10.0f);
 
             ImGui::EndMenu();
         }
