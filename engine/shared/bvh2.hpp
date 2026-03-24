@@ -82,7 +82,7 @@ class Bvh2 {
     Hit trace(const Ray& ray, uint32_t ray_mask) const;
 
     /* Sphere check the acceleration structure */
-    std::vector<std::pair<uint32_t, std::vector<std::pair<float, glm::uvec3>>>> overlap_sphere(const glm::vec3& center, float radius, uint32_t layer_mask);
+    std::vector<std::pair<tmt::Entity, std::vector<std::pair<float, glm::uvec3>>>> overlap_sphere(const glm::vec3& center, float radius, uint32_t layer_mask);
 };
 
 }  // namespace tmt

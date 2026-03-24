@@ -487,7 +487,7 @@ Hit Bvh2<T>::trace(const Ray& ray, uint32_t ray_mask) const {
 }
 
 template <typename T>
-std::vector<std::pair<uint32_t, std::vector<std::pair<float, glm::uvec3>>>> Bvh2<T>::overlap_sphere(const glm::vec3& center, float radius, uint32_t layer_mask)
+std::vector<std::pair<Entity, std::vector<std::pair<float, glm::uvec3>>>> Bvh2<T>::overlap_sphere(const glm::vec3& center, float radius, uint32_t layer_mask)
 {
     Aabb sphere_aabb(center - radius, center + radius);
 
@@ -501,7 +501,7 @@ std::vector<std::pair<uint32_t, std::vector<std::pair<float, glm::uvec3>>>> Bvh2
 
         if(!hit_voxels.empty()) 
         {
-            return_data.push_back( std::make_pair(candidates[i], hit_voxels));
+            return_data.push_back( std::make_pair((Entity)candidates[i], hit_voxels));
         }
     }
 
