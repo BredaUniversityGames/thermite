@@ -86,10 +86,24 @@ void MainScene::on_start() {
     const tmt::ResourceRef box_scene = tmt::engine.resources.load_resource<tmt::VoxelScene>({ tmt::IO::Location::PROJECT, "box-10.vengi" });
     box_model = tmt::engine.resources.copy_resource<tmt::VoxelVolume>(box_scene);
 
-    auto camera = tmt::Camera::get_active_camera();
+    tmt::Entity camera = tmt::Camera::get_active_camera();
 
-    Tweening::tween(camera);
+    Tweening::Tween move_tween = Tweening::tween<tmt::Transform>(camera)  //
+                      .duration(5.0f)
+                      .ease(Tweening::Ease::IN_CUBIC)
+                      .move()
+                      .from({ 0.0f, 0.0f, 0.0f })
+                      .to({ 10.0f, 10.0f, 10.0f }); /* Automatically starts */
 
+    move_tween.stop(); /* We can stop it */
+    move_tween.start(); /* We can start it again */
+    move_tween.restart(); /* Or restart it from the beginning (also starts it if it was stopped) */
+    move_tween.finish();  /* Fast forward to the end */
+
+    Tweening::tween(test_float).from(-5.0f).to(5.0f).duration(2.0f);
+    Tweening::tween(test_float).from(-5.0f).to(5.0f).duration(2.0f);
+    Tweening::tween(test_float).from(-5.0f).to(5.0f).duration(2.0f);
+    Tweening::tween(test_float).from(-5.0f).to(5.0f).duration(2.0f);
     Tweening::tween(test_float).from(-5.0f).to(5.0f).duration(2.0f);
 }
 

@@ -39,7 +39,13 @@ enum class Ease : uint8_t {
     IN_OUT_ELASTIC,
     IN_BOUNCE,
     OUT_BOUNCE,
-    IN_OUT_BOUNCE
+    IN_OUT_BOUNCE,
+};
+
+enum class LoopMode : uint8_t {
+    NONE,
+    LOOP,
+    PING_PONG,
 };
 
 /* Core type */
@@ -104,12 +110,12 @@ inline T lerp(const T& a, const T& b, const float t) {
 inline float apply_ease(float t, Ease ease);
 
 /* Mixins */
-template <typename D>
+template <typename Derived>
 class EaseMixin {
    public:
-    D& ease(const Ease easing) {
+    Derived& ease(const Ease easing) {
         ease_value = easing;
-        return static_cast<D&>(*this);
+        return static_cast<Derived&>(*this);
     }
 
     Ease get_ease() const { return ease_value; }
@@ -118,17 +124,19 @@ class EaseMixin {
     Ease ease_value = Ease::LINEAR;
 };
 
-template <typename D>
+template <typename Derived>
 class TimeMixin {
    public:
-    D& duration(const float seconds) {
+    Derived& duration(const float seconds) {
         duration_value = seconds;
-        return static_cast<D&>(*this);
+        return static_cast<Derived&>(*this);
     }
 
     float get_duration() const { return duration_value; }
 
     float& get_elapsed_time() { return elapsed_time; }
+
+    float get_elapsed_time() const { return elapsed_time; }
 
    protected:
     float duration_value = 1.0f; /* Default duration is 1 second */
@@ -137,17 +145,17 @@ class TimeMixin {
     float elapsed_time = 0.0f;
 };
 
-template <typename D, typename T>
+template <typename Derived, typename T>
 class FromToMixin {
    public:
-    D& from(T start) {
+    Derived& from(T start) {
         this->start = std::move(start);
-        return static_cast<D&>(*this);
+        return static_cast<Derived&>(*this);
     }
 
-    D& to(T end) {
+    Derived& to(T end) {
         this->end = std::move(end);
-        return static_cast<D&>(*this);
+        return static_cast<Derived&>(*this);
     }
 
     const T& get_start() const { return start; }
@@ -157,6 +165,84 @@ class FromToMixin {
    protected:
     T start {};
     T end {};
+};
+
+template <typename Derived>
+class LoopMixin {
+   public:
+    /*
+        None = 0 -> 1, then stop
+        Loop = 0 -> 1, 0 -> 1, ...
+        PingPong = 0 -> 1, 1 -> 0, ...
+    */
+    Derived& loop(const LoopMode mode = LoopMode::LOOP) {
+        loop_mode = mode;
+        return static_cast<Derived&>(*this);
+    }
+
+    LoopMode get_loop_mode() const { return loop_mode; }
+
+   protected:
+    LoopMode loop_mode = LoopMode::NONE;
+};
+
+template <typename Derived>
+class RepeatMixin {
+   public:
+    /*
+        0 = no repeat, play once
+        -1 = infinite repeat
+        >0 = repeat count
+    */
+    Derived& repeat(const int count) {
+        repeat_count = count;
+        return static_cast<Derived&>(*this);
+    }
+
+    int get_repeat_count() const { return repeat_count; }
+
+   protected:
+    int repeat_count = 0;
+};
+
+template <typename Derived>
+class TweenBase : public EaseMixin<Derived>, /*<br>*/
+                  public TimeMixin<Derived>, /*<br>*/
+                  public LoopMixin<Derived>, /*<br>*/
+                  public RepeatMixin<Derived> {
+   public:
+    void tick(const float delta_time) {
+        auto& elapsed = this->get_elapsed_time();
+        const float duration = this->get_duration();
+
+        float progress = (duration > 0.0f) ? elapsed / duration : 1.0f;
+        progress = compute_progress(progress);
+
+        const float t = apply_ease(progress, this->get_ease());
+        static_cast<Derived*>(this)->interpolate(t);
+
+        elapsed += delta_time;
+    }
+
+    bool is_done() const {
+        if (this->get_loop_mode() != LoopMode::NONE) return false;
+        if (this->get_repeat_count() < 0) return false;  // infinite
+        return this->get_elapsed_time() >= this->get_duration() * (this->get_repeat_count() + 1);
+    }
+
+   private:
+    float compute_progress(float progress) const {
+        switch (this->get_loop_mode()) {
+            case LoopMode::LOOP:
+                return std::fmod(progress, 1.0f);
+            case LoopMode::PING_PONG: {
+                const float mod = std::fmod(progress, 2.0f);
+                return (mod <= 1.0f) ? mod : (2.0f - mod);
+            }
+            default:  // NONE
+                return std::min(progress, 1.0f);
+        }
+    }
 };
 
 /* Manager that stores collections of tweens for each context. */
@@ -197,31 +283,11 @@ class TweenCollection {
     }
 
     static void update(const float delta_time) {
-        // Update each tween
-
-        constexpr bool HAS_EASE = std::derived_from<TweenType, EaseMixin<TweenType>>;
-        constexpr bool HAS_TIME = std::derived_from<TweenType, TimeMixin<TweenType>>;
-
-        for (size_t i = 0; i < tweens.size(); ++i) {
-            auto& tween = tweens[i];
-
-            float progress = 0.0f;
-            if constexpr (HAS_TIME) {
-                const float duration = tween.get_duration();
-                if (duration > 0.0f) {
-                    progress = tween.get_elapsed_time() / duration;
-                }
-            }
-
-            float t = progress;
-            if constexpr (HAS_EASE) {
-                t = apply_ease(progress, tween.get_ease());
-            }
-
-            /* 0 - 1 */
-            tween.interpolate(t);
-            tween.get_elapsed_time() += delta_time;
+        for (auto& tween : tweens) {
+            tween.tick(delta_time);
         }
+
+        std::erase_if(tweens, [](const TweenType& tween) { return tween.is_done(); });
     }
 
    private:
@@ -249,8 +315,8 @@ inline void update(const float delta_time_seconds) {
     Detail::Manager<Context>::update(delta_time_seconds);
 }
 
-/* Entry point, requires ITween type */
-template <typename T, typename... Args>
+/* Entry point */
+template <typename... Args, typename T>
 requires Traits::HasITween<T, Args...>
 ITween<std::remove_cvref_t<T>, Args...>& tween(T& value) {
     using BareT = std::remove_cvref_t<T>;
@@ -258,7 +324,7 @@ ITween<std::remove_cvref_t<T>, Args...>& tween(T& value) {
 }
 
 /* Error fallback for types that don't have ITween specialization */
-template <typename T, typename... Args>
+template <typename... Args, typename T>
 void tween(T& value) {
     static_assert(Traits::HasITween<T, Args...>, "No ITween specialization found for type T and Args...");
 }
@@ -266,11 +332,9 @@ void tween(T& value) {
 /* Default Implementation */
 template <typename T>
 requires Traits::IsLerpable<T>
-struct ITween<T> : public Detail::EaseMixin<ITween<T>>,      /**/
-                   public Detail::FromToMixin<ITween<T>, T>, /**/
-                   public Detail::TimeMixin<ITween<T>> {
+struct ITween<T> : public Detail::TweenBase<ITween<T>>, /**/
+                   public Detail::FromToMixin<ITween<T>, T> {
     ITween(T* value) : value(value) {};
-
     static ITween create(T& value) { return ITween(&value); }
 
     void interpolate(const float t) {
