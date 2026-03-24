@@ -77,9 +77,12 @@ void OreManager::process_thermite_ore_explosion(tmt::Entity voxel_entity, glm::u
     
     for (auto& result_pair : sphere_check_result) {
         auto result_entity_world_pos = tmt::engine.ecs.get_component<tmt::Transform>(result_pair.first).get_world_position();
+        auto result_entity_local_pos = tmt::engine.ecs.get_component<tmt::Transform>(result_pair.first).get_local_position();
         tmt::Log::info("Entity in sphere check: {}", result_pair.first);
 
         tmt::Log::info("Entity in sphere check world position: {} {} {}", result_entity_world_pos.x, result_entity_world_pos.y, result_entity_world_pos.z);
+        tmt::Log::info("Entity in sphere check local position: {} {} {}", result_entity_local_pos.x, result_entity_local_pos.y, result_entity_local_pos.z);
+        tmt::Log::info("Distance from origin entity: {}", glm::length(result_entity_world_pos - origin_entity_world_pos));
         // Guard for voxel renderer
         if (auto result_vox_renderer = tmt::engine.ecs.try_get_component<tmt::VoxelRenderer>(result_pair.first)) {
             // Loop over resulting voxels
