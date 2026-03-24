@@ -20,8 +20,7 @@ inline void tag_invoke(JsonReflect::deserialize_t, const JsonReflect::json& j, t
     const tmt::Transform& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
     const std::set<tmt::Entity>& children = transform.get_all_children();
 
-    for (const tmt::Entity child : children)
-    {
+    for (const tmt::Entity child : children) {
         const tmt::BoneComp* bone = tmt::engine.ecs.try_get_component<tmt::BoneComp>(child);
 
         if (bone == nullptr) continue;

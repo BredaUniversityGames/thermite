@@ -9,9 +9,12 @@
 
 namespace tmt {
 
-class RigModelManager : public ISystem, OnDrawLines  {
+class RigModelManager : public ISystem, OnDrawLines {
    public:
-    std::string ISystem::get_name() override { return "animation system"; }
+    // Inherited from base class ISystem
+    constexpr std::string get_name() override { return "animation system"; }
+    // Inherited from base class OnDrawLines
+    constexpr std::string get_name() const override { return "RigModelManager"; }
 
     void on_start() override {}
     void on_update(const FrameData& time) override;
@@ -19,7 +22,6 @@ class RigModelManager : public ISystem, OnDrawLines  {
 
     // Inherited via OnDrawLines
     void on_draw_lines() const override;
-    constexpr std::string OnDrawLines::get_name() const override { return "RigModelManager"; }
 };
 
 class AnimationConstraintSystem : public ISystem {

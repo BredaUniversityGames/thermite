@@ -7,23 +7,26 @@
 #include "engine/core/ecs.hpp"
 
 #ifdef THERMITE_EDITOR
+// NOLINTBEGIN(readability-identifier-naming)
 namespace ax {
 
 namespace NodeEditor {
+
 enum class SaveReasonFlags : uint32_t;
 
 struct EditorContext;
 
-}
+}  // namespace NodeEditor
 
 }  // namespace ax
+// NOLINTEND(readability-identifier-naming)
 #endif
 
 namespace tmt {
 
 struct Trigger {
     Trigger() = default;
-    Trigger(bool _value) : value(_value) {}
+    Trigger(const bool value) : value(value) {}
 
     // operators needed due to comparing std::variant<..., Trigger>
     [[nodiscard]] bool operator==(const Trigger&) const { return value; }
@@ -51,7 +54,7 @@ struct Condition {
     static const CompareFunctionMap COMPARE_MAP;
 
     [[nodiscard]] bool is_satisfied(const Variant& parameter) const {
-        auto& compare = COMPARE_MAP.at(compare_type);
+        const auto& compare = COMPARE_MAP.at(compare_type);
         const bool satisfied = compare(parameter, compare_value);
         return satisfied;
     }
