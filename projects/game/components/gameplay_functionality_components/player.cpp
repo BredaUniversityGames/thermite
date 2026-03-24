@@ -288,7 +288,7 @@ void Player::update(const tmt::FrameData& time) {
             if (input.is_action_pressed(action::BOOST) && boost_available) {
                 apply_boost();
             } else {
-                reset_boost();
+                reset_boost(time.delta_time);
             }
 
             attempt_attach(input);
@@ -512,6 +512,7 @@ void Player::on_attach(const AttachEvent& event) {
         // this is used so if the player was already holding the button, it does not instantly move
         reset_action_time(action::TRIGGER_BARGE_MOVEMENT);
         reset_action_time(action::TRIGGER_RUN_END);
+        velocity = glm::vec3 { 0.0f };
     } else {
         state = PlayerState::FREEMOVING;
     }
@@ -523,10 +524,23 @@ void Player::apply_boost() {
     boost_was_applied = true;
 }
 
-void Player::reset_boost() {
+void Player::reset_boost(float delta_time) {
+    /*
     max_speed_calculated = max_speed;
-    acceleration_calculated = acceleration;
+    acceleration_calculated = acceleration;*/
+    float lerp_factor = std::min(1.0f, boost_deceleration_factor * delta_time);
+
     boost_was_applied = false;
+    max_speed_calculated = glm::mix(max_speed_calculated, max_speed, lerp_factor);
+    acceleration_calculated = glm::mix(acceleration_calculated, acceleration, lerp_factor);
+
+    // Snap to exact values when close enough
+    if (glm::abs(max_speed_calculated - max_speed) < 0.001f) {
+        max_speed_calculated = max_speed;
+    }
+    if (glm::abs(acceleration_calculated - acceleration) < 0.001f) {
+        acceleration_calculated = acceleration;
+    }
 }
 
 void Player::reset_action_time(std::string_view action_name) {
