@@ -12,18 +12,25 @@ void game::Missile::start() {
     auto& name = tmt::engine.ecs.get_component<tmt::Name>(entity);
     name.name = "Missile";
 
-    game::MediumEnemy& enemy = tmt::engine.ecs.get_component<game::MediumEnemy>(enemy_entity);
+    MediumEnemy& enemy = tmt::engine.ecs.get_component<game::MediumEnemy>(enemy_entity);
     glm::vec3 enemy_pos = tmt::engine.ecs.get_component<tmt::Transform>(enemy_entity).get_world_position();
     glm::vec3 missile_pos = enemy_pos;
     if (tmt::engine.ecs.valid(enemy.missile_origin)) {
         tmt::Transform& missile_origin = tmt::engine.ecs.get_component<tmt::Transform>(enemy.missile_origin);
         missile_pos = missile_origin.get_world_position();
     }
-    auto& missile_trans = tmt::engine.ecs.add_component<tmt::Transform>(entity);
+    auto& missile_trans = tmt::engine.ecs.get_component<tmt::Transform>(entity);
     missile_trans.set_world_position(missile_pos);
 
     auto& voxel_renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(entity);
-    voxel_renderer.resource = enemy.missile_voxel_object;
+    auto ref = tmt::engine.resources.copy_resource<tmt::VoxelVolume>(enemy.missile_voxel_object);
+    voxel_renderer.resource = ref;
+
+    auto& voxel_body = tmt::engine.ecs.add_component<tmt::VoxelBody>(entity);
+    voxel_body.layer = 4;
+    voxel_body.type = tmt::VoxelBody::STATIC;
+
+    enemy_projectile_mask = enemy.projectile_mask;
 
     // set random offset
     offset = glm::vec3(
@@ -35,13 +42,14 @@ void game::Missile::start() {
 void game::Missile::update(const tmt::FrameData& time) {
     auto& enemy = tmt::engine.ecs.get_component<game::MediumEnemy>(enemy_entity);
     if (life_time > enemy.life_time) {
-        tmt::engine.ecs.remove_component<Missile>(entity);
+        explode();
         return;
     }
     life_time += time.delta_time;
 
     auto& position = tmt::engine.ecs.get_component<tmt::Transform>(entity);
     auto player_pos = tmt::engine.ecs.get_component<tmt::Transform>(enemy.player).get_world_position();
+    player_pos += enemy.target_offset;
     auto enemy_pos = tmt::engine.ecs.get_component<tmt::Transform>(enemy_entity).get_world_position();
     auto& nav_mesh = tmt::engine.ecs.get_component<tmt::NavMesh>(enemy.walkable_asteroid);
     auto ground_up = (*nav_mesh.nodes_mesh)[nav_mesh.find_closest_node(enemy_pos)].normal;
@@ -57,7 +65,7 @@ void game::Missile::update(const tmt::FrameData& time) {
     if (life_time > enemy.start_homing_after) {
         float max_home_time = enemy.life_time - enemy.start_homing_after;
         float home_time = life_time - enemy.start_homing_after;
-        float home_t = glm::clamp(home_time / max_home_time, 0.0f, 1.0f);  // was inverted
+        float home_t = glm::clamp(home_time / max_home_time, 0.0f, 1.0f);
 
         glm::vec3 to_player = player_pos - position.get_world_position();
         if (glm::dot(to_player, to_player) > 0.0001f) {
@@ -76,23 +84,40 @@ void game::Missile::update(const tmt::FrameData& time) {
     position.translate(velocity * time.delta_time);
     
     // collision check
+    //const tmt::Ray ray_cast = tmt::Ray(previous_position, glm::normalize(delta));
+    //const tmt::Hit hit = tmt::engine.ecs.systems.get<tmt::Physics>().raycast(ray_cast, layer_mask);
+
     const tmt::Ray ray_cast = tmt::Ray(position.get_world_position(), glm::normalize(velocity));
-    const tmt::Hit hit = tmt::engine.renderer.trace_ray(ray_cast);
+    
+    const tmt::Hit hit = tmt::engine.ecs.systems.get<tmt::Physics>().raycast(ray_cast, enemy_projectile_mask);
+    
+    tmt::engine.polyline.draw_arrow(ray_cast.origin, ray_cast.dir, 1.0f);
 
     // TODO this is very dumb code that should be updated when we have proper raycasts check
     if (hit.entity != entt::null && hit.distance < 0.01f /*&& hit.entity != entity*/) {
-        //explode(hit);
+        explode(&hit);
     }
 }
 
 void game::Missile::end() {}
 
-void game::Missile::explode(const tmt::Hit& hit) {
-    // tmt::Log::info("Would collide with entity {} at distance {}, step {}", hit.entity, hit.distance, step_distance);
-    //auto& enemy = tmt::engine.ecs.get_component<game::MediumEnemy>(enemy_entity);
-    //auto* resource = tmt::engine.ecs.get_component<tmt::VoxelRenderer>(hit.entity).resource.resource.get();
+void game::Missile::explode(const tmt::Hit* hit) const {
+    auto& enemy = tmt::engine.ecs.get_component<MediumEnemy>(enemy_entity);    
+    if (hit) {
+        tmt::Log::info("Would collide with entity {} at distance {}", hit->entity, hit->distance);
+        
+        auto* resource = tmt::engine.ecs.get_component<tmt::VoxelRenderer>(hit->entity).resource.resource.get();
+        resource->blas->subtract(stencil.resource.get(), hit->coord);
+        resource->set_dirty();
+    }
     //enemy.ore_manager->initiate_thermite_explosion(entity, glm::uvec3(0, 0, 0));
-    //resource->blas->subtract(stencil.resource.get(), hit.coord);
-    //resource->set_dirty();
+
+    auto& missile_trans = tmt::engine.ecs.get_component<tmt::Transform>(entity);
+    auto& voxel_body = tmt::engine.ecs.get_component<tmt::VoxelBody>(entity);
+    voxel_body.layer = 4;
+    //voxel_body.type = tmt::VoxelBody::DYNAMIC;
+    voxel_body.velocity = velocity;
+    voxel_body.position = missile_trans.get_world_position();
+
     tmt::engine.ecs.remove_component<Missile>(entity);
 }

@@ -57,6 +57,8 @@ void tag_invoke(ImReflect::ImInput_t, const char* name, game::MediumEnemy& value
             ImReflect::Input("Stencil", value.stencil, type_settings, type_response);
             help("Stencil used for subtracting shapes from asteroids when missiles hit an asteroid");
             ImReflect::Input("Missile Voxel Body", value.missile_voxel_object, type_settings, type_response);
+            ImReflect::Input("Missile Layer Mask", value.projectile_mask, type_settings, type_response);
+            help("Mask that only excludes enemy projectiles, so they don't collide with themselves");
             ImReflect::Input("Missile Cooldown", value.missile_cooldown, type_settings, type_response);
             ImReflect::Input("Missile Burst", value.missile_burst, type_settings, type_response);
             help("Number of missiles launched in one burst");
@@ -64,6 +66,8 @@ void tag_invoke(ImReflect::ImInput_t, const char* name, game::MediumEnemy& value
             help("Time between missiles in a burst");
             ImReflect::Input("Max Randomness", value.missile_max_randomness, type_settings, type_response);
             help("Maximum random offset added to each missile's trajectory during launching");
+            ImReflect::Input("Target Offset", value.target_offset, type_settings, type_response);
+            help("Offset from player");
 
             ImGui::Spacing();
             ImGui::TextDisabled("Per-Missile Settings");
