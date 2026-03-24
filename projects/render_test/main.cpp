@@ -93,6 +93,7 @@ void MainScene::on_start() {
     move_tween = Tweening::tween<tmt::Transform>(camera)  //
                      .duration(5.0f)
                      .ease(Tweening::Ease::IN_CUBIC)
+                     .ping_pong()
                      .move()
                      .from({ 0.0f, 0.0f, 0.0f })
                      .to({ 10.0f, 10.0f, 10.0f }); /* Automatically starts */
@@ -113,9 +114,9 @@ void MainScene::on_update(const tmt::FrameData& time) {
     /* input controls for tween testing */
     if (tmt::engine.input.is_keyboard_button_just_pressed(tmt::Key::SPACE)) {
         if (move_tween.is_paused()) {
-            move_tween.stop();
-        } else {
             move_tween.start();
+        } else {
+            move_tween.stop();
         }
     }
     if (tmt::engine.input.is_keyboard_button_just_pressed(tmt::Key::R)) {

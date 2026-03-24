@@ -185,10 +185,16 @@ class EaseMixin {
         return static_cast<Derived&>(*this);
     }
 
-    Ease get_ease() const { return ease_value; }
+    Derived& reverse_ease(const Ease easing) {
+        reverse_ease_value = easing;
+        has_reverse_ease = true;
+        return static_cast<Derived&>(*this);
+    }
 
    protected:
     Ease ease_value = Ease::LINEAR;
+    Ease reverse_ease_value = Ease::LINEAR;
+    bool has_reverse_ease = false;
 };
 
 template <typename Derived>
@@ -237,13 +243,21 @@ class FromToMixin {
 template <typename Derived>
 class LoopMixin {
    public:
-    /*
-        None = 0 -> 1, then stop
-        Loop = 0 -> 1, 0 -> 1, ...
-        PingPong = 0 -> 1, 1 -> 0, ...
-    */
-    Derived& loop(const LoopMode mode = LoopMode::LOOP) {
-        loop_mode = mode;
+    /* None = 0 -> 1, then stop */
+    Derived& no_loop() {
+        loop_mode = LoopMode::NONE;
+        return static_cast<Derived&>(*this);
+    }
+
+    /* Loop = 0 -> 1, 0 -> 1, ... */
+    Derived& loop() {
+        loop_mode = LoopMode::LOOP;
+        return static_cast<Derived&>(*this);
+    }
+
+    /* PingPong = 0->1, 1->0, ...*/
+    Derived& ping_pong() {
+        loop_mode = LoopMode::PING_PONG;
         return static_cast<Derived&>(*this);
     }
 
@@ -280,13 +294,15 @@ class ControllableMixin {
         return Tween(ctrl_stop, ctrl_start, ctrl_restart, ctrl_finish, ctrl_release, ctrl_is_paused);
     }
 
-    void inject_control_fns(std::function<void()> stop, std::function<void()> start, std::function<void()> restart, std::function<void()> finish, std::function<void()> release) {
+    void inject_control_fns(
+        std::function<void()> stop, std::function<void()> start, std::function<void()> restart, std::function<void()> finish, std::function<void()> release, std::function<bool()> is_paused
+    ) {
         ctrl_stop = std::move(stop);
         ctrl_start = std::move(start);
         ctrl_restart = std::move(restart);
         ctrl_finish = std::move(finish);
         ctrl_release = std::move(release);
-        ctrl_is_paused = [this]() { return paused; };
+        ctrl_is_paused = std::move(is_paused);
     }
 
     void do_stop() { paused = true; }
@@ -348,9 +364,18 @@ class TweenBase : public EaseMixin<Derived>, /*<br>*/
         const float duration = this->get_duration();
 
         float progress = (duration > 0.0f) ? elapsed / duration : 1.0f;
-        progress = compute_progress(progress);
 
-        const float t = apply_ease(progress, this->get_ease());
+        bool is_reversing = false;
+        const float computed = compute_progress(progress, is_reversing);
+
+        float t;
+        if (is_reversing && this->has_reverse_ease) {
+            t = apply_ease(computed, this->reverse_ease_value);        // fully custom return ease
+        } else if (is_reversing) {
+            t = 1.0f - apply_ease(1.0f - computed, this->ease_value);  // mirrored default
+        } else {
+            t = apply_ease(computed, this->ease_value);
+        }
         static_cast<Derived*>(this)->interpolate(t);
 
         elapsed += delta_time;
@@ -358,21 +383,28 @@ class TweenBase : public EaseMixin<Derived>, /*<br>*/
 
     bool is_done() const {
         if (this->is_keep_alive()) return false;
-        if (this->get_loop_mode() != LoopMode::NONE) return false;
         if (this->get_repeat_count() < 0) return false;  // infinite
-        return this->get_elapsed_time() >= this->get_duration() * (this->get_repeat_count() + 1);
+
+        /* Ping pong's full cycle is 2x the duration*/
+        const float cycle = (this->get_loop_mode() == LoopMode::PING_PONG) ? this->get_duration() * 2.0f : this->get_duration();
+        return this->get_elapsed_time() >= cycle * (this->get_repeat_count() + 1);
     }
 
    private:
-    float compute_progress(float progress) const {
+    float compute_progress(float progress, bool& is_reversing) const {
+        is_reversing = false;
         switch (this->get_loop_mode()) {
             case LoopMode::LOOP:
                 return std::fmod(progress, 1.0f);
             case LoopMode::PING_PONG: {
                 const float mod = std::fmod(progress, 2.0f);
-                return (mod <= 1.0f) ? mod : (2.0f - mod);
+                if (mod > 1.0f) {
+                    is_reversing = true;
+                    return 2.0f - mod;  // goes back from 1->0
+                }
+                return mod;
             }
-            default:  // NONE
+            default:
                 return std::min(progress, 1.0f);
         }
     }
@@ -412,7 +444,16 @@ class TweenCollection {
     static TweenType& add(TweenType tween) {
         ensure_registered();
         tweens.push_back(std::move(tween));
-        return tweens.back();
+        auto& stored = tweens.back();
+        stored.inject_control_fns(
+            [&stored] { stored.do_stop(); },     //
+            [&stored] { stored.do_start(); },    //
+            [&stored] { stored.do_restart(); },  //
+            [&stored] { stored.do_finish(); },   //
+            [&stored] { stored.do_release(); },  //
+            [&stored] { return stored.is_paused(); }
+        );
+        return stored;
     }
 
     static void update(const float delta_time) {
@@ -424,7 +465,8 @@ class TweenCollection {
     }
 
    private:
-    static inline std::vector<TweenType> tweens {};
+    /* Using deque to avoid pointer invalidation when storing tweens */
+    static inline std::deque<TweenType> tweens {};
 
     static void ensure_registered() {
         static bool registered = [] {
