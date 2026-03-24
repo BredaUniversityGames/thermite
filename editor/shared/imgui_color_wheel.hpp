@@ -116,7 +116,7 @@ inline bool ColorWheel3(const char* label, float color[3], ImGuiColorWheelFlags 
     BeginGroup();
 
     bool changed = false;
-    if (BeginPopup("WheelPopup")) {
+    if (BeginPopup("WheelPopup", ImGuiWindowFlags_NoMove)) {
         const ImGuiWindow* popup_window = GetCurrentWindow();
         const ImVec2 picker_pos = popup_window->DC.CursorPos;
 
