@@ -19,6 +19,8 @@ class FireLaser : public tmt::GoapAction {
     } state = SITTING_DOWN;
 
     tmt::Entity player = entt::null;
+    tmt::Entity laser_entity = entt::null;
+    std::vector<tmt::Entity> laser_charge_entities; 
 
     float time = 0.0f;
     float original_height = 0.0f;

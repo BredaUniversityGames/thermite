@@ -54,8 +54,6 @@ void game::Missile::update(const tmt::FrameData& time) {
     auto& nav_mesh = tmt::engine.ecs.get_component<tmt::NavMesh>(enemy.walkable_asteroid);
     auto ground_up = (*nav_mesh.nodes_mesh)[nav_mesh.find_closest_node(enemy_pos)].normal;
 
-    tmt::engine.polyline.draw_sphere(position.get_world_position(), 0.1f);
-
     // fades from full launch down to zero
     float launch_t = glm::clamp((life_time / enemy.stop_launching_after), 0.0f, 1.0f);
     glm::vec3 launch_contribution = glm::mix(ground_up * enemy.launch_speed, glm::vec3(0.0f), launch_t);
@@ -111,9 +109,6 @@ void game::Missile::update(const tmt::FrameData& time) {
 
     const tmt::Hit hit = tmt::engine.ecs.systems.get<tmt::Physics>().raycast(ray_cast, enemy_projectile_mask);
 
-    tmt::engine.polyline.use_depth_testing(false);
-    tmt::engine.polyline.draw_arrow(ray_cast.origin, ray_cast.dir, 1.0f);
-
     // TODO this is very dumb code that should be updated when we have proper raycasts check
     if (hit.entity != entt::null && hit.distance < 0.1f /*&& hit.entity != entity*/) {
         explode();
@@ -132,6 +127,7 @@ void game::Missile::explode() const {
     voxel_body.type = tmt::VoxelBody::DYNAMIC;
     voxel_body.velocity = velocity;
     voxel_body.position = missile_trans.get_world_position();
+    voxel_body.rotation = missile_trans.get_world_rotation();
 
     auto& renderer = tmt::engine.ecs.get_component<tmt::VoxelRenderer>(entity);
 

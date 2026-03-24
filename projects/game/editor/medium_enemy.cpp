@@ -91,6 +91,8 @@ void tag_invoke(ImReflect::ImInput_t, const char* name, game::MediumEnemy& value
 
         /* Laser */
         if (ImGui::TreeNode("Laser")) {
+            ImReflect::Input("Laser Charge Voxel Body", value.laser_charge_voxel_object, type_settings, type_response);
+            ImReflect::Input("Laser Voxel Body", value.laser_voxel_object, type_settings, type_response);
             ImReflect::Input("Laser Range", value.laser_range, type_settings, type_response);
             ImReflect::Input("Laser Cooldown", value.laser_cooldown, type_settings, type_response);
             ImReflect::Input("Laser Firing Time", value.laser_firing_time, type_settings, type_response);

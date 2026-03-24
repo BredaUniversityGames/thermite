@@ -11,6 +11,8 @@
 
 #include <cstdlib>
 
+#include "engine/core/renderer/renderer.hpp"
+
 void FireLaser::on_start(tmt::Entity enemy_entity) {
     for (const auto& [cam_entity, camera] : tmt::engine.ecs.view<tmt::Camera>().each()) {
         player = cam_entity;
@@ -72,6 +74,14 @@ void FireLaser::on_tick(tmt::Entity enemy_entity, float dt) {
                 tmt::engine.polyline.draw_sphere(laser_pos + direction * i, .01f);
             }
             if (time > enemy.laser_winding_up_time) {
+                laser_entity = tmt::engine.ecs.create_entity();
+                auto& voxel_renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(laser_entity);
+                auto ref = tmt::engine.resources.copy_resource<tmt::VoxelVolume>(enemy.laser_voxel_object);
+                voxel_renderer.resource = ref;
+                auto& voxel_body = tmt::engine.ecs.add_component<tmt::VoxelBody>(laser_entity);
+                voxel_body.layer = 4;
+                voxel_body.type = tmt::VoxelBody::STATIC;
+                
                 state = FIRING;
                 time = 0.0f;
             }
@@ -107,6 +117,8 @@ void FireLaser::on_tick(tmt::Entity enemy_entity, float dt) {
             direction = target_dir;
 
             if (time > enemy.laser_firing_time) {
+                tmt::engine.ecs.destroy_entity(laser_entity);
+                state = WINDING_UP;
                 auto& enemy = tmt::engine.ecs.get_component<game::MediumEnemy>(enemy_entity);
                 enemy.laser_timer = 0.0f;
                 enemy.height_above_ground_offset = 0.0f;
@@ -115,11 +127,21 @@ void FireLaser::on_tick(tmt::Entity enemy_entity, float dt) {
                 ws->set_fact(tmt::FactId("m_laser_ready"), false);
             }
 
-            tmt::engine.polyline.use_color(1.0f, 0.1f, 0.1f);
-            tmt::engine.polyline.use_line_width(10.0f);
-            for (float i = 0; i < 50.0f; i += 0.03f) {
-                tmt::engine.polyline.draw_sphere(laser_pos + direction * i, .01f);
-            }
+            const tmt::Ray ray_cast = tmt::Ray(laser_pos, glm::normalize(direction));
+            const tmt::Hit laser_hit = tmt::engine.ecs.systems.get<tmt::Physics>().raycast(ray_cast, enemy.projectile_mask);
+            auto hit_pos = laser_pos + direction * laser_hit.distance;
+            
+            //scale laser voxel object between laser hit and laser pos
+            auto& laser_transform = tmt::engine.ecs.get_component<tmt::Transform>(laser_entity);
+            glm::vec3 end_pos = (laser_hit.entity != entt::null) ? hit_pos : (laser_pos + direction * 50.0f);  // fallback if no hit
+            float laser_length = glm::distance(laser_pos, end_pos);
+            glm::vec3 mid_point = (laser_pos + end_pos) * 0.5f;
+            laser_transform.set_world_position(mid_point);
+
+            glm::vec3 up = (glm::abs(glm::dot(direction, glm::vec3(0.0f, 1.0f, 0.0f))) < 0.99f) ? glm::vec3(0.0f, 1.0f, 0.0f) : glm::vec3(0.0f, 0.0f, 1.0f);
+            laser_transform.set_world_rotation(glm::quatLookAt(direction, up));
+            //laser is 1 long on z axis
+            laser_transform.set_world_scale(glm::vec3(0.1f, 0.1f, laser_length));
 
             break;
         }
