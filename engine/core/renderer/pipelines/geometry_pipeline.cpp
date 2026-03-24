@@ -35,6 +35,7 @@ void GeometryPipeline::enqueue(RenderGraph& render_graph, RenderView& render_vie
         render_graph.add_compute_pass("geometry pass", "geometry.cs")
             /* Render view */
             .read(render_view.render_view_buffer)
+            .read(render_view.blue_noise1d->image)
             /* Object buffers */
             .read(scene_view.bvh_nodes)
             .read(scene_view.object_indices)
@@ -67,13 +68,6 @@ void GeometryPipeline::enqueue(RenderGraph& render_graph, RenderView& render_vie
         DISPLAY_MODE(DEPTH, "[debug] depth pass", "debug/depth.cs")
         DISPLAY_MODE(NORMALS, "[debug] normals pass", "debug/normals.cs")
         DISPLAY_MODE(ALBEDO, "[debug] albedo pass", "debug/albedo.cs")
-        case DisplayMode::MOTIONVECTORS:
-            render_graph.add_compute_pass("[debug] motion vectors pass", "debug/motion_vectors.cs")
-            .read(render_view.mbuffer.image)
-            .write(render_image)
-            .group_size(16, 8)
-            .work_size(render_res.x, render_res.y);
-            break;
         default: 
             break;
     }

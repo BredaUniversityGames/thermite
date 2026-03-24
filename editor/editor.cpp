@@ -59,6 +59,7 @@
 #include "editor/windows/material_editor.hpp"
 #include "editor/windows/brush.hpp"
 #include "editor/windows/editor_settings.hpp"
+#include "editor/windows/rig_state_controller.hpp"
 #include "editor/windows/ui.hpp"
 #include "editor/windows/level_editor.hpp"
 #include "editor/windows/player_data.hpp"
@@ -121,6 +122,7 @@ void Editor::on_engine_init(const ApplicationSpecs&) {
     systems[Mode::SCENE].add<UIEditor>();
     systems[Mode::SCENE].add<LevelEditor>();
     systems[Mode::SCENE].add<PlayerDataWindow>();
+    systems[Mode::SCENE].add<RigStateController>();
 
     engine.scenes.register_scene<VoxelEditScene>();
     systems[Mode::VOXEL].add<ModelViewer>();
@@ -255,11 +257,10 @@ void Editor::main_menu_bar() {
                     }
                 }
                 ImGui::EndMenu();
-            }
-            if (engine.renderer.display_mode == DisplayMode::DEFAULT || engine.renderer.display_mode == DisplayMode::MOTIONVECTORS) {
-                engine.renderer.enable_taa = true;
-            } else {
-                engine.renderer.enable_taa = false;
+
+                if (engine.renderer.display_mode != DisplayMode::DEFAULT) {
+                    engine.renderer.enable_taa = false;
+                }
             }
 
             /* List of shading rate labels */
@@ -291,6 +292,7 @@ void Editor::main_menu_bar() {
 
             RendererSettings& settings = engine.player_data.get<RendererSettings>("RendererSettings");
             ImGui::SliderFloat("Bloom Radius", &settings.bloom_radius, 0.0f, 1.0f);
+            ImGui::SliderFloat("Bloom Threshold", &settings.bloom_threshold, 0.0f, 10.0f);
 
             ImGui::EndMenu();
         }
@@ -382,6 +384,13 @@ void Editor::main_status_bar() {
         ImGui::SameLine();
         ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
         ImGui::SameLine();
+        constexpr const char* version = BUILD_VERSION;
+        if (version[0] != '\0') {
+            ImGui::Text("%s", version);
+        } else {
+            ImGui::TextDisabled("dev (no version provided)");
+        }
+        ImGui::SameLine();
         const float fps_anchor_x = ImGui::GetCursorPosX();
         const float fps_reserved = ImGui::CalcTextSize("FPS: 999").x + ImGui::GetStyle().ItemSpacing.x;
         ImGui::Text("fps: %.0f", ImGui::GetIO().Framerate);
@@ -389,6 +398,8 @@ void Editor::main_status_bar() {
         ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
         ImGui::SameLine();
         ImGui::Text("ms: %.2f", 1000.0f / ImGui::GetIO().Framerate);
+        ImGui::SameLine();
+
         ImGui::End();
     }
 
