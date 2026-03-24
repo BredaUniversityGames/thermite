@@ -49,6 +49,10 @@ void OreManager::initiate_thermite_explosion(tmt::Entity voxel_entity, glm::uvec
 }
 
 void OreManager::process_thermite_ore_explosion(tmt::Entity voxel_entity, glm::uvec3 explosion_center) {  // explosion center is uint voxel position relative to entity transform
+    auto origin_entity_world_pos = tmt::engine.ecs.get_component<tmt::Transform>(voxel_entity).get_world_position();
+    tmt::Log::info("----------------------------- Thermite Explosion --------------------------------------");
+    tmt::Log::info("Origin entity: {}\nExplosion center voxel position: {} {} {}", voxel_entity, explosion_center.x, explosion_center.y, explosion_center.z);
+    tmt::Log::info("Origin entity position: {} {} {}", origin_entity_world_pos.x, origin_entity_world_pos.y, origin_entity_world_pos.z);
     auto vox_renderer = tmt::engine.ecs.try_get_component<tmt::VoxelRenderer>(voxel_entity);
     auto& vox_entity_transform = tmt::engine.ecs.get_component<tmt::Transform>(voxel_entity);
     int cx = static_cast<int>(explosion_center.x);
@@ -57,6 +61,8 @@ void OreManager::process_thermite_ore_explosion(tmt::Entity voxel_entity, glm::u
 
     glm::vec3 explosion_center_local_pos = glm::vec3(explosion_center) / static_cast<float>(VOXELS_PER_UNIT);
     glm::vec3 explosion_world_pos = glm::vec3(vox_entity_transform.get_world_matrix() * glm::vec4(explosion_center_local_pos, 1.0f));
+
+    tmt::Log::info("Explosion world pos: {} {} {}", explosion_world_pos.x, explosion_world_pos.y, explosion_world_pos.z);
 
     // check if player is within explosion
     if (glm::length(tmt::engine.ecs.get_component<tmt::Transform>(player_entity).get_world_position() - explosion_world_pos) <= thermite_ore_settings.radius_explosion) {
@@ -68,7 +74,12 @@ void OreManager::process_thermite_ore_explosion(tmt::Entity voxel_entity, glm::u
 
     // refactor: use sphere check instead
     auto sphere_check_result = tmt::engine.ecs.systems.get<tmt::Physics>().overlap_sphere(explosion_world_pos, thermite_ore_settings.radius_explosion, thermite_ore_settings.layer_mask);
+    
     for (auto& result_pair : sphere_check_result) {
+        auto result_entity_world_pos = tmt::engine.ecs.get_component<tmt::Transform>(result_pair.first).get_world_position();
+        tmt::Log::info("Entity in sphere check: {}", result_pair.first);
+
+        tmt::Log::info("Entity in sphere check world position: {} {} {}", result_entity_world_pos.x, result_entity_world_pos.y, result_entity_world_pos.z);
         // Guard for voxel renderer
         if (auto result_vox_renderer = tmt::engine.ecs.try_get_component<tmt::VoxelRenderer>(result_pair.first)) {
             // Loop over resulting voxels
