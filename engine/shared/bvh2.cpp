@@ -55,11 +55,11 @@ void Bvh2<T>::build(const T* input_prims, const uint32_t input_count) {
     prims = new T[input_count] {};
     bounds = new Aabb[input_count] {};
 
-    for  (uint32_t i = 0; i < input_count; i++) {
+    for (uint32_t i = 0; i < input_count; i++) {
         prims[i] = input_prims[i];
     }
 
-   // std::memcpy(prims, input_prims, prim_count * sizeof(T));
+    // std::memcpy(prims, input_prims, prim_count * sizeof(T));
 
     /* Setup the root node for the BVH */
     Bvh2Node& root = nodes[0];

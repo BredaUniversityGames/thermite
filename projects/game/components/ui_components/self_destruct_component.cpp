@@ -3,6 +3,7 @@
 #include "projects/game/components/gameplay_functionality_components/player.hpp"
 
 namespace game {
+
 void SelfDestructComponent::start() {
     // Guard for button
     if (auto* button_component = tmt::engine.ecs.try_get_component<tmt::Button>(entity)) {
@@ -13,9 +14,7 @@ void SelfDestructComponent::start() {
     }
 }
 
-void SelfDestructComponent::update(const tmt::FrameData& time) {
-    
-}
+void SelfDestructComponent::update(const tmt::FrameData& time) {}
 
 void SelfDestructComponent::end() {
     // Guard for button
@@ -39,4 +38,5 @@ void SelfDestructComponent::self_destruct() {
         tmt::Log::error("Player entity that was assigned to self destruct button does not have a player component.");
     }
 }
-}
+
+}  // namespace game

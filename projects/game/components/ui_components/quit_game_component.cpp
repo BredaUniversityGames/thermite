@@ -1,6 +1,7 @@
 #include "quit_game_component.hpp"
 
 namespace game {
+
 void QuitGameComponent::start() {
     // Guard for button
     if (auto* button_component = tmt::engine.ecs.try_get_component<tmt::Button>(entity)) {
@@ -11,9 +12,7 @@ void QuitGameComponent::start() {
     }
 }
 
-void QuitGameComponent::update(const tmt::FrameData& time) {
-    
-}
+void QuitGameComponent::update(const tmt::FrameData& time) {}
 
 void QuitGameComponent::end() {
     // Guard for button
@@ -25,4 +24,5 @@ void QuitGameComponent::end() {
 void QuitGameComponent::quit_game() {
     tmt::engine.game_controller.end_game();
 }
-}
+
+}  // namespace game

@@ -15,6 +15,7 @@ class QuitGameComponent : public tmt::GameComponent<QuitGameComponent> {
     void end() override;
 
     void quit_game();
+
    private:
 };
 
