@@ -37,6 +37,13 @@ void game::Missile::start() {
         (static_cast<float>(rand()) / RAND_MAX - 0.5f) * enemy.missile_max_randomness, (static_cast<float>(rand()) / RAND_MAX - 0.5f) * enemy.missile_max_randomness,
         (static_cast<float>(rand()) / RAND_MAX - 0.5f) * enemy.missile_max_randomness
     );
+
+    // initial missile rotation
+    auto& nav_mesh = tmt::engine.ecs.get_component<tmt::NavMesh>(enemy.walkable_asteroid);
+    auto ground_up = (*nav_mesh.nodes_mesh)[nav_mesh.find_closest_node(enemy_pos)].normal;
+    glm::vec3 forward = glm::normalize(ground_up);
+    glm::vec3 up = (glm::abs(glm::dot(forward, ground_up)) < 0.99f) ? ground_up : glm::vec3(0.0f, 1.0f, 0.0f);
+    missile_trans.set_world_rotation(glm::quatLookAt(forward, up));
 }
 
 void game::Missile::update(const tmt::FrameData& time) {
