@@ -45,7 +45,9 @@ class MediumEnemy : public tmt::GameComponent<MediumEnemy> {
     float start_homing_after = 0.5f;
     float launch_speed = 0.1f;
     float home_speed = 0.2f;
+    float slow_homing_accuracy_after = 4.0f;
     float life_time = 0.2f;
+    float missile_rotation_speed = 0.2f;
     glm::vec3 target_offset = glm::vec3(0, 0, 0);
 
     float missile_cooldown = 2.0f;
@@ -76,7 +78,7 @@ class MediumEnemy : public tmt::GameComponent<MediumEnemy> {
 
 TMT_OBJECT(
     game::MediumEnemy,
-    (walkable_asteroid, laser_origin, missile_origin, stencil, missile_voxel_object, projectile_mask, rotation_speed, height_above_ground, walk_speed, aggro_range, laser_range, stomp_range,
-     missile_cooldown, stop_launching_after, start_homing_after, launch_speed, home_speed, life_time, target_offset, missile_burst, burst_interval, missile_max_randomness, laser_cooldown,
+    (walkable_asteroid, laser_origin, missile_origin, stencil, missile_voxel_object, projectile_mask, rotation_speed, height_above_ground, walk_speed, aggro_range, laser_range, stomp_range, missile_cooldown, stop_launching_after, start_homing_after, slow_homing_accuracy_after, launch_speed, home_speed, life_time,
+                        missile_rotation_speed, target_offset, missile_burst, burst_interval, missile_max_randomness, laser_cooldown,
      laser_firing_time, laser_sitting_down_time, laser_winding_up_time, laser_linear_speed, laser_exponential_speed, laser_linear_threshold, laser_max_randomness, laser_prediction_length)
 );

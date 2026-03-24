@@ -72,6 +72,16 @@ void game::Missile::update(const tmt::FrameData& time) {
             home_contribution = glm::normalize(to_player) * enemy.home_speed * home_t;
         }
     }
+    
+    // slow down homing towards end of life
+    if (life_time > enemy.slow_homing_accuracy_after && glm::dot(velocity, velocity) > 0.0001f) {
+        float max_slowing_time = enemy.life_time - enemy.slow_homing_accuracy_after;
+        float slowing_time = life_time - enemy.slow_homing_accuracy_after;
+        float slow_t = glm::clamp(slowing_time / max_slowing_time, 0.0f, 1.0f);
+        float home_contribution_length = glm::length(home_contribution);
+        home_contribution = glm::mix(home_contribution, velocity, slow_t);
+        home_contribution = glm::normalize(home_contribution) * home_contribution_length;
+    }
 
     auto added_vel = launch_contribution + home_contribution;
     float length = glm::length(added_vel);
@@ -82,24 +92,25 @@ void game::Missile::update(const tmt::FrameData& time) {
     velocity += added_vel;
     velocity *= 0.7f;
     position.translate(velocity * time.delta_time);
-    
-    // Rotate missile to face velocity direction
+
+    //missile rotation
     if (glm::dot(velocity, velocity) > 0.0001f) {
         glm::vec3 forward = glm::normalize(velocity);
-        // Use ground_up as the up hint, but fall back if forward is nearly parallel to it
         glm::vec3 up = (glm::abs(glm::dot(forward, ground_up)) < 0.99f) ? ground_up : glm::vec3(0.0f, 1.0f, 0.0f);
-        glm::quat rot = glm::quatLookAt(forward, up);
+        glm::quat target_rot = glm::quatLookAt(forward, up);
+        glm::quat current_rot = position.get_world_rotation();
+        glm::quat rot = glm::slerp(current_rot, target_rot, enemy.missile_rotation_speed * time.delta_time);
         position.set_world_rotation(rot);
     }
 
     // collision check
-    //const tmt::Ray ray_cast = tmt::Ray(previous_position, glm::normalize(delta));
-    //const tmt::Hit hit = tmt::engine.ecs.systems.get<tmt::Physics>().raycast(ray_cast, layer_mask);
+    // const tmt::Ray ray_cast = tmt::Ray(previous_position, glm::normalize(delta));
+    // const tmt::Hit hit = tmt::engine.ecs.systems.get<tmt::Physics>().raycast(ray_cast, layer_mask);
 
     const tmt::Ray ray_cast = tmt::Ray(position.get_world_position(), glm::normalize(velocity));
-    
+
     const tmt::Hit hit = tmt::engine.ecs.systems.get<tmt::Physics>().raycast(ray_cast, enemy_projectile_mask);
-    
+
     tmt::engine.polyline.use_depth_testing(false);
     tmt::engine.polyline.draw_arrow(ray_cast.origin, ray_cast.dir, 1.0f);
 
@@ -112,7 +123,7 @@ void game::Missile::update(const tmt::FrameData& time) {
 void game::Missile::end() {}
 
 void game::Missile::explode() const {
-    auto& enemy = tmt::engine.ecs.get_component<MediumEnemy>(enemy_entity);    
+    auto& enemy = tmt::engine.ecs.get_component<MediumEnemy>(enemy_entity);
     enemy.ore_manager->initiate_thermite_explosion(entity, glm::uvec3(0, 0, 0));
 
     auto& missile_trans = tmt::engine.ecs.get_component<tmt::Transform>(entity);

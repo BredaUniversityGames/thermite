@@ -68,6 +68,8 @@ void tag_invoke(ImReflect::ImInput_t, const char* name, game::MediumEnemy& value
             help("Maximum random offset added to each missile's trajectory during launching");
             ImReflect::Input("Target Offset", value.target_offset, type_settings, type_response);
             help("Offset from player");
+            ImReflect::Input("Rotation Speed", value.missile_rotation_speed, type_settings, type_response);
+            help("Speed at which missiles turn towards the direction they're going in");
 
             ImGui::Spacing();
             ImGui::TextDisabled("Per-Missile Settings");
@@ -81,6 +83,8 @@ void tag_invoke(ImReflect::ImInput_t, const char* name, game::MediumEnemy& value
             help("Maximum speed the missile will reach when homing. home speed will start at 0 and reach it's maximum at the end of the missiles lifetime");
             ImReflect::Input("Start Homing After", value.start_homing_after, type_settings, type_response);
             help("Amount of time after the missile was created before the missile starts homing towards the player");
+            ImReflect::Input("Slow Homing Accuracy After", value.slow_homing_accuracy_after, type_settings, type_response);
+            help("Time after which the homing will start becoming less effective");
             ImReflect::Input("Lifetime", value.life_time, type_settings, type_response);
             ImGui::TreePop();
         }
