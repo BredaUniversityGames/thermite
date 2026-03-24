@@ -48,9 +48,76 @@ enum class LoopMode : uint8_t {
     PING_PONG,
 };
 
-/* Core type */
+/* Forward declarations */
 template <typename T, typename... Args>
-class ITween;
+class ITween; /* Primary template, should be specialized for each type we want to tween */
+
+namespace Detail {
+
+template <typename D>
+class ControllableMixin; /* Mixin to inject control functions into ITween specializations and convert to Tween handle */
+
+}
+
+/* Handle to control a tween after creation, can be used to stop, start, restart, or finish the tween. */
+class Tween {
+   public:
+    Tween() = default;
+
+    ~Tween() {
+        if (ctrl_release) ctrl_release();
+    }
+
+    /* Non - copyable, one handle owns one tween*/
+    Tween(const Tween&) = delete;
+    Tween& operator=(const Tween&) = delete;
+
+    Tween(Tween&& o) noexcept :
+        ctrl_stop(std::move(o.ctrl_stop)),
+        ctrl_start(std::move(o.ctrl_start)),
+        ctrl_restart(std::move(o.ctrl_restart)),
+        ctrl_finish(std::move(o.ctrl_finish)),
+        ctrl_release(std::move(o.ctrl_release)),
+        ctrl_is_paused(std::move(o.ctrl_is_paused)) {
+        /* clear release so it only fires once */
+        o.ctrl_release = nullptr;
+    }
+    Tween& operator=(Tween&&) = default;
+
+    void stop() {
+        if (ctrl_stop) ctrl_stop();
+    }
+    void start() {
+        if (ctrl_start) ctrl_start();
+    }
+    void restart() {
+        if (ctrl_restart) ctrl_restart();
+    }
+    void finish() {
+        if (ctrl_finish) ctrl_finish();
+    }
+
+    bool is_paused() const { return ctrl_is_paused ? ctrl_is_paused() : false; }
+
+    bool is_valid() const { return ctrl_stop != nullptr; }
+
+   private:
+    template <typename D>
+    friend class Detail::ControllableMixin;
+
+    Tween(
+        std::function<void()> stop, std::function<void()> start, std::function<void()> restart, std::function<void()> finish, std::function<void()> release, std::function<bool()> is_paused
+    ) :
+        ctrl_stop(std::move(stop)),
+        ctrl_start(std::move(start)),
+        ctrl_restart(std::move(restart)),
+        ctrl_finish(std::move(finish)),
+        ctrl_release(std::move(release)),
+        ctrl_is_paused(std::move(is_paused)) {}
+
+    std::function<void()> ctrl_stop, ctrl_start, ctrl_restart, ctrl_finish, ctrl_release;
+    std::function<bool()> ctrl_is_paused;
+};
 
 namespace Traits {
 
@@ -206,12 +273,77 @@ class RepeatMixin {
 };
 
 template <typename Derived>
+class ControllableMixin {
+   public:
+    operator Tween() {
+        keep_alive = true;
+        return Tween(ctrl_stop, ctrl_start, ctrl_restart, ctrl_finish, ctrl_release, ctrl_is_paused);
+    }
+
+    void inject_control_fns(std::function<void()> stop, std::function<void()> start, std::function<void()> restart, std::function<void()> finish, std::function<void()> release) {
+        ctrl_stop = std::move(stop);
+        ctrl_start = std::move(start);
+        ctrl_restart = std::move(restart);
+        ctrl_finish = std::move(finish);
+        ctrl_release = std::move(release);
+        ctrl_is_paused = [this]() { return paused; };
+    }
+
+    void do_stop() { paused = true; }
+
+    void do_start() { paused = false; }
+
+    void do_restart() {
+        /* Reach up to into time mixin */
+        static_assert(std::derived_from<Derived, TimeMixin<Derived>>, "Restart requires TimeMixin");
+        static_cast<Derived*>(this)->get_elapsed_time() = 0.0f;
+        paused = false;
+    }
+
+    void do_finish() {
+        /* Reach up to into time mixin */
+        static_assert(std::derived_from<Derived, TimeMixin<Derived>>, "Finish requires TimeMixin");
+        static_assert(std::derived_from<Derived, RepeatMixin<Derived>>, "Finish requires RepeatMixin");
+        auto* d = static_cast<Derived*>(this);
+        d->get_elapsed_time() = d->get_duration() * (d->get_repeat_count() + 1);
+    }
+
+    void do_release() { keep_alive = false; }
+
+    bool is_paused() const { return paused; }
+    bool is_keep_alive() const { return keep_alive; }
+
+   private:
+    bool paused = false;
+    bool keep_alive = false;
+
+    std::function<void()> ctrl_stop, ctrl_start, ctrl_restart, ctrl_finish, ctrl_release;
+    std::function<bool()> ctrl_is_paused;
+};
+
+/* Mixins for sub-tweens to convert to Tween handle */
+template <typename Parent>
+class SubTweenMixin {
+   public:
+    SubTweenMixin() = default;
+    SubTweenMixin(Parent* parent) : parent(parent) {}
+
+    operator Tween() { return parent->operator Tween(); }
+
+   protected:
+    Parent* parent = nullptr;
+};
+
+template <typename Derived>
 class TweenBase : public EaseMixin<Derived>, /*<br>*/
-                  public TimeMixin<Derived>, /*<br>*/
-                  public LoopMixin<Derived>, /*<br>*/
-                  public RepeatMixin<Derived> {
+                  public TimeMixin<Derived>,
+                  public LoopMixin<Derived>,
+                  public RepeatMixin<Derived>,
+                  public ControllableMixin<Derived> {
    public:
     void tick(const float delta_time) {
+        if (this->is_paused()) return;
+
         auto& elapsed = this->get_elapsed_time();
         const float duration = this->get_duration();
 
@@ -225,6 +357,7 @@ class TweenBase : public EaseMixin<Derived>, /*<br>*/
     }
 
     bool is_done() const {
+        if (this->is_keep_alive()) return false;
         if (this->get_loop_mode() != LoopMode::NONE) return false;
         if (this->get_repeat_count() < 0) return false;  // infinite
         return this->get_elapsed_time() >= this->get_duration() * (this->get_repeat_count() + 1);

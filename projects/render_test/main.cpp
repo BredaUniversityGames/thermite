@@ -34,6 +34,8 @@ class MainScene : public tmt::Scene<MainScene> {
     float time_passed = 0.0f;
     float cooldown = 0.0f;
 
+    Tweening::Tween move_tween;
+
     void on_start() override;
     void on_update(const tmt::FrameData& time) override;
     void on_end() override;
@@ -88,23 +90,12 @@ void MainScene::on_start() {
 
     tmt::Entity camera = tmt::Camera::get_active_camera();
 
-    Tweening::Tween move_tween = Tweening::tween<tmt::Transform>(camera)  //
-                      .duration(5.0f)
-                      .ease(Tweening::Ease::IN_CUBIC)
-                      .move()
-                      .from({ 0.0f, 0.0f, 0.0f })
-                      .to({ 10.0f, 10.0f, 10.0f }); /* Automatically starts */
-
-    move_tween.stop(); /* We can stop it */
-    move_tween.start(); /* We can start it again */
-    move_tween.restart(); /* Or restart it from the beginning (also starts it if it was stopped) */
-    move_tween.finish();  /* Fast forward to the end */
-
-    Tweening::tween(test_float).from(-5.0f).to(5.0f).duration(2.0f);
-    Tweening::tween(test_float).from(-5.0f).to(5.0f).duration(2.0f);
-    Tweening::tween(test_float).from(-5.0f).to(5.0f).duration(2.0f);
-    Tweening::tween(test_float).from(-5.0f).to(5.0f).duration(2.0f);
-    Tweening::tween(test_float).from(-5.0f).to(5.0f).duration(2.0f);
+    move_tween = Tweening::tween<tmt::Transform>(camera)  //
+                     .duration(5.0f)
+                     .ease(Tweening::Ease::IN_CUBIC)
+                     .move()
+                     .from({ 0.0f, 0.0f, 0.0f })
+                     .to({ 10.0f, 10.0f, 10.0f }); /* Automatically starts */
 }
 
 void MainScene::on_update(const tmt::FrameData& time) {
@@ -112,7 +103,27 @@ void MainScene::on_update(const tmt::FrameData& time) {
     time_passed += time.delta_time;
     cooldown -= time.delta_time;
 
-    tmt::Log::info("{}", test_float);
+    // tmt::Log::info("{}", test_float);
+
+    // move_tween.stop();    /* We can stop it */
+    // move_tween.start();   /* We can start it again */
+    // move_tween.restart(); /* Or restart it from the beginning (also starts it if it was stopped) */
+    // move_tween.finish();  /* Fast forward to the end */
+
+    /* input controls for tween testing */
+    if (tmt::engine.input.is_keyboard_button_just_pressed(tmt::Key::SPACE)) {
+        if (move_tween.is_paused()) {
+            move_tween.stop();
+        } else {
+            move_tween.start();
+        }
+    }
+    if (tmt::engine.input.is_keyboard_button_just_pressed(tmt::Key::R)) {
+        move_tween.restart();
+    }
+    if (tmt::engine.input.is_keyboard_button_just_pressed(tmt::Key::F)) {
+        move_tween.finish();
+    }
 
     // Use to test the logging please
     /*  static int i = 0;

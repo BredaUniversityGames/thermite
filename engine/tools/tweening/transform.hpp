@@ -7,9 +7,23 @@
 template <>
 struct Tweening::ITween<tmt::Entity, tmt::Transform> : public Tweening::Detail::TweenBase<ITween<tmt::Entity, tmt::Transform>> {
     /* Sub tweens */
-    struct Move : public Tweening::Detail::FromToMixin<Move, glm::vec3> {};
-    struct Rotate : public Tweening::Detail::FromToMixin<Rotate, glm::quat> {};
-    struct Scale : public Tweening::Detail::FromToMixin<Scale, glm::vec3> {};
+    struct Move : public Tweening::Detail::FromToMixin<Move, glm::vec3>,  //
+                  public Tweening::Detail::SubTweenMixin<ITween> {
+        Move() = default;
+        Move(ITween* parent) : Tweening::Detail::SubTweenMixin<ITween>(parent) {}
+    };
+
+    struct Rotate : public Tweening::Detail::FromToMixin<Rotate, glm::quat>,  //
+                    public Tweening::Detail::SubTweenMixin<ITween> {
+        Rotate() = default;
+        Rotate(ITween* parent) : Tweening::Detail::SubTweenMixin<ITween>(parent) {}
+    };
+
+    struct Scale : public Tweening::Detail::FromToMixin<Scale, glm::vec3>,  //
+                   public Tweening::Detail::SubTweenMixin<ITween> {
+        Scale() = default;
+        Scale(ITween* parent) : Tweening::Detail::SubTweenMixin<ITween>(parent) {}
+    };
 
    public:
     ITween(const tmt::Entity entity) : owner(entity) {};
@@ -32,17 +46,17 @@ struct Tweening::ITween<tmt::Entity, tmt::Transform> : public Tweening::Detail::
     }
 
     Move& move() {
-        tween_variant.emplace<Move>();
+        tween_variant.emplace<Move>(this);
         return std::get<Move>(tween_variant);
     }
 
     Rotate& rotate() {
-        tween_variant.emplace<Rotate>();
+        tween_variant.emplace<Rotate>(this);
         return std::get<Rotate>(tween_variant);
     }
 
     Scale& scale() {
-        tween_variant.emplace<Scale>();
+        tween_variant.emplace<Scale>(this);
         return std::get<Scale>(tween_variant);
     }
 
