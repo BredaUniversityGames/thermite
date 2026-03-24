@@ -12,7 +12,6 @@
         18,
         19,
         20,
-        22,
         1048576,
         1048577,
         1048578,
@@ -58,9 +57,6 @@
         },
         "20": {
             "name": "Test Emitter"
-        },
-        "22": {
-            "name": "Entity_22"
         },
         "1048576": {
             "name": "Camera"
@@ -317,28 +313,6 @@
             "parent": 4294967295,
             "children": []
         },
-        "22": {
-            "local_position": {
-                "x": 22.06256103515625,
-                "y": 31.983734130859375,
-                "z": 0.1625000238418579
-            },
-            "local_rotation": {
-                "w": 1.0,
-                "x": 0.0,
-                "y": 0.0,
-                "z": 0.0
-            },
-            "local_scale": {
-                "x": 1.0,
-                "y": 1.0,
-                "z": 1.0
-            },
-            "parent": 4294967295,
-            "children": [
-                1048597
-            ]
-        },
         "1048576": {
             "local_position": {
                 "x": 0.0,
@@ -541,9 +515,9 @@
         },
         "1048597": {
             "local_position": {
-                "x": 0.0,
-                "y": 0.0,
-                "z": 0.0
+                "x": -49.6307373046875,
+                "y": 18.30633544921875,
+                "z": 99.72393035888672
             },
             "local_rotation": {
                 "w": -0.13052614033222198,
@@ -553,10 +527,10 @@
             },
             "local_scale": {
                 "x": 1.0,
-                "y": 1.0000005960464478,
-                "z": 1.0000005960464478
+                "y": 1.0,
+                "z": 1.0
             },
-            "parent": 22,
+            "parent": 4294967295,
             "children": []
         }
     },
@@ -976,10 +950,10 @@
         }
     },
     "UIComponent": {
-        "22": {
+        "1048597": {
             "size": {
-                "x": 318.5740051269531,
-                "y": 41.27203369140625
+                "x": 726.2618408203125,
+                "y": 389.9395751953125
             },
             "pivot": {
                 "x": 0.5,
@@ -994,29 +968,10 @@
                 "y": 1.0
             },
             "anchor": "MIDDLE_CENTER"
-        },
-        "1048597": {
-            "size": {
-                "x": 318.5740051269531,
-                "y": 41.27203369140625
-            },
-            "pivot": {
-                "x": 0.5,
-                "y": 0.5
-            },
-            "block_raycasts": false,
-            "scale_with_parent_x": true,
-            "scale_with_parent_y": true,
-            "aspect_mode": "STRETCH",
-            "aspect_ratio": {
-                "x": 1.0,
-                "y": 1.0
-            },
-            "anchor": "MIDDLE_CENTER"
         }
     },
     "ImageRenderer": {
-        "22": {
+        "1048597": {
             "texture": {
                 "file_location": {
                     "sub_location": "PROJECT",
@@ -1025,16 +980,16 @@
                 "data": null
             },
             "color": {
-                "x": 0.4483985900878906,
-                "y": 0.4483985900878906,
-                "z": 0.4483985900878906,
+                "x": 0.3451957106590271,
+                "y": 0.3451957106590271,
+                "z": 0.3451957106590271,
                 "w": 1.0
             }
         }
     },
     "TextRenderer": {
         "1048597": {
-            "text": "aaaaaa bbbbbb ccccc",
+            "text": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
             "font": {
                 "file_location": {
                     "sub_location": "ENGINE",
@@ -1050,24 +1005,24 @@
                     "last_char": 126
                 }
             },
-            "font_size": 17.0,
+            "font_size": 32.0,
             "color": {
                 "x": 1.0,
                 "y": 1.0,
                 "z": 1.0,
                 "w": 1.0
             },
-            "line_spacing": 0.0,
+            "line_spacing": 74.0,
             "letter_spacing": 0.0,
             "paragraph_spacing": 0.0,
             "horizontal_align": "LEFT",
-            "vertical_align": "MIDDLE",
-            "word_wrap": false,
-            "max_width": 318.5740051269531,
-            "max_height": 41.27203369140625,
+            "vertical_align": "TOP",
+            "word_wrap": true,
+            "max_width": 726.2618408203125,
+            "max_height": 389.9395751953125,
             "overflow": "VISIBLE",
             "use_ui_component_size": true,
-            "auto_font_size": true,
+            "auto_font_size": false,
             "rich_text_enabled": true
         }
     },

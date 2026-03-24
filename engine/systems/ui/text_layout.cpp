@@ -404,7 +404,7 @@ void TextLayout::align_line(TextLine& line, const std::vector<GlyphInstance>& gl
 }
 
 void TextLayout::align_vertical(TextLayoutResult& result, VerticalAlign v_align, float container_height) {
-    if (result.glyphs.empty() || v_align == VerticalAlign::TOP) {
+    if (result.glyphs.empty()) {
         return;
     }
 
@@ -421,6 +421,10 @@ void TextLayout::align_vertical(TextLayoutResult& result, VerticalAlign v_align,
     float offset = 0.0f;
 
     switch (v_align) {
+        case VerticalAlign::TOP:
+            /* Align visual top of glyphs to container top (y = 0) */
+            offset = -visual_min_y;
+            break;
         case VerticalAlign::MIDDLE:
             /* Center the visual glyph bounds, not the line metrics */
             offset = (container_height - visual_height) * 0.5f - visual_min_y;
@@ -428,8 +432,6 @@ void TextLayout::align_vertical(TextLayoutResult& result, VerticalAlign v_align,
         case VerticalAlign::BOTTOM:
             /* Align visual bottom of glyphs to container bottom */
             offset = container_height - visual_max_y;
-            break;
-        default:
             break;
     }
 

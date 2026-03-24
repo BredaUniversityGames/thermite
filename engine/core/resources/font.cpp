@@ -68,8 +68,11 @@ bool Font::generate_sdf_atlas(const unsigned char* font_data, size_t) {
     int ascent, descent, line_gap;
     stbtt_GetFontVMetrics(&font_info, &ascent, &descent, &line_gap);
 
-    metrics.ascender = ascent * scale;
-    metrics.descender = descent * scale;
+    /* Include SDF padding in ascender/descender since glyph bearings include padding.
+     * This ensures consistent positioning: when bearing.y == ascender, the glyph
+     * top aligns exactly with the line top (cursor_y). */
+    metrics.ascender = ascent * scale + sdf_padding;
+    metrics.descender = descent * scale - sdf_padding;
     metrics.line_height = (ascent - descent + line_gap) * scale;
     metrics.base_size = base_font_size;
 
