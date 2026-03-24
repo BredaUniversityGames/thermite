@@ -13,3 +13,4 @@
 #include "editor/imgui/types/named_type.hpp"
 #include "editor/imgui/types/button.hpp"
 #include "editor/imgui/types/bezier_curve.hpp"
+#include "editor/imgui/types/environment.hpp"
