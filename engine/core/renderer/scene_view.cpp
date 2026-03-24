@@ -162,6 +162,10 @@ void SceneView::update_voxel_objects(RenderGraph& render_graph) {
         gpu_object.voxels_handle = renderer.resource->blas_voxels.get_index();
         gpu_object.palette_handle = renderer.resource->blas_palette.get_index();
         gpu_object.object_flags = renderer.outlined ? 0b1u : 0b0u;
+        constexpr float MIN_DIST = 50.0f;
+        constexpr float MAX_DIST = 60.0f;
+        const float opacity = glm::clamp(1.0f - (glm::distance(transform.get_world_position(), glm::vec3(engine.renderer.render_view.gpu_view.origin)) - MIN_DIST) / (MAX_DIST - MIN_DIST), 0.0f, 1.0f);
+        gpu_object.opacity = opacity * renderer.opacity;
         if (renderer.outlined) render_outlines = true;
         renderer.outlined = false; /* Reset outlined flag */
 

@@ -59,9 +59,7 @@ public [ForceInline] Hit trace_bvh2<let DEBUG : bool>(
             for (uint i = 0u; i < prim_count; ++i) {
                 const uint index = indices[prim_index + i];
                 const VoxelObject prim = prims[index];
-
-                dither = r1(dither);
-                if (0.5f <= dither) continue;
+                if (prim.opacity <= r1(dither)) continue;
 
                 trace_voxel_object<DEBUG>(ray, prim, index, hit);
             }

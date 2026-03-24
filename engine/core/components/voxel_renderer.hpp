@@ -15,10 +15,13 @@ struct VoxelRenderer {
     /* Unique object identifier. */
     uint32_t uuid = 0u;
 
+    /* Voxel renderer opacity. */
+    float opacity = 1.0f;
+
     /* Should this voxel renderer be outlined? */
     bool outlined = false;
 };
 
 }  // namespace tmt
 
-TMT_COMPONENT(tmt::VoxelRenderer, "Voxel Renderer", (resource));
+TMT_COMPONENT(tmt::VoxelRenderer, "Voxel Renderer", (resource, opacity));

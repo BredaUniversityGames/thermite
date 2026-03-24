@@ -27,7 +27,7 @@ void main(int2 thread_id: SV_DispatchThreadID) {
     const Ray ray = pinhole_ray(render_view, thread_id);
 
     /* Trace the scene BVH */
-    const float dither = r1(blue_noise1d[thread_id % 512].r, render_view.frame_index * 512u);
+    const float dither = r1(blue_noise1d[thread_id % 512].r, render_view.frame_index % 1024u);
     const Hit hit = trace_bvh2<false>(bvh_nodes, object_indices, object_data, ray, BIG_F32, dither);
 
     /* Write packed visibility info into the visibility buffer */
