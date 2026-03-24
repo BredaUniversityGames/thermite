@@ -5,6 +5,7 @@
 #include <functional>
 #include <vector>
 #include <numbers>
+#include <optional>
 
 namespace Tweening {
 
@@ -43,7 +44,6 @@ enum class Ease : uint8_t {
 };
 
 enum class LoopMode : uint8_t {
-    NONE,
     LOOP,
     PING_PONG,
 };
@@ -160,6 +160,11 @@ namespace Detail {
 /* Default context, used by default */
 struct Default {};
 
+struct TweenFrame {
+    float alpha; /* In Seconds */
+    uint64_t frame_count;
+};
+
 /* Helpers */
 template <typename T>
 inline void lerp(T& v, const T& a, const T& b, const float t) {
@@ -221,37 +226,35 @@ class TimeMixin {
 template <typename Derived, typename T>
 class FromToMixin {
    public:
-    Derived& from(T start) {
-        this->start = std::move(start);
+    Derived& from(T start_val) {
+        this->start = std::move(start_val);
         return static_cast<Derived&>(*this);
     }
 
-    Derived& to(T end) {
-        this->end = std::move(end);
+    Derived& to(T end_val) {
+        this->end = std::move(end_val);
         return static_cast<Derived&>(*this);
     }
 
-    const T& get_start() const { return start; }
+    bool has_start() const { return start.has_value(); }
 
-    const T& get_end() const { return end; }
+    bool has_end() const { return end.has_value(); }
+
+    const T& get_start() const { return start.value(); }
+
+    const T& get_end() const { return end.value(); }
 
    protected:
-    T start {};
-    T end {};
+    std::optional<T> start {};
+    std::optional<T> end {};
 };
 
 template <typename Derived>
 class LoopMixin {
    public:
-    /* None = 0 -> 1, then stop */
-    Derived& no_loop() {
-        loop_mode = LoopMode::NONE;
-        return static_cast<Derived&>(*this);
-    }
-
     /* Loop = 0 -> 1, 0 -> 1, ... */
-    Derived& loop() {
-        loop_mode = LoopMode::LOOP;
+    Derived& loop(const LoopMode mode = LoopMode::LOOP) {
+        loop_mode = mode;
         return static_cast<Derived&>(*this);
     }
 
@@ -264,7 +267,7 @@ class LoopMixin {
     LoopMode get_loop_mode() const { return loop_mode; }
 
    protected:
-    LoopMode loop_mode = LoopMode::NONE;
+    LoopMode loop_mode = LoopMode::LOOP;
 };
 
 template <typename Derived>
@@ -359,9 +362,18 @@ class TweenBase : public EaseMixin<Derived>, /*<br>*/
    public:
     void tick(const float delta_time) {
         if (this->is_paused()) return;
+        if (this->is_done()) return;
 
         auto& elapsed = this->get_elapsed_time();
         const float duration = this->get_duration();
+
+        elapsed += delta_time;
+
+        if (this->get_repeat_count() >= 0) {
+            const float total_cycle = (this->get_loop_mode() == LoopMode::PING_PONG) ? duration * 2.0f : duration;
+            const float max_elapsed = total_cycle * (this->get_repeat_count() + 1);
+            elapsed = std::min(elapsed, max_elapsed);
+        }
 
         float progress = (duration > 0.0f) ? elapsed / duration : 1.0f;
 
@@ -376,9 +388,10 @@ class TweenBase : public EaseMixin<Derived>, /*<br>*/
         } else {
             t = apply_ease(computed, this->ease_value);
         }
-        static_cast<Derived*>(this)->interpolate(t);
+        TweenFrame frame { t, frame_count };
+        static_cast<Derived*>(this)->interpolate(frame);
 
-        elapsed += delta_time;
+        frame_count++;
     }
 
     bool is_done() const {
@@ -390,6 +403,8 @@ class TweenBase : public EaseMixin<Derived>, /*<br>*/
     }
 
    private:
+    uint64_t frame_count = 0;
+
     float compute_progress(float progress, bool& is_reversing) const {
         is_reversing = false;
         switch (this->get_loop_mode()) {
@@ -511,9 +526,14 @@ struct ITween<T> : public Detail::TweenBase<ITween<T>>, /**/
     ITween(T* value) : value(value) {};
     static ITween create(T& value) { return ITween(&value); }
 
-    void interpolate(const float t) {
+    void interpolate(const Detail::TweenFrame& frame) {
+        if (frame.frame_count == 0) {
+            /* On first frame, if start or end are not set, initialize them to current value */
+            if (!this->has_start()) this->from(*value);
+            if (!this->has_end()) this->to(*value);
+        }
         if (value) {
-            Detail::lerp(*value, this->start, this->end, t);
+            Detail::lerp(*value, this->start, this->end, frame.alpha);
         }
     }
 

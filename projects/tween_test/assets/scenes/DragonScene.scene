@@ -1,0 +1,98 @@
+{
+    "version": 1,
+    "entities": [
+        0,
+        1
+    ],
+    "Name": {
+        "0": {
+            "name": "Entity_0"
+        },
+        "1": {
+            "name": "Light"
+        }
+    },
+    "Transform": {
+        "0": {
+            "local_position": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 11.987380981445313
+            },
+            "local_rotation": {
+                "w": 0.70710688829422,
+                "x": 0.0,
+                "y": -0.7071066498756409,
+                "z": 0.0
+            },
+            "local_scale": {
+                "x": 0.9999898076057434,
+                "y": 1.0,
+                "z": 0.9999898076057434
+            },
+            "parent": 4294967295,
+            "children": []
+        },
+        "1": {
+            "local_position": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": -5.2918596267700195
+            },
+            "local_rotation": {
+                "w": 0.7745908498764038,
+                "x": 0.2990805506706238,
+                "y": -0.5198725461959839,
+                "z": 0.200729638338089
+            },
+            "local_scale": {
+                "x": 1.0,
+                "y": 0.9999999403953552,
+                "z": 1.0000003576278687
+            },
+            "parent": 4294967295,
+            "children": []
+        }
+    },
+    "Voxel Renderer": {
+        "0": {
+            "resource": {
+                "file_location": {
+                    "sub_location": "PROJECT",
+                    "relative_path": "dragon128.vengi"
+                },
+                "constructor_args": [
+                    "00000000-0000-0000-0000-000000000000"
+                ]
+            }
+        }
+    },
+    "ComponentCollection": {
+        "0": {
+            "Tweener": {
+                "duration": 1.0,
+                "ease": "LINEAR",
+                "repeat_count": 2
+            }
+        }
+    },
+    "Light": {
+        "1": {
+            "color": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "temperature": -1.0,
+            "type": "SUN_LIGHT",
+            "light": {
+                "index": 1,
+                "value": {
+                    "source_angle": 0.10000000149011612,
+                    "luminous_intensity": 1.0
+                }
+            }
+        }
+    },
+    "systems": null
+}
