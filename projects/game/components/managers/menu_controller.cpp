@@ -16,7 +16,7 @@ void MenuController::update(const tmt::FrameData& time) {
             return;
         }
 
-        if (tmt::engine.ecs.is_disabled(inventory_menu_entity) && tmt::engine.ecs.is_disabled(end_run_menu_entity)) {
+        if (tmt::engine.ecs.is_disabled(inventory_menu_entity)) {
             enable_inventory_menu();
         } else {
             disable_inventory_menu();
@@ -29,7 +29,7 @@ void MenuController::update(const tmt::FrameData& time) {
             return;
         }
 
-        if (tmt::engine.ecs.is_disabled(pause_menu_entity) && tmt::engine.ecs.is_disabled(end_run_menu_entity)) {
+        if (tmt::engine.ecs.is_disabled(pause_menu_entity)) {
             enable_pause_menu();
         } else {
             disable_pause_menu();
@@ -42,7 +42,7 @@ void MenuController::update(const tmt::FrameData& time) {
             return;
         }
 
-        if (tmt::engine.ecs.is_disabled(upgrade_menu_entity) && tmt::engine.ecs.is_disabled(end_run_menu_entity)) {
+        if (tmt::engine.ecs.is_disabled(upgrade_menu_entity)) {
             enable_upgrade_menu();
         } else {
             disable_upgrade_menu();
@@ -113,6 +113,10 @@ void MenuController::disable_upgrade_menu() const {
 }
 
 void MenuController::enable_end_of_game_menu(const EndRun& event) const {
+    tmt::engine.ecs.disable(pause_menu_entity);
+    tmt::engine.ecs.disable(upgrade_menu_entity);
+    tmt::engine.ecs.disable(inventory_menu_entity);
+
     // Open end of game menu
     if (event.player_dead) {
         if (death_menu_entity == entt::null) {
