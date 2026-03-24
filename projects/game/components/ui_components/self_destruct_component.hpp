@@ -8,7 +8,7 @@ class SelfDestructComponent : public tmt::GameComponent<SelfDestructComponent> {
    public:
     using GameComponent::GameComponent;
 
-    static std::string_view get_name() { return "Button: Self Destruct"; }
+    static std::string_view get_name() { return "ButtonSelfDestruct"; }
 
     void start() override;
     void update(const tmt::FrameData& time) override;
