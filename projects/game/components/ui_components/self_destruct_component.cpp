@@ -1,4 +1,5 @@
 #include "self_destruct_component.hpp"
+#include "engine/core/components/button.hpp"
 
 #include "projects/game/components/gameplay_functionality_components/player.hpp"
 

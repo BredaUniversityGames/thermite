@@ -1,4 +1,5 @@
 #include "quit_game_component.hpp"
+#include "engine/core/components/button.hpp"
 
 namespace game {
 
