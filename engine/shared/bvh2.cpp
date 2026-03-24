@@ -492,7 +492,7 @@ std::vector<std::pair<Entity, std::vector<std::pair<float, glm::uvec3>>>> Bvh2<T
 
     std::vector<uint32_t> candidates = overlap(sphere_aabb, layer_mask);
 
-    std::vector<std::pair<uint32_t, std::vector<std::pair<float, glm::uvec3>>>> return_data;
+    std::vector<std::pair<Entity, std::vector<std::pair<float, glm::uvec3>>>> return_data;
 
     for (uint32_t i = 0; i < candidates.size(); i++) {
         const T& prim = prims[candidates[i]];
