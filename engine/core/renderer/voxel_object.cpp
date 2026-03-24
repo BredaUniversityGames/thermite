@@ -55,13 +55,12 @@ Hit VoxelObject::intersect(Ray ray, const float tmax) const {
     return Hit(hit_dist, {}, local_hit.coord, glm::normalize(hit_normal));
 }
 
-std::vector<std::pair<float, glm::uvec3>> VoxelObject::sphere_overlap(const glm::vec3& center, float radius) const
-{
+std::vector<std::pair<float, glm::uvec3>> VoxelObject::sphere_overlap(const glm::vec3& center, float radius) const {
     if (!volume->blas) return {};
 
     glm::vec3 local_sphere_center = glm::vec3(world_to_local * glm::vec4(center, 1.0f));
 
-     // Sphere AABB in local space
+    // Sphere AABB in local space
     const glm::vec3 sphere_min = local_sphere_center - glm::vec3(radius);
     const glm::vec3 sphere_max = local_sphere_center + glm::vec3(radius);
 
@@ -83,16 +82,16 @@ std::vector<std::pair<float, glm::uvec3>> VoxelObject::sphere_overlap(const glm:
     for (int x = min_coord.x; x <= max_coord.x; ++x) {
         for (int y = min_coord.y; y <= max_coord.y; ++y) {
             for (int z = min_coord.z; z <= max_coord.z; ++z) {
-                if (!volume->blas->get_voxel(x,y,z)) continue;
+                if (!volume->blas->get_voxel(x, y, z)) continue;
 
-                //sphere point overlap because fast and easy
+                // sphere point overlap because fast and easy
                 const glm::vec3 voxel_center = -half_extent + (glm::vec3(x, y, z) + glm::vec3(0.5f)) * UNITS_PER_VOXEL;
                 float sqr_dist = glm::length2(local_sphere_center - voxel_center);
 
-                bool overlap = sqr_dist < (radius*radius);
-                if(!overlap) continue;
+                bool overlap = sqr_dist < (radius * radius);
+                if (!overlap) continue;
 
-                hits.emplace_back(std::make_pair(sqr_dist, glm::vec3{x,y,z}));
+                hits.emplace_back(std::make_pair(sqr_dist, glm::vec3 { x, y, z }));
             }
         }
     }
