@@ -83,6 +83,15 @@ void game::Missile::update(const tmt::FrameData& time) {
     velocity *= 0.7f;
     position.translate(velocity * time.delta_time);
     
+    // Rotate missile to face velocity direction
+    if (glm::dot(velocity, velocity) > 0.0001f) {
+        glm::vec3 forward = glm::normalize(velocity);
+        // Use ground_up as the up hint, but fall back if forward is nearly parallel to it
+        glm::vec3 up = (glm::abs(glm::dot(forward, ground_up)) < 0.99f) ? ground_up : glm::vec3(0.0f, 1.0f, 0.0f);
+        glm::quat rot = glm::quatLookAt(forward, up);
+        position.set_world_rotation(rot);
+    }
+
     // collision check
     //const tmt::Ray ray_cast = tmt::Ray(previous_position, glm::normalize(delta));
     //const tmt::Hit hit = tmt::engine.ecs.systems.get<tmt::Physics>().raycast(ray_cast, layer_mask);
@@ -91,33 +100,31 @@ void game::Missile::update(const tmt::FrameData& time) {
     
     const tmt::Hit hit = tmt::engine.ecs.systems.get<tmt::Physics>().raycast(ray_cast, enemy_projectile_mask);
     
+    tmt::engine.polyline.use_depth_testing(false);
     tmt::engine.polyline.draw_arrow(ray_cast.origin, ray_cast.dir, 1.0f);
 
     // TODO this is very dumb code that should be updated when we have proper raycasts check
-    if (hit.entity != entt::null && hit.distance < 0.01f /*&& hit.entity != entity*/) {
-        explode(&hit);
+    if (hit.entity != entt::null && hit.distance < 0.1f /*&& hit.entity != entity*/) {
+        explode();
     }
 }
 
 void game::Missile::end() {}
 
-void game::Missile::explode(const tmt::Hit* hit) const {
+void game::Missile::explode() const {
     auto& enemy = tmt::engine.ecs.get_component<MediumEnemy>(enemy_entity);    
-    if (hit) {
-        tmt::Log::info("Would collide with entity {} at distance {}", hit->entity, hit->distance);
-        
-        auto* resource = tmt::engine.ecs.get_component<tmt::VoxelRenderer>(hit->entity).resource.resource.get();
-        resource->blas->subtract(stencil.resource.get(), hit->coord);
-        resource->set_dirty();
-    }
-    //enemy.ore_manager->initiate_thermite_explosion(entity, glm::uvec3(0, 0, 0));
+    enemy.ore_manager->initiate_thermite_explosion(entity, glm::uvec3(0, 0, 0));
 
     auto& missile_trans = tmt::engine.ecs.get_component<tmt::Transform>(entity);
     auto& voxel_body = tmt::engine.ecs.get_component<tmt::VoxelBody>(entity);
-    voxel_body.layer = 4;
-    //voxel_body.type = tmt::VoxelBody::DYNAMIC;
+    voxel_body.layer = 0;
+    voxel_body.type = tmt::VoxelBody::DYNAMIC;
     voxel_body.velocity = velocity;
     voxel_body.position = missile_trans.get_world_position();
+
+    auto& renderer = tmt::engine.ecs.get_component<tmt::VoxelRenderer>(entity);
+
+    tmt::engine.ecs.systems.try_get<tmt::Physics>()->recalculate_physics_data(voxel_body, *renderer.resource.resource);
 
     tmt::engine.ecs.remove_component<Missile>(entity);
 }

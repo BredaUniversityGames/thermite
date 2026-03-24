@@ -17,7 +17,7 @@ struct Missile : public tmt::GameComponent<Missile> {
     void update(const tmt::FrameData& time) override;
     void end() override;
 
-    void explode(const tmt::Hit* hit = nullptr) const;
+    void explode() const;
 
     enum State { LAUNCHED, HOMING } state = LAUNCHED;
     glm::vec3 velocity = glm::vec3(0, 0, 0);
