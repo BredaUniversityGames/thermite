@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <limits>
 
 namespace tmt {
 
@@ -24,10 +25,16 @@ TextLayoutResult TextLayout::layout(const TextRenderer& text_renderer, const Fon
         return result;
     }
 
+    /* Calculate effective font size (auto-calculated if auto_font_size is enabled) */
+    float effective_font_size = text_renderer.font_size;
+    if (text_renderer.auto_font_size && container_size.x > 0.0f && container_size.y > 0.0f) {
+        effective_font_size = calculate_auto_font_size(text_renderer, font, container_size);
+    }
+
     /* Set up layout state */
     LayoutState state {};
     state.font = font;
-    state.base_font_size = text_renderer.font_size;
+    state.base_font_size = effective_font_size;
     state.letter_spacing = text_renderer.letter_spacing;
     state.line_spacing = text_renderer.line_spacing;
     /* Use container_size from UIComponent if max_width/max_height not explicitly set */
@@ -132,6 +139,68 @@ glm::vec2 TextLayout::measure(const std::string& text, const Font& font, float f
 
     TextLayoutResult result = layout(tr, &font, glm::vec2(max_width, 0.0f));
     return result.bounds;
+}
+
+float TextLayout::calculate_auto_font_size(const TextRenderer& text_renderer, const Font* font, const glm::vec2& container_size) {
+    /* Use default font if none provided */
+    if (!font || !font->is_valid()) {
+        font = FontManager::get_default_font().get();
+    }
+
+    if (!font || !font->is_valid()) {
+        return text_renderer.font_size;
+    }
+
+    /* Need valid container size to calculate auto font size */
+    if (container_size.x <= 0.0f || container_size.y <= 0.0f) {
+        return text_renderer.font_size;
+    }
+
+    /* Empty text - return current font size */
+    if (text_renderer.text.empty()) {
+        return text_renderer.font_size;
+    }
+
+    /* Use binary search to find the optimal font size */
+    constexpr float MIN_FONT_SIZE = 1.0f;
+    constexpr float MAX_FONT_SIZE = 1000.0f;
+    constexpr float TOLERANCE = 0.5f;
+    constexpr int MAX_ITERATIONS = 20;
+
+    float low = MIN_FONT_SIZE;
+    float high = MAX_FONT_SIZE;
+    float best_size = MIN_FONT_SIZE;
+
+    /* Create a temporary TextRenderer for measurement */
+    TextRenderer temp_tr = text_renderer;
+    temp_tr.auto_font_size = false; /* Avoid recursion */
+
+    for (int i = 0; i < MAX_ITERATIONS; ++i) {
+        float mid = (low + high) * 0.5f;
+        temp_tr.font_size = mid;
+
+        /* Layout with the test font size */
+        TextLayoutResult result = layout(temp_tr, font, container_size);
+
+        bool fits_width = result.bounds.x <= container_size.x;
+        bool fits_height = result.bounds.y <= container_size.y;
+
+        if (fits_width && fits_height) {
+            /* Text fits, try larger */
+            best_size = mid;
+            low = mid;
+        } else {
+            /* Text doesn't fit, try smaller */
+            high = mid;
+        }
+
+        /* Check convergence */
+        if (high - low < TOLERANCE) {
+            break;
+        }
+    }
+
+    return best_size;
 }
 
 void TextLayout::process_char(uint32_t codepoint, const TextSegment& segment, LayoutState& state, TextLayoutResult& result) {
@@ -339,14 +408,26 @@ void TextLayout::align_vertical(TextLayoutResult& result, VerticalAlign v_align,
         return;
     }
 
+    /* Calculate actual visual bounds of glyphs (not line metrics) */
+    float visual_min_y = std::numeric_limits<float>::max();
+    float visual_max_y = std::numeric_limits<float>::lowest();
+
+    for (const auto& glyph : result.glyphs) {
+        visual_min_y = std::min(visual_min_y, glyph.position.y);
+        visual_max_y = std::max(visual_max_y, glyph.position.y + glyph.size.y);
+    }
+
+    float visual_height = visual_max_y - visual_min_y;
     float offset = 0.0f;
 
     switch (v_align) {
         case VerticalAlign::MIDDLE:
-            offset = (container_height - result.bounds.y) * 0.5f;
+            /* Center the visual glyph bounds, not the line metrics */
+            offset = (container_height - visual_height) * 0.5f - visual_min_y;
             break;
         case VerticalAlign::BOTTOM:
-            offset = container_height - result.bounds.y;
+            /* Align visual bottom of glyphs to container bottom */
+            offset = container_height - visual_max_y;
             break;
         default:
             break;

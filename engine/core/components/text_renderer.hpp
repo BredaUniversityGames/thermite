@@ -65,6 +65,12 @@ struct TextRenderer {
      * to follow the UI element's size. */
     bool use_ui_component_size = true;
 
+    /* When enabled, the font size is automatically calculated to make the text
+     * fit exactly within max_width and max_height. Requires both max_width and
+     * max_height to be set (or use_ui_component_size to be enabled).
+     * This will override the font_size value during layout. */
+    bool auto_font_size = false;
+
     /* Rich text parsing */
     bool rich_text_enabled = true;
 
@@ -80,5 +86,5 @@ struct TextRenderer {
 TMT_COMPONENT(
     tmt::TextRenderer, "TextRenderer",
     (text, font, font_size, color, line_spacing, letter_spacing, paragraph_spacing, horizontal_align, vertical_align, word_wrap, max_width, max_height, overflow, use_ui_component_size,
-     rich_text_enabled)
+     auto_font_size, rich_text_enabled)
 );

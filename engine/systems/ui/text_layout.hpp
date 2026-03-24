@@ -88,6 +88,17 @@ class TextLayout {
      */
     static glm::vec2 measure(const std::string& text, const Font& font, float font_size, float max_width = 0.0f, bool word_wrap = false, float letter_spacing = 0.0f);
 
+    /*
+     * Calculate the optimal font size to fit text within the given bounds.
+     * Uses binary search for efficiency.
+     *
+     * @param text_renderer The text renderer component (font_size is ignored)
+     * @param font The font to use for measurement
+     * @param container_size The target container size (width, height)
+     * @return The calculated font size that makes text fit within bounds
+     */
+    static float calculate_auto_font_size(const TextRenderer& text_renderer, const Font* font, const glm::vec2& container_size);
+
    private:
     /* Internal layout state */
     struct LayoutState {

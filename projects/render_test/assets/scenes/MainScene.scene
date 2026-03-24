@@ -543,7 +543,7 @@
             "local_position": {
                 "x": 0.0,
                 "y": 0.0,
-                "z": 0.25
+                "z": 0.0
             },
             "local_rotation": {
                 "w": -0.13052614033222198,
@@ -978,8 +978,8 @@
     "UIComponent": {
         "22": {
             "size": {
-                "x": 256.2731628417969,
-                "y": 515.576416015625
+                "x": 318.5740051269531,
+                "y": 41.27203369140625
             },
             "pivot": {
                 "x": 0.5,
@@ -997,8 +997,8 @@
         },
         "1048597": {
             "size": {
-                "x": 256.2731628417969,
-                "y": 515.576416015625
+                "x": 318.5740051269531,
+                "y": 41.27203369140625
             },
             "pivot": {
                 "x": 0.5,
@@ -1057,16 +1057,17 @@
                 "z": 1.0,
                 "w": 1.0
             },
-            "line_spacing": 65.0,
+            "line_spacing": 0.0,
             "letter_spacing": 0.0,
             "paragraph_spacing": 0.0,
-            "horizontal_align": "CENTER",
+            "horizontal_align": "LEFT",
             "vertical_align": "MIDDLE",
-            "word_wrap": true,
-            "max_width": 256.2731628417969,
-            "max_height": 515.576416015625,
+            "word_wrap": false,
+            "max_width": 318.5740051269531,
+            "max_height": 41.27203369140625,
             "overflow": "VISIBLE",
             "use_ui_component_size": true,
+            "auto_font_size": true,
             "rich_text_enabled": true
         }
     },
