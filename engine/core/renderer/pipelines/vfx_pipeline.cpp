@@ -206,6 +206,8 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
     render_graph.upload_buffer(particle_effects_buffer, effects.data(), 0, sizeof(GpuParticleEffect) * effects.size());
 
     /* Emit Stage */
+    emitter_count = (uint32_t)emitters.size();
+    effects_count = (uint32_t)effects.size();
     for (uint32_t i = 0; i < emitters.size(); i++) {
         const GpuEmitter& em = emitters[i];
 
@@ -258,7 +260,7 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
                                 .depth_stencil(render_view.dbuffer.image, true, true)
                                 .load_op_depth(LoadOp::Load)
                                 .load_op_color(LoadOp::Load)
-                                .attach(render_view.lbuffer.image)
+                                .attach(render_view.lbuffer.images[0])
                                 .attach(render_view.mbuffer.image)
                                 .raster_extent(render_res.x, render_res.y);
     billboard_pass.draw_indirect(billboard_vertices, instanced_draw_args_buffer);
