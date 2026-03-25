@@ -1,5 +1,6 @@
 #include "weapon_manager.hpp"
 #include "projects/game/data_headers/game_input.hpp"
+#include "projects/game/data_headers/events.hpp"
 #include "projects/game/components/gameplay_functionality_components/weapon_and_tool_components/weapon.hpp"
 #include "engine/core/input/input.hpp"
 #include "engine/core/logger.hpp"
@@ -45,6 +46,11 @@ void game::WeaponManager::set_new_weapon(game::WeaponType weapon_slot) {
 }
 
 void game::WeaponManager::start() {
+    // Connect to the GamePausedEvent and GameUnpausedEvent
+    tmt::engine.ecs.get_dispatcher().sink<game::GamePausedEvent>().connect<&WeaponManager::on_game_paused>(this);
+    tmt::engine.ecs.get_dispatcher().sink<game::GameUnpausedEvent>().connect<&WeaponManager::on_game_unpaused>(this);
+
+
     current_weapon = starting_weapon;
     tmt::Log::info("[WeaponManager] Starting with weapon: {}", magic_enum::enum_name(starting_weapon));
 
@@ -74,6 +80,10 @@ void game::WeaponManager::start() {
 }
 
 void game::WeaponManager::end() {
+    // Disconnect from the events
+    tmt::engine.ecs.get_dispatcher().sink<game::GamePausedEvent>().disconnect<&WeaponManager::on_game_paused>(this);
+    tmt::engine.ecs.get_dispatcher().sink<game::GameUnpausedEvent>().disconnect<&WeaponManager::on_game_unpaused>(this);
+
     tmt::Log::info("[WeaponManager] Ending, unsubscribing {}", magic_enum::enum_name(current_weapon));
     unsubscribe_weapon(current_weapon);
     tmt::engine.ecs.get_dispatcher().sink<WeaponFiredEvent>().disconnect<&WeaponManager::on_overheat>(this);
@@ -372,4 +382,16 @@ void game::WeaponManager::update_procedural_motion(float dt) {
         root_eff_transform->set_local_position(state.current_state + recoil_impulse.translation);
         root_eff_transform->set_local_rotation(rot_state.current_state * recoil_impulse.rotation);
     }
+}
+
+void game::WeaponManager::on_game_paused(const game::GamePausedEvent& event) {
+    // Unsubscribe from the current weapon
+    unsubscribe_weapon(get_active_weapon());
+    // You can save the state of the active weapon if needed
+    last_used_weapon = get_active_weapon();
+}
+
+void game::WeaponManager::on_game_unpaused(const game::GameUnpausedEvent& event) {
+    // Resubscribe to the last used weapon
+    set_new_weapon(last_used_weapon);
 }

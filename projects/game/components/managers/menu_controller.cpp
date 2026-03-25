@@ -2,6 +2,7 @@
 #include "engine/core/input/input.hpp"
 #include "projects/game/data_headers/game_input.hpp"
 #include "projects/game/components/gameplay_functionality_components/player.hpp"
+#include "projects/game/components/managers/weapon_manager.hpp"
 
 // systems to disable for pause
 #include "engine/systems/ai/goap/goap_system.hpp"
@@ -74,6 +75,16 @@ void MenuController::enable_pause_menu() const {
     unlock_mouse();
     tmt::engine.ecs.enable(pause_menu_entity);
 
+    // Loop over all entities with WeaponManager component
+    // tmt::engine.ecs.view<game::WeaponManager>().each([&](tmt::Entity entity, game::WeaponManager& weapon_manager) {
+    //    // Save active weapon and unsubscribe
+    //    weapon_manager.last_used_weapon = weapon_manager.get_active_weapon();
+    //    weapon_manager.unsubscribe_weapon(weapon_manager.get_active_weapon());
+    //});
+
+    // Dispatch game paused event
+    tmt::engine.ecs.get_dispatcher().trigger(game::GamePausedEvent {});
+
     // disable systems
     auto& systems = tmt::engine.ecs.systems;
 
@@ -101,6 +112,9 @@ void MenuController::disable_pause_menu() const {
     }
     lock_mouse();
     tmt::engine.ecs.disable(pause_menu_entity);
+
+    // Dispatch game unpaused event
+    tmt::engine.ecs.get_dispatcher().trigger(game::GameUnpausedEvent {});
 
     // enable systems
     auto& systems = tmt::engine.ecs.systems;
