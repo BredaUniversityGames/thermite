@@ -29,7 +29,7 @@ class SceneMode : public IEditorMode, public OnPreLoadScene {
 
     Camera cached_editor_camera;
     Transform cached_editor_transform;
-    DisplayMode cached_display_mode{DisplayMode::DEFAULT};
+    DisplayMode cached_display_mode { DisplayMode::DEFAULT };
 
     // Used as a flag for the on_pre_load_scene function call.
     bool is_switching_to { false };
