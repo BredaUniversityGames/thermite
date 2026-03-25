@@ -39,7 +39,7 @@ void tag_invoke(ImReflect::ImInput_t, const char* name, game::MediumEnemy& value
 
     ImGui::Spacing();
 
-    /* ── Movement & Detection ────────────────────────── */
+    /* ── Projectile Layers ────────────────────────── */
     if (ImGui::TreeNodeEx("Projectile Masks", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImReflect::Input("Projectile Layer Mask", value.projectile_mask, type_settings, type_response);
         help("Mask that only excludes enemy projectiles, so they don't collide with themselves");
