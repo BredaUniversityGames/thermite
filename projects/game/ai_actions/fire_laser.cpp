@@ -18,7 +18,6 @@ void FireLaser::on_start(tmt::Entity enemy_entity) {
         player = cam_entity;
         break;
     }
-    tmt::Log::error("laser onstart");
     auto& enemy = tmt::engine.ecs.get_component<game::MediumEnemy>(enemy_entity);
     state = SITTING_DOWN;
     time = 0.0f;
@@ -50,10 +49,9 @@ void FireLaser::on_tick(tmt::Entity enemy_entity, float dt) {
 
     const auto& player_pos = tmt::engine.ecs.get_component<tmt::Transform>(player).get_world_position();
 
-    enemy.height_above_ground_offset = -enemy.height_above_ground + enemy.laser_sitting_down_height_offset;
-
     switch (state) {
         case SITTING_DOWN: {
+            enemy.height_above_ground_offset = -enemy.height_above_ground + enemy.laser_sitting_down_height_offset;
             if (time > enemy.laser_sitting_down_time) {
                 state = WINDING_UP;
                 time = 0.0f;
@@ -61,6 +59,7 @@ void FireLaser::on_tick(tmt::Entity enemy_entity, float dt) {
             break;
         }
         case WINDING_UP: {
+            enemy.height_above_ground_offset = -enemy.height_above_ground + enemy.laser_sitting_down_height_offset;
             glm::vec3 target_dir = glm::normalize(target_pos - laser_pos);
             direction = target_dir;
 
@@ -79,7 +78,7 @@ void FireLaser::on_tick(tmt::Entity enemy_entity, float dt) {
                 auto ref = tmt::engine.resources.copy_resource<tmt::VoxelVolume>(enemy.laser_voxel_object);
                 voxel_renderer.resource = ref;
                 auto& voxel_body = tmt::engine.ecs.add_component<tmt::VoxelBody>(laser_entity);
-                voxel_body.layer = 4;
+                voxel_body.layer = enemy.projectile_layer;
                 voxel_body.type = tmt::VoxelBody::STATIC;
                 
                 state = FIRING;
@@ -88,6 +87,18 @@ void FireLaser::on_tick(tmt::Entity enemy_entity, float dt) {
             break;
         }
         case FIRING: {
+            if (!tmt::engine.ecs.valid(laser_entity)) {
+                tmt::Log::error("laser entity not available, but fire laser action called");
+                laser_entity = entt::null;
+                state = WINDING_UP;
+                enemy.laser_timer = 0.0f;
+                enemy.height_above_ground_offset = 0.0f;
+                auto ws = tmt::engine.ecs.try_get_component<tmt::WorldState>(enemy_entity);
+                if (!ws) return;
+                ws->set_fact(tmt::FactId("m_laser_ready"), false);
+                
+                return;
+            }
             auto linear_target_pos = target_pos;
             {
                 glm::vec3 to_player = player_pos - linear_target_pos;
@@ -118,6 +129,7 @@ void FireLaser::on_tick(tmt::Entity enemy_entity, float dt) {
 
             if (time > enemy.laser_firing_time) {
                 tmt::engine.ecs.destroy_entity(laser_entity);
+                laser_entity = entt::null;
                 state = WINDING_UP;
                 auto& enemy = tmt::engine.ecs.get_component<game::MediumEnemy>(enemy_entity);
                 enemy.laser_timer = 0.0f;
@@ -125,6 +137,7 @@ void FireLaser::on_tick(tmt::Entity enemy_entity, float dt) {
                 auto ws = tmt::engine.ecs.try_get_component<tmt::WorldState>(enemy_entity);
                 if (!ws) return;
                 ws->set_fact(tmt::FactId("m_laser_ready"), false);
+                return;
             }
 
             const tmt::Ray ray_cast = tmt::Ray(laser_pos, glm::normalize(direction));

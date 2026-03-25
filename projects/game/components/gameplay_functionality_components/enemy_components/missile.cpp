@@ -27,7 +27,7 @@ void game::Missile::start() {
     voxel_renderer.resource = ref;
 
     auto& voxel_body = tmt::engine.ecs.add_component<tmt::VoxelBody>(entity);
-    voxel_body.layer = 4;
+    voxel_body.layer = enemy.projectile_layer;
     voxel_body.type = tmt::VoxelBody::STATIC;
 
     enemy_projectile_mask = enemy.projectile_mask;
@@ -40,6 +40,7 @@ void game::Missile::start() {
 
     // initial missile rotation
     auto& nav_mesh = tmt::engine.ecs.get_component<tmt::NavMesh>(enemy.walkable_asteroid);
+    if (nav_mesh.nodes_mesh->empty()) return;
     auto ground_up = (*nav_mesh.nodes_mesh)[nav_mesh.find_closest_node(enemy_pos)].normal;
     glm::vec3 forward = glm::normalize(ground_up);
     glm::vec3 up = (glm::abs(glm::dot(forward, ground_up)) < 0.99f) ? ground_up : glm::vec3(0.0f, 1.0f, 0.0f);
@@ -59,6 +60,7 @@ void game::Missile::update(const tmt::FrameData& time) {
     player_pos += enemy.target_offset;
     auto enemy_pos = tmt::engine.ecs.get_component<tmt::Transform>(enemy_entity).get_world_position();
     auto& nav_mesh = tmt::engine.ecs.get_component<tmt::NavMesh>(enemy.walkable_asteroid);
+    if (nav_mesh.nodes_mesh->empty()) return;
     auto ground_up = (*nav_mesh.nodes_mesh)[nav_mesh.find_closest_node(enemy_pos)].normal;
 
     // fades from full launch down to zero

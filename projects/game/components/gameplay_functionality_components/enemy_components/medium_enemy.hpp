@@ -25,6 +25,8 @@ class MediumEnemy : public tmt::GameComponent<MediumEnemy> {
     tmt::Entity missile_origin = entt::null;
     tmt::Entity laser_origin = entt::null;
     game::OreManager* ore_manager;
+    LayerMask projectile_mask {};
+    int projectile_layer = 4;
 
     glm::vec3 velocity = glm::vec3(0, 0, 0);
     glm::quat rotation = glm::quat(1, 0, 0, 0);
@@ -40,7 +42,7 @@ class MediumEnemy : public tmt::GameComponent<MediumEnemy> {
 
     tmt::ResourceRef<tmt::Stencil> stencil;
     tmt::IO::FileLocation missile_voxel_object;
-    LayerMask projectile_mask {};
+    
     float stop_launching_after = 0.5f;
     float start_homing_after = 0.5f;
     float launch_speed = 0.1f;
@@ -80,7 +82,7 @@ class MediumEnemy : public tmt::GameComponent<MediumEnemy> {
 
 TMT_OBJECT(
     game::MediumEnemy,
-    (walkable_asteroid, laser_origin, missile_origin, stencil, missile_voxel_object, projectile_mask, rotation_speed, height_above_ground, walk_speed, aggro_range, laser_range, stomp_range, missile_cooldown, stop_launching_after, start_homing_after, slow_homing_accuracy_after, launch_speed, home_speed, life_time, missile_rotation_speed, target_offset, missile_burst,
+    (walkable_asteroid, laser_origin, missile_origin, stencil, missile_voxel_object, projectile_mask, projectile_layer, rotation_speed, height_above_ground, walk_speed, aggro_range, laser_range, stomp_range, missile_cooldown, stop_launching_after, start_homing_after, slow_homing_accuracy_after, launch_speed, home_speed, life_time, missile_rotation_speed, target_offset, missile_burst,
      burst_interval, missile_max_randomness, laser_cooldown, laser_charge_voxel_object, laser_voxel_object,
      laser_firing_time, laser_sitting_down_time, laser_winding_up_time, laser_linear_speed, laser_exponential_speed, laser_linear_threshold, laser_max_randomness, laser_prediction_length)
 );

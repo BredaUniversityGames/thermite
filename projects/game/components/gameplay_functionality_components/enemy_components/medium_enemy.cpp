@@ -85,10 +85,8 @@ void game::MediumEnemy::update(const tmt::FrameData& time) {
 
     auto& normal = (*nodes)[closest_node].normal;
 
-    tmt::Ray ray;
-    ray.origin = walking_transform.get_world_position() + normal * 0.5f;
-    ray.dir = glm::normalize(-normal);
-    const tmt::Hit hit = tmt::engine.renderer.trace_ray(ray);
+    const tmt::Ray ray = tmt::Ray(walking_transform.get_world_position() + normal * 0.5f, glm::normalize(-normal));
+    const tmt::Hit hit = tmt::engine.ecs.systems.get<tmt::Physics>().raycast(ray, projectile_mask);
 
     glm::vec3 move_to = ray.origin + ray.dir * hit.distance - ray.dir * (height_above_ground + height_above_ground_offset);
     glm::vec3 desired_velocity = glm::normalize(move_to - walking_transform.get_world_position()) * walk_speed * 0.5f;

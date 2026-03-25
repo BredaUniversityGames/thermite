@@ -39,6 +39,17 @@ void tag_invoke(ImReflect::ImInput_t, const char* name, game::MediumEnemy& value
 
     ImGui::Spacing();
 
+    /* ── Movement & Detection ────────────────────────── */
+    if (ImGui::TreeNodeEx("Projectile Masks", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImReflect::Input("Projectile Layer Mask", value.projectile_mask, type_settings, type_response);
+        help("Mask that only excludes enemy projectiles, so they don't collide with themselves");
+        ImReflect::Input("Projectile Layer", value.projectile_layer, type_settings, type_response);
+        help("Layer all projectiles are put on");
+        ImGui::TreePop();
+    }
+
+    ImGui::Spacing();
+
     /* ── Attacks ─────────────────────────────────────── */
     if (ImGui::TreeNodeEx("Attacks", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::Indent();
@@ -57,8 +68,6 @@ void tag_invoke(ImReflect::ImInput_t, const char* name, game::MediumEnemy& value
             ImReflect::Input("Stencil", value.stencil, type_settings, type_response);
             help("Stencil used for subtracting shapes from asteroids when missiles hit an asteroid");
             ImReflect::Input("Missile Voxel Body", value.missile_voxel_object, type_settings, type_response);
-            ImReflect::Input("Missile Layer Mask", value.projectile_mask, type_settings, type_response);
-            help("Mask that only excludes enemy projectiles, so they don't collide with themselves");
             ImReflect::Input("Missile Cooldown", value.missile_cooldown, type_settings, type_response);
             ImReflect::Input("Missile Burst", value.missile_burst, type_settings, type_response);
             help("Number of missiles launched in one burst");
