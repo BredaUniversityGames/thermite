@@ -53,6 +53,7 @@ void MenuController::update(const tmt::FrameData& time) {
 void MenuController::start() {
     // Bind end run to event
     tmt::engine.ecs.get_dispatcher().sink<EndRun>().connect<&MenuController::enable_end_of_game_menu>(this);
+    player_entity = tmt::engine.ecs.view<Player>().front().entity;  // Assuming there's only one player entity in the game
 }
 
 void MenuController::enable_pause_menu() const {
@@ -141,20 +142,18 @@ void MenuController::enable_end_of_game_menu(const EndRun& event) const {
     }
 }
 
-void MenuController::lock_mouse() {
+void MenuController::lock_mouse() const {
     tmt::engine.input.lock_mouse(true);
     tmt::engine.input.set_mouse_relative_to_window(true);
 
-    auto player_entity = tmt::engine.ecs.view<Player>().front().entity;  // Assuming there's only one player entity in the game
     // TODO this will get removed when proper game state are implemented
     tmt::engine.ecs.get_component<Player>(player_entity).set_state(PlayerState::FREEMOVING);
 }
 
-void MenuController::unlock_mouse() {
+void MenuController::unlock_mouse() const {
     tmt::engine.input.lock_mouse(false);
     tmt::engine.input.set_mouse_relative_to_window(false);
 
-    auto player_entity = tmt::engine.ecs.view<Player>().front().entity;  // Assuming there's only one player entity in the game
     // TODO this will get removed when proper game state are implemented
     tmt::engine.ecs.get_component<Player>(player_entity).set_state(PlayerState::PAUSED);
 }
