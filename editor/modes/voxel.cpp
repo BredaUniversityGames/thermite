@@ -75,8 +75,13 @@ void VoxelMode::on_switch_to(const std::any& meta_data) {
     Transform& light_transform = engine.ecs.get_component<Transform>(light_entity);
     light_transform = cached_light_offset;
     light_transform.set_parent(camera_follower);
-    
-    /* Disable TAA and kill active particles */
+
+    /* Create the default skybox entity */
+    Environment& environment = engine.ecs.create_entity<Environment>();
+    environment.resource = engine.resources.load_resource<Envmap>(IO::FileLocation { IO::Location::EDITOR, "volcanic_planet.hdr" });
+
+    /* Switch back display mode, disable TAA and kill active particles */
+    engine.renderer.display_mode = cached_display_mode;
     engine.renderer.enable_taa = false;
     engine.renderer.kill_particles = true;
 }
@@ -101,7 +106,8 @@ void VoxelMode::on_switch_away() {
     node_hierarchy.clear_root_entities();
     node_hierarchy.clear_selected_entities();
 
-    /* Re-enable TAA */
+    /* Save the display mode and re-enable TAA */
+    cached_display_mode = engine.renderer.display_mode;
     engine.renderer.enable_taa = true;
 }
 
