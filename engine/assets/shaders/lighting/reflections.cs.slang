@@ -199,8 +199,8 @@ RWTexture2D<float3> specular;
 [numthreads(16, 8, 1)]
 void main(int2 thread_id: SV_DispatchThreadID) {
     /* Quarter-rate shading */
-    // const int2 offset = int2(render_view.frame_index & 0b1, (render_view.frame_index >> 1) & 0b1);
-    const int2 pixel_id = (thread_id << 1); // + offset;
+    const int2 offset = int2(render_view.frame_index & 0b1, (render_view.frame_index >> 1) & 0b1);
+    const int2 pixel_id = (thread_id << 1) + offset;
 
     /* Bounds check */
     if (any(pixel_id >= render_view.resolution)) return;
@@ -225,7 +225,7 @@ void main(int2 thread_id: SV_DispatchThreadID) {
         return; /* No reflections */
     }
 
-    const float3 hit_point = ray.origin + ray.dir * geo.depth + geo.normal * 0.001f;
+    float3 hit_point = ray.origin + ray.dir * geo.depth + geo.normal * 0.001f;
 
     const float2 noise = r2(blue_noise[thread_id % 512].rg, render_view.frame_index % 1024u);
 
@@ -239,26 +239,38 @@ void main(int2 thread_id: SV_DispatchThreadID) {
 
     /* Importance sample specular lobe */
     const float alpha_2 = alpha * alpha;
-    const float3 wh = sample_vndf_bounded(wo, alpha, alpha_2, noise);
-    const float3 wi = normalize(reflect(-wo, wh));
-    // const float3 wi = sample_cone(float3(-wo.x, -wo.y, wo.z), cos(0.1f), noise);
-    // const float3 wh = normalize(wi + wo);
+    // const float3 wh = sample_vndf_bounded(wo, alpha, alpha_2, noise);
+    // const float3 wi = normalize(reflect(-wo, wh));
+    const float3 wi = sample_cone(float3(-wo.x, -wo.y, wo.z), cos(PI_F32 * 0.5f * alpha), noise);
+    const float3 wh = normalize(wi + wo);
 
     /* Ignore directions which lie underneath the horizon */
     // if (wi.z <= 0.0f) wi = float3(-wo.x, -wo.y, wo.z);
-    // if (wi.z <= 0.0f) {
-    //     specular[thread_id] = 0.0f;
-    //     return;
-    // }
-    const float3 sample_dir = normalize(mul(transpose(basis), wi));
+    if (wi.z <= 0.0f) {
+        specular[thread_id] = 0.0f;
+        return;
+    }
+    float3 sample_dir = normalize(mul(transpose(basis), wi));
 
     /* Evaluate the BSDF and PDF of the sample */
     const float pdf = 1.0f;  // pdf_vndf_isotropic(wo, wi, alpha, float3(0, 0, 1));
-    const float3 bsdf = specular_brdf(wi.z, wo.z, wh.z, dot(wo, wh), geo.material) / pdf;
+    const float3 bsdf = specular_brdf(wi.z, wo.z, wh.z, max(0.5f, dot(wo, wh)), geo.material) / pdf;
     // float3 wi;
     // const float3 bsdf = ImportanceSampleGgxD(wo, wi, alpha, eta, noise);
 
     /* Trace sample direction */
+    // Hit hit;
+    // for (int i = 0; i < 3; ++i) {
+    //     const Ray ray = custom_ray(hit_point, sample_dir);
+    //     hit = trace_bvh2<false>(tlas_nodes, object_indices, objects, ray, BIG_F32);
+    //     if (hit.t >= BIG_F32) break; /* Hit sky */
+
+    //     const Material mat = unpack_material(hit, objects);
+    //     if (mat.ior() <= 1.0f) break; /* Hit non-reflective surface */
+
+    //     hit_point = ray.origin + ray.dir * (hit.t - 0.0001f);
+    //     sample_dir = sample_cone(reflect(ray.dir, unpack_normal(hit, objects, ray)), cos(PI_F32 * 0.5f * mat.roughness() * mat.roughness()), noise);
+    // }
     const Hit hit = trace_bvh2<false>(tlas_nodes, object_indices, objects, custom_ray(hit_point, sample_dir), BIG_F32);
 
     float3 luminance;
@@ -269,10 +281,10 @@ void main(int2 thread_id: SV_DispatchThreadID) {
 
         /* Sample surface cache for diffuse reflection */
         const cache::Slot slot = cache::fetch(macrofacet_cache, pack_visibility(hit));
-        if (slot.key != cache::EMPTY_KEY) luminance += mat.albedo() * slot.read_diffuse();
+        if (slot.key != cache::EMPTY_KEY) luminance += mat.albedo() * slot.read_diffuse() * PI_F32;
     } else {
         const float2 uv = dir_to_latlong(sample_dir);
-        luminance = bindless::texture_sampled<Texture2D<float4>>(scene_view.envmap_full_handle).SampleLevel(envmap_sampler, uv, 0).rgb;
+        luminance = bindless::texture_sampled<Texture2D<float4>>(scene_view.envmap_filtered_handle).SampleLevel(envmap_sampler, uv, 0).rgb * PI_F32 * 2.0f;
     }
     luminance *= bsdf;
 

@@ -118,3 +118,14 @@ public [ForceInline] Material unpack_material(const Hit hit, StructuredBuffer<Vo
     /* Find the voxel material */
     return voxel_material(object, voxel_ptr);
 }
+
+/* Unpack voxel normal data from hit. */
+public [ForceInline] float3 unpack_normal(const Hit hit, StructuredBuffer<VoxelObject> objects, const Ray ray) {
+    const VoxelObject object = objects[hit.object_index];
+
+    /* Unpack the geometry normal (1b sign | 2b axis) */
+    float3 local_normal = 0.0f;
+    local_normal[hit.face_index & 0b11u] = (hit.face_index >> 2) == 0u ? -1.0f : 1.0f;
+    /* Use inverse ray direction as fallback normal for invalid values (3) */
+    return hit.face_index == 3u ? -ray.dir : normalize(mul(object.local_to_world, float4(local_normal, 0.0f)).xyz);
+}
