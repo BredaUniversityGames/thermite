@@ -78,13 +78,6 @@ void MenuController::enable_pause_menu() const {
     unlock_mouse();
     tmt::engine.ecs.enable(pause_menu_entity);
 
-    // Loop over all entities with WeaponManager component
-    // tmt::engine.ecs.view<game::WeaponManager>().each([&](tmt::Entity entity, game::WeaponManager& weapon_manager) {
-    //    // Save active weapon and unsubscribe
-    //    weapon_manager.last_used_weapon = weapon_manager.get_active_weapon();
-    //    weapon_manager.unsubscribe_weapon(weapon_manager.get_active_weapon());
-    //});
-
     // Dispatch game paused event
     tmt::engine.ecs.get_dispatcher().trigger(game::GamePausedEvent {});
 

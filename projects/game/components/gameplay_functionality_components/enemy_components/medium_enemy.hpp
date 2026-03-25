@@ -19,6 +19,11 @@ class MediumEnemy : public tmt::GameComponent<MediumEnemy> {
 
     void kite_player() const;
 
+    void on_game_paused(const game::GamePausedEvent&);
+    void on_game_unpaused(const game::GameUnpausedEvent&);
+
+    bool paused = false;
+
     tmt::Entity player = entt::null;
     tmt::Entity walkable_asteroid = entt::null;
     tmt::Entity missile_origin = entt::null;
