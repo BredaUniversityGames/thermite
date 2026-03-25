@@ -4,9 +4,12 @@
 
 #include "engine/core/renderer/renderer.hpp"
 #include "engine/core/polyline.hpp"
+#include "engine/core/components/voxel_renderer.hpp"
 
 #include "engine/systems/ai/goap/goap_system.hpp"
 #include "engine/systems/ai/navigation/nav_mesh.hpp"
+#include "engine/systems/physics/physics_system.hpp"
+#include "engine/systems/physics/components/voxel_body.hpp"
 
 void game::Missile::start() {
     auto& name = tmt::engine.ecs.get_component<tmt::Name>(entity);

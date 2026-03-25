@@ -12,6 +12,8 @@
 #include <cstdlib>
 
 #include "engine/core/renderer/renderer.hpp"
+#include "engine/systems/physics/physics_system.hpp"
+#include "engine/systems/physics/components/voxel_body.hpp"
 
 void FireLaser::on_start(tmt::Entity enemy_entity) {
     for (const auto& [cam_entity, camera] : tmt::engine.ecs.view<tmt::Camera>().each()) {

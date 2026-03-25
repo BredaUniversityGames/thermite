@@ -6,6 +6,7 @@
 
 #include "engine/systems/ai/goap/goap_system.hpp"
 #include "engine/systems/ai/navigation/nav_mesh.hpp"
+#include "engine/systems/physics/physics_system.hpp"
 
 #include "engine\core\components\voxel_renderer.hpp"
 

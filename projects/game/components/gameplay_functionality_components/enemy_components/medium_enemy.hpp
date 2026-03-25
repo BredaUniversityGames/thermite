@@ -5,6 +5,7 @@
 #include "engine/core/resources/stencil.hpp"
 
 #include "projects/game/components/managers/ore_manager.hpp"
+#include "projects/game/data_headers/layer_mask.hpp"
 
 namespace game {
 
