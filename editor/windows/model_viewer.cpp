@@ -15,6 +15,7 @@
 #include "editor/windows/palette.hpp"
 #include "editor/windows/node_hierarchy.hpp"
 #include "editor/windows/brush.hpp"
+#include "editor/shared/colors.hpp"
 
 namespace tmt {
 
@@ -83,7 +84,7 @@ FaceData calculate_face_info(const int32_t face_index, const Transform& transfor
 }
 
 // Draw a single face of a voxel grid bounding box.
-bool draw_face(const FaceData& info, const Transform& transform, const glm::vec3& half_extent) {
+bool draw_face(const FaceData& info, const Transform& transform, const glm::vec3& half_extent, const glm::vec3 color = glm::vec3(1.0f)) {
     const glm::vec3 camera_position = engine.renderer.get_debug_transform().get_world_position();
     if (glm::dot(info.world_normal, camera_position - info.face_center) >= 0.0f) return false;
 
@@ -117,7 +118,7 @@ bool draw_face(const FaceData& info, const Transform& transform, const glm::vec3
 
     // Draw the lines between the points to make the grid face.
     engine.polyline.use_line_width(2.0f, true);
-    engine.polyline.use_color(glm::vec4 { 0.8f, 0.8f, 0.8f, 1.0f });
+    engine.polyline.use_color(color);
 
     engine.polyline.draw_line(p0, p1);
     engine.polyline.draw_line(p1, p2);
@@ -170,13 +171,13 @@ void draw_selection(const Hit& hit, const glm::vec3& half_extent, const Transfor
     engine.polyline.draw_obb(world_voxel_pos, VOXEL_SIZE_HALF * local_scale, transform.get_world_rotation());
 }
 
-std::vector<FaceData> draw_valid_faces(const Transform& transform, const glm::vec3& half_extent) {
+std::vector<FaceData> draw_valid_faces(const Transform& transform, const glm::vec3& half_extent, const glm::vec3 color = glm::vec3(1.0f)) {
     std::vector<FaceData> valid_faces;
 
     for (int32_t i = 0; i < 6; i++) {
         FaceData face = calculate_face_info(i, transform, half_extent);
 
-        if (draw_face(face, transform, half_extent)) valid_faces.push_back(face);  // Don't add the face to the vector if `draw_face` returned false aka we can't see it.
+        if (draw_face(face, transform, half_extent, color)) valid_faces.push_back(face);  // Don't add the face to the vector if `draw_face` returned false aka we can't see it.
     }
 
     return valid_faces;
@@ -200,7 +201,7 @@ bool handle_selection(
     if (!is_face_hit) {
         if (brush_state.tool != Brush::Tool::COLOR_PICKER && brush_state.mode == Brush::Mode::ATTACH) {
             // If we can hit a face, that means we want to work on top of the voxel the mouse is pointing at, we get the voxel coord by adjusting it here.
-            const glm::vec3 local_normal = world_to_local_matrix * glm::vec4 { hit.normal, 0.0f };
+            const glm::vec3 local_normal = glm::normalize(glm::vec3(world_to_local_matrix * glm::vec4 { hit.normal, 0.0f }));
             const glm::uvec3 voxel_grid_normal { glm::round(local_normal) };
             hit.coord += voxel_grid_normal;
         }
@@ -360,28 +361,31 @@ void handle_brush(const Brush::State brush_state, const ResourceRef<VoxelVolume>
 
             static glm::uvec3 start_coord { std::numeric_limits<uint32_t>::max() };
             if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) start_coord = hit.coord;
-
             const glm::uvec3& end_coord = hit.coord;
 
-            // Calculate the middle point of the selected volume of voxels.
-            const glm::vec3 selection_middle = glm::vec3 { start_coord + end_coord + 1u } * VOXEL_SIZE_HALF;
+            // Find the bounded start and end coordinates.
+            const glm::uvec3 start_bounded = glm::min(start_coord, model->size - 1u);
+            const glm::uvec3 end_bounded = glm::min(end_coord, model->size - 1u);
 
             // Calculate the half extent of the selected volume of voxels (requires min and max to correctly account for the start and end voxels).
-            const glm::uvec3 min = glm::min(start_coord, end_coord);
-            const glm::uvec3 max = glm::max(start_coord, end_coord);
-            const glm::vec3 select_half_extent = (glm::vec3 { min } - glm::vec3 { max } - 1.0f) * VOXEL_SIZE_HALF;
+            const glm::uvec3 min = glm::min(start_bounded, end_bounded);
+            const glm::uvec3 max = glm::max(start_bounded, end_bounded);
 
             const Transform& transform = engine.ecs.get_component<Transform>(hit.entity);
             const glm::vec3 half_extent = glm::vec3 { model->size } * VOXEL_SIZE_HALF;
-            const glm::vec3 world_position = transform.get_world_matrix() * glm::vec4 { selection_middle - half_extent, 1.0f };
 
-            engine.polyline.draw_obb(world_position, select_half_extent, transform.get_world_rotation());
+            // Find the world min and max position, use those to find the center and half extent.
+            const glm::vec3 world_min = transform.get_world_matrix() * glm::vec4 { glm::vec3(min) * UNITS_PER_VOXEL - half_extent, 1.0f };
+            const glm::vec3 world_max = transform.get_world_matrix() * glm::vec4 { glm::vec3(max + 1u) * UNITS_PER_VOXEL - half_extent, 1.0f };
+            const glm::vec3 select_half_extent = glm::vec3(max - min + 1u) * VOXEL_SIZE_HALF * transform.get_world_scale();
+            const glm::vec3 select_center = (world_min + world_max) * 0.5f;
+
+            engine.polyline.draw_obb(select_center, select_half_extent, transform.get_world_rotation());
 
             // Releasing the mouse button to modify the area.
             if (!ImGui::IsMouseReleased(ImGuiMouseButton_Left)) break;
 
             modify_voxel_volume(model, brush_state.mode, min, max, material_index);
-
             break;
         }
 
@@ -491,6 +495,16 @@ void ModelViewer::on_inspect() {
     NodeHierarchy& node_hierarchy = editor.systems[Editor::Mode::VOXEL].get<NodeHierarchy>();
     const Entity selected_entity = node_hierarchy.get_first_selected_entity();
 
+    // Draw bounding boxes of all selected entities.
+    for (const Entity e : node_hierarchy.get_selected_entities()) {
+        if (e == selected_entity || !engine.ecs.has_component<VoxelRenderer>(e)) continue;
+
+        const Transform& transform = engine.ecs.get_component<Transform>(e);
+        const ResourceRef<VoxelVolume>& resource = engine.ecs.get_component<VoxelRenderer>(e).resource;
+        const glm::vec3 half_extent = glm::vec3 { resource->size } * VOXEL_SIZE_HALF;
+        draw_valid_faces(transform, half_extent, colors::SELECTED);
+    }
+
     if (!engine.ecs.valid(selected_entity) || !engine.ecs.has_component<VoxelRenderer>(selected_entity)) return;
 
     // Get the necessary values for handling selection (entity transform, voxel resource, ray cast for selection, etc).
@@ -503,7 +517,7 @@ void ModelViewer::on_inspect() {
 
     if (glm::any(glm::greaterThanEqual(hit.coord, resource->size))) hit.entity = entt::null;
 
-    const std::vector<FaceData> valid_faces = draw_valid_faces(transform, half_extent);
+    const std::vector<FaceData> valid_faces = draw_valid_faces(transform, half_extent, colors::SELECTED);
 
     // Don't calculate voxel hits when the cursor isn't over the window or using gizmo.
     if (!ImGui::IsWindowHovered() || is_tool_gizmo) return;

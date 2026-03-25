@@ -6,18 +6,17 @@
 
 void game::CollisionTrigger::fixed_update(const tmt::FrameData& time) {
     // TODO update aabb in case this moves
-    const auto& bvh = tmt::engine.ecs.systems.get<tmt::Physics>().get_bvh();
+    // const auto& bvh = tmt::engine.ecs.systems.get<tmt::Physics>().get_bvh();
+    const auto& physics = tmt::engine.ecs.systems.get<tmt::Physics>();
     // TODO mask it
 
     auto world_aabb = get_aabb_world();
 
-    auto overlap_hits = bvh.overlap({ world_aabb.min_bounds, world_aabb.max_bounds });
+    auto overlap_hits = physics.overlap({ world_aabb.min_bounds, world_aabb.max_bounds }, layer_mask);
     if (!overlap_hits.empty()) {
-        auto group = tmt::engine.ecs.group<tmt::VoxelBody>(entt::get<tmt::Transform>);
         for (uint32_t hit : overlap_hits) {
-            tmt::Entity other_entity = group[hit];
+            tmt::Entity other_entity = tmt::engine.ecs.systems.get<tmt::Physics>().get_entities()[hit];
             // do stuff with the entity
-            // TODO for now just kill it
             tmt::engine.ecs.get_dispatcher().trigger(TriggerCollisionEvent { .trigger = entity, .other_object = other_entity });
         }
     }

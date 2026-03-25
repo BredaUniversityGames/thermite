@@ -182,7 +182,6 @@ void Hierarchy::context_menu(const Entity hovered_entity) {
         if (selected_entities.size() == 1 && is_playing == false) { /* Make Prefab */
             ImGui::Separator();
             const auto text = "Make Prefab...";
-            // TODO: give extra pop-up for name
             if (ImGui::MenuItem(text)) {
                 ImGui::OpenPopup(prefab_popup_id);
                 ImGui::CloseCurrentPopup();
@@ -206,6 +205,7 @@ void Hierarchy::context_menu(const Entity hovered_entity) {
                     PrefabHelper::create_prefab(temp_location, root_entity);
                     prefab_name = "NewPrefab";
                     ImGui::CloseCurrentPopup();
+                    OnSceneModified::dispatch();
                 } else {
                     error_message = "Selected entity is already part of a prefab, cannot create prefab from it.";
                 }
@@ -314,6 +314,7 @@ void Hierarchy::delete_selection() {
         tmt::engine.ecs.destroy_entity(selected);
     }
     clear_selection();
+    OnSceneModified::dispatch();
 }
 
 void Hierarchy::clear_selection() {
@@ -419,8 +420,7 @@ void Hierarchy::top_bar() {
             ImGui::EndMenu();
         }
 
-        ImGui::Text(ICON_MS_FILTER_ALT);
-        ImGui::InputText("##" ICON_MS_FILTER_ALT, &filter);
+        ImGui::InputTextWithHint("##EntitySearch", ICON_MS_SEARCH " Search entities...", &filter);
 
         ImGui::EndMenuBar();
     }
@@ -437,7 +437,12 @@ bool Hierarchy::display_entity(const HierarchyState& state, uint32_t& row) {
 
     const bool filtering = filter.empty() == false;
     if (filtering) {
-        if (state.name.name.find(filter) == std::string::npos) {
+        /* Lower case everything */
+        std::string name_lower = state.name.name;
+        std::string filter_lower = filter;
+        std::transform(name_lower.begin(), name_lower.end(), name_lower.begin(), ::tolower);
+        std::transform(filter_lower.begin(), filter_lower.end(), filter_lower.begin(), ::tolower);
+        if (name_lower.find(filter_lower) == std::string::npos) {
             return false;
         }
     } else {

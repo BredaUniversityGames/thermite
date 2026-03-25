@@ -17,6 +17,7 @@
 #include "engine/core/components/prefab.hpp"
 #include "engine/core/components/light.hpp"
 #include "engine/core/components/emitter.hpp"
+#include "engine/core/components/cell_grouper_tag.hpp"
 #include "engine/core/components/ui_component.hpp"
 #include "engine/core/components/image_renderer.hpp"
 #include "engine/core/components/button.hpp"
@@ -28,6 +29,7 @@
 #include "engine/systems/ai/goap/components/goap_goal.hpp"
 #include "engine/systems/ai/goap/components/goap_action.hpp"
 #include "engine/systems/ai/goap/components/world_state.hpp"
+#include "engine/core/components/rig_controller.hpp"
 
 namespace tmt {
 
@@ -35,9 +37,10 @@ namespace tmt {
 using SerializeComponents = ComponentRegistry<
 	/* Order in which components are serialized */
 	Prefab,
-	Name, 
+	Name,
 	Transform, 
 	DisableFlag,
+	tmt::LevelCellGrouperTag,
 	VoxelRenderer, 
 	Environment,
 	Camera,
@@ -58,10 +61,12 @@ using SerializeComponents = ComponentRegistry<
 	UIComponent,
 	ImageRenderer,
 	Button,
+	BoneComp,
 	RigModel,
 	GoapAgentType,
 	GoapAgentTypeRef,
-	WorldState
+	WorldState,
+	RigController
 >;
 // clang-format on
 
@@ -93,7 +98,8 @@ using InspectComponents = ComponentRegistry<
 	RigModel,
 	GoapAgentType,
 	GoapAgentTypeRef,
-	WorldState
+	WorldState,
+	RigController
 >;
 // clang-format on
 

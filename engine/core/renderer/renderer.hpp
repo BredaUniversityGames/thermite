@@ -1,9 +1,5 @@
 #pragma once
 
-#include <vector>
-
-#include <glm/gtc/quaternion.hpp>
-
 #include "render_view.hpp"
 #include "scene_view.hpp"
 
@@ -27,6 +23,11 @@ enum class DisplayMode : uint32_t {
     MOTIONVECTORS, /* Visualize motion vectors. */
 };
 
+struct RendererSettings {
+    float bloom_radius = 0.2f;
+    float bloom_threshold = 1.0f;
+};
+
 class Renderer {
     GPUAdapter& gpu;
     RenderGraph& render_graph;
@@ -46,6 +47,8 @@ class Renderer {
     /* Display mode for debugging */
     DisplayMode display_mode = DisplayMode::DEFAULT;
     bool enable_taa = true;
+    bool kill_particles = false;
+    float bloom_radius = 0.25f;
 
     /* Pipelines */
     class GeometryPipeline& geometry_pipeline;
@@ -53,6 +56,7 @@ class Renderer {
     class PolylinePipeline& polyline_pipeline;
     class VfxPipeline& vfx_pipeline;
     class UiPipeline& ui_pipeline;
+    class PostProcessPipeline& post_process_pipeline;
 
 #ifdef THERMITE_EDITOR
     ImGUI* imgui = nullptr;
@@ -88,3 +92,5 @@ class Renderer {
 };
 
 }  // namespace tmt
+
+TMT_OBJECT(tmt::RendererSettings, (bloom_radius));
