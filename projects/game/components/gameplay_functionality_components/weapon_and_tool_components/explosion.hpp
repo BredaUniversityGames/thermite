@@ -2,6 +2,7 @@
 #include "engine/systems/gameplay/game_component.hpp"
 #include "projects/game/data_headers/layer_mask.hpp"
 
+#include "engine/tools/types/bezier_curve.hpp"
 namespace game {
 
 struct ExplosionParameters {
