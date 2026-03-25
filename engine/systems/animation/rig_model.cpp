@@ -100,6 +100,11 @@ void RigModel::recurse(const ResourceRef<VoxelScene>& scene, const VoxelSceneNod
 };
 
 void RigModel::attach_voxel_objects() {
+    if (!VoxelScene::SUPPORTED_FILE_EXTENSIONS.contains(vox_path.relative_path.extension().generic_string())) {
+        Log::error("Failed to attach voxel objects, file isn't a voxel file: {}", vox_path);
+        return;
+    }
+
     // Load the voxel scene and populate entities by recursing through nodes
     const auto voxel_file = engine.resources.load_resource<VoxelScene>(vox_path);
     const glm::vec3 armature_pos = engine.ecs.get_component<Transform>(armature_entity).get_world_position();
