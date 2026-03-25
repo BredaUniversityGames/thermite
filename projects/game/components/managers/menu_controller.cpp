@@ -113,9 +113,15 @@ void MenuController::disable_upgrade_menu() const {
 }
 
 void MenuController::enable_end_of_game_menu(const EndRun& event) const {
-    tmt::engine.ecs.disable(pause_menu_entity);
-    tmt::engine.ecs.disable(upgrade_menu_entity);
-    tmt::engine.ecs.disable(inventory_menu_entity);
+    if (pause_menu_entity != entt::null) {
+        tmt::engine.ecs.disable(pause_menu_entity);
+    }
+    if (upgrade_menu_entity != entt::null) {
+        tmt::engine.ecs.disable(upgrade_menu_entity);
+    }
+    if (inventory_menu_entity != entt::null) {
+        tmt::engine.ecs.disable(inventory_menu_entity);
+    }
 
     // Open end of game menu
     if (event.player_dead) {
