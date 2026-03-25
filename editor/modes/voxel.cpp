@@ -66,8 +66,17 @@ void VoxelMode::on_switch_to(const std::any& meta_data) {
 
     edit_data.clear();
 
-    /* Switch to the albedo display mode, disable TAA and kill active particles */
-    engine.renderer.display_mode = DisplayMode::ALBEDO;
+    /* Create the camera follower and light that follows the camera */
+    const Entity camera_follower = engine.ecs.create_entity("CameraFollower");
+
+    const Entity light_entity = engine.ecs.create_entity("Light");
+    engine.ecs.add_component<Light>(light_entity) = cached_editor_light;
+
+    Transform& light_transform = engine.ecs.get_component<Transform>(light_entity);
+    light_transform = cached_light_offset;
+    light_transform.set_parent(camera_follower);
+    
+    /* Disable TAA and kill active particles */
     engine.renderer.enable_taa = false;
     engine.renderer.kill_particles = true;
 }
@@ -85,11 +94,14 @@ void VoxelMode::on_switch_away() {
     cached_editor_camera = engine.renderer.get_debug_camera();
     cached_editor_transform = engine.renderer.get_debug_transform();
 
+    const Entity light = engine.ecs.view<Light>().front();
+    cached_editor_light = engine.ecs.get_component<Light>(light);
+    cached_light_offset = engine.ecs.get_component<Transform>(light);
+
     node_hierarchy.clear_root_entities();
     node_hierarchy.clear_selected_entities();
 
-    /* Switch back to the default display mode, and re-enable TAA */
-    engine.renderer.display_mode = DisplayMode::DEFAULT;
+    /* Re-enable TAA */
     engine.renderer.enable_taa = true;
 }
 
