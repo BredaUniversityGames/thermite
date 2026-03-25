@@ -4,8 +4,6 @@
 #include "medium_enemy.hpp"
 #include "../../../editor/all.hpp"
 
-class game::MediumEnemy;
-
 namespace game {
 
 struct Missile : public tmt::GameComponent<Missile> {
@@ -31,4 +29,4 @@ struct Missile : public tmt::GameComponent<Missile> {
     float damage = 10.0f;
 };
 
-}  // namespace gaem
+}  // namespace game

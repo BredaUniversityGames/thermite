@@ -80,7 +80,7 @@ void FireLaser::on_tick(tmt::Entity enemy_entity, float dt) {
                 auto& voxel_body = tmt::engine.ecs.add_component<tmt::VoxelBody>(laser_entity);
                 voxel_body.layer = enemy.projectile_layer;
                 voxel_body.type = tmt::VoxelBody::STATIC;
-                
+
                 state = FIRING;
                 time = 0.0f;
             }
@@ -93,10 +93,10 @@ void FireLaser::on_tick(tmt::Entity enemy_entity, float dt) {
                 state = WINDING_UP;
                 enemy.laser_timer = 0.0f;
                 enemy.height_above_ground_offset = 0.0f;
-                auto ws = tmt::engine.ecs.try_get_component<tmt::WorldState>(enemy_entity);
+                auto* ws = tmt::engine.ecs.try_get_component<tmt::WorldState>(enemy_entity);
                 if (!ws) return;
                 ws->set_fact(tmt::FactId("m_laser_ready"), false);
-                
+
                 return;
             }
             auto linear_target_pos = target_pos;
@@ -143,8 +143,8 @@ void FireLaser::on_tick(tmt::Entity enemy_entity, float dt) {
             const tmt::Ray ray_cast = tmt::Ray(laser_pos, glm::normalize(direction));
             const tmt::Hit laser_hit = tmt::engine.ecs.systems.get<tmt::Physics>().raycast(ray_cast, enemy.projectile_mask);
             auto hit_pos = laser_pos + direction * laser_hit.distance;
-            
-            //scale laser voxel object between laser hit and laser pos
+
+            // scale laser voxel object between laser hit and laser pos
             auto& laser_transform = tmt::engine.ecs.get_component<tmt::Transform>(laser_entity);
             glm::vec3 end_pos = (laser_hit.entity != entt::null) ? hit_pos : (laser_pos + direction * 50.0f);  // fallback if no hit
             float laser_length = glm::distance(laser_pos, end_pos);
@@ -153,7 +153,7 @@ void FireLaser::on_tick(tmt::Entity enemy_entity, float dt) {
 
             glm::vec3 up = (glm::abs(glm::dot(direction, glm::vec3(0.0f, 1.0f, 0.0f))) < 0.99f) ? glm::vec3(0.0f, 1.0f, 0.0f) : glm::vec3(0.0f, 0.0f, 1.0f);
             laser_transform.set_world_rotation(glm::quatLookAt(direction, up));
-            //laser is 1 long on z axis
+            // laser is 1 long on z axis
             laser_transform.set_world_scale(glm::vec3(0.1f, 0.1f, laser_length));
 
             break;
@@ -166,4 +166,18 @@ void FireLaser::on_tick(tmt::Entity enemy_entity, float dt) {
 
 bool FireLaser::is_done(tmt::Entity /*enemy_entity*/) const {
     return false;
+}
+
+void FireLaser::on_interrupt(tmt::Entity enemy_entity) {
+    game::MediumEnemy& enemy = tmt::engine.ecs.get_component<game::MediumEnemy>(enemy_entity);
+    if (tmt::engine.ecs.valid(laser_entity)) {
+        tmt::engine.ecs.destroy_entity(laser_entity);
+    }
+    laser_entity = entt::null;
+    state = WINDING_UP;
+    enemy.laser_timer = 0.0f;
+    enemy.height_above_ground_offset = 0.0f;
+    auto* ws = tmt::engine.ecs.try_get_component<tmt::WorldState>(enemy_entity);
+    if (!ws) return;
+    ws->set_fact(tmt::FactId("m_laser_ready"), false);
 }

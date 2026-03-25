@@ -20,7 +20,7 @@ class FireLaser : public tmt::GoapAction {
 
     tmt::Entity player = entt::null;
     tmt::Entity laser_entity = entt::null;
-    std::vector<tmt::Entity> laser_charge_entities; 
+    std::vector<tmt::Entity> laser_charge_entities;
 
     float time = 0.0f;
     float original_height = 0.0f;
@@ -36,4 +36,5 @@ class FireLaser : public tmt::GoapAction {
     void on_tick(tmt::Entity agent, float dt) override;
     bool is_done(tmt::Entity agent) const override;
     void on_finished(tmt::Entity) override {}
+    void on_interrupt(tmt::Entity) override;
 };

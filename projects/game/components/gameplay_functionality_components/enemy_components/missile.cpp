@@ -79,7 +79,7 @@ void game::Missile::update(const tmt::FrameData& time) {
             home_contribution = glm::normalize(to_player) * enemy.home_speed * home_t;
         }
     }
-    
+
     // slow down homing towards end of life
     if (life_time > enemy.slow_homing_accuracy_after && glm::dot(velocity, velocity) > 0.0001f) {
         float max_slowing_time = enemy.life_time - enemy.slow_homing_accuracy_after;
@@ -100,7 +100,7 @@ void game::Missile::update(const tmt::FrameData& time) {
     velocity *= 0.7f;
     position.translate(velocity * time.delta_time);
 
-    //missile rotation
+    // missile rotation
     if (glm::dot(velocity, velocity) > 0.0001f) {
         glm::vec3 forward = glm::normalize(velocity);
         glm::vec3 up = (glm::abs(glm::dot(forward, ground_up)) < 0.99f) ? ground_up : glm::vec3(0.0f, 1.0f, 0.0f);

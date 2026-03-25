@@ -37,14 +37,21 @@ void FireMissiles::on_tick(tmt::Entity enemy_entity, float dt) {
 
     if (missiles == 0) {
         auto& enemy = tmt::engine.ecs.get_component<game::MediumEnemy>(enemy_entity);
-        enemy.missile_timer = interval_timer * enemy.missile_burst;
+        enemy.missile_timer = 0.0f;
         auto* ws = tmt::engine.ecs.try_get_component<tmt::WorldState>(enemy_entity);
         if (!ws) return;
-        // ws->facts[std::hash<std::string>()("m_missiles_ready")] = false;
         ws->set_fact(tmt::FactId("m_missiles_ready"), false);
     }
 }
 
 bool FireMissiles::is_done(tmt::Entity /*enemy_entity*/) const {
     return false;
+}
+
+void FireMissiles::on_interrupt(tmt::Entity enemy_entity) {
+    auto& enemy = tmt::engine.ecs.get_component<game::MediumEnemy>(enemy_entity);
+    enemy.missile_timer = 0.0f;
+    auto* ws = tmt::engine.ecs.try_get_component<tmt::WorldState>(enemy_entity);
+    if (!ws) return;
+    ws->set_fact(tmt::FactId("m_missiles_ready"), false);
 }

@@ -14,7 +14,7 @@ void game::MediumEnemy::start() {
         player = CamEntity;
         break;
     }
-    
+
     // Set ore manager
     auto ore_manager_view = tmt::engine.ecs.view<OreManager>();
     if (!ore_manager_view.empty()) {
@@ -31,7 +31,7 @@ void game::MediumEnemy::update(const tmt::FrameData& time) {
     tmt::Transform& walking_transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
 
     // world state update
-    auto ws = tmt::engine.ecs.try_get_component<tmt::WorldState>(entity);
+    auto* ws = tmt::engine.ecs.try_get_component<tmt::WorldState>(entity);
     if (!ws) return;
     const auto& player_pos = tmt::engine.ecs.get_component<tmt::Transform>(player).get_world_position();
     float dist = glm::length(player_pos - walking_transform.get_world_position());
@@ -79,7 +79,7 @@ void game::MediumEnemy::update(const tmt::FrameData& time) {
 
     // height correction
     auto& nav_mesh = tmt::engine.ecs.get_component<tmt::NavMesh>(walkable_asteroid);
-    auto nodes = nav_mesh.nodes_mesh;
+    auto* nodes = nav_mesh.nodes_mesh;
     if (nodes->empty()) return;
     int closest_node = nav_mesh.find_closest_node(walking_transform.get_world_position());
 
