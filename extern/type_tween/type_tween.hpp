@@ -49,15 +49,27 @@ enum class LoopMode : uint8_t {
 };
 
 /* Forward declarations */
+
+/* Primary template, should be specialized for each type we want to tween */
+/* Requiresments:
+ * - Must inherit from Detail::TweenBase<ITween<T, Args...>>
+ * - Must provide a static create function that returns an instance of the tween
+ * - Must implement the interpolation logic in the interpolate function, which takes a TweenFrame as input
+ * - [Optional] Should implement FromToMixin, for providing from/to functions and storing start/end values
+ * - [Optional] Should implement TypedCallbackMixin, for providing on_update callbacks with the correct type
+ *
+ * See ``ITween<T>`` Default specialization for an example of how to implement a tween specialization
+ */
 template <typename T, typename... Args>
-class ITween; /* Primary template, should be specialized for each type we want to tween */
+class ITween;
 
 namespace Detail {
 
+/* Mixin to inject control functions into ITween specializations and convert to Tween handle */
 template <typename D>
-class ControllableMixin; /* Mixin to inject control functions into ITween specializations and convert to Tween handle */
+class ControllableMixin;
 
-}
+}  // namespace Detail
 
 /* Handle to control a tween after creation, can be used to stop, start, restart, or finish the tween. */
 class Tween {
@@ -173,7 +185,7 @@ namespace Detail {
 struct Default {};
 
 struct TweenFrame {
-    float alpha; /* In Seconds */
+    float alpha; /* Normalized time in the current tween cycle, between 0 and 1 */
     uint64_t frame_count;
 };
 
@@ -339,6 +351,85 @@ class RepeatMixin {
     int repeat_count = 0;
 };
 
+/* Implemented and handled by Tweenbase */
+template <typename Derived>
+class CallbackMixin {
+   public:
+    /* Fires on the very first tick, before start_delay */
+    Derived& on_pre_start(std::function<void()> cb) {
+        on_pre_start_cb = std::move(cb);
+        return static_cast<Derived&>(*this);
+    }
+    /* Fires when animation begins, after start_delay */
+    Derived& on_start(std::function<void()> cb) {
+        on_start_cb = std::move(cb);
+        return static_cast<Derived&>(*this);
+    }
+    /* Fires at the beginning of each cycle (including the first) */
+    Derived& on_cycle_begin(std::function<void()> cb) {
+        on_cycle_begin_cb = std::move(cb);
+        return static_cast<Derived&>(*this);
+    }
+    /* PING_PONG only: fires when the forward pass reaches t=1, before reverse_delay */
+    Derived& on_forward_end(std::function<void()> cb) {
+        on_forward_end_cb = std::move(cb);
+        return static_cast<Derived&>(*this);
+    }
+    /* PING_PONG only: fires when the reverse pass begins, after reverse_delay */
+    Derived& on_reverse_begin(std::function<void()> cb) {
+        on_reverse_begin_cb = std::move(cb);
+        return static_cast<Derived&>(*this);
+    }
+    /* PING_PONG only: fires when the reverse pass ends */
+    Derived& on_reverse_end(std::function<void()> cb) {
+        on_reverse_end_cb = std::move(cb);
+        return static_cast<Derived&>(*this);
+    }
+    /* Fires at the end of each cycle */
+    Derived& on_cycle_end(std::function<void()> cb) {
+        on_cycle_end_cb = std::move(cb);
+        return static_cast<Derived&>(*this);
+    }
+    /* Fires after repeat_delay, just before the next cycle begins */
+    Derived& on_repeat(std::function<void()> cb) {
+        on_repeat_cb = std::move(cb);
+        return static_cast<Derived&>(*this);
+    }
+    /* Fires once when all cycles and end_delay are complete */
+    Derived& on_complete(std::function<void()> cb) {
+        on_complete_cb = std::move(cb);
+        return static_cast<Derived&>(*this);
+    }
+
+   protected:
+    std::function<void()> on_pre_start_cb;
+    std::function<void()> on_start_cb;
+    std::function<void()> on_cycle_begin_cb;
+    std::function<void()> on_forward_end_cb;
+    std::function<void()> on_reverse_begin_cb;
+    std::function<void()> on_reverse_end_cb;
+    std::function<void()> on_cycle_end_cb;
+    std::function<void()> on_repeat_cb;
+    std::function<void()> on_complete_cb;
+};
+
+/* Needs to be Implemented and handled by ITween specialization */
+template <typename Derived, typename T>
+class TypedCallbackMixin {
+   public:
+    Derived& on_update(std::function<void(float, T)> cb) {
+        on_update_cb = std::move(cb);
+        return static_cast<Derived&>(*this);
+    }
+
+    void call_update(float t, T value) {
+        if (on_update_cb) on_update_cb(t, value);
+    }
+
+   protected:
+    std::function<void(float, T)> on_update_cb;
+};
+
 template <typename Derived>
 class ControllableMixin {
    public:
@@ -365,7 +456,9 @@ class ControllableMixin {
     void do_restart() {
         /* Reach up to into time mixin */
         static_assert(std::derived_from<Derived, TimeMixin<Derived>>, "Restart requires TimeMixin");
-        static_cast<Derived*>(this)->get_elapsed_time() = 0.0f;
+        auto* d = static_cast<Derived*>(this);
+        d->get_elapsed_time() = 0.0f;
+        d->reset_playback_state();
         paused = false;
     }
 
@@ -411,12 +504,20 @@ class SubTweenMixin {
     Parent* parent = nullptr;
 };
 
+enum class CyclePhase : uint8_t {
+    FORWARD,       /* 0 -> 1 */
+    REVERSE_DELAY, /* hold at t=1 before reversing (PING_PONG only) */
+    REVERSE,       /* 1 -> 0 animation (PING_PONG only) */
+    REPEAT_DELAY,  /* hold at terminal value before next cycle */
+};
+
 template <typename Derived>
-class TweenBase : public EaseMixin<Derived>, /*<br>*/
+class TweenBase : public EaseMixin<Derived>,
                   public TimeMixin<Derived>,
                   public LoopMixin<Derived>,
                   public RepeatMixin<Derived>,
-                  public ControllableMixin<Derived> {
+                  public ControllableMixin<Derived>,
+                  public CallbackMixin<Derived> {
    public:
     void tick(const float delta_time) {
         if (this->is_paused()) return;
@@ -430,116 +531,197 @@ class TweenBase : public EaseMixin<Derived>, /*<br>*/
         const float end_delay = this->get_end_delay();
         const float cycle = compute_cycle_time(duration, rev_delay, rep_delay, this->get_loop_mode());
 
+        /* on_pre_start: fires on the very first tick, before start_delay */
+        if (!pre_start_fired) {
+            pre_start_fired = true;
+            if (this->on_pre_start_cb) this->on_pre_start_cb();
+        }
+
         elapsed += delta_time;
 
-        /* Clamp to the maximum meaningful time so we never overshoot */
         if (this->get_repeat_count() >= 0) {
             const float total_anim = cycle * (this->get_repeat_count() + 1) - rep_delay;
             const float max_elapsed = start_delay + total_anim + end_delay;
             elapsed = std::min(elapsed, max_elapsed);
         }
 
-        /* --- Phase 1: start delay --- */
+        /* Phase 1: start delay */
         if (elapsed < start_delay) return;
 
         const float anim_elapsed = elapsed - start_delay;
-
         const float total_anim_time = (this->get_repeat_count() >= 0) ? cycle * (this->get_repeat_count() + 1) - rep_delay : std::numeric_limits<float>::max();
 
-        /* --- Phase 3: end delay (with one-shot finalisation) --- */
+        /* Phase 3: end delay */
         if (anim_elapsed >= total_anim_time) {
             if (!finalized) {
                 finalized = true;
+
+                /* Degenerate: duration == 0, never passed through Phase 2 */
+                if (frame_count == 0) {
+                    if (this->on_start_cb) this->on_start_cb();
+                    if (this->on_cycle_begin_cb) this->on_cycle_begin_cb();
+                }
+
+                /* End-of-last-cycle callbacks.
+                   Guard against double-firing: if last_sub_phase == REPEAT_DELAY
+                   then on_cycle_end already fired when we entered that hold. */
+                if (last_sub_phase != CyclePhase::REPEAT_DELAY) {
+                    if (last_sub_phase == CyclePhase::REVERSE && this->on_reverse_end_cb) this->on_reverse_end_cb();
+                    if (this->on_cycle_end_cb) this->on_cycle_end_cb();
+                }
+
                 const float last_anim = std::nextafter(total_anim_time, 0.0f);
                 bool is_reversing = false;
-                const float computed = compute_progress(last_anim, duration, rev_delay, rep_delay, is_reversing);
+                CyclePhase phase = CyclePhase::FORWARD;
+                const float computed = compute_progress(last_anim, duration, rev_delay, rep_delay, is_reversing, phase);
+
                 float t;
-                if (is_reversing && this->has_reverse_ease) {
+                if (is_reversing && this->has_reverse_ease)
                     t = apply_ease(computed, this->reverse_ease_value);
-                } else if (is_reversing) {
+                else if (is_reversing)
                     t = 1.0f - apply_ease(1.0f - computed, this->ease_value);
-                } else {
+                else
                     t = apply_ease(computed, this->ease_value);
-                }
+
                 TweenFrame frame { t, frame_count };
-                static_cast<Derived*>(this)->interpolate(frame);
+                static_cast<Derived*>(this)->interpolate(frame); /* fires on_update */
                 frame_count++;
+
+                if (this->on_complete_cb) this->on_complete_cb();
             }
             return;
         }
 
-        /* Not in end_delay - reset so a restart() correctly re-finalizes. */
         finalized = false;
 
-        /* --- Phase 2: active animation --- */
+        /* Phase 2: active animation */
         bool is_reversing = false;
-        const float computed = compute_progress(anim_elapsed, duration, rev_delay, rep_delay, is_reversing);
+        CyclePhase current_phase = CyclePhase::FORWARD;
+        const float computed = compute_progress(anim_elapsed, duration, rev_delay, rep_delay, is_reversing, current_phase);
 
         float t;
-        if (is_reversing && this->has_reverse_ease) {
+        if (is_reversing && this->has_reverse_ease)
             t = apply_ease(computed, this->reverse_ease_value);
-        } else if (is_reversing) {
+        else if (is_reversing)
             t = 1.0f - apply_ease(1.0f - computed, this->ease_value);
-        } else {
+        else
             t = apply_ease(computed, this->ease_value);
-        }
 
         TweenFrame frame { t, frame_count };
-        static_cast<Derived*>(this)->interpolate(frame);
+
+        /* on_start + on_cycle_begin: first animation tick (also fires after restart) */
+        if (frame_count == 0) {
+            if (this->on_start_cb) this->on_start_cb();
+            if (this->on_cycle_begin_cb) this->on_cycle_begin_cb();
+        }
+
+        /* Cycle boundary detection */
+        const int cycle_index = (cycle > 0.0f) ? static_cast<int>(anim_elapsed / cycle) : 0;
+        const bool new_cycle = (cycle_index > last_cycle_index) && (frame_count > 0);
+
+        if (new_cycle) {
+            /*
+             * Crossed into a new cycle.  If there was no REPEAT_DELAY hold,
+             * on_cycle_end hasn't fired yet, do it now before on_repeat.
+             */
+            if (last_sub_phase != CyclePhase::REPEAT_DELAY) {
+                if (last_sub_phase == CyclePhase::REVERSE && this->on_reverse_end_cb) this->on_reverse_end_cb();
+                if (this->on_cycle_end_cb) this->on_cycle_end_cb();
+            }
+            if (this->on_repeat_cb) this->on_repeat_cb();
+            if (this->on_cycle_begin_cb) this->on_cycle_begin_cb();
+        } else if (frame_count > 0) {
+            /* Intra-cycle phase transition detection */
+
+            /* PING_PONG: forward pass just reached t=1 */
+            if (last_sub_phase == CyclePhase::FORWARD && (current_phase == CyclePhase::REVERSE_DELAY || current_phase == CyclePhase::REVERSE)) {
+                if (this->on_forward_end_cb) this->on_forward_end_cb();
+            }
+
+            /* PING_PONG: reverse pass just started (handles both with and without reverse_delay) */
+            if (last_sub_phase != CyclePhase::REVERSE && current_phase == CyclePhase::REVERSE) {
+                if (this->on_reverse_begin_cb) this->on_reverse_begin_cb();
+            }
+
+            /* PING_PONG: reverse pass just ended, entering repeat_delay hold */
+            if (last_sub_phase == CyclePhase::REVERSE && current_phase == CyclePhase::REPEAT_DELAY) {
+                if (this->on_reverse_end_cb) this->on_reverse_end_cb();
+                if (this->on_cycle_end_cb) this->on_cycle_end_cb();
+            }
+
+            /* LOOP: forward pass just ended, entering repeat_delay hold */
+            if (last_sub_phase == CyclePhase::FORWARD && current_phase == CyclePhase::REPEAT_DELAY) {
+                if (this->on_cycle_end_cb) this->on_cycle_end_cb();
+            }
+        }
+
+        last_cycle_index = cycle_index;
+        last_sub_phase = current_phase;
+
+        static_cast<Derived*>(this)->interpolate(frame); /* fires on_update */
         frame_count++;
     }
 
     bool is_done() const {
         if (this->get_repeat_count() < 0) return false;
-
         const float cycle = compute_cycle_time(this->get_duration(), this->get_reverse_delay(), this->get_repeat_delay(), this->get_loop_mode());
-
         const float total_anim = cycle * (this->get_repeat_count() + 1) - this->get_repeat_delay();
         const float total = this->get_start_delay() + total_anim + this->get_end_delay();
         return this->get_elapsed_time() >= total;
     }
 
+    void reset_playback_state() {
+        frame_count = 0;
+        finalized = false;
+        pre_start_fired = false;
+        last_cycle_index = -1;
+        last_sub_phase = CyclePhase::FORWARD;
+    }
+
    private:
     uint64_t frame_count = 0;
     bool finalized = false;
+    bool pre_start_fired = false;
+    int last_cycle_index = -1;
+    CyclePhase last_sub_phase = CyclePhase::FORWARD;
 
-    float compute_progress(const float anim_elapsed, const float dur, const float rev_delay, const float rep_delay, bool& is_reversing) const {
+    float compute_progress(const float anim_elapsed, const float dur, const float rev_delay, const float rep_delay, bool& is_reversing, CyclePhase& phase) const {
         is_reversing = false;
 
         switch (this->get_loop_mode()) {
             case LoopMode::LOOP: {
                 const float cycle_time = dur + rep_delay;
                 const float cycle_pos = (cycle_time > 0.0f) ? std::fmod(anim_elapsed, cycle_time) : 0.0f;
-
                 if (cycle_pos >= dur) {
-                    /* Hold at t=1 during repeat_delay */
+                    phase = CyclePhase::REPEAT_DELAY;
                     return 1.0f;
                 }
+                phase = CyclePhase::FORWARD;
                 return (dur > 0.0f) ? cycle_pos / dur : 1.0f;
             }
 
             case LoopMode::PING_PONG: {
                 const float cycle_time = 2.0f * dur + rev_delay + rep_delay;
                 const float cycle_pos = (cycle_time > 0.0f) ? std::fmod(anim_elapsed, cycle_time) : 0.0f;
-
                 if (cycle_pos <= dur) {
-                    /* Forward pass: 0 -> 1 */
+                    phase = CyclePhase::FORWARD;
                     return (dur > 0.0f) ? cycle_pos / dur : 1.0f;
                 } else if (cycle_pos <= dur + rev_delay) {
-                    /* Hold at peak during reverse_delay */
+                    phase = CyclePhase::REVERSE_DELAY;
                     return 1.0f;
                 } else if (cycle_pos <= 2.0f * dur + rev_delay) {
-                    /* Reverse pass: 1 -> 0 */
                     is_reversing = true;
+                    phase = CyclePhase::REVERSE;
                     const float rev_elapsed = cycle_pos - dur - rev_delay;
                     return (dur > 0.0f) ? 1.0f - (rev_elapsed / dur) : 0.0f;
                 } else {
-                    /* Hold at t=0 during repeat_delay */
+                    phase = CyclePhase::REPEAT_DELAY;
                     return 0.0f;
                 }
             }
 
             default:
+                phase = CyclePhase::FORWARD;
                 return (dur > 0.0f) ? std::min(anim_elapsed / dur, 1.0f) : 1.0f;
         }
     }
@@ -676,7 +858,8 @@ void tween(T& value) {
 template <typename T>
 requires Traits::IsLerpable<T>
 struct ITween<T> : public Detail::TweenBase<ITween<T>>, /**/
-                   public Detail::FromToMixin<ITween<T>, T> {
+                   public Detail::FromToMixin<ITween<T>, T>,
+                   public Detail::TypedCallbackMixin<ITween<T>, T*> {
     ITween(T* value) : value(value) {};
     static ITween create(T& value) { return ITween(&value); }
 
@@ -688,6 +871,9 @@ struct ITween<T> : public Detail::TweenBase<ITween<T>>, /**/
         }
         if (value) {
             Detail::lerp(*value, this->start, this->end, frame.alpha);
+        }
+        if (this->on_update_cb) {
+            this->on_update_cb(frame.alpha, value);
         }
     }
 
@@ -826,3 +1012,74 @@ inline float apply_ease(float t, Ease ease) {
 }
 
 }  // namespace Tweening::Detail
+
+/* === Loop === */
+/*
+on_pre_start
+  [start_delay]
+on_start
+on_cycle_begin
+  [forward] -> on_update
+on_cycle_end
+  [end_delay]
+on_complete
+*/
+
+/* === Loop with repeat === */
+/*
+on_pre_start
+  [start_delay]
+on_start
+on_cycle_begin
+  [forward pass] -> on_update
+on_cycle_end
+  [repeat_delay]
+on_repeat
+on_cycle_begin
+  [forward pass] -> on_update
+on_cycle_end
+  [repeat_delay]
+on_repeat
+on_cycle_begin
+  [forward pass] -> on_update
+on_cycle_end
+  [end_delay]
+on_complete
+*/
+
+/* === Ping Pong === */
+/*
+on_pre_start
+  [start_delay]
+on_start
+on_cycle_begin
+  [forward pass] -> on_update
+on_forward_end
+  [reverse_delay]
+on_reverse_begin
+  [reverse pass] -> on_update
+on_reverse_end
+on_cycle_end
+  [end_delay]
+on_complete
+*/
+
+/* === Ping Pong with repeat === */
+/*
+on_pre_start
+  [start_delay]
+on_start
+on_cycle_begin
+  [forward pass] -> on_update
+on_forward_end
+  [reverse_delay]
+on_reverse_begin
+  [reverse pass] -> on_update
+on_reverse_end
+on_cycle_end
+  [repeat_delay]
+on_repeat
+...
+  [end_delay]
+on_complete
+*/

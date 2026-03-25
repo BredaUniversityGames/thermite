@@ -46,6 +46,7 @@ struct Tweening::ITween<tmt::Entity, tmt::Transform> : public Tweening::Detail::
 
     /* Sub tweens */
     struct Move : public Tweening::Detail::FromToMixin<Move, glm::vec3>,  //
+                  public Tweening::Detail::TypedCallbackMixin<Move, tmt::Transform&>,
                   public Tweening::Detail::SubTweenMixin<ITween>,
                   public WorldOrLocalMixin<Move>,
                   public OffsetMixin<Move, glm::vec3> {
@@ -54,6 +55,7 @@ struct Tweening::ITween<tmt::Entity, tmt::Transform> : public Tweening::Detail::
     };
 
     struct Rotate : public Tweening::Detail::FromToMixin<Rotate, glm::quat>,  //
+                    public Tweening::Detail::TypedCallbackMixin<Rotate, tmt::Transform&>,
                     public Tweening::Detail::SubTweenMixin<ITween>,
                     public WorldOrLocalMixin<Rotate>,
                     public OffsetMixin<Rotate, glm::quat> {
@@ -62,6 +64,7 @@ struct Tweening::ITween<tmt::Entity, tmt::Transform> : public Tweening::Detail::
     };
 
     struct Scale : public Tweening::Detail::FromToMixin<Scale, glm::vec3>,  //
+                   public Tweening::Detail::TypedCallbackMixin<Scale, tmt::Transform&>,
                    public Tweening::Detail::SubTweenMixin<ITween>,
                    public WorldOrLocalMixin<Scale>,
                    public OffsetMixin<Scale, glm::vec3> {
@@ -115,21 +118,26 @@ struct Tweening::ITween<tmt::Entity, tmt::Transform> : public Tweening::Detail::
                 using SubType = std::decay_t<decltype(sub)>;
                 const bool is_local = (sub.get_space() == Space::LOCAL);
                 if constexpr (std::is_same_v<SubType, Move>) {
-                    if (is_local)
+                    if (is_local) {
                         transform.set_local_position(Tweening::Detail::lerp(sub.get_start(), sub.get_end(), t));
-                    else
+                    } else {
                         transform.set_world_position(Tweening::Detail::lerp(sub.get_start(), sub.get_end(), t));
+                    }
                 } else if constexpr (std::is_same_v<SubType, Rotate>) {
-                    if (is_local)
+                    if (is_local) {
                         transform.set_local_rotation(glm::slerp(sub.get_start(), sub.get_end(), t));
-                    else
+                    } else {
                         transform.set_world_rotation(glm::slerp(sub.get_start(), sub.get_end(), t));
+                    }
                 } else if constexpr (std::is_same_v<SubType, Scale>) {
-                    if (is_local)
+                    if (is_local) {
                         transform.set_local_scale(Tweening::Detail::lerp(sub.get_start(), sub.get_end(), t));
-                    else
+                    } else {
                         transform.set_world_scale(Tweening::Detail::lerp(sub.get_start(), sub.get_end(), t));
+                    }
                 }
+
+                sub.call_update(t, transform);
             },
             tween_variant
         );

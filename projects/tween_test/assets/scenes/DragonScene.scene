@@ -72,10 +72,11 @@
             "Tweener": {
                 "depth_offset": 10.0,
                 "duration": 2.0,
+                "ease": "IN_OUT_QUAD",
                 "offset": {
-                    "x": 100.0,
-                    "y": 0.0,
-                    "z": 0.0
+                    "x": 2.0,
+                    "y": 2.0,
+                    "z": 2.0
                 },
                 "prefab": {
                     "file_location": {
@@ -83,7 +84,7 @@
                         "sub_location": "PROJECT"
                     }
                 },
-                "repeat_count": -1
+                "repeat_count": 1
             }
         }
     },

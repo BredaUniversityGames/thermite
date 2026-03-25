@@ -63,9 +63,10 @@ class Tweener : public tmt::GameComponent<Tweener> {
     float duration = 1.0f;
     int repeat_count = -1;  // infinite
     glm::vec3 offset { 100.0f, 0.0f, 0.0f };
+    Tweening::Ease ease = Tweening::Ease::IN_OUT_QUAD;
     float depth_offset = 10.0f;
 };
-TMT_OBJECT(Tweener, (prefab, duration, repeat_count, offset, depth_offset));
+TMT_OBJECT(Tweener, (prefab, duration, repeat_count, offset, ease, depth_offset));
 
 std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs& args) {
     // clang-format off
@@ -107,15 +108,25 @@ void DragonScene::on_end() {}
 void Tweener::start() {
     Tweening::tween<tmt::Transform>(entity)  //
         .duration(duration)
-        .ease(Tweening::Ease::LINEAR)
+        .ease(ease)
         .repeat(repeat_count)
         .ping_pong()
+        .on_pre_start([]() { tmt::Log::info("Tween pre-start"); })
         .start_delay(1.0f)
+        .on_start([]() { tmt::Log::info("Tween started"); })
+        .on_cycle_begin([]() { tmt::Log::info("Tween cycle begun"); })
+        .on_forward_end([]() { tmt::Log::info("Tween forward ended"); })
         .reverse_delay(1.0f)
+        .on_reverse_begin([]() { tmt::Log::info("Tween reverse begun"); })
+        .on_reverse_end([]() { tmt::Log::info("Tween reverse ended"); })
+        .on_cycle_end([]() { tmt::Log::info("Tween cycle ended"); })
         .repeat_delay(1.0f)
+        .on_repeat([]() { tmt::Log::info("Tween repeated"); })
         .end_delay(1.0f)
-        .move()
-        .offset(offset);
+        .on_complete([]() { tmt::Log::info("Tween completed"); })
+        .scale()
+        .offset(offset)
+        .on_update([](float alpha, const tmt::Transform& transform) { /* Do something */ });
 
     /* Loop through Tweening::ease */
     // for (int i = 0; i <= static_cast<int>(Tweening::Ease::IN_OUT_BOUNCE); ++i) {
