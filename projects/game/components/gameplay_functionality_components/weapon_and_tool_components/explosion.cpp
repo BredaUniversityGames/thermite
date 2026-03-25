@@ -32,11 +32,9 @@ void game::Explosion::explode() const {
 
     auto& ore_database = ore_properties->ores;
 
-    const auto& physics_entities = tmt::engine.ecs.systems.get<tmt::Physics>().get_entities();
     // iterate over all hits and check their toughness
     const auto hits = tmt::engine.ecs.systems.get<tmt::Physics>().overlap_sphere(get_position(), param.radius, param.mask);
-    for (const auto& [voxel_body_entity, voxels] : hits) {
-        auto voxel_entity = physics_entities[static_cast<uint32_t>(voxel_body_entity)];
+    for (const auto& [voxel_entity, voxels] : hits) {
         auto* resource = tmt::engine.ecs.get_component<tmt::VoxelRenderer>(voxel_entity).resource.resource.get();
 
         for (const auto& [sqr_distance, voxel_coord] : voxels) {
@@ -54,13 +52,14 @@ void game::Explosion::explode() const {
                 case tmt::Material::Type::COPPER:
                 case tmt::Material::Type::TITANIUM:
                 case tmt::Material::Type::STEEL:
-                case tmt::Material::Type::REINFORCED_STEEL:
+                case tmt::Material::Type::REINFORCED_STEEL: {
                     auto radius = param.radius;
                     float t = sqr_distance / (radius * radius);
-                    auto power = param.distance_strength_curve.eval(t) * param.explosion_power;
+                    auto power = (1.0f - param.distance_strength_curve.eval(t)) * param.explosion_power;
                     if (ore_toughness < power) {
                         resource->blas->remove_voxel(voxel_coord.x, voxel_coord.y, voxel_coord.z);
                     }
+                } break;
             }
         }
         resource->set_dirty();
