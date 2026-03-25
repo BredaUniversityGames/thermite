@@ -109,5 +109,5 @@ void Tweener::start() {
                 .repeat(repeat_count)
                 .ping_pong()
                 .move()
-                .offset({ 10.0f, 0.0f, 0.0f });
+                .offset({ 100.0f, 0.0f, 0.0f });
 }

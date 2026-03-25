@@ -70,9 +70,9 @@
     "ComponentCollection": {
         "0": {
             "Tweener": {
-                "duration": 1.0,
+                "duration": 2.0,
                 "ease": "LINEAR",
-                "repeat_count": 2
+                "repeat_count": -1
             }
         }
     },

@@ -327,14 +327,19 @@ class ControllableMixin {
         d->get_elapsed_time() = d->get_duration() * (d->get_repeat_count() + 1);
     }
 
-    void do_release() { keep_alive = false; }
+    void do_release() {
+        if (keep_alive) released = true;
+        keep_alive = false;
+    }
 
     bool is_paused() const { return paused; }
     bool is_keep_alive() const { return keep_alive; }
+    bool is_released() const { return released; }
 
    private:
     bool paused = false;
     bool keep_alive = false;
+    bool released = false;
 
     std::function<void()> ctrl_stop, ctrl_start, ctrl_restart, ctrl_finish, ctrl_release;
     std::function<bool()> ctrl_is_paused;
@@ -425,7 +430,7 @@ class TweenBase : public EaseMixin<Derived>, /*<br>*/
 };
 
 /* Manager that stores collections of tweens for each context. */
-template <typename Context = Detail::Default>
+template <typename Context>
 class Manager {
    public:
     static void update(const float delta_time_seconds) {
@@ -471,11 +476,17 @@ class TweenCollection {
     }
 
     static void update(const float delta_time) {
+        /* Clear tweens that are done or released */
+        std::erase_if(tweens, [](const TweenType& tween) {
+            const bool done = tween.is_done();
+            const bool keep_alive = tween.is_keep_alive();
+            const bool released = tween.is_released();
+            return (done && !keep_alive) || released;
+        });
+
         for (auto& tween : tweens) {
             tween.tick(delta_time);
         }
-
-        std::erase_if(tweens, [](const TweenType& tween) { return tween.is_done() && !tween.is_keep_alive(); });
     }
 
    private:
@@ -493,9 +504,12 @@ class TweenCollection {
 
 }  // namespace Detail
 
+template <typename Context>
+struct Ctx {};
+
 /* Update default context */
 inline void update(const float delta_time_seconds) {
-    Detail::Manager<>::update(delta_time_seconds);
+    Detail::Manager<Detail::Default>::update(delta_time_seconds);
 }
 
 /* Update specific context */
@@ -504,12 +518,20 @@ inline void update(const float delta_time_seconds) {
     Detail::Manager<Context>::update(delta_time_seconds);
 }
 
-/* Entry point */
+/* Context Entry point */
+template <typename... Args, typename T, typename Context>
+requires Traits::HasITween<T, Args...>
+ITween<std::remove_cvref_t<T>, Args...>& tween(T& value, Ctx<Context>) {
+    using BareT = std::remove_cvref_t<T>;
+    return Detail::TweenCollection<Context, BareT, Args...>::add(ITween<BareT, Args...>::create(value));
+}
+
+/* Default Entry point */
 template <typename... Args, typename T>
 requires Traits::HasITween<T, Args...>
 ITween<std::remove_cvref_t<T>, Args...>& tween(T& value) {
-    using BareT = std::remove_cvref_t<T>;
-    return Detail::TweenCollection<Detail::Default, BareT, Args...>::add(ITween<BareT, Args...>::create(value));
+    /* Default context is used if no context is provided */
+    return tween<Args...>(value, Ctx<Detail::Default> {});
 }
 
 /* Error fallback for types that don't have ITween specialization */
