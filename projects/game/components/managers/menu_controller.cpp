@@ -5,7 +5,11 @@
 
 namespace game {
 
-void MenuController::end() {}
+void MenuController::start() {
+    // Bind end run to event
+    tmt::engine.ecs.get_dispatcher().sink<EndRun>().connect<&MenuController::enable_end_of_game_menu>(this);
+    player_entity = tmt::engine.ecs.view<Player>().front().entity;  // Assuming there's only one player entity in the game
+}
 
 void MenuController::update(const tmt::FrameData& time) {
     auto& input = tmt::engine.input;
@@ -50,10 +54,8 @@ void MenuController::update(const tmt::FrameData& time) {
     }
 }
 
-void MenuController::start() {
-    // Bind end run to event
-    tmt::engine.ecs.get_dispatcher().sink<EndRun>().connect<&MenuController::enable_end_of_game_menu>(this);
-    player_entity = tmt::engine.ecs.view<Player>().front().entity;  // Assuming there's only one player entity in the game
+void MenuController::end() {
+    tmt::engine.ecs.get_dispatcher().sink<EndRun>().disconnect<&MenuController::enable_end_of_game_menu>(this);
 }
 
 void MenuController::enable_pause_menu() const {
