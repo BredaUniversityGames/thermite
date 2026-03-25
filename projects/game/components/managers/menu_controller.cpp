@@ -16,7 +16,11 @@
 
 namespace game {
 
-void MenuController::end() {}
+void MenuController::start() {
+    // Bind end run to event
+    tmt::engine.ecs.get_dispatcher().sink<EndRun>().connect<&MenuController::enable_end_of_game_menu>(this);
+    player_entity = tmt::engine.ecs.view<Player>().front().entity;  // Assuming there's only one player entity in the game
+}
 
 void MenuController::update(const tmt::FrameData& time) {
     auto& input = tmt::engine.input;
@@ -27,7 +31,7 @@ void MenuController::update(const tmt::FrameData& time) {
             return;
         }
 
-        if (tmt::engine.ecs.is_disabled(inventory_menu_entity) && tmt::engine.ecs.is_disabled(end_run_menu_entity)) {
+        if (tmt::engine.ecs.is_disabled(inventory_menu_entity)) {
             enable_inventory_menu();
         } else {
             disable_inventory_menu();
@@ -40,7 +44,7 @@ void MenuController::update(const tmt::FrameData& time) {
             return;
         }
 
-        if (tmt::engine.ecs.is_disabled(pause_menu_entity) && tmt::engine.ecs.is_disabled(end_run_menu_entity)) {
+        if (tmt::engine.ecs.is_disabled(pause_menu_entity)) {
             enable_pause_menu();
         } else {
             disable_pause_menu();
@@ -53,7 +57,7 @@ void MenuController::update(const tmt::FrameData& time) {
             return;
         }
 
-        if (tmt::engine.ecs.is_disabled(upgrade_menu_entity) && tmt::engine.ecs.is_disabled(end_run_menu_entity)) {
+        if (tmt::engine.ecs.is_disabled(upgrade_menu_entity)) {
             enable_upgrade_menu();
         } else {
             disable_upgrade_menu();
@@ -61,9 +65,8 @@ void MenuController::update(const tmt::FrameData& time) {
     }
 }
 
-void MenuController::start() {
-    // Bind end run to event
-    tmt::engine.ecs.get_dispatcher().sink<EndRun>().connect<&MenuController::enable_end_of_game_menu>(this);
+void MenuController::end() {
+    tmt::engine.ecs.get_dispatcher().sink<EndRun>().disconnect<&MenuController::enable_end_of_game_menu>(this);
 }
 
 void MenuController::enable_pause_menu() const {
@@ -175,6 +178,16 @@ void MenuController::disable_upgrade_menu() const {
 }
 
 void MenuController::enable_end_of_game_menu(const EndRun& event) const {
+    if (pause_menu_entity != entt::null) {
+        tmt::engine.ecs.disable(pause_menu_entity);
+    }
+    if (upgrade_menu_entity != entt::null) {
+        tmt::engine.ecs.disable(upgrade_menu_entity);
+    }
+    if (inventory_menu_entity != entt::null) {
+        tmt::engine.ecs.disable(inventory_menu_entity);
+    }
+
     // Open end of game menu
     if (event.player_dead) {
         if (death_menu_entity == entt::null) {
@@ -193,20 +206,18 @@ void MenuController::enable_end_of_game_menu(const EndRun& event) const {
     }
 }
 
-void MenuController::lock_mouse() {
+void MenuController::lock_mouse() const {
     tmt::engine.input.lock_mouse(true);
     tmt::engine.input.set_mouse_relative_to_window(true);
 
-    auto player_entity = tmt::engine.ecs.view<Player>().front().entity;  // Assuming there's only one player entity in the game
     // TODO this will get removed when proper game state are implemented
     tmt::engine.ecs.get_component<Player>(player_entity).set_state(PlayerState::FREEMOVING);
 }
 
-void MenuController::unlock_mouse() {
+void MenuController::unlock_mouse() const {
     tmt::engine.input.lock_mouse(false);
     tmt::engine.input.set_mouse_relative_to_window(false);
 
-    auto player_entity = tmt::engine.ecs.view<Player>().front().entity;  // Assuming there's only one player entity in the game
     // TODO this will get removed when proper game state are implemented
     tmt::engine.ecs.get_component<Player>(player_entity).set_state(PlayerState::PAUSED);
 }
