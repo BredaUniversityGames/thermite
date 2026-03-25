@@ -64,7 +64,7 @@ class Tweener : public tmt::GameComponent<Tweener> {
     int repeat_count = -1;  // infinite
     glm::vec3 offset { 100.0f, 0.0f, 0.0f };
     Tweening::Ease ease = Tweening::Ease::IN_OUT_QUAD;
-    float depth_offset = 10.0f;
+    glm::vec3 depth_offset { 0.0f, 0.0f, 10.0f };
 };
 TMT_OBJECT(Tweener, (prefab, duration, repeat_count, offset, ease, depth_offset));
 
@@ -97,7 +97,7 @@ void DragonScene::on_start() {
         auto& camera = tmt::engine.ecs.add_component<tmt::Camera>(entity);
 
         auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
-        transform.set_world_position(glm::vec3(0.0f, 10.0f, -20.0f));
+        transform.set_world_position(glm::vec3(0.0f, 5.0f, -20.0f));
     }
 }
 
@@ -106,27 +106,71 @@ void DragonScene::on_update(const tmt::FrameData& /*time*/) {}
 void DragonScene::on_end() {}
 
 void Tweener::start() {
-    Tweening::tween<tmt::Transform>(entity)  //
-        .duration(duration)
-        .ease(ease)
-        .repeat(repeat_count)
-        .ping_pong()
-        .on_pre_start([]() { tmt::Log::info("Tween pre-start"); })
-        .start_delay(1.0f)
-        .on_start([]() { tmt::Log::info("Tween started"); })
-        .on_cycle_begin([]() { tmt::Log::info("Tween cycle begun"); })
-        .on_forward_end([]() { tmt::Log::info("Tween forward ended"); })
-        .reverse_delay(1.0f)
-        .on_reverse_begin([]() { tmt::Log::info("Tween reverse begun"); })
-        .on_reverse_end([]() { tmt::Log::info("Tween reverse ended"); })
-        .on_cycle_end([]() { tmt::Log::info("Tween cycle ended"); })
-        .repeat_delay(1.0f)
-        .on_repeat([]() { tmt::Log::info("Tween repeated"); })
-        .end_delay(1.0f)
-        .on_complete([]() { tmt::Log::info("Tween completed"); })
-        .scale()
-        .offset(offset)
-        .on_update([](float alpha, const tmt::Transform& transform) { /* Do something */ });
+    {
+        /* Move */
+        tmt::Entity new_entity = tmt::PrefabHelper::instantiate_prefab(prefab);
+        auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(new_entity);
+        transform.set_world_position(-depth_offset);
+        Tweening::tween<tmt::Transform>(new_entity)  //
+            .start_delay(1.5f)
+            .duration(duration)
+            .ease(ease)
+            .repeat(repeat_count)
+            .ping_pong()
+            .move()
+            .offset(glm::vec3(0.0f, 0.0f, 10.0f));
+    }
+    {
+        /* Scale */
+        tmt::Entity new_entity = tmt::PrefabHelper::instantiate_prefab(prefab);
+        auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(new_entity);
+        transform.set_world_position({ 0.0f, 0.0f, 0.0f });
+        Tweening::tween<tmt::Transform>(new_entity)  //
+            .start_delay(1.5f)
+            .duration(duration)
+            .ease(ease)
+            .repeat(repeat_count)
+            .ping_pong()
+            .scale()
+            .from(glm::vec3(1.0f, 1.0f, 1.0f))
+            .to(glm::vec3(2.0f, 2.0f, 2.0f));
+    }
+    {
+        /* Rotate */
+        tmt::Entity new_entity = tmt::PrefabHelper::instantiate_prefab(prefab);
+        auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(new_entity);
+        transform.set_world_position(depth_offset);
+        Tweening::tween<tmt::Transform>(new_entity)  //
+            .start_delay(1.5f)
+            .duration(duration)
+            .ease(ease)
+            .repeat(repeat_count)
+            .ping_pong()
+            .rotate()
+            .offset(glm::quat(glm::vec3(0.0f, glm::radians(180.0f), 0.0f)));
+    }
+
+     Tweening::tween<tmt::Transform>(entity)  //
+         .duration(duration)
+         .ease(ease)
+         .repeat(repeat_count)
+         .ping_pong()
+         .start_delay(1.0f)
+         .reverse_delay(1.0f)
+         .repeat_delay(1.0f)
+         .end_delay(1.0f)
+         .on_pre_start([]() { tmt::Log::info("Tween pre-start"); })
+         .on_start([]() { tmt::Log::info("Tween started"); })
+         .on_cycle_begin([]() { tmt::Log::info("Tween cycle begun"); })
+         .on_forward_end([]() { tmt::Log::info("Tween forward ended"); })
+         .on_reverse_begin([]() { tmt::Log::info("Tween reverse begun"); })
+         .on_reverse_end([]() { tmt::Log::info("Tween reverse ended"); })
+         .on_cycle_end([]() { tmt::Log::info("Tween cycle ended"); })
+         .on_repeat([]() { tmt::Log::info("Tween repeated"); })
+         .on_complete([]() { tmt::Log::info("Tween completed"); })
+         .scale()
+         .offset(offset)
+         .on_update([](float alpha, const tmt::Transform& transform) { /* Do something */ });
 
     /* Loop through Tweening::ease */
     // for (int i = 0; i <= static_cast<int>(Tweening::Ease::IN_OUT_BOUNCE); ++i) {

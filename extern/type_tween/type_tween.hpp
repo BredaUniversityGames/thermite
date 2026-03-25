@@ -499,6 +499,8 @@ class SubTweenMixin {
     SubTweenMixin(Parent* parent) : parent(parent) {}
 
     operator Tween() { return parent->operator Tween(); }
+    operator Parent&() { return *parent; }
+    operator const Parent&() const { return *parent; }
 
    protected:
     Parent* parent = nullptr;

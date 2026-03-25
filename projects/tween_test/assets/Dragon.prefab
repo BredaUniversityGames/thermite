@@ -44,16 +44,7 @@
         }
     },
     "ComponentCollection": {
-        "0": {
-            "Tweener": {
-                "duration": 2.0,
-                "offset": {
-                    "x": 100.0,
-                    "y": 0.0,
-                    "z": 0.0
-                },
-                "repeat_count": -1
-            }
-        }
-    }
+        "0": null
+    },
+    "systems": null
 }

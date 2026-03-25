@@ -15,9 +15,9 @@
     "Transform": {
         "1": {
             "local_position": {
-                "x": 0.0,
-                "y": 0.0,
-                "z": -5.2918596267700195
+                "x": -99.0,
+                "y": -99.0,
+                "z": -99.0
             },
             "local_rotation": {
                 "w": 0.7745908498764038,
@@ -27,7 +27,7 @@
             },
             "local_scale": {
                 "x": 1.0,
-                "y": 0.9999999403953552,
+                "y": 0.9999998807907104,
                 "z": 1.0000003576278687
             },
             "parent": 4294967295,
@@ -54,23 +54,14 @@
             "children": []
         }
     },
-    "Voxel Renderer": {
-        "1048576": {
-            "resource": {
-                "file_location": {
-                    "sub_location": "PROJECT",
-                    "relative_path": "dragon128.vengi"
-                },
-                "constructor_args": [
-                    "00000000-0000-0000-0000-000000000000"
-                ]
-            }
-        }
-    },
     "ComponentCollection": {
         "1048576": {
             "Tweener": {
-                "depth_offset": 10.0,
+                "depth_offset": {
+                    "x": 20.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
                 "duration": 2.0,
                 "ease": "IN_OUT_QUAD",
                 "offset": {
