@@ -266,6 +266,8 @@ void Engine::resume_game() {
 void Engine::end_game() {
     TMT_ZONE_SCOPED_N("Engine::end_game")
 
+    Tweening::clear();
+
     if (scenes.get_active_scene()) scenes.get_active_scene()->on_end();
     app->on_end();
 

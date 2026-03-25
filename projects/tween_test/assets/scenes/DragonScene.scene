@@ -1,38 +1,18 @@
 {
     "version": 1,
     "entities": [
-        0,
-        1
+        1,
+        1048576
     ],
     "Name": {
-        "0": {
-            "name": "Entity_0"
-        },
         "1": {
             "name": "Light"
+        },
+        "1048576": {
+            "name": "Entity_1048576"
         }
     },
     "Transform": {
-        "0": {
-            "local_position": {
-                "x": 0.0,
-                "y": 0.0,
-                "z": 11.987380981445313
-            },
-            "local_rotation": {
-                "w": 0.70710688829422,
-                "x": 0.0,
-                "y": -0.7071066498756409,
-                "z": 0.0
-            },
-            "local_scale": {
-                "x": 0.9999898076057434,
-                "y": 1.0,
-                "z": 0.9999898076057434
-            },
-            "parent": 4294967295,
-            "children": []
-        },
         "1": {
             "local_position": {
                 "x": 0.0,
@@ -52,10 +32,30 @@
             },
             "parent": 4294967295,
             "children": []
+        },
+        "1048576": {
+            "local_position": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "local_rotation": {
+                "w": 0.7071067690849304,
+                "x": 0.0,
+                "y": -0.7071067690849304,
+                "z": 0.0
+            },
+            "local_scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "parent": 4294967295,
+            "children": []
         }
     },
     "Voxel Renderer": {
-        "0": {
+        "1048576": {
             "resource": {
                 "file_location": {
                     "sub_location": "PROJECT",
@@ -68,10 +68,21 @@
         }
     },
     "ComponentCollection": {
-        "0": {
+        "1048576": {
             "Tweener": {
+                "depth_offset": 10.0,
                 "duration": 2.0,
-                "ease": "LINEAR",
+                "offset": {
+                    "x": 100.0,
+                    "y": 0.0,
+                    "z": 0.0
+                },
+                "prefab": {
+                    "file_location": {
+                        "relative_path": "Dragon.prefab",
+                        "sub_location": "PROJECT"
+                    }
+                },
                 "repeat_count": -1
             }
         }

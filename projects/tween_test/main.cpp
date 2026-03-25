@@ -21,6 +21,7 @@
 #include "engine/tools/player_data.hpp"
 
 #include "engine/tools/tweening.hpp"
+#include "engine/tools/prefab_helper.hpp"
 
 class Game : public tmt::Application {
    public:
@@ -57,13 +58,14 @@ class Tweener : public tmt::GameComponent<Tweener> {
     void update(const tmt::FrameData& time) override {}
     void end() override {}
 
-    float duration = 1.0f;
-    Tweening::Ease ease = Tweening::Ease::LINEAR;
-    int repeat_count = -1;  // infinite
+    tmt::ResourceRef<tmt::Json> prefab {};
 
-    Tweening::Tween tween;
+    float duration = 1.0f;
+    int repeat_count = -1;  // infinite
+    glm::vec3 offset { 100.0f, 0.0f, 0.0f };
+    float depth_offset = 10.0f;
 };
-TMT_OBJECT(Tweener, (duration, ease, repeat_count));
+TMT_OBJECT(Tweener, (prefab, duration, repeat_count, offset, depth_offset));
 
 std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs& args) {
     // clang-format off
@@ -103,11 +105,37 @@ void DragonScene::on_update(const tmt::FrameData& /*time*/) {}
 void DragonScene::on_end() {}
 
 void Tweener::start() {
-    tween = Tweening::tween<tmt::Transform>(entity)  //
-                .duration(duration)
-                .ease(ease)
-                .repeat(repeat_count)
-                .ping_pong()
-                .move()
-                .offset({ 100.0f, 0.0f, 0.0f });
+    Tweening::tween<tmt::Transform>(entity)  //
+        .duration(duration)
+        .ease(Tweening::Ease::LINEAR)
+        .repeat(repeat_count)
+        .ping_pong()
+        .start_delay(1.0f)
+        .reverse_delay(1.0f)
+        .repeat_delay(1.0f)
+        .end_delay(1.0f)
+        .move()
+        .offset(offset);
+
+    /* Loop through Tweening::ease */
+    // for (int i = 0; i <= static_cast<int>(Tweening::Ease::IN_OUT_BOUNCE); ++i) {
+    //     const auto ease = static_cast<Tweening::Ease>(i);
+
+    //    tmt::Entity new_entity = tmt::PrefabHelper::instantiate_prefab(prefab);
+    //    if (new_entity == entt::null) {
+    //        tmt::Log::error("Failed to instantiate prefab for Tweener component on entity {}. Skipping tween creation.", entity);
+    //        continue;
+    //    }
+
+    //    auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(new_entity);
+    //    transform.set_world_position(glm::vec3(0.0f, 0.0f, depth_offset * i));
+
+    //    Tweening::tween<tmt::Transform>(new_entity)  //
+    //        .duration(duration)
+    //        .ease(ease)
+    //        .repeat(repeat_count)
+    //        .ping_pong()
+    //        .move()
+    //        .offset(offset);
+    //}
 }

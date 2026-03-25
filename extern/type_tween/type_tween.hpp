@@ -82,7 +82,19 @@ class Tween {
         /* clear release so it only fires once */
         o.ctrl_release = nullptr;
     }
-    Tween& operator=(Tween&&) = default;
+    Tween& operator=(Tween&& o) noexcept {
+        if (this != &o) {
+            if (ctrl_release) ctrl_release();  // release the tween we currently own
+            ctrl_stop = std::move(o.ctrl_stop);
+            ctrl_start = std::move(o.ctrl_start);
+            ctrl_restart = std::move(o.ctrl_restart);
+            ctrl_finish = std::move(o.ctrl_finish);
+            ctrl_release = std::move(o.ctrl_release);
+            ctrl_is_paused = std::move(o.ctrl_is_paused);
+            o.ctrl_release = nullptr;  // prevent source from double-releasing
+        }
+        return *this;
+    }
 
     void stop() {
         if (ctrl_stop) ctrl_stop();
@@ -181,6 +193,11 @@ inline T lerp(const T& a, const T& b, const float t) {
 /* easing function, defined at bottom of file */
 inline float apply_ease(float t, Ease ease);
 
+inline float compute_cycle_time(const float duration, const float reverse_delay, const float repeat_delay, const LoopMode mode) {
+    const float base = (mode == LoopMode::PING_PONG) ? 2.0f * duration + reverse_delay : duration;
+    return base + repeat_delay;
+}
+
 /* Mixins */
 template <typename Derived>
 class EaseMixin {
@@ -205,19 +222,52 @@ class EaseMixin {
 template <typename Derived>
 class TimeMixin {
    public:
+    /* duration of tween animation  */
     Derived& duration(const float seconds) {
         duration_value = seconds;
         return static_cast<Derived&>(*this);
     }
 
+    /* Delay before the animation starts */
+    Derived& start_delay(const float seconds) {
+        start_delay_value = seconds;
+        return static_cast<Derived&>(*this);
+    }
+
+    /* Delay at the peak of PING_PING cycle before reversing */
+    Derived& reverse_delay(const float seconds) {
+        reverse_delay_value = seconds;
+        return static_cast<Derived&>(*this);
+    }
+
+    /* Delay between the end of one cycle and the start of the next when repeating */
+    Derived& repeat_delay(const float seconds) {
+        repeat_delay_value = seconds;
+        return static_cast<Derived&>(*this);
+    }
+
+    /* How long to wait after tweening is done to finish tween */
+    Derived& end_delay(const float seconds) {
+        end_delay_value = seconds;
+        return static_cast<Derived&>(*this);
+    }
+
     float get_duration() const { return duration_value; }
+    float get_start_delay() const { return start_delay_value; }
+    float get_reverse_delay() const { return reverse_delay_value; }
+    float get_repeat_delay() const { return repeat_delay_value; }
+    float get_end_delay() const { return end_delay_value; }
 
     float& get_elapsed_time() { return elapsed_time; }
-
     float get_elapsed_time() const { return elapsed_time; }
 
    protected:
     float duration_value = 1.0f; /* Default duration is 1 second */
+
+    float start_delay_value = 0.0f;
+    float reverse_delay_value = 0.0f;
+    float repeat_delay_value = 0.0f;
+    float end_delay_value = 0.0f;
 
     /* Internal timer */
     float elapsed_time = 0.0f;
@@ -324,7 +374,10 @@ class ControllableMixin {
         static_assert(std::derived_from<Derived, TimeMixin<Derived>>, "Finish requires TimeMixin");
         static_assert(std::derived_from<Derived, RepeatMixin<Derived>>, "Finish requires RepeatMixin");
         auto* d = static_cast<Derived*>(this);
-        d->get_elapsed_time() = d->get_duration() * (d->get_repeat_count() + 1);
+
+        /* Compute total cycle time and set elapsed time to end of last cycle */
+        const float cycle = compute_cycle_time(d->get_duration(), d->get_reverse_delay(), d->get_repeat_delay(), d->get_loop_mode());
+        d->get_elapsed_time() = d->get_start_delay() + cycle * (d->get_repeat_count() + 1) + d->get_end_delay();
     }
 
     void do_release() {
@@ -371,60 +424,123 @@ class TweenBase : public EaseMixin<Derived>, /*<br>*/
 
         auto& elapsed = this->get_elapsed_time();
         const float duration = this->get_duration();
+        const float start_delay = this->get_start_delay();
+        const float rev_delay = this->get_reverse_delay();
+        const float rep_delay = this->get_repeat_delay();
+        const float end_delay = this->get_end_delay();
+        const float cycle = compute_cycle_time(duration, rev_delay, rep_delay, this->get_loop_mode());
 
         elapsed += delta_time;
 
+        /* Clamp to the maximum meaningful time so we never overshoot */
         if (this->get_repeat_count() >= 0) {
-            const float total_cycle = (this->get_loop_mode() == LoopMode::PING_PONG) ? duration * 2.0f : duration;
-            const float max_elapsed = total_cycle * (this->get_repeat_count() + 1);
+            const float total_anim = cycle * (this->get_repeat_count() + 1) - rep_delay;
+            const float max_elapsed = start_delay + total_anim + end_delay;
             elapsed = std::min(elapsed, max_elapsed);
         }
 
-        float progress = (duration > 0.0f) ? elapsed / duration : 1.0f;
+        /* --- Phase 1: start delay --- */
+        if (elapsed < start_delay) return;
 
+        const float anim_elapsed = elapsed - start_delay;
+
+        const float total_anim_time = (this->get_repeat_count() >= 0) ? cycle * (this->get_repeat_count() + 1) - rep_delay : std::numeric_limits<float>::max();
+
+        /* --- Phase 3: end delay (with one-shot finalisation) --- */
+        if (anim_elapsed >= total_anim_time) {
+            if (!finalized) {
+                finalized = true;
+                const float last_anim = std::nextafter(total_anim_time, 0.0f);
+                bool is_reversing = false;
+                const float computed = compute_progress(last_anim, duration, rev_delay, rep_delay, is_reversing);
+                float t;
+                if (is_reversing && this->has_reverse_ease) {
+                    t = apply_ease(computed, this->reverse_ease_value);
+                } else if (is_reversing) {
+                    t = 1.0f - apply_ease(1.0f - computed, this->ease_value);
+                } else {
+                    t = apply_ease(computed, this->ease_value);
+                }
+                TweenFrame frame { t, frame_count };
+                static_cast<Derived*>(this)->interpolate(frame);
+                frame_count++;
+            }
+            return;
+        }
+
+        /* Not in end_delay - reset so a restart() correctly re-finalizes. */
+        finalized = false;
+
+        /* --- Phase 2: active animation --- */
         bool is_reversing = false;
-        const float computed = compute_progress(progress, is_reversing);
+        const float computed = compute_progress(anim_elapsed, duration, rev_delay, rep_delay, is_reversing);
 
         float t;
         if (is_reversing && this->has_reverse_ease) {
-            t = apply_ease(computed, this->reverse_ease_value);        // fully custom return ease
+            t = apply_ease(computed, this->reverse_ease_value);
         } else if (is_reversing) {
-            t = 1.0f - apply_ease(1.0f - computed, this->ease_value);  // mirrored default
+            t = 1.0f - apply_ease(1.0f - computed, this->ease_value);
         } else {
             t = apply_ease(computed, this->ease_value);
         }
+
         TweenFrame frame { t, frame_count };
         static_cast<Derived*>(this)->interpolate(frame);
-
         frame_count++;
     }
 
     bool is_done() const {
-        if (this->get_repeat_count() < 0) return false;  // infinite
+        if (this->get_repeat_count() < 0) return false;
 
-        const float cycle = (this->get_loop_mode() == LoopMode::PING_PONG) ? this->get_duration() * 2.0f : this->get_duration();
+        const float cycle = compute_cycle_time(this->get_duration(), this->get_reverse_delay(), this->get_repeat_delay(), this->get_loop_mode());
 
-        return this->get_elapsed_time() >= cycle * (this->get_repeat_count() + 1);
+        const float total_anim = cycle * (this->get_repeat_count() + 1) - this->get_repeat_delay();
+        const float total = this->get_start_delay() + total_anim + this->get_end_delay();
+        return this->get_elapsed_time() >= total;
     }
 
    private:
     uint64_t frame_count = 0;
+    bool finalized = false;
 
-    float compute_progress(float progress, bool& is_reversing) const {
+    float compute_progress(const float anim_elapsed, const float dur, const float rev_delay, const float rep_delay, bool& is_reversing) const {
         is_reversing = false;
+
         switch (this->get_loop_mode()) {
-            case LoopMode::LOOP:
-                return std::fmod(progress, 1.0f);
-            case LoopMode::PING_PONG: {
-                const float mod = std::fmod(progress, 2.0f);
-                if (mod > 1.0f) {
-                    is_reversing = true;
-                    return 2.0f - mod;  // goes back from 1->0
+            case LoopMode::LOOP: {
+                const float cycle_time = dur + rep_delay;
+                const float cycle_pos = (cycle_time > 0.0f) ? std::fmod(anim_elapsed, cycle_time) : 0.0f;
+
+                if (cycle_pos >= dur) {
+                    /* Hold at t=1 during repeat_delay */
+                    return 1.0f;
                 }
-                return mod;
+                return (dur > 0.0f) ? cycle_pos / dur : 1.0f;
             }
+
+            case LoopMode::PING_PONG: {
+                const float cycle_time = 2.0f * dur + rev_delay + rep_delay;
+                const float cycle_pos = (cycle_time > 0.0f) ? std::fmod(anim_elapsed, cycle_time) : 0.0f;
+
+                if (cycle_pos <= dur) {
+                    /* Forward pass: 0 -> 1 */
+                    return (dur > 0.0f) ? cycle_pos / dur : 1.0f;
+                } else if (cycle_pos <= dur + rev_delay) {
+                    /* Hold at peak during reverse_delay */
+                    return 1.0f;
+                } else if (cycle_pos <= 2.0f * dur + rev_delay) {
+                    /* Reverse pass: 1 -> 0 */
+                    is_reversing = true;
+                    const float rev_elapsed = cycle_pos - dur - rev_delay;
+                    return (dur > 0.0f) ? 1.0f - (rev_elapsed / dur) : 0.0f;
+                } else {
+                    /* Hold at t=0 during repeat_delay */
+                    return 0.0f;
+                }
+            }
+
             default:
-                return std::min(progress, 1.0f);
+                return (dur > 0.0f) ? std::min(anim_elapsed / dur, 1.0f) : 1.0f;
         }
     }
 };
@@ -435,7 +551,7 @@ class Manager {
    public:
     static void update(const float delta_time_seconds) {
         for (auto& [_, collection] : collections) {
-            collection(delta_time_seconds);
+            if (collection.update) collection.update(delta_time_seconds);
         }
     }
 
@@ -447,11 +563,23 @@ class Manager {
             return;  // Collection already registered
         }
 
-        collections[type_index] = [](float delta_time) { CollectionType::update(delta_time); };
+        collections[type_index].update = [](float delta_time) { CollectionType::update(delta_time); };
+        collections[type_index].clear = []() { CollectionType::clear(); };
+    }
+
+    static void clear() {
+        for (auto& [_, collection] : collections) {
+            if (collection.clear) collection.clear();
+        }
     }
 
    private:
-    static inline std::unordered_map<std::type_index, std::function<void(float)>> collections;
+    struct Callbacks {
+        std::function<void(float)> update = nullptr;
+        std::function<void()> clear = nullptr;
+    };
+
+    static inline std::unordered_map<std::type_index, Callbacks> collections;
 };
 
 /* Collection that stores all tween of a specialization */
@@ -462,36 +590,40 @@ class TweenCollection {
    public:
     static TweenType& add(TweenType tween) {
         ensure_registered();
-        tweens.push_back(std::move(tween));
-        auto& stored = tweens.back();
-        stored.inject_control_fns(
-            [&stored] { stored.do_stop(); },     //
-            [&stored] { stored.do_start(); },    //
-            [&stored] { stored.do_restart(); },  //
-            [&stored] { stored.do_finish(); },   //
-            [&stored] { stored.do_release(); },  //
-            [&stored] { return stored.is_paused(); }
+        auto ptr = std::make_unique<TweenType>(std::move(tween));
+        TweenType* raw = ptr.get();  // stable forever
+        tweens.push_back(std::move(ptr));
+
+        raw->inject_control_fns(
+            [raw] { raw->do_stop(); },     //
+            [raw] { raw->do_start(); },    //
+            [raw] { raw->do_restart(); },  //
+            [raw] { raw->do_finish(); },   //
+            [raw] { raw->do_release(); },  //
+            [raw] { return raw->is_paused(); }
         );
-        return stored;
+        return *raw;
     }
 
     static void update(const float delta_time) {
         /* Clear tweens that are done or released */
-        std::erase_if(tweens, [](const TweenType& tween) {
-            const bool done = tween.is_done();
-            const bool keep_alive = tween.is_keep_alive();
-            const bool released = tween.is_released();
+        std::erase_if(tweens, [](const std::unique_ptr<TweenType>& tween) {
+            const bool done = tween->is_done();
+            const bool keep_alive = tween->is_keep_alive();
+            const bool released = tween->is_released();
             return (done && !keep_alive) || released;
         });
 
         for (auto& tween : tweens) {
-            tween.tick(delta_time);
+            tween->tick(delta_time);
         }
     }
 
+    static void clear() { tweens.clear(); }
+
    private:
     /* Using deque to avoid pointer invalidation when storing tweens */
-    static inline std::deque<TweenType> tweens {};
+    static inline std::deque<std::unique_ptr<TweenType>> tweens {};
 
     static void ensure_registered() {
         static bool registered = [] {
@@ -507,15 +639,15 @@ class TweenCollection {
 template <typename Context>
 struct Ctx {};
 
-/* Update default context */
-inline void update(const float delta_time_seconds) {
-    Detail::Manager<Detail::Default>::update(delta_time_seconds);
-}
-
-/* Update specific context */
-template <typename Context>
+/* Main update */
+template <typename Context = Detail::Default>
 inline void update(const float delta_time_seconds) {
     Detail::Manager<Context>::update(delta_time_seconds);
+}
+
+template <typename Context = Detail::Default>
+inline void clear() {
+    Detail::Manager<Context>::clear();
 }
 
 /* Context Entry point */
