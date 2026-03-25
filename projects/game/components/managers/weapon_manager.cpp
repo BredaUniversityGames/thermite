@@ -50,7 +50,6 @@ void game::WeaponManager::start() {
     tmt::engine.ecs.get_dispatcher().sink<game::GamePausedEvent>().connect<&WeaponManager::on_game_paused>(this);
     tmt::engine.ecs.get_dispatcher().sink<game::GameUnpausedEvent>().connect<&WeaponManager::on_game_unpaused>(this);
 
-
     current_weapon = starting_weapon;
     tmt::Log::info("[WeaponManager] Starting with weapon: {}", magic_enum::enum_name(starting_weapon));
 
