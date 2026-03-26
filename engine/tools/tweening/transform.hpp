@@ -1,8 +1,8 @@
 #pragma once
-#include <../type_tween/type_tween.hpp>
 #include <variant>
 
 #include "engine/core/components/transform.hpp"
+#include "engine/tools/tweening.hpp"
 
 template <>
 struct Tweening::ITween<tmt::Entity, tmt::Transform> : public Tweening::Detail::TweenBase<ITween<tmt::Entity, tmt::Transform>> {

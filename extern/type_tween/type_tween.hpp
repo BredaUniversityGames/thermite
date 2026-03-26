@@ -7,6 +7,10 @@
 #include <numbers>
 #include <optional>
 
+#ifndef BEFRIEND_MIXINS
+    #define BEFRIEND_MIXINS /* Empty, defined by user */
+#endif
+
 namespace Tweening {
 
 enum class Ease : uint8_t {
@@ -126,9 +130,10 @@ class Tween {
 
 template <typename ITweenType>
 class TypedTweenHandle {
-    std::shared_ptr<ITweenType> ptr;
+    std::shared_ptr<ITweenType> ptr = nullptr;
 
    public:
+    TypedTweenHandle() = default;
     explicit TypedTweenHandle(std::shared_ptr<ITweenType> p) : ptr(std::move(p)) {}
     ITweenType* operator->() { return ptr.get(); }
     ITweenType& operator*() { return *ptr; }
@@ -223,7 +228,14 @@ class EaseMixin {
         return static_cast<Derived&>(*this);
     }
 
+    Ease& get_ease() { return ease_value; }
+    Ease get_ease() const { return ease_value; }
+
+    Ease& get_reverse_ease() { return reverse_ease_value; }
+    Ease get_reverse_ease() const { return reverse_ease_value; }
+
    protected:
+    BEFRIEND_MIXINS
     Ease ease_value = Ease::LINEAR;
     Ease reverse_ease_value = Ease::LINEAR;
     bool has_reverse_ease = false;
@@ -272,6 +284,7 @@ class TimeMixin {
     float get_elapsed_time() const { return elapsed_time; }
 
    protected:
+    BEFRIEND_MIXINS
     float duration_value = 1.0f; /* Default duration is 1 second */
 
     float start_delay_value = 0.0f;
@@ -305,6 +318,7 @@ class FromToMixin {
     const T& get_end() const { return end_value.value(); }
 
    protected:
+    BEFRIEND_MIXINS
     std::optional<T> start_value {};
     std::optional<T> end_value {};
 };
@@ -327,6 +341,7 @@ class LoopMixin {
     LoopMode get_loop_mode() const { return loop_mode; }
 
    protected:
+    BEFRIEND_MIXINS
     LoopMode loop_mode = LoopMode::LOOP;
 };
 
@@ -346,6 +361,7 @@ class RepeatMixin {
     int get_repeat_count() const { return repeat_count; }
 
    protected:
+    BEFRIEND_MIXINS
     int repeat_count = 0;
 };
 
