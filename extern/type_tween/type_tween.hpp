@@ -76,6 +76,14 @@ class Tween {
    public:
     Tween() = default;
 
+    Tween(std::shared_ptr<void> life, std::function<void()> stop, std::function<void()> start, std::function<void()> restart, std::function<void()> finish, std::function<bool()> is_paused) :
+        lifetime(std::move(life)),
+        ctrl_stop(std::move(stop)),
+        ctrl_start(std::move(start)),
+        ctrl_restart(std::move(restart)),
+        ctrl_finish(std::move(finish)),
+        ctrl_is_paused(std::move(is_paused)) {}
+
     /* Now copyable shared_ptr handles the refcount */
     Tween(const Tween&) = default;
     Tween& operator=(const Tween&) = default;
@@ -116,24 +124,22 @@ class Tween {
     std::function<bool()> ctrl_is_paused;
 };
 
-template <typename T, typename... Args>
-class TypedTween {
-    using TweenType = ITween<T, Args...>;
-    std::shared_ptr<TweenType> ptr;
+template <typename ITweenType>
+class TypedTweenHandle {
+    std::shared_ptr<ITweenType> ptr;
 
    public:
-    TypedTween() = default;
-
-    explicit TypedTween(std::shared_ptr<TweenType> p) : ptr(std::move(p)) {}
-
-    TweenType* operator->() { return ptr.get(); }
-    const TweenType* operator->() const { return ptr.get(); }
-    TweenType& operator*() { return *ptr; }
-
-    bool is_valid() const { return ptr != nullptr; }
+    explicit TypedTweenHandle(std::shared_ptr<ITweenType> p) : ptr(std::move(p)) {}
+    ITweenType* operator->() { return ptr.get(); }
+    ITweenType& operator*() { return *ptr; }
 
     operator Tween() { return Tween(ptr); }
+
+    bool is_valid() const { return ptr != nullptr; }
 };
+
+template <typename T, typename... Args>
+using TypedTween = TypedTweenHandle<ITween<T, Args...>>;
 
 namespace Traits {
 
@@ -281,26 +287,26 @@ template <typename Derived, typename T>
 class FromToMixin {
    public:
     Derived& from(T start_val) {
-        this->start = std::move(start_val);
+        this->start_value = std::move(start_val);
         return static_cast<Derived&>(*this);
     }
 
     Derived& to(T end_val) {
-        this->end = std::move(end_val);
+        this->end_value = std::move(end_val);
         return static_cast<Derived&>(*this);
     }
 
-    bool has_start() const { return start.has_value(); }
+    bool has_start() const { return start_value.has_value(); }
 
-    bool has_end() const { return end.has_value(); }
+    bool has_end() const { return end_value.has_value(); }
 
-    const T& get_start() const { return start.value(); }
+    const T& get_start() const { return start_value.value(); }
 
-    const T& get_end() const { return end.value(); }
+    const T& get_end() const { return end_value.value(); }
 
    protected:
-    std::optional<T> start {};
-    std::optional<T> end {};
+    std::optional<T> start_value {};
+    std::optional<T> end_value {};
 };
 
 template <typename Derived>
@@ -433,10 +439,10 @@ class ControllableMixin {
         ctrl_is_paused = std::move(is_paused);
     }
 
-    void do_stop() { paused = true; }
-    void do_start() { paused = false; }
+    void stop() { paused = true; }
+    void start() { paused = false; }
 
-    void do_restart() {
+    void restart() {
         static_assert(std::derived_from<Derived, TimeMixin<Derived>>, "Restart requires TimeMixin");
         auto* d = static_cast<Derived*>(this);
         d->get_elapsed_time() = 0.0f;
@@ -444,7 +450,7 @@ class ControllableMixin {
         paused = false;
     }
 
-    void do_finish() {
+    void finish() {
         static_assert(std::derived_from<Derived, TimeMixin<Derived>>, "Finish requires TimeMixin");
         static_assert(std::derived_from<Derived, RepeatMixin<Derived>>, "Finish requires RepeatMixin");
         auto* d = static_cast<Derived*>(this);
@@ -468,6 +474,7 @@ class SubTweenMixin {
     SubTweenMixin() = default;
     SubTweenMixin(Parent* parent) : parent(parent) {}
 
+    operator Tween() { return parent->operator Tween(); }
     operator Parent&() { return *parent; }
     operator const Parent&() const { return *parent; }
 
@@ -649,12 +656,27 @@ class TweenBase : public EaseMixin<Derived>,
         last_sub_phase = CyclePhase::FORWARD;
     }
 
+    void set_self_weak(std::shared_ptr<void> sp) { self_weak = sp; }
+    std::shared_ptr<void> get_self_shared() { return self_weak.lock(); }
+
+    operator TypedTweenHandle<Derived>() {
+        auto sp = std::static_pointer_cast<Derived>(self_weak.lock());
+        return TypedTweenHandle<Derived>(std::move(sp));
+    }
+
+    operator Tween() {
+        auto* d = static_cast<Derived*>(this);
+        return Tween(self_weak.lock(), [d] { d->stop(); }, [d] { d->start(); }, [d] { d->restart(); }, [d] { d->finish(); }, [d] { return d->is_paused(); });
+    }
+
    private:
     uint64_t frame_count = 0;
     bool finalized = false;
     bool pre_start_fired = false;
     int last_cycle_index = -1;
     CyclePhase last_sub_phase = CyclePhase::FORWARD;
+
+    std::weak_ptr<void> self_weak;
 
     float compute_progress(const float anim_elapsed, const float dur, const float rev_delay, const float rep_delay, bool& is_reversing, CyclePhase& phase) const {
         is_reversing = false;
@@ -741,18 +763,21 @@ class TweenCollection {
     using TweenType = ITween<T, Args...>;
 
    public:
-    static TypedTween<T, Args...> add(TweenType tween) {
+    static TweenType& add(TweenType tween) {
         ensure_registered();
         auto ptr = std::make_shared<TweenType>(std::move(tween));
+        ptr->set_self_weak(ptr);
 
         ptr->inject_control_fns(
-            [p = ptr.get()] { p->do_stop(); },   //
-            [p = ptr.get()] { p->do_start(); },  //
-            [p = ptr.get()] { p->do_restart(); }, [p = ptr.get()] { p->do_finish(); }, [p = ptr.get()] { return p->is_paused(); }
+            [p = ptr.get()] { p->stop(); },     //
+            [p = ptr.get()] { p->start(); },    //
+            [p = ptr.get()] { p->restart(); },  //
+            [p = ptr.get()] { p->finish(); },   //
+            [p = ptr.get()] { return p->is_paused(); }
         );
 
         tweens.push_back(ptr);
-        return ptr;
+        return *ptr;  // reference into the deque-owned shared_ptr, stable forever
     }
 
     static void update(const float delta_time) {
@@ -800,7 +825,7 @@ inline void clear() {
 /* Context entry point */
 template <typename... Args, typename T, typename Context>
 requires Traits::HasITween<T, Args...>
-TypedTween<std::remove_cvref_t<T>, Args...> tween(T& value, Ctx<Context>) {
+ITween<std::remove_cvref_t<T>, Args...>& tween(T& value, Ctx<Context>) {
     using BareT = std::remove_cvref_t<T>;
     return Detail::TweenCollection<Context, BareT, Args...>::add(ITween<BareT, Args...>::create(value));
 }
@@ -808,7 +833,7 @@ TypedTween<std::remove_cvref_t<T>, Args...> tween(T& value, Ctx<Context>) {
 /* Default entry point */
 template <typename... Args, typename T>
 requires Traits::HasITween<T, Args...>
-TypedTween<std::remove_cvref_t<T>, Args...> tween(T& value) {
+ITween<std::remove_cvref_t<T>, Args...>& tween(T& value) {
     return tween<Args...>(value, Ctx<Detail::Default> {});
 }
 
@@ -834,7 +859,7 @@ struct ITween<T> : public Detail::TweenBase<ITween<T>>, /**/
             if (!this->has_end()) this->to(*value);
         }
         if (value) {
-            Detail::lerp(*value, this->start, this->end, frame.alpha);
+            Detail::lerp(*value, this->get_start(), this->get_end(), frame.alpha);
         }
         if (this->on_update_cb) {
             this->on_update_cb(frame.alpha, value);
