@@ -3,6 +3,7 @@
 #include <glm/glm.hpp>
 
 #include <graphite/resources/handle.hh>
+#include <graphite/resources/texture.hh>
 
 #include "engine/core/entity.hpp"
 #include "engine/core/components/camera.hpp"
@@ -43,8 +44,15 @@ struct GpuView {
 
 /* Screen buffer resource. */
 struct ScreenBuffer {
+    TextureMeta meta = TextureMeta();
     Texture texture {};
     Image image {};
+};
+
+struct PostProcessBuffer {
+    TextureMeta meta = TextureMeta();
+    Texture texture {};
+    std::vector<Image> images {};
 };
 
 /* Direct Illumination Shading Rate. */
@@ -97,6 +105,12 @@ struct RenderView {
     ScreenBuffer hbuffer1 {}; /* Accumulated (History) frame buffer (WxH, 8 bytes) */
     ScreenBuffer hbuffer2 {}; /* Accumulated (History) frame buffer (WxH, 8 bytes) */
     ScreenBuffer mbuffer {};  /* Motion Vector buffer (WxH, 4 bytes) */
+    /* Post Process buffers */
+    PostProcessBuffer tbuffer {}; /* Thresholded luminance buffer (WxH, 4 bytes) */
+
+    /* Intermediate specular luminance buffer */
+    ScreenBuffer raw_spec_buffer {};
+    ScreenBuffer spec_buffer {};
 
     /* Macrofacet buffers */
     Buffer macrofacet_cache {}; /* Macrofacet hash cache (10.000.000, 48 bytes) */

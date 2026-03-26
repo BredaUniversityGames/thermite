@@ -73,11 +73,16 @@ class Bvh2 {
 
     /* Find all primitives overlapping an AABB. */
     std::vector<uint32_t> overlap(const Aabb& aabb) const;
+    /* Find only the primitives in layer_mask overlapping with an AABB */
+    std::vector<uint32_t> overlap(const Aabb& aabb, uint32_t layer_mask) const;
 
     /* Trace the acceleration structure. */
     Hit trace(const Ray& ray) const;
     /* Trace the acceleration structure. Used for raycasting to check for layers to ignore */
     Hit trace(const Ray& ray, uint32_t ray_mask) const;
+
+    /* Sphere check the acceleration structure */
+    std::vector<std::pair<tmt::Entity, std::vector<std::pair<float, glm::uvec3>>>> overlap_sphere(const glm::vec3& center, float radius, uint32_t layer_mask);
 };
 
 }  // namespace tmt

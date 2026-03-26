@@ -12,7 +12,7 @@
 #include "extern/imgui-bezier-editor/bezier_editor.hpp"
 #pragma warning(pop)
 
-void tag_invoke(ImReflect::ImInput_t, const char* label, tmt::BezierCurve& curve, ImSettings&, ImResponse& response) {
+void tag_invoke(ImReflect::ImInput_t, const char* label, tmt::BezierCurve& curve, ImSettings&, ImResponse& /*response*/) {
     ImGui::PushID(label);
     ImGui::Bezier("", curve.values.data());  // draw
     ImGui::PopID();

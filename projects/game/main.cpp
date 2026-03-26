@@ -20,6 +20,9 @@
 #include "ai_actions/wander.hpp"
 #include "ai_actions/fire_missiles.hpp"
 #include "ai_actions/fire_laser.hpp"
+#include "ai_actions/get_in_laser_range.hpp"
+#include "ai_actions/stomp.hpp"
+#include "ai_actions/flee.hpp"
 
 // Enemies
 #include "components/gameplay_functionality_components/enemy_components/medium_enemy.hpp"
@@ -43,6 +46,8 @@
 #include "components/ui_components/text_component.hpp"
 #include "components/ui_components/scene_switch_component.hpp"
 #include "components/ui_components/entity_control_component.hpp"
+#include "components/ui_components/self_destruct_component.hpp"
+#include "components/ui_components/quit_game_component.hpp"
 // Managers
 #include "components/managers/ore_manager.hpp"
 #include "components/managers/menu_controller.hpp"
@@ -58,6 +63,7 @@
 #include "data_headers/ore_properties.hpp"
 
 // Goap Components
+#include "components/gameplay_functionality_components/weapon_and_tool_components/explosion.hpp"
 #include "engine/systems/ai/goap/goap_system.hpp"
 #include "components/goap_actions/steer_to_player.hpp"
 #include "components/goap_actions/wander_steering.hpp"
@@ -86,11 +92,14 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     /* Register Scenes */
     tmt::engine.scenes.register_scene<MainMenuScene>();
     tmt::engine.scenes.register_scene<MainGameScene>();
+    tmt::engine.scenes.register_scene<HubScene>();
     tmt::engine.scenes.register_scene<Zoo>();
     tmt::engine.scenes.register_scene<Gym>();
     tmt::engine.scenes.register_scene<DanielTestScene>();
     tmt::engine.scenes.register_scene<MikaTestScene>();
     tmt::engine.scenes.register_scene<LoekTestScene>();
+    tmt::engine.scenes.register_scene<WeaponMotionTest>();
+    tmt::engine.scenes.register_scene<BogdanulTestScene>();
 
     /* Register Game Components */
     tmt::engine.component_registry.register_component<game::Player>();
@@ -114,12 +123,15 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     tmt::engine.component_registry.register_component<game::MediumEnemy>();
     tmt::engine.component_registry.register_component<game::OreProperties>();
     tmt::engine.component_registry.register_component<game::OreManager>();
+    tmt::engine.component_registry.register_component<game::Explosion>();
     /* Register World Generation Components */
     tmt::engine.component_registry.register_component<game::AsteroidFieldComponent>();
     tmt::engine.component_registry.register_component<game::RandomPrefabSpawner>();
     /* Register Game UI Components */
     tmt::engine.component_registry.register_component<game::SceneSwitchComponent>();
     tmt::engine.component_registry.register_component<game::EntityControlComponent>();
+    tmt::engine.component_registry.register_component<game::SelfDestructComponent>();
+    tmt::engine.component_registry.register_component<game::QuitGameComponent>();
 
     /* Register Goap Components */
     {
@@ -180,12 +192,16 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
         action_reg.register_action(std::make_unique<Wander>());
         action_reg.register_action(std::make_unique<FireMissiles>());
         action_reg.register_action(std::make_unique<FireLaser>());
+        action_reg.register_action(std::make_unique<GetInLaserRange>());
+        action_reg.register_action(std::make_unique<Stomp>());
+        action_reg.register_action(std::make_unique<Flee>());
 
+        // Goap stuff
         {
             tmt::GoapGoal chase;
             chase.name = "g_ChasePlayer";
-            chase.desired_state = { { tmt::FactId("m_in_laser_range"), true } };
-            chase.priority = 10;
+            chase.desired_state = { { tmt::FactId("m_get_close_to_player"), true } };
+            chase.priority = 5;
             chase.valid = true;
 
             goal_reg.register_goal("g_ChasePlayer", chase);
@@ -208,6 +224,26 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
             kill_player.valid = true;
 
             goal_reg.register_goal("g_KillPlayer", kill_player);
+        }
+
+        {
+            tmt::GoapGoal get_in_laser_range;
+            get_in_laser_range.name = "g_GetInLaserRange";
+            get_in_laser_range.desired_state = { { tmt::FactId("m_in_laser_range"), true } };
+            get_in_laser_range.priority = 10;
+            get_in_laser_range.valid = true;
+
+            goal_reg.register_goal("g_GetInLaserRange", get_in_laser_range);
+        }
+
+        {
+            tmt::GoapGoal stay_safe;
+            stay_safe.name = "g_StaySafe";
+            stay_safe.desired_state = { { tmt::FactId("m_stay_safe"), true } };
+            stay_safe.priority = 40;
+            stay_safe.valid = true;
+
+            goal_reg.register_goal("g_StaySafe", stay_safe);
         }
     }
 
