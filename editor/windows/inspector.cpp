@@ -87,13 +87,13 @@ void Inspector::display_entity_info(const MenuContext& menu_context) {
 
         const auto& prefab = engine.ecs.get_component<Prefab>(menu_context.primary_entity);
         const auto prefab_location = prefab.source_location.relative_path.string();
-        //ImGui::BeginDisabled();
-        //const ImVec4 color = colors::to_imvec4(tmt::colors::PREFAB);
+        // ImGui::BeginDisabled();
+        // const ImVec4 color = colors::to_imvec4(tmt::colors::PREFAB);
         const auto text = ICON_MS_OPEN_IN_NEW " " + prefab_location;
         if (ImGui::TextLink(text.c_str())) {
             editor.switch_mode(Editor::Mode::PREFAB, prefab.source_location);
         }
-        //ImGui::EndDisabled();
+        // ImGui::EndDisabled();
     }
 }
 
