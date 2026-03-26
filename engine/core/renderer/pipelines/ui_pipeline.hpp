@@ -20,7 +20,6 @@ class UiPipeline {
     Buffer images_buffer {};
     Buffer image_vertex_buffer {};
     Sampler image_sampler {};
-    uint32_t image_count = 0u;
 
     /* Text Rendering */
     Buffer glyphs_buffer {};
@@ -37,14 +36,14 @@ class UiPipeline {
 
     void deinit(GPUAdapter& gpu);
 
-    uint32_t image_count = 0;
-
     UiPipeline() = default;
     ~UiPipeline() = default;
 
     /* Cannot be copied */
     UiPipeline(const UiPipeline&) = delete;
     UiPipeline& operator=(const UiPipeline&) = delete;
+    
+    uint32_t image_count = 0u;
 
     bool render_ui_pipeline = true;
     bool render_text = true;

@@ -278,10 +278,10 @@ bool Font::generate_sdf_atlas(const unsigned char* font_data, size_t) {
         bank.create_texture(texture_name.c_str(), TextureUsage::Sampled | TextureUsage::TransferDst, TextureFormat::RGBA8Unorm, { (uint32_t)atlas_width, (uint32_t)atlas_height, 0 })
             .expect("Failed to create font atlas texture.");
 
-    bank.upload_texture(atlas_texture, rgba_atlas_data.data(), rgba_atlas_data.size()).expect("Failed to upload font atlas texture.");
-
     std::string image_name = name + " Atlas Image";
     atlas_image = bank.create_image(image_name.c_str(), atlas_texture).expect("Failed to create font atlas image.");
+
+    bank.upload_texture(atlas_image, rgba_atlas_data.data(), rgba_atlas_data.size()).expect("Failed to upload font atlas texture.");
 
     valid = true;
     Log::info(Log::Scope::ENGINE, "Loaded font: {} ({} glyphs)", name, glyphs.size());
@@ -437,10 +437,10 @@ bool Font::generate_msdf_atlas(const char* font_file) {
                 bank.create_texture(texture_name.c_str(), TextureUsage::Sampled | TextureUsage::TransferDst, TextureFormat::RGBA8Unorm, { (uint32_t)atlas_width, (uint32_t)atlas_height, 0 })
                     .expect("Failed to create font atlas texture.");
 
-            bank.upload_texture(atlas_texture, rgba_atlas_data.data(), rgba_atlas_data.size()).expect("Failed to upload font atlas texture.");
-
             std::string image_name = name + " Atlas Image";
             atlas_image = bank.create_image(image_name.c_str(), atlas_texture).expect("Failed to create font atlas image.");
+
+            bank.upload_texture(atlas_image, rgba_atlas_data.data(), rgba_atlas_data.size()).expect("Failed to upload font atlas texture.");
 
             valid = true;
             Log::info(Log::Scope::ENGINE, "Loaded font: {} ({} glyphs)", name, glyphs.size());
