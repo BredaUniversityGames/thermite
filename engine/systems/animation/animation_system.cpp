@@ -253,8 +253,8 @@ void tmt::AnimationConstraintSystem::on_update(const tmt::FrameData& time) {
             if (walk_cycle.stepping_effector) {
                 float distance_height_factor = glm::clamp(glm::distance(walk_cycle.initial_pos, continuous_available_pos), 0.f, 1.f);
 
-                float t = walk_cycle.stepping_curve.eval(walk_cycle.step_interp, walk_cycle.stepping_curve.values.data());
-                float t_step = walk_cycle.height_curve.eval(walk_cycle.step_interp, walk_cycle.height_curve.values.data());
+                float t = walk_cycle.stepping_curve.eval(walk_cycle.step_interp);
+                float t_step = walk_cycle.height_curve.eval(walk_cycle.step_interp);
 
                 glm::vec3 mix_step = glm::mix(walk_cycle.initial_pos, walk_cycle.desired_pos, t);
                 float height_step = sinf(glm::pi<float>() * t_step) * walk_cycle.step_height * distance_height_factor * static_cast<float>(walk_cycle.grounded);
