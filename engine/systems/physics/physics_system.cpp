@@ -715,7 +715,7 @@ inline void recurse_mass(
         // Get child node index
         const uint32_t child_node_offset = (uint32_t)__popcnt64(node.child_mask & ((1ull << i) - 1u));
         const uint32_t child_node_index = node.abs_ptr() + child_node_offset;
-
+        
         // Recursively go deeper if child is not a leaf
         if (current_depth + 1 < tree->depth) {
             recurse_mass(tree, child_node_index, current_depth + 1, child_half_extent, child_center, extents_diff, mass_center_sum, voxel_count);
@@ -730,6 +730,7 @@ inline void recurse_mass(
 }
 
 inline void calculate_center_of_mass(VoxelBody& vb, const VoxelVolume& volume) {
+
     // Update voxel body dimensions
     const glm::vec3 size = (glm::vec3)volume.size * UNITS_PER_VOXEL;
     vb.width = size.x;

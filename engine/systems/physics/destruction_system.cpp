@@ -109,11 +109,11 @@ void Destruction::destroy_voxels(Entity entity, const Stencil* stencil, glm::ive
     fill_edge_indices(edge_indices, entity, stencil, offset);
 
     // Clear the graph and generate it a new one (to slow)
-    des->clear();
-    generate_connection_graph(*des, resource->blas.get());
+    //des->clear();
+    //generate_connection_graph(*des, resource->blas.get());
 
     // Regenerate part of the graph based on the edge indices
-    // regenerate_connection_graph(*des, resource->blas.get(), stencil, offset);
+    regenerate_connection_graph(*des, resource->blas.get(), stencil, offset);
 
     // Can be done before separating the objects, because the data will be transfered over
     Physics::recalculate_edge_normals(resource->blas.get(), edge_indices);
@@ -501,6 +501,7 @@ void fill_volumes(const Svt64* original_tree, const std::vector<uint64_t>& tree_
     for (size_t i = 0; i < entities.size(); i++) {
         VoxelRenderer& vr = engine.ecs.get_component<VoxelRenderer>(entities[i]);
         VoxelBody& vb = engine.ecs.get_component<VoxelBody>(entities[i]);
+        Transform& transform = engine.ecs.get_component<Transform>(entities[i]);
         Svt64* tree = vr.resource.resource->blas.get();
 
         /* Allocate space for new tree */
@@ -533,8 +534,13 @@ void fill_volumes(const Svt64* original_tree, const std::vector<uint64_t>& tree_
         // Transform position of new object
         glm::uvec3 diff = vr.resource->size - max;
         glm::vec3 offset = ((glm::vec3)vr.resource->size - (glm::vec3)max) * UNITS_PER_VOXEL * 0.5f;
+        glm::vec3 rotated_pos = vb.rotation * ((glm::vec3)tree_offset * UNITS_PER_VOXEL - offset);
 
-        vb.position += (glm::vec3)tree_offset * UNITS_PER_VOXEL - offset;  //((glm::vec3)offset - (glm::vec3)diff) * 0.5f * UNITS_PER_VOXEL;
+        vb.position += rotated_pos;
+
+        transform.set_world_position(vb.position);
+        transform.set_world_rotation(vb.rotation);
+        //vb.position += rotated_pos;  //((glm::vec3)offset - (glm::vec3)diff) * 0.5f * UNITS_PER_VOXEL;
 
         // Update tree size
         vr.resource->size = max;
@@ -547,6 +553,7 @@ std::vector<Entity> Destruction::find_seperations(Entity entity, const std::vect
     TMT_ZONE_SCOPED
 
     VoxelRenderer& vr = engine.ecs.get_component<VoxelRenderer>(entity);
+    VoxelBody& vb = engine.ecs.get_component<VoxelBody>(entity);
     auto* resource = vr.resource.resource.get();
     Svt64* tree = resource->blas.get();
     size_t max_depth = 0;
@@ -674,13 +681,16 @@ std::vector<Entity> Destruction::find_seperations(Entity entity, const std::vect
         // engine.ecs.add_component<VoxelBody>(entities[i]);
 
         VoxelRenderer& new_vr = engine.ecs.add_component<VoxelRenderer>(entities[i]);
-        new_vr.resource = { {}, std::make_shared<VoxelVolume>(vr.resource->size) };
+        new_vr.resource = { {}, std::make_shared<VoxelVolume>() };
+        new_vr.resource.resource->size = vr.resource->size;
 
         engine.ecs.add_component<Destructable>(entities[i]);
-        VoxelBody& vb = engine.ecs.add_component<VoxelBody>(entities[i]);
-        vb.gravity = 0.0f;
+        VoxelBody& new_vb = engine.ecs.add_component<VoxelBody>(entities[i]);
+        new_vb.position = vb.position;
+        new_vb.rotation = vb.rotation;
+        new_vb.gravity = 0.0f;
         // if (i == 1) vb.gravity = 9.0f;
-        vb.type = VoxelBody::DYNAMIC;
+        new_vb.type = VoxelBody::DYNAMIC;
         // vr.resource = { {}, std::make_shared<tmt::VoxelVolume>() };
     }
 
