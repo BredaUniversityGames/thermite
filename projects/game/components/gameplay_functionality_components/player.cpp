@@ -68,6 +68,8 @@ void setup_inputs(tmt::InputMap& input_map) {
     input_map.add_key_to_action(action::OPEN_PAUSE_MENU, tmt::Key::P);
     input_map.add_action(action::OPEN_UPGRADE_MENU);
     input_map.add_key_to_action(action::OPEN_UPGRADE_MENU, tmt::Key::U);
+
+    // barge
     input_map.add_action(action::ATTACH_KEY);
     input_map.add_key_to_action(action::ATTACH_KEY, tmt::Key::E);
     input_map.add_action(action::TRIGGER_BARGE_MOVEMENT);
@@ -512,6 +514,7 @@ void Player::on_attach(const AttachEvent& event) {
         // this is used so if the player was already holding the button, it does not instantly move
         reset_action_time(action::TRIGGER_BARGE_MOVEMENT);
         reset_action_time(action::TRIGGER_RUN_END);
+        velocity = glm::vec3 { 0.0f };
     } else {
         state = PlayerState::FREEMOVING;
     }
@@ -527,9 +530,11 @@ void Player::reset_boost(float delta_time) {
     /*
     max_speed_calculated = max_speed;
     acceleration_calculated = acceleration;*/
+    float lerp_factor = std::min(1.0f, boost_deceleration_factor * delta_time);
+
     boost_was_applied = false;
-    max_speed_calculated = glm::mix(max_speed_calculated, max_speed, boost_deceleration_factor * delta_time);
-    acceleration_calculated = glm::mix(acceleration_calculated, acceleration, boost_deceleration_factor * delta_time);
+    max_speed_calculated = glm::mix(max_speed_calculated, max_speed, lerp_factor);
+    acceleration_calculated = glm::mix(acceleration_calculated, acceleration, lerp_factor);
 
     // Snap to exact values when close enough
     if (glm::abs(max_speed_calculated - max_speed) < 0.001f) {
