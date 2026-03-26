@@ -41,7 +41,7 @@ void RenderView::init() {
     /* Viewport Texture */
     viewport.texture = bank.create_texture(
                                "Viewport Texture", TextureUsage::ColorAttachment | TextureUsage::Sampled | TextureUsage::Storage, TextureFormat::RGBA8Unorm,
-                               { (uint32_t)engine.window.width, (uint32_t)engine.window.height, 0 }, { 1, 1 }
+                               { (uint32_t)engine.window.width, (uint32_t)engine.window.height, 0 }
     )
                            .expect("failed to initialize attachment texture");
 
@@ -70,11 +70,31 @@ void RenderView::init() {
 
     /* Create the luminance buffer */
     lbuffer.texture = bank.create_texture("Luminance Buffer Texture", TextureUsage::ColorAttachment | TextureUsage::Storage | TextureUsage::Sampled, TextureFormat::RG11B10Ufloat, render_size)
-                          .expect("failed to create ibuffer texture.");
-    lbuffer.image = bank.create_image("Luminance Buffer Image", lbuffer.texture).expect("failed to create ibuffer image.");
+                          .expect("failed to create lbuffer texture.");
+    lbuffer.image = bank.create_image("Luminance Buffer Image", lbuffer.texture).expect("failed to create lbuffer image.");
+
     nbuffer.texture = bank.create_texture("Denoised Luminance Buffer Texture", TextureUsage::Storage | TextureUsage::Sampled, TextureFormat::RG11B10Ufloat, render_size)
                           .expect("failed to create nbuffer texture.");
     nbuffer.image = bank.create_image("Denoised Luminance Buffer Image", nbuffer.texture).expect("failed to create nbuffer image.");
+
+    /* Create the thresholded luminance buffer */
+    tbuffer.meta = { 7, 1 };  // Set 7 mips, 1 array layer
+    tbuffer.texture =
+        bank.create_texture(
+                "Thresholded Luminance Buffer Texture", TextureUsage::ColorAttachment | TextureUsage::Storage | TextureUsage::Sampled, TextureFormat::RG11B10Ufloat, render_size, tbuffer.meta
+        )
+            .expect("failed to create tbuffer texture.");
+    for (uint32_t curr_mip = 0; curr_mip < tbuffer.meta.mips; curr_mip++)
+        tbuffer.images.push_back(bank.create_image("Thresholded Luminance Buffer Image", tbuffer.texture, curr_mip).expect("failed to create tbuffer image."));
+
+    /* Quarter size specular buffer */
+    const Size3D quarter_size { view_size.x >> 1, view_size.y >> 1 };
+    raw_spec_buffer.texture = bank.create_texture("Raw Specular Buffer Texture", TextureUsage::Storage | TextureUsage::Sampled, TextureFormat::RG11B10Ufloat, quarter_size)
+                                  .expect("failed to create raw specular buffer texture.");
+    raw_spec_buffer.image = bank.create_image("Raw Specular Buffer Image", raw_spec_buffer.texture).expect("failed to create raw specular buffer image.");
+    spec_buffer.texture = bank.create_texture("Specular Buffer Texture", TextureUsage::Storage | TextureUsage::Sampled, TextureFormat::RG11B10Ufloat, quarter_size)
+                              .expect("failed to create specular buffer texture.");
+    spec_buffer.image = bank.create_image("Specular Buffer Image", spec_buffer.texture).expect("failed to create specular buffer image.");
 
     /* History Screen Buffers */
     hbuffer1.texture = bank.create_texture("History1 Buffer Texture", TextureUsage::ColorAttachment | TextureUsage::Sampled | TextureUsage::Storage, TextureFormat::RGBA16Sfloat, render_size)
@@ -182,16 +202,22 @@ void RenderView::deinit() {
     bank.destroy(dbuffer.texture);
     bank.destroy(lbuffer.image);
     bank.destroy(lbuffer.texture);
+    for (auto& timage : tbuffer.images) bank.destroy(timage);
+    bank.destroy(tbuffer.texture);
     bank.destroy(nbuffer.image);
     bank.destroy(nbuffer.texture);
+    bank.destroy(raw_spec_buffer.image);
+    bank.destroy(raw_spec_buffer.texture);
+    bank.destroy(spec_buffer.image);
+    bank.destroy(spec_buffer.texture);
     bank.destroy(hbuffer1.image);
     bank.destroy(hbuffer1.texture);
     bank.destroy(hbuffer2.image);
     bank.destroy(hbuffer2.texture);
     bank.destroy(mbuffer.image);
     bank.destroy(mbuffer.texture);
-    bank.destroy(viewport.texture);
     bank.destroy(viewport.image);
+    bank.destroy(viewport.texture);
 
     bank.destroy(render_view_buffer);
     bank.destroy(render_target);
@@ -246,15 +272,22 @@ void RenderView::resize_textures() {
         render_size.y = render_size.y >> 1;
     }
 
+    /* Quarter rate screen size */
+    const Size3D quarter_size { view_size.x >> 1, view_size.y >> 1 };
+
     /* Resize the screen buffers */
     bank.resize_texture(viewport.texture, view_size).expect("failed to resize viewport texture.");
     bank.resize_texture(vbuffer.texture, view_size).expect("failed to resize vbuffer texture.");
     bank.resize_texture(dbuffer.texture, view_size).expect("failed to resize depth buffer texture.");
     bank.resize_texture(lbuffer.texture, render_size).expect("failed to resize lbuffer texture.");
     bank.resize_texture(nbuffer.texture, render_size).expect("failed to resize nbuffer texture.");
+    bank.resize_texture(raw_spec_buffer.texture, quarter_size).expect("failed to resize raw specular buffer texture.");
+    bank.resize_texture(spec_buffer.texture, quarter_size).expect("failed to resize specular buffer texture.");
     bank.resize_texture(hbuffer1.texture, view_size).expect("failed to resize hbuffer texture.");
     bank.resize_texture(hbuffer2.texture, view_size).expect("failed to resize hbuffer texture.");
     bank.resize_texture(mbuffer.texture, view_size).expect("failed to resize mbuffer texture.");
+
+    bank.resize_texture(tbuffer.texture, render_size, tbuffer.meta).expect("failed to resize tbuffer texture.");
 }
 
 }  // namespace tmt

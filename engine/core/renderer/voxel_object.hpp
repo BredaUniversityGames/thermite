@@ -32,9 +32,10 @@ struct alignas(16) GpuVoxelObject {
 
     /* Object flags, 0b = outlined. */
     uint32_t object_flags = 0u;
+    float opacity = 1.0f;
 
     /* Padding. */
-    glm::uvec3 padding {};
+    glm::uvec2 padding {};
 };
 
 struct VoxelObject {
@@ -60,7 +61,7 @@ struct VoxelObject {
     /* Unique object identifier. */
     uint32_t uuid = 0u;
 
-    VoxelVolume* volume {};
+    ResourceRef<VoxelVolume> volume {};
 
     /* Get the axis-aligned bounding box of this voxel object. */
     inline Aabb aabb() const {
@@ -72,6 +73,10 @@ struct VoxelObject {
 
     /* Intersect the voxel object with a ray. */
     Hit intersect(Ray ray, const float tmax) const;
+
+    /* Overlap the voxel object with a sphere.*/
+    /* Returns [distance, coord] */
+    std::vector<std::pair<float, glm::uvec3>> sphere_overlap(const glm::vec3& center, float radius) const;
 };
 
 }  // namespace tmt

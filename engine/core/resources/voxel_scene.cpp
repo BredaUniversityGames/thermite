@@ -29,6 +29,23 @@ void recurse_get_uuids(const tmt::VoxelSceneNode& node, std::vector<tmt::UUID>& 
     }
 }
 
+bool recurse_get_node_matrix(const tmt::VoxelSceneNode& node, const tmt::UUID& uuid, glm::mat4& matrix) {
+    if (node.uuid == uuid) {
+        matrix = node.transform * matrix;
+        return true;
+    }
+
+    glm::mat4 current_matrix = node.transform * matrix;
+
+    for (const tmt::VoxelSceneNode& child : node.children) {
+        if (!recurse_get_node_matrix(child, uuid, current_matrix)) continue;
+
+        return true;
+    }
+
+    return false;
+}
+
 }  // namespace
 
 namespace tmt {
@@ -361,21 +378,35 @@ VoxelSceneNode parse_hierarchy(const vengi::Node* file_node) {
             // Only access the material palette if the index has material properties.
             if (i < material_palette.size()) {
                 const std::map<std::string, float>& material_properties = material_palette[i].properties;
+                const auto end = material_properties.end();
 
                 const auto ior_property = material_properties.find("ior");
-                if (ior_property != material_properties.end()) material.ior = glm::packHalf1x16(ior_property->second);
+                if (ior_property != end) material.ior = glm::packHalf1x16(ior_property->second);
 
                 const auto emission_property = material_properties.find("emission");
-                if (emission_property != material_properties.end()) material.emission = glm::packHalf1x16(emission_property->second);
+                if (emission_property != end) material.emission = glm::packHalf1x16(emission_property->second);
 
                 const auto roughness_property = material_properties.find("roughness");
-                if (roughness_property != material_properties.end()) material.roughness = static_cast<uint8_t>(roughness_property->second * 255.0f);
+                if (roughness_property != end) material.roughness = static_cast<uint8_t>(roughness_property->second * 255.0f);
 
                 const auto metallic_property = material_properties.find("metallic");
-                if (metallic_property != material_properties.end()) material.metallic = static_cast<uint8_t>(metallic_property->second * 255.0f);
+                if (metallic_property != end) material.metallic = static_cast<uint8_t>(metallic_property->second * 255.0f);
+
+                const auto edge_tint_r_property = material_properties.find("edge_tint_r");
+                const auto edge_tint_g_property = material_properties.find("edge_tint_g");
+                const auto edge_tint_b_property = material_properties.find("edge_tint_b");
+                if (edge_tint_r_property != end && edge_tint_g_property != end && edge_tint_b_property != end) {
+                    const float r = glm::clamp(edge_tint_r_property->second, 0.0f, 1.0f);
+                    const float g = glm::clamp(edge_tint_g_property->second, 0.0f, 1.0f);
+                    const float b = glm::clamp(edge_tint_b_property->second, 0.0f, 1.0f);
+                    material.edge_tint = Rgb10(cs::r709_to_acescg(cs::linearize(glm::vec3(r, g, b))));
+                }
 
                 const auto transmission_property = material_properties.find("transmission");
-                if (transmission_property != material_properties.end()) material.transmission = static_cast<uint8_t>(transmission_property->second * 255.0f);
+                if (transmission_property != end) material.transmission = static_cast<uint8_t>(transmission_property->second * 255.0f);
+
+                const auto type_property = material_properties.find("type");
+                if (type_property != end) material.type = static_cast<Material::Type>(type_property->second * 255.0f);
             }
 
             node.tree->palette.entries[i] = material;
@@ -396,8 +427,8 @@ Entity recurse_instantiate_scene(
     const Entity entity = engine.ecs.create_entity(node.name);
 
     Transform& transform = engine.ecs.get_component<Transform>(entity);
-    transform.set_world_matrix(parent_matrix * node.transform);
     transform.set_parent(parent_entity);
+    transform.set_world_matrix(parent_matrix * node.transform);
 
     if (node.tree != nullptr) {
         VoxelRenderer& renderer = engine.ecs.add_component<VoxelRenderer>(entity);
@@ -467,6 +498,17 @@ std::vector<UUID> VoxelScene::get_all_uuids() const {
     }
 
     return uuids;
+}
+
+glm::mat4 VoxelScene::get_node_world_matrix(const UUID& uuid) const {
+    for (const VoxelSceneNode& node : root_nodes) {
+        if (uuid == node.uuid) return node.transform;
+
+        glm::mat4 world_matrix = node.transform;
+        if (recurse_get_node_matrix(node, uuid, world_matrix)) return world_matrix;
+    }
+
+    return glm::identity<glm::mat4>();
 }
 
 bool VoxelScene::fallback(const FallbackReason) {
