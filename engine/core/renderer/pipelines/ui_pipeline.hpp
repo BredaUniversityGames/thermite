@@ -42,7 +42,7 @@ class UiPipeline {
     /* Cannot be copied */
     UiPipeline(const UiPipeline&) = delete;
     UiPipeline& operator=(const UiPipeline&) = delete;
-    
+
     uint32_t image_count = 0u;
 
     bool render_ui_pipeline = true;
