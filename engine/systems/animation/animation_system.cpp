@@ -130,19 +130,19 @@ void RigModelManager::on_update(const FrameData& time) {
 }
 
 void RigModelManager::on_draw_lines() const {
-    for (const auto&& [entity, transform, bone_renderer] : engine.ecs.get_registry().view<Transform, BoneHierarchyRenderer>().each()) {
+    for (const auto&& [entity, transform, bone_renderer] : engine.ecs.view<Transform, BoneHierarchyRenderer>().each()) {
         tmt::engine.polyline.use_depth_testing(true);
         tmt::engine.polyline.use_color(bone_renderer.color);
         tmt::engine.polyline.use_line_width(bone_renderer.line_width);
         tmt::RenderBoneHierarchy(transform);
     }
 
-    for (const auto&& [entity, transform, bend_hint] : engine.ecs.get_registry().view<Transform, BendHint>().each()) {
+    for (const auto&& [entity, transform, bend_hint] : engine.ecs.view<Transform, BendHint>().each()) {
         tmt::engine.polyline.use_color(glm::vec4(1.f, 0.f, 0.f, 1.f));
         tmt::engine.polyline.draw_sphere(transform.get_world_position(), bend_hint.radius);
     }
 
-    for (const auto&& [entity, transform, effector] : engine.ecs.get_registry().view<Transform, Effector>().each()) {
+    for (const auto&& [entity, transform, effector] : engine.ecs.view<Transform, Effector>().each()) {
         tmt::engine.polyline.use_color(glm::vec4(0.f, 0.7f, 0.7f, 1.f));
         tmt::engine.polyline.draw_sphere(transform.get_world_position(), effector.radius);
     }
