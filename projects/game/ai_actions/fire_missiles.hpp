@@ -5,6 +5,7 @@
 class FireMissiles : public tmt::GoapAction {
    public:
     FireMissiles() {
+        preconditions["m_missiles_intact"] = true;
         preconditions["m_in_aggro_range"] = true;
         preconditions["m_missiles_ready"] = true;
         effects["m_kill_player"] = true;

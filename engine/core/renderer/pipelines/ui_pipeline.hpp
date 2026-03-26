@@ -37,6 +37,8 @@ class UiPipeline {
 
     void deinit(GPUAdapter& gpu);
 
+    uint32_t image_count = 0;
+
     UiPipeline() = default;
     ~UiPipeline() = default;
 

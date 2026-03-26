@@ -3,12 +3,21 @@
 
 #include "engine/core/io.hpp"
 #include "engine/core/reflection.hpp"
+#include "engine/core/logger.hpp"
 
 namespace tmt {
+
+enum class FallbackReason : uint8_t {
+    FILE_NOT_FOUND,
+    LOAD_FAILED,
+    RELOAD_FAILED,
+};
 
 class Resource {
    public:
     virtual ~Resource() = default;
+
+    bool is_loaded() const { return loaded; }
 
    protected:
     /* [Required] */
@@ -20,7 +29,12 @@ class Resource {
         return load();
     }
 
-    bool is_loaded() const { return loaded; }
+    /* [Optional] fallback is called when a resource fails to load or reload */
+    virtual bool fallback(const FallbackReason reason) {
+        (void)reason;
+        tmt::Log::error(tmt::Log::Scope::ENGINE, "[Resource] No fallback implemented for resource with fallback reason: {}", reason);
+        return true;
+    }
 
    private:
     friend class Resources;
@@ -76,7 +90,7 @@ class ResourceRef {
     ResourceRef(IO::FileLocation file_location) : file_location(std::move(file_location)), resource(nullptr) {}
     ResourceRef(IO::FileLocation file_location, std::shared_ptr<T> resource) : file_location(std::move(file_location)), resource(std::move(resource)) {}
 
-    IO::FileLocation file_location;
+    IO::FileLocation file_location {};
     std::shared_ptr<T> resource = nullptr;
 
     T* operator->() const { return resource.get(); }
@@ -89,4 +103,4 @@ class ResourceRef {
 
 }  // namespace tmt
 
-TMT_OBJECT(tmt::FileResource, (file_location));
+JSON_REFLECT(tmt::FileResource, file_location);
