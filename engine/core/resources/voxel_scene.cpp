@@ -29,6 +29,21 @@ void recurse_get_uuids(const tmt::VoxelSceneNode& node, std::vector<tmt::UUID>& 
     }
 }
 
+bool recurse_get_node_matrix(const tmt::VoxelSceneNode& node, const tmt::UUID& uuid, glm::mat4& out_matrix, const glm::mat4& parent_matrix = glm::identity<glm::mat4>()) {
+    const glm::mat4 world_matrix = parent_matrix * node.transform;
+
+    if (node.uuid == uuid) {
+        out_matrix = world_matrix;
+        return true;
+    }
+
+    for (const tmt::VoxelSceneNode& child : node.children) {
+        if (recurse_get_node_matrix(child, uuid, out_matrix, world_matrix)) return true;
+    }
+
+    return false;
+}
+
 }  // namespace
 
 namespace tmt {
@@ -410,8 +425,8 @@ Entity recurse_instantiate_scene(
     const Entity entity = engine.ecs.create_entity(node.name);
 
     Transform& transform = engine.ecs.get_component<Transform>(entity);
-    transform.set_world_matrix(parent_matrix * node.transform);
     transform.set_parent(parent_entity);
+    transform.set_world_matrix(parent_matrix * node.transform);
 
     if (node.tree != nullptr) {
         VoxelRenderer& renderer = engine.ecs.add_component<VoxelRenderer>(entity);
@@ -481,6 +496,15 @@ std::vector<UUID> VoxelScene::get_all_uuids() const {
     }
 
     return uuids;
+}
+
+glm::mat4 VoxelScene::get_node_world_matrix(const UUID& uuid) const {
+    for (const VoxelSceneNode& node : root_nodes) {
+        glm::mat4 out_matrix;
+        if (recurse_get_node_matrix(node, uuid, out_matrix)) return out_matrix;
+    }
+
+    return glm::identity<glm::mat4>();
 }
 
 bool VoxelScene::fallback(const FallbackReason) {
