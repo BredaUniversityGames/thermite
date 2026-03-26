@@ -76,36 +76,22 @@ class Tween {
    public:
     Tween() = default;
 
-    ~Tween() {
-        if (ctrl_release) ctrl_release();
-    }
+    /* Now copyable shared_ptr handles the refcount */
+    Tween(const Tween&) = default;
+    Tween& operator=(const Tween&) = default;
+    Tween(Tween&&) = default;
+    Tween& operator=(Tween&&) = default;
 
-    /* Non - copyable, one handle owns one tween*/
-    Tween(const Tween&) = delete;
-    Tween& operator=(const Tween&) = delete;
-
-    Tween(Tween&& o) noexcept :
-        ctrl_stop(std::move(o.ctrl_stop)),
-        ctrl_start(std::move(o.ctrl_start)),
-        ctrl_restart(std::move(o.ctrl_restart)),
-        ctrl_finish(std::move(o.ctrl_finish)),
-        ctrl_release(std::move(o.ctrl_release)),
-        ctrl_is_paused(std::move(o.ctrl_is_paused)) {
-        /* clear release so it only fires once */
-        o.ctrl_release = nullptr;
-    }
-    Tween& operator=(Tween&& o) noexcept {
-        if (this != &o) {
-            if (ctrl_release) ctrl_release();  // release the tween we currently own
-            ctrl_stop = std::move(o.ctrl_stop);
-            ctrl_start = std::move(o.ctrl_start);
-            ctrl_restart = std::move(o.ctrl_restart);
-            ctrl_finish = std::move(o.ctrl_finish);
-            ctrl_release = std::move(o.ctrl_release);
-            ctrl_is_paused = std::move(o.ctrl_is_paused);
-            o.ctrl_release = nullptr;  // prevent source from double-releasing
-        }
-        return *this;
+    /* Implicit conversion from any TypedTween */
+    template <typename T, typename... Args>
+    Tween(const std::shared_ptr<ITween<T, Args...>>& ptr) {
+        auto* raw = ptr.get();
+        lifetime = ptr;  // shared_ptr<void> extends lifetime
+        ctrl_stop = [raw] { raw->do_stop(); };
+        ctrl_start = [raw] { raw->do_start(); };
+        ctrl_restart = [raw] { raw->do_restart(); };
+        ctrl_finish = [raw] { raw->do_finish(); };
+        ctrl_is_paused = [raw] { return raw->is_paused(); };
     }
 
     void stop() {
@@ -122,25 +108,31 @@ class Tween {
     }
 
     bool is_paused() const { return ctrl_is_paused ? ctrl_is_paused() : false; }
-
-    bool is_valid() const { return ctrl_stop != nullptr; }
+    bool is_valid() const { return lifetime != nullptr; }
 
    private:
-    template <typename D>
-    friend class Detail::ControllableMixin;
-
-    Tween(
-        std::function<void()> stop, std::function<void()> start, std::function<void()> restart, std::function<void()> finish, std::function<void()> release, std::function<bool()> is_paused
-    ) :
-        ctrl_stop(std::move(stop)),
-        ctrl_start(std::move(start)),
-        ctrl_restart(std::move(restart)),
-        ctrl_finish(std::move(finish)),
-        ctrl_release(std::move(release)),
-        ctrl_is_paused(std::move(is_paused)) {}
-
-    std::function<void()> ctrl_stop, ctrl_start, ctrl_restart, ctrl_finish, ctrl_release;
+    std::shared_ptr<void> lifetime;
+    std::function<void()> ctrl_stop, ctrl_start, ctrl_restart, ctrl_finish;
     std::function<bool()> ctrl_is_paused;
+};
+
+template <typename T, typename... Args>
+class TypedTween {
+    using TweenType = ITween<T, Args...>;
+    std::shared_ptr<TweenType> ptr;
+
+   public:
+    TypedTween() = default;
+
+    explicit TypedTween(std::shared_ptr<TweenType> p) : ptr(std::move(p)) {}
+
+    TweenType* operator->() { return ptr.get(); }
+    const TweenType* operator->() const { return ptr.get(); }
+    TweenType& operator*() { return *ptr; }
+
+    bool is_valid() const { return ptr != nullptr; }
+
+    operator Tween() { return Tween(ptr); }
 };
 
 namespace Traits {
@@ -433,28 +425,18 @@ class TypedCallbackMixin {
 template <typename Derived>
 class ControllableMixin {
    public:
-    operator Tween() {
-        keep_alive = true;
-        return Tween(ctrl_stop, ctrl_start, ctrl_restart, ctrl_finish, ctrl_release, ctrl_is_paused);
-    }
-
-    void inject_control_fns(
-        std::function<void()> stop, std::function<void()> start, std::function<void()> restart, std::function<void()> finish, std::function<void()> release, std::function<bool()> is_paused
-    ) {
+    void inject_control_fns(std::function<void()> stop, std::function<void()> start, std::function<void()> restart, std::function<void()> finish, std::function<bool()> is_paused) {
         ctrl_stop = std::move(stop);
         ctrl_start = std::move(start);
         ctrl_restart = std::move(restart);
         ctrl_finish = std::move(finish);
-        ctrl_release = std::move(release);
         ctrl_is_paused = std::move(is_paused);
     }
 
     void do_stop() { paused = true; }
-
     void do_start() { paused = false; }
 
     void do_restart() {
-        /* Reach up to into time mixin */
         static_assert(std::derived_from<Derived, TimeMixin<Derived>>, "Restart requires TimeMixin");
         auto* d = static_cast<Derived*>(this);
         d->get_elapsed_time() = 0.0f;
@@ -463,31 +445,19 @@ class ControllableMixin {
     }
 
     void do_finish() {
-        /* Reach up to into time mixin */
         static_assert(std::derived_from<Derived, TimeMixin<Derived>>, "Finish requires TimeMixin");
         static_assert(std::derived_from<Derived, RepeatMixin<Derived>>, "Finish requires RepeatMixin");
         auto* d = static_cast<Derived*>(this);
-
-        /* Compute total cycle time and set elapsed time to end of last cycle */
         const float cycle = compute_cycle_time(d->get_duration(), d->get_reverse_delay(), d->get_repeat_delay(), d->get_loop_mode());
         d->get_elapsed_time() = d->get_start_delay() + cycle * (d->get_repeat_count() + 1) + d->get_end_delay();
     }
 
-    void do_release() {
-        if (keep_alive) released = true;
-        keep_alive = false;
-    }
-
     bool is_paused() const { return paused; }
-    bool is_keep_alive() const { return keep_alive; }
-    bool is_released() const { return released; }
 
    private:
     bool paused = false;
-    bool keep_alive = false;
-    bool released = false;
 
-    std::function<void()> ctrl_stop, ctrl_start, ctrl_restart, ctrl_finish, ctrl_release;
+    std::function<void()> ctrl_stop, ctrl_start, ctrl_restart, ctrl_finish;
     std::function<bool()> ctrl_is_paused;
 };
 
@@ -498,7 +468,6 @@ class SubTweenMixin {
     SubTweenMixin() = default;
     SubTweenMixin(Parent* parent) : parent(parent) {}
 
-    operator Tween() { return parent->operator Tween(); }
     operator Parent&() { return *parent; }
     operator const Parent&() const { return *parent; }
 
@@ -772,30 +741,25 @@ class TweenCollection {
     using TweenType = ITween<T, Args...>;
 
    public:
-    static TweenType& add(TweenType tween) {
+    static TypedTween<T, Args...> add(TweenType tween) {
         ensure_registered();
-        auto ptr = std::make_unique<TweenType>(std::move(tween));
-        TweenType* raw = ptr.get();  // stable forever
-        tweens.push_back(std::move(ptr));
+        auto ptr = std::make_shared<TweenType>(std::move(tween));
 
-        raw->inject_control_fns(
-            [raw] { raw->do_stop(); },     //
-            [raw] { raw->do_start(); },    //
-            [raw] { raw->do_restart(); },  //
-            [raw] { raw->do_finish(); },   //
-            [raw] { raw->do_release(); },  //
-            [raw] { return raw->is_paused(); }
+        ptr->inject_control_fns(
+            [p = ptr.get()] { p->do_stop(); },   //
+            [p = ptr.get()] { p->do_start(); },  //
+            [p = ptr.get()] { p->do_restart(); }, [p = ptr.get()] { p->do_finish(); }, [p = ptr.get()] { return p->is_paused(); }
         );
-        return *raw;
+
+        tweens.push_back(ptr);
+        return ptr;
     }
 
     static void update(const float delta_time) {
-        /* Clear tweens that are done or released */
-        std::erase_if(tweens, [](const std::unique_ptr<TweenType>& tween) {
-            const bool done = tween->is_done();
-            const bool keep_alive = tween->is_keep_alive();
-            const bool released = tween->is_released();
-            return (done && !keep_alive) || released;
+        /* Erase tweens nobody holds a handle to anymore that are also done */
+        std::erase_if(tweens, [](const std::shared_ptr<TweenType>& t) {
+            /*<br>*/
+            return t->is_done() && t.use_count() == 1;
         });
 
         for (auto& tween : tweens) {
@@ -806,8 +770,7 @@ class TweenCollection {
     static void clear() { tweens.clear(); }
 
    private:
-    /* Using deque to avoid pointer invalidation when storing tweens */
-    static inline std::deque<std::unique_ptr<TweenType>> tweens {};
+    static inline std::deque<std::shared_ptr<TweenType>> tweens {};
 
     static void ensure_registered() {
         static bool registered = [] {
@@ -834,23 +797,22 @@ inline void clear() {
     Detail::Manager<Context>::clear();
 }
 
-/* Context Entry point */
+/* Context entry point */
 template <typename... Args, typename T, typename Context>
 requires Traits::HasITween<T, Args...>
-ITween<std::remove_cvref_t<T>, Args...>& tween(T& value, Ctx<Context>) {
+TypedTween<std::remove_cvref_t<T>, Args...> tween(T& value, Ctx<Context>) {
     using BareT = std::remove_cvref_t<T>;
     return Detail::TweenCollection<Context, BareT, Args...>::add(ITween<BareT, Args...>::create(value));
 }
 
-/* Default Entry point */
+/* Default entry point */
 template <typename... Args, typename T>
 requires Traits::HasITween<T, Args...>
-ITween<std::remove_cvref_t<T>, Args...>& tween(T& value) {
-    /* Default context is used if no context is provided */
+TypedTween<std::remove_cvref_t<T>, Args...> tween(T& value) {
     return tween<Args...>(value, Ctx<Detail::Default> {});
 }
 
-/* Error fallback for types that don't have ITween specialization */
+/* Error fallback */
 template <typename... Args, typename T>
 void tween(T& value) {
     static_assert(Traits::HasITween<T, Args...>, "No ITween specialization found for type T and Args...");
