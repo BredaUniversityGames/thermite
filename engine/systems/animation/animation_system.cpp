@@ -198,7 +198,6 @@ void tmt::AnimationConstraintSystem::on_update(const tmt::FrameData& time) {
         auto& parent_transform = engine.ecs.get_component<Transform>(parent);
         auto up = parent_transform.get_up();
 
-
         glm::vec3 continuous_available_pos = engine.ecs.get_component<Transform>(walk_cycle.desired_target_entity).get_world_position();
         if (auto nav_mesh = engine.ecs.try_get_component<NavMesh>(walk_cycle.ground_entity)) {
             int idx = nav_mesh->find_closest_node(continuous_available_pos);
@@ -217,8 +216,6 @@ void tmt::AnimationConstraintSystem::on_update(const tmt::FrameData& time) {
                 walk_cycle.grounded = false;
             }
         }
-
-       
 
         glm::vec3 point_velocity = (continuous_available_pos - walk_cycle.last_continuous_pos) / time.delta_time;
         walk_cycle.last_continuous_pos = continuous_available_pos;
