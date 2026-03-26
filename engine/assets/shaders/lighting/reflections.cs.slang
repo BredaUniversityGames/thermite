@@ -195,6 +195,44 @@ RWTexture2D<float3> specular;
 //     return alphaSquare / (PI_F32 * 4.0f * nrmN * nrmN * sigmaI);
 // }
 
+float2 importance_sample_ggx(float2 xi, float a2) {
+    const float phi = 2.0f * PI_F32 * xi.x;
+    const float theta = acos(sqrt((1.0f - xi.y) / ((a2 - 1.0f) * xi.y + 1.0f)));
+    return float2(phi, theta);
+}
+
+// https://hal.archives-ouvertes.fr/hal-01509746/document
+float3 GgxVndf(float3 wo, float roughness, float u1, float u2)
+{
+    // -- Stretch the view vector so we are sampling as though
+    // -- roughness==1
+    float3 v = normalize(float3(wo.x * roughness,
+                                wo.y,
+                                wo.z * roughness));
+
+    // -- Build an orthonormal basis with v, t1, and t2
+    float3 t1 = (v.y < 0.999f) ? normalize(cross(v, float3(0, 1, 0))) : float3(1, 0, 0);
+    float3 t2 = cross(t1, v);
+
+    // -- Choose a point on a disk with each half of the disk weighted
+    // -- proportionally to its projection onto direction v
+    float a = 1.0f / (1.0f + v.y);
+    float r = sqrt(u1);
+    float phi = (u2 < a) ? (u2 / a) * PI_F32 
+                         : PI_F32 + (u2 - a) / (1.0f - a) * PI_F32;
+    float p1 = r * cos(phi);
+    float p2 = r * sin(phi) * ((u2 < a) ? 1.0f : v.y);
+
+    // -- Calculate the normal in this stretched tangent space
+    float3 n = p1 * t1 + p2 * t2
+             + sqrt(max(0.0f, 1.0f - p1 * p1 - p2 * p2)) * v;
+
+    // -- unstretch and normalize the normal
+    return normalize(float3(roughness * n.x,
+                            max(0.0f, n.y),
+                            roughness * n.z));
+}
+
 [shader("compute")]
 [numthreads(16, 8, 1)]
 void main(int2 thread_id: SV_DispatchThreadID) {
@@ -241,8 +279,11 @@ void main(int2 thread_id: SV_DispatchThreadID) {
     const float alpha_2 = alpha * alpha;
     // const float3 wh = sample_vndf_bounded(wo, alpha, alpha_2, noise);
     // const float3 wi = normalize(reflect(-wo, wh));
-    const float3 wi = sample_cone(float3(-wo.x, -wo.y, wo.z), cos(PI_F32 * 0.5f * alpha), noise);
-    const float3 wh = normalize(wi + wo);
+    // const float3 wi = sample_hemisphere_cosine(float3(0, 0, 1), noise);
+    const float2 wi_s = importance_sample_ggx(noise, alpha_2);
+    // const float3 wi = spherical_to_dir(wi_s.x, wi_s.y);
+    const float3 wh = spherical_to_dir(wi_s.x, wi_s.y);  // normalize(wi + wo);
+    const float3 wi = reflect(-wo, wh);
 
     /* Ignore directions which lie underneath the horizon */
     // if (wi.z <= 0.0f) wi = float3(-wo.x, -wo.y, wo.z);
@@ -254,7 +295,7 @@ void main(int2 thread_id: SV_DispatchThreadID) {
 
     /* Evaluate the BSDF and PDF of the sample */
     const float pdf = 1.0f;  // pdf_vndf_isotropic(wo, wi, alpha, float3(0, 0, 1));
-    const float3 bsdf = specular_brdf(wi.z, wo.z, wh.z, max(0.5f, dot(wo, wh)), geo.material) / pdf;
+    const float3 bsdf = specular_brdf(wi.z, wo.z, wh.z, dot(wo, wh), geo.material) / pdf;
     // float3 wi;
     // const float3 bsdf = ImportanceSampleGgxD(wo, wi, alpha, eta, noise);
 
