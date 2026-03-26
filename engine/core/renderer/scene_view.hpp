@@ -41,6 +41,11 @@ struct SceneView {
     void update(RenderGraph& render_graph, const RenderView& render_view);
     void deinit();
 
+    /* Stats */
+    uint32_t object_count = 0u;
+    uint32_t light_count = 0u;
+    bool sun_light_active = false;
+
     /* GPU resources */
     Buffer bvh_nodes {};
     Buffer object_indices {};
@@ -54,6 +59,13 @@ struct SceneView {
     uint32_t next_uuid = 1u;
     std::vector<Entity> entities {};
     bool render_outlines = false;
+
+    /* Any objects before this distance will be fully opaque. */
+    float object_opaque_distance = 128.0f;
+    /* Any objects after this distance will be fully transparent. */
+    float object_transparent_distance = 152.0f;
+    /* Factor to change the interpolation curve when going from opaque to transparent. */
+    float object_opacity_transition = 10.0f;
 
    private:
     /* Collect and upload all voxel objects in the scene. */
