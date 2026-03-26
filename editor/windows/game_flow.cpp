@@ -96,7 +96,9 @@ void GameFlow::lock_mouse() {
 
 void GameFlow::on_game_end() {
     unlock_mouse();
-    editor.save_data.open_windows = open_windows_before;
+    if (fullscreen) {
+        editor.save_data.open_windows = open_windows_before;
+    }
     fullscreen = false;
 
     if (has_ended == false) return;
