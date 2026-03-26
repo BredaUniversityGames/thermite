@@ -54,6 +54,8 @@ struct GpuGlyph {
     glm::vec4 uv_rect {};  /* .xy = min UV, .zw = max UV */
     glm::vec4 color {};    /* Text color (RGBA Rec.709) */
     glm::vec4 params {};   /* .x = atlas_index, .yzw = unused */
+    glm::vec3 angles {};
+    float pad {};
 };
 
 void UiPipeline::init(GPUAdapter& gpu) {
@@ -239,6 +241,23 @@ void UiPipeline::enqueue_text(RenderGraph& render_graph, RenderView& render_view
             /* Perform text layout */
             TextLayoutResult layout = TextLayout::layout(text_renderer, font, container_size);
 
+            glm::vec3 scale {};
+            glm::vec3 translation {};
+            glm::vec3 skew {};
+            glm::vec4 perspective {};
+            glm::quat orientation {};
+
+            // Decompose the matrix into its components.
+            glm::decompose(transform.get_world_matrix(), scale, orientation, translation, skew, perspective);
+
+            const glm::vec3 angles = glm::eulerAngles(orientation);
+
+            /* Compute the rotation center (pivot point of the text block) */
+            const glm::vec2 rotation_center = base_pos + ui_component.pivot * container_size;
+
+            /* Build the rotation matrix from the decomposed quaternion */
+            const glm::mat3 rot = glm::mat3_cast(orientation);
+
             /* Convert layout glyphs to GPU format */
             for (const auto& glyph : layout.glyphs) {
                 if (glyphs.size() >= MAX_UI_GLYPHS) {
@@ -246,15 +265,26 @@ void UiPipeline::enqueue_text(RenderGraph& render_graph, RenderView& render_view
                     break;
                 }
 
+                /* Glyph position before rotation (in the XY plane, Z = 0) */
+                glm::vec2 glyph_pos_2d = base_pos + glyph.position;
+                const glm::vec3 offset = glm::vec3(glyph_pos_2d - rotation_center, 0.0f) * glm::vec3(scale.x, scale.y, 1.0f);
+
+                /* Rotate the offset with the full 3D rotation */
+                const glm::vec3 rotated_offset = rot * offset;
+
+                /* Project back to 2D */
+                glyph_pos_2d = rotation_center + glm::vec2(rotated_offset);
+
                 /* Fill in the GPU glyph struct */
                 GpuGlyph& gpu_glyph = glyphs.emplace_back();
-                gpu_glyph.pos_size.x = base_pos.x + glyph.position.x;
-                gpu_glyph.pos_size.y = base_pos.y + glyph.position.y;
-                gpu_glyph.pos_size.z = glyph.size.x;
-                gpu_glyph.pos_size.w = glyph.size.y;
+                gpu_glyph.pos_size.x = glyph_pos_2d.x;
+                gpu_glyph.pos_size.y = glyph_pos_2d.y;
+                gpu_glyph.pos_size.z = glyph.size.x * scale.x;
+                gpu_glyph.pos_size.w = glyph.size.y * scale.y;
                 gpu_glyph.uv_rect = glyph.uv_rect;
                 gpu_glyph.color = glyph.color;
                 gpu_glyph.params.x = *reinterpret_cast<const float*>(&glyph.atlas_index);
+                gpu_glyph.angles = angles;
             }
         }
     }

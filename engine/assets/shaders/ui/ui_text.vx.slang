@@ -5,17 +5,31 @@ import ui_text;
 ConstantBuffer<RenderView> gpu_view;
 StructuredBuffer<GlyphInstance> glyphs;
 
+/* Rotate the point 'p' on the Z axis. */
+inline float2 rotate_vertex(const float2 p, const GlyphInstance instance) {
+    const float2 o = p; //- instance.extent() * instance.pivot();
+
+    /* <https://stackoverflow.com/questions/34050929/3d-point-rotation-algorithm> */
+    const float cosa = cos(instance.angles.z);
+    const float sina = sin(instance.angles.z);
+    const float cosb = cos(instance.angles.y);
+    const float sinb = sin(instance.angles.y);
+    const float cosc = cos(instance.angles.x);
+    const float sinc = sin(instance.angles.x);
+    const float xx = cosa * cosb;
+    const float xy = cosa * sinb * sinc - sina * cosc;
+    const float yx = sina * cosb;
+    const float yy = sina * sinb * sinc + cosa * cosc;
+    return float2(xx * o.x + xy * o.y, yx * o.x + yy * o.y);
+}
+
 [shader("vertex")]
 TextVertexOutput main(TextVertexInput input, int instance_id: SV_InstanceID) {
     /* Get the glyph instance data */
     const GlyphInstance glyph = glyphs[instance_id];
-    
-    /* Calculate screen position */
-    /* input.pos.xy is [0,1] representing the quad corners */
-    const float2 screen_pos = glyph.pos() + input.pos.xy * glyph.size();
-    
+
     /* Convert to normalized device coordinates (same as ui_image shader) */
-    const float2 ndc = screen_pos / gpu_view.resolution;
+    const float2 ndc = (glyph.pos() + rotate_vertex(input.pos.xy * glyph.size(), glyph)) / gpu_view.resolution;
     
     /* Interpolate UVs from glyph's UV rect */
     const float2 uvs = lerp(glyph.uv_min(), glyph.uv_max(), input.uvs);

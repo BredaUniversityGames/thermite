@@ -23,6 +23,8 @@ public struct GlyphInstance {
     public float4 color;
     /* SDF parameters */
     public float4 params; /* .x = atlas_index, .yzw = unused */
+    /* Euler angles */
+    public float3 angles;
     
     public float2 pos() { return pos_size.xy; }
     public float2 size() { return pos_size.zw; }
