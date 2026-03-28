@@ -69,13 +69,13 @@
                 "y": 1.0,
                 "z": 1.0
             },
-            "temperature": 3360.0,
+            "temperature": 4150.0,
             "type": "SUN_LIGHT",
             "light": {
                 "index": 1,
                 "value": {
                     "source_angle": 0.10000000149011612,
-                    "luminous_intensity": 20.0
+                    "luminous_intensity": 1.0
                 }
             }
         }

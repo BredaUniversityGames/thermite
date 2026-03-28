@@ -126,7 +126,144 @@ void Destruction::destroy_voxels(Entity entity, const Stencil* stencil, glm::ive
         VoxelBody& seperate_vb = engine.ecs.get_component<VoxelBody>(seperate_entity);
         VoxelRenderer& seperate_vr = engine.ecs.get_component<VoxelRenderer>(seperate_entity);
         Physics::initialize_voxel_body(seperate_vb, *seperate_vr.resource.resource.get());
-        // Physics::recalculate_physics_data(seperate_vb);
+    }
+}
+
+uint64_t flood_fill_64(uint64_t seed, uint64_t solid_mask) {
+    // Mask to only solid voxels
+    uint64_t filled = seed & solid_mask;
+
+    while (true) {
+        uint64_t expanded = filled;
+
+        // +X: shift right by 1, mask out voxels that wrapped across X boundary
+        expanded |= (filled << 1) & 0xEEEEEEEEEEEEEEEEULL;  // x != 0 mask
+        // -X: shift left by 1
+        expanded |= (filled >> 1) & 0x7777777777777777ULL;  // x != 3 mask
+
+        // +Z: shift by 4 (z is bits [2:3]), mask out z boundary wraps
+        expanded |= (filled << 4) & 0xFFF0FFF0FFF0FFF0ULL;  // z != 0 mask
+        // -Z:
+        expanded |= (filled >> 4) & 0x0FFF0FFF0FFF0FFFULL;  // z != 3 mask
+
+        // +Y: shift by 16 (y is bits [4:5])
+        expanded |= (filled << 16) & 0xFFFFFFFFFFFF0000ULL;  // y != 0 mask
+        // -Y:
+        expanded |= (filled >> 16) & 0x0000FFFFFFFFFFFFULL;  // y != 3 mask
+
+        // Only keep solid voxels
+        expanded &= solid_mask;
+
+        // If nothing changed, we're done
+        if (expanded == filled) break;
+        filled = expanded;
+    }
+
+    return filled;
+}
+
+void Destruction::destroy_voxel(Entity entity, glm::uvec3 pos) {
+    TMT_ZONE_SCOPED_N("Destruction")
+
+    // Get voxel body & destructable components
+    VoxelRenderer* vr = engine.ecs.try_get_component<VoxelRenderer>(entity);
+    VoxelBody* vb = engine.ecs.try_get_component<VoxelBody>(entity);
+    Destructable* des = engine.ecs.try_get_component<Destructable>(entity);
+    if (vr == nullptr || des == nullptr) return;
+
+    // Subtract voxels from BLAS
+    auto* resource = vr->resource.resource.get();
+    resource->blas->remove_voxel(pos.x, pos.y, pos.z);
+    resource->set_dirty();
+
+    // Get neighbors in all cardinal directions
+    const glm::ivec3 dirs[] = { { -1, 0, 0 }, { 1, 0, 0 }, { 0, -1, 0 }, { 0, 1, 0 }, { 0, 0, -1 }, { 0, 0, 1 } };
+    std::vector<glm::uvec3> neighbors;
+    neighbors.reserve(6);
+
+    // Get all solid neighbors
+    for (int d = 0; d < 6; d++) {
+        glm::ivec3 neighbor_pos = (glm::ivec3)pos + dirs[d];
+
+        // Skip if the world position is outside the bounds of the resource,
+        if (neighbor_pos.x < 0 || neighbor_pos.y < 0 || neighbor_pos.z < 0) continue;
+        if (neighbor_pos.x >= (int)resource->size.x || neighbor_pos.y >= (int)resource->size.y || neighbor_pos.z >= (int)resource->size.z) continue;
+
+        // Skip if the voxel is empty
+        if (resource->blas->get_voxel((uint32_t)neighbor_pos.x, (uint32_t)neighbor_pos.y, (uint32_t)neighbor_pos.z) == nullptr) continue;
+
+        neighbors.push_back((glm::uvec3)neighbor_pos);
+    }
+
+    // Recalculate the normals around the voxel that has been destroyed
+    Physics::recalculate_edge_normals(resource->blas.get(), neighbors);
+
+    // Adjust mass
+    // Remove voxel contribution from center of mass
+    const float voxel_mass = std::powf(UNITS_PER_VOXEL, 3) * vb->density;
+    const float old_mass = vb->inv_mass == 0.0f ? 0.0f : 1.0f / vb->inv_mass;
+    const float new_mass = old_mass - voxel_mass;
+
+    // World position of the removed voxels center in local space
+    const glm::vec3 voxel_local_pos = ((glm::vec3)pos + 0.5f) * UNITS_PER_VOXEL;
+
+    // Weighted average
+    vb->com_local_offset = (vb->com_local_offset * old_mass - voxel_local_pos * voxel_mass) / new_mass;
+    vb->inv_mass = 1.0f / new_mass;
+
+    {
+        TMT_ZONE_SCOPED_N("Early Out")
+
+        // If we have 0 or 1 neighbor, skip destruction
+        if (neighbors.size() <= 1) {
+            return;
+        }
+
+        // Create solid mask (3x3x3 area of surrounding solid voxels)
+        uint64_t solid_mask = 0;
+        for (int ly = 0; ly <= 2; ly++) {
+            for (int lz = 0; lz <= 2; lz++) {
+                for (int lx = 0; lx <= 2; lx++) {
+                    // Get neighboring position
+                    glm::ivec3 wp = (glm::ivec3)pos + glm::ivec3(lx - 1, ly - 1, lz - 1);
+
+                    // Skip voxel that we just destroyed
+                    if (lx == 1 && ly == 1 && lz == 1) continue;
+
+                    // Bounds check
+                    if (wp.x < 0 || wp.y < 0 || wp.z < 0) continue;
+                    if (wp.x >= (int)resource->size.x || wp.y >= (int)resource->size.y || wp.z >= (int)resource->size.z) continue;
+
+                    // Add to the mask if its solid
+                    if (resource->blas->get_voxel((uint32_t)wp.x, (uint32_t)wp.y, (uint32_t)wp.z) != nullptr) solid_mask |= 1ULL << (lx + lz * 4 + ly * 16);
+                }
+            }
+        }
+
+        // Get index of neighbor 0 as a mask
+        glm::ivec3 s = (glm::ivec3)neighbors[0] - (glm::ivec3)pos + glm::ivec3(1, 1, 1);
+        uint64_t seed = 1ULL << (s.x + s.z * 4 + s.y * 16);
+
+        // Do a floodfill on 4^3 grid of bits
+        uint64_t fill = flood_fill_64(seed, solid_mask);
+
+        // If the solid_mask != the fill, some parts are unreachable
+        if (fill == solid_mask) return;
+    }
+
+    // NOTE: Replace this with custom recalculate graph function for a single voxel
+    // Clear the graph and generate it a new one (to slow)
+    des->clear();
+    generate_connection_graph(*des, resource->blas.get());
+
+    // Find where the objects separate and creates new entities for each part
+    std::vector<Entity> seperated_entities = find_seperations(entity, neighbors, *des);
+
+    // Recalculate physics data for all separate voxel bodies
+    for (Entity seperate_entity : seperated_entities) {
+        VoxelBody& seperate_vb = engine.ecs.get_component<VoxelBody>(seperate_entity);
+        VoxelRenderer& seperate_vr = engine.ecs.get_component<VoxelRenderer>(seperate_entity);
+        Physics::initialize_voxel_body(seperate_vb, *seperate_vr.resource.resource.get());
     }
 }
 
@@ -276,39 +413,6 @@ Svt64Node* get_tree_node_at_position(uint32_t x, uint32_t y, uint32_t z, Svt64* 
     }
 
     return node;
-}
-
-uint64_t flood_fill_64(uint64_t seed, uint64_t solid_mask) {
-    // Mask to only solid voxels
-    uint64_t filled = seed & solid_mask;
-
-    while (true) {
-        uint64_t expanded = filled;
-
-        // +X: shift right by 1, mask out voxels that wrapped across X boundary
-        expanded |= (filled << 1) & 0xEEEEEEEEEEEEEEEEULL;  // x != 0 mask
-        // -X: shift left by 1
-        expanded |= (filled >> 1) & 0x7777777777777777ULL;  // x != 3 mask
-
-        // +Z: shift by 4 (z is bits [2:3]), mask out z boundary wraps
-        expanded |= (filled << 4) & 0xFFF0FFF0FFF0FFF0ULL;  // z != 0 mask
-        // -Z:
-        expanded |= (filled >> 4) & 0x0FFF0FFF0FFF0FFFULL;  // z != 3 mask
-
-        // +Y: shift by 16 (y is bits [4:5])
-        expanded |= (filled << 16) & 0xFFFFFFFFFFFF0000ULL;  // y != 0 mask
-        // -Y:
-        expanded |= (filled >> 16) & 0x0000FFFFFFFFFFFFULL;  // y != 3 mask
-
-        // Only keep solid voxels
-        expanded &= solid_mask;
-
-        // If nothing changed, we're done
-        if (expanded == filled) break;
-        filled = expanded;
-    }
-
-    return filled;
 }
 
 // Forward declare function
@@ -516,17 +620,20 @@ void fill_volumes(const Svt64* original_tree, const std::vector<uint64_t>& tree_
         tree->voxel_count = 0u;
         tree->palette = original_tree->palette;
 
+        // Build new tree from the tree_masks
         tree->nodes[0] = tree->subdivide_masked(tree->depth * 2u, glm::uvec3(0u), original_tree, 0u, tree_masks, (uint8_t)i, graph);
+
+        // Destroy very small objects
+        if (tree->voxel_count < 4) {
+            engine.ecs.destroy_entity(entities[i]);
+            continue;
+        }
 
         // Shrink tree
         // Offset initial depth
         glm::uvec3 tree_offset = glm::uvec3(0);
         tree->depth++;
         shrink_tree(tree, tree->nodes[0], tree_offset);
-
-        //    /* Reallocate the nodes to save memory */
-        // nodes = (Svt64Node*)realloc(nodes, (node_count + SVT64_BUFFER_MEMORY) * sizeof(Svt64Node));
-        // nodes_capacity = node_count + SVT64_BUFFER_MEMORY;
 
         // Get max bounds
         glm::uvec3 max = tree->get_max() + glm::uvec3(1);
@@ -640,10 +747,6 @@ std::vector<Entity> Destruction::find_seperations(Entity entity, const std::vect
             }
         }
 
-        // NOTE: THIS IS WRONG, WE COULD HAVE ADDED A NODE DURING THE LOW LEVEL SEPARATION
-        // Skip the flood++ if we never added a node
-        // if (stack.empty()) continue;
-
         while (!stack.empty()) {
             if (stack.size() > max_depth) max_depth = stack.size();
 
@@ -665,9 +768,7 @@ std::vector<Entity> Destruction::find_seperations(Entity entity, const std::vect
         // flood_id++;
     }
 
-    // Log::info("Shapes found: {}", flood_id);
-
-    // num of trees = flood_id
+    // num of trees = flood_id (return original entity if we only found 1 object)
     if (flood_id <= 1) return std::vector<Entity> { entity };
 
     std::vector<Entity> entities;
@@ -683,6 +784,8 @@ std::vector<Entity> Destruction::find_seperations(Entity entity, const std::vect
         VoxelRenderer& new_vr = engine.ecs.add_component<VoxelRenderer>(entities[i]);
         new_vr.resource = { {}, std::make_shared<VoxelVolume>() };
         new_vr.resource.resource->size = vr.resource->size;
+
+        //Transform& new_transform = engine.ecs.add_component<Transform>(entities[i]);
 
         engine.ecs.add_component<Destructable>(entities[i]);
         VoxelBody& new_vb = engine.ecs.add_component<VoxelBody>(entities[i]);
