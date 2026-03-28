@@ -119,6 +119,22 @@ public [ForceInline] Material unpack_material(const Hit hit, StructuredBuffer<Vo
     return voxel_material(object, voxel_ptr);
 }
 
+/* Unpack voxel material data from hit. */
+public [ForceInline] Material unpack_material(const uint64_t packed, StructuredBuffer<VoxelObject> objects) {
+    const VisData vis = unpack_visibility(packed);
+    const VoxelObject object = objects[vis.object_index];
+
+    /* Unpack the voxel position index (1D -> 3D) */
+    const uint3 voxel_index = expand_voxel_index(vis.voxel_index);
+
+    /* Find the voxel data pointer by traversing the SVT64 */
+    const StructuredBuffer<Svt64Node> nodes = bindless::storage_buffer<StructuredBuffer<Svt64Node>>(object.blas_handle);
+    const uint voxel_ptr = fetch_svt64(nodes, object.tree_depth, voxel_index);
+
+    /* Find the voxel material */
+    return voxel_material(object, voxel_ptr);
+}
+
 /* Unpack voxel normal data from hit. */
 public [ForceInline] float3 unpack_normal(const Hit hit, StructuredBuffer<VoxelObject> objects, const Ray ray) {
     const VoxelObject object = objects[hit.object_index];

@@ -201,36 +201,29 @@ float2 importance_sample_ggx(float2 xi, float a2) {
     return float2(phi, theta);
 }
 
-// https://hal.archives-ouvertes.fr/hal-01509746/document
-float3 GgxVndf(float3 wo, float roughness, float u1, float u2)
-{
-    // -- Stretch the view vector so we are sampling as though
-    // -- roughness==1
-    float3 v = normalize(float3(wo.x * roughness,
-                                wo.y,
-                                wo.z * roughness));
+float3 SampleVNDF_GGX_Isotropic(float2 u, float3 wi, float alpha, float3 n) {
+    float3 wi_z = -n * dot(wi, n);
+    float3 wi_xy = wi + wi_z;
 
-    // -- Build an orthonormal basis with v, t1, and t2
-    float3 t1 = (v.y < 0.999f) ? normalize(cross(v, float3(0, 1, 0))) : float3(1, 0, 0);
-    float3 t2 = cross(t1, v);
+    // Warp to hemisphere configuration
+    float3 wiStd = -normalize(alpha * wi_xy + wi_z);
 
-    // -- Choose a point on a disk with each half of the disk weighted
-    // -- proportionally to its projection onto direction v
-    float a = 1.0f / (1.0f + v.y);
-    float r = sqrt(u1);
-    float phi = (u2 < a) ? (u2 / a) * PI_F32 
-                         : PI_F32 + (u2 - a) / (1.0f - a) * PI_F32;
-    float p1 = r * cos(phi);
-    float p2 = r * sin(phi) * ((u2 < a) ? 1.0f : v.y);
+    // Sample spherical cap in (-wiStd.z, 1]
+    float wiStd_z = dot(wiStd, n);
+    float z = 1.0 - u.y * (1.0 + wiStd_z);
+    float sinTheta = sqrt(saturate(1.0 - z * z));
+    float phi = PI_F32 * 2.0f * u.x - PI_F32;
+    float3 cStd = float3(sinTheta * cos(phi), sinTheta * sin(phi), z);
 
-    // -- Calculate the normal in this stretched tangent space
-    float3 n = p1 * t1 + p2 * t2
-             + sqrt(max(0.0f, 1.0f - p1 * p1 - p2 * p2)) * v;
+    // Reflect to align with normal
+    float3 wr = n + float3(0, 0, 1.000001);
+    float3 c = dot(wr, cStd) * wr / wr.z - cStd;
 
-    // -- unstretch and normalize the normal
-    return normalize(float3(roughness * n.x,
-                            max(0.0f, n.y),
-                            roughness * n.z));
+    // Unstretch
+    float3 wmStd = c + wiStd;
+    float3 wmStd_z = n * dot(n, wmStd);
+    float3 wmStd_xy = wmStd_z - wmStd;
+    return normalize(alpha * wmStd_xy + wmStd_z);
 }
 
 [shader("compute")]
@@ -268,34 +261,40 @@ void main(int2 thread_id: SV_DispatchThreadID) {
     const float2 noise = r2(blue_noise[thread_id % 512].rg, render_view.frame_index % 1024u);
 
     /* Transform vectors into shading space */
-    const float3x3 basis = orthonormal_basis(geo.normal);
-    const float3 wo = normalize(mul(basis, -ray.dir));
+    // const float3x3 basis = orthonormal_basis(geo.normal);
+    // const float3 wo = normalize(mul(basis, -ray.dir));
 
     /* Get the material roughness */
     const float roughness = geo.material.roughness();
     const float alpha = roughness * roughness;
 
     /* Importance sample specular lobe */
-    const float alpha_2 = alpha * alpha;
+    // const float alpha_2 = alpha * alpha;
+    const float3 wo = -ray.dir;
+    const float3 wh = SampleVNDF_GGX_Isotropic(clamp(noise, 0.05f, 0.95f), wo, alpha, geo.normal);
+    const float3 wi = reflect(-wo, wh);
     // const float3 wh = sample_vndf_bounded(wo, alpha, alpha_2, noise);
     // const float3 wi = normalize(reflect(-wo, wh));
     // const float3 wi = sample_hemisphere_cosine(float3(0, 0, 1), noise);
-    const float2 wi_s = importance_sample_ggx(noise, alpha_2);
+    // const float2 wi_s = importance_sample_ggx(noise, alpha_2);
     // const float3 wi = spherical_to_dir(wi_s.x, wi_s.y);
-    const float3 wh = spherical_to_dir(wi_s.x, wi_s.y);  // normalize(wi + wo);
-    const float3 wi = reflect(-wo, wh);
+    // const float3 wh = spherical_to_dir(wi_s.x, wi_s.y);  // normalize(wi + wo);
+    // const float3 wi = reflect(-wo, wh);
 
     /* Ignore directions which lie underneath the horizon */
     // if (wi.z <= 0.0f) wi = float3(-wo.x, -wo.y, wo.z);
-    if (wi.z <= 0.0f) {
+    // if (wi.z <= 0.0f) {
+    //     specular[thread_id] = 0.0f;
+    //     return;
+    // }
+    if (dot(geo.normal, wi) <= 0.0f) {
         specular[thread_id] = 0.0f;
         return;
     }
-    float3 sample_dir = normalize(mul(transpose(basis), wi));
 
     /* Evaluate the BSDF and PDF of the sample */
     const float pdf = 1.0f;  // pdf_vndf_isotropic(wo, wi, alpha, float3(0, 0, 1));
-    const float3 bsdf = specular_brdf(wi.z, wo.z, wh.z, dot(wo, wh), geo.material) / pdf;
+    const float3 bsdf = specular_brdf(dot(wi, geo.normal), dot(wo, geo.normal), dot(wh, geo.normal), dot(wo, wh), geo.material) / pdf;
     // float3 wi;
     // const float3 bsdf = ImportanceSampleGgxD(wo, wi, alpha, eta, noise);
 
@@ -312,7 +311,7 @@ void main(int2 thread_id: SV_DispatchThreadID) {
     //     hit_point = ray.origin + ray.dir * (hit.t - 0.0001f);
     //     sample_dir = sample_cone(reflect(ray.dir, unpack_normal(hit, objects, ray)), cos(PI_F32 * 0.5f * mat.roughness() * mat.roughness()), noise);
     // }
-    const Hit hit = trace_bvh2<false>(tlas_nodes, object_indices, objects, custom_ray(hit_point, sample_dir), BIG_F32);
+    const Hit hit = trace_bvh2<false>(tlas_nodes, object_indices, objects, custom_ray(hit_point, wi), BIG_F32);
 
     float3 luminance;
     if (hit.t < BIG_F32) {
@@ -322,12 +321,15 @@ void main(int2 thread_id: SV_DispatchThreadID) {
 
         /* Sample surface cache for diffuse reflection */
         const cache::Slot slot = cache::fetch(macrofacet_cache, pack_visibility(hit));
-        if (slot.key != cache::EMPTY_KEY) luminance += mat.albedo() * slot.read_diffuse() * PI_F32;
+        if (slot.key != cache::EMPTY_KEY) luminance += mat.albedo() * slot.read_diffuse();
     } else {
-        const float2 uv = dir_to_latlong(sample_dir);
+        const float2 uv = dir_to_latlong(wi);
         luminance = bindless::texture_sampled<Texture2D<float4>>(scene_view.envmap_filtered_handle).SampleLevel(envmap_sampler, uv, 0).rgb * PI_F32 * 2.0f;
     }
-    luminance *= bsdf;
-
-    specular[thread_id] = luminance;
+    specular[thread_id] = luminance * bsdf;
+    // if (dot(bsdf, bsdf) < 0.1f) {
+    //     specular[thread_id] = 0.0f;
+    // } else {
+    //     specular[thread_id] = luminance * bsdf;
+    // }    
 }
