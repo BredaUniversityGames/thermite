@@ -26,7 +26,6 @@ void OreManager::start() {
         tmt::Log::warn("No ore properties found, needed for ore toughness checks");
         return;
     }
-
 }
 
 void OreManager::update(const tmt::FrameData& time) {
@@ -69,7 +68,7 @@ void OreManager::process_thermite_ore_explosion(tmt::Entity voxel_entity, glm::u
 
     // refactor: use sphere check instead
     auto sphere_check_result = tmt::engine.ecs.systems.get<tmt::Physics>().overlap_sphere(explosion_world_pos, thermite_ore_settings.radius_explosion, thermite_ore_settings.layer_mask);
-    
+
     for (auto& result_pair : sphere_check_result) {
         auto result_entity_world_pos = tmt::engine.ecs.get_component<tmt::Transform>(result_pair.first).get_world_position();
         auto result_entity_local_pos = tmt::engine.ecs.get_component<tmt::Transform>(result_pair.first).get_local_position();
@@ -101,7 +100,6 @@ void OreManager::process_thermite_ore_explosion(tmt::Entity voxel_entity, glm::u
             }
         }
     }
-
 }
 
 }  // namespace game
