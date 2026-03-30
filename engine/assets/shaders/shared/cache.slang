@@ -16,7 +16,7 @@ public static const uint INACTIVE_THRESHOLD = 60u;
 public static const uint CAPACITY = 10000000u;
 
 static const uint TEMPORAL_DIFF_SAMPLES = 24u;
-static const uint TEMPORAL_SPEC_SAMPLES = 3u;
+static const uint TEMPORAL_SPEC_SAMPLES = 6u;
 
 /* Cache Slot (48 bytes) */
 public struct Slot {
