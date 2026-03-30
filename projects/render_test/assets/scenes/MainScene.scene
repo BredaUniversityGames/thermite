@@ -16,7 +16,6 @@
         22,
         23,
         24,
-        25,
         1048576,
         1048577,
         1048578,
@@ -73,9 +72,6 @@
         },
         "24": {
             "name": "root"
-        },
-        "25": {
-            "name": "voxel_grid"
         },
         "1048576": {
             "name": "Camera"
@@ -273,7 +269,7 @@
             "local_position": {
                 "x": 0.18639665842056274,
                 "y": 3.6447267532348633,
-                "z": -9.324745178222656
+                "z": 16.28931999206543
             },
             "local_rotation": {
                 "w": 1.0,
@@ -407,28 +403,6 @@
                 "z": 1.0
             },
             "parent": 4294967295,
-            "children": [
-                25
-            ]
-        },
-        "25": {
-            "local_position": {
-                "x": 0.36490193009376526,
-                "y": -0.08175583183765411,
-                "z": -3.7432384490966797
-            },
-            "local_rotation": {
-                "w": 1.0,
-                "x": 0.0,
-                "y": 0.0,
-                "z": 0.0
-            },
-            "local_scale": {
-                "x": 1.0,
-                "y": 1.0,
-                "z": 1.0
-            },
-            "parent": 24,
             "children": []
         },
         "1048576": {
@@ -684,20 +658,6 @@
                 "data": {},
                 "constructor_args": [
                     "d4362ea6-493a-4555-be61-559e1992a4dd"
-                ]
-            },
-            "opacity": 1.0,
-            "distance_culling": true
-        },
-        "25": {
-            "resource": {
-                "file_location": {
-                    "sub_location": "PROJECT",
-                    "relative_path": "models\\test_asteroid_matprop.svh"
-                },
-                "data": {},
-                "constructor_args": [
-                    "1b4f3552-e1da-8cbc-984e-43a55945360a"
                 ]
             },
             "opacity": 1.0,
@@ -1026,9 +986,9 @@
         },
         "18": {
             "color": {
-                "x": 0.9801578521728516,
-                "y": 0.9928810596466064,
-                "z": 0.998791515827179
+                "x": 0.6889858245849609,
+                "y": 0.22444625198841095,
+                "z": 0.4227480888366699
             },
             "temperature": 4760.0,
             "type": "SPHERE_LIGHT",
@@ -1037,7 +997,7 @@
                 "value": {
                     "source_radius": 0.10000000149011612,
                     "attenuation_radius": 10.0,
-                    "luminous_flux": 500.0
+                    "luminous_flux": 750.0
                 }
             }
         }
