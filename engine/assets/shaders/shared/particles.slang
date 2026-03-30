@@ -11,7 +11,6 @@ public struct BillboardVertexOutput {
     public uint32_t flipbook_frames : FRAMES0;
     public float dither_scale : DITHERSCALE0;
     public float2 motion_vec : MOTIONVEC;
-    public uint32_t instance_id : INSTANCEID;
 };
 
 public struct ParticleEffect {

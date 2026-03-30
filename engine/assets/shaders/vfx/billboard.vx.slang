@@ -13,8 +13,7 @@ StructuredBuffer<uint32_t> alive_list;
 
 [shader("vertex")]
 BillboardVertexOutput main(VertexInput input, uint32_t instance_id: SV_InstanceID) {
-    const uint32_t particle_idx = alive_list[instance_id];
-    const Particle particle = particles[particle_idx];
+    const Particle particle = particles[alive_list[instance_id]];
 
     /* 1. Transform to clip space  */
     const float4 clip_pos = mul(gpu_view.world_to_clip, float4(particle.pos, 1.0f));
@@ -57,7 +56,6 @@ BillboardVertexOutput main(VertexInput input, uint32_t instance_id: SV_InstanceI
     output.flipbook_frames = particle.flipbook_frames;
     output.current_frame = particle.current_frame;
     output.dither_scale = particle.dither_scale;
-    output.instance_id = particle_idx;
 
     return output;
 }

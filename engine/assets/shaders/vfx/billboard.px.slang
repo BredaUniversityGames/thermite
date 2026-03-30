@@ -30,10 +30,6 @@ FragmentOutput main(BillboardVertexOutput input) {
     const bool partial_transparent = tex_sample.a > 0.0f && tex_sample.a < 1.0f;
     const bool should_dither = input.opacity <= 0.99f || partial_transparent;
 
-    //const float2 particle_offset = r2(float2(0.0f, 0.0f), input.instance_id + gpu_view.frame_index * 1337u);
-    //const float noise = blue_noise1d.Sample(point_sampler, screen_pos / (512.0f * input.dither_scale) + particle_offset).r;
-    //const float dither = should_dither ? r1(noise, gpu_view.frame_index % 1024u) : 0.0f;
-
     const float dither = should_dither ? r1(blue_noise1d.Sample(point_sampler, screen_pos / (512.0f * input.dither_scale)).r, gpu_view.frame_index % 1024u) : 0.0f;
 
     // dither when alpha is above 0.0f but below 1.0f
