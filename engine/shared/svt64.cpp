@@ -134,7 +134,7 @@ Svt64Node Svt64::subdivide(const RawVoxels& raw_data, uint32_t scale, glm::uvec3
 
 /* Recursive tree subdivide function. */
 Svt64Node Svt64::subdivide_masked(
-    uint32_t scale, glm::uvec3 index, const Svt64* original_tree, uint32_t node_index, const std::vector<uint64_t>& tree_masks, uint8_t id, const Destructable& graph
+    uint32_t scale, glm::uvec3 index, const Svt64* original_tree, uint32_t node_index, const std::vector<uint64_t>& tree_masks, uint8_t id, const Destructible& graph
 ) {
     TMT_ZONE_SCOPED
 

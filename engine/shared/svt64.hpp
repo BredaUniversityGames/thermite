@@ -56,7 +56,7 @@ struct Svt64Hit {
 
 struct Ray;
 class Stencil;
-struct Destructable;
+struct Destructible;
 
 /* 64-wide Sparse Voxel Tree. */
 class Svt64 {
@@ -116,7 +116,7 @@ class Svt64 {
 
      /* Recursive tree subdivide function for destruction to build based on a mask. */
     Svt64Node subdivide_masked(
-        uint32_t scale, glm::uvec3 index, const Svt64* original_tree, uint32_t node_index, const std::vector<uint64_t>& tree_masks, uint8_t id, const Destructable& graph
+        uint32_t scale, glm::uvec3 index, const Svt64* original_tree, uint32_t node_index, const std::vector<uint64_t>& tree_masks, uint8_t id, const Destructible& graph
     );
 
     glm::uvec3 get_max();

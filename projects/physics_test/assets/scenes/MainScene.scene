@@ -2,7 +2,8 @@
     "version": 1,
     "entities": [
         0,
-        1
+        1,
+        2
     ],
     "Name": {
         "0": {
@@ -10,6 +11,9 @@
         },
         "1": {
             "name": "Camera"
+        },
+        "2": {
+            "name": "Entity_2"
         }
     },
     "Transform": {
@@ -20,9 +24,9 @@
                 "z": 0.0
             },
             "local_rotation": {
-                "w": 1.0,
+                "w": 0.8660253882408142,
                 "x": 0.0,
-                "y": 0.0,
+                "y": -0.5,
                 "z": 0.0
             },
             "local_scale": {
@@ -52,6 +56,39 @@
             },
             "parent": 4294967295,
             "children": []
+        },
+        "2": {
+            "local_position": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "local_rotation": {
+                "w": 1.0,
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "local_scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "parent": 4294967295,
+            "children": []
+        }
+    },
+    "Environment": {
+        "2": {
+            "resource": {
+                "file_location": {
+                    "sub_location": "PROJECT",
+                    "relative_path": "volcanic_planet.hdr"
+                }
+            },
+            "object_opaque_distance": 128.0,
+            "object_transparent_distance": 152.0,
+            "object_opacity_transition": 10.0
         }
     },
     "Camera": {
@@ -69,7 +106,7 @@
                 "y": 1.0,
                 "z": 1.0
             },
-            "temperature": 4150.0,
+            "temperature": 5200.0,
             "type": "SUN_LIGHT",
             "light": {
                 "index": 1,

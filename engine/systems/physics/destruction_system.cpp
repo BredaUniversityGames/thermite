@@ -16,7 +16,7 @@ namespace tmt {
 void Destruction::on_start() {}
 
 void Destruction::on_update(const FrameData&) {
-    for (const auto& [entity, des, vb, vr] : engine.ecs.view<Destructable, VoxelBody, VoxelRenderer>().each()) {
+    for (const auto& [entity, des, vb, vr] : engine.ecs.view<Destructible, VoxelBody, VoxelRenderer>().each()) {
         if (des.initialized) continue;
 
         des.initialized = true;
@@ -83,7 +83,7 @@ void Destruction::destroy_voxels(Entity entity, const Stencil* stencil, glm::ive
 
     // Get voxel body & destructable components
     VoxelRenderer* vr = engine.ecs.try_get_component<VoxelRenderer>(entity);
-    Destructable* des = engine.ecs.try_get_component<Destructable>(entity);
+    Destructible* des = engine.ecs.try_get_component<Destructible>(entity);
     if (vr == nullptr || des == nullptr) return;
 
     // Subtract voxels from BLAS
@@ -113,16 +113,23 @@ void Destruction::destroy_voxels(Entity entity, const Stencil* stencil, glm::ive
     //generate_connection_graph(*des, resource->blas.get());
 
     // Regenerate part of the graph based on the edge indices
-    regenerate_connection_graph(*des, resource->blas.get(), stencil, offset);
+    //regenerate_connection_graph(*des, resource->blas.get(), stencil, offset);
+
+    des->clear();
+    generate_connection_graph(*des, resource->blas.get());
 
     // Can be done before separating the objects, because the data will be transfered over
     Physics::recalculate_edge_normals(resource->blas.get(), edge_indices);
+
+
 
     // Find where the objects separate and creates new entities for each part
     std::vector<Entity> seperated_entities = find_seperations(entity, edge_indices, *des);
 
     // Recalculate physics data for all separate voxel bodies
     for (Entity seperate_entity : seperated_entities) {
+        if (!engine.ecs.get_registry().valid(seperate_entity)) continue;
+
         VoxelBody& seperate_vb = engine.ecs.get_component<VoxelBody>(seperate_entity);
         VoxelRenderer& seperate_vr = engine.ecs.get_component<VoxelRenderer>(seperate_entity);
         Physics::initialize_voxel_body(seperate_vb, *seperate_vr.resource.resource.get());
@@ -168,7 +175,7 @@ void Destruction::destroy_voxel(Entity entity, glm::uvec3 pos) {
     // Get voxel body & destructable components
     VoxelRenderer* vr = engine.ecs.try_get_component<VoxelRenderer>(entity);
     VoxelBody* vb = engine.ecs.try_get_component<VoxelBody>(entity);
-    Destructable* des = engine.ecs.try_get_component<Destructable>(entity);
+    Destructible* des = engine.ecs.try_get_component<Destructible>(entity);
     if (vr == nullptr || des == nullptr) return;
 
     // Subtract voxels from BLAS
@@ -261,6 +268,8 @@ void Destruction::destroy_voxel(Entity entity, glm::uvec3 pos) {
 
     // Recalculate physics data for all separate voxel bodies
     for (Entity seperate_entity : seperated_entities) {
+        if (!engine.ecs.get_registry().valid(seperate_entity)) continue;
+
         VoxelBody& seperate_vb = engine.ecs.get_component<VoxelBody>(seperate_entity);
         VoxelRenderer& seperate_vr = engine.ecs.get_component<VoxelRenderer>(seperate_entity);
         Physics::initialize_voxel_body(seperate_vb, *seperate_vr.resource.resource.get());
@@ -338,7 +347,7 @@ constexpr uint64_t edge_masks[6] {
     0xF000F000F000F000ULL   // +Z
 };
 
-Svt64Node* get_tree_node_and_mark(uint32_t x, uint32_t y, uint32_t z, Svt64* tree, Destructable& graph, std::vector<uint64_t>& tree_masks, uint64_t mask) {
+Svt64Node* get_tree_node_and_mark(uint32_t x, uint32_t y, uint32_t z, Svt64* tree, Destructible& graph, std::vector<uint64_t>& tree_masks, uint64_t mask) {
     TMT_ZONE_SCOPED
 
     tmt::Svt64Node* node = &tree->nodes[0];
@@ -378,7 +387,7 @@ Svt64Node* get_tree_node_and_mark(uint32_t x, uint32_t y, uint32_t z, Svt64* tre
     return node;
 }
 
-Svt64Node* get_tree_node_at_position(uint32_t x, uint32_t y, uint32_t z, Svt64* tree, Destructable& graph) {
+Svt64Node* get_tree_node_at_position(uint32_t x, uint32_t y, uint32_t z, Svt64* tree, Destructible& graph) {
     TMT_ZONE_SCOPED
 
     tmt::Svt64Node* node = &tree->nodes[0];
@@ -420,7 +429,7 @@ Svt64Node* get_tree_node_at_position(uint32_t x, uint32_t y, uint32_t z, Svt64* 
 // , std::vector<Destruction::FloodStackEntry>& stack
 
 void low_level_separation_flood(
-    Destructable& graph, DestructionNode& current_node, uint8_t id, uint64_t overlap_mask, Svt64* tree, std::vector<Destruction::FloodStackEntry>& stack, std::vector<uint64_t>& tree_masks
+    Destructible& graph, DestructionNode& current_node, uint8_t id, uint64_t overlap_mask, Svt64* tree, std::vector<Destruction::FloodStackEntry>& stack, std::vector<uint64_t>& tree_masks
 ) {
     // Get svt64 node
     const Svt64Node& tree_node = *get_tree_node_at_position(current_node.global_position.x, current_node.global_position.y, current_node.global_position.z, tree, graph);
@@ -526,7 +535,7 @@ void low_level_separation_flood(
     //}
 }
 
-void separation_flood(Destructable& graph, DestructionNode& current_node, uint8_t id, Svt64* tree, std::vector<Destruction::FloodStackEntry>& stack, std::vector<uint64_t>& tree_masks) {
+void separation_flood(Destructible& graph, DestructionNode& current_node, uint8_t id, Svt64* tree, std::vector<Destruction::FloodStackEntry>& stack, std::vector<uint64_t>& tree_masks) {
     current_node.flood_id |= (1ull << id);
     current_node.cleared = true;
 
@@ -601,7 +610,7 @@ void shrink_tree(Svt64* tree, Svt64Node& current_node, glm::uvec3& offset) {
     }
 }
 
-void fill_volumes(const Svt64* original_tree, const std::vector<uint64_t>& tree_masks, std::vector<Entity>& entities, const Destructable& graph) {
+void fill_volumes(const Svt64* original_tree, const std::vector<uint64_t>& tree_masks, std::vector<Entity>& entities, const Destructible& graph) {
     for (size_t i = 0; i < entities.size(); i++) {
         VoxelRenderer& vr = engine.ecs.get_component<VoxelRenderer>(entities[i]);
         VoxelBody& vb = engine.ecs.get_component<VoxelBody>(entities[i]);
@@ -622,12 +631,6 @@ void fill_volumes(const Svt64* original_tree, const std::vector<uint64_t>& tree_
 
         // Build new tree from the tree_masks
         tree->nodes[0] = tree->subdivide_masked(tree->depth * 2u, glm::uvec3(0u), original_tree, 0u, tree_masks, (uint8_t)i, graph);
-
-        // Destroy very small objects
-        if (tree->voxel_count < 4) {
-            engine.ecs.destroy_entity(entities[i]);
-            continue;
-        }
 
         // Shrink tree
         // Offset initial depth
@@ -654,9 +657,20 @@ void fill_volumes(const Svt64* original_tree, const std::vector<uint64_t>& tree_
 
         vr.resource->set_dirty();
     }
+
+    for (size_t i = 0; i < entities.size(); i++) {
+        VoxelRenderer& vr = engine.ecs.get_component<VoxelRenderer>(entities[i]);
+        Svt64* tree = vr.resource.resource->blas.get();
+        // Destroy very small objects
+        if (tree->voxel_count < 4) {
+            engine.ecs.disable(entities[i], true);
+            // engine.ecs.destroy_entity(entities[i]);
+            continue;
+        }
+    }
 }
 
-std::vector<Entity> Destruction::find_seperations(Entity entity, const std::vector<glm::uvec3>& edge_indices, Destructable& graph) {
+std::vector<Entity> Destruction::find_seperations(Entity entity, const std::vector<glm::uvec3>& edge_indices, Destructible& graph) {
     TMT_ZONE_SCOPED
 
     VoxelRenderer& vr = engine.ecs.get_component<VoxelRenderer>(entity);
@@ -787,7 +801,7 @@ std::vector<Entity> Destruction::find_seperations(Entity entity, const std::vect
 
         //Transform& new_transform = engine.ecs.add_component<Transform>(entities[i]);
 
-        engine.ecs.add_component<Destructable>(entities[i]);
+        engine.ecs.add_component<Destructible>(entities[i]);
         VoxelBody& new_vb = engine.ecs.add_component<VoxelBody>(entities[i]);
         new_vb.position = vb.position;
         new_vb.rotation = vb.rotation;
@@ -826,7 +840,7 @@ bool all_children_solid(Svt64* tree, const uint32_t node_index) {
 }
 
 void set_lower_level_neighbors(
-    Destructable& graph, DestructionNode& connection_node, Svt64* tree, const uint32_t node_index, const uint32_t current_depth, const uint32_t node_scale, const uint32_t global_x,
+    Destructible& graph, DestructionNode& connection_node, Svt64* tree, const uint32_t node_index, const uint32_t current_depth, const uint32_t node_scale, const uint32_t global_x,
     const uint32_t global_y, const uint32_t global_z, uint64_t edge_mask, uint8_t from_dir, uint8_t to_dir
 ) {
     // Get current node
@@ -863,7 +877,7 @@ void set_lower_level_neighbors(
 }
 
 void set_highest_level_neighbors(
-    Destructable& graph, DestructionNode& connection_node, Svt64* tree, const uint32_t node_scale, const uint32_t global_x, const uint32_t global_y, const uint32_t global_z
+    Destructible& graph, DestructionNode& connection_node, Svt64* tree, const uint32_t node_scale, const uint32_t global_x, const uint32_t global_y, const uint32_t global_z
 ) {
     {  // -X
         tmt::Svt64Node* node = &tree->nodes[0];
@@ -1121,7 +1135,7 @@ void set_highest_level_neighbors(
 }
 
 void recurse_generate_connection(
-    Destructable& graph, Svt64* tree, const uint32_t node_index, const uint32_t current_depth, const uint32_t node_scale, const uint32_t global_x, const uint32_t global_y,
+    Destructible& graph, Svt64* tree, const uint32_t node_index, const uint32_t current_depth, const uint32_t node_scale, const uint32_t global_x, const uint32_t global_y,
     const uint32_t global_z
 ) {
     // Get current node
@@ -1177,7 +1191,7 @@ void recurse_generate_connection(
 }
 
 void recurse_regenerate_connection(
-    Destructable& graph, Svt64* tree, const uint32_t node_index, const uint32_t current_depth, const uint32_t node_scale, const uint32_t global_x, const uint32_t global_y,
+    Destructible& graph, Svt64* tree, const uint32_t node_index, const uint32_t current_depth, const uint32_t node_scale, const uint32_t global_x, const uint32_t global_y,
     const uint32_t global_z, glm::uvec3 min, glm::uvec3 max
 ) {
     // Get current node
@@ -1255,7 +1269,7 @@ void recurse_regenerate_connection(
     }
 }
 
-void Destruction::regenerate_connection_graph(Destructable& graph, Svt64* tree, const Stencil* stencil, glm::ivec3 offset) {
+void Destruction::regenerate_connection_graph(Destructible& graph, Svt64* tree, const Stencil* stencil, glm::ivec3 offset) {
     TMT_ZONE_SCOPED
 
     // recurse_regenerate_connection(graph, tree, 0, 0, (1u << (tree->depth * 2u)), 0, 0, 0, (glm::uvec3)offset, (glm::uvec3)offset + stencil->size);
@@ -1332,7 +1346,7 @@ void Destruction::regenerate_connection_graph(Destructable& graph, Svt64* tree, 
     }
 }
 
-void Destruction::generate_connection_graph(Destructable& graph, Svt64* tree) {
+void Destruction::generate_connection_graph(Destructible& graph, Svt64* tree) {
     TMT_ZONE_SCOPED
     // Scale of the root node in voxels
     const uint32_t node_scale = (1u << (tree->depth * 2u));

@@ -714,7 +714,11 @@ inline void calculate_center_of_mass(VoxelBody& vb, const VoxelVolume& volume) {
     // Apply results to voxel body
     // vb.com_local_offset = mass_center_sum / (float)voxel_count;
     const float voxel_mass = std::powf(UNITS_PER_VOXEL, 3) * vb.density;
-    vb.inv_mass = 1.0f / (voxel_mass * voxel_count);
+
+    if (voxel_count == 0) 
+        vb.inv_mass = 1.0f;
+    else 
+        vb.inv_mass = 1.0f / (voxel_mass * voxel_count);
 }
 
 inline void recurse_inertia(
@@ -745,7 +749,7 @@ inline void recurse_inertia(
         if (current_depth + 1 < tree->depth) {
             recurse_inertia(tree, child_node_index, current_depth + 1, child_half_extent, child_center, extents_diff, com_local, voxel_mass, inertia_tensor);
         } else {
-            // Leaf node - accumulate inertia contribution
+            // Leaf node, accumulate inertia contribution
             // Convert to local voxel space (same as mass calculation) then subtract COM
             const glm::vec3 voxel_pos = child_center - extents_diff;
             const glm::vec3 r = voxel_pos - com_local;
@@ -795,6 +799,10 @@ void Physics::initialize_voxel_body(VoxelBody& vb, VoxelVolume& volume) {
 
     // Then calculate inertia (needs COM)
     vb.inv_inertia = glm::inverse(calculate_inertia_tensor(vb, volume));
+    
+    if (glm::any(glm::isnan(vb.inv_inertia[0])) || glm::any(glm::isinf(vb.inv_inertia[0]))) vb.inv_inertia = glm::mat3(1.0f);
+    if (glm::any(glm::isnan(vb.inv_inertia[1])) || glm::any(glm::isinf(vb.inv_inertia[1]))) vb.inv_inertia = glm::mat3(1.0f);
+    if (glm::any(glm::isnan(vb.inv_inertia[2])) || glm::any(glm::isinf(vb.inv_inertia[2]))) vb.inv_inertia = glm::mat3(1.0f);
 
     vb.center_of_mass = vb.position + (vb.rotation * vb.com_local_offset);
 }

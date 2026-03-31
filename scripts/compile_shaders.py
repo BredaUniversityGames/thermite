@@ -60,8 +60,8 @@ def main():
         "-o", str(output_file)
     ]
 
-    if args.depfile:
-        cmd += ["-depfile", str(args.depfile)]
+    # if args.depfile:
+    #    cmd += ["-depfile", str(args.depfile)]
 
     # if args.debug:
     #    cmd += ["-g", "-O0", "-line-directive-mode", "standard"]

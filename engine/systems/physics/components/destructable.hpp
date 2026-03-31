@@ -34,7 +34,7 @@ struct DestructionNode {
     std::array<AxisConnections, 6> connections;
 };
 
-struct Destructable {
+struct Destructible {
     bool initialized = false;
     uint32_t node_count = 0;
 
