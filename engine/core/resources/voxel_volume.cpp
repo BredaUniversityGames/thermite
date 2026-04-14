@@ -43,8 +43,6 @@ VoxelVolume::VoxelVolume() : Base({}, {}) {
 
     blas->nodes_capacity = 1u;
     blas->voxels_capacity = 1u;
-    //blas_nodes 
-    //blas_voxels
 
     create_gpu_buffers();
 }

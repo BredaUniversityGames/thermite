@@ -9,7 +9,6 @@ constexpr uint32_t MAX_VOXEL_NODES = 1 << 30;
 struct DestructionNode;
 
 struct AxisConnections {
-    // uint8_t count = 0;
     std::vector<uint32_t> node_indices;
 
     void add_connection(uint32_t node_index) { node_indices.push_back(node_index); };
