@@ -4,6 +4,7 @@
 #include "engine/core/polyline.hpp"
 #include "engine/core/components/voxel_renderer.hpp"
 #include "engine/tools/player_data.hpp"
+#include "projects/game/data_headers/save_entries.hpp"
 #include "projects/game/data_headers/wallet.hpp"
 void game::OreCollector::start() {
     tmt::engine.ecs.get_dispatcher().sink<TriggerCollisionEvent>().connect<&OreCollector::on_collision_trigger>(this);
@@ -113,11 +114,8 @@ void game::OreCollector::transfer_money() {
         wallet->currencies.dollars = static_cast<uint64_t>(static_cast<float>(wallet->currencies.dollars) * penalty_percentage);
     }
 
-    tmt::Log::info("Dollars: {}", wallet->currencies.dollars);
-    for (auto& pair : wallet->currencies.resource_counts) {
-        tmt::Log::info("Resource {}, count {}", magic_enum::enum_name(pair.first), pair.second);
-    }
-    auto& resources { tmt::engine.player_data.get<Currencies>("Run resources") };
+    wallet->currencies.print_values();
+    auto& resources { tmt::engine.player_data.get<Currencies>(RUN_RESOURCES) };
     resources = wallet->currencies;
     // reset state
     wallet->currencies = Currencies {};

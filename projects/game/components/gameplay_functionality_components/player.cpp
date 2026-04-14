@@ -15,7 +15,10 @@
 #include "engine/core/components/ui_component.hpp"
 #include "engine/shared/ray.hpp"
 #include "engine/systems/physics/physics_system.hpp"
+#include "engine/tools/player_data.hpp"
 #include "projects/game/components/development_tools/debug_line_helper.hpp"
+#include "projects/game/data_headers/save_entries.hpp"
+#include "projects/game/data_headers/wallet.hpp"
 
 // TODO before we have a serializer for input, you can add all the needed keybindings here.
 //  TODO we still have to add the gamepad inputs here
@@ -85,6 +88,16 @@ void Player::start() {
     tmt::engine.input.lock_mouse(true);
     setup_inputs(tmt::engine.input_map);
     tmt::engine.ecs.get_dispatcher().sink<AttachEvent>().connect<&Player::on_attach>(this);
+
+    // initialize wallet
+    auto* wallet = tmt::engine.ecs.try_get_component<Wallet>(entity);
+    if (wallet == nullptr) {
+        tmt::Log::error("No Wallet component found");
+
+        return;
+    }
+    auto& resources { tmt::engine.player_data.get<Currencies>(PERSISTENT_RESOURCES) };
+    wallet->currencies = resources;
 }
 void Player::end() {
     // tmt::engine.ecs.get_dispatcher().trigger<AttachEvent>({ .entity = entity_that_attaches, .is_attached = is_attached });

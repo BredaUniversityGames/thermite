@@ -14,6 +14,8 @@
 #include "engine/systems/motion_math/motion_math_system.hpp"  // undure of this pause either
 #include "engine/systems/physics/physics_system.hpp"
 #include "engine/tools/player_data.hpp"
+#include "projects/game/data_headers/save_entries.hpp"
+#include "projects/game/data_headers/wallet.hpp"
 
 namespace game {
 
@@ -199,6 +201,10 @@ void MenuController::enable_end_of_game_menu(const EndRun& event) const {
         unlock_mouse();
         tmt::engine.ecs.enable(end_run_menu_entity);
     }
+    auto& run_curr { tmt::engine.player_data.get<Currencies>(RUN_RESOURCES) };
+    auto& persistent_curr { tmt::engine.player_data.get<Currencies>(PERSISTENT_RESOURCES) };
+
+    persistent_curr += run_curr;
 }
 
 void MenuController::lock_mouse() const {

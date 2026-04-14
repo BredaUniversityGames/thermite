@@ -6,8 +6,28 @@ namespace game {
 
 struct Currencies {
     uint64_t dollars = 0u;
-
     std::unordered_map<OreProperties::OreResources, uint64_t> resource_counts = {};
+
+    Currencies& operator+=(const Currencies& other) {
+        dollars += other.dollars;
+        for (const auto& [ore, count] : other.resource_counts) {
+            resource_counts[ore] += count;
+        }
+        return *this;
+    }
+
+    Currencies operator+(const Currencies& other) const {
+        Currencies result = *this;
+        result += other;
+        return result;
+    }
+
+    void print_values() {
+        tmt::Log::info("Dollars: {}", dollars);
+        for (auto& pair : resource_counts) {
+            tmt::Log::info("Resource {}, count {}", magic_enum::enum_name(pair.first), pair.second);
+        }
+    }
 };
 class Wallet : public tmt::GameComponent<Wallet> {
    public:
