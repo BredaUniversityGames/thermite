@@ -44,6 +44,9 @@ void Scenes::swap_scenes() {
         return;
     }
 
+    /* Reset Particles */
+    engine.renderer.kill_particles = true;
+
     /* Unload */
     OnPreUnloadScene::dispatch();
     if (active_scene) active_scene->on_end();
