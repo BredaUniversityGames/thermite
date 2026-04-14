@@ -13,9 +13,15 @@ void game::MediumEnemy::start() {
         player = CamEntity;
         break;
     }
+
+    auto& dispatcher = tmt::engine.ecs.get_dispatcher();
+    dispatcher.sink<game::GamePausedEvent>().connect<&MediumEnemy::on_game_paused>(this);
+    dispatcher.sink<game::GameUnpausedEvent>().connect<&MediumEnemy::on_game_unpaused>(this);
 }
 
 void game::MediumEnemy::update(const tmt::FrameData& time) {
+    if (paused) return;
+    
     // check core, if none, enemy dies
     if (this->core == entt::null) die();
 
@@ -158,6 +164,14 @@ void game::MediumEnemy::die() {
     /*auto& registry = tmt::engine.ecs.get_registry();
     auto& agent = registry.get<tmt::GoapAgent>(this);
     tmt::engine.ecs.remove_component<tmt::GoapAgent>(this);*/
+}
+
+void game::MediumEnemy::on_game_paused(const game::GamePausedEvent&) {
+    paused = true;
+}
+
+void game::MediumEnemy::on_game_unpaused(const game::GameUnpausedEvent&) {
+    paused = false;
 }
 
 bool Missile::update(float dt, glm::vec3 ground_up, glm::vec3 player_pos) {

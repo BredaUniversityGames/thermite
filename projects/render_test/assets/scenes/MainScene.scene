@@ -15,6 +15,7 @@
         21,
         22,
         23,
+        24,
         1048576,
         1048577,
         1048578,
@@ -24,7 +25,8 @@
         1048582,
         1048583,
         1048584,
-        1048585
+        1048585,
+        1048597
     ],
     "Name": {
         "10": {
@@ -69,6 +71,9 @@
         "23": {
             "name": "Lamp (1)"
         },
+        "24": {
+            "name": "root"
+        },
         "1048576": {
             "name": "Camera"
         },
@@ -98,6 +103,9 @@
         },
         "1048585": {
             "name": "Asteroid8"
+        },
+        "1048597": {
+            "name": "Test UI"
         }
     },
     "Transform": {
@@ -263,9 +271,9 @@
         },
         "18": {
             "local_position": {
-                "x": 0.0,
-                "y": 0.0,
-                "z": 17.5
+                "x": 0.18639665842056274,
+                "y": 3.6447267532348633,
+                "z": 16.28931999206543
             },
             "local_rotation": {
                 "w": 1.0,
@@ -376,6 +384,26 @@
             "local_scale": {
                 "x": 1.0,
                 "y": 5.0,
+                "z": 1.0
+            },
+            "parent": 4294967295,
+            "children": []
+        },
+        "24": {
+            "local_position": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "local_rotation": {
+                "w": 1.0,
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "local_scale": {
+                "x": 1.0,
+                "y": 1.0,
                 "z": 1.0
             },
             "parent": 4294967295,
@@ -580,6 +608,26 @@
             },
             "parent": 4294967295,
             "children": []
+        },
+        "1048597": {
+            "local_position": {
+                "x": 18.50146484375,
+                "y": -74.99996948242188,
+                "z": -0.890625
+            },
+            "local_rotation": {
+                "w": 1.0,
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "local_scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "parent": 4294967295,
+            "children": []
         }
     },
     "Voxel Renderer": {
@@ -589,10 +637,13 @@
                     "sub_location": "PROJECT",
                     "relative_path": "wall.svh"
                 },
+                "data": {},
                 "constructor_args": [
                     "00000000-0000-0000-0000-000000000000"
                 ]
-            }
+            },
+            "opacity": 1.0,
+            "distance_culling": true
         },
         "21": {
             "resource": {
@@ -600,10 +651,13 @@
                     "sub_location": "PROJECT",
                     "relative_path": "lamp.svh"
                 },
+                "data": {},
                 "constructor_args": [
                     "d4362ea6-493a-4555-be61-559e1992a4dd"
                 ]
-            }
+            },
+            "opacity": 1.0,
+            "distance_culling": true
         },
         "22": {
             "resource": {
@@ -611,10 +665,13 @@
                     "sub_location": "PROJECT",
                     "relative_path": "diffuse_wall.svh"
                 },
+                "data": {},
                 "constructor_args": [
                     "00000000-0000-0000-0000-000000000000"
                 ]
-            }
+            },
+            "opacity": 1.0,
+            "distance_culling": true
         },
         "23": {
             "resource": {
@@ -622,10 +679,13 @@
                     "sub_location": "PROJECT",
                     "relative_path": "lamp.svh"
                 },
+                "data": {},
                 "constructor_args": [
                     "d4362ea6-493a-4555-be61-559e1992a4dd"
                 ]
-            }
+            },
+            "opacity": 1.0,
+            "distance_culling": true
         },
         "1048577": {
             "resource": {
@@ -633,10 +693,13 @@
                     "sub_location": "PROJECT",
                     "relative_path": "test_asteroid_3.svh"
                 },
+                "data": {},
                 "constructor_args": [
                     "00000000-0000-0000-0000-000000000000"
                 ]
-            }
+            },
+            "opacity": 1.0,
+            "distance_culling": true
         },
         "1048578": {
             "resource": {
@@ -644,10 +707,13 @@
                     "sub_location": "PROJECT",
                     "relative_path": "test_asteroid_3.svh"
                 },
+                "data": {},
                 "constructor_args": [
                     "00000000-0000-0000-0000-000000000000"
                 ]
-            }
+            },
+            "opacity": 1.0,
+            "distance_culling": true
         },
         "1048579": {
             "resource": {
@@ -655,10 +721,13 @@
                     "sub_location": "PROJECT",
                     "relative_path": "test_asteroid_3.svh"
                 },
+                "data": {},
                 "constructor_args": [
                     "00000000-0000-0000-0000-000000000000"
                 ]
-            }
+            },
+            "opacity": 1.0,
+            "distance_culling": true
         },
         "1048580": {
             "resource": {
@@ -666,10 +735,13 @@
                     "sub_location": "PROJECT",
                     "relative_path": "test_asteroid_7.svh"
                 },
+                "data": {},
                 "constructor_args": [
                     "00000000-0000-0000-0000-000000000000"
                 ]
-            }
+            },
+            "opacity": 1.0,
+            "distance_culling": true
         },
         "1048581": {
             "resource": {
@@ -677,10 +749,13 @@
                     "sub_location": "PROJECT",
                     "relative_path": "test_asteroid_7.svh"
                 },
+                "data": {},
                 "constructor_args": [
                     "00000000-0000-0000-0000-000000000000"
                 ]
-            }
+            },
+            "opacity": 1.0,
+            "distance_culling": true
         },
         "1048582": {
             "resource": {
@@ -688,10 +763,13 @@
                     "sub_location": "PROJECT",
                     "relative_path": "test_asteroid_7.svh"
                 },
+                "data": {},
                 "constructor_args": [
                     "00000000-0000-0000-0000-000000000000"
                 ]
-            }
+            },
+            "opacity": 1.0,
+            "distance_culling": true
         },
         "1048583": {
             "resource": {
@@ -699,10 +777,13 @@
                     "sub_location": "PROJECT",
                     "relative_path": "test_asteroid_7.svh"
                 },
+                "data": {},
                 "constructor_args": [
                     "00000000-0000-0000-0000-000000000000"
                 ]
-            }
+            },
+            "opacity": 1.0,
+            "distance_culling": true
         },
         "1048584": {
             "resource": {
@@ -710,10 +791,13 @@
                     "sub_location": "PROJECT",
                     "relative_path": "test_asteroid_7.svh"
                 },
+                "data": {},
                 "constructor_args": [
                     "00000000-0000-0000-0000-000000000000"
                 ]
-            }
+            },
+            "opacity": 1.0,
+            "distance_culling": true
         },
         "1048585": {
             "resource": {
@@ -721,10 +805,13 @@
                     "sub_location": "PROJECT",
                     "relative_path": "test_asteroid_7.svh"
                 },
+                "data": {},
                 "constructor_args": [
                     "00000000-0000-0000-0000-000000000000"
                 ]
-            }
+            },
+            "opacity": 1.0,
+            "distance_culling": true
         }
     },
     "Environment": {
@@ -734,7 +821,10 @@
                     "sub_location": "PROJECT",
                     "relative_path": "env\\HDR_multi_nebulae_3.hdr"
                 }
-            }
+            },
+            "object_opaque_distance": 128.0,
+            "object_transparent_distance": 152.0,
+            "object_opacity_transition": 10.0
         }
     },
     "Camera": {
@@ -920,18 +1010,18 @@
         },
         "18": {
             "color": {
-                "x": 0.6441628932952881,
-                "y": 0.07901414483785629,
-                "z": 0.590932309627533
+                "x": 0.6889858245849609,
+                "y": 0.22444625198841095,
+                "z": 0.4227480888366699
             },
-            "temperature": -6000.0,
+            "temperature": 4760.0,
             "type": "SPHERE_LIGHT",
             "light": {
                 "index": 0,
                 "value": {
                     "source_radius": 0.10000000149011612,
                     "attenuation_radius": 10.0,
-                    "luminous_flux": 500.0
+                    "luminous_flux": 750.0
                 }
             }
         }
@@ -1033,6 +1123,83 @@
                 }
             ],
             "active": true
+        }
+    },
+    "UIComponent": {
+        "1048597": {
+            "size": {
+                "x": 1175.9984130859375,
+                "y": 274.00006103515625
+            },
+            "pivot": {
+                "x": 0.5,
+                "y": 0.5
+            },
+            "block_raycasts": false,
+            "scale_with_parent_x": false,
+            "scale_with_parent_y": false,
+            "aspect_mode": "STRETCH",
+            "aspect_ratio": {
+                "x": 1.0,
+                "y": 1.0
+            },
+            "anchor": "MIDDLE_CENTER"
+        }
+    },
+    "ImageRenderer": {
+        "1048597": {
+            "texture": {
+                "file_location": {
+                    "sub_location": "PROJECT",
+                    "relative_path": ""
+                },
+                "data": null
+            },
+            "color": {
+                "x": 0.3451957106590271,
+                "y": 0.3451957106590271,
+                "z": 0.3451957106590271,
+                "w": 1.0
+            }
+        }
+    },
+    "TextRenderer": {
+        "1048597": {
+            "text": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
+            "font": {
+                "file_location": {
+                    "sub_location": "ENGINE",
+                    "relative_path": "fonts/Rubik-Regular.ttf"
+                },
+                "data": {
+                    "atlas_size": 1024,
+                    "base_font_size": 80.0,
+                    "sdf_padding": 8,
+                    "sdf_on_edge_value": 128.0,
+                    "sdf_pixel_dist_scale": 16.0,
+                    "first_char": 32,
+                    "last_char": 126
+                }
+            },
+            "font_size": 32.0,
+            "color": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0,
+                "w": 1.0
+            },
+            "line_spacing": 74.0,
+            "letter_spacing": 0.0,
+            "paragraph_spacing": 0.0,
+            "horizontal_align": "LEFT",
+            "vertical_align": "TOP",
+            "word_wrap": true,
+            "max_width": 1175.9984130859375,
+            "max_height": 274.00006103515625,
+            "overflow": "VISIBLE",
+            "use_ui_component_size": true,
+            "auto_font_size": false,
+            "rich_text_enabled": true
         }
     },
     "systems": null
