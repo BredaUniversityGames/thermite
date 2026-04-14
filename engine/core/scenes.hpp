@@ -56,6 +56,9 @@ class Scenes : public OnBlockInputRequest {
     template <typename T>
     requires std::is_base_of_v<SceneBase, T>
     void load_scene() {
+        /* Reset Particles */
+        engine.renderer.kill_particles = true;
+
         enqueue_scene<T>();
         swap_scenes();
     }
