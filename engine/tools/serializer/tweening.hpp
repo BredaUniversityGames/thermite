@@ -16,11 +16,3 @@ template <typename T, typename... Args>
 inline void tag_invoke(JsonReflect::deserialize_t, const JsonReflect::json& j, Tweening::TypedTween<T, Args...>& tween) {
     using TweenType = Tweening::TypedTween<T, Args...>;
 }
-
-template <typename A, typename B>
-struct MyObject {
-    A a;
-    B b;
-};
-
-VISITABLE_TEMPLATE_STRUCT((typename A, typename B), MyObject, (A, B), a, b);

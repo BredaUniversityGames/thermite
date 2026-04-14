@@ -133,7 +133,8 @@ class TypedTweenHandle {
     std::shared_ptr<ITweenType> ptr = nullptr;
 
    public:
-    TypedTweenHandle() = default;
+    using TweenType = ITweenType;
+    TypedTweenHandle() : ptr(std::make_shared<ITweenType>(nullptr)) {}
     explicit TypedTweenHandle(std::shared_ptr<ITweenType> p) : ptr(std::move(p)) {}
     ITweenType* operator->() { return ptr.get(); }
     ITweenType& operator*() { return *ptr; }

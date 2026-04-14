@@ -213,3 +213,11 @@ void Tweener::start() {
     //        .offset(offset);
     //}
 }
+
+template <typename A, typename B>
+struct MyObject {
+    A a;
+    B b;
+};
+
+VISITABLE_TEMPLATE_STRUCT((typename A, typename B), MyObject, (A, B), a, b);
