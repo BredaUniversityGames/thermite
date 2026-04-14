@@ -10,6 +10,7 @@
 #include "engine/tools/serializer/ecs.hpp"
 
 #include "engine/core/input/input.hpp"
+#include "engine/core/renderer/renderer.hpp"
 
 namespace tmt {
 

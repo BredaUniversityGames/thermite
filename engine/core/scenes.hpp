@@ -10,9 +10,6 @@
 #include "engine/events/scene.hpp"
 #include "engine/events/input.hpp"
 
-#include "engine/engine.hpp"
-#include "engine/core/renderer/renderer.hpp"
-
 namespace tmt {
 
 class Scenes : public OnBlockInputRequest {
