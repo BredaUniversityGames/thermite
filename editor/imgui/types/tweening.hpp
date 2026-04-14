@@ -2,14 +2,7 @@
 #include "engine/tools/tweening.hpp"
 #include <ImReflect.hpp>
 
-template <typename T>
-requires std::derived_from<T, Tweening::Detail::EaseMixin<T>>
-inline void ease_input(T* value, ImSettings& settings, ImResponse& response) {
-    // Fix: value is a pointer, so use -> not .
-    ImReflect::Input("Ease", value->get_ease(), settings, response);
-}
-
-VISITABLE_TEMPLATE_STRUCT((typename D), Tweening::Detail::EaseMixin, (D), ease_value, reverse_ease_value);
+VISITABLE_TEMPLATE_STRUCT_IN_CONTEXT(ImReflect::Detail::ImContext, (typename D), Tweening::Detail::EaseMixin, (D), ease_value, reverse_ease_value);
 
 template <typename T /*, typename... Args*/>
 inline void tag_invoke(ImReflect::ImInput_t, const char* label, Tweening::TypedTween<T /*, Args...*/>& value, ImSettings& settings, ImResponse& response) {
@@ -26,6 +19,6 @@ inline void tag_invoke(ImReflect::ImInput_t, const char* label, Tweening::TypedT
 
     constexpr bool HAS_EASE = std::derived_from<TweenType, Tweening::Detail::EaseMixin<TweenType>>;
     if constexpr (HAS_EASE) {
-        ease_input(&*value, settings, response);
+        ImReflect::Input("", static_cast<Tweening::Detail::EaseMixin<TweenType>&>(*value), settings, response);
     }
 }
