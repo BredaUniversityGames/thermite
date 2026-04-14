@@ -13,6 +13,7 @@
 #include "engine/systems/gameplay/gameplay.hpp"               // also probably not disable this one
 #include "engine/systems/motion_math/motion_math_system.hpp"  // undure of this pause either
 #include "engine/systems/physics/physics_system.hpp"
+#include "engine/tools/player_data.hpp"
 
 namespace game {
 
@@ -183,6 +184,7 @@ void MenuController::enable_end_of_game_menu(const EndRun& event) const {
 
     // Open end of game menu
     if (event.player_dead) {
+        // Ore gets reduced here
         if (death_menu_entity == entt::null) {
             tmt::Log::error("No death menu found, please add the menu to the menu controller.");
             return;

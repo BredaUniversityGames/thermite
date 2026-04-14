@@ -4,6 +4,11 @@
 
 namespace game {
 
+struct Currencies {
+    uint64_t dollars = 0u;
+
+    std::unordered_map<OreProperties::OreResources, uint64_t> resource_counts = {};
+};
 class Wallet : public tmt::GameComponent<Wallet> {
    public:
     using GameComponent::GameComponent;
@@ -14,11 +19,10 @@ class Wallet : public tmt::GameComponent<Wallet> {
     void update(const tmt::FrameData& time) override {}
     void end() override {}
 
-    // Currencies
-    uint64_t dollars = 0.0f;
-
-    std::unordered_map<OreProperties::OreResources, uint64_t> resource_counts = {};
+    // Currencies;
+    Currencies currencies;
 };
 
 }  // namespace game
-TMT_OBJECT(game::Wallet, (dollars, resource_counts));
+TMT_OBJECT(game::Currencies, (dollars, resource_counts));
+TMT_OBJECT(game::Wallet, (currencies));
