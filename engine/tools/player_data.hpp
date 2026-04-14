@@ -22,10 +22,10 @@ class PlayerData {
 
     struct TypeOps {
         const std::type_info& type_info;
-        const std::function<tmt::json(const std::any&)> serialize;
-        const std::function<void(const tmt::json&, std::any&)> deserialize;
+        const std::function<tmt::json(const std::any&)> serialize = nullptr;
+        const std::function<void(const tmt::json&, std::any&)> deserialize = nullptr;
 #if defined(THERMITE_EDITOR) && !defined(THERMITE_ENGINE)
-        const std::function<void(const char* label, std::any&)> inspect;
+        const std::function<void(const char* label, std::any&)> inspect = nullptr;
 #endif
     };
 
@@ -117,6 +117,14 @@ class PlayerData {
 #if defined(THERMITE_EDITOR) && !defined(THERMITE_ENGINE)
     void inspect() {
         for (auto& [key, entry] : entries) {
+            if (entry.ops.inspect == nullptr) {
+                ImGui::Text("Key '%s' with type '%s' has not been called yet or is engine struct.", key.c_str(), entry.ops.type_info.name());
+                continue;
+            }
+            if (entry.value.has_value() == false) {
+                ImGui::Text("Key '%s' with type '%s' has no value.", key.c_str(), entry.ops.type_info.name());
+                continue;
+            }
             try {
                 entry.ops.inspect(key.c_str(), entry.value);
             } catch (const std::exception& e) {
