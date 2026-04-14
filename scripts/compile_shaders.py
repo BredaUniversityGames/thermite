@@ -61,10 +61,10 @@ def main():
     ]
 
     if args.depfile:
-       cmd += ["-depfile", str(args.depfile)]
+        cmd += ["-depfile", str(args.depfile)]
 
     if args.debug:
-       cmd += ["-g", "-O0", "-line-directive-mode", "standard"]
+        cmd += ["-g", "-O0", "-line-directive-mode", "standard"]
 
     all_outputs = []
 
