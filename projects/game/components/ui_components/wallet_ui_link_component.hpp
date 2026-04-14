@@ -26,10 +26,10 @@ class WalletUiLink : public tmt::GameComponent<WalletUiLink> {
     DisplayTextType resource_to_display = DisplayTextType::DOLLARS;
 
    private:
-    void change_text();
+    void change_text() const;
     void update_value();
-    bool wallet_entity_check();
-    bool component_check();
+    bool wallet_entity_check() const;
+    bool component_check() const;
     tmt::TextRenderer* text_renderer_component = nullptr;
     Wallet* wallet_component = nullptr;
     int previous_value = -1;

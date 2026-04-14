@@ -17,7 +17,7 @@ void WalletUiLink::update(const tmt::FrameData& time) {
 
 void WalletUiLink::end() {}
 
-bool WalletUiLink::wallet_entity_check() {
+bool WalletUiLink::wallet_entity_check() const {
     if (entity_with_wallet == entt::null) {
         tmt::Log::error("No wallet entity set for wallet ui link component on entity: {}", entity);
         return false;
@@ -30,7 +30,7 @@ bool WalletUiLink::wallet_entity_check() {
     return true;
 }
 
-bool WalletUiLink::component_check() {
+bool WalletUiLink::component_check() const {
     if (!wallet_component) {
         tmt::Log::error("No wallet found on wallet entity: {}, for wallet ui link component on entity: {}", entity_with_wallet, entity);
         return false;
@@ -43,7 +43,7 @@ bool WalletUiLink::component_check() {
     return true;
 }
 
-void WalletUiLink::change_text() {
+void WalletUiLink::change_text() const {
     text_renderer_component->text = std::to_string(current_value);
 }
 
