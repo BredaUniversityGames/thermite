@@ -212,51 +212,17 @@ void Destruction::destroy_voxel(Entity entity, glm::uvec3 pos) {
     // World position of the removed voxels center in local space
     const glm::vec3 voxel_local_pos = ((glm::vec3)pos + 0.5f) * UNITS_PER_VOXEL;
 
-    // Weighted average
+    // Update center of mass through a weighted average
     vb->com_local_offset = (vb->com_local_offset * old_mass - voxel_local_pos * voxel_mass) / new_mass;
     vb->inv_mass = 1.0f / new_mass;
 
-    {
-        TMT_ZONE_SCOPED_N("Early Out")
-
-        // If we have 0 or 1 neighbor, skip destruction
-        if (neighbors.size() <= 1) {
-            return;
-        }
-
-        // Create solid mask (3x3x3 area of surrounding solid voxels)
-        uint64_t solid_mask = 0;
-        for (int ly = 0; ly <= 2; ly++) {
-            for (int lz = 0; lz <= 2; lz++) {
-                for (int lx = 0; lx <= 2; lx++) {
-                    // Get neighboring position
-                    glm::ivec3 wp = (glm::ivec3)pos + glm::ivec3(lx - 1, ly - 1, lz - 1);
-
-                    // Skip voxel that we just destroyed
-                    if (lx == 1 && ly == 1 && lz == 1) continue;
-
-                    // Bounds check
-                    if (wp.x < 0 || wp.y < 0 || wp.z < 0) continue;
-                    if (wp.x >= (int)resource->size.x || wp.y >= (int)resource->size.y || wp.z >= (int)resource->size.z) continue;
-
-                    // Add to the mask if its solid
-                    if (resource->blas->get_voxel((uint32_t)wp.x, (uint32_t)wp.y, (uint32_t)wp.z) != nullptr) solid_mask |= 1ULL << (lx + lz * 4 + ly * 16);
-                }
-            }
-        }
-
-        // Get index of neighbor 0 as a mask
-        glm::ivec3 s = (glm::ivec3)neighbors[0] - (glm::ivec3)pos + glm::ivec3(1, 1, 1);
-        uint64_t seed = 1ULL << (s.x + s.z * 4 + s.y * 16);
-
-        // Do a floodfill on 4^3 grid of bits
-        uint64_t fill = flood_fill_64(seed, solid_mask);
-
-        // If the solid_mask != the fill, some parts are unreachable
-        if (fill == solid_mask) return;
+    // Early out
+    if (seperation_early_out(resource, pos, neighbors)) {
+        return;
     }
 
     // NOTE: Replace this with custom recalculate graph function for a single voxel
+    // NOTE: This might need to happen before the early out
     // Clear the graph and generate it a new one (to slow)
     des->clear();
     generate_connection_graph(*des, resource->blas.get());
@@ -272,6 +238,48 @@ void Destruction::destroy_voxel(Entity entity, glm::uvec3 pos) {
         VoxelRenderer& seperate_vr = engine.ecs.get_component<VoxelRenderer>(seperate_entity);
         Physics::initialize_voxel_body(seperate_vb, *seperate_vr.resource.resource.get());
     }
+}
+
+bool Destruction::seperation_early_out(VoxelVolume* resource, const glm::uvec3& pos, const std::vector<glm::uvec3>& neighbors) {
+    TMT_ZONE_SCOPED_N("Early Out")
+
+    // If we have 0 or 1 neighbor, skip destruction
+    if (neighbors.size() <= 1) {
+        return true;
+    }
+
+    // Create solid mask (3x3x3 area of surrounding solid voxels)
+    uint64_t solid_mask = 0;
+    for (int ly = 0; ly <= 2; ly++) {
+        for (int lz = 0; lz <= 2; lz++) {
+            for (int lx = 0; lx <= 2; lx++) {
+                // Get neighboring position
+                glm::ivec3 wp = (glm::ivec3)pos + glm::ivec3(lx - 1, ly - 1, lz - 1);
+
+                // Skip voxel that we just destroyed
+                if (lx == 1 && ly == 1 && lz == 1) continue;
+
+                // Bounds check
+                if (wp.x < 0 || wp.y < 0 || wp.z < 0) continue;
+                if (wp.x >= (int)resource->size.x || wp.y >= (int)resource->size.y || wp.z >= (int)resource->size.z) continue;
+
+                // Add to the mask if its solid
+                if (resource->blas->get_voxel((uint32_t)wp.x, (uint32_t)wp.y, (uint32_t)wp.z) != nullptr) solid_mask |= 1ULL << (lx + lz * 4 + ly * 16);
+            }
+        }
+    }
+
+    // Get index of neighbor 0 as a mask
+    glm::ivec3 s = (glm::ivec3)neighbors[0] - (glm::ivec3)pos + glm::ivec3(1, 1, 1);
+    uint64_t seed = 1ULL << (s.x + s.z * 4 + s.y * 16);
+
+    // Do a floodfill on 4^3 grid of bits
+    uint64_t fill = flood_fill_64(seed, solid_mask);
+
+    // If the solid_mask != the fill, some parts are unreachable
+    if (fill == solid_mask) return true;
+
+    return false;
 }
 
 void Destruction::fill_edge_indices(std::vector<glm::uvec3>& edge_indices, Entity entity, const Stencil* stencil, glm::ivec3 offset) {
@@ -421,10 +429,6 @@ Svt64Node* get_tree_node_at_position(uint32_t x, uint32_t y, uint32_t z, Svt64* 
 
     return node;
 }
-
-// Forward declare function
-// void separation_flood(Destructable& graph, DestructionNode& current_node, uint8_t id, Svt64* tree);
-// , std::vector<Destruction::FloodStackEntry>& stack
 
 void low_level_separation_flood(
     Destructible& graph, DestructionNode& current_node, uint8_t id, uint64_t overlap_mask, Svt64* tree, std::vector<Destruction::FloodStackEntry>& stack, std::vector<uint64_t>& tree_masks
