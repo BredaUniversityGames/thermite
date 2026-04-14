@@ -2,6 +2,9 @@ module bvh2;
 
 import view;
 import voxel;
+import math;
+
+static const uint BVH2_FUSE = 128u;
 
 public struct Bvh2Node {
     /* .xyz = Left minimum bounds ~ .w = Left child node index */
@@ -32,7 +35,7 @@ public [ForceInline] Hit trace_bvh2<let DEBUG : bool>(
     StructuredBuffer<float4> nodes,
     StructuredBuffer<uint> indices,
     StructuredBuffer<VoxelObject> prims,
-    Ray ray, float tmax = 1e30f
+    Ray ray, float tmax = 1e30f, float dither = 0.0f
 ) {
     /* Check to make sure the root node of the BVH is valid */
     if (asuint(nodes[0].w) == 0u && asuint(nodes[3].w) == 0u) {
@@ -46,7 +49,7 @@ public [ForceInline] Hit trace_bvh2<let DEBUG : bool>(
     Hit hit = Hit::miss();
     hit.t = tmax;
     uint node_index = 0u, stack[14], stack_ptr = 0u;
-    for (;;) {
+    for (uint f = 0u; f < BVH2_FUSE; ++f) {
         const float4 rmax_prim_count = nodes[node_index + 3u];
         const float4 rmin_prim_index = nodes[node_index + 2u];
         const uint prim_count = asuint(rmax_prim_count.w);
@@ -58,6 +61,8 @@ public [ForceInline] Hit trace_bvh2<let DEBUG : bool>(
             for (uint i = 0u; i < prim_count; ++i) {
                 const uint index = indices[prim_index + i];
                 const VoxelObject prim = prims[index];
+                if (prim.opacity <= r1(dither)) continue;
+
                 trace_voxel_object<DEBUG>(ray, prim, index, hit);
             }
 
@@ -129,7 +134,7 @@ public [ForceInline] float occlusion_bvh2(
     /* Traversal state */
     float t = tmax;
     uint node_index = 0u, stack[14], stack_ptr = 0u;
-    for (;;) {
+    for (uint f = 0u; f < BVH2_FUSE; ++f) {
         const float4 rmax_prim_count = nodes[node_index + 3u];
         const float4 rmin_prim_index = nodes[node_index + 2u];
         const uint prim_count = asuint(rmax_prim_count.w);

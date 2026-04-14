@@ -142,6 +142,15 @@ public float r1(const uint n) {
 }
 
 /* R1 quasi-random sequence. [0, 1) */
+public float r1(inout float noise) {
+    /* Improved coefficients from <https://www.martysmods.com/a-better-r2-sequence/> */
+    /* (1.0 - original coefficients) */
+    const float o = noise;
+    noise = frac(o + 0.38196601125010515179366115080745f);
+    return o;
+}
+
+/* R1 quasi-random sequence. [0, 1) */
 public float r1(const float noise, const uint n) {
     /* Improved coefficients from <https://www.martysmods.com/a-better-r2-sequence/> */
     /* (1.0 - original coefficients) */
@@ -216,4 +225,11 @@ public inline float2 dir_to_latlong(const float3 dir) {
     const float theta = acos(dir.y);
     const float2 uv = float2(phi / (PI_F32 * 2.0f), theta / PI_F32);
     return uv;
+}
+
+public inline float3 spherical_to_dir(const float phi, const float theta) {
+    float sinTheta = sin(theta);
+    return float3(sinTheta * cos(phi),
+              sinTheta * sin(phi),
+              cos(theta));
 }

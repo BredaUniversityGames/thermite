@@ -10,6 +10,9 @@ RWStructuredBuffer<uint32_t> alive_list_new;
 RWStructuredBuffer<uint32_t> dead_list;
 RWStructuredBuffer<Counters> counters;
 
+[[vk::push_constant]]
+uint32_t kill_particles;
+
 [shader("compute")]
 [numthreads(256, 1, 1)]
 void main(uint3 thread_id: SV_DispatchThreadID) {
@@ -23,12 +26,14 @@ void main(uint3 thread_id: SV_DispatchThreadID) {
 
     p.age += render_view.dt;
 
+    if (kill_particles == 1u) p.lifetime = -1.0f;
+
     if (p.age < p.lifetime) {
         const float t = p.age / p.lifetime;
 
         const float3 speed = lerp(p.start_speed, p.end_speed, p.speed_curve.evaluate(t));
-        p.pos += p.dir * speed * render_view.dt;
         p.prev_pos = p.pos;
+        p.pos += p.dir * speed * render_view.dt;
 
         p.size = lerp(p.start_size, p.end_size, p.size_curve.evaluate(t));
         p.opacity = lerp(p.start_opacity, p.end_opacity, p.opacity_curve.evaluate(t));

@@ -389,7 +389,7 @@ void NodeHierarchy::export_file(const std::string& file_description, const std::
                         const glm::vec3& coord = transform.get_world_matrix() * glm::vec4 { local_coord * UNITS_PER_VOXEL, 1.0f };
 
                         // Invert the X-axis to correctly load it in external programs.
-                        obj_file << std::format("v {} {} {}", -coord.x, coord.y, coord.z) << '\n';
+                        obj_file << std::format("v {} {} {}", coord.x, coord.y, -coord.z) << '\n';
                     }
 
                     // Write all the polygons using the indices (+1 because .obj indices start at 1).
@@ -498,8 +498,10 @@ void NodeHierarchy::recurse_display_node(const Entity entity, const Name& name, 
 
 void NodeHierarchy::clear_hierarchy() {
     clear_selected_entities();
+    for (const Entity root_entity : root_entities) {
+        engine.ecs.destroy_entity(root_entity);
+    }
     root_entities.clear();
-    engine.ecs.clear();
 
     // Clear the undo/redo stack so the user doesn't try to undo changes to an old file in the newly loaded one.
     editor.systems[Editor::Mode::VOXEL].get<UndoRedoManager>().clear();
