@@ -5,7 +5,6 @@
 
 namespace game {
 
-
 enum class DisplayTextType : uint8_t {
     NONE = static_cast<uint8_t>(OreProperties::OreResources::NONE),
     SCRAP = static_cast<uint8_t>(OreProperties::OreResources::SCRAP),
@@ -16,25 +15,25 @@ enum class DisplayTextType : uint8_t {
 };
 
 class WalletUiLink : public tmt::GameComponent<WalletUiLink> {
-    public:
-        using GameComponent::GameComponent;
-        static std::string_view name() { return "Wallet Ui Link"; }
-        void start() override;
-        void update(const tmt::FrameData& time) override;
-        void end() override;
+   public:
+    using GameComponent::GameComponent;
+    static std::string_view name() { return "Wallet Ui Link"; }
+    void start() override;
+    void update(const tmt::FrameData& time) override;
+    void end() override;
 
-        tmt::Entity entity_with_wallet = entt::null;
-        DisplayTextType resource_to_display = DisplayTextType::DOLLARS;
+    tmt::Entity entity_with_wallet = entt::null;
+    DisplayTextType resource_to_display = DisplayTextType::DOLLARS;
 
-    private:
-        void change_text();
-        void update_value();
-        bool wallet_entity_check();
-        bool component_check();
-        tmt::TextRenderer* text_renderer_component = nullptr;
-        Wallet* wallet_component = nullptr;
-        int previous_value = -1;
-        int current_value = 0;
+   private:
+    void change_text();
+    void update_value();
+    bool wallet_entity_check();
+    bool component_check();
+    tmt::TextRenderer* text_renderer_component = nullptr;
+    Wallet* wallet_component = nullptr;
+    int previous_value = -1;
+    int current_value = 0;
 };
 
 }  // namespace game

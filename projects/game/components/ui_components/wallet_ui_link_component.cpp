@@ -1,12 +1,13 @@
 #include "wallet_ui_link_component.hpp"
 
 namespace game {
+
 void WalletUiLink::start() {
     if (wallet_entity_check()) {
         text_renderer_component = tmt::engine.ecs.try_get_component<tmt::TextRenderer>(entity);
         wallet_component = tmt::engine.ecs.try_get_component<Wallet>(entity_with_wallet);
     }
-    
+
     update_value();
 }
 
@@ -14,12 +15,9 @@ void WalletUiLink::update(const tmt::FrameData& time) {
     update_value();
 }
 
-void WalletUiLink::end() {
-    
-}
+void WalletUiLink::end() {}
 
 bool WalletUiLink::wallet_entity_check() {
-
     if (entity_with_wallet == entt::null) {
         tmt::Log::error("No wallet entity set for wallet ui link component on entity: {}", entity);
         return false;
@@ -65,4 +63,4 @@ void WalletUiLink::update_value() {
     }
 }
 
-}
+}  // namespace game
