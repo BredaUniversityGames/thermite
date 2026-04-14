@@ -109,19 +109,17 @@ void Destruction::destroy_voxels(Entity entity, const Stencil* stencil, glm::ive
     fill_edge_indices(edge_indices, entity, stencil, offset);
 
     // Clear the graph and generate it a new one (to slow)
-    //des->clear();
-    //generate_connection_graph(*des, resource->blas.get());
+    // des->clear();
+    // generate_connection_graph(*des, resource->blas.get());
 
     // Regenerate part of the graph based on the edge indices
-    //regenerate_connection_graph(*des, resource->blas.get(), stencil, offset);
+    // regenerate_connection_graph(*des, resource->blas.get(), stencil, offset);
 
     des->clear();
     generate_connection_graph(*des, resource->blas.get());
 
     // Can be done before separating the objects, because the data will be transfered over
     Physics::recalculate_edge_normals(resource->blas.get(), edge_indices);
-
-
 
     // Find where the objects separate and creates new entities for each part
     std::vector<Entity> seperated_entities = find_seperations(entity, edge_indices, *des);
@@ -650,7 +648,7 @@ void fill_volumes(const Svt64* original_tree, const std::vector<uint64_t>& tree_
 
         transform.set_world_position(vb.position);
         transform.set_world_rotation(vb.rotation);
-        //vb.position += rotated_pos;  //((glm::vec3)offset - (glm::vec3)diff) * 0.5f * UNITS_PER_VOXEL;
+        // vb.position += rotated_pos;  //((glm::vec3)offset - (glm::vec3)diff) * 0.5f * UNITS_PER_VOXEL;
 
         // Update tree size
         vr.resource->size = max;
@@ -799,7 +797,7 @@ std::vector<Entity> Destruction::find_seperations(Entity entity, const std::vect
         new_vr.resource = { {}, std::make_shared<VoxelVolume>() };
         new_vr.resource.resource->size = vr.resource->size;
 
-        //Transform& new_transform = engine.ecs.add_component<Transform>(entities[i]);
+        // Transform& new_transform = engine.ecs.add_component<Transform>(entities[i]);
 
         engine.ecs.add_component<Destructible>(entities[i]);
         VoxelBody& new_vb = engine.ecs.add_component<VoxelBody>(entities[i]);

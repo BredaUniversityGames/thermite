@@ -63,7 +63,6 @@ class Svt64 {
     /* Recursive tree subdivide function. */
     Svt64Node subdivide(const RawVoxels& raw_data, uint32_t scale, glm::uvec3 index);
 
-   
    public:
     /* List of tree nodes. */
     Svt64Node* nodes = nullptr;
@@ -114,7 +113,7 @@ class Svt64 {
     /* Trace a ray through the tree. */
     Svt64Hit trace(const Ray& ray) const;
 
-     /* Recursive tree subdivide function for destruction to build based on a mask. */
+    /* Recursive tree subdivide function for destruction to build based on a mask. */
     Svt64Node subdivide_masked(
         uint32_t scale, glm::uvec3 index, const Svt64* original_tree, uint32_t node_index, const std::vector<uint64_t>& tree_masks, uint8_t id, const Destructible& graph
     );
