@@ -35,9 +35,9 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
 
     /* Gather buffer handles */
     const BindHandle render_image = render_view.get_render_image();
-    const BindHandle diff_buffer = render_view.diff_buffer.image, raw_diff_buffer = render_view.lbuffer.images[0];
-    const BindHandle spec_buffer = render_view.spec_buffer.image, raw_spec_buffer = render_view.lbuffer.images[0];
-    const BindHandle output_buffer = render_view.lbuffer.images[0];
+    const BindHandle diff_buffer = render_view.diff_buffer.image, raw_diff_buffer = render_view.lbuffer.image;
+    const BindHandle spec_buffer = render_view.spec_buffer.image, raw_spec_buffer = render_view.lbuffer.image;
+    const BindHandle output_buffer = render_view.lbuffer.image;
     const Size3D output_res { render_view.gpu_view.resolution.x, render_view.gpu_view.resolution.y };
     const RendererSettings& settings = engine.player_data.get<RendererSettings>("RendererSettings");
 
@@ -163,6 +163,7 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
     render_graph.add_compute_pass("cache flush pass", "lighting/cache_flush.cs")
         .read(render_view.render_view_buffer) /* Render view buffer */
         .write(render_view.macrofacet_cache) /* Cache buffer */
+        .read(scene_view.object_data) /* Voxel objects buffer */
         .read(render_view.vbuffer.image) /* Visibility buffer */
         .group_size(16, 8)
         .work_size(output_res.x, output_res.y);
@@ -185,9 +186,9 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
     if (engine.renderer.display_mode == DisplayMode::ILLUMINANCE) {
         render_graph.add_compute_pass("[debug] illuminance pass", "debug/illuminance.cs")
             .read(render_view.render_view_buffer) /* Render view buffer */
-            .read(render_view.vbuffer.image) /* Visibility buffer */
-            .write(render_view.macrofacet_cache) /* Cache buffer */
-            .read(diff_buffer) /* Diffuse buffer */
+            //.read(render_view.vbuffer.image) /* Visibility buffer */
+            //.write(render_view.macrofacet_cache) /* Cache buffer */
+            .read(diff_buffer) /* Luminance buffer */
             .write(render_image) /* Render target */
             .group_size(16, 8)
             .work_size(output_res.x, output_res.y);

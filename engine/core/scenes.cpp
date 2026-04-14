@@ -10,6 +10,7 @@
 #include "engine/tools/serializer/ecs.hpp"
 
 #include "engine/core/input/input.hpp"
+#include "engine/core/renderer/renderer.hpp"
 
 namespace tmt {
 
@@ -43,6 +44,9 @@ void Scenes::swap_scenes() {
         Log::error(Log::Scope::ENGINE, "[Scenes] swap_scenes: Scene not registered");
         return;
     }
+
+    /* Reset Particles */
+    engine.renderer.kill_particles = true;
 
     /* Unload */
     OnPreUnloadScene::dispatch();
@@ -96,10 +100,10 @@ void Scenes::swap_scenes() {
     }
 }
 
-void Scenes::serialize_active_scene() {
+bool Scenes::serialize_active_scene() {
     if (active_scene_type == NULL_SCENE) {
         Log::error(Log::Scope::ENGINE, "[Scenes] serialize_active_scene: No active scene");
-        return;
+        return false;
     }
 
     const SceneInfo& info = registered_scenes.at(active_scene_type);
@@ -108,7 +112,7 @@ void Scenes::serialize_active_scene() {
     const bool result = IO::write_text_file(info.file_location, serialized.dump(4), true);
     if (result == false) {
         Log::error(Log::Scope::ENGINE, "[Scenes] serialize_active_scene: Failed to write scene JSON to file");
-        return;
+        return false;
     }
 
     if (active_scene_json == nullptr) {
@@ -122,6 +126,7 @@ void Scenes::serialize_active_scene() {
     }
 
     OnSceneSerialized::dispatch();
+    return true;
 }
 
 void Scenes::deserialize_scene(PreLoadSceneEvent& event) {

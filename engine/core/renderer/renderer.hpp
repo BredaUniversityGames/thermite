@@ -43,6 +43,7 @@ inline Size3D rated_resolution(Size3D base, ShadingRate rate) {
 
 struct RendererSettings {
     float bloom_radius = 0.2f;
+    float bloom_threshold = 1.0f;
     ShadingRate diff_shading_rate = ShadingRate::HALF_RATE;
     ShadingRate spec_shading_rate = ShadingRate::QUARTER_RATE;
 };
@@ -66,6 +67,7 @@ class Renderer {
     /* Display mode for debugging */
     DisplayMode display_mode = DisplayMode::DEFAULT;
     bool enable_taa = true;
+    bool kill_particles = false;
     float bloom_radius = 0.25f;
 
     /* Pipelines */

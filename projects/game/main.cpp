@@ -35,6 +35,8 @@
 #include "components/gameplay_functionality_components/ore_collector.hpp"
 #include "components/gameplay_functionality_components/fuel.hpp"
 #include "components/gameplay_functionality_components/upgrade.hpp"
+#include "components/gameplay_functionality_components/destroy_timed.hpp"
+
 // Weapons and tools
 #include "components/gameplay_functionality_components/weapon_and_tool_components/projectile_spawner.hpp"
 #include "components/gameplay_functionality_components/weapon_and_tool_components/rifle_projectile.hpp"
@@ -46,6 +48,8 @@
 #include "components/ui_components/text_component.hpp"
 #include "components/ui_components/scene_switch_component.hpp"
 #include "components/ui_components/entity_control_component.hpp"
+#include "components/ui_components/self_destruct_component.hpp"
+#include "components/ui_components/quit_game_component.hpp"
 // Managers
 #include "components/managers/ore_manager.hpp"
 #include "components/managers/menu_controller.hpp"
@@ -61,6 +65,7 @@
 #include "data_headers/ore_properties.hpp"
 
 // Goap Components
+#include "components/gameplay_functionality_components/weapon_and_tool_components/explosion.hpp"
 #include "engine/systems/ai/goap/goap_system.hpp"
 #include "components/goap_actions/steer_to_player.hpp"
 #include "components/goap_actions/wander_steering.hpp"
@@ -95,6 +100,7 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     tmt::engine.scenes.register_scene<DanielTestScene>();
     tmt::engine.scenes.register_scene<MikaTestScene>();
     tmt::engine.scenes.register_scene<LoekTestScene>();
+    tmt::engine.scenes.register_scene<WeaponMotionTest>();
     tmt::engine.scenes.register_scene<BogdanulTestScene>();
 
     /* Register Game Components */
@@ -119,12 +125,16 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     tmt::engine.component_registry.register_component<game::MediumEnemy>();
     tmt::engine.component_registry.register_component<game::OreProperties>();
     tmt::engine.component_registry.register_component<game::OreManager>();
+    tmt::engine.component_registry.register_component<game::Explosion>();
+    tmt::engine.component_registry.register_component<game::DestroyTimed>();
     /* Register World Generation Components */
     tmt::engine.component_registry.register_component<game::AsteroidFieldComponent>();
     tmt::engine.component_registry.register_component<game::RandomPrefabSpawner>();
     /* Register Game UI Components */
     tmt::engine.component_registry.register_component<game::SceneSwitchComponent>();
     tmt::engine.component_registry.register_component<game::EntityControlComponent>();
+    tmt::engine.component_registry.register_component<game::SelfDestructComponent>();
+    tmt::engine.component_registry.register_component<game::QuitGameComponent>();
 
     /* Register Goap Components */
     {
@@ -189,6 +199,7 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
         action_reg.register_action(std::make_unique<Stomp>());
         action_reg.register_action(std::make_unique<Flee>());
 
+        // Goap stuff
         {
             tmt::GoapGoal chase;
             chase.name = "g_ChasePlayer";

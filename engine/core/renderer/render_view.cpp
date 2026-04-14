@@ -58,19 +58,9 @@ void RenderView::init() {
     const Size3D full_rate { gpu_view.resolution.x, gpu_view.resolution.y };
     vbuffer.texture = bank.create_texture("Visibility Buffer Texture", TextureUsage::Storage | TextureUsage::Sampled, TextureFormat::RG32Uint, full_rate).expect("failed to create vbuffer texture.");
     vbuffer.image = bank.create_image("Visibility Buffer Image", vbuffer.texture).expect("failed to create vbuffer image.");
-    dbuffer.texture = bank.create_texture("Depth Buffer Texture", TextureUsage::DepthStencil, TextureFormat::D32Sfloat, full_rate).expect("failed to create depth buffer texture.");
+    dbuffer.texture =
+        bank.create_texture("Depth Buffer Texture", TextureUsage::DepthStencil | TextureUsage::Sampled, TextureFormat::D32Sfloat, full_rate).expect("failed to create depth buffer texture.");
     dbuffer.image = bank.create_image("Depth Buffer Image", dbuffer.texture).expect("failed to create depth buffer image.");
-
-    /* Create the luminance buffer */
-    lbuffer.meta = { 7u /* mips */, 1u /* layers */ };
-    lbuffer.texture = bank.create_texture("Luminance Buffer Texture", 
-        TextureUsage::ColorAttachment | TextureUsage::Storage | TextureUsage::Sampled, 
-        TextureFormat::RG11B10Ufloat, full_rate, lbuffer.meta
-    ).expect("failed to create ibuffer texture.");
-    /* Create images for each luminance buffer mip level */
-    for (uint32_t curr_mip = 0u; curr_mip < lbuffer.meta.mips; curr_mip++) {
-        lbuffer.images.push_back(bank.create_image("Luminance Buffer Image", lbuffer.texture, curr_mip).expect("failed to create lbuffer image."));
-    }
 
     /* Calculate the specular and diffuse shading resolutions */
     const RendererSettings& settings = engine.player_data.get<RendererSettings>("RendererSettings");
@@ -86,6 +76,21 @@ void RenderView::init() {
         TextureUsage::Storage | TextureUsage::Sampled, TextureFormat::RG11B10Ufloat, spec_rate
     ).expect("failed to create specular buffer texture.");
     spec_buffer.image = bank.create_image("Intermediate Specular Buffer Image", spec_buffer.texture).expect("failed to create specular buffer image.");
+
+    /* Create the luminance buffer */
+    lbuffer.texture = bank.create_texture("Luminance Buffer Texture", TextureUsage::ColorAttachment | TextureUsage::Storage | TextureUsage::Sampled, TextureFormat::RG11B10Ufloat, full_rate)
+                          .expect("failed to create lbuffer texture.");
+    lbuffer.image = bank.create_image("Luminance Buffer Image", lbuffer.texture).expect("failed to create lbuffer image.");
+
+    /* Create the thresholded luminance buffer */
+    tbuffer.meta = { 7, 1 };  // Set 7 mips, 1 array layer
+    tbuffer.texture =
+        bank.create_texture(
+                "Thresholded Luminance Buffer Texture", TextureUsage::ColorAttachment | TextureUsage::Storage | TextureUsage::Sampled, TextureFormat::RG11B10Ufloat, full_rate, tbuffer.meta
+        )
+            .expect("failed to create tbuffer texture.");
+    for (uint32_t curr_mip = 0; curr_mip < tbuffer.meta.mips; curr_mip++)
+        tbuffer.images.push_back(bank.create_image("Thresholded Luminance Buffer Image", tbuffer.texture, curr_mip).expect("failed to create tbuffer image."));
 
     /* History Screen Buffers */
     hbuffer1.texture = bank.create_texture("History1 Buffer Texture", 
@@ -192,10 +197,12 @@ void RenderView::deinit() {
     bank.destroy(vbuffer.texture);
     bank.destroy(dbuffer.image);
     bank.destroy(dbuffer.texture);
-    for (auto& limage : lbuffer.images) bank.destroy(limage);
+    bank.destroy(lbuffer.image);
     bank.destroy(lbuffer.texture);
     bank.destroy(diff_buffer.image);
     bank.destroy(diff_buffer.texture);
+    for (auto& timage : tbuffer.images) bank.destroy(timage);
+    bank.destroy(tbuffer.texture);
     bank.destroy(spec_buffer.image);
     bank.destroy(spec_buffer.texture);
     bank.destroy(hbuffer1.image);
@@ -204,8 +211,8 @@ void RenderView::deinit() {
     bank.destroy(hbuffer2.texture);
     bank.destroy(mbuffer.image);
     bank.destroy(mbuffer.texture);
-    bank.destroy(viewport.texture);
     bank.destroy(viewport.image);
+    bank.destroy(viewport.texture);
 
     bank.destroy(render_view_buffer);
     bank.destroy(render_target);
@@ -260,12 +267,13 @@ void RenderView::resize_textures() {
     bank.resize_texture(viewport.texture, full_rate).expect("failed to resize viewport texture.");
     bank.resize_texture(vbuffer.texture, full_rate).expect("failed to resize vbuffer texture.");
     bank.resize_texture(dbuffer.texture, full_rate).expect("failed to resize depth buffer texture.");
-    bank.resize_texture(lbuffer.texture, full_rate, lbuffer.meta).expect("failed to resize lbuffer texture.");
+    bank.resize_texture(lbuffer.texture, full_rate).expect("failed to resize lbuffer texture.");
     bank.resize_texture(diff_buffer.texture, diff_rate).expect("failed to resize diffuse buffer texture.");
     bank.resize_texture(spec_buffer.texture, spec_rate).expect("failed to resize specular buffer texture.");
     bank.resize_texture(hbuffer1.texture, full_rate).expect("failed to resize hbuffer texture.");
     bank.resize_texture(hbuffer2.texture, full_rate).expect("failed to resize hbuffer texture.");
     bank.resize_texture(mbuffer.texture, full_rate).expect("failed to resize mbuffer texture.");
+    bank.resize_texture(tbuffer.texture, full_rate, tbuffer.meta).expect("failed to resize tbuffer texture.");
 }
 
 }  // namespace tmt

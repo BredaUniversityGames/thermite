@@ -124,9 +124,19 @@ void SceneView::update_voxel_objects(RenderGraph& render_graph) {
         /* Don't render objects with a null resource */
         if (renderer.resource == nullptr) continue;
 
+        /* Validate transform scale */
+        if (!transform.validate_scale()) continue;
+
         /* Don't render objects with invalid transforms */
         if (validate_transform(transform.get_world_matrix())) continue;
         renderer.resource->update_if_dirty();
+
+        /* Calculate object opacity based on distance from the camera */
+        const float object_d = glm::distance(transform.get_world_position(), glm::vec3(engine.renderer.render_view.gpu_view.origin));
+        const float range_d = object_transparent_distance - object_opaque_distance;
+        const float opacity_t = 1.0f - glm::clamp(object_d - object_opaque_distance, 0.0f, range_d) / range_d;
+        const float opacity = (renderer.distance_culling ? (1.0f - powf(2.0f, -object_opacity_transition * opacity_t)) : 1.0f) * renderer.opacity;
+        if (opacity <= 0.0f) continue; /* Skip fully transparent objects */
 
         /* Set the UUID of the object */
         if (renderer.uuid == 0u) {
@@ -162,6 +172,7 @@ void SceneView::update_voxel_objects(RenderGraph& render_graph) {
         gpu_object.voxels_handle = renderer.resource->blas_voxels.get_index();
         gpu_object.palette_handle = renderer.resource->blas_palette.get_index();
         gpu_object.object_flags = renderer.outlined ? 0b1u : 0b0u;
+        gpu_object.opacity = opacity > 0.99f ? 1.0f : opacity;
         if (renderer.outlined) render_outlines = true;
         renderer.outlined = false; /* Reset outlined flag */
 
@@ -171,6 +182,7 @@ void SceneView::update_voxel_objects(RenderGraph& render_graph) {
         /* Insert Entity Transform */
         prev_transforms[entity] = gpu_object.local_to_world;
     }
+    object_count = (uint32_t)cpu_objects.size();
 
     /* Build a BVH over the scene */
     bvh.build(cpu_objects.data(), (uint32_t)cpu_objects.size());
@@ -243,10 +255,17 @@ void SceneView::update_lights(RenderGraph& render_graph, const RenderView&) {
         }
     }
 
+    /* Update scene stats */
+    light_count = (uint32_t)gpu_lights.size();
+    sun_light_active = glm::any(glm::greaterThan(gpu_view.sun_luminance, glm::vec3(0.0f)));
+
     /* Capture all environment in the scene */
     const entt::basic_group env_group = engine.ecs.group<const Environment>();
     gpu_view.envmap_full_handle = 0u;
     gpu_view.envmap_filtered_handle = 0u;
+    object_opaque_distance = 128.0f;
+    object_transparent_distance = 152.0f;
+    object_opacity_transition = 10.0f;
 
     /* Iterate over all environments */
     for (auto&& [entity, env] : env_group.each()) {
@@ -254,6 +273,9 @@ void SceneView::update_lights(RenderGraph& render_graph, const RenderView&) {
             /* Select the first valid environment we find */
             gpu_view.envmap_full_handle = env.resource->full_image.get_index();
             gpu_view.envmap_filtered_handle = env.resource->filtered_image.get_index();
+            object_opaque_distance = env.object_opaque_distance;
+            object_transparent_distance = env.object_transparent_distance;
+            object_opacity_transition = env.object_opacity_transition;
             break;
         }
     }

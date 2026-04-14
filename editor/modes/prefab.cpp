@@ -9,6 +9,9 @@
 #include "engine/core/logger.hpp"
 #include "engine/tools/serializer.hpp"
 #include "engine/tools/serializer/ecs.hpp"
+#include "engine/core/renderer/renderer.hpp"
+
+#include "editor/core/systems/pop_up/pop_up.hpp"
 
 namespace tmt {
 
@@ -27,6 +30,8 @@ void PrefabMode::on_switch_to(const std::any& meta_data) {
         Log::error("PrefabMode::on_switch_to called without prefab location meta data");
         return;
     }
+    /* Disable TAA */
+    engine.renderer.enable_taa = false;
 
     engine.scenes.load_scene<PrefabEditScene>();
 
@@ -41,7 +46,16 @@ void PrefabMode::on_switch_away() {}
 void PrefabMode::save_prefab() {
     const json prefab_json = Serializer::serialize(engine.ecs);
     const std::string prefab_json_str = prefab_json.dump(4);
-    IO::write_text_file(prefab_location, prefab_json_str);
+    const bool success = IO::write_text_file(prefab_location, prefab_json_str);
+    if (!success) {
+        // clang-format off
+        Notification::create()
+            .severity(Severity::ERROR)
+            .duration(5.0f)
+            .title("Failed to Save Prefab")
+            .message("An error occurred while saving the prefab. Check the logs for more details.");
+        // clang-format on
+    }
 }
 
 }  // namespace tmt

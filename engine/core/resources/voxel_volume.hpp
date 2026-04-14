@@ -14,6 +14,7 @@ class VoxelVolume : public tmt::RuntimeResource<VoxelScene, UUID> {
 
    public:
     // Constructor for temporary VoxelVolume's that aren't managed by the resource system (used in the voxel editor).
+    VoxelVolume();
     VoxelVolume(const glm::uvec3& grid_size);
     VoxelVolume(const VoxelSceneNode& node);
     VoxelVolume(const ResourceRef<VoxelVolume>& volume, const UUID& new_uuid);
@@ -54,3 +55,6 @@ class VoxelVolume : public tmt::RuntimeResource<VoxelScene, UUID> {
 };
 
 }  // namespace tmt
+
+TMT_OBJECT_INSPECT_EMPTY(tmt::VoxelVolume);
+TMT_OBJECT_SERIALIZE_EMPTY(tmt::VoxelVolume);
