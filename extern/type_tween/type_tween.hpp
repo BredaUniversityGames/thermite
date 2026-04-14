@@ -225,21 +225,20 @@ class EaseMixin {
 
     Derived& reverse_ease(const Ease easing) {
         reverse_ease_value = easing;
-        has_reverse_ease = true;
         return static_cast<Derived&>(*this);
     }
 
     Ease& get_ease() { return ease_value; }
     Ease get_ease() const { return ease_value; }
 
-    Ease& get_reverse_ease() { return reverse_ease_value; }
-    Ease get_reverse_ease() const { return reverse_ease_value; }
+    Ease get_reverse_ease() const { return reverse_ease_value.value_or(ease_value); }
+
+    bool has_reverse_ease() const { return reverse_ease_value.has_value(); }
 
    protected:
     BEFRIEND_MIXINS
     Ease ease_value = Ease::LINEAR;
-    Ease reverse_ease_value = Ease::LINEAR;
-    bool has_reverse_ease = false;
+    std::optional<Ease> reverse_ease_value;
 };
 
 template <typename Derived>
@@ -571,12 +570,12 @@ class TweenBase : public EaseMixin<Derived>,
                 const float computed = compute_progress(last_anim, duration, rev_delay, rep_delay, is_reversing, phase);
 
                 float t;
-                if (is_reversing && this->has_reverse_ease)
-                    t = apply_ease(computed, this->reverse_ease_value);
+                if (is_reversing && this->has_reverse_ease())
+                    t = apply_ease(computed, this->get_reverse_ease());
                 else if (is_reversing)
-                    t = 1.0f - apply_ease(1.0f - computed, this->ease_value);
+                    t = 1.0f - apply_ease(1.0f - computed, this->get_ease());
                 else
-                    t = apply_ease(computed, this->ease_value);
+                    t = apply_ease(computed, this->get_ease());
 
                 TweenFrame frame { t, frame_count };
                 static_cast<Derived*>(this)->interpolate(frame); /* fires on_update */
@@ -595,12 +594,12 @@ class TweenBase : public EaseMixin<Derived>,
         const float computed = compute_progress(anim_elapsed, duration, rev_delay, rep_delay, is_reversing, current_phase);
 
         float t;
-        if (is_reversing && this->has_reverse_ease)
-            t = apply_ease(computed, this->reverse_ease_value);
+        if (is_reversing && this->has_reverse_ease())
+            t = apply_ease(computed, this->get_reverse_ease());
         else if (is_reversing)
-            t = 1.0f - apply_ease(1.0f - computed, this->ease_value);
+            t = 1.0f - apply_ease(1.0f - computed, this->get_ease());
         else
-            t = apply_ease(computed, this->ease_value);
+            t = apply_ease(computed, this->get_ease());
 
         TweenFrame frame { t, frame_count };
 

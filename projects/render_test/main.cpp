@@ -34,8 +34,6 @@ class MainScene : public tmt::Scene<MainScene> {
     float time_passed = 0.0f;
     float cooldown = 0.0f;
 
-    Tweening::Tween move_tween;
-
     void on_start() override;
     void on_update(const tmt::FrameData& time) override;
     void on_end() override;
@@ -87,16 +85,6 @@ void MainScene::on_start() {
     /* Load the throwable box model */
     const tmt::ResourceRef box_scene = tmt::engine.resources.load_resource<tmt::VoxelScene>({ tmt::IO::Location::PROJECT, "box-10.vengi" });
     box_model = tmt::engine.resources.copy_resource<tmt::VoxelVolume>(box_scene);
-
-    tmt::Entity camera = tmt::Camera::get_active_camera();
-
-    move_tween = Tweening::tween<tmt::Transform>(camera)  //
-                     .duration(5.0f)
-                     .ease(Tweening::Ease::IN_CUBIC)
-                     .ping_pong()
-                     .move()
-                     .from({ 0.0f, 0.0f, 0.0f })
-                     .to({ 10.0f, 10.0f, 10.0f }); /* Automatically starts */
 }
 
 void MainScene::on_update(const tmt::FrameData& time) {

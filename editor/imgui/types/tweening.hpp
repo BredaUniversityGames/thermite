@@ -9,7 +9,7 @@ inline void ease_input(T* value, ImSettings& settings, ImResponse& response) {
     ImReflect::Input("Ease", value->get_ease(), settings, response);
 }
 
-VISITABLE_TEMPLATE_STRUCT((typename D), Tweening::Detail::EaseMixin, (D), ease_value, reverse_ease_value, has_reverse_ease);
+VISITABLE_TEMPLATE_STRUCT((typename D), Tweening::Detail::EaseMixin, (D), ease_value, reverse_ease_value);
 
 template <typename T /*, typename... Args*/>
 inline void tag_invoke(ImReflect::ImInput_t, const char* label, Tweening::TypedTween<T /*, Args...*/>& value, ImSettings& settings, ImResponse& response) {
