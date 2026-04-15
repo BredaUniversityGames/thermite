@@ -4,7 +4,16 @@
 namespace game {
 
 enum class UpgradeType : uint8_t { MAX_HEALTH = 0u, MAX_BATTERY = 1u, MAX_SPEED = 2u, ACCELERATION = 3u, PRIMARY_ATK_SPEED = 4u, SECONDARY_ATK_SPEED = 5u, GUN_DMG = 6u, BARGE_MAX_FUEL = 7u };
-
+struct PersistentStats {
+    float max_health = 0;
+    float max_battery = 0;
+    float max_speed = 0;
+    float acceleration = 0;
+    float primary_atk_speed = 0;
+    float secondary_atk_speed = 0;
+    float gun_dmg = 0;
+    float barge_max_fuel = 0;
+};
 class Upgrade : public tmt::GameComponent<Upgrade> {
    public:
     using GameComponent::GameComponent;
@@ -31,3 +40,4 @@ class Upgrade : public tmt::GameComponent<Upgrade> {
 
 }  // namespace game
 TMT_OBJECT(game::Upgrade, (upgrade_target, type, upgrade_to, player_entity, dollar_cost, new_upgrade_costs));
+TMT_OBJECT(game::PersistentStats, (max_health, max_battery, max_speed, acceleration, primary_atk_speed, secondary_atk_speed, gun_dmg, barge_max_fuel));

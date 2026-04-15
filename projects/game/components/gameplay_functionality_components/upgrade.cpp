@@ -4,6 +4,7 @@
 #include "engine/core/components/button.hpp"
 #include "projects/game/components/gameplay_functionality_components/weapon_and_tool_components/mining_component.hpp"
 #include "player.hpp"
+#include "projects/game/components/development_tools/save_data.hpp"
 #include "projects/game/components/gameplay_functionality_components/weapon_and_tool_components/weapon.hpp"
 
 namespace game {
@@ -140,7 +141,15 @@ bool Upgrade::apply_upgrade() {
     }
     wallet_component->currencies.dollars -= dollar_cost;
 
-    return modify_upgrade_entities();
+    if (!modify_upgrade_entities()) {
+        return false;
+    }
+    auto barge_view = tmt::engine.ecs.view<FuelComponent>();
+    if (barge_view.empty()) {
+        tmt::Log::error("No barge entity found for saving upgrade.");
+        return false;
+    }
+    save_after_upgrade(player_entity, barge_view.front().entity);
 }
 
 }  // namespace game

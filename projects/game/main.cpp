@@ -37,6 +37,9 @@
 #include "components/gameplay_functionality_components/upgrade.hpp"
 #include "components/gameplay_functionality_components/destroy_timed.hpp"
 
+// Tags
+#include "data_headers/game_tags.hpp"
+
 // Weapons and tools
 #include "components/gameplay_functionality_components/weapon_and_tool_components/projectile_spawner.hpp"
 #include "components/gameplay_functionality_components/weapon_and_tool_components/rifle_projectile.hpp"
@@ -128,6 +131,9 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     tmt::engine.component_registry.register_component<game::OreManager>();
     tmt::engine.component_registry.register_component<game::Explosion>();
     tmt::engine.component_registry.register_component<game::DestroyTimed>();
+    // Tags
+    tmt::engine.component_registry.register_component<game::UpgradeParent>();
+
     /* Register World Generation Components */
     tmt::engine.component_registry.register_component<game::AsteroidFieldComponent>();
     tmt::engine.component_registry.register_component<game::RandomPrefabSpawner>();
