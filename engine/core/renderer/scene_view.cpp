@@ -12,7 +12,24 @@
 #include "engine/core/components/light.hpp"
 #include "engine/core/components/environment.hpp"
 
+#include "engine/core/polyline.hpp"
+
 namespace tmt {
+
+namespace light_grid {
+
+constexpr uint32_t MAX_LIGHTS_PER_CELL = 64u;
+constexpr uint32_t MAX_CASCADES = 3u;
+constexpr uint32_t CASCADES_RESOLUTION = 16u;
+constexpr uint32_t BITMASKS_PER_CASCADE = MAX_LIGHTS + 32u - 1u / 32u;                   /* div up */
+constexpr uint32_t FIRST_CASCADE_BOUNDS = 32u;                                           /* world space units */
+constexpr uint32_t FIRST_CASCADE_CELL_SIZE = FIRST_CASCADE_BOUNDS / CASCADES_RESOLUTION; /* world space units */
+
+constexpr uint32_t CELLS_PER_CASCADE = CASCADES_RESOLUTION * CASCADES_RESOLUTION * CASCADES_RESOLUTION;
+constexpr uint32_t TOTAL_LIGHTS_PER_CASCADE = MAX_LIGHTS_PER_CELL * CELLS_PER_CASCADE;
+constexpr uint32_t LIGHT_GRID_BUFFER_SIZE = CELLS_PER_CASCADE * MAX_CASCADES * MAX_LIGHTS_PER_CELL;
+
+}  // namespace light_grid
 
 /* Universal light descriptor. */
 struct UniversalLightDesc {
@@ -208,28 +225,10 @@ void SceneView::update_lights(RenderGraph& render_graph, const RenderView&) {
     /* Capture all lights in the scene */
     const entt::basic_group light_group = engine.ecs.group<const Light>(entt::get<Transform>);
 
-    /* Allocate space for the cpu flatbit array */
-    std::vector light_bitmasks = reserved<uint32_t>((size_t)(32 * light_grid::MAX_CASCADES));
-
     /* Allocate space for all lights */
     const size_t count = std::min(light_group.size(), (size_t)MAX_LIGHTS);
     std::vector gpu_lights = reserved<UniversalLightDesc>(count);
     GpuSceneView gpu_view {};
-
-    for (size_t cascade = 0; cascade < light_grid::MAX_CASCADES; cascade++) {
-
-        for (size_t light_index = 0; light_index < count; light_index++) {
-
-            const uint32_t bitmask_index = light_index >> 5; /* light_index / 5 */
-            const uint32_t bit_index = light_index & 0b11111u; /* light_index % 32 */
-
-            /* get bitmask (32 bitmasks per cascade) */
-            uint32_t& bitmask = light_bitmasks[cascade * 32u + bitmask_index];
-
-            /* if inside bounds update the bitmask */
-            bitmask |= 1 << bit_index;
-        }
-    }
 
     /* Iterate over all lights */
     for (auto&& [entity, light, transform] : light_group.each()) {
@@ -281,6 +280,34 @@ void SceneView::update_lights(RenderGraph& render_graph, const RenderView&) {
             }
             default:
                 break;
+        }
+    }
+
+    /* Allocate space for the cpu flatbit array */
+    std::vector light_bitmasks = reserved<uint32_t>((size_t)(light_grid::BITMASKS_PER_CASCADE * light_grid::MAX_CASCADES));
+
+    for (size_t cascade = 0; cascade < light_grid::MAX_CASCADES; cascade++) {
+        /* compute cascade bounds (in world space units) */
+        const uint32_t curr_cascade_bounds = light_grid::FIRST_CASCADE_BOUNDS << cascade;
+        // const glm::vec3 center = glm::vec3(engine.renderer.render_view.gpu_view.origin);
+        const glm::vec3 center = glm::vec3(0.0f, 0.0f, 0.0f);
+        const glm::vec3 max = { center.x + curr_cascade_bounds, center.y + curr_cascade_bounds, center.z + curr_cascade_bounds };
+        const glm::vec3 min = { center.x - curr_cascade_bounds, center.y - curr_cascade_bounds, center.z - curr_cascade_bounds };
+
+        //engine.polyline.use_color()
+        
+        engine.polyline.draw_aabb(min, max);
+
+         for (size_t light_index = 0; light_index < count; light_index++) {
+
+            const uint32_t bitmask_index = (uint32_t)light_index >> 5; /* light_index / 5 */
+            const uint32_t bit_index = (uint32_t)light_index & 0b11111u; /* light_index % 32 */
+
+            /* get bitmask (32 bitmasks per cascade) */
+            uint32_t& bitmask = light_bitmasks[cascade * light_grid::BITMASKS_PER_CASCADE + bitmask_index];
+
+            /* if inside bounds update the bitmask */
+            bitmask |= 1 << bit_index;
         }
     }
 
