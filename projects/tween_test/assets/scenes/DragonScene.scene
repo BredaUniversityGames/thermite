@@ -54,28 +54,26 @@
             "children": []
         }
     },
+    "Voxel Renderer": {
+        "1048576": {
+            "resource": {
+                "file_location": {
+                    "sub_location": "PROJECT",
+                    "relative_path": "dragon128.vengi"
+                },
+                "data": {},
+                "constructor_args": [
+                    "00000000-0000-0000-0000-000000000000"
+                ]
+            },
+            "opacity": 1.0,
+            "distance_culling": true
+        }
+    },
     "ComponentCollection": {
         "1048576": {
             "Tweener": {
-                "depth_offset": {
-                    "x": 20.0,
-                    "y": 0.0,
-                    "z": 0.0
-                },
-                "duration": 2.0,
-                "ease": "IN_OUT_QUAD",
-                "offset": {
-                    "x": 2.0,
-                    "y": 2.0,
-                    "z": 2.0
-                },
-                "prefab": {
-                    "file_location": {
-                        "relative_path": "Dragon.prefab",
-                        "sub_location": "PROJECT"
-                    }
-                },
-                "repeat_count": 1
+                "my_tween": null
             }
         }
     },

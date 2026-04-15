@@ -58,6 +58,7 @@ enum class LoopMode : uint8_t {
 /* Requiresments:
  * - Must inherit from Detail::TweenBase<ITween<T, Args...>>
  * - Must provide a static create function that returns an instance of the tween
+ * - Must provide a static create_default function that returns an instance of the tween with default values for all parameters
  * - Must implement the interpolation logic in the interpolate function, which takes a TweenFrame as input
  * - [Optional] Should implement FromToMixin, for providing from/to functions and storing start/end values
  * - [Optional] Should implement TypedCallbackMixin, for providing on_update callbacks with the correct type
@@ -134,14 +135,18 @@ class TypedTweenHandle {
 
    public:
     using TweenType = ITweenType;
-    TypedTweenHandle() : ptr(std::make_shared<ITweenType>(nullptr)) {}
+    TypedTweenHandle() : ptr(ITweenType::make_shared_default()) {}
     explicit TypedTweenHandle(std::shared_ptr<ITweenType> p) : ptr(std::move(p)) {}
     ITweenType* operator->() { return ptr.get(); }
+    const ITweenType* operator->() const { return ptr.get(); }
     ITweenType& operator*() { return *ptr; }
+    const ITweenType& operator*() const { return *ptr; }
 
     operator Tween() { return Tween(ptr); }
 
     bool is_valid() const { return ptr != nullptr; }
+
+    std::shared_ptr<ITweenType> get_ptr() const { return ptr; }
 };
 
 template <typename T, typename... Args>
@@ -416,6 +421,7 @@ class CallbackMixin {
     }
 
    protected:
+    BEFRIEND_MIXINS
     std::function<void()> on_pre_start_cb;
     std::function<void()> on_start_cb;
     std::function<void()> on_cycle_begin_cb;
@@ -441,6 +447,7 @@ class TypedCallbackMixin {
     }
 
    protected:
+    BEFRIEND_MIXINS
     std::function<void(float, T)> on_update_cb;
 };
 
@@ -477,15 +484,18 @@ class ControllableMixin {
     bool is_paused() const { return paused; }
 
    private:
+    BEFRIEND_MIXINS
     bool paused = false;
 
     std::function<void()> ctrl_stop, ctrl_start, ctrl_restart, ctrl_finish;
     std::function<bool()> ctrl_is_paused;
 };
 
+struct SubTweenTag {};
+
 /* Mixins for sub-tweens to convert to Tween handle */
 template <typename Parent>
-class SubTweenMixin {
+class SubTweenMixin : public SubTweenTag {
    public:
     SubTweenMixin() = default;
     SubTweenMixin(Parent* parent) : parent(parent) {}
@@ -796,6 +806,20 @@ class TweenCollection {
         return *ptr;  // reference into the deque-owned shared_ptr, stable forever
     }
 
+    static TweenType& add_existing(std::shared_ptr<TweenType> ptr) {
+        ensure_registered();
+        ptr->set_self_weak(ptr);
+        ptr->inject_control_fns(
+            [p = ptr.get()] { p->stop(); },     //
+            [p = ptr.get()] { p->start(); },    //
+            [p = ptr.get()] { p->restart(); },  //
+            [p = ptr.get()] { p->finish(); },   //
+            [p = ptr.get()] { return p->is_paused(); }
+        );
+        tweens.push_back(ptr);
+        return *tweens.back();
+    }
+
     static void update(const float delta_time) {
         /* Erase tweens nobody holds a handle to anymore that are also done */
         std::erase_if(tweens, [](const std::shared_ptr<TweenType>& t) {
@@ -853,37 +877,78 @@ ITween<std::remove_cvref_t<T>, Args...>& tween(T& value) {
     return tween<Args...>(value, Ctx<Detail::Default> {});
 }
 
+/* Context-aware overload for TypedTweenHandle */
+template <typename T, typename... Args, typename Context>
+ITween<T, Args...>& tween(TypedTweenHandle<ITween<T, Args...>>& handle, Ctx<Context>) {
+    return Detail::TweenCollection<Context, T, Args...>::add_existing(handle.get_ptr());
+}
+
+/* Default-context overload for TypedTweenHandle */
+template <typename T, typename... Args>
+ITween<T, Args...>& tween(TypedTweenHandle<ITween<T, Args...>>& handle) {
+    return tween(handle, Ctx<Detail::Default> {});
+}
+
 /* Error fallback */
 template <typename... Args, typename T>
 void tween(T& value) {
     static_assert(Traits::HasITween<T, Args...>, "No ITween specialization found for type T and Args...");
 }
 
-/* Default Implementation */
-template <typename T>
+// === Body: TweenType is in the pattern, no default needed ===
+template <typename T, typename TweenType>
 requires Traits::IsLerpable<T>
-struct ITween<T> : public Detail::TweenBase<ITween<T>>, /**/
-                   public Detail::FromToMixin<ITween<T>, T>,
-                   public Detail::TypedCallbackMixin<ITween<T>, T*> {
-    ITween(T* value) : value(value) {};
-    static ITween create(T& value) { return ITween(&value); }
+struct ITween<T, TweenType> : public Detail::TweenBase<TweenType>, public Detail::FromToMixin<TweenType, T>, public Detail::TypedCallbackMixin<TweenType, T*> {
+   protected:
+    ITween(T* value) : value(value) {}
 
+   public:
     void interpolate(const Detail::TweenFrame& frame) {
         if (frame.frame_count == 0) {
-            /* On first frame, if start or end are not set, initialize them to current value */
             if (!this->has_start()) this->from(*value);
             if (!this->has_end()) this->to(*value);
         }
-        if (value) {
-            Detail::lerp(*value, this->get_start(), this->get_end(), frame.alpha);
-        }
-        if (this->on_update_cb) {
-            this->on_update_cb(frame.alpha, value);
-        }
+        if (value) Detail::lerp(*value, this->get_start(), this->get_end(), frame.alpha);
+        if (this->on_update_cb) this->on_update_cb(frame.alpha, value);
     }
 
    private:
     T* value = nullptr;
+};
+
+/* Entry point: zero-arg case, wires self in as the CRTP type */
+template <typename T>
+requires Traits::IsLerpable<T>
+struct ITween<T> : public ITween<T, ITween<T>> {
+    ITween(T* value) : ITween<T, ITween<T>>(value) {}
+    static ITween create(T& value) { return ITween(&value); }
+    static std::shared_ptr<ITween> make_shared_default() { return std::make_shared<ITween>(nullptr); }
+};
+
+struct Owned {};
+
+/* Default owned implemenation */
+template <typename T>
+requires Traits::IsLerpable<T>
+struct ITween<T, Owned> : public ITween<T, ITween<T, Owned>> {
+    using Base = ITween<T, ITween<T, Owned>>;
+
+    ITween() : Base(&owned_value) {}
+    explicit ITween(T initial) : Base(&owned_value), owned_value(std::move(initial)) {}
+    ITween(std::nullptr_t) : Base(&owned_value) {}
+
+    static std::shared_ptr<ITween> make_shared_default() { return std::make_shared<ITween>(); }
+
+    ITween(const ITween&) = delete;
+    ITween& operator=(const ITween&) = delete;
+    ITween(ITween&&) = delete;
+    ITween& operator=(ITween&&) = delete;
+
+    T& get() { return owned_value; }
+    const T& get() const { return owned_value; }
+
+   private:
+    T owned_value {};
 };
 
 }  // namespace Tweening

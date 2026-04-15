@@ -21,6 +21,7 @@
 #include "engine/tools/player_data.hpp"
 
 #include "engine/tools/tweening.hpp"
+#include "engine/tools/tweening/transform.hpp"
 #include "engine/tools/prefab_helper.hpp"
 
 class Game : public tmt::Application {
@@ -58,17 +59,10 @@ class Tweener : public tmt::GameComponent<Tweener> {
     void update(const tmt::FrameData& time) override {}
     void end() override {}
 
-    tmt::ResourceRef<tmt::Json> prefab {};
-
-    float duration = 1.0f;
-    int repeat_count = -1;  // infinite
-    glm::vec3 offset { 100.0f, 0.0f, 0.0f };
-    Tweening::Ease ease = Tweening::Ease::IN_OUT_QUAD;
-    glm::vec3 depth_offset { 0.0f, 0.0f, 10.0f };
-
-    Tweening::TypedTween<float> my_tween;
+    Tweening::TypedTween<float, Tweening::Owned> my_tween;
+    Tweening::TypedTween<tmt::Entity, tmt::Transform> my_tween_transform;
 };
-TMT_OBJECT(Tweener, (my_tween));
+TMT_OBJECT(Tweener, (my_tween, my_tween_transform));
 
 std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs& args) {
     // clang-format off
@@ -109,17 +103,23 @@ void DragonScene::on_end() {}
 
 void Tweener::start() {
     static float my_float = 0.0f;
-    my_tween = Tweening::tween(my_float)  //
-                   .from(0.0f)
-                   .to(1.0f)
-                   .duration(2.0f)
-                   .ease(Tweening::Ease::IN_OUT_SINE)
-                   .repeat(-1)
-                   .ping_pong()
-                   .on_update([](float alpha, float* value) {
-                       //
-                       tmt::Log::info("Tween alpha: {}, value: {}", alpha, *value);
-                   });
+    my_tween->on_update([](float alpha, float* value) {
+        //
+        tmt::Log::info("Tween alpha: {}, value: {}", alpha, *value);
+    });
+    Tweening::tween(my_tween);
+
+    // my_tween = Tweening::tween(my_float)  //
+    //                .from(0.0f)
+    //                .to(1.0f)
+    //                .duration(2.0f)
+    //                .ease(Tweening::Ease::IN_OUT_SINE)
+    //                .repeat(-1)
+    //                .ping_pong()
+    //                .on_update([](float alpha, float* value) {
+    //                    //
+    //                    tmt::Log::info("Tween alpha: {}, value: {}", alpha, *value);
+    //                });
 
     // my_tween->duration(5.0f);
     // my_tween->start();

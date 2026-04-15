@@ -3,78 +3,100 @@
 
 #include "engine/core/components/transform.hpp"
 #include "engine/tools/tweening.hpp"
+#include "engine/core/reflection.hpp"
+
+namespace tmt::TransformTweening {
+
+enum class Space {
+    LOCAL,
+    WORLD,
+};
+
+/* Sub mixins */
+template <typename Derived>
+struct WorldOrLocalMixin {
+    Derived& local_space() {
+        space = Space::LOCAL;
+        return static_cast<Derived&>(*this);
+    }
+    Derived& world_space() {
+        space = Space::WORLD;
+        return static_cast<Derived&>(*this);
+    }
+
+    Space get_space() const { return space; }
+
+   protected:
+    BEFRIEND_MIXINS
+    Space space = Space::LOCAL; /* Default to local space */
+};
+
+template <typename Derived, typename T>
+struct OffsetMixin {
+    Derived& offset(const T& offset_val) {
+        this->offset_value = offset_val;
+        return static_cast<Derived&>(*this);
+    }
+
+    bool has_offset() const { return offset_value.has_value(); }
+
+    const T& get_offset() const { return offset_value.value(); }
+
+   protected:
+    BEFRIEND_MIXINS
+    std::optional<T> offset_value {};
+};
+
+/* Sub tweens */
+template <typename ITween>
+struct Move : public Tweening::Detail::FromToMixin<Move<ITween>, glm::vec3>,  //
+              public Tweening::Detail::TypedCallbackMixin<Move<ITween>, tmt::Transform&>,
+              public Tweening::Detail::SubTweenMixin<ITween>,
+              public WorldOrLocalMixin<Move<ITween>>,
+              public OffsetMixin<Move<ITween>, glm::vec3> {
+    using value_type = glm::vec3;
+    Move() = default;
+    Move(ITween* parent) : Tweening::Detail::SubTweenMixin<ITween>(parent) {}
+};
+
+template <typename ITween>
+struct Rotate : public Tweening::Detail::FromToMixin<Rotate<ITween>, glm::quat>,  //
+                public Tweening::Detail::TypedCallbackMixin<Rotate<ITween>, tmt::Transform&>,
+                public Tweening::Detail::SubTweenMixin<ITween>,
+                public WorldOrLocalMixin<Rotate<ITween>>,
+                public OffsetMixin<Rotate<ITween>, glm::quat> {
+    using value_type = glm::quat;
+    Rotate() = default;
+    Rotate(ITween* parent) : Tweening::Detail::SubTweenMixin<ITween>(parent) {}
+};
+
+template <typename ITween>
+struct Scale : public Tweening::Detail::FromToMixin<Scale<ITween>, glm::vec3>,  //
+               public Tweening::Detail::TypedCallbackMixin<Scale<ITween>, tmt::Transform&>,
+               public Tweening::Detail::SubTweenMixin<ITween>,
+               public WorldOrLocalMixin<Scale<ITween>>,
+               public OffsetMixin<Scale<ITween>, glm::vec3> {
+    using value_type = glm::vec3;
+    Scale() = default;
+    Scale(ITween* parent) : Tweening::Detail::SubTweenMixin<ITween>(parent) {}
+};
+
+}  // namespace tmt::TransformTweening
+
+TMT_OBJECT_TEMPLATE((typename Derived), tmt::TransformTweening::WorldOrLocalMixin, (Derived), space);
+TMT_OBJECT_TEMPLATE((typename Derived, typename T), tmt::TransformTweening::OffsetMixin, (Derived, T), offset_value);
 
 template <>
 struct Tweening::ITween<tmt::Entity, tmt::Transform> : public Tweening::Detail::TweenBase<ITween<tmt::Entity, tmt::Transform>> {
-    enum class Space {
-        LOCAL,
-        WORLD,
-    };
-
-    /* Sub mixins */
-    template <typename Derived>
-    struct WorldOrLocalMixin {
-        Derived& local_space() {
-            space = Space::LOCAL;
-            return static_cast<Derived&>(*this);
-        }
-        Derived& world_space() {
-            space = Space::WORLD;
-            return static_cast<Derived&>(*this);
-        }
-
-        Space get_space() const { return space; }
-
-       protected:
-        Space space = Space::LOCAL; /* Default to local space */
-    };
-
-    template <typename Derived, typename T>
-    struct OffsetMixin {
-        Derived& offset(const T& offset_val) {
-            this->offset_value = offset_val;
-            return static_cast<Derived&>(*this);
-        }
-
-        bool has_offset() const { return offset_value.has_value(); }
-
-        const T& get_offset() const { return offset_value.value(); }
-
-       protected:
-        std::optional<T> offset_value {};
-    };
-
-    /* Sub tweens */
-    struct Move : public Tweening::Detail::FromToMixin<Move, glm::vec3>,  //
-                  public Tweening::Detail::TypedCallbackMixin<Move, tmt::Transform&>,
-                  public Tweening::Detail::SubTweenMixin<ITween>,
-                  public WorldOrLocalMixin<Move>,
-                  public OffsetMixin<Move, glm::vec3> {
-        Move() = default;
-        Move(ITween* parent) : Tweening::Detail::SubTweenMixin<ITween>(parent) {}
-    };
-
-    struct Rotate : public Tweening::Detail::FromToMixin<Rotate, glm::quat>,  //
-                    public Tweening::Detail::TypedCallbackMixin<Rotate, tmt::Transform&>,
-                    public Tweening::Detail::SubTweenMixin<ITween>,
-                    public WorldOrLocalMixin<Rotate>,
-                    public OffsetMixin<Rotate, glm::quat> {
-        Rotate() = default;
-        Rotate(ITween* parent) : Tweening::Detail::SubTweenMixin<ITween>(parent) {}
-    };
-
-    struct Scale : public Tweening::Detail::FromToMixin<Scale, glm::vec3>,  //
-                   public Tweening::Detail::TypedCallbackMixin<Scale, tmt::Transform&>,
-                   public Tweening::Detail::SubTweenMixin<ITween>,
-                   public WorldOrLocalMixin<Scale>,
-                   public OffsetMixin<Scale, glm::vec3> {
-        Scale() = default;
-        Scale(ITween* parent) : Tweening::Detail::SubTweenMixin<ITween>(parent) {}
-    };
+    using Move = tmt::TransformTweening::Move<ITween>;
+    using Rotate = tmt::TransformTweening::Rotate<ITween>;
+    using Scale = tmt::TransformTweening::Scale<ITween>;
 
    public:
+    ITween() = default;
     ITween(const tmt::Entity entity) : owner(entity) {};
     static ITween create(const tmt::Entity& entity) { return ITween(entity); }
+    static std::shared_ptr<ITween> make_shared_default() { return std::make_shared<ITween>(static_cast<tmt::Entity>(entt::null)); }
 
     void interpolate(const Tweening::Detail::TweenFrame& frame) {
         auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(owner);
@@ -87,7 +109,7 @@ struct Tweening::ITween<tmt::Entity, tmt::Transform> : public Tweening::Detail::
                 [&](auto& sub) {
                     using SubType = std::decay_t<decltype(sub)>;
                     const bool has_offset = sub.has_offset();
-                    const bool is_local = (sub.get_space() == Space::LOCAL);
+                    const bool is_local = (sub.get_space() == tmt::TransformTweening::Space::LOCAL);
 
                     if constexpr (std::is_same_v<SubType, Move>) {
                         if (!sub.has_start()) sub.from(is_local ? transform.get_local_position() : transform.get_world_position());
@@ -116,7 +138,7 @@ struct Tweening::ITween<tmt::Entity, tmt::Transform> : public Tweening::Detail::
         std::visit(
             [&](auto& sub) {
                 using SubType = std::decay_t<decltype(sub)>;
-                const bool is_local = (sub.get_space() == Space::LOCAL);
+                const bool is_local = (sub.get_space() == tmt::TransformTweening::Space::LOCAL);
                 if constexpr (std::is_same_v<SubType, Move>) {
                     if (is_local) {
                         transform.set_local_position(Tweening::Detail::lerp(sub.get_start(), sub.get_end(), t));
@@ -159,7 +181,10 @@ struct Tweening::ITween<tmt::Entity, tmt::Transform> : public Tweening::Detail::
     }
 
    private:
+    BEFRIEND_VISITABLE()
     tmt::Entity owner = entt::null;
 
     std::variant<Move, Rotate, Scale> tween_variant;
 };
+
+TMT_OBJECT_TEMPLATE((), Tweening::ITween, (tmt::Entity, tmt::Transform), owner);
