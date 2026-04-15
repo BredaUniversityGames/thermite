@@ -41,42 +41,10 @@ void Upgrade::button_apply() {
     }
 }
 
-bool Upgrade::apply_upgrade() {
-    if (upgrade_target == entt::null) {
-        tmt::Log::error("Upgrade has no valid target entity.");
-        return false;  // no player entity in scene, return false
-    }
-    if (player_entity == entt::null) {
-        tmt::Log::error("Upgrade could not find valid player entity.");
-        return false;
-    }
-
-    auto wallet_component = tmt::engine.ecs.try_get_component<Wallet>(player_entity);
-
-    if (!wallet_component) {
-        tmt::Log::error("Player entity does not have valid Wallet component, could not apply upgrade.");
-        return false;
-    }
-
-    for (auto& [resource, cost] : new_upgrade_costs) {
-        if (wallet_component->currencies.resource_counts[resource] < cost) {
-            tmt::Log::info("Unable to buy upgrade, insufficient {}.", magic_enum::enum_name(resource));
-            return false;
-        }
-    }
-    if (wallet_component->currencies.dollars <= dollar_cost) {
-        tmt::Log::info("Unable to buy upgrade, insufficient {} dollars", wallet_component->currencies.dollars);
-        return false;
-    }
-
-    for (auto& [resource, cost] : new_upgrade_costs) {
-        wallet_component->currencies.resource_counts[resource] -= cost;
-    }
-    wallet_component->currencies.dollars -= dollar_cost;
-
-    auto player_component = tmt::engine.ecs.try_get_component<Player>(upgrade_target);
-    auto weapon_component = tmt::engine.ecs.try_get_component<Weapon>(upgrade_target);
-    auto fuel_component = tmt::engine.ecs.try_get_component<FuelComponent>(upgrade_target);
+bool Upgrade::modify_upgrade_entities() const {
+    auto* player_component = tmt::engine.ecs.try_get_component<Player>(upgrade_target);
+    auto* weapon_component = tmt::engine.ecs.try_get_component<Weapon>(upgrade_target);
+    auto* fuel_component = tmt::engine.ecs.try_get_component<FuelComponent>(upgrade_target);
 
     switch (type) {
         case UpgradeType::MAX_HEALTH:
@@ -134,10 +102,45 @@ bool Upgrade::apply_upgrade() {
             break;
         default:
             tmt::Log::error("Invalid upgrade type, could not apply upgrade.");
-            return false;  // Invalid upgrade type, cannot apply upgrade
+            return false;
     }
 
-    return true;           // Upgrade applied successfully
+    return true;
+}
+bool Upgrade::apply_upgrade() {
+    if (upgrade_target == entt::null) {
+        tmt::Log::error("Upgrade has no valid target entity.");
+        return false;  // no player entity in scene, return false
+    }
+    if (player_entity == entt::null) {
+        tmt::Log::error("Upgrade could not find valid player entity.");
+        return false;
+    }
+
+    auto* wallet_component = tmt::engine.ecs.try_get_component<Wallet>(player_entity);
+
+    if (!wallet_component) {
+        tmt::Log::error("Player entity does not have valid Wallet component, could not apply upgrade.");
+        return false;
+    }
+
+    for (auto& [resource, cost] : new_upgrade_costs) {
+        if (wallet_component->currencies.resource_counts[resource] < cost) {
+            tmt::Log::info("Unable to buy upgrade, insufficient {}.", magic_enum::enum_name(resource));
+            return false;
+        }
+    }
+    if (wallet_component->currencies.dollars <= dollar_cost) {
+        tmt::Log::info("Unable to buy upgrade, insufficient {} dollars", wallet_component->currencies.dollars);
+        return false;
+    }
+
+    for (auto& [resource, cost] : new_upgrade_costs) {
+        wallet_component->currencies.resource_counts[resource] -= cost;
+    }
+    wallet_component->currencies.dollars -= dollar_cost;
+
+    return modify_upgrade_entities();
 }
 
 }  // namespace game

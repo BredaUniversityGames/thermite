@@ -24,6 +24,7 @@ class Upgrade : public tmt::GameComponent<Upgrade> {
     std::vector<std::tuple<OreProperties::OreResources, uint64_t>> new_upgrade_costs = { { OreProperties::OreResources::NONE, 1.0f } };  // An initial cost
     bool apply_upgrade();
     void button_apply();
+    bool modify_upgrade_entities() const;
 
    private:
 };
