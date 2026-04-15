@@ -194,7 +194,7 @@ void Explode::on_tick(tmt::Entity agent, float dt) {
         valid_entities.insert(agent);
 
         for (const auto& [voxel_entity, voxels] : hits) {
-            // ? only process voxels that belong to this enemy hierarchy
+            // only process voxels that belong to this enemy hierarchy
             if (!valid_entities.count(voxel_entity)) continue;
 
             auto& voxel_renderer = ecs.get_component<tmt::VoxelRenderer>(voxel_entity);
