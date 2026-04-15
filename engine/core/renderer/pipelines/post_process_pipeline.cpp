@@ -14,6 +14,11 @@ namespace tmt {
 void PostProcessPipeline::init(GPUAdapter& gpu) {
     VRAMBank& bank = gpu.get_vram_bank();
 
+    lum_partial_texture = bank.create_texture("Partial Lum Buffer Texture", TextureUsage::Sampled | TextureUsage::Storage, TextureFormat::RGBA16Sfloat, {256u, 256u}).expect("failed to initialize partial lum buffer texture");
+    lum_partial_image = bank.create_image("Partial Lum Buffer Image", lum_partial_texture).expect("failed to initialize partial lum buffer image.");
+    lum_tiny_texture = bank.create_texture("Tiny Lum Buffer Texture", TextureUsage::Sampled | TextureUsage::Storage, TextureFormat::RGBA16Sfloat, {16u, 16u}).expect("failed to initialize tiny lum buffer texture");
+    lum_tiny_image = bank.create_image("Tiny Lum Buffer Image", lum_tiny_texture).expect("failed to initialize tiny lum buffer image.");
+
     down_sampler = bank.create_sampler("Down Sampler", Filter::Linear, AddressMode::ClampToBorder).expect("failed to create down sampler.");
     up_sampler = bank.create_sampler("Up Sampler", Filter::Linear, AddressMode::ClampToEdge).expect("failed to create up sampler.");
 }
@@ -22,6 +27,24 @@ void PostProcessPipeline::enqueue(RenderGraph& render_graph, RenderView render_v
     const glm::uvec2 shading_res = render_view.gpu_view.resolution;
 
     RendererSettings& settings = engine.player_data.get<RendererSettings>("RendererSettings");
+
+    { /* Auto-exposure */
+        /* clang-format off */
+        render_graph.add_compute_pass("Luminance Gather (Auto-exposure)", "lighting/lum_gather.cs")
+            .read(render_view.render_view_buffer)
+            .read(render_view.lbuffer.image)
+            .write(lum_partial_image)
+            .group_size(8, 8)
+            .work_size(256, 256);
+
+        render_graph.add_compute_pass("Luminance Average (Auto-exposure)", "lighting/lum_average.cs")
+            .read(lum_partial_image)
+            .write(lum_tiny_image)
+            .read(down_sampler)
+            .group_size(8, 8)
+            .work_size(128, 128);
+        /* clang-format on */
+    }
 
     /* Threshold the Luminance buffer */
     {
@@ -89,6 +112,10 @@ void PostProcessPipeline::enqueue(RenderGraph& render_graph, RenderView render_v
 void PostProcessPipeline::deinit(GPUAdapter& gpu) {
     VRAMBank& bank = gpu.get_vram_bank();
 
+    bank.destroy(lum_partial_image);
+    bank.destroy(lum_partial_texture);
+    bank.destroy(lum_tiny_image);
+    bank.destroy(lum_tiny_texture);
     bank.destroy(down_sampler);
     bank.destroy(up_sampler);
 }
