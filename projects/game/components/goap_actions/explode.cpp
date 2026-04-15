@@ -15,6 +15,9 @@
 #include "../managers/ore_manager.hpp"
 #include "../gameplay_functionality_components/enemy_components/small_enemy.hpp"
 
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/norm.hpp>
+
 namespace game {
 
 void Explode::on_start(tmt::Entity agent) {
@@ -48,6 +51,39 @@ void Explode::on_tick(tmt::Entity agent, float dt) {
 
     auto& registry = tmt::engine.ecs.get_registry();
     auto& steering_agent = registry.get<SteeringAgent>(agent);
+
+    auto& transform = registry.get<tmt::Transform>(agent);
+
+    glm::vec3 enemy_pos = transform.get_world_position();
+    glm::vec3 player_pos = tmt::engine.ecs.get_component<tmt::Transform>(player_entity).get_world_position();
+
+    // direction TO player
+    glm::vec3 dir = player_pos - enemy_pos;
+    dir.y = 0.0f;
+
+    if (glm::length2(dir) > 0.0001f) {
+        dir = glm::normalize(dir);
+
+        glm::quat target_rot = glm::quatLookAt(-dir, glm::vec3(0, 1, 0));
+
+        // optional model correction (VERY likely needed in your engine)
+        target_rot *= glm::angleAxis(glm::radians(180.0f), glm::vec3(0, 1, 0));
+
+        // choose correct rotation owner
+        if (registry.any_of<tmt::VoxelBody>(agent)) {
+            auto& body = registry.get<tmt::VoxelBody>(agent);
+
+            glm::quat current_rot = body.rotation;
+            float turn_speed = 6.0f;
+
+            body.rotation = glm::slerp(current_rot, target_rot, turn_speed * dt);
+        } else {
+            glm::quat current_rot = transform.get_world_rotation();
+            float turn_speed = 6.0f;
+
+            transform.set_world_rotation(glm::slerp(current_rot, target_rot, turn_speed * dt));
+        }
+    }
 
     if (live_charge_time >= steering_agent.params->charge_time && !exploded) {
         auto* small_enemy = tmt::engine.ecs.try_get_component<SmallEnemy>(agent);
