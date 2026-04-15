@@ -123,7 +123,7 @@ void Explode::on_tick(tmt::Entity agent, float dt) {
 
         // destroy core entity & explosion
         tmt::engine.ecs.destroy_entity(thermite);
-        //tmt::engine.ecs.destroy_entity(small_enemy->explosion);
+        // tmt::engine.ecs.destroy_entity(small_enemy->explosion);
 
         // remove GOAP so it doesn't keep acting
         tmt::engine.ecs.remove_component<tmt::GoapAgent>(agent);
