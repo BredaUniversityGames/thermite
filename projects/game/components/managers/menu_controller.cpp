@@ -72,6 +72,11 @@ void MenuController::update(const tmt::FrameData& time) {
 
 void MenuController::end() {
     tmt::engine.ecs.get_dispatcher().sink<EndRun>().disconnect<&MenuController::enable_end_of_game_menu>(this);
+    auto has_ended { tmt::engine.ecs.get_component<Player>(tmt::engine.ecs.view<Player>().front().entity).player_ended_run };
+    if (has_ended == false) {
+        // trigger death of player if forced quit
+        enable_end_of_game_menu({ true });
+    }
 }
 
 void MenuController::enable_pause_menu() const {

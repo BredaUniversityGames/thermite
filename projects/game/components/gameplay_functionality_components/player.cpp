@@ -101,14 +101,8 @@ void Player::start() {
     }
 }
 void Player::end() {
-    // tmt::engine.ecs.get_dispatcher().trigger<AttachEvent>({ .entity = entity_that_attaches, .is_attached = is_attached });
-
     tmt::engine.ecs.get_dispatcher().sink<AttachEvent>().disconnect<&Player::on_attach>(this);
-    // this is a forced closing of the game, behave like you just dies
-    if (player_ended_run == false) {
-        tmt::Log::info("The player forced quit, counts as a death");
-        tmt::engine.ecs.get_dispatcher().trigger(EndRun { true });
-    }
+    // this is a forced closing of the game, behaves like the player just dies
 }
 
 void Player::look_camera() {
