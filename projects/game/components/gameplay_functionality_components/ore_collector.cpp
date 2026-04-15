@@ -16,7 +16,6 @@ void game::OreCollector::update(const tmt::FrameData& time) {}
 
 void game::OreCollector::end() {
     tmt::engine.ecs.get_dispatcher().sink<TriggerCollisionEvent>().disconnect<&OreCollector::on_collision_trigger>(this);
-
 }
 
 void game::OreCollector::on_collision_trigger(const TriggerCollisionEvent& trigger) {

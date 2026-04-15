@@ -394,7 +394,7 @@ void Player::update(const tmt::FrameData& time) {
         out_of_energy_timer = 0.0f;
     }
 
-    if (out_of_energy_timer >= out_of_energy_time_till_death) {
+    if (out_of_energy_timer >= out_of_energy_time_till_death && !player_ended_run) {
         tmt::engine.ecs.get_dispatcher().trigger(EndRun { true });
         player_ended_run = true;
         state = PlayerState::PAUSED;
