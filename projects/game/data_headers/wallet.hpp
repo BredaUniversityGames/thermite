@@ -7,8 +7,7 @@ namespace game {
 struct Currencies {
     uint64_t dollars = 0u;
 
-    std::unordered_map<OreProperties::OreResources, uint64_t> resource_counts = {
-    };
+    std::unordered_map<OreProperties::OreResources, uint64_t> resource_counts = {};
 
     Currencies& operator+=(const Currencies& other) {
         dollars += other.dollars;

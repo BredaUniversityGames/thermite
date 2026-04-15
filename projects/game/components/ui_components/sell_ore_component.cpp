@@ -1,6 +1,7 @@
 #include "sell_ore_component.hpp"
 
 namespace game {
+
 void SellOreComponent::start() {
     if (!entity_check()) {
         return;
@@ -25,7 +26,6 @@ void SellOreComponent::start() {
 
 void SellOreComponent::update(const tmt::FrameData& time) {
     if (is_held) {
-
         timer -= time.delta_time;
 
         if (timer <= 0.0f) {
@@ -36,9 +36,7 @@ void SellOreComponent::update(const tmt::FrameData& time) {
     }
 }
 
-void SellOreComponent::end() {
-    
-}
+void SellOreComponent::end() {}
 
 bool SellOreComponent::entity_check() const {
     if (entity_with_wallet == entt::null) {
@@ -65,7 +63,6 @@ bool SellOreComponent::component_check() const {
 }
 
 void SellOreComponent::sell_ore() {
-
     if (wallet_component->currencies.resource_counts.at(ore_entry->ore_resource) > 1) {
         wallet_component->currencies.resource_counts.at(ore_entry->ore_resource) -= 1;
         wallet_component->currencies.dollars += static_cast<int>(ore_entry->value);
@@ -82,4 +79,5 @@ void SellOreComponent::up_toggle() {
     current_cooldown = initial_hold_cooldown;
     is_held = false;
 }
-}
+
+}  // namespace game
