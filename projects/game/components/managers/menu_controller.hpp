@@ -32,7 +32,6 @@ class MenuController : public tmt::GameComponent<MenuController> {
 
     void enable_upgrade_menu() const;
     void disable_upgrade_menu() const;
-    void save_resources(bool penalty) const;
 
     void enable_end_of_game_menu(const EndRun& event) const;
 

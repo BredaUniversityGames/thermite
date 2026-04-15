@@ -14,6 +14,7 @@
 #include "engine/systems/motion_math/motion_math_system.hpp"  // undure of this pause either
 #include "engine/systems/physics/physics_system.hpp"
 #include "engine/tools/player_data.hpp"
+#include "projects/game/components/development_tools/save_data.hpp"
 #include "projects/game/components/gameplay_functionality_components/ore_collector.hpp"
 #include "projects/game/data_headers/save_entries.hpp"
 #include "projects/game/data_headers/wallet.hpp"
@@ -174,28 +175,6 @@ void MenuController::disable_upgrade_menu() const {
     tmt::engine.ecs.disable(upgrade_menu_entity);
 }
 
-void MenuController::save_resources(bool penalty) const {
-    auto wallet = tmt::engine.ecs.try_get_component<game::Wallet>(tmt::engine.ecs.view<OreCollector>().front().entity);
-    if (wallet == nullptr) {
-        tmt::Log::error("No Wallet component found");
-
-        return;
-    }
-    if (penalty) {
-        tmt::Log::info("Penalty of {:.2f}, applied when saving current run resources", penalty_percentage);
-        for (auto& pair : wallet->currencies.resource_counts) {
-            pair.second = static_cast<uint64_t>(static_cast<float>(pair.second) * penalty_percentage);
-        }
-        wallet->currencies.dollars = static_cast<uint64_t>(static_cast<float>(wallet->currencies.dollars) * penalty_percentage);
-    }
-
-    wallet->currencies.print_values();
-
-    auto& persistent_curr { tmt::engine.player_data.get<Currencies>(PERSISTENT_RESOURCES) };
-
-    persistent_curr += wallet->currencies;
-    wallet->currencies = Currencies {};
-}
 void MenuController::enable_end_of_game_menu(const EndRun& event) const {
     if (pause_menu_entity != entt::null) {
         tmt::engine.ecs.disable(pause_menu_entity);
@@ -225,7 +204,11 @@ void MenuController::enable_end_of_game_menu(const EndRun& event) const {
         tmt::engine.ecs.enable(end_run_menu_entity);
     }
     // this run
-    save_resources(event.player_dead);
+    float multiplier = 1.0f;
+    if (event.player_dead) {
+        multiplier = penalty_percentage;
+    }
+    save_resources_on_run(multiplier);
 }
 
 void MenuController::lock_mouse() const {
