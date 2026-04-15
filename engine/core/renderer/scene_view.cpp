@@ -54,6 +54,14 @@ void SceneView::init() {
     lights_data = bank.create_buffer("Lights Data Buffer", s, MAX_LIGHTS, sizeof(UniversalLightDesc)).expect("failed to create lights data buffer.");
     scene_view = bank.create_buffer("Scene View Buffer", c, sizeof(GpuSceneView)).expect("failed to create scene view buffer.");
 
+    /* Coarse light grid */
+    cascades_bitmasks = bank.create_buffer("Cascades Bitmasks", BufferUsage::TransferDst | BufferUsage::Constant, light_grid::LIGHT_GRID_BUFFER_SIZE, sizeof(uint32_t))
+                            .expect("failed to initialize the cascades bitmasks buffer");
+
+    /* Fine light grid */
+    fine_light_grid = bank.create_buffer("Fine Light Grid", BufferUsage::TransferDst | BufferUsage::Storage, light_grid::LIGHT_GRID_BUFFER_SIZE, sizeof(uint32_t))
+                          .expect("failed to initialize the fine light grid buffer");
+
     /* Subscribe to EnTT */
     engine.ecs.get_registry().on_destroy<VoxelRenderer>().connect<&SceneView::on_renderer_destroyed>(this);
     next_uuid = 1u; /* Set the base uuid */
@@ -78,6 +86,9 @@ void SceneView::deinit() {
     bank.destroy(object_data);
     bank.destroy(lights_data);
     bank.destroy(scene_view);
+
+    bank.destroy(cascades_bitmasks);
+    bank.destroy(fine_light_grid);
 }
 
 /* Create a vector containing type `T`, with space reserved for `count` instances. */
@@ -197,10 +208,28 @@ void SceneView::update_lights(RenderGraph& render_graph, const RenderView&) {
     /* Capture all lights in the scene */
     const entt::basic_group light_group = engine.ecs.group<const Light>(entt::get<Transform>);
 
+    /* Allocate space for the cpu flatbit array */
+    std::vector light_bitmasks = reserved<uint32_t>((size_t)(32 * light_grid::MAX_CASCADES));
+
     /* Allocate space for all lights */
     const size_t count = std::min(light_group.size(), (size_t)MAX_LIGHTS);
     std::vector gpu_lights = reserved<UniversalLightDesc>(count);
     GpuSceneView gpu_view {};
+
+    for (size_t cascade = 0; cascade < light_grid::MAX_CASCADES; cascade++) {
+
+        for (size_t light_index = 0; light_index < count; light_index++) {
+
+            const uint32_t bitmask_index = light_index >> 5; /* light_index / 5 */
+            const uint32_t bit_index = light_index & 0b11111u; /* light_index % 32 */
+
+            /* get bitmask (32 bitmasks per cascade) */
+            uint32_t& bitmask = light_bitmasks[cascade * 32u + bitmask_index];
+
+            /* if inside bounds update the bitmask */
+            bitmask |= 1 << bit_index;
+        }
+    }
 
     /* Iterate over all lights */
     for (auto&& [entity, light, transform] : light_group.each()) {
@@ -241,7 +270,7 @@ void SceneView::update_lights(RenderGraph& render_graph, const RenderView&) {
                 gpu_light.culling_radius = spot_light.attenuation_distance;
                 break;
             }
-            /* Spot light */
+            /* Tube light */
             case LightType::TUBE_LIGHT: {
                 const TubeLight tube_light = std::get<TubeLight>(light.light);
                 gpu_light.source_radius = tube_light.source_radius;
