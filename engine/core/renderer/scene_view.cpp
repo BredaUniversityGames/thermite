@@ -16,21 +16,6 @@
 
 namespace tmt {
 
-namespace light_grid {
-
-constexpr uint32_t MAX_LIGHTS_PER_CELL = 64u;
-constexpr uint32_t MAX_CASCADES = 3u;
-constexpr uint32_t CASCADES_RESOLUTION = 16u;
-constexpr uint32_t BITMASKS_PER_CASCADE = MAX_LIGHTS + 32u - 1u / 32u;                   /* div up */
-constexpr uint32_t FIRST_CASCADE_BOUNDS = 32u;                                           /* world space units */
-constexpr uint32_t FIRST_CASCADE_CELL_SIZE = FIRST_CASCADE_BOUNDS / CASCADES_RESOLUTION; /* world space units */
-
-constexpr uint32_t CELLS_PER_CASCADE = CASCADES_RESOLUTION * CASCADES_RESOLUTION * CASCADES_RESOLUTION;
-constexpr uint32_t TOTAL_LIGHTS_PER_CASCADE = MAX_LIGHTS_PER_CELL * CELLS_PER_CASCADE;
-constexpr uint32_t LIGHT_GRID_BUFFER_SIZE = CELLS_PER_CASCADE * MAX_CASCADES * MAX_LIGHTS_PER_CELL;
-
-}  // namespace light_grid
-
 /* Universal light descriptor. */
 struct UniversalLightDesc {
     /* The kind of light source. */
@@ -71,7 +56,11 @@ void SceneView::init() {
     lights_data = bank.create_buffer("Lights Data Buffer", s, MAX_LIGHTS, sizeof(UniversalLightDesc)).expect("failed to create lights data buffer.");
     scene_view = bank.create_buffer("Scene View Buffer", c, sizeof(GpuSceneView)).expect("failed to create scene view buffer.");
 
-    /* Coarse light grid */
+    /* Cascades counters buffer */
+    cascades_counters = bank.create_buffer("Cascades Counters", BufferUsage::TransferDst | BufferUsage::Constant, light_grid::MAX_CASCADES, sizeof(uint32_t))
+                            .expect("failed to initialize the cascades counters buffer");
+
+    /* Cascades bitmasks buffer */
     cascades_bitmasks = bank.create_buffer("Cascades Bitmasks", BufferUsage::TransferDst | BufferUsage::Constant, light_grid::LIGHT_GRID_BUFFER_SIZE, sizeof(uint32_t))
                             .expect("failed to initialize the cascades bitmasks buffer");
 
@@ -285,31 +274,70 @@ void SceneView::update_lights(RenderGraph& render_graph, const RenderView&) {
 
     /* Allocate space for the cpu flatbit array */
     std::vector light_bitmasks = reserved<uint32_t>((size_t)(light_grid::BITMASKS_PER_CASCADE * light_grid::MAX_CASCADES));
+    for (size_t i = 0; i < light_bitmasks.capacity(); i++) {
+        light_bitmasks.emplace_back();
+    }
+    std::vector cascade_counts = reserved<uint32_t>((size_t)light_grid::MAX_CASCADES);
 
     for (size_t cascade = 0; cascade < light_grid::MAX_CASCADES; cascade++) {
+        uint32_t& light_counter = cascade_counts.emplace_back();
+
         /* compute cascade bounds (in world space units) */
         const uint32_t curr_cascade_bounds = light_grid::FIRST_CASCADE_BOUNDS << cascade;
         // const glm::vec3 center = glm::vec3(engine.renderer.render_view.gpu_view.origin);
         const glm::vec3 center = glm::vec3(0.0f, 0.0f, 0.0f);
-        const glm::vec3 max = { center.x + curr_cascade_bounds, center.y + curr_cascade_bounds, center.z + curr_cascade_bounds };
-        const glm::vec3 min = { center.x - curr_cascade_bounds, center.y - curr_cascade_bounds, center.z - curr_cascade_bounds };
+        const glm::vec3 cascade_max = { center.x + curr_cascade_bounds, center.y + curr_cascade_bounds, center.z + curr_cascade_bounds };
+        const glm::vec3 cascade_min = { center.x - curr_cascade_bounds, center.y - curr_cascade_bounds, center.z - curr_cascade_bounds };
 
-        //engine.polyline.use_color()
-        
-        engine.polyline.draw_aabb(min, max);
+        const Aabb cascade_aabb = Aabb(cascade_min, cascade_max);
 
-         for (size_t light_index = 0; light_index < count; light_index++) {
+        /* compute inner aabb (the area covered by the previous cascade) */
+        Aabb inner_aabb {};
+        const bool has_inner = cascade > 0;
+        if (has_inner) {
+            const uint32_t inner_bounds = light_grid::FIRST_CASCADE_BOUNDS << (cascade - 1);
+            const glm::vec3 inner_max = { center.x + inner_bounds, center.y + inner_bounds, center.z + inner_bounds };
+            const glm::vec3 inner_min = { center.x - inner_bounds, center.y - inner_bounds, center.z - inner_bounds };
+            inner_aabb = Aabb(inner_min, inner_max);
+        }
 
-            const uint32_t bitmask_index = (uint32_t)light_index >> 5; /* light_index / 5 */
+        engine.polyline.use_color({ 1.0f, 0.0f, 0.0f, 1.0f });
+        engine.polyline.draw_aabb(cascade_min, cascade_max);
+
+        for (size_t light_index = 0; light_index < gpu_lights.size(); light_index++) {
+            const uint32_t bitmask_index = (uint32_t)light_index >> 5;   /* light_index / 32 */
             const uint32_t bit_index = (uint32_t)light_index & 0b11111u; /* light_index % 32 */
+
+            /* TODO: Might be a good idea to use OBBs or Spheres instead of AABB */
+            /* compute light aabb */
+            const UniversalLightDesc& light = gpu_lights[light_index];
+            const glm::vec3 light_max = light.origin + light.culling_radius;
+            const glm::vec3 light_min = light.origin - light.culling_radius;
+            const Aabb light_aabb = Aabb(light_min, light_max);
+
+            engine.polyline.use_color({ 1.0f, 1.0f, 0.0f, 1.0f });
+            engine.polyline.draw_aabb(light_min, light_max);
 
             /* get bitmask (32 bitmasks per cascade) */
             uint32_t& bitmask = light_bitmasks[cascade * light_grid::BITMASKS_PER_CASCADE + bitmask_index];
 
-            /* if inside bounds update the bitmask */
-            bitmask |= 1 << bit_index;
+            /* if inside bounds update the bitmask and counter */
+            if (cascade_aabb.overlap(light_aabb)) {
+                if (has_inner && inner_aabb.contains(light_aabb)) {
+                    continue; /* entirely covered by the finer cascade so we skip it */
+                }
+
+                bitmask |= 1 << bit_index;
+                light_counter++;
+            }
         }
+
+        // Log::info("Cascade #{} has {} Lights!", cascade, light_counter);
     }
+
+    /* Upload light grid buffers */
+    render_graph.upload_buffer(cascades_counters, cascade_counts.data(), 0u, cascade_counts.size() * sizeof(uint32_t));
+    render_graph.upload_buffer(cascades_bitmasks, light_bitmasks.data(), 0u, cascade_counts.size() * sizeof(uint32_t));
 
     /* Update scene stats */
     light_count = (uint32_t)gpu_lights.size();

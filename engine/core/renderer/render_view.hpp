@@ -108,8 +108,6 @@ struct RenderView {
     /* Post Process buffers */
     PostProcessBuffer tbuffer {}; /* Thresholded luminance buffer (WxH, 4 bytes) */
 
-    ScreenBuffer light_cascades {}; /* Light Cascades buffer (WxH, 4 bytes) */
-
     /* Intermediate specular luminance buffer */
     ScreenBuffer raw_spec_buffer {};
     ScreenBuffer spec_buffer {};

@@ -28,8 +28,6 @@ Texture2D<uint2> vbuffer;
 /* Luminance buffer. */
 RWTexture2D<float3> lbuffer;
 
-RWTexture2D<float4> light_cascades;
-
 struct PickedLight {
     uint i; /* Selected light index. */
     float rcp_pdf; /* Reciprocal probability distribution function. */
@@ -110,21 +108,6 @@ inline float3 direct_illuminance(const float3 point, const float3 normal, const 
     return illuminance;
 }
 
-/* Index light cascades using view-space point `p`. */
-inline uint32_t index_cascades(const float3 p) {
-    /* Calculate the cascade index */
-    const float max_axis = max(max(abs(p.x), abs(p.y)), abs(p.z));
-    uint32_t cascade_index = (uint32_t)max(0.0f, ceil(log2(max_axis) - 4.0f));
-    if (cascade_index >= 8u) cascade_index = 0xFFFFFFFFu; /* Out of bounds */
-
-    return cascade_index;
-
-    /* Find which cell in the cascade the local point falls into */
-    //const uint32_t cascade_cell_extent = 1u << (cascade_index + 1u);
-    //const glm::vec3 cascade_point = glm::floor(p / (float)cascade_cell_extent) + 8.0f;
-    //return { cascade_index, (uint32_t)cascade_point.x, (uint32_t)cascade_point.y, (uint32_t)cascade_point.z };
-}
-
 [shader("compute")]
 [numthreads(16, 8, 1)]
 void main(int2 thread_id: SV_DispatchThreadID) {
@@ -149,7 +132,6 @@ void main(int2 thread_id: SV_DispatchThreadID) {
     /* Bounds check */
     if (any(pixel_id >= render_view.resolution)) {
         lbuffer[thread_id] = 0.0f;
-        light_cascades[thread_id] = 0.0f;
         return;
     }
 
@@ -159,7 +141,6 @@ void main(int2 thread_id: SV_DispatchThreadID) {
     /* Exit early if the visibility for this pixel is null */
     if (null_visibility(facet_key)) {
         lbuffer[thread_id] = 0.0f;
-        light_cascades[thread_id] = 0.0f;
         return;
     }
 
@@ -174,7 +155,6 @@ void main(int2 thread_id: SV_DispatchThreadID) {
     if (scale == 0.0f) {
         /* Exit early if there's no diffuse contribution */
         lbuffer[thread_id] = 0.0f;
-        light_cascades[thread_id] = 0.0f;
         return;
     }
 
@@ -187,26 +167,4 @@ void main(int2 thread_id: SV_DispatchThreadID) {
     const float3 diffuse = direct_illuminance(hit_point, geo.normal, -ray.dir, geo.material, seed, noise);
 
     lbuffer[thread_id] = scale * diffuse;
-
-    float3 view_hit = hit_point - ray.origin;
-
-    float4 cascade = float4(0.0f);
-    uint32_t index = index_cascades(view_hit);
-
-    if (index == 0u)
-        cascade = float4(1.0f, 0.0f, 0.0f, 1.0f);
-    if (index == 1u)
-        cascade = float4(1.0f, 1.0f, 0.0f, 1.0f); 
-    if (index == 2u)
-        cascade = float4(1.0f, 1.0f, 1.0f, 1.0f);
-    if (index == 3u)
-        cascade = float4(0.0f, 1.0f, 1.0f, 1.0f);
-    if (index == 4u)
-        cascade = float4(0.0f, 0.0f, 1.0f, 1.0f);
-    if (index == 5u)
-        cascade = float4(0.0f, 1.0f, 0.0f, 1.0f);
-    if (index == 6u)
-        cascade = float4(1.0f, 0.0f, 1.0f, 1.0f);
-
-    light_cascades[thread_id] = cascade;
 }
