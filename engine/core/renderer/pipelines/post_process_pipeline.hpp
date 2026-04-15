@@ -21,12 +21,15 @@ class PostProcessPipeline {
     void enqueue(RenderGraph& render_graph, RenderView render_view);
     void deinit(GPUAdapter& gpu);
 
-    /* Partial Luminance texture for auto-exposure (256x256) */
-    Texture lum_partial_texture {};
-    Image lum_partial_image {};
-    /* Tiny Luminance texture for auto-exposure (16x16) */
-    Texture lum_tiny_texture {};
-    Image lum_tiny_image {};
+    /* Partial AutoX texture (256x256) */
+    Texture autox_partial_texture {};
+    Image autox_partial_image {};
+    /* Tiny AutoX texture (16x16) */
+    Texture autox_tiny_texture {};
+    Image autox_tiny_image {};
+    /* Final AutoX texture (1x1) */
+    Texture autox_texture {};
+    Image autox_image {};
 
     Sampler down_sampler {};
     Sampler up_sampler {};

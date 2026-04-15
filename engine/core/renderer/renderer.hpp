@@ -26,6 +26,9 @@ enum class DisplayMode : uint32_t {
 struct RendererSettings {
     float bloom_radius = 0.2f;
     float bloom_threshold = 1.0f;
+    float autox_key_value = 0.01f;
+    float autox_lum_min = 0.005f;
+    float autox_lum_max = 100.0f;
 };
 
 class Renderer {
