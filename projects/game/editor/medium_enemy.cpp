@@ -60,6 +60,7 @@ void tag_invoke(ImReflect::ImInput_t, const char* name, game::MediumEnemy& value
             ImReflect::Input("Stomp Cooldown", value.stomp_cooldown, type_settings, type_response);
             ImReflect::Input("Stomp Windup", value.stomp_windup, type_settings, type_response);
             ImReflect::Input("Stomp Radius", value.stomp_radius, type_settings, type_response);
+            ImReflect::Input("Stomp Damage", value.stomp_damage, type_settings, type_response);
             ImGui::TreePop();
         }
 
@@ -107,6 +108,10 @@ void tag_invoke(ImReflect::ImInput_t, const char* name, game::MediumEnemy& value
             ImReflect::Input("Laser Firing Time", value.laser_firing_time, type_settings, type_response);
             ImReflect::Input("Laser Sitting Down Time", value.laser_sitting_down_time, type_settings, type_response);
             ImReflect::Input("Laser Winding Up Time", value.laser_winding_up_time, type_settings, type_response);
+            ImReflect::Input("Laser Damage Per Second", value.laser_damage, type_settings, type_response);
+            ImReflect::Input("Laser Damage Radius", value.laser_damage_radius, type_settings, type_response);
+            ImReflect::Input("Laser Target Offset", value.laser_target_offset, type_settings, type_response);
+            help("Offset from player, purely visual. The point that is used to check if damage should be done to the player, is also moved using the same offset.");
 
             ImGui::Spacing();
             ImGui::TextDisabled("Laser Advanced Settings");
@@ -122,6 +127,7 @@ void tag_invoke(ImReflect::ImInput_t, const char* name, game::MediumEnemy& value
             help("Max randomness is the maximum random offset added to the laser's initial direction when firing");
             ImReflect::Input("Prediction Length", value.laser_prediction_length, type_settings, type_response);
             help("Length of the offset added to the laser's target position, in the direction the player is moving");
+            ImReflect::Input("Laser Velocity Smoothing", value.laser_vel_smoothing, type_settings, type_response);
 
             ImGui::TreePop();
         }

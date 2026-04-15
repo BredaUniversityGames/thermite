@@ -31,6 +31,8 @@ void game::MediumEnemy::update(const tmt::FrameData& time) {
     tmt::engine.polyline.use_depth_testing(false);
     tmt::Transform& walking_transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
 
+    tmt::engine.polyline.draw_sphere(walking_transform.get_world_position(), 0.5f, 16);
+
     // world state update
     auto* ws = tmt::engine.ecs.try_get_component<tmt::WorldState>(entity);
     if (!ws) return;

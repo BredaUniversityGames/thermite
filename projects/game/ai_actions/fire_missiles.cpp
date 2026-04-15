@@ -13,10 +13,6 @@
 #include <cstdlib>
 
 void FireMissiles::on_start(tmt::Entity enemy_entity) {
-    for (const auto& [CamEntity, camera] : tmt::engine.ecs.view<tmt::Camera>().each()) {
-        player = CamEntity;
-        break;
-    }
     tmt::Log::error("missile onstart");
     auto& enemy = tmt::engine.ecs.get_component<game::MediumEnemy>(enemy_entity);
     missiles = enemy.missile_burst;

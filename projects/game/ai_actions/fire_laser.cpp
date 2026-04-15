@@ -15,18 +15,28 @@
 #include "engine/systems/physics/physics_system.hpp"
 #include "engine/systems/physics/components/voxel_body.hpp"
 
-void FireLaser::on_start(tmt::Entity enemy_entity) {
-    for (const auto& [cam_entity, camera] : tmt::engine.ecs.view<tmt::Camera>().each()) {
-        player = cam_entity;
-        break;
+void FireLaser::cleanup(tmt::Entity enemy_entity) {
+    game::MediumEnemy& enemy = tmt::engine.ecs.get_component<game::MediumEnemy>(enemy_entity);
+    if (tmt::engine.ecs.valid(laser_entity)) {
+        tmt::engine.ecs.destroy_entity(laser_entity);
     }
+    laser_entity = entt::null;
+    state = WINDING_UP;
+    enemy.laser_timer = 0.0f;
+    enemy.height_above_ground_offset = 0.0f;
+    auto* ws = tmt::engine.ecs.try_get_component<tmt::WorldState>(enemy_entity);
+    if (!ws) return;
+    ws->set_fact(tmt::FactId("m_laser_ready"), false);
+}
+
+void FireLaser::on_start(tmt::Entity enemy_entity) {
     auto& enemy = tmt::engine.ecs.get_component<game::MediumEnemy>(enemy_entity);
     state = SITTING_DOWN;
     time = 0.0f;
 
     tmt::Transform& enemy_transform = tmt::engine.ecs.get_component<tmt::Transform>(enemy_entity);
     const auto& enemy_entity_pos = enemy_transform.get_world_position();
-    const auto& player_pos = tmt::engine.ecs.get_component<tmt::Transform>(player).get_world_position();
+    const auto& player_pos = tmt::engine.ecs.get_component<tmt::Transform>(enemy.player).get_world_position();
 
     direction = player_pos - enemy_entity_pos +
                 glm::vec3(
@@ -49,7 +59,8 @@ void FireLaser::on_tick(tmt::Entity enemy_entity, float dt) {
         laser_pos = laser_origin.get_world_position();
     }
 
-    const auto& player_pos = tmt::engine.ecs.get_component<tmt::Transform>(player).get_world_position();
+    auto player_pos = tmt::engine.ecs.get_component<tmt::Transform>(enemy.player).get_world_position();
+    player_pos += enemy.laser_target_offset;
 
     switch (state) {
         case SITTING_DOWN: {
@@ -79,9 +90,9 @@ void FireLaser::on_tick(tmt::Entity enemy_entity, float dt) {
                 auto& voxel_renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(laser_entity);
                 auto ref = tmt::engine.resources.copy_resource<tmt::VoxelVolume>(enemy.laser_voxel_object);
                 voxel_renderer.resource = ref;
-                auto& voxel_body = tmt::engine.ecs.add_component<tmt::VoxelBody>(laser_entity);
-                voxel_body.layer = enemy.projectile_layer;
-                voxel_body.type = tmt::VoxelBody::STATIC;
+                // auto& voxel_body = tmt::engine.ecs.add_component<tmt::VoxelBody>(laser_entity);
+                // voxel_body.layer = enemy.projectile_layer;
+                // voxel_body.type = tmt::VoxelBody::STATIC;
 
                 state = FIRING;
                 time = 0.0f;
@@ -101,61 +112,77 @@ void FireLaser::on_tick(tmt::Entity enemy_entity, float dt) {
 
                 return;
             }
+
+            glm::vec3 raw_vel = (player_pos - last_player_pos) / dt;
+            last_player_pos = player_pos;
+
+            smoothed_player_vel = glm::mix(smoothed_player_vel, raw_vel, enemy.laser_vel_smoothing);
+            glm::vec3 predicted_player_pos = player_pos + smoothed_player_vel * (enemy.laser_prediction_length / (1.0f / glm::distance(player_pos, target_pos)));
+
             auto linear_target_pos = target_pos;
             {
-                glm::vec3 to_player = player_pos - linear_target_pos;
-                if (glm::dot(to_player, to_player) > 0.0001f) {
-                    glm::vec3 player_vel = (player_pos - last_player_pos) / dt;
-                    last_player_pos = player_pos;
-                    linear_target_pos = linear_target_pos + glm::normalize(to_player) * enemy.laser_linear_speed * dt + player_vel * enemy.laser_prediction_length;
+                glm::vec3 to_player = predicted_player_pos - linear_target_pos;
+                float dist = glm::length(to_player);
+                if (dist > 0.0001f) {
+                    float step = enemy.laser_linear_speed * dt;
+                    linear_target_pos += (to_player / dist) * glm::min(step, dist);
                 }
             }
 
             auto exponential_target_pos = target_pos;
             {
-                glm::vec3 to_player = player_pos - exponential_target_pos;
-                float length = glm::length(to_player);
-                if (glm::dot(to_player, to_player) > 0.0001f) {
-                    glm::vec3 player_vel = (player_pos - last_player_pos) / dt;
-                    last_player_pos = player_pos;
-                    exponential_target_pos = exponential_target_pos + glm::normalize(to_player) * enemy.laser_exponential_speed * length * dt + player_vel * enemy.laser_prediction_length;
+                glm::vec3 to_player = predicted_player_pos - exponential_target_pos;
+                float dist = glm::length(to_player);
+                if (dist > 0.0001f) {
+                    float step = enemy.laser_exponential_speed * dist * dt;
+                    exponential_target_pos += (to_player / dist) * glm::min(step, dist);
                 }
             }
 
             float linear_weight = glm::clamp(time / enemy.laser_linear_threshold, 0.0f, 1.0f);
             float exponential_weight = 1.0f - linear_weight;
             target_pos = linear_target_pos * linear_weight + exponential_target_pos * exponential_weight;
+            direction = glm::normalize(target_pos - laser_pos);
 
             glm::vec3 target_dir = glm::normalize(target_pos - laser_pos);
             direction = target_dir;
 
             if (time > enemy.laser_firing_time) {
-                tmt::engine.ecs.destroy_entity(laser_entity);
-                laser_entity = entt::null;
-                state = WINDING_UP;
-                auto& enemy = tmt::engine.ecs.get_component<game::MediumEnemy>(enemy_entity);
-                enemy.laser_timer = 0.0f;
-                enemy.height_above_ground_offset = 0.0f;
-                auto ws = tmt::engine.ecs.try_get_component<tmt::WorldState>(enemy_entity);
-                if (!ws) return;
-                ws->set_fact(tmt::FactId("m_laser_ready"), false);
+                cleanup(enemy_entity);
                 return;
             }
 
+            // scaling laser and checking for player collision
             const tmt::Ray ray_cast = tmt::Ray(laser_pos, glm::normalize(direction));
             const tmt::Hit laser_hit = tmt::engine.ecs.systems.get<tmt::Physics>().raycast(ray_cast, enemy.projectile_mask);
             auto hit_pos = laser_pos + direction * laser_hit.distance;
 
+            const float MAX_RANGE = 50.0f;
+            float raycast_dist = (laser_hit.entity != entt::null) ? laser_hit.distance : MAX_RANGE;
+            raycast_dist = glm::min(raycast_dist, MAX_RANGE);
+            glm::vec3 end_pos = laser_pos + direction * raycast_dist;
+
+            // closest point on laser to player
+            glm::vec3 line = end_pos - laser_pos;
+            float line_len_sq = glm::dot(line, line);
+            float t = glm::clamp(glm::dot(player_pos - laser_pos, line) / line_len_sq, 0.0f, 1.0f);
+            glm::vec3 closest_point = laser_pos + line * t;
+            float distance_to_player = glm::distance(closest_point, player_pos);
+
+            // deal damage to player and cutoff laser
+            if (distance_to_player < enemy.laser_damage_radius) {
+                tmt::engine.ecs.get_component<game::Player>(enemy.player).health.value -= enemy.laser_damage * dt;
+                //end_pos = closest_point;
+            }
+
             // scale laser voxel object between laser hit and laser pos
             auto& laser_transform = tmt::engine.ecs.get_component<tmt::Transform>(laser_entity);
-            glm::vec3 end_pos = (laser_hit.entity != entt::null) ? hit_pos : (laser_pos + direction * 50.0f);  // fallback if no hit
             float laser_length = glm::distance(laser_pos, end_pos);
             glm::vec3 mid_point = (laser_pos + end_pos) * 0.5f;
             laser_transform.set_world_position(mid_point);
 
             glm::vec3 up = (glm::abs(glm::dot(direction, glm::vec3(0.0f, 1.0f, 0.0f))) < 0.99f) ? glm::vec3(0.0f, 1.0f, 0.0f) : glm::vec3(0.0f, 0.0f, 1.0f);
             laser_transform.set_world_rotation(glm::quatLookAt(direction, up));
-            // laser is 1 long on z axis
             laser_transform.set_world_scale(glm::vec3(0.1f, 0.1f, laser_length));
 
             break;
@@ -171,15 +198,5 @@ bool FireLaser::is_done(tmt::Entity /*enemy_entity*/) const {
 }
 
 void FireLaser::on_interrupt(tmt::Entity enemy_entity) {
-    game::MediumEnemy& enemy = tmt::engine.ecs.get_component<game::MediumEnemy>(enemy_entity);
-    if (tmt::engine.ecs.valid(laser_entity)) {
-        tmt::engine.ecs.destroy_entity(laser_entity);
-    }
-    laser_entity = entt::null;
-    state = WINDING_UP;
-    enemy.laser_timer = 0.0f;
-    enemy.height_above_ground_offset = 0.0f;
-    auto* ws = tmt::engine.ecs.try_get_component<tmt::WorldState>(enemy_entity);
-    if (!ws) return;
-    ws->set_fact(tmt::FactId("m_laser_ready"), false);
+    cleanup(enemy_entity);
 }

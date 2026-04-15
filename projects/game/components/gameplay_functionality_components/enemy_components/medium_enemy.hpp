@@ -66,17 +66,22 @@ class MediumEnemy : public tmt::GameComponent<MediumEnemy> {
     float laser_sitting_down_time = 0.5f;
     float laser_winding_up_time = 0.5f;
     float laser_sitting_down_height_offset = 0.2f;
+    float laser_damage = 0.5f;
+    float laser_damage_radius = 0.5f;
+    glm::vec3 laser_target_offset = glm::vec3(0, 0, 0);   
     float laser_firing_time = 1.0f;
     float laser_linear_speed = 0.0f;
     float laser_exponential_speed = 0.0f;
     float laser_linear_threshold = 0.5f;
     float laser_max_randomness = 1.0f;
     float laser_prediction_length = 0.0f;
+    float laser_vel_smoothing = 0.25f;
 
     float stomp_cooldown = 3.0f;
     float stomp_timer = 0.0f;
     float stomp_windup = 0.5f;
     float stomp_radius = 1.0f;
+    float stomp_damage = 0.5f;
 };
 
 }  // namespace game
@@ -85,6 +90,6 @@ TMT_OBJECT(
     game::MediumEnemy,
     (walkable_asteroid, laser_origin, missile_origin, stencil, missile_voxel_object, projectile_mask, projectile_layer, rotation_speed, height_above_ground, walk_speed, aggro_range,
      laser_range, stomp_range, missile_cooldown, stop_launching_after, start_homing_after, slow_homing_accuracy_after, launch_speed, home_speed, life_time, missile_rotation_speed,
-     target_offset, missile_burst, burst_interval, missile_max_randomness, laser_cooldown, laser_charge_voxel_object, laser_voxel_object, laser_firing_time, laser_sitting_down_time,
-     laser_winding_up_time, laser_linear_speed, laser_exponential_speed, laser_linear_threshold, laser_max_randomness, laser_prediction_length)
+     target_offset, missile_burst, burst_interval, missile_max_randomness, laser_cooldown, laser_charge_voxel_object, laser_voxel_object, laser_firing_time, laser_sitting_down_time, laser_winding_up_time, laser_damage, laser_damage_radius, laser_target_offset, laser_linear_speed, laser_exponential_speed,
+                        laser_linear_threshold, laser_max_randomness, laser_prediction_length, laser_vel_smoothing, stomp_cooldown, stomp_timer, stomp_windup, stomp_radius, stomp_damage)
 );

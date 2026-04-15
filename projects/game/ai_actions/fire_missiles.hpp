@@ -12,8 +12,6 @@ class FireMissiles : public tmt::GoapAction {
         cost = 5.f;
     }
 
-    tmt::Entity player = entt::null;
-
     int missiles = 0;
     float interval_timer = 0.0f;
 
