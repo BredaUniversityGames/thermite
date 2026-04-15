@@ -12,7 +12,7 @@ namespace game {
 
 template <typename T>
 static Wallet* get_wallet(std::string_view label) {
-    auto view = tmt::engine.ecs.view<T>();
+    const auto view = std::as_const(tmt::engine.ecs).view<T>();
     if (view.empty()) {
         tmt::Log::error("No {} entity found", label);
         return nullptr;
@@ -49,20 +49,40 @@ static void save_resources_on_run(float multiplier_percentage) {
 
     player_wallet->currencies = persistent_curr;
 }
-static std::optional<PersistentStats> collect_stats(tmt::Entity player_entity, tmt::Entity barge_entity) {
-    auto* player = tmt::engine.ecs.try_get_component<Player>(player_entity);
+static std::optional<PersistentStats> collect_stats() {
+    const auto& ecs = std::as_const(tmt::engine.ecs);
+
+    const auto player_view = ecs.view<Player>();
+    if (player_view.empty()) {
+        tmt::Log::error("No Player entity found when collecting stats");
+        return {};
+    }
+
+    const auto weapon_view = ecs.view<Weapon>();
+    if (weapon_view.empty()) {
+        tmt::Log::error("No Weapon entity found when collecting stats");
+        return {};
+    }
+
+    const auto barge_view = ecs.view<FuelComponent>();
+    if (barge_view.empty()) {
+        tmt::Log::error("No barge entity found when collecting stats");
+        return {};
+    }
+
+    const auto* player = ecs.try_get_component<Player>(player_view.front().entity);
     if (!player) {
         tmt::Log::error("No Player component found when collecting stats");
         return {};
     }
 
-    auto* weapon = tmt::engine.ecs.try_get_component<Weapon>(player_entity);
+    const auto* weapon = ecs.try_get_component<Weapon>(weapon_view.front().entity);
     if (!weapon) {
         tmt::Log::error("No Weapon component found when collecting stats");
         return {};
     }
 
-    auto* fuel = tmt::engine.ecs.try_get_component<FuelComponent>(barge_entity);
+    const auto* fuel = ecs.try_get_component<FuelComponent>(barge_view.front().entity);
     if (!fuel) {
         tmt::Log::error("No FuelComponent found when collecting stats");
         return {};
@@ -110,11 +130,11 @@ static bool apply_stats(tmt::Entity player_entity, tmt::Entity barge_entity, con
 
     return true;
 }
-static void save_after_upgrade(tmt::Entity player_entity, tmt::Entity barge_entity) {
+static void save_after_upgrade() {
     auto* player_wallet = get_wallet<Player>("Player");
     if (player_wallet == nullptr) return;
 
-    auto stats = collect_stats(player_entity, barge_entity);
+    auto stats = collect_stats();
     if (!stats.has_value()) return;
 
     tmt::engine.player_data.get<Currencies>(PERSISTENT_RESOURCES) = player_wallet->currencies;

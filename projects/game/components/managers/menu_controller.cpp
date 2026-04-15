@@ -74,7 +74,7 @@ void MenuController::end() {
     tmt::engine.ecs.get_dispatcher().sink<EndRun>().disconnect<&MenuController::enable_end_of_game_menu>(this);
     auto player_view = tmt::engine.ecs.view<Player>();
     if (player_view.empty()) {
-        tmt::Log::error("No Player entity found");
+        tmt::Log::error("No Player entity ");
         return;
     }
 

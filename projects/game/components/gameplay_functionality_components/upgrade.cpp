@@ -144,12 +144,13 @@ bool Upgrade::apply_upgrade() {
     if (!modify_upgrade_entities()) {
         return false;
     }
-    auto barge_view = tmt::engine.ecs.view<FuelComponent>();
+    const auto barge_view = std::as_const(tmt::engine.ecs).view<FuelComponent>();
     if (barge_view.empty()) {
         tmt::Log::error("No barge entity found for saving upgrade.");
         return false;
     }
-    save_after_upgrade(player_entity, barge_view.front().entity);
+    save_after_upgrade();
+    return true;
 }
 
 }  // namespace game
