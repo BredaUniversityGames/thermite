@@ -13,6 +13,18 @@
 
 namespace tmt {
 
+// -X, +X, -Y, +Y, -Z, +Z
+constexpr glm::ivec3 dirs[6] = { { -1, 0, 0 }, { 1, 0, 0 }, { 0, -1, 0 }, { 0, 1, 0 }, { 0, 0, -1 }, { 0, 0, 1 } };
+
+constexpr uint64_t edge_masks[6] {
+    0x1111111111111111ULL,  // -X
+    0x8888888888888888ULL,  // +X
+    0x000000000000FFFFULL,  // -Y
+    0xFFFF000000000000ULL,  // +Y
+    0x000F000F000F000FULL,  // -Z
+    0xF000F000F000F000ULL   // +Z
+};
+
 void Destruction::on_start() {}
 
 void Destruction::on_update(const FrameData&) {
@@ -295,6 +307,9 @@ bool Destruction::seperation_early_out(VoxelVolume* resource, const glm::uvec3& 
         filled[d + 1] = flood_fill_64(edge_mask, nodes[d + 1]->child_mask);
     }
 
+    // Stores which neighbors will most likely have seperated
+    std::vector<glm::uvec3> unfilled_neighbors;
+
     // Check all neighbors are touched by the flood
     for (const glm::uvec3& n : neighbors) {
         // Find which of the 7 nodes this neighbor belongs to
@@ -312,7 +327,61 @@ bool Destruction::seperation_early_out(VoxelVolume* resource, const glm::uvec3& 
         }
 
         // Check if the bit is set in the flood result for this node
-        if (!(filled[slot] & n_bit)) return false;
+        if (!(filled[slot] & n_bit)) {
+            unfilled_neighbors.push_back(n);
+        }
+    }
+
+    // Mini floodfill on unfilled neighbors to check if they are connected (to get rid of the case where only a few voxels get seperated)
+    for (const glm::uvec3& n : unfilled_neighbors) {
+        // Store visited voxel positions
+        std::vector<glm::uvec3> visited;
+
+        // Store positions to visit
+        std::queue<glm::uvec3> to_visit;
+
+        // Skip if the voxel is not solid anymore
+        if (resource->blas->get_voxel((uint32_t)n.x, (uint32_t)n.y, (uint32_t)n.z) == nullptr) continue;  
+        
+        // Add first neighbor
+        to_visit.push(n);
+        visited.push_back(n);
+
+        while (!to_visit.empty()) {
+            if (visited.size() > 5) break;
+
+            glm::uvec3 cur = to_visit.front();
+            to_visit.pop();
+
+            for (int d = 0; d < 6; d++) {
+                const glm::ivec3 next = (glm::ivec3)cur + dirs[d];
+
+                // Bounds check
+                if (next.x < 0 || next.y < 0 || next.z < 0) continue;
+                if (next.x >= (int)resource->size.x || next.y >= (int)resource->size.y || next.z >= (int)resource->size.z) continue;
+
+                const glm::uvec3 next_u = (glm::uvec3)next;
+
+                // Skip if the voxel is empty
+                if (resource->blas->get_voxel(next_u.x, next_u.y, next_u.z) == nullptr) continue;
+
+                // Skip if already visited
+                if (std::find(visited.begin(), visited.end(), next_u) != visited.end()) continue;
+
+                visited.push_back(next_u);
+                to_visit.push(next_u);
+            }
+        }
+
+        // If we visited only a few voxels, we can simply destroy them and skip the separation
+        if (visited.size() <= 4) {
+            for (const glm::uvec3& v : visited) {
+                resource->blas->remove_voxel(v.x, v.y, v.z);
+            }
+            resource->set_dirty();
+        } else {  // else we probably have a proper seperation
+            return false;
+        }
     }
 
     return true;
@@ -325,7 +394,7 @@ void Destruction::fill_edge_indices(std::vector<glm::uvec3>& edge_indices, Entit
     auto* resource = vr.resource.resource.get();
     Svt64* tree = resource->blas.get();
 
-    const glm::ivec3 dirs[] = { { -1, 0, 0 }, { 1, 0, 0 }, { 0, -1, 0 }, { 0, 1, 0 }, { 0, 0, -1 }, { 0, 0, 1 } };
+    //const glm::ivec3 dirs[] = { { -1, 0, 0 }, { 1, 0, 0 }, { 0, -1, 0 }, { 0, 1, 0 }, { 0, 0, -1 }, { 0, 0, 1 } };
 
     // Loop over the stencil and find all voxels where destruction happened next to
     for (uint32_t local_z = 0; local_z < stencil->size.z; local_z++) {
@@ -376,18 +445,6 @@ void Destruction::fill_edge_indices(std::vector<glm::uvec3>& edge_indices, Entit
         }
     }
 }
-
-// -X, +X, -Y, +Y, -Z, +Z
-constexpr glm::ivec3 dirs[6] = { { -1, 0, 0 }, { 1, 0, 0 }, { 0, -1, 0 }, { 0, 1, 0 }, { 0, 0, -1 }, { 0, 0, 1 } };
-
-constexpr uint64_t edge_masks[6] {
-    0x1111111111111111ULL,  // -X
-    0x8888888888888888ULL,  // +X
-    0x000000000000FFFFULL,  // -Y
-    0xFFFF000000000000ULL,  // +Y
-    0x000F000F000F000FULL,  // -Z
-    0xF000F000F000F000ULL   // +Z
-};
 
 Svt64Node* get_tree_node_and_mark(uint32_t x, uint32_t y, uint32_t z, Svt64* tree, Destructible& graph, std::vector<uint64_t>& tree_masks, uint64_t mask) {
     TMT_ZONE_SCOPED
