@@ -56,7 +56,7 @@ void SensorsSystem::on_update(const tmt::FrameData& /*time*/) {
         auto* small_enemy = tmt::engine.ecs.try_get_component<SmallEnemy>(agent);
 
         // try get small enemy component, and the core entity, if no core enemy dies
-        if (!small_enemy || !tmt::engine.ecs.valid(small_enemy->core)) {
+        /*if (!small_enemy || !tmt::engine.ecs.valid(small_enemy->core)) {
             // call die on the small_enemy so it shows it died?
             small_enemy->die();
 
@@ -65,7 +65,7 @@ void SensorsSystem::on_update(const tmt::FrameData& /*time*/) {
             tmt::engine.ecs.remove_component<SteeringAgent>(agent);
 
             return;  // nothing to explode
-        }
+        }*/ 
 
         // check world states
         auto* agent_transform = ecs.try_get_component<tmt::Transform>(agent);

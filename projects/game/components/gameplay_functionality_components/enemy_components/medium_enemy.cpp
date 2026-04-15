@@ -23,7 +23,7 @@ void game::MediumEnemy::update(const tmt::FrameData& time) {
     if (paused) return;
     
     // check core, if none, enemy dies
-    if (this->core == entt::null) die();
+    // if (this->core == entt::null) die();
 
     tmt::engine.polyline.use_color(1.0f, 0.0f, 0.0f);
     tmt::engine.polyline.use_line_width(2.0f);

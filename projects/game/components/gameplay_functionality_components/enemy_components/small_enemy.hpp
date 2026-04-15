@@ -18,9 +18,10 @@ class SmallEnemy : public tmt::GameComponent<SmallEnemy> {
     void die();
 
     tmt::Entity thermite = entt::null;
-    tmt::Entity core = entt::null;
+    // tmt::Entity core = entt::null;
+    tmt::Entity explosion = entt::null;
 };
 
 }  // namespace game
 
-TMT_OBJECT(game::SmallEnemy, (thermite, core));
+TMT_OBJECT(game::SmallEnemy, (thermite, explosion/*, core*/));

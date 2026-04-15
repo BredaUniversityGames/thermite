@@ -3,6 +3,7 @@
 #include "engine/engine.hpp"
 #include "engine/core/ecs.hpp"
 #include "engine/core/components/voxel_renderer.hpp"
+#include "engine/core/components/emitter.hpp"
 #include "engine/systems/physics/components/voxel_body.hpp"
 
 #include "engine/systems/ai/steering/steering_system.hpp"
@@ -55,6 +56,13 @@ void Explode::on_tick(tmt::Entity agent, float dt) {
         if (!small_enemy || !tmt::engine.ecs.valid(small_enemy->thermite)) {
             tmt::Log::warn("Enemy doesnt have small enemy component OR a core assigned.");
             return;  // nothing to explode
+        }
+
+        // try get small enemy component, and the explosion entity, to get the particle emitter
+        if (tmt::engine.ecs.valid(small_enemy->explosion)) {
+            auto& particles = tmt::engine.ecs.get_component<tmt::ParticleEmitter>(small_enemy->explosion);
+
+            particles.should_burst = true;
         }
 
         tmt::Entity thermite = small_enemy->thermite;
@@ -113,12 +121,9 @@ void Explode::on_tick(tmt::Entity agent, float dt) {
             }
         }
 
-        /* Right now voxels disappear instantly, could do:
-         * spawn particles
-         * wait 0.2s before removing voxels*/
-
-        // destroy core entity
+        // destroy core entity & explosion
         tmt::engine.ecs.destroy_entity(thermite);
+        //tmt::engine.ecs.destroy_entity(small_enemy->explosion);
 
         // remove GOAP so it doesn't keep acting
         tmt::engine.ecs.remove_component<tmt::GoapAgent>(agent);
