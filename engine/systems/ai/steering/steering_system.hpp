@@ -58,7 +58,7 @@ class SteeringSystem : public ISystem {
     /**
      * Check if an ARRIVE request is complete and stop the agent.
      */
-    void check_completion(const SteeringAgent & agent, SteeringRequest & request, const Transform& transform, VoxelBody& body);
+    void check_completion(const SteeringAgent& agent, SteeringRequest& request, const Transform& transform, VoxelBody& body);
 };
 
 }  // namespace tmt

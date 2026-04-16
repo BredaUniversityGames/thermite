@@ -55,7 +55,7 @@ void SteeringSystem::on_fixed_update(const FrameData& time) {
 
         // Apply steering as acceleration
         body.velocity += steering * time.delta_time;
-        
+
         // Clamp max speed
         float speed = glm::length(body.velocity);
         if (speed > agent.max_speed) body.velocity = (body.velocity / speed) * agent.max_speed;
@@ -261,7 +261,7 @@ glm::vec3 SteeringSystem::calculate_force(const SteeringAgent& agent, const Stee
  * For ARRIVE requests, checks if the agent is within arrive_radius and moving slowly enough.
  * Stops the agent and marks the request as completed.
  */
-void SteeringSystem::check_completion(const SteeringAgent & agent, SteeringRequest & request, const Transform& transform, VoxelBody& body) {
+void SteeringSystem::check_completion(const SteeringAgent& agent, SteeringRequest& request, const Transform& transform, VoxelBody& body) {
     if (request.mode != SteeringMode::ARRIVE) return;
 
     float dist = glm::distance(transform.get_world_position(), request.target_position);
