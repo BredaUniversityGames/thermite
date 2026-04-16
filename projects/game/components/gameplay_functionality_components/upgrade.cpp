@@ -144,7 +144,7 @@ bool Upgrade::apply_upgrade() {
     if (!modify_upgrade_entities()) {
         return false;
     }
-    const auto barge_view = std::as_const(tmt::engine.ecs).view<FuelComponent>();
+    const auto barge_view = tmt::engine.ecs.view<FuelComponent>(entt::exclude_t {});
     if (barge_view.empty()) {
         tmt::Log::error("No barge entity found for saving upgrade.");
         return false;

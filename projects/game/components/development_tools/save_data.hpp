@@ -12,7 +12,7 @@ namespace game {
 
 template <typename T>
 static Wallet* get_wallet(std::string_view label) {
-    const auto view = std::as_const(tmt::engine.ecs).view<T>();
+    const auto view = tmt::engine.ecs.view<T>(entt::exclude_t {});
     if (view.empty()) {
         tmt::Log::error("No {} entity found", label);
         return nullptr;
@@ -50,21 +50,21 @@ static void save_resources_on_run(float multiplier_percentage) {
     player_wallet->currencies = persistent_curr;
 }
 static std::optional<PersistentStats> collect_stats() {
-    const auto& ecs = std::as_const(tmt::engine.ecs);
+    const auto& ecs = tmt::engine.ecs;
 
-    const auto player_view = ecs.view<Player>();
+    const auto player_view = ecs.view<Player>(entt::exclude_t {});
     if (player_view.empty()) {
         tmt::Log::error("No Player entity found when collecting stats");
         return {};
     }
 
-    const auto weapon_view = ecs.view<Weapon>();
+    const auto weapon_view = ecs.view<Weapon>(entt::exclude_t {});
     if (weapon_view.empty()) {
         tmt::Log::error("No Weapon entity found when collecting stats");
         return {};
     }
 
-    const auto barge_view = ecs.view<FuelComponent>();
+    const auto barge_view = ecs.view<FuelComponent>(entt::exclude_t {});
     if (barge_view.empty()) {
         tmt::Log::error("No barge entity found when collecting stats");
         return {};
