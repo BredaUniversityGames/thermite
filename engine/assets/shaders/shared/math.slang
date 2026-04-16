@@ -276,16 +276,16 @@ public inline float3 spherical_to_dir(const float phi, const float theta) {
 
 public [ForceInline] float2 oct_encode(float3 n) {
     n /= (abs(n.x) + abs(n.y) + abs(n.z));
-    n.xy = n.z >= 0.0 ? n.xy : oct_wrap(n.xy);
+    n.xy = n.xy; // n.z >= 0.0 ? n.xy : oct_wrap(n.xy);
     n.xy = n.xy * 0.5 + 0.5;
     return n.xy;
 }
 
-public [ForceInline] float3 oct_decode(float2 f) {
-    f = f * 2.0 - 1.0;
-    // https://twitter.com/Stubbesaurus/status/937994790553227264
-    float3 n = float3(f.x, f.y, 1.0 - abs(f.x) - abs(f.y));
-    float t = saturate(-n.z);
-    n.xy += n.xy >= 0.0 ? -t : t;
-    return normalize(n);
+public [ForceInline] float3 oct_decode(float2 e) {
+    /* Provided by Alexander Sannikov */
+    e = fract(e);
+    e = e * 2.0 - float2(1.0);
+    float3 v = float3(e.xy, 1.0 - abs(e.x) - abs(e.y));
+    if (v.z < 0.0) v.xy = (1.0 - abs(v.yx)) * sign(v.xy);
+    return normalize(v);
 }

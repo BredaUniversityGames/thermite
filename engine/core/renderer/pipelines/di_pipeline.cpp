@@ -31,7 +31,7 @@ void DiPipeline::init(GPUAdapter& gpu) {
     /* Create the intermediate probe buffer */
     constexpr uint32_t probe_width = 8u;
     constexpr uint32_t cascade_width = 16u;
-    const Size3D probe_buffer_size = Size3D(cascade_width * probe_width, cascade_width * probe_width);
+    const Size3D probe_buffer_size = Size3D(cascade_width * probe_width, cascade_width * probe_width, cascade_width);
     probe_texture = bank.create_texture("Intermediate Probe Buffer Texture", TextureUsage::Storage | TextureUsage::Sampled, TextureFormat::RGBA16Sfloat, probe_buffer_size).expect("failed to create probe texture.");
     probe_image = bank.create_image("Intermediate Probe Buffer Image", probe_texture).expect("failed to create probe image.");
 }
@@ -91,21 +91,29 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
     { /* Illuminance Volume Update */
         constexpr uint32_t probe_width = 8u;
         constexpr uint32_t cascade_width = 16u;
+        uint32_t cascade_index = 0u;
 
         /* Illuminance probe tracing */
         render_graph.add_compute_pass("trace probes pass", "lighting/volume_trace.cs")
+            /* Ray-tracing buffers */
+            .read(scene_view.bvh_nodes)
+            .read(scene_view.object_indices)
+            .read(scene_view.object_data)
+            /* Intermediate probe buffer */
             .write(probe_image)
-            .group_size(8, 8)
-            .work_size(cascade_width * probe_width, cascade_width * probe_width);
+            .push_constants(&cascade_index, 0u, sizeof(uint32_t))
+            .group_size(8, 8, 1)
+            .work_size(cascade_width * probe_width, cascade_width * probe_width, cascade_width);
 
         /* Illuminance probe update */
-        uint32_t cascade_index = 1u;
         render_graph.add_compute_pass("update probes pass", "lighting/volume_update.cs")
+            /* Intermediate probe buffer */
             .read(probe_image)
+            /* Illuminance volume buffer */
             .write(render_view.probe_image)
             .push_constants(&cascade_index, 0u, sizeof(uint32_t))
-            .group_size(8, 8)
-            .work_size(cascade_width * probe_width, cascade_width * probe_width);
+            .group_size(8, 8, 1)
+            .work_size(cascade_width * probe_width, cascade_width * probe_width, cascade_width);
     }
 
     { /* Specular illumination pass */
