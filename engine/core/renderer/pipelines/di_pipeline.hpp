@@ -25,6 +25,10 @@ class DiPipeline {
     void enqueue(RenderGraph& render_graph, RenderView& render_view, SceneView& scene_view);
     void deinit(GPUAdapter& gpu);
 
+    /* Intermediate probe texture */
+    Texture probe_texture {};
+    Image probe_image {};
+
     bool cache_init = false;
 };
 

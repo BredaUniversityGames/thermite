@@ -108,6 +108,15 @@ void RenderView::init() {
     ).expect("failed to initialize motion vector buffer texture");
     mbuffer.image = bank.create_image("Motion Vector Buffer Image", mbuffer.texture).expect("failed to initialize motion vector buffer image.");
 
+    /* Create the irradiance probe buffer */
+    constexpr uint32_t probe_width = 8u;
+    constexpr uint32_t cascade_width = 16u;
+    constexpr uint32_t cascade_count = 6u;
+    // constexpr uint32_t probe_padding = 2u;
+    const Size3D probe_buffer_size = Size3D(cascade_width * probe_width, cascade_width * probe_width, cascade_count);
+    probe_texture = bank.create_texture("Irradiance Probe Buffer Texture", TextureUsage::Storage | TextureUsage::Sampled, TextureFormat::RGBA16Sfloat, probe_buffer_size).expect("failed to create probe texture.");
+    probe_image = bank.create_image("Irradiance Probe Buffer Image", probe_texture).expect("failed to create probe image.");
+
     /* Create the macrofacet cache */
     const uint64_t cache_size = 10'000'000u; /* 480 MB */
     macrofacet_cache = bank.create_buffer("Macrofacet Cache Buffer", BufferUsage::Storage, cache_size, 48ull /* bytes */).expect("failed to create macrofacet cache buffer.");
@@ -211,6 +220,8 @@ void RenderView::deinit() {
     bank.destroy(hbuffer2.texture);
     bank.destroy(mbuffer.image);
     bank.destroy(mbuffer.texture);
+    bank.destroy(probe_image);
+    bank.destroy(probe_texture);
     bank.destroy(viewport.image);
     bank.destroy(viewport.texture);
 

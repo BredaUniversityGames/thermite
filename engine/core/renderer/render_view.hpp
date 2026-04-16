@@ -76,9 +76,6 @@ struct RenderView {
     /* Create a ray from this render view for a given pixel coordinate. */
     Ray pixel_ray(glm::ivec2 pixel) const;
 
-    /* Directional albedo look up texture (32x32) */
-    Texture diralbedo_lut_texture {};
-    Image diralbedo_lut {};
     /* Blue noise textures (512x512) */
     ResourceRef<Texture2D> blue_noise2d {};
     ResourceRef<Texture2D> blue_noise1d {};
@@ -96,6 +93,10 @@ struct RenderView {
     /* Intermediate specular & diffuse buffers */
     ScreenBuffer spec_buffer {};
     ScreenBuffer diff_buffer {};
+
+    /* Irradiance volume texture */
+    Texture probe_texture {};
+    Image probe_image {};
 
     /* Macrofacet buffers */
     Buffer macrofacet_cache {}; /* Macrofacet hash cache (10.000.000, 48 bytes) */

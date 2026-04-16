@@ -25,7 +25,16 @@ glm::uvec2 div_up(const glm::uvec2 a, const uint32_t ax, const uint32_t ay) {
     return glm::uvec2(div_up(a.x, ax), div_up(a.y, ay));
 }
 
-void DiPipeline::init(GPUAdapter&) {}
+void DiPipeline::init(GPUAdapter& gpu) {
+    VRAMBank& bank = gpu.get_vram_bank();
+
+    /* Create the intermediate probe buffer */
+    constexpr uint32_t probe_width = 8u;
+    constexpr uint32_t cascade_width = 16u;
+    const Size3D probe_buffer_size = Size3D(cascade_width * probe_width, cascade_width * probe_width);
+    probe_texture = bank.create_texture("Intermediate Probe Buffer Texture", TextureUsage::Storage | TextureUsage::Sampled, TextureFormat::RGBA16Sfloat, probe_buffer_size).expect("failed to create probe texture.");
+    probe_image = bank.create_image("Intermediate Probe Buffer Image", probe_texture).expect("failed to create probe image.");
+}
 
 /* clang-format off */
 
@@ -77,6 +86,26 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
             .write(diff_buffer)
             .group_size(16, 8)
             .work_size(rate.x, rate.y);
+    }
+
+    { /* Illuminance Volume Update */
+        constexpr uint32_t probe_width = 8u;
+        constexpr uint32_t cascade_width = 16u;
+
+        /* Illuminance probe tracing */
+        render_graph.add_compute_pass("trace probes pass", "lighting/volume_trace.cs")
+            .write(probe_image)
+            .group_size(8, 8)
+            .work_size(cascade_width * probe_width, cascade_width * probe_width);
+
+        /* Illuminance probe update */
+        uint32_t cascade_index = 1u;
+        render_graph.add_compute_pass("update probes pass", "lighting/volume_update.cs")
+            .read(probe_image)
+            .write(render_view.probe_image)
+            .push_constants(&cascade_index, 0u, sizeof(uint32_t))
+            .group_size(8, 8)
+            .work_size(cascade_width * probe_width, cascade_width * probe_width);
     }
 
     { /* Specular illumination pass */
@@ -206,6 +235,11 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
 
 /* clang-format on */
 
-void DiPipeline::deinit(GPUAdapter&) {}
+void DiPipeline::deinit(GPUAdapter& gpu) {
+    VRAMBank& bank = gpu.get_vram_bank();
+
+    bank.destroy(probe_image);
+    bank.destroy(probe_texture);
+}
 
 }  // namespace tmt
