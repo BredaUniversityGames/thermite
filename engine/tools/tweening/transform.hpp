@@ -64,8 +64,8 @@ struct Rotate : public Tweening::Detail::FromToMixin<Rotate<ITween>, glm::quat>,
                 public Tweening::Detail::TypedCallbackMixin<Rotate<ITween>, tmt::Transform&>,
                 public Tweening::Detail::SubTweenMixin<ITween>,
                 public WorldOrLocalMixin<Rotate<ITween>>,
-                public OffsetMixin<Rotate<ITween>, glm::quat> {
-    using value_type = glm::quat;
+                public OffsetMixin<Rotate<ITween>, glm::vec3> {
+    using value_type = glm::vec3;
     Rotate() = default;
     Rotate(ITween* parent) : Tweening::Detail::SubTweenMixin<ITween>(parent) {}
 };
