@@ -1,4 +1,5 @@
 #pragma once
+#include "engine/core/reflection.hpp"
 #include "engine/shared/svt64.hpp"
 
 namespace tmt {
@@ -67,3 +68,7 @@ struct Destructible {
 };
 
 }  // namespace tmt
+
+TMT_COMPONENT_NAME(tmt::Destructible, "Destructible");
+TMT_COMPONENT_SERIALIZE_EMPTY(tmt::Destructible);
+TMT_COMPONENT_INSPECT_EMPTY(tmt::Destructible);

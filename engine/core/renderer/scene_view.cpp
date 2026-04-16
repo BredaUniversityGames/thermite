@@ -11,6 +11,7 @@
 #include "engine/core/components/voxel_renderer.hpp"
 #include "engine/core/components/light.hpp"
 #include "engine/core/components/environment.hpp"
+#include <tools/profiler.hpp>
 
 namespace tmt {
 
@@ -60,6 +61,8 @@ void SceneView::init() {
 }
 
 void SceneView::update(RenderGraph& render_graph, const RenderView& render_view) {
+    TMT_ZONE_SCOPED_N("Update Scene View")
+
     /* Update voxel objects */
     update_voxel_objects(render_graph);
 

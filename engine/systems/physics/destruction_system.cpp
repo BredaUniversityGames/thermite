@@ -378,7 +378,6 @@ bool Destruction::seperation_early_out(VoxelVolume* resource, const glm::uvec3& 
             for (const glm::uvec3& v : visited) {
                 resource->blas->remove_voxel(v.x, v.y, v.z);
             }
-            resource->set_dirty();
         } else {  // else we probably have a proper seperation
             return false;
         }
