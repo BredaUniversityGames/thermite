@@ -10,6 +10,7 @@
 #include "engine/tools/serializer/ecs.hpp"
 
 #include "engine/core/input/input.hpp"
+#include "engine/core/renderer/renderer.hpp"
 
 namespace tmt {
 
@@ -44,17 +45,22 @@ void Scenes::swap_scenes() {
         return;
     }
 
+    /* Reset Particles */
+    engine.renderer.kill_particles = true;
+
     /* Unload */
     OnPreUnloadScene::dispatch();
     if (active_scene) active_scene->on_end();
     active_scene_type = NULL_SCENE;
-    engine.ecs.clear();
     OnSceneEnd::dispatch();
 
     const bool was_playing = engine.game_controller.is_playing();
     if (was_playing) {
         engine.ecs.on_game_end();
     }
+
+    /* Clear scene after we end everything */
+    engine.ecs.clear();
 
     /* Load */
     SceneInfo& info = registered_scenes.at(next_scene_type);
