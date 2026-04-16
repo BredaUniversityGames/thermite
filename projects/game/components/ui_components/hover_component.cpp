@@ -1,7 +1,6 @@
 #include "hover_component.hpp"
 
 void game::HoverComponent::start() {
-
     if (hover_entity == entt::null) {
         tmt::Log::error("Hover entity not set for {}", entity);
         return;
@@ -20,9 +19,7 @@ void game::HoverComponent::start() {
     }
 }
 
-void game::HoverComponent::update(const tmt::FrameData& time) {
-    
-}
+void game::HoverComponent::update(const tmt::FrameData& time) {}
 
 void game::HoverComponent::end() {
     if (auto* button_component = tmt::engine.ecs.try_get_component<tmt::Button>(entity)) {
