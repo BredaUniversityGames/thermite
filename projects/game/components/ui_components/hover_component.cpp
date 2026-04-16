@@ -13,8 +13,8 @@ void game::HoverComponent::start() {
     }
 
     if (auto* button_component = tmt::engine.ecs.try_get_component<tmt::Button>(entity)) {
-        button_component->on_select.add(this, &HoverComponent::disable);
-        button_component->on_deselect.add(this, &HoverComponent::enable);
+        button_component->on_select.add(this, &HoverComponent::enable);
+        button_component->on_deselect.add(this, &HoverComponent::disable);
     } else {
         tmt::Log::warn("No button found on entity {}", entity);
     }
