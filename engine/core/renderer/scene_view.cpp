@@ -56,12 +56,8 @@ void SceneView::init() {
     lights_data = bank.create_buffer("Lights Data Buffer", s, MAX_LIGHTS, sizeof(UniversalLightDesc)).expect("failed to create lights data buffer.");
     scene_view = bank.create_buffer("Scene View Buffer", c, sizeof(GpuSceneView)).expect("failed to create scene view buffer.");
 
-    /* Cascades counters buffer */
-    cascades_counters = bank.create_buffer("Cascades Counters", BufferUsage::TransferDst | BufferUsage::Constant, light_grid::MAX_CASCADES, sizeof(uint32_t))
-                            .expect("failed to initialize the cascades counters buffer");
-
-    /* Cascades bitmasks buffer */
-    cascades_bitmasks = bank.create_buffer("Cascades Bitmasks", BufferUsage::TransferDst | BufferUsage::Constant, light_grid::LIGHT_GRID_BUFFER_SIZE, sizeof(uint32_t))
+    /* Cascades bitmasks buffer */ 
+    cascades_bitmasks = bank.create_buffer("Cascades Bitmasks", BufferUsage::TransferDst | BufferUsage::Storage, light_grid::BITMASKS_PER_CASCADE * light_grid::MAX_CASCADES, sizeof(uint32_t))
                             .expect("failed to initialize the cascades bitmasks buffer");
 
     /* Fine light grid */
@@ -282,12 +278,12 @@ void SceneView::update_lights(RenderGraph& render_graph, const RenderView&) {
     for (size_t cascade = 0; cascade < light_grid::MAX_CASCADES; cascade++) {
         uint32_t& light_counter = cascade_counts.emplace_back();
 
-        /* compute cascade bounds (in world space units) */
-        const uint32_t curr_cascade_bounds = light_grid::FIRST_CASCADE_BOUNDS << cascade;
+        /* compute cascade half extent (in world space units) */
+        const uint32_t cascade_half_extent = (light_grid::FIRST_CASCADE_BOUNDS << cascade) / 2u;
         // const glm::vec3 center = glm::vec3(engine.renderer.render_view.gpu_view.origin);
         const glm::vec3 center = glm::vec3(0.0f, 0.0f, 0.0f);
-        const glm::vec3 cascade_max = { center.x + curr_cascade_bounds, center.y + curr_cascade_bounds, center.z + curr_cascade_bounds };
-        const glm::vec3 cascade_min = { center.x - curr_cascade_bounds, center.y - curr_cascade_bounds, center.z - curr_cascade_bounds };
+        const glm::vec3 cascade_max = { center.x + cascade_half_extent, center.y + cascade_half_extent, center.z + cascade_half_extent };
+        const glm::vec3 cascade_min = { center.x - cascade_half_extent, center.y - cascade_half_extent, center.z - cascade_half_extent };
 
         const Aabb cascade_aabb = Aabb(cascade_min, cascade_max);
 
@@ -332,11 +328,10 @@ void SceneView::update_lights(RenderGraph& render_graph, const RenderView&) {
             }
         }
 
-        // Log::info("Cascade #{} has {} Lights!", cascade, light_counter);
+        //Log::info("Cascade #{} has {} Lights!", cascade, light_counter);
     }
 
     /* Upload light grid buffers */
-    render_graph.upload_buffer(cascades_counters, cascade_counts.data(), 0u, cascade_counts.size() * sizeof(uint32_t));
     render_graph.upload_buffer(cascades_bitmasks, light_bitmasks.data(), 0u, cascade_counts.size() * sizeof(uint32_t));
 
     /* Update scene stats */

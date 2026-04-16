@@ -39,16 +39,7 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
     const BindHandle specular_image = render_view.spec_buffer.image;
     const glm::uvec2 render_res = render_view.gpu_view.resolution;
 
-    /* Light Culling Pass */
-    {
-        render_graph.add_compute_pass("light culling pass", "lighting/cull.cs")
-            .read(scene_view.cascades_counters)
-            .read(scene_view.cascades_bitmasks)
-            .read(scene_view.lights_data)
-            .write(scene_view.fine_light_grid)
-            .group_size(4, 4, 4)
-            .work_size(light_grid::CASCADES_RESOLUTION, light_grid::CASCADES_RESOLUTION, light_grid::CASCADES_RESOLUTION * light_grid::MAX_CASCADES);
-    }
+    
 
     if (cache_init == false) {
         /* Cache init pass */

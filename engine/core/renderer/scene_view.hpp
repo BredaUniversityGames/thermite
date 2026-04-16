@@ -22,7 +22,7 @@ namespace light_grid {
 constexpr uint32_t MAX_LIGHTS_PER_CELL = 64u;
 constexpr uint32_t MAX_CASCADES = 3u;
 constexpr uint32_t CASCADES_RESOLUTION = 16u;
-constexpr uint32_t BITMASKS_PER_CASCADE = MAX_LIGHTS + 31u / 32u;                        /* div up */
+constexpr uint32_t BITMASKS_PER_CASCADE = (MAX_LIGHTS + 31u) / 32u;                      /* div up */
 constexpr uint32_t FIRST_CASCADE_BOUNDS = 32u;                                           /* world space units */
 constexpr uint32_t FIRST_CASCADE_CELL_SIZE = FIRST_CASCADE_BOUNDS / CASCADES_RESOLUTION; /* world space units */
 
@@ -76,7 +76,6 @@ struct SceneView {
     bool render_outlines = false;
 
     /* Light acc structure */
-    Buffer cascades_counters {}; /* Stores the amount of lights present in each cascade. */
     Buffer cascades_bitmasks {}; /* Filled on the CPU. Stores light bitmask per cascade. */
     Buffer fine_light_grid {};   /* Filled on the GPU, using the cascades_bitmasks. Stores light indices per cascade cell. */
 

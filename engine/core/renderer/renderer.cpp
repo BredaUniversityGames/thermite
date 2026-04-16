@@ -133,6 +133,16 @@ void Renderer::update() {
         render_view.update_gpu_view(render_graph, debug_camera, debug_transform);
     }
 
+    /* Light Culling Pass */
+    {
+        render_graph.add_compute_pass("light culling pass", "lighting/cull.cs")
+            .read(scene_view.cascades_bitmasks)
+            .read(scene_view.lights_data)
+            .write(scene_view.fine_light_grid)
+            .group_size(4, 4, 4)
+            .work_size(light_grid::CASCADES_RESOLUTION, light_grid::CASCADES_RESOLUTION, light_grid::CASCADES_RESOLUTION * light_grid::MAX_CASCADES);
+    }
+
     /* Enqueue pipelines */
     geometry_pipeline.enqueue(render_graph, render_view, scene_view);
     di_pipeline.enqueue(render_graph, render_view, scene_view);
@@ -141,6 +151,17 @@ void Renderer::update() {
     if (engine.renderer.display_mode == DisplayMode::MOTIONVECTORS) {
         render_graph.add_compute_pass("[debug] motion vectors pass", "debug/motion_vectors.cs")
             .read(render_view.mbuffer.image)
+            .write(render_view.get_render_image())
+            .group_size(16, 8)
+            .work_size(render_view.gpu_view.resolution.x, render_view.gpu_view.resolution.y);
+    }
+
+    if (engine.renderer.display_mode == DisplayMode::LIGHTS) {
+        render_graph.add_compute_pass("[debug] light grid pass", "debug/light_grid.cs")
+            .read(render_view.render_view_buffer)
+            .read(render_view.dbuffer.image)
+            .read(scene_view.fine_light_grid)
+            .read(scene_view.lights_data)
             .write(render_view.get_render_image())
             .group_size(16, 8)
             .work_size(render_view.gpu_view.resolution.x, render_view.gpu_view.resolution.y);
