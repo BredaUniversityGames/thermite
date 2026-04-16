@@ -1,6 +1,7 @@
 #pragma once
 #define JSON_REFLECT_ENABLE_CONST_CAST
 // #define JSON_REFLECT_INITIALIZE_SMART_POINTERS
+#define JSON_RELFECT_ALLOW_THROW 0
 #include <JsonReflect.hpp>
 #include "engine/tools/json.hpp"
 
