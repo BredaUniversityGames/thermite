@@ -5,6 +5,7 @@
 #include "engine/core/components/voxel_renderer.hpp"
 #include "engine/core/components/emitter.hpp"
 #include "engine/systems/physics/components/voxel_body.hpp"
+#include "engine/systems/animation/rig_model.hpp"
 
 #include "engine/systems/ai/steering/steering_system.hpp"
 #include "engine/systems/ai/steering/components/steering_mode.hpp"
@@ -35,10 +36,6 @@ void Explode::on_start(tmt::Entity agent) {
         tmt::Log::warn("Steering system not active.");
         return;
     }
-
-    // Get the SteeringAgent component & copy global steering params into this agent
-    auto& steering_agent = registry.get<SteeringAgent>(agent);
-    steering_agent.params = &steering->overrides().params;
 
     if (!ecs.valid(player_entity)) {
         player_entity = ecs.view<Player>().front().entity;  // Assuming there's only one player entity in the game
@@ -89,15 +86,15 @@ void Explode::on_tick(tmt::Entity agent, float dt) {
         }
     }
 
-    if (live_charge_time >= steering_agent.params->charge_time && !exploded) {
-        auto* small_enemy = ecs.try_get_component<SmallEnemy>(agent);
+    auto* small_enemy = ecs.try_get_component<SmallEnemy>(agent);
 
-        // try get small enemy component, and the core entity
-        if (!small_enemy || !ecs.valid(small_enemy->thermite)) {
-            tmt::Log::warn("Enemy doesnt have small enemy component OR a core assigned.");
-            return;  // nothing to explode
-        }
+    // try get small enemy component, and the core entity
+    if (!small_enemy || !ecs.valid(small_enemy->thermite)) {
+        tmt::Log::warn("Enemy doesnt have small enemy component OR a core assigned.");
+        return;  // nothing to explode
+    }
 
+    if (live_charge_time >= small_enemy->logic_paramaters.charge_time && !exploded) {
         // try get small enemy component, and the explosion entity, to get the particle emitter
         if (tmt::engine.ecs.valid(small_enemy->explosion)) {
             auto& particles = tmt::engine.ecs.get_component<tmt::ParticleEmitter>(small_enemy->explosion);
@@ -111,14 +108,24 @@ void Explode::on_tick(tmt::Entity agent, float dt) {
         auto& core_transform = ecs.get_component<tmt::Transform>(thermite);
         glm::vec3 explosion_center = core_transform.get_world_position();
 
+        // --- create explosion entity ---
+        tmt::Entity explosion_entity = ecs.create_entity();
+
+        // Transform
+        auto& explosion_transform = ecs.get_component<tmt::Transform>(explosion_entity);
+        explosion_transform.set_world_position(explosion_center);
+
+        // Explosion component
+        auto& explosion = ecs.add_component<Explosion>(explosion_entity);
+
+        // Copy params from agent
+        explosion.param = small_enemy->explosion_parameters;
+
         // Get everything (with voxel body) within radius and push away
-        float radius = steering_agent.params->explosion_range;
-        float force = steering_agent.params->explosion_force;  // add this param!
+        float radius = small_enemy->logic_paramaters.push_radius;
+        float force = small_enemy->logic_paramaters.explosion_force;
 
         for (auto [entity, body, transform] : ecs.view<tmt::VoxelBody, tmt::Transform>().each()) {
-            // Only affect dynamic bodies ?
-            // if (body.type != tmt::VoxelBody::DYNAMIC) continue;
-
             glm::vec3 pos = transform.get_world_position();
             glm::vec3 dir = pos - explosion_center;
 
@@ -147,8 +154,7 @@ void Explode::on_tick(tmt::Entity agent, float dt) {
             float dist = glm::length(dir);
 
             if (dist <= radius && dist > 0.001f) {
-                // damage
-                player.health.value -= steering_agent.params->explosion_damage;
+                player.health.value -= small_enemy->logic_paramaters.explosion_damage;
 
                 glm::vec3 normal = glm::normalize(dir);
 
@@ -156,61 +162,19 @@ void Explode::on_tick(tmt::Entity agent, float dt) {
                 float strength = 1.0f - (dist / radius);
 
                 // push player
-                float player_force = steering_agent.params->explosion_force;
+                float player_force = small_enemy->logic_paramaters.explosion_force;
                 player.apply_impulse(normal, player_force * strength);
             }
         }
 
-        /*auto& physics = ecs.systems.get<tmt::Physics>();
+        std::set<tmt::Entity> children = transform.get_all_children();
 
-        const auto hits = physics.overlap_sphere(
-            explosion_center, steering_agent.params->explosion_range,
-            0xFFFFFFFF  // ALL layers
-        );
+        for (tmt::Entity child : children) {
+            if (!ecs.valid(child)) continue;
 
-        for (const auto& [voxel_entity, voxels] : hits) {
-            auto& voxel_renderer = ecs.get_component<tmt::VoxelRenderer>(voxel_entity);
-
-            auto* resource = voxel_renderer.resource.resource.get();
-            if (!resource || !resource->blas) continue;
-
-            for (const auto& [sqr_distance, voxel_coord] : voxels) {
-                auto* voxel_material = resource->blas->get_voxel(voxel_coord.x, voxel_coord.y, voxel_coord.z);
-
-                if (!voxel_material) continue;
-
-                resource->blas->remove_voxel(voxel_coord.x, voxel_coord.y, voxel_coord.z);
+            if (ecs.try_get_component<tmt::RigModel>(child)) {
+                ecs.remove_component<tmt::RigModel>(child);
             }
-
-            resource->set_dirty();
-        }*/
-
-        auto& physics = ecs.systems.get<tmt::Physics>();
-
-        const auto hits = physics.overlap_sphere(explosion_center, steering_agent.params->explosion_range, 0xFFFFFFFF);
-
-        // build allowed set (enemy + children)
-        std::set<tmt::Entity> valid_entities = transform.get_all_children();
-        valid_entities.insert(agent);
-
-        for (const auto& [voxel_entity, voxels] : hits) {
-            // only process voxels that belong to this enemy hierarchy
-            if (!valid_entities.count(voxel_entity)) continue;
-
-            auto& voxel_renderer = ecs.get_component<tmt::VoxelRenderer>(voxel_entity);
-
-            auto* resource = voxel_renderer.resource.resource.get();
-            if (!resource || !resource->blas) continue;
-
-            for (const auto& [sqr_distance, voxel_coord] : voxels) {
-                auto* voxel_material = resource->blas->get_voxel(voxel_coord.x, voxel_coord.y, voxel_coord.z);
-
-                if (!voxel_material) continue;
-
-                resource->blas->remove_voxel(voxel_coord.x, voxel_coord.y, voxel_coord.z);
-            }
-
-            resource->set_dirty();
         }
 
         // destroy core entity & explosion

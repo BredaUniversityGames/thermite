@@ -77,10 +77,8 @@ void SensorsSystem::on_update(const tmt::FrameData& /*time*/) {
         glm::vec3 agent_pos = agent_transform->get_world_position();
         float distance = glm::length(player_pos - agent_pos);
 
-        const auto& params = steering->overrides().params;
-
-        ws->set_fact(tmt::FactId("s_player_in_range"), distance <= params.activation_range);
-        ws->set_fact(tmt::FactId("s_player_in_explosion_zone"), distance <= params.max_explosion_range);
+        ws->set_fact(tmt::FactId("s_player_in_range"), distance <= small_enemy->logic_paramaters.activation_range);
+        ws->set_fact(tmt::FactId("s_player_in_explosion_zone"), distance <= small_enemy->logic_paramaters.max_explosion_range);
 
         if (!ws->facts[tmt::FactId("s_player_in_explosion_zone").id]) {
             ws->set_fact(tmt::FactId("s_ready_to_explode"), false);
