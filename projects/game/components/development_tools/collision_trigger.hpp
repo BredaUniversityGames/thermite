@@ -39,7 +39,7 @@ class TransformTween : public tmt::GameComponent<TransformTween> {
     void fixed_update(const tmt::FrameData& time) override {};
     void end() override {};
 
-    glm::quat offset_rotation { 0.f, 0.f, 0.f, 1.f };
+    glm::vec3 offset_rotation { 0.f, 0.f, 0.f };
     Tweening::TypedTween<tmt::Entity, tmt::Transform> rotate_tween;
 };
 

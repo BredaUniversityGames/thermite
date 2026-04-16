@@ -60,7 +60,7 @@ struct Move : public Tweening::Detail::FromToMixin<Move<ITween>, glm::vec3>,  //
 };
 
 template <typename ITween>
-struct Rotate : public Tweening::Detail::FromToMixin<Rotate<ITween>, glm::quat>,  //
+struct Rotate : public Tweening::Detail::FromToMixin<Rotate<ITween>, glm::vec3>,  //
                 public Tweening::Detail::TypedCallbackMixin<Rotate<ITween>, tmt::Transform&>,
                 public Tweening::Detail::SubTweenMixin<ITween>,
                 public WorldOrLocalMixin<Rotate<ITween>>,
@@ -118,11 +118,11 @@ struct Tweening::ITween<tmt::Entity, tmt::Transform> : public Tweening::Detail::
                         else if (!sub.has_end())
                             sub.to(is_local ? transform.get_local_position() : transform.get_world_position());
                     } else if constexpr (std::is_same_v<SubType, Rotate>) {
-                        if (!sub.has_start()) sub.from(is_local ? transform.get_local_rotation() : transform.get_world_rotation());
+                        if (!sub.has_start()) sub.from(glm::eulerAngles(is_local ? transform.get_local_rotation() : transform.get_world_rotation()));
                         if (has_offset)
-                            sub.to(sub.get_start() * sub.get_offset());
+                            sub.to(sub.get_start() + sub.get_offset());
                         else if (!sub.has_end())
-                            sub.to(is_local ? transform.get_local_rotation() : transform.get_world_rotation());
+                            sub.to(glm::eulerAngles(is_local ? transform.get_local_rotation() : transform.get_world_rotation()));
                     } else if constexpr (std::is_same_v<SubType, Scale>) {
                         if (!sub.has_start()) sub.from(is_local ? transform.get_local_scale() : transform.get_world_scale());
                         if (has_offset)
@@ -147,9 +147,9 @@ struct Tweening::ITween<tmt::Entity, tmt::Transform> : public Tweening::Detail::
                     }
                 } else if constexpr (std::is_same_v<SubType, Rotate>) {
                     if (is_local) {
-                        transform.set_local_rotation(glm::slerp(sub.get_start(), sub.get_end(), t));
+                        transform.set_local_rotation(Tweening::Detail::lerp(sub.get_start(), sub.get_end(), t));
                     } else {
-                        transform.set_world_rotation(glm::slerp(sub.get_start(), sub.get_end(), t));
+                        transform.set_world_rotation(Tweening::Detail::lerp(sub.get_start(), sub.get_end(), t));
                     }
                 } else if constexpr (std::is_same_v<SubType, Scale>) {
                     if (is_local) {
