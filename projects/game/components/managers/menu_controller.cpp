@@ -75,6 +75,7 @@ void MenuController::end() {
     auto player_view = tmt::engine.ecs.view<Player>();
     if (player_view.empty()) {
         tmt::Log::error("No Player entity ");
+
         return;
     }
 

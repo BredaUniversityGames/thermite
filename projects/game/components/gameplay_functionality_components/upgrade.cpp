@@ -54,13 +54,16 @@ void Upgrade::modify_upgrade_entities() const {
             tmt::engine.player_data.get<FuelData>(FUEL_DATA).max_fuel = upgrade_to;
             break;
         case UpgradeType::MINING_SPEED:
-            tmt::Log::info("Not implemented yet {}", magic_enum::enum_name(type));
+            tmt::Log::warn("Not implemented yet {}", magic_enum::enum_name(type));
             break;
         case UpgradeType::GRAVITY_PULL:
-            tmt::Log::info("Not implemented yet {}", magic_enum::enum_name(type));
+            tmt::Log::warn("Not implemented yet {}", magic_enum::enum_name(type));
             break;
         case UpgradeType::EXPLOSION_PARAMETERS:
-            tmt::Log::info("Not implemented yet {}", magic_enum::enum_name(type));
+            tmt::Log::warn("Not implemented yet {}", magic_enum::enum_name(type));
+            break;
+        default:
+            tmt::Log::warn("Not implemented yet {}", magic_enum::enum_name(type));
             break;
     }
 }
