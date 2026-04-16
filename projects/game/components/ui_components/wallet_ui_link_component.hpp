@@ -15,10 +15,7 @@ enum class DisplayTextType : uint8_t {
     ALL_RESOURCES
 };
 
-enum class DisplayType : uint8_t {
-    CURRENT,
-    LIMIT
-};
+enum class DisplayType : uint8_t { CURRENT, LIMIT };
 
 class WalletUiLink : public tmt::GameComponent<WalletUiLink> {
    public:
