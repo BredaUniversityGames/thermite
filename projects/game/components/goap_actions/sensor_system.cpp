@@ -65,7 +65,7 @@ void SensorsSystem::on_update(const tmt::FrameData& /*time*/) {
             tmt::engine.ecs.remove_component<SteeringAgent>(agent);
 
             return;  // nothing to explode
-        }*/ 
+        }*/
 
         // check world states
         auto* agent_transform = ecs.try_get_component<tmt::Transform>(agent);

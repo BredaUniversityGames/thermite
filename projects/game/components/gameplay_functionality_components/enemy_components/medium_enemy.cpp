@@ -21,7 +21,7 @@ void game::MediumEnemy::start() {
 
 void game::MediumEnemy::update(const tmt::FrameData& time) {
     if (paused) return;
-    
+
     // check core, if none, enemy dies
     // if (this->core == entt::null) die();
 
