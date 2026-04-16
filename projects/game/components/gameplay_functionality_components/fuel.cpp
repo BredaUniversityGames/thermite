@@ -1,5 +1,7 @@
 #include "fuel.hpp"
 #include "mover_component.hpp"
+#include "engine/tools/player_data.hpp"
+#include "projects/game/data_headers/save_entries.hpp"
 namespace {
 
 game::MoverComponent& get_mover_component(tmt::Entity entity) {
@@ -8,6 +10,10 @@ game::MoverComponent& get_mover_component(tmt::Entity entity) {
 
 }  // namespace
 void game::FuelComponent::start() {
+    fuel_data = tmt::engine.player_data.get<FuelData>(FUEL_DATA);
+
+    current_fuel = fuel_data.max_fuel;
+
     tmt::engine.ecs.get_dispatcher().sink<MovementUpdateEvent>().connect<&FuelComponent::on_trigger_movement>(this);
 
     if (current_fuel > 0.0f) {

@@ -99,6 +99,11 @@ void Player::start() {
         setup_inputs(tmt::engine.input_map);
         tmt::engine.ecs.get_dispatcher().sink<AttachEvent>().connect<&Player::on_attach>(this);
     }
+    health = tmt::engine.player_data.get<PlayerStat>(PLAYER_HEALTH_DATA);
+    energy = tmt::engine.player_data.get<PlayerStat>(PLAYER_ENERGY_DATA);
+    auto& movement_data = tmt::engine.player_data.get<PlayerMovement>(PLAYER_MOVEMENT_DATA);
+    acceleration = movement_data.acceleration;
+    max_speed = movement_data.max_speed;
 }
 void Player::end() {
     tmt::engine.ecs.get_dispatcher().sink<AttachEvent>().disconnect<&Player::on_attach>(this);

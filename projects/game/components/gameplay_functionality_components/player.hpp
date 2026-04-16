@@ -7,6 +7,10 @@
 
 namespace game {
 
+struct PlayerMovement {
+    float acceleration = 20.0f;
+    float max_speed = 10.0f;
+};
 struct PlayerStat {
     float max_value = 100.f;
     float value = 100.f;
@@ -105,6 +109,7 @@ class Player : public tmt::GameComponent<Player> {
 
 }  // namespace game
 TMT_OBJECT(game::PlayerStat, (max_value, value, increase_multiplier));
+TMT_OBJECT(game::PlayerMovement, (acceleration, max_speed));
 TMT_OBJECT(game::RayCollisionCheck, (collision_layer, player_radius, collision_speed_damping, camera_near_distance));
 TMT_OBJECT(
     game::Player, (camera_sensitivity, acceleration, deceleration, drag, max_speed, boost_max_speed_multiplier, boost_acceleration_multiplier, boost_deceleration_factor,
