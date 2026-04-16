@@ -15,11 +15,14 @@ void PostProcessPipeline::init(GPUAdapter& gpu) {
     VRAMBank& bank = gpu.get_vram_bank();
 
     /* Create auto exposure buffers */
-    autox_partial_texture = bank.create_texture("Partial AutoX Buffer Texture", TextureUsage::Sampled | TextureUsage::Storage, TextureFormat::R32Sfloat, {256u, 256u}).expect("failed to initialize partial autox buffer texture");
+    autox_partial_texture = bank.create_texture("Partial AutoX Buffer Texture", TextureUsage::Sampled | TextureUsage::Storage, TextureFormat::R32Sfloat, { 256u, 256u })
+                                .expect("failed to initialize partial autox buffer texture");
     autox_partial_image = bank.create_image("Partial AutoX Buffer Image", autox_partial_texture).expect("failed to initialize partial autox buffer image.");
-    autox_tiny_texture = bank.create_texture("Tiny AutoX Buffer Texture", TextureUsage::Sampled | TextureUsage::Storage, TextureFormat::R32Sfloat, {16u, 16u}).expect("failed to initialize tiny autox buffer texture");
+    autox_tiny_texture = bank.create_texture("Tiny AutoX Buffer Texture", TextureUsage::Sampled | TextureUsage::Storage, TextureFormat::R32Sfloat, { 16u, 16u })
+                             .expect("failed to initialize tiny autox buffer texture");
     autox_tiny_image = bank.create_image("Tiny AutoX Buffer Image", autox_tiny_texture).expect("failed to initialize tiny autox buffer image.");
-    autox_texture = bank.create_texture("Final AutoX Buffer Texture", TextureUsage::Sampled | TextureUsage::Storage, TextureFormat::R32Sfloat, {1u, 1u}).expect("failed to initialize autox buffer texture");
+    autox_texture = bank.create_texture("Final AutoX Buffer Texture", TextureUsage::Sampled | TextureUsage::Storage, TextureFormat::R32Sfloat, { 1u, 1u })
+                        .expect("failed to initialize autox buffer texture");
     autox_image = bank.create_image("Final AutoX Buffer Image", autox_texture).expect("failed to initialize autox buffer image.");
 
     down_sampler = bank.create_sampler("Down Sampler", Filter::Linear, AddressMode::ClampToBorder).expect("failed to create down sampler.");

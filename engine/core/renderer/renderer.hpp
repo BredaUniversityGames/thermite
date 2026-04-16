@@ -45,7 +45,7 @@ struct RendererSettings {
     float bloom_radius = 0.5f;
     float bloom_threshold = 1.0f;
     float bloom_trail = 1.0f;
-    
+
     float autox_key_value = 0.01f;
     float autox_lum_min = 0.001f;
     float autox_lum_max = 100.0f;
