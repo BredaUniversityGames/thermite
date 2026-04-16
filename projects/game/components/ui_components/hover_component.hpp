@@ -16,8 +16,8 @@ class HoverComponent : public tmt::GameComponent<HoverComponent> {
     tmt::Entity hover_entity = entt::null;
 
    private:
-    void disable(tmt::Entity entity_to_disable);
-    void enable(tmt::Entity entity_to_enable);
+    void disable();
+    void enable();
 };
 
 }  // namespace game

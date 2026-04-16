@@ -38,8 +38,8 @@ void SellOreComponent::update(const tmt::FrameData& time) {
 
 void SellOreComponent::end() {
     if (auto* button_component = tmt::engine.ecs.try_get_component<tmt::Button>(entity)) {
-        button_component->on_click.clear;
-        button_component->on_release.clear;
+        button_component->on_click.clear();
+        button_component->on_release.clear();
     } else {
         tmt::Log::warn("No button found on entity {}", entity);
     }
