@@ -13,7 +13,8 @@ RWTexture2D<float> autox_buffer;
 /* Down Sampler */
 SamplerState down_sampler;
 
-static const float AUTOX_R = 1.0f;
+[[vk::push_constant]]
+float autox_response;
 
 /* 8x8 luminance values in LDS. */
 groupshared float gs_l[64];
@@ -53,5 +54,5 @@ void main(int2 thread_id: SV_DispatchThreadID, int group_i: SV_GroupIndex) {
 
     /* Finally update the auto exposure buffer */
     const float autox = autox_buffer[0];
-    autox_buffer[0] = autox + (lum_sum - autox) * (1.0f - exp(-render_view.dt * AUTOX_R));
+    autox_buffer[0] = autox + (lum_sum - autox) * (1.0f - exp(-render_view.dt * autox_response));
 }
