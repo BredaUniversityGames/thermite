@@ -102,6 +102,7 @@ void Engine::init(std::unique_ptr<Application> user_app) {
     ecs.systems.add<UI>();
     ecs.systems.add<MotionMathSystem>();
     ecs.systems.add<ButtonManager>();
+    ecs.systems.add<Tweener>();
     ecs.systems.add<Gameplay>(); /* Should be last */
 
     OnEngineInit::dispatch(app->specs);
@@ -234,13 +235,6 @@ void Engine::start_game() {
 
 void Engine::update_game(const FrameData& frame_data) {
     TMT_ZONE_SCOPED_N("Engine::update_game")
-
-    {
-        TMT_ZONE_SCOPED_N("Tweening")
-        /* Tweening needs to go first so they are 0 when we add+render them and 1 when we call game */
-        Tweening::update(frame_data.delta_time);
-    }
-
     app->on_update(frame_data);
     if (scenes.get_active_scene()) scenes.get_active_scene()->on_update(frame_data);
     OnGameUpdate::dispatch(frame_data);
@@ -265,8 +259,6 @@ void Engine::resume_game() {
 
 void Engine::end_game() {
     TMT_ZONE_SCOPED_N("Engine::end_game")
-
-    Tweening::clear();
 
     if (scenes.get_active_scene()) scenes.get_active_scene()->on_end();
     app->on_end();

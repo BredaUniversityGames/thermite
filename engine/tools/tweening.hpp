@@ -37,6 +37,14 @@ using TweenMixinsInspect = ComponentRegistry<
     >;
 // clang-format on
 
+class Tweener : public ISystem {
+    constexpr virtual std::string get_name() override { return "Tweener"; }
+
+    virtual void on_start() {};
+    virtual void on_update(const tmt::FrameData& time) { Tweening::update(time.delta_time); };
+    virtual void on_end() { Tweening::clear(); };
+};
+
 }  // namespace tmt
 
 // VISITABLE_TEMPLATE_STRUCT_IN_CONTEXT(ImReflect::Detail::ImContext, (typename D), Tweening::Detail::EaseMixin, (D), ease_value, reverse_ease_value);
