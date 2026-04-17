@@ -13,6 +13,7 @@
 #include "engine/core/components/environment.hpp"
 
 #include "engine/core/polyline.hpp"
+#include "engine/core/input/input.hpp"
 
 namespace tmt {
 
@@ -56,7 +57,7 @@ void SceneView::init() {
     lights_data = bank.create_buffer("Lights Data Buffer", s, MAX_LIGHTS, sizeof(UniversalLightDesc)).expect("failed to create lights data buffer.");
     scene_view = bank.create_buffer("Scene View Buffer", c, sizeof(GpuSceneView)).expect("failed to create scene view buffer.");
 
-    /* Cascades bitmasks buffer */ 
+    /* Cascades bitmasks buffer */
     cascades_bitmasks = bank.create_buffer("Cascades Bitmasks", BufferUsage::TransferDst | BufferUsage::Storage, light_grid::BITMASKS_PER_CASCADE * light_grid::MAX_CASCADES, sizeof(uint32_t))
                             .expect("failed to initialize the cascades bitmasks buffer");
 
@@ -75,6 +76,10 @@ void SceneView::update(RenderGraph& render_graph, const RenderView& render_view)
 
     /* Update lights */
     update_lights(render_graph, render_view);
+
+    if (engine.input.is_keyboard_button_just_pressed(Key::L)) {
+        update_light_grid_center = !update_light_grid_center;
+    }
 }
 
 void SceneView::deinit() {
@@ -280,10 +285,9 @@ void SceneView::update_lights(RenderGraph& render_graph, const RenderView&) {
 
         /* compute cascade half extent (in world space units) */
         const uint32_t cascade_half_extent = (light_grid::FIRST_CASCADE_BOUNDS << cascade) / 2u;
-        // const glm::vec3 center = glm::vec3(engine.renderer.render_view.gpu_view.origin);
-        const glm::vec3 center = glm::vec3(0.0f, 0.0f, 0.0f);
-        const glm::vec3 cascade_max = { center.x + cascade_half_extent, center.y + cascade_half_extent, center.z + cascade_half_extent };
-        const glm::vec3 cascade_min = { center.x - cascade_half_extent, center.y - cascade_half_extent, center.z - cascade_half_extent };
+        light_grid_center = update_light_grid_center ? glm::vec3(engine.renderer.render_view.gpu_view.origin) : light_grid_center;
+        const glm::vec3 cascade_max = { light_grid_center.x + cascade_half_extent, light_grid_center.y + cascade_half_extent, light_grid_center.z + cascade_half_extent };
+        const glm::vec3 cascade_min = { light_grid_center.x - cascade_half_extent, light_grid_center.y - cascade_half_extent, light_grid_center.z - cascade_half_extent };
 
         const Aabb cascade_aabb = Aabb(cascade_min, cascade_max);
 
@@ -291,9 +295,9 @@ void SceneView::update_lights(RenderGraph& render_graph, const RenderView&) {
         Aabb inner_aabb {};
         const bool has_inner = cascade > 0;
         if (has_inner) {
-            const uint32_t inner_bounds = light_grid::FIRST_CASCADE_BOUNDS << (cascade - 1);
-            const glm::vec3 inner_max = { center.x + inner_bounds, center.y + inner_bounds, center.z + inner_bounds };
-            const glm::vec3 inner_min = { center.x - inner_bounds, center.y - inner_bounds, center.z - inner_bounds };
+            const uint32_t inner_half_extent = (light_grid::FIRST_CASCADE_BOUNDS << (cascade - 1)) / 2u;
+            const glm::vec3 inner_max = { light_grid_center.x + inner_half_extent, light_grid_center.y + inner_half_extent, light_grid_center.z + inner_half_extent };
+            const glm::vec3 inner_min = { light_grid_center.x - inner_half_extent, light_grid_center.y - inner_half_extent, light_grid_center.z - inner_half_extent };
             inner_aabb = Aabb(inner_min, inner_max);
         }
 
@@ -328,11 +332,11 @@ void SceneView::update_lights(RenderGraph& render_graph, const RenderView&) {
             }
         }
 
-        //Log::info("Cascade #{} has {} Lights!", cascade, light_counter);
+        // Log::info("Cascade #{} has {} Lights!", cascade, light_counter);
     }
 
     /* Upload light grid buffers */
-    render_graph.upload_buffer(cascades_bitmasks, light_bitmasks.data(), 0u, cascade_counts.size() * sizeof(uint32_t));
+    render_graph.upload_buffer(cascades_bitmasks, light_bitmasks.data(), 0u, light_bitmasks.size() * sizeof(uint32_t));
 
     /* Update scene stats */
     light_count = (uint32_t)gpu_lights.size();

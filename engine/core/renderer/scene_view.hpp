@@ -78,6 +78,8 @@ struct SceneView {
     /* Light acc structure */
     Buffer cascades_bitmasks {}; /* Filled on the CPU. Stores light bitmask per cascade. */
     Buffer fine_light_grid {};   /* Filled on the GPU, using the cascades_bitmasks. Stores light indices per cascade cell. */
+    glm::vec3 light_grid_center = { 0.0f, 0.0f, 0.0f };
+    bool update_light_grid_center = true;
 
     /* Any objects before this distance will be fully opaque. */
     float object_opaque_distance = 128.0f;

@@ -30,7 +30,7 @@ void DiPipeline::init(GPUAdapter&) {}
 
 void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, SceneView& scene_view) {
     /* Only run this pass if it's outputs are actually used */
-    if (engine.renderer.display_mode != DisplayMode::ILLUMINANCE && engine.renderer.display_mode != DisplayMode::CACHE && engine.renderer.display_mode != DisplayMode::DEFAULT) return;
+    if (engine.renderer.display_mode != DisplayMode::ILLUMINANCE && engine.renderer.display_mode != DisplayMode::CACHE && engine.renderer.display_mode != DisplayMode::LIGHTS && engine.renderer.display_mode != DisplayMode::DEFAULT ) return;
 
     /* Get Render Image */
     const BindHandle render_image = render_view.get_render_image();
@@ -38,8 +38,6 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
     const BindHandle raw_specular_image = render_view.raw_spec_buffer.image;
     const BindHandle specular_image = render_view.spec_buffer.image;
     const glm::uvec2 render_res = render_view.gpu_view.resolution;
-
-    
 
     if (cache_init == false) {
         /* Cache init pass */
@@ -97,7 +95,7 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
         .group_size(16, 8)
         .work_size(quarter_rate.x, quarter_rate.y);
 
-    if (engine.renderer.display_mode == DisplayMode::DEFAULT) {
+    if (engine.renderer.display_mode == DisplayMode::DEFAULT || engine.renderer.display_mode == DisplayMode::LIGHTS) {
         for (uint32_t i = 0u; i < 6u; ++i) {
             /* Denoising pass */
             uint32_t step_size = 1u << i;
@@ -182,7 +180,7 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
     // }
     
     /* Composite pass */
-    if (engine.renderer.display_mode == DisplayMode::DEFAULT) {
+    if (engine.renderer.display_mode == DisplayMode::DEFAULT || engine.renderer.display_mode == DisplayMode::LIGHTS) {
         render_graph.add_compute_pass("composite pass", "composite.cs")
             .read(render_view.render_view_buffer) /* Render view buffer */
             .read(scene_view.scene_view) /* Scene view buffer */

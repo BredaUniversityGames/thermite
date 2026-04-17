@@ -7,6 +7,9 @@ StructuredBuffer<Light> lights;
 
 RWStructuredBuffer<uint32_t> light_grid;
 
+[[vk::push_constant]]
+float3 cam_center;
+
 static groupshared uint32_t group_buckets[32];
 
 static constexpr uint32_t FIRST_CASCADE_BOUNDS = 32u;
@@ -20,9 +23,8 @@ void main(int3 thread_id: SV_DispatchThreadID, int3 group_id: SV_GroupID) {
 
     /* Compute current cascade aabb */
     const uint32_t cascade_half_extent = (FIRST_CASCADE_BOUNDS << cascade_index) / 2u;
-    const float3 center = float3(0.0f, 0.0f, 0.0f);
-    const float3 cascade_max = { center.x + cascade_half_extent, center.y + cascade_half_extent, center.z + cascade_half_extent };
-    const float3 cascade_min = { center.x - cascade_half_extent, center.y - cascade_half_extent, center.z - cascade_half_extent };
+    const float3 cascade_max = { cam_center.x + cascade_half_extent, cam_center.y + cascade_half_extent, cam_center.z + cascade_half_extent };
+    const float3 cascade_min = { cam_center.x - cascade_half_extent, cam_center.y - cascade_half_extent, cam_center.z - cascade_half_extent };
     Aabb cascade_aabb;
     cascade_aabb.min = cascade_min;
     cascade_aabb.max = cascade_max;
@@ -31,6 +33,12 @@ void main(int3 thread_id: SV_DispatchThreadID, int3 group_id: SV_GroupID) {
     Aabb group_aabb;
     group_aabb.min = cascade_min + group_extent * uint3(group_id.x, group_id.y, group_id.z % 4);
     group_aabb.max = group_aabb.min + group_extent;
+
+    /* Clear group buckets — 64 threads, 32 buckets, so first 32 threads each clear one */
+    uint32_t local_index = (thread_id.x & 3u) + (thread_id.y & 3u) * 4u + (z_coord & 3u) * 16u;
+    if (local_index < 32u)
+        group_buckets[local_index] = 0u;
+    GroupMemoryBarrierWithGroupSync();
 
     /* 1. 16x16x16 -> 4x4x4 culling. Cull against 4x4x4 groups (64 threads) */
     /* Cascades Flat Bit array loop */
@@ -59,7 +67,7 @@ void main(int3 thread_id: SV_DispatchThreadID, int3 group_id: SV_GroupID) {
             /* Update group bitmask */
             if (group_aabb.overlap(light_aabb)) {
                 const uint32_t group_bit_index = (uint32_t)light_index & 0b11111u; /* light_index % 32 */
-                group_buckets[i] |= 1 << group_bit_index;
+                InterlockedOr(group_buckets[i], 1u << group_bit_index); /* prevents race conditions */
             }
         }
     }
