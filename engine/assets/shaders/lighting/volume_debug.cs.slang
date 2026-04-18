@@ -16,8 +16,7 @@ RWTexture2D<float4> render_target;
 
 [[vk::push_constant]] int cascade_index;
 
-// --- Ray-sphere intersection, returns t or -1 ---
-float RaySphere(float3 ro, float3 rd, float3 center, float radius) {
+float trace_sphere(float3 ro, float3 rd, float3 center, float radius) {
     float3 oc = ro - center;
     float b = dot(oc, rd);
     float c = dot(oc, oc) - radius * radius;
@@ -36,62 +35,48 @@ void main(int2 thread_id: SV_DispatchThreadID) {
     const Ray ray = pinhole_ray(render_view, thread_id);
 
     /* Grid constants */
-    static const int3 GRID_SIZE = int3(16, 16, 16);
-    static const float SPACING = 2.0f;
-    static const float3 GRID_ORIGIN = -16.0f;
-    static const float3 GRID_EXTENT = 32.0f;
-    static const float3 GRID_HALF_EXTENT = GRID_EXTENT * 0.5f;
-    static const float RADIUS = 0.2f;
+    const float3 cascade_center = 0.0f;
+    const float probe_extent = float(CASCADE_EXTENT) / CASCADE_WIDTH;
+    const float3 grid_min = cascade_center - CASCADE_HALF_EXTENT;
+    const float3 grid_max = cascade_center + CASCADE_HALF_EXTENT;
 
-    float3 grid_min = GRID_ORIGIN; // - GRID_HALF_EXTENT;
-    float3 grid_max = GRID_ORIGIN + GRID_EXTENT;
-
-    /* Ray-AABB slab test */
-    float3 inv_dir = rcp(ray.dir);
-    float3 t0 = (grid_min - ray.origin) * inv_dir;
-    float3 t1 = (grid_max - ray.origin) * inv_dir;
-    float3 t_min = min(t0, t1);
-    float3 t_max = max(t0, t1);
-    float t_enter = max(max(t_min.x, t_min.y), max(t_min.z, 0.0f));
-    float t_exit = min(min(t_max.x, t_max.y), t_max.z);
-
-    if (t_enter > t_exit) {
-        // render_target[thread_id] = float4(0.1f, 0.1f, 0.1f, 1.0f);
-        return;
-    }
+    /* Early out if the ray misses the cascade entirely */
+    const float3 inv_dir = rcp(ray.dir);
+    const float3 t0 = (grid_min - ray.origin) * inv_dir;
+    const float3 t1 = (grid_max - ray.origin) * inv_dir;
+    const float3 t_min = min(t0, t1);
+    const float3 t_max = max(t0, t1);
+    const float t_enter = max(max(t_min.x, t_min.y), max(t_min.z, 0.0f));
+    const float t_exit = min(min(t_max.x, t_max.y), t_max.z);
+    if (t_enter > t_exit) return;
 
     /* DDA setup */
-    float3 entry = ray.origin + ray.dir * (t_enter + 0.01f);
-    float3 grid_local = (entry - GRID_ORIGIN) / SPACING;
-    int3 cell = clamp(int3(floor(grid_local)), int3(0, 0, 0), GRID_SIZE - 1);
-    int3 step_dir = int3(ray.dir >= 0.0f ? 1 : -1);
-    float3 t_delta = abs(SPACING * inv_dir);
-
-    float3 next_bound = GRID_ORIGIN
-                      + (float3(cell) + float3(step_dir) * 0.5f + 0.5f) * SPACING;
+    const float3 entry = ray.origin + ray.dir * (t_enter + 0.01f);
+    const float3 grid_local = (entry - grid_min) / probe_extent;
+    int3 cell = clamp(int3(floor(grid_local)), int3(0, 0, 0), CASCADE_WIDTH - 1);
+    const int3 step_dir = select(ray.dir >= 0.0f, 1, -1);
+    const float3 t_delta = abs(probe_extent * inv_dir);
+    const float3 next_bound = grid_min + (float3(cell) + float3(step_dir) * 0.5f + 0.5f) * probe_extent;
     float3 t_max3 = (next_bound - ray.origin) * inv_dir;
+    const int3 exit_cell = select(step_dir > 0, CASCADE_WIDTH, -1);
 
-    int3 exit_cell = int3(
-        step_dir.x > 0 ? GRID_SIZE.x : -1,
-        step_dir.y > 0 ? GRID_SIZE.y : -1,
-        step_dir.z > 0 ? GRID_SIZE.z : -1
-    );
-
-    /* DDA march */
-    float closest_t = 1e30;
+    /* DDA traversal state */
+    float closest_t = 1e30f;
     int3 hit_probe = int3(-1, -1, -1);
-    float3 hit_normal = float3(0, 0, 0);
+    float3 hit_normal = float3(0.0f, 0.0f, 0.0f);
 
-    [loop]
-    for (int i = 0; i < 48; i++) {  // 3*16 max diagonal steps
-        float3 center = GRID_ORIGIN + (float3(cell) + 0.5f) * SPACING;
-        float t = RaySphere(ray.origin, ray.dir, center, RADIUS);
+    /* Traverse the cascade using DDA */
+    for (int i = 0; i < 48; i++) {
+        /* For each cell trace against a sphere representing the probe */
+        const float3 center = grid_min + (float3(cell) + 0.5f) * probe_extent;
+        const float t = trace_sphere(ray.origin, ray.dir, center, 0.2f);
 
+        /* Check if we hit the probe sphere */
         if (t > 0.0f && t < closest_t) {
             closest_t = t;
             hit_probe = cell;
             hit_normal = normalize((ray.origin + t * ray.dir) - center);
-            break;  // first hit is closest — sphere fits in cell
+            break;
         }
 
         /* Advance along axis with smallest t_max */
@@ -107,22 +92,14 @@ void main(int2 thread_id: SV_DispatchThreadID) {
         }
     }
 
-    if (closest_t == 1e30) {
-        // render_target[thread_id] = float4(0.1f, 0.1f, 0.1f, 1.0f);
-        return;
-    }
+    /* Missed */
+    if (closest_t == 1e30) return;
 
+    /* Calculate the UV coordinates to sample on the probe atlas */
     const float2 ray_id = saturate(oct_encode(hit_normal)) * 8.0f;
     const float2 probe_id = sample_texel(hit_probe, cascade_index);
     const float2 uv = (probe_id + ray_id) / ATLAS_SIZE;
 
-    // const float3 uvw = float3(
-    //     (float(hit_probe.x) * 8.0f + uv.x * 8.0f) / (16.0f * 8.0f),
-    //     (float(hit_probe.y) * 8.0f + uv.y * 8.0f) / (16.0f * 8.0f),
-    //     float(hit_probe.z) / (16.0f * 6.0f)
-    // );
-
-    // render_target[thread_id] = float4(uvw, 1.0f);
-    // render_target[thread_id] = float4(hit_normal * 0.5f + 0.5f, 1.0f);
+    /* Sample the probe atlas and display the color */
     render_target[thread_id] = float4(probe_buffer.SampleLevel(linear_sampler, uv, 0) / 16.0f, 1.0f);
 }
