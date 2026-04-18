@@ -1225,7 +1225,7 @@
                 "index": 0,
                 "value": {
                     "source_radius": 0.10000000149011612,
-                    "attenuation_radius": 18.0,
+                    "attenuation_radius": 33.5,
                     "luminous_flux": 750.0
                 }
             }

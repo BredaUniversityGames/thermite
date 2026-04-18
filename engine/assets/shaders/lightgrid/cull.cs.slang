@@ -1,5 +1,6 @@
 import lights;
 import math;
+import lightgrid;
 
 StructuredBuffer<uint32_t> cascades_bitmasks;
 
@@ -10,9 +11,9 @@ RWStructuredBuffer<uint32_t> light_grid;
 [[vk::push_constant]]
 float3 cam_center;
 
-static groupshared uint32_t group_buckets[32];
+#define BITMASKS_PER_GROUP 32u
 
-static constexpr uint32_t FIRST_CASCADE_BOUNDS = 32u;
+groupshared uint32_t group_buckets[BITMASKS_PER_GROUP];
 
 [shader("compute")]
 [numthreads(4, 4, 4)]
@@ -22,29 +23,23 @@ void main(int3 thread_id: SV_DispatchThreadID, int3 group_id: SV_GroupID) {
     const uint32_t z_coord = thread_id.z & 0b1111u;   /* z_coord = thread_id.z % 16u */
 
     /* Compute current cascade aabb */
-    const uint32_t cascade_half_extent = (FIRST_CASCADE_BOUNDS << cascade_index) / 2u;
+    const uint32_t cascade_half_extent = (FIRST_CASCADE_BOUNDS << cascade_index) >> 1;
     const float3 cascade_max = { cam_center.x + cascade_half_extent, cam_center.y + cascade_half_extent, cam_center.z + cascade_half_extent };
     const float3 cascade_min = { cam_center.x - cascade_half_extent, cam_center.y - cascade_half_extent, cam_center.z - cascade_half_extent };
     Aabb cascade_aabb;
     cascade_aabb.min = cascade_min;
     cascade_aabb.max = cascade_max;
 
-    const uint32_t group_extent = cascade_half_extent / 2u; /* cascade_extent / 4u */
+    const uint32_t group_extent = cascade_half_extent >> 1; /* cascade_half_extent / 2u */
     Aabb group_aabb;
-    group_aabb.min = cascade_min + group_extent * uint3(group_id.x, group_id.y, group_id.z % 4);
+    group_aabb.min = cascade_min + group_extent * uint3(group_id.x, group_id.y, group_id.z & 0b11u /* group_id.z % 4 */);
     group_aabb.max = group_aabb.min + group_extent;
-
-    /* Clear group buckets — 64 threads, 32 buckets, so first 32 threads each clear one */
-    uint32_t local_index = (thread_id.x & 3u) + (thread_id.y & 3u) * 4u + (z_coord & 3u) * 16u;
-    if (local_index < 32u)
-        group_buckets[local_index] = 0u;
-    GroupMemoryBarrierWithGroupSync();
 
     /* 1. 16x16x16 -> 4x4x4 culling. Cull against 4x4x4 groups (64 threads) */
     /* Cascades Flat Bit array loop */
-    for (uint32_t i = 0u; i < 32u; i++) {
+    for (uint32_t i = 0u; i < BITMASKS_PER_GROUP; i++) {
         /* Retrieve bitmasks for this cascade */
-        uint32_t cascade_bitmask = cascades_bitmasks[cascade_index * 32u + i];
+        uint32_t cascade_bitmask = cascades_bitmasks[cascade_index * BITMASKS_PER_GROUP + i];
 
         /* Loop over each bit in the bitmask (1 bit = 1 light) */
         while (cascade_bitmask != 0u) {
@@ -55,7 +50,7 @@ void main(int3 thread_id: SV_DispatchThreadID, int3 group_id: SV_GroupID) {
             cascade_bitmask ^= (1u << bit_index);
 
             /* Get light */
-            const uint32_t light_index = i * 32u + bit_index;
+            const uint32_t light_index = i * BITMASKS_PER_GROUP + bit_index;
             const Light light = lights[light_index];
 
             /* Cull picked light against 4x4x4 group */
@@ -67,7 +62,7 @@ void main(int3 thread_id: SV_DispatchThreadID, int3 group_id: SV_GroupID) {
             /* Update group bitmask */
             if (group_aabb.overlap(light_aabb)) {
                 const uint32_t group_bit_index = (uint32_t)light_index & 0b11111u; /* light_index % 32 */
-                InterlockedOr(group_buckets[i], 1u << group_bit_index); /* prevents race conditions */
+                group_buckets[i] |= 1u << group_bit_index;
             }
         }
     }
@@ -76,13 +71,13 @@ void main(int3 thread_id: SV_DispatchThreadID, int3 group_id: SV_GroupID) {
     GroupMemoryBarrierWithGroupSync();
 
     /* Compute cell aabb */
-    const uint32_t cell_extent = group_extent / 4u;
+    const uint32_t cell_extent = group_extent >> 2u; /* group_extent / 4u */
     Aabb cell_aabb;
     cell_aabb.min = cascade_min + cell_extent * uint3(thread_id.x, thread_id.y, z_coord);
     cell_aabb.max = cell_aabb.min + cell_extent;
 
     /* 2. 4x4x4 -> 1x1x1 culling. Cull against individual cells in the light grid (1 thread = 1 cell) */
-    for (uint32_t i = 0u; i < 32u; i++) {
+    for (uint32_t i = 0u; i < BITMASKS_PER_GROUP; i++) {
         uint32_t group_bitmask = group_buckets[i];
 
         /* Loop over each bit in the group bitmask */
@@ -94,7 +89,7 @@ void main(int3 thread_id: SV_DispatchThreadID, int3 group_id: SV_GroupID) {
             group_bitmask ^= (1u << bit_index);
 
             /* Get light */
-            const uint32_t light_index = i * 32u + bit_index;
+            const uint32_t light_index = i * BITMASKS_PER_GROUP + bit_index;
             const Light light = lights[light_index];
 
             /* Cull picked light against cell (thread) */
@@ -106,15 +101,15 @@ void main(int3 thread_id: SV_DispatchThreadID, int3 group_id: SV_GroupID) {
             /* Insert light index into light_grid */
             if (cell_aabb.overlap(light_aabb)) {
                 /* Retrieve cell index */
-                const uint32_t cell_index = cascade_index * (16u * 16u * 16u) + (z_coord * 16u * 16u) + (thread_id.y * 16u) + thread_id.x;
-                const uint32_t cell_base = cell_index * 64u;
+                const uint32_t cell_index = (cascade_index * CASCADES_RESOLUTION3) + (z_coord * CASCADES_RESOLUTION2) + (thread_id.y * CASCADES_RESOLUTION) + thread_id.x;
+                const uint32_t cell_base = cell_index * LIGHTS_PER_CELL;
 
                 /* Increment counter */
                 uint32_t slot;
                 InterlockedAdd(light_grid[cell_base], 1u, slot);
 
                 /* Append light grid */
-                if (slot < 63u) /* Max 63 lights per cell */ 
+                if (slot < LIGHTS_PER_CELL - 1u) /* Max (LIGHTS_PER_CELL - 1) lights per cell */ 
                     light_grid[cell_base + 1u + slot] = light_index;
             }
         }

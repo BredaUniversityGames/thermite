@@ -135,11 +135,6 @@ void Renderer::update() {
 
     /* Light Culling Pass */
     {
-        struct CamCenter {
-            glm::vec3 pos;
-        } cam_center;
-        cam_center.pos = scene_view.light_grid_center;
-
         render_graph.add_compute_pass("light grid clear counts pass", "lightgrid/clear_counts.cs")
             .write(scene_view.fine_light_grid)
             .group_size(4, 4, 4)
@@ -149,7 +144,7 @@ void Renderer::update() {
             .read(scene_view.cascades_bitmasks)
             .read(scene_view.lights_data)
             .write(scene_view.fine_light_grid)
-            .push_constants(&cam_center, 0, sizeof(CamCenter))
+            .push_constants(&scene_view.light_grid_center, 0, sizeof(glm::vec3))
             .group_size(4, 4, 4)
             .work_size(light_grid::CASCADES_RESOLUTION, light_grid::CASCADES_RESOLUTION, light_grid::CASCADES_RESOLUTION * light_grid::MAX_CASCADES);
     }
@@ -203,18 +198,13 @@ void Renderer::update() {
     }
 
     if (engine.renderer.display_mode == DisplayMode::LIGHTS) {
-        struct CamCenter {
-            glm::vec3 pos;
-        } cam_center;
-        cam_center.pos = scene_view.light_grid_center;
-
         render_graph.add_compute_pass("[debug] light grid pass", "debug/light_grid.cs")
             .read(render_view.render_view_buffer)
             .read(render_view.dbuffer.image)
             .read(scene_view.fine_light_grid)
             .read(scene_view.lights_data)
             .write(render_view.get_render_image())
-            .push_constants(&cam_center, 0, sizeof(CamCenter))
+            .push_constants(&scene_view.light_grid_center, 0, sizeof(glm::vec3))
             .group_size(16, 8)
             .work_size(render_view.gpu_view.resolution.x, render_view.gpu_view.resolution.y);
     }
