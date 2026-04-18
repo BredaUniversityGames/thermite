@@ -89,7 +89,9 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
     }
 
     { /* Illuminance Volume Update */
+        // constexpr uint32_t probe_border = 1u;
         constexpr uint32_t probe_width = 8u;
+        // constexpr uint32_t probe_stride = probe_width + probe_border * 2u;
         constexpr uint32_t cascade_width = 16u;
         int cascade_index = 0;
 

@@ -96,7 +96,7 @@ void main(int2 thread_id: SV_DispatchThreadID) {
     if (closest_t == 1e30) return;
 
     /* Calculate the UV coordinates to sample on the probe atlas */
-    const float2 ray_id = saturate(oct_encode(hit_normal)) * 8.0f;
+    const float2 ray_id = saturate(oct_encode(hit_normal)) * PROBE_WIDTH;
     const float2 probe_id = sample_texel(hit_probe, cascade_index);
     const float2 uv = (probe_id + ray_id) / ATLAS_SIZE;
 

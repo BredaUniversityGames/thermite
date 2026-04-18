@@ -109,7 +109,8 @@ void RenderView::init() {
     mbuffer.image = bank.create_image("Motion Vector Buffer Image", mbuffer.texture).expect("failed to initialize motion vector buffer image.");
 
     /* Create the irradiance probe buffer */
-    constexpr uint32_t probe_width = 8u;
+    constexpr uint32_t probe_border = 1u;
+    constexpr uint32_t probe_width = 8u + probe_border * 2u;
     constexpr uint32_t cascade_width = 16u;
     constexpr uint32_t cascade_count = 6u;
     // constexpr uint32_t probe_padding = 2u;

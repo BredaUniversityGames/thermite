@@ -1,8 +1,12 @@
 module volume;
 
+/* WARNING: Not all parts of the code actually respond correctly to the constants below! */
+
 /* Width of a probe in rays/texels, probes are 2D. */
 public const static int PROBE_WIDTH_BITS = 3; /* ^2 */
 public const static int PROBE_WIDTH = 1 << PROBE_WIDTH_BITS;
+public const static int PROBE_BORDER = 1;
+public const static int PROBE_STRIDE = PROBE_WIDTH + PROBE_BORDER * 2;
 /* Width of a cascade in probes, cascades are 3D. */
 public const static int CASCADE_WIDTH_BITS = 4; /* ^3 */
 public const static int CASCADE_WIDTH = 1 << CASCADE_WIDTH_BITS;
@@ -20,8 +24,8 @@ public const static int CASCADE_HEIGHT_BITS = CASCADE_WIDTH_BITS + PROBE_WIDTH_B
 
 /* Size of the cascades texture atlas in texels */
 public const static int2 ATLAS_SIZE = int2(
-    CASCADE_WIDTH * PROBE_WIDTH * CASCADE_WIDTH,
-    PROBE_WIDTH * CASCADE_WIDTH * CASCADE_COUNT
+    CASCADE_WIDTH * PROBE_STRIDE * CASCADE_WIDTH,
+    PROBE_STRIDE * CASCADE_WIDTH * CASCADE_COUNT
 );
 
 /* 3D position of the probe belonging to this thread index. */
@@ -46,7 +50,7 @@ public [ForceInline] int2 thread_texel(const int2 thread_id, const int cascade_i
 /* 2D ID of the top-left texel belonging to this probe id and cascade index. */
 public [ForceInline] int2 sample_texel(const int3 probe_id, const int cascade_index) {
     return int2(
-        (probe_id.y << SLICE_WIDTH_BITS) | (probe_id.x << PROBE_WIDTH_BITS),
-        (cascade_index << CASCADE_HEIGHT_BITS) | (probe_id.z << PROBE_WIDTH_BITS)
+        probe_id.y * CASCADE_WIDTH * PROBE_STRIDE + probe_id.x * PROBE_STRIDE + PROBE_BORDER,
+        cascade_index * CASCADE_WIDTH * PROBE_STRIDE + probe_id.z * PROBE_STRIDE + PROBE_BORDER
     );
 }

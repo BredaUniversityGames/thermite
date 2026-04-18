@@ -31,6 +31,14 @@ groupshared float gs_z[64];
 /* Load direction value from LDS. */
 [ForceInline] float3 lds_load_dir(const int i) { return float3(gs_x[i], gs_y[i], gs_z[i]); }
 
+/* Map a texel index to a unique probe border texel. */
+int2 map_to_border(const int i) {
+    if (i < PROBE_STRIDE) return int2(i, 0);
+    else if (i < PROBE_STRIDE * 2) return int2(i - PROBE_STRIDE, PROBE_STRIDE - 1);
+    else if (i < PROBE_STRIDE * 2 + PROBE_STRIDE - 2) return int2(0, i - PROBE_STRIDE * 2 + 1);
+    else return int2(PROBE_STRIDE - 1, i - (PROBE_STRIDE * 3 - 2) + 1);
+}
+
 [shader("compute")]
 [numthreads(8, 8, 1)]
 void main(int2 thread_id: SV_DispatchThreadID, int2 texel_id: SV_GroupThreadID, int texel_i: SV_GroupIndex) {
@@ -55,5 +63,30 @@ void main(int2 thread_id: SV_DispatchThreadID, int2 texel_id: SV_GroupThreadID, 
     }
 
     /* Write out the illuminance into the illuminance volume */
-    probe_buffer[thread_texel(thread_id, cascade_index)] = illuminance;
+    const int3 probe_id = int3(thread_probe(thread_id));
+    const int2 probe_origin = int2(
+        probe_id.y * CASCADE_WIDTH * PROBE_STRIDE + probe_id.x * PROBE_STRIDE + PROBE_BORDER,
+        cascade_index * CASCADE_WIDTH * PROBE_STRIDE + probe_id.z * PROBE_STRIDE + PROBE_BORDER
+    );
+    probe_buffer[probe_origin + texel_id] = illuminance;
+    GroupMemoryBarrierWithGroupSync();
+
+    /* Store illuminance into LDS for filling the probe border */
+    lds_store_lum(texel_i, illuminance);
+    GroupMemoryBarrierWithGroupSync();
+    if (texel_i >= 36) return; /* We only need 36 threads for the border */
+
+    /* Map the texel index to the probe border */
+    const int2 border_texel = map_to_border(texel_i) - PROBE_BORDER;
+
+    /* Mirror the border texel to find the source texel to copy */
+    const bool flip_x = border_texel.x < 0 || border_texel.x >= PROBE_WIDTH;
+    const bool flip_y = border_texel.y < 0 || border_texel.y >= PROBE_WIDTH;
+    const int2 src_texel = int2(
+        clamp(select(flip_y, PROBE_WIDTH - 1 - border_texel.x, border_texel.x), 0, PROBE_WIDTH - 1),
+        clamp(select(flip_x, PROBE_WIDTH - 1 - border_texel.y, border_texel.y), 0, PROBE_WIDTH - 1)
+    );
+
+    /* Copy the source texel into the border texel */
+    probe_buffer[probe_origin + border_texel] = lds_load_lum(src_texel.y * PROBE_WIDTH + src_texel.x);
 }
