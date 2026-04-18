@@ -110,10 +110,10 @@ void RenderView::init() {
 
     /* Create the irradiance probe buffer */
     constexpr uint32_t probe_width = 8u;
-    constexpr uint32_t cascade_width = 16u;
+    // constexpr uint32_t cascade_width = 16u;
     constexpr uint32_t cascade_count = 6u;
     // constexpr uint32_t probe_padding = 2u;
-    const Size3D probe_buffer_size = Size3D(cascade_width * probe_width, cascade_width * probe_width, cascade_width * cascade_count);
+    const Size3D probe_buffer_size = Size3D(64 * probe_width * cascade_count, 64 * probe_width);
     probe_texture = bank.create_texture("Irradiance Probe Buffer Texture", TextureUsage::Storage | TextureUsage::Sampled, TextureFormat::RGBA16Sfloat, probe_buffer_size).expect("failed to create probe texture.");
     probe_image = bank.create_image("Irradiance Probe Buffer Image", probe_texture).expect("failed to create probe image.");
 

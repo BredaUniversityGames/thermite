@@ -3,17 +3,18 @@ import voxel;
 import bvh2;
 import visibility;
 import math;
+import volume;
 
 /* Active render view. */
 ConstantBuffer<RenderView> render_view;
 /* Probe output buffer. */
-Texture3D<float3> probe_buffer;
+Texture2D<float3> probe_buffer;
 /* Linear sampler. */
 SamplerState linear_sampler;
 /* Render target. (Output) */
 RWTexture2D<float4> render_target;
 
-[[vk::push_constant]] uint cascade_index;
+[[vk::push_constant]] int cascade_index;
 
 // --- Ray-sphere intersection, returns t or -1 ---
 float RaySphere(float3 ro, float3 rd, float3 center, float radius) {
@@ -111,20 +112,17 @@ void main(int2 thread_id: SV_DispatchThreadID) {
         return;
     }
 
-    const float2 uv = saturate(oct_encode(hit_normal));
-    // const float3 lookup = float3(
-    //     float(hit_probe.x) * 8.0f + uv.x * 8.0f,
-    //     float(hit_probe.y) * 8.0f + uv.y * 8.0f,
-    //     float(hit_probe.z) * 8.0f
-    // ) / float3(16 * 8, 16 * 8, 16);
+    const float2 ray_id = saturate(oct_encode(hit_normal)) * 8.0f;
+    const float2 probe_id = sample_texel(hit_probe, cascade_index);
+    const float2 uv = (probe_id + ray_id) / ATLAS_SIZE;
 
-    const float3 uvw = float3(
-        (float(hit_probe.x) * 8.0f + uv.x * 8.0f) / (16.0f * 8.0f),
-        (float(hit_probe.y) * 8.0f + uv.y * 8.0f) / (16.0f * 8.0f),
-        float(hit_probe.z) / (16.0f * 6.0f)
-    );
+    // const float3 uvw = float3(
+    //     (float(hit_probe.x) * 8.0f + uv.x * 8.0f) / (16.0f * 8.0f),
+    //     (float(hit_probe.y) * 8.0f + uv.y * 8.0f) / (16.0f * 8.0f),
+    //     float(hit_probe.z) / (16.0f * 6.0f)
+    // );
 
     // render_target[thread_id] = float4(uvw, 1.0f);
     // render_target[thread_id] = float4(hit_normal * 0.5f + 0.5f, 1.0f);
-    render_target[thread_id] = float4(probe_buffer.SampleLevel(linear_sampler, uvw, 0) / 16.0f, 1.0f);
+    render_target[thread_id] = float4(probe_buffer.SampleLevel(linear_sampler, uv, 0) / 16.0f, 1.0f);
 }

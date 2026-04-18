@@ -29,9 +29,8 @@ void DiPipeline::init(GPUAdapter& gpu) {
     VRAMBank& bank = gpu.get_vram_bank();
 
     /* Create the intermediate probe buffer */
-    constexpr uint32_t probe_width = 8u;
-    constexpr uint32_t cascade_width = 16u;
-    const Size3D probe_buffer_size = Size3D(cascade_width * probe_width, cascade_width * probe_width, cascade_width);
+    constexpr uint32_t cascade_stride = 64u * 8u; /* 16x16x16 => 64x64 */
+    const Size3D probe_buffer_size = Size3D(cascade_stride, cascade_stride);
     probe_texture = bank.create_texture("Intermediate Probe Buffer Texture", TextureUsage::Storage | TextureUsage::Sampled, TextureFormat::RGBA16Sfloat, probe_buffer_size).expect("failed to create probe texture.");
     probe_image = bank.create_image("Intermediate Probe Buffer Image", probe_texture).expect("failed to create probe image.");
 }
@@ -90,8 +89,8 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
 
     { /* Illuminance Volume Update */
         constexpr uint32_t probe_width = 8u;
-        constexpr uint32_t cascade_width = 16u;
-        uint32_t cascade_index = 0u;
+        // constexpr uint32_t cascade_width = 16u;
+        int cascade_index = 0;
 
         /* Illuminance probe tracing */
         render_graph.add_compute_pass("trace probes pass", "lighting/volume_trace.cs")
@@ -101,9 +100,9 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
             .read(scene_view.object_data)
             /* Intermediate probe buffer */
             .write(probe_image)
-            .push_constants(&cascade_index, 0u, sizeof(uint32_t))
-            .group_size(8, 8, 1)
-            .work_size(cascade_width * probe_width, cascade_width * probe_width, cascade_width);
+            .push_constants(&cascade_index, 0u, sizeof(int))
+            .group_size(8, 8)
+            .work_size(64 * probe_width, 64 * probe_width);
 
         /* Illuminance probe update */
         render_graph.add_compute_pass("update probes pass", "lighting/volume_update.cs")
@@ -111,9 +110,9 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
             .read(probe_image)
             /* Illuminance volume buffer */
             .write(render_view.probe_image)
-            .push_constants(&cascade_index, 0u, sizeof(uint32_t))
+            .push_constants(&cascade_index, 0u, sizeof(int))
             .group_size(8, 8, 1)
-            .work_size(cascade_width * probe_width, cascade_width * probe_width, cascade_width);
+            .work_size(64 * probe_width, 64 * probe_width);
     }
 
     { /* Specular illumination pass */
