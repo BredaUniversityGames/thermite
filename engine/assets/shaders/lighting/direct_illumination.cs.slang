@@ -41,22 +41,7 @@ struct PickedLight {
 
 /* Pick a light to sample for a given sample point using reservoir sampling. */
 inline PickedLight pick_light(const float3 point, const float3 normal, inout uint32_t seed, const float2 noise) {
-    /* Index light grid cascades */
-    const lgrid::CascadeIndex index = lgrid::index_cascades(point - grid_center);
-
-    if (index.cascade == 0xFFFFFFFFu)
-        return PickedLight(uint32_t::maxValue, BIG_F32);
-
-    /* Compute cell index and base, and retrieve light count */
-    const uint32_t cell_index = (index.cascade * lgrid::CASCADES_RESOLUTION3) + (index.z * lgrid::CASCADES_RESOLUTION2) + (index.y * lgrid::CASCADES_RESOLUTION) + index.x;
-    const uint32_t cell_base = cell_index * lgrid::LIGHTS_PER_CELL;
-    const uint32_t light_count = light_grid[cell_base];
-
-    /* Pick light */
-    const uint32_t slot = uint32_t(rand_float(seed) * light_count);
-    const uint32_t light_index = light_grid[cell_base + 1u + slot];
-
-    return PickedLight(light_index, (float)light_count);
+    
 }
 
 inline float3 direct_illuminance(const float3 point, const float3 normal, const float3 view_dir, const Material mat, inout uint seed, const float2 noise) {
@@ -75,13 +60,27 @@ inline float3 direct_illuminance(const float3 point, const float3 normal, const 
         }
     }
 
-    if (scene_view.light_count == 0u)
+    /* Index light grid cascades */
+    PickedLight picked_light;
+    const lgrid::CascadeIndex index = lgrid::index_cascades(point - grid_center);
+
+    if (index.cascade == 0xFFFFFFFFu)
         return illuminance;
 
-    /* Fetch a light to sample */
-    const PickedLight picked_light = pick_light(point, normal, seed, noise);
-    if (picked_light.i == uint32_t::maxValue)
+    /* Compute cell index and base, and retrieve light count */
+    const uint32_t cell_index = (index.cascade * lgrid::CASCADES_RESOLUTION3) + (index.z * lgrid::CASCADES_RESOLUTION2) + (index.y * lgrid::CASCADES_RESOLUTION) + index.x;
+    const uint32_t cell_base = cell_index * lgrid::LIGHTS_PER_CELL;
+    const uint32_t light_count = light_grid[cell_base];
+
+    if (light_count == 0u)
         return illuminance;
+
+    /* Pick light */
+    const uint32_t slot = uint32_t(rand_float(seed) * light_count);
+    const uint32_t light_index = light_grid[cell_base + 1u + slot];
+    picked_light = PickedLight(light_index, (float)light_count);
+
+    /* Fetch a light to sample */
     const Light light = lights[picked_light.i];
 
     /* Generate a sample for the light we picked */
