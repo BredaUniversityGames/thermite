@@ -1,6 +1,8 @@
 #pragma once
 #include "ore_properties.hpp"
+#include "save_entries.hpp"
 #include "engine/systems/gameplay/game_component.hpp"
+#include "engine/tools/player_data.hpp"
 
 namespace game {
 
@@ -30,6 +32,10 @@ struct Currencies {
         }
     }
 };
+struct WalletData {
+    Currencies limits;
+    int total_resource_limit;
+};
 class Wallet : public tmt::GameComponent<Wallet> {
    public:
     using GameComponent::GameComponent;
@@ -38,6 +44,9 @@ class Wallet : public tmt::GameComponent<Wallet> {
 
     void start() override {
         // TODO load saved data if there is any
+        auto& wallet_data { tmt::engine.player_data.get<WalletData>(WALLET_DATA) };
+        limits = wallet_data.limits;
+        total_resource_limit = wallet_data.total_resource_limit;
     }
     void update(const tmt::FrameData& time) override {}
     void end() override {}
@@ -52,3 +61,4 @@ class Wallet : public tmt::GameComponent<Wallet> {
 }  // namespace game
 TMT_OBJECT(game::Currencies, (dollars, resource_counts));
 TMT_OBJECT(game::Wallet, (currencies, limits, total_resource_limit));
+TMT_OBJECT(game::WalletData, (limits, total_resource_limit));

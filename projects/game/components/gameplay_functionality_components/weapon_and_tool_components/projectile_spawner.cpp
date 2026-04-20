@@ -13,6 +13,10 @@ std::string_view ProjectileSpawner::get_name() {
 }
 void ProjectileSpawner::start() {
     tmt::engine.ecs.get_dispatcher().sink<WeaponFiredEvent>().connect<&ProjectileSpawner::on_shoot>(this);
+    // TODO load saved data if there is any
+    if (auto* weapon { tmt::engine.ecs.try_get_component<Weapon>(entity) }) {
+        weapon->primary_fire_rate.shots_per_second = tmt::engine.player_data.get<float>(RIFLE_FIRE_DATA);
+    }
 }
 void ProjectileSpawner::update(const tmt::FrameData& time) {}
 void ProjectileSpawner::end() {
