@@ -60,7 +60,7 @@
 #include "components/development_tools/collision_trigger.hpp"
 #include "components/development_tools/attach_component.hpp"
 // World generation
-#include "components/world_gen/asteroid_field_component.hpp"
+#include "components/world_gen/generation_component.hpp"
 #include "components/world_gen/random_prefab_spawner.hpp"
 // Data Headers
 #include "data_headers/scene_list.hpp"
@@ -131,7 +131,7 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     tmt::engine.component_registry.register_component<game::Explosion>();
     tmt::engine.component_registry.register_component<game::DestroyTimed>();
     /* Register World Generation Components */
-    tmt::engine.component_registry.register_component<game::AsteroidFieldComponent>();
+    tmt::engine.component_registry.register_component<game::GenerationComponent>();
     tmt::engine.component_registry.register_component<game::RandomPrefabSpawner>();
     /* Register Game UI Components */
     tmt::engine.component_registry.register_component<game::SceneSwitchComponent>();

@@ -3,7 +3,6 @@
 #include "editor/editor.hpp"
 #include "editor/windows/viewport.hpp"
 #include "engine/core/renderer/renderer.hpp"
-#include "engine/core/components/cell_grouper_tag.hpp"
 #include "engine/engine.hpp"
 #include "imgui.h"
 #include "engine/core/polyline.hpp"
@@ -13,14 +12,14 @@
 #include "engine/core/scenes.hpp"
 #include "editor/core/systems/undo_redo/level_editor_diff.hpp"
 #include "editor/imgui/types/all.hpp"
+#include "engine/core/components/cell_grouper_tag.hpp"
 #include <ImReflect.hpp>
 
 namespace tmt {
 
 void tmt::LevelEditor::on_inspect() {
-    const std::string& scene_name = engine.scenes.get_active_scene_info().name;
-    auto& pickable_cell_templates = scene_pickable_cell_templates[scene_name];
-    auto& cells = scene_cells[scene_name];
+    auto& pickable_cell_templates = level_configuration.scene_pickable_cell_templates;
+    auto& cells = level_configuration.scene_cells;
 
     window_displayed = true;
 
@@ -28,8 +27,8 @@ void tmt::LevelEditor::on_inspect() {
 
     ImGui::Checkbox("Enable level editing", &enable_editing);
     ImGui::Checkbox("Mirror X", &mirror_x);
-    ImGui::DragFloat("Cell size", &cell_size);
-    ImGui::DragFloat3("Global field offset", &global_field_offset[0]);
+    ImGui::DragFloat("Cell size", &level_configuration.cell_size);
+    ImGui::DragFloat3("Global field offset", &level_configuration.global_field_offset[0]);
 
     static const char* brush_previews[static_cast<int>(Brush::MAX)] = { "PLACE", "REMOVE", "REPLACE" };
     if (ImGui::BeginCombo("Brush Mode", brush_previews[selected_brush_mode])) {
@@ -86,12 +85,12 @@ void tmt::LevelEditor::on_inspect() {
         }
     }
 
-    if (ImGui::Button("Generate cells")) {
-        auto view = engine.ecs.view<LevelCellGrouperTag>();
+    if (ImGui::Button("Generate level + configuration")) {
+        auto view = engine.ecs.view<tmt::LevelCellGrouperTag>();
         tmt::Entity grouper_entity;
         if (view.begin() == view.end()) {
             grouper_entity = engine.ecs.create_entity("Level Cell Objects");
-            engine.ecs.add_component<LevelCellGrouperTag>(grouper_entity);
+            engine.ecs.add_component<tmt::LevelCellGrouperTag>(grouper_entity);
         } else {
             grouper_entity = view.front();
         }
@@ -104,13 +103,13 @@ void tmt::LevelEditor::on_inspect() {
         }
 
         for (auto& cell_template : pickable_cell_templates) {
-            cell_template.field.size = { cell_size, cell_template.height, cell_size };
+            cell_template.field.size = { level_configuration.cell_size, cell_template.height, level_configuration.cell_size };
         }
 
         for (auto& [coord, cell] : cells) {
             auto& cell_template = pickable_cell_templates[cell.template_index];
 
-            cell_template.field.size = { cell_size, cell_template.height, cell_size };
+            cell_template.field.size = { level_configuration.cell_size, cell_template.height, level_configuration.cell_size };
 
             if (cell_template.random_seed)
                 Random::set_seed(Random::irand());
@@ -134,12 +133,16 @@ void tmt::LevelEditor::on_inspect() {
 
                 auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(instantiated);
 
-                glm::vec3 min = cell_pos - glm::vec3(cell_size * 0.5f, cell_template.height * 0.5f, cell_size * 0.5f);
+                glm::vec3 min = cell_pos - glm::vec3(level_configuration.cell_size * 0.5f, cell_template.height * 0.5f, level_configuration.cell_size * 0.5f);
 
                 transform.set_local_position(min + point.pos);
                 transform.set_local_rotation(glm::vec3(pitch, yaw, roll));
             }
         }
+
+        
+        tmt::json config_json = Serializer::serialize(level_configuration);
+        IO::write_text_file({IO::Location::PROJECT, "level/config.json"}, config_json.dump(4));
     }
 
     ImDrawList* draw_list = viewport.get_drawlist();
@@ -248,7 +251,7 @@ void tmt::LevelEditor::on_editor_update(const tmt::FrameData& time) {
 }
 
 void LevelEditor::draw_cell(ImDrawList* draw_list, glm::vec3 pos, const Cell& cell, const std::vector<CellTemplate>& pickable_cell_templates, glm::vec4 col) {
-    float extent = cell_size * 0.5f;
+    float extent = level_configuration.cell_size * 0.5f;
     float height_extent = pickable_cell_templates[cell.template_index].height * 0.5f;
     glm::vec3 local_vertices[8] = { glm::vec3(-extent, -height_extent, -extent), glm::vec3(extent, -height_extent, -extent), glm::vec3(extent, height_extent, -extent),
                                     glm::vec3(-extent, height_extent, -extent),  glm::vec3(-extent, -height_extent, extent), glm::vec3(extent, -height_extent, extent),
@@ -301,19 +304,19 @@ void LevelEditor::draw_cell(ImDrawList* draw_list, glm::vec3 pos, const Cell& ce
 }
 
 glm::vec3 LevelEditor::coord_to_world(glm::ivec2 coord) {
-    return global_field_offset + glm::vec3(coord.x * cell_size + cell_size * 0.5f, 0.f, coord.y * cell_size + cell_size * 0.5f);
+    return level_configuration.global_field_offset +
+           glm::vec3(coord.x * level_configuration.cell_size + level_configuration.cell_size * 0.5f, 0.f, coord.y * level_configuration.cell_size + level_configuration.cell_size * 0.5f);
 }
 
 glm::ivec2 LevelEditor::world_to_coord(glm::vec3 pos) {
-    pos -= global_field_offset;
-    return glm::ivec2(glm::floor(pos.x / cell_size), glm::floor(pos.z / cell_size));
+    pos -= level_configuration.global_field_offset;
+    return glm::ivec2(glm::floor(pos.x / level_configuration.cell_size), glm::floor(pos.z / level_configuration.cell_size));
 }
 
 void tmt::LevelEditor::on_editor_end() {}
 
-std::unordered_map<glm::ivec2, LevelEditor::Cell>& LevelEditor::get_cells() {
-    const std::string& scene_name = engine.scenes.get_active_scene_info().name;
-    return scene_cells[scene_name];
+std::unordered_map<glm::ivec2, Cell>& LevelEditor::get_cells() {
+    return level_configuration.scene_cells;
 }
 
 }  // namespace tmt
