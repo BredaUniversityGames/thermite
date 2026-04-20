@@ -3,6 +3,7 @@
 #include "engine/core/entity.hpp"
 #include "../../../editor/all.hpp"
 #include "engine/core/resources/stencil.hpp"
+#include "projects/game/data_headers/events.hpp"
 
 #include "projects/game/components/managers/ore_manager.hpp"
 #include "projects/game/data_headers/layer_mask.hpp"
@@ -20,6 +21,11 @@ class MediumEnemy : public tmt::GameComponent<MediumEnemy> {
     void end() override;
 
     void kite_player() const;
+
+    void on_game_paused(const game::GamePausedEvent&);
+    void on_game_unpaused(const game::GameUnpausedEvent&);
+
+    bool paused = false;
 
     tmt::Entity player = entt::null;
     tmt::Entity walkable_asteroid = entt::null;

@@ -15,7 +15,10 @@
 #include "engine/core/components/ui_component.hpp"
 #include "engine/shared/ray.hpp"
 #include "engine/systems/physics/physics_system.hpp"
+#include "engine/tools/player_data.hpp"
 #include "projects/game/components/development_tools/debug_line_helper.hpp"
+#include "projects/game/data_headers/save_entries.hpp"
+#include "projects/game/data_headers/wallet.hpp"
 
 // TODO before we have a serializer for input, you can add all the needed keybindings here.
 //  TODO we still have to add the gamepad inputs here
@@ -68,6 +71,8 @@ void setup_inputs(tmt::InputMap& input_map) {
     input_map.add_key_to_action(action::OPEN_PAUSE_MENU, tmt::Key::P);
     input_map.add_action(action::OPEN_UPGRADE_MENU);
     input_map.add_key_to_action(action::OPEN_UPGRADE_MENU, tmt::Key::U);
+
+    // barge
     input_map.add_action(action::ATTACH_KEY);
     input_map.add_key_to_action(action::ATTACH_KEY, tmt::Key::E);
     input_map.add_action(action::TRIGGER_BARGE_MOVEMENT);
@@ -77,17 +82,27 @@ void setup_inputs(tmt::InputMap& input_map) {
 }
 
 void Player::start() {
-    tmt::engine.input.set_mouse_relative_to_window(true);
-    glm::vec2 screen_size = { tmt::engine.window.width, tmt::engine.window.height };
-    tmt::engine.input.warp_mouse({ screen_size.x / 2.0f, screen_size.y / 2.0f }, true);
-    tmt::engine.input.lock_mouse(true);
-    setup_inputs(tmt::engine.input_map);
-    tmt::engine.ecs.get_dispatcher().sink<AttachEvent>().connect<&Player::on_attach>(this);
+    auto& resources { tmt::engine.player_data.get<Currencies>(PERSISTENT_RESOURCES) };
+    // initialize wallet
+    auto* wallet = tmt::engine.ecs.try_get_component<Wallet>(entity);
+    if (wallet == nullptr) {
+        tmt::Log::error("No Wallet component found");
+
+        return;
+    }
+    wallet->currencies = resources;
+    if (tmt::engine.ecs.is_enabled(entity)) {
+        tmt::engine.input.set_mouse_relative_to_window(true);
+        glm::vec2 screen_size = { tmt::engine.window.width, tmt::engine.window.height };
+        tmt::engine.input.warp_mouse({ screen_size.x / 2.0f, screen_size.y / 2.0f }, true);
+        tmt::engine.input.lock_mouse(true);
+        setup_inputs(tmt::engine.input_map);
+        tmt::engine.ecs.get_dispatcher().sink<AttachEvent>().connect<&Player::on_attach>(this);
+    }
 }
 void Player::end() {
-    // tmt::engine.ecs.get_dispatcher().trigger<AttachEvent>({ .entity = entity_that_attaches, .is_attached = is_attached });
-
     tmt::engine.ecs.get_dispatcher().sink<AttachEvent>().disconnect<&Player::on_attach>(this);
+    // this is a forced closing of the game, behaves like the player just dies
 }
 
 void Player::look_camera() {
@@ -378,7 +393,7 @@ void Player::update(const tmt::FrameData& time) {
         out_of_energy_timer = 0.0f;
     }
 
-    if (out_of_energy_timer >= out_of_energy_time_till_death) {
+    if (out_of_energy_timer >= out_of_energy_time_till_death && !player_ended_run) {
         tmt::engine.ecs.get_dispatcher().trigger(EndRun { true });
         player_ended_run = true;
         state = PlayerState::PAUSED;
