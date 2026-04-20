@@ -1,6 +1,8 @@
 #pragma once
 #include "player.hpp"
 #include "projects/game/data_headers/wallet.hpp"
+#include "engine/core/components/button.hpp"
+
 namespace game {
 
 enum class UpgradeType : uint8_t {
@@ -20,7 +22,7 @@ enum class UpgradeType : uint8_t {
     BARGE_RECHARGE_DISTANCE,
     // Mining Tool
     DRILL_RADIUS,
-    DRILL_RANGE,
+    DRILL_DISTANCE,
     DRILL_CONSISTENCY,
     DRILL_SPEED,
     // Gravity Tool

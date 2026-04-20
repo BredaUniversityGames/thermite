@@ -11,7 +11,7 @@ constexpr auto PLAYER_RECHARGE_DATA = "player_recharge_data";
 constexpr auto WALLET_DATA = "wallet_data";
 // barge
 constexpr auto FUEL_DATA = "fuel_data";
-constexpr auto BARGE_MOVE_DATA = "move_data";
+constexpr auto BARGE_MOVE_DATA = "barge_move_data";
 // rifle
 constexpr auto RIFLE_PROJECTILE_DATA = "rifle_projectile_data";
 constexpr auto RIFLE_FIRE_DATA = "rifle_fire_data";
