@@ -18,8 +18,6 @@ struct Missile : public tmt::GameComponent<Missile> {
     void explode();
     void empty_check();
 
-    bool exploded = false;  
-
     glm::vec3 velocity = glm::vec3(0, 0, 0);
 
     LayerMask enemy_projectile_mask {};
