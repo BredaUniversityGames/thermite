@@ -31,7 +31,9 @@ void Upgrade::end() {
     }
 }
 
-void Upgrade::button_apply(tmt::Button::Context) {
+void Upgrade::button_apply(tmt::Button::Context context) {
+    if (context.disabled) return;
+
     if (apply_upgrade()) {
         tmt::engine.ecs.disable(entity);
         tmt::Log::info("Applied upgrade.");
