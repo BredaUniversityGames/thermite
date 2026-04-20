@@ -32,12 +32,13 @@ inline JsonReflect::json tag_invoke(JsonReflect::serialize_t, const Tweening::Ty
 
 template <typename T, typename... Args>
 inline void tag_invoke(JsonReflect::deserialize_t, const JsonReflect::json& j, Tweening::TypedTween<T, Args...>& tween) {
-    using TweenType = Tweening::TypedTween<T, Args...>;
+    using TweenTypeHandle = Tweening::TypedTween<T, Args...>;
+    using TweenType = typename TweenTypeHandle::TweenType;
 
     constexpr bool IS_REFLECTED = JsonReflect::Detail::is_visitable_v<TweenType, JsonReflect::serialize_lib_t>;
     if constexpr (IS_REFLECTED) {
         // ImReflect::Input("", *value.get_ptr(), settings, response);
-        JsonReflect::from_json(j, tween.get_ptr());
+        JsonReflect::from_json(j, *tween.get_ptr());
     }
 
     tmt::TweenMixinsSerialize<TweenType, T>::for_each([&](auto tag) {

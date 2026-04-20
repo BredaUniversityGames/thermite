@@ -59,10 +59,10 @@ class Tweener : public tmt::GameComponent<Tweener> {
     void update(const tmt::FrameData& time) override {}
     void end() override {}
 
-    Tweening::TypedTween<float, Tweening::Owned> my_tween;
+    glm::vec3 offset { 0.0f, 0.0f, 10.0f };
     Tweening::TypedTween<tmt::Entity, tmt::Transform> my_tween_transform;
 };
-TMT_OBJECT(Tweener, (my_tween, my_tween_transform));
+TMT_OBJECT(Tweener, (offset, my_tween_transform));
 
 std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs& args) {
     // clang-format off
@@ -102,12 +102,7 @@ void DragonScene::on_update(const tmt::FrameData& /*time*/) {}
 void DragonScene::on_end() {}
 
 void Tweener::start() {
-    static float my_float = 0.0f;
-    my_tween->on_update([](float alpha, float* value) {
-        //
-        tmt::Log::info("Tween alpha: {}, value: {}", alpha, *value);
-    });
-    Tweening::tween(my_tween);
+    Tweening::tween(my_tween_transform).move().offset(offset);
 
     // my_tween = Tweening::tween(my_float)  //
     //                .from(0.0f)

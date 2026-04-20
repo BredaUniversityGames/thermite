@@ -48,7 +48,7 @@ enum class Ease : uint8_t {
 };
 
 enum class LoopMode : uint8_t {
-    LOOP,
+    RESTART,
     PING_PONG,
 };
 
@@ -332,7 +332,7 @@ template <typename Derived>
 class LoopMixin {
    public:
     /* Loop = 0 -> 1, 0 -> 1, ... */
-    Derived& loop(const LoopMode mode = LoopMode::LOOP) {
+    Derived& loop(const LoopMode mode = LoopMode::RESTART) {
         loop_mode = mode;
         return static_cast<Derived&>(*this);
     }
@@ -347,7 +347,7 @@ class LoopMixin {
 
    protected:
     BEFRIEND_MIXINS
-    LoopMode loop_mode = LoopMode::LOOP;
+    LoopMode loop_mode = LoopMode::RESTART;
 };
 
 template <typename Derived>
@@ -653,7 +653,7 @@ class TweenBase : public EaseMixin<Derived>,
                 if (this->on_cycle_end_cb) this->on_cycle_end_cb();
             }
 
-            /* LOOP: forward pass just ended, entering repeat_delay hold */
+            /* RESTART: forward pass just ended, entering repeat_delay hold */
             if (last_sub_phase == CyclePhase::FORWARD && current_phase == CyclePhase::REPEAT_DELAY) {
                 if (this->on_cycle_end_cb) this->on_cycle_end_cb();
             }
@@ -708,7 +708,7 @@ class TweenBase : public EaseMixin<Derived>,
         is_reversing = false;
 
         switch (this->get_loop_mode()) {
-            case LoopMode::LOOP: {
+            case LoopMode::RESTART: {
                 const float cycle_time = dur + rep_delay;
                 const float cycle_pos = (cycle_time > 0.0f) ? std::fmod(anim_elapsed, cycle_time) : 0.0f;
                 if (cycle_pos >= dur) {
