@@ -59,10 +59,14 @@ class Tweener : public tmt::GameComponent<Tweener> {
     void update(const tmt::FrameData& time) override {}
     void end() override {}
 
-    glm::vec3 offset { 0.0f, 0.0f, 10.0f };
-    Tweening::TypedTween<tmt::Entity, tmt::Transform> my_tween_transform;
+    glm::vec3 move_offset { 0.0f, 0.0f, 10.0f };
+    Tweening::TypedTween<tmt::Entity, tmt::Transform> my_move_transform;
+    glm::vec3 rotate_offset { 0.0f, glm::radians(180.0f), 0.0f };
+    Tweening::TypedTween<tmt::Entity, tmt::Transform> my_rotate_transform;
+    glm::vec3 scale_offset { 2.0f };
+    Tweening::TypedTween<tmt::Entity, tmt::Transform> my_scale_transform;
 };
-TMT_OBJECT(Tweener, (offset, my_tween_transform));
+TMT_OBJECT(Tweener, (move_offset, my_move_transform, rotate_offset, my_rotate_transform, scale_offset, my_scale_transform));
 
 std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs& args) {
     // clang-format off
@@ -102,13 +106,27 @@ void DragonScene::on_update(const tmt::FrameData& /*time*/) {}
 void DragonScene::on_end() {}
 
 void Tweener::start() {
-    static int ease_offset = 0;
-    Tweening::tween(my_tween_transform)  //
+    static int move_ease_offset = 0;
+    Tweening::tween(my_move_transform)  //
         .owner(entity)
-        .ease(static_cast<Tweening::Ease>(ease_offset % static_cast<int>(Tweening::Ease::IN_OUT_BOUNCE)))
+        .ease(static_cast<Tweening::Ease>(move_ease_offset % static_cast<int>(Tweening::Ease::IN_OUT_BOUNCE)))
         .move()
-        .offset(offset);
-    ease_offset++;
+        .offset(move_offset);
+    move_ease_offset++;
+    static int rotate_ease_offset = 0;
+    Tweening::tween(my_rotate_transform)  //
+        .owner(entity)
+        .ease(static_cast<Tweening::Ease>(rotate_ease_offset % static_cast<int>(Tweening::Ease::IN_OUT_BOUNCE)))
+        .rotate()
+        .offset(rotate_offset);
+    rotate_ease_offset++;
+    static int scale_ease_offset = 0;
+    Tweening::tween(my_scale_transform)  //
+        .owner(entity)
+        .ease(static_cast<Tweening::Ease>(scale_ease_offset % static_cast<int>(Tweening::Ease::IN_OUT_BOUNCE)))
+        .scale()
+        .offset(scale_offset);
+    scale_ease_offset++;
 
     // my_tween = Tweening::tween(my_float)  //
     //                .from(0.0f)
