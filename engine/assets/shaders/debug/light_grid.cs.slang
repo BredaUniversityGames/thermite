@@ -17,7 +17,7 @@ StructuredBuffer<Light> lights;
 RWTexture2D<float4> render_target;
 
 [[vk::push_constant]]
-float3 cam_center;
+float3 grid_center;
 
 [shader("compute")]
 [numthreads(16, 8, 1)]
@@ -39,9 +39,9 @@ void main(int2 thread_id: SV_DispatchThreadID) {
     world_pos /= world_pos.w;
 
     /* Look up cascade */
-    const CascadeIndex index = index_cascades(world_pos.xyz - cam_center);
+    const lgrid::CascadeIndex index = lgrid::index_cascades(world_pos.xyz - grid_center);
 
-    if (index.cascade == 0xFFFFFFFFu || index.cascade >= MAX_CASCADES) {
+    if (index.cascade == 0xFFFFFFFFu || index.cascade >= lgrid::MAX_CASCADES) {
         return;
     }
 
@@ -53,11 +53,11 @@ void main(int2 thread_id: SV_DispatchThreadID) {
         float3(1.0f, 0.0f, 1.0f), /* Magenta */
         float3(0.0f, 1.0f, 1.0f), /* Cyan */
     };
-    const float3 cascade_color = cascade_colors[min(index.cascade, MAX_CASCADES - 1u)];
+    const float3 cascade_color = cascade_colors[min(index.cascade, lgrid::MAX_CASCADES - 1u)];
 
-    const uint32_t cell_index = (index.cascade * CASCADES_RESOLUTION3) + (index.z * CASCADES_RESOLUTION2) + (index.y * CASCADES_RESOLUTION) + index.x;
-    const uint32_t count = light_grid[cell_index * LIGHTS_PER_CELL];
-    const float3 heat = heat_color((float)count / 4.0f);
+    const uint32_t cell_index = (index.cascade * lgrid::CASCADES_RESOLUTION3) + (index.z * lgrid::CASCADES_RESOLUTION2) + (index.y * lgrid::CASCADES_RESOLUTION) + index.x;
+    const uint32_t count = light_grid[cell_index * lgrid::LIGHTS_PER_CELL];
+    const float3 heat = heat_color((float)count / 32.0f);
 
     /* Blend debug color over the scene */
     const float3 scene = render_target[thread_id].rgb;

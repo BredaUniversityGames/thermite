@@ -62,7 +62,7 @@ void SceneView::init() {
                             .expect("failed to initialize the cascades bitmasks buffer");
 
     /* Fine light grid */
-    fine_light_grid = bank.create_buffer("Fine Light Grid", BufferUsage::TransferDst | BufferUsage::Storage, light_grid::LIGHT_GRID_BUFFER_SIZE, sizeof(uint32_t))
+    light_grid = bank.create_buffer("Fine Light Grid", BufferUsage::TransferDst | BufferUsage::Storage, light_grid::LIGHT_GRID_BUFFER_SIZE, sizeof(uint32_t))
                           .expect("failed to initialize the fine light grid buffer");
 
     /* Subscribe to EnTT */
@@ -95,7 +95,7 @@ void SceneView::deinit() {
     bank.destroy(scene_view);
 
     bank.destroy(cascades_bitmasks);
-    bank.destroy(fine_light_grid);
+    bank.destroy(light_grid);
 }
 
 /* Create a vector containing type `T`, with space reserved for `count` instances. */
@@ -301,8 +301,8 @@ void SceneView::update_lights(RenderGraph& render_graph, const RenderView&) {
             inner_aabb = Aabb(inner_min, inner_max);
         }
 
-        engine.polyline.use_color({ 1.0f, 0.0f, 0.0f, 1.0f });
-        engine.polyline.draw_aabb(cascade_min, cascade_max);
+        //engine.polyline.use_color({ 1.0f, 0.0f, 0.0f, 1.0f });
+        //engine.polyline.draw_aabb(cascade_min, cascade_max);
 
         for (size_t light_index = 0; light_index < gpu_lights.size(); light_index++) {
             const uint32_t bitmask_index = (uint32_t)light_index >> 5;   /* light_index / 32 */
@@ -315,8 +315,8 @@ void SceneView::update_lights(RenderGraph& render_graph, const RenderView&) {
             const glm::vec3 light_min = light.origin - light.culling_radius;
             const Aabb light_aabb = Aabb(light_min, light_max);
 
-            engine.polyline.use_color({ 1.0f, 1.0f, 0.0f, 1.0f });
-            engine.polyline.draw_aabb(light_min, light_max);
+            //engine.polyline.use_color({ 1.0f, 1.0f, 0.0f, 1.0f });
+            //engine.polyline.draw_aabb(light_min, light_max);
 
             /* get bitmask (32 bitmasks per cascade) */
             uint32_t& bitmask = light_bitmasks[cascade * light_grid::BITMASKS_PER_CASCADE + bitmask_index];

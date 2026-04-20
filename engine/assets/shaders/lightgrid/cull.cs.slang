@@ -9,7 +9,7 @@ StructuredBuffer<Light> lights;
 RWStructuredBuffer<uint32_t> light_grid;
 
 [[vk::push_constant]]
-float3 cam_center;
+float3 grid_center;
 
 #define BITMASKS_PER_GROUP 32u
 
@@ -23,9 +23,9 @@ void main(int3 thread_id: SV_DispatchThreadID, int3 group_id: SV_GroupID) {
     const uint32_t z_coord = thread_id.z & 0b1111u;   /* z_coord = thread_id.z % 16u */
 
     /* Compute current cascade aabb */
-    const uint32_t cascade_half_extent = (FIRST_CASCADE_BOUNDS << cascade_index) >> 1;
-    const float3 cascade_max = { cam_center.x + cascade_half_extent, cam_center.y + cascade_half_extent, cam_center.z + cascade_half_extent };
-    const float3 cascade_min = { cam_center.x - cascade_half_extent, cam_center.y - cascade_half_extent, cam_center.z - cascade_half_extent };
+    const uint32_t cascade_half_extent = (lgrid::FIRST_CASCADE_BOUNDS << cascade_index) >> 1;
+    const float3 cascade_max = { grid_center.x + cascade_half_extent, grid_center.y + cascade_half_extent, grid_center.z + cascade_half_extent };
+    const float3 cascade_min = { grid_center.x - cascade_half_extent, grid_center.y - cascade_half_extent, grid_center.z - cascade_half_extent };
     Aabb cascade_aabb;
     cascade_aabb.min = cascade_min;
     cascade_aabb.max = cascade_max;
@@ -101,15 +101,15 @@ void main(int3 thread_id: SV_DispatchThreadID, int3 group_id: SV_GroupID) {
             /* Insert light index into light_grid */
             if (cell_aabb.overlap(light_aabb)) {
                 /* Retrieve cell index */
-                const uint32_t cell_index = (cascade_index * CASCADES_RESOLUTION3) + (z_coord * CASCADES_RESOLUTION2) + (thread_id.y * CASCADES_RESOLUTION) + thread_id.x;
-                const uint32_t cell_base = cell_index * LIGHTS_PER_CELL;
+                const uint32_t cell_index = (cascade_index * lgrid::CASCADES_RESOLUTION3) + (z_coord * lgrid::CASCADES_RESOLUTION2) + (thread_id.y * lgrid::CASCADES_RESOLUTION) + thread_id.x;
+                const uint32_t cell_base = cell_index * lgrid::LIGHTS_PER_CELL;
 
                 /* Increment counter */
                 uint32_t slot;
                 InterlockedAdd(light_grid[cell_base], 1u, slot);
 
                 /* Append light grid */
-                if (slot < LIGHTS_PER_CELL - 1u) /* Max (LIGHTS_PER_CELL - 1) lights per cell */ 
+                if (slot < lgrid::LIGHTS_PER_CELL - 1u) /* Max (LIGHTS_PER_CELL - 1) lights per cell */
                     light_grid[cell_base + 1u + slot] = light_index;
             }
         }

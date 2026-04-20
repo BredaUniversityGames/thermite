@@ -11,6 +11,8 @@
 #include "engine/core/renderer/voxel_object.hpp"
 #include "engine/core/renderer/renderer.hpp"
 
+#include "engine/core/input/input.hpp"
+
 namespace tmt {
 
 /* Divide two numbers, rounding up. */
@@ -70,9 +72,11 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
             .read(scene_view.object_indices) /* Voxel object indices buffer */
             .read(scene_view.object_data) /* Voxel objects buffer */
             .read(scene_view.lights_data) /* Lights data buffer */
+            .read(scene_view.light_grid) /* Lights data buffer */
             // .write(render_view.macrofacet_cache) /* Cache buffer */
             .read(render_view.vbuffer.image) /* Visibility buffer */
             .write(diffuse_image) /* Diffuse buffer */
+            .push_constants(&scene_view.light_grid_center, 0, sizeof(glm::vec3))
             .group_size(16, 8)
             .work_size(shading_res.x, shading_res.y);
     }
