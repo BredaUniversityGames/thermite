@@ -8,7 +8,7 @@
 
 void game::MoverComponent::start() {
     // TODO check if data
-    movement_speed = tmt::engine.player_data.get<float>(BARGE_MOVE_DATA);
+    movement_speed = tmt::engine.player_data.get<float>(BARGE_MOVE_DATA, movement_speed);
 }
 void game::MoverComponent::draw_debug_lines() const {
     cfg.set_values();

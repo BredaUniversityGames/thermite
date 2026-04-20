@@ -43,10 +43,11 @@ class Wallet : public tmt::GameComponent<Wallet> {
     static std::string_view get_name() { return "Wallet"; }
 
     void start() override {
-        // TODO load saved data if there is any
-        auto& wallet_data { tmt::engine.player_data.get<WalletData>(WALLET_DATA) };
-        limits = wallet_data.limits;
-        total_resource_limit = wallet_data.total_resource_limit;
+        auto wallet_data { tmt::engine.player_data.try_get<WalletData>(WALLET_DATA) };
+        if (wallet_data.has_value()) {
+            limits = wallet_data->limits;
+            total_resource_limit = wallet_data->total_resource_limit;
+        }
     }
     void update(const tmt::FrameData& time) override {}
     void end() override {}

@@ -52,7 +52,6 @@
 #include "components/ui_components/quit_game_component.hpp"
 #include "components/ui_components/wallet_ui_link_component.hpp"
 #include "components/ui_components/sell_ore_component.hpp"
-#include "components/ui_components/hover_component.hpp"
 // Managers
 #include "components/managers/ore_manager.hpp"
 #include "components/managers/menu_controller.hpp"
@@ -85,20 +84,20 @@ class Game : public tmt::Application {
     Game(const tmt::ApplicationSpecs& specs) : Application(specs) {}
 
     void on_start() override {
-        // player
-        tmt::engine.player_data.get<game::PlayerStat>(game::PLAYER_HEALTH_DATA);
-        tmt::engine.player_data.get<game::PlayerStat>(game::PLAYER_ENERGY_DATA);
-        tmt::engine.player_data.get<game::PlayerMovement>(game::PLAYER_MOVEMENT_DATA);
-        tmt::engine.player_data.get<game::PlayerRecharge>(game::PLAYER_RECHARGE_DATA);
+        //// player
+        // tmt::engine.player_data.get<game::PlayerStat>(game::PLAYER_HEALTH_DATA);
+        // tmt::engine.player_data.get<game::PlayerStat>(game::PLAYER_ENERGY_DATA);
+        // tmt::engine.player_data.get<game::PlayerMovement>(game::PLAYER_MOVEMENT_DATA);
+        // tmt::engine.player_data.get<game::PlayerRecharge>(game::PLAYER_RECHARGE_DATA);
 
-        // barge
+        //// barge
 
-        tmt::engine.player_data.get<game::FuelData>(game::FUEL_DATA);
-        tmt::engine.player_data.get<float>(game::BARGE_MOVE_DATA);
+        // tmt::engine.player_data.get<game::FuelData>(game::FUEL_DATA);
+        // tmt::engine.player_data.get<float>(game::BARGE_MOVE_DATA);
 
-        // resources
-        tmt::engine.player_data.get<game::Currencies>(game::PERSISTENT_RESOURCES);
-        // tmt::engine.player_data.get<std::b>>(game::UPGRADES);
+        //// resources
+        // tmt::engine.player_data.get<game::Currencies>(game::PERSISTENT_RESOURCES);
+        //// tmt::engine.player_data.get<std::b>>(game::UPGRADES);
     }
     void on_update(const tmt::FrameData& time) override {};
     void on_end() override {};
@@ -160,7 +159,6 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     tmt::engine.component_registry.register_component<game::QuitGameComponent>();
     tmt::engine.component_registry.register_component<game::WalletUiLink>();
     tmt::engine.component_registry.register_component<game::SellOreComponent>();
-    tmt::engine.component_registry.register_component<game::HoverComponent>();
 
     /* Register Goap Components */
     {

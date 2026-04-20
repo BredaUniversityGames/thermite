@@ -60,12 +60,16 @@ void MiningComponent::start() {
     }
 
     // TODO load data only if it is there
-    auto& mining_data { tmt::engine.player_data.get<MiningData>(MINING_DATA) };
-    ray_cylinder.ray_distance = mining_data.ray_distance;
-    ray_cylinder.base_radius = mining_data.base_radius;
-    ray_cylinder.ray_amount = mining_data.ray_amount;
-    if (auto* weapon { tmt::engine.ecs.try_get_component<Weapon>(entity) }) {
-        weapon->primary_fire_rate.shots_per_second = mining_data.rays_per_second;
+
+    auto mining_data { tmt::engine.player_data.try_get<MiningData>(MINING_DATA) };
+    if (mining_data.has_value()) {
+        ray_cylinder.ray_distance = mining_data->ray_distance;
+        ray_cylinder.base_radius = mining_data->base_radius;
+        ray_cylinder.ray_amount = mining_data->ray_amount;
+
+        if (auto* weapon { tmt::engine.ecs.try_get_component<Weapon>(entity) }) {
+            weapon->primary_fire_rate.shots_per_second = mining_data->rays_per_second;
+        }
     }
 }
 

@@ -83,17 +83,21 @@ void setup_inputs(tmt::InputMap& input_map) {
 
 void Player::load_upgrades() {
     // TODO only load if there is data there
-    health = tmt::engine.player_data.get<PlayerStat>(PLAYER_HEALTH_DATA);
-    energy = tmt::engine.player_data.get<PlayerStat>(PLAYER_ENERGY_DATA);
+    health = tmt::engine.player_data.get<PlayerStat>(PLAYER_HEALTH_DATA, health);
+    energy = tmt::engine.player_data.get<PlayerStat>(PLAYER_ENERGY_DATA, energy);
 
-    auto& movement_data = tmt::engine.player_data.get<PlayerMovement>(PLAYER_MOVEMENT_DATA);
-    acceleration = movement_data.acceleration;
-    max_speed = movement_data.max_speed;
-    boost_max_speed_multiplier = movement_data.boost_max_speed_multiplier;
+    auto movement_data = tmt::engine.player_data.try_get<PlayerMovement>(PLAYER_MOVEMENT_DATA);
+    if (movement_data.has_value()) {
+        acceleration = movement_data->acceleration;
+        max_speed = movement_data->max_speed;
+        boost_max_speed_multiplier = movement_data->boost_max_speed_multiplier;
+    }
 
-    auto& recharge_data = tmt::engine.player_data.get<PlayerRecharge>(PLAYER_RECHARGE_DATA);
-    out_of_energy_time_till_death = recharge_data.out_of_energy_time_till_death;
-    recharge_distance = recharge_data.recharge_distance;
+    auto recharge_data = tmt::engine.player_data.try_get<PlayerRecharge>(PLAYER_RECHARGE_DATA);
+    if (recharge_data.has_value()) {
+        out_of_energy_time_till_death = recharge_data->out_of_energy_time_till_death;
+        recharge_distance = recharge_data->recharge_distance;
+    }
 }
 void Player::start() {
     auto& resources { tmt::engine.player_data.get<Currencies>(PERSISTENT_RESOURCES) };
