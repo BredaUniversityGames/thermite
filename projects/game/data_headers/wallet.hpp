@@ -7,7 +7,11 @@ namespace game {
 struct Currencies {
     uint64_t dollars = 0u;
 
-    std::unordered_map<OreProperties::OreResources, uint64_t> resource_counts = {};
+    std::unordered_map<OreProperties::OreResources, uint64_t> resource_counts = { { OreProperties::OreResources::NONE, -1 },
+                                                                                  { OreProperties::OreResources::SCRAP, -1 },
+                                                                                  { OreProperties::OreResources::COPPER, -1 },
+                                                                                  { OreProperties::OreResources::THERMITE, -1 },
+                                                                                  { OreProperties::OreResources::TITANIUM, -1 } };
 
     Currencies& operator+=(const Currencies& other) {
         dollars += other.dollars;
@@ -42,8 +46,11 @@ class Wallet : public tmt::GameComponent<Wallet> {
 
     // Currencies;
     Currencies currencies;
+    Currencies limits;
+
+    int total_resource_limit = -1;
 };
 
 }  // namespace game
 TMT_OBJECT(game::Currencies, (dollars, resource_counts));
-TMT_OBJECT(game::Wallet, (currencies));
+TMT_OBJECT(game::Wallet, (currencies, limits, total_resource_limit));

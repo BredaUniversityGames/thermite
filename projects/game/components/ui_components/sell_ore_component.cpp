@@ -27,7 +27,14 @@ void SellOreComponent::update(const tmt::FrameData& time) {
     }
 }
 
-void SellOreComponent::end() {}
+void SellOreComponent::end() {
+    if (auto* button_component = tmt::engine.ecs.try_get_component<tmt::Button>(entity)) {
+        button_component->on_click.clear();
+        button_component->on_release.clear();
+    } else {
+        tmt::Log::warn("No button found on entity {}", entity);
+    }
+}
 
 bool SellOreComponent::entity_check() const {
     if (entity_with_wallet == entt::null) {
@@ -51,11 +58,12 @@ void SellOreComponent::sell_ore() {
     }
 }
 
-void SellOreComponent::down_toggle() {
+void SellOreComponent::down_toggle(tmt::Button::Context) {
     is_held = true;
 }
 
-void SellOreComponent::up_toggle() {
+void SellOreComponent::up_toggle(tmt::Button::Context context) {
+    if (context.disabled) return;
     // reset all values for rampup
     timer = 0.0f;
     current_cooldown = initial_hold_cooldown;
