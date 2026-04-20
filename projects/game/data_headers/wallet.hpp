@@ -36,7 +36,9 @@ class Wallet : public tmt::GameComponent<Wallet> {
 
     static std::string_view get_name() { return "Wallet"; }
 
-    void start() override {}
+    void start() override {
+        // TODO load saved data if there is any
+    }
     void update(const tmt::FrameData& time) override {}
     void end() override {}
 

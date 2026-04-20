@@ -10,6 +10,7 @@ game::MoverComponent& get_mover_component(tmt::Entity entity) {
 
 }  // namespace
 void game::FuelComponent::start() {
+    // TODO check if data is there
     fuel_data = tmt::engine.player_data.get<FuelData>(FUEL_DATA);
 
     current_fuel = fuel_data.max_fuel;

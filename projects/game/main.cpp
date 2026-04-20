@@ -74,12 +74,31 @@
 #include "components/goap_actions/prepare_explode.hpp"
 #include "components/goap_actions/explode.hpp"
 #include "components/goap_actions/sensor_system.hpp"
+#include "data_headers/save_entries.hpp"
+#include "engine/tools/player_data.hpp"
+
+#include <bitset>
 
 class Game : public tmt::Application {
    public:
     Game(const tmt::ApplicationSpecs& specs) : Application(specs) {}
 
-    void on_start() override {};
+    void on_start() override {
+        // player
+        tmt::engine.player_data.get<game::PlayerStat>(game::PLAYER_HEALTH_DATA);
+        tmt::engine.player_data.get<game::PlayerStat>(game::PLAYER_ENERGY_DATA);
+        tmt::engine.player_data.get<game::PlayerMovement>(game::PLAYER_MOVEMENT_DATA);
+        tmt::engine.player_data.get<game::PlayerRecharge>(game::PLAYER_RECHARGE_DATA);
+
+        // barge
+
+        tmt::engine.player_data.get<game::FuelData>(game::FUEL_DATA);
+        tmt::engine.player_data.get<float>(game::BARGE_MOVE_DATA);
+
+        // resources
+        tmt::engine.player_data.get<game::Currencies>(game::PERSISTENT_RESOURCES);
+        // tmt::engine.player_data.get<std::b>>(game::UPGRADES);
+    }
     void on_update(const tmt::FrameData& time) override {};
     void on_end() override {};
 };

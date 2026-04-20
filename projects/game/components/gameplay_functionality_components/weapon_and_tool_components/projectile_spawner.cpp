@@ -3,6 +3,8 @@
 #include "rifle_projectile.hpp"
 #include "spawner.hpp"
 #include "weapon.hpp"
+#include "engine/tools/player_data.hpp"
+#include "projects/game/data_headers/save_entries.hpp"
 
 namespace game {
 
@@ -27,6 +29,8 @@ void ProjectileSpawner::on_shoot(const WeaponFiredEvent& e) const {
     if (tmt::engine.ecs.valid(bullet_entity) == false) return;
 
     auto& rifle_projectile = tmt::engine.ecs.get_component<RifleProjectile>(bullet_entity);
+    // TODO load saved data if there is any
+    rifle_projectile.explosion_parameters = tmt::engine.player_data.get<ExplosionParameters>(RIFLE_PROJECTILE_DATA);
 
     auto& bullet_transform = tmt::engine.ecs.get_component<tmt::Transform>(bullet_entity);
 

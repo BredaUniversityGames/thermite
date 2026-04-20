@@ -4,11 +4,16 @@
 #include "engine/systems/physics/components/voxel_body.hpp"
 #include "engine/core/polyline.hpp"
 #include "weapon.hpp"
+#include "engine/tools/player_data.hpp"
+#include "projects/game/data_headers/save_entries.hpp"
 
 namespace game {
 
 void GravityManipulationComponent::start() {
     tmt::engine.ecs.get_dispatcher().sink<WeaponFiredEvent>().connect<&GravityManipulationComponent::on_weapon_fired>(this);
+
+    // TODO only if the data is there
+    max_mass = tmt::engine.player_data.get<float>(GRAVITY_GUN_DATA);
 }
 
 void GravityManipulationComponent::update(const tmt::FrameData& time) {}
