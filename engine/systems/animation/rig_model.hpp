@@ -7,6 +7,7 @@
 #include "engine/core/resources.hpp"
 #include "engine/core/resources/voxel_volume.hpp"
 #include "engine/core/reflection.hpp"
+#include "pose.h"
 
 namespace tmt {
 
@@ -25,7 +26,7 @@ class RigModel {
     IO::FileLocation vox_path = {};
     ResourceRef<RigData> data;
     std::vector<Entity> bone_entities;
-
+    
     float time = 0.05f;
     float animation_speed = 1.0f;
     float transfer_time = 0.0f;
@@ -50,11 +51,13 @@ class RigModel {
     std::string get_next_animation() const { return next_animation; }
     std::string current_animation_playing();
 
-    void animate_translation(Transform& t, Bone& b) const;
-    void animate_rotation(Transform& t, Bone& b) const;
-    void animate_scale(Transform& t, Bone& b) const;
-
     enum class State : uint8_t { ANIMATE_LOOP, ANIMATE_ONCE, STATIONARY, TRANSFERRING_TO_LOOP, TRANSFERRING_TO_ONCE, TRANSFERRING_TO_STOP } state = State::STATIONARY;
+
+    std::unordered_map<Entity, Pose> bone_keyframes;
+
+    void animate_translation(Pose& t, Bone& b) const;
+    void animate_rotation(Pose& t, Bone& b) const;
+    void animate_scale(Pose& t, Bone& b) const;
 
    private:
     std::string next_animation;
@@ -65,7 +68,15 @@ class RigModel {
     void init_bones(const Bone& b, Entity p);
 };
 
+struct ConstrainedRig
+{
+    std::unordered_map<Entity, Pose> constrained_poses;
+    float blend = 0.f;
+};
+
 }  // namespace tmt
+
 
 JSON_REFLECT(tmt::BoneComp, id);
 TMT_COMPONENT(tmt::RigModel, "Animated Rig", (vox_is_loaded, vox_path, data));
+TMT_COMPONENT(tmt::ConstrainedRig, "Constrained Rig", (blend));
