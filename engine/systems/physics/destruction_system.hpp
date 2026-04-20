@@ -38,6 +38,7 @@ class Destruction : public ISystem {
     std::vector<Entity> find_seperations(Entity entity, const std::vector<glm::uvec3>& edge_indices, Destructible& graph);
     void regenerate_connection_graph(Destructible& graph, Svt64* tree, const Stencil* stencil, glm::ivec3 offset);
     void generate_connection_graph(Destructible& graph, Svt64* tree);
+    void update_connection_graph_at(Destructible& graph, Svt64* tree, const glm::uvec3& pos);
     // FloodStackEntry separation_flood(Destructable& graph, DestructionNode& current_node, uint8_t id, Svt64* tree);
 };
 

@@ -409,7 +409,7 @@ Svt64Node* Svt64::get_leaf(const uint32_t x, const uint32_t y, const uint32_t z)
         current = &nodes[current->abs_ptr() + child_pos];
     }
 
-    return nullptr;
+    return current;
 }
 
 Material* Svt64::get_voxel(const uint32_t x, const uint32_t y, const uint32_t z) {
