@@ -3,8 +3,32 @@
 #include "projects/game/data_headers/wallet.hpp"
 namespace game {
 
-enum class UpgradeType : uint8_t { MAX_HEALTH, MAX_BATTERY, MAX_SPEED, ACCELERATION, MINING_SPEED, GRAVITY_PULL, EXPLOSION_PARAMETERS, BARGE_MAX_FUEL };
-
+enum class UpgradeType : uint8_t {
+    // Player
+    MAX_HEALTH,
+    MAX_BATTERY,
+    MAX_SPEED,
+    ACCELERATION,
+    MAX_BOOST_SPEED,
+    HEALTH_RESTORE_SPEED,
+    BATTERY_RESTORE_SPEED,
+    EMERGENCY_BATTERY_TIME,
+    STORAGE_LIMIT,
+    // Barge
+    BARGE_MAX_FUEL,
+    BARGE_SPEED,
+    BARGE_RECHARGE_DISTANCE,
+    // Mining Tool
+    DRILL_RADIUS,
+    DRILL_RANGE,
+    DRILL_CONSISTENCY,
+    DRILL_SPEED,
+    // Gravity Tool
+    MAX_GRAB_SIZE,
+    // Rifle
+    RIFLE_IMPACT_RADIUS,
+    RIFLE_EXPLOSION_POWER,
+};
 class Upgrade : public tmt::GameComponent<Upgrade> {
    public:
     using GameComponent::GameComponent;
