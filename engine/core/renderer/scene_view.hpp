@@ -20,7 +20,7 @@ constexpr uint32_t MAX_LIGHTS = 1024u;
 namespace light_grid {
 
 constexpr uint32_t MAX_LIGHTS_PER_CELL = 64u;
-constexpr uint32_t MAX_CASCADES = 3u;
+constexpr uint32_t MAX_CASCADES = 6u;
 constexpr uint32_t CASCADES_RESOLUTION = 16u;
 constexpr uint32_t BITMASKS_PER_CASCADE = (MAX_LIGHTS + 31u) / 32u;                      /* div up */
 constexpr uint32_t FIRST_CASCADE_BOUNDS = 32u;                                           /* world space units */

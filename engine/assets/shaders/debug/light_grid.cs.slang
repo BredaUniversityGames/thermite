@@ -41,16 +41,19 @@ void main(int2 thread_id: SV_DispatchThreadID) {
     /* Look up cascade */
     const CascadeIndex index = index_cascades(world_pos.xyz - cam_center);
 
-    if (index.cascade == 0xFFFFFFFFu || index.cascade >= 3u) {
+    if (index.cascade == 0xFFFFFFFFu || index.cascade >= MAX_CASCADES) {
         return;
     }
 
-    const float3 cascade_colors[3] = {
-        float3(1.0f, 0.0f, 0.0f),
-        float3(0.0f, 1.0f, 0.0f),
-        float3(0.0f, 0.0f, 1.0f),
+    const float3 cascade_colors[6] = {
+        float3(1.0f, 0.0f, 0.0f), /* Red */
+        float3(0.0f, 1.0f, 0.0f), /* Green */
+        float3(0.0f, 0.0f, 1.0f), /* Blue */
+        float3(1.0f, 1.0f, 0.0f), /* Yellow */
+        float3(1.0f, 0.0f, 1.0f), /* Magenta */
+        float3(0.0f, 1.0f, 1.0f), /* Cyan */
     };
-    const float3 cascade_color = cascade_colors[min(index.cascade, 2u)];
+    const float3 cascade_color = cascade_colors[min(index.cascade, MAX_CASCADES - 1u)];
 
     const uint32_t cell_index = (index.cascade * CASCADES_RESOLUTION3) + (index.z * CASCADES_RESOLUTION2) + (index.y * CASCADES_RESOLUTION) + index.x;
     const uint32_t count = light_grid[cell_index * LIGHTS_PER_CELL];

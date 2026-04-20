@@ -1,5 +1,6 @@
 module lightgrid;
 
+public static constexpr uint32_t MAX_CASCADES = 6u;
 public static constexpr uint32_t LIGHTS_PER_CELL = 64u; /* Actually only 63 lights since first uint32 in the cell is the light count for that cell */
 public static constexpr uint32_t FIRST_CASCADE_BOUNDS = 32u;
 public static constexpr uint32_t CASCADES_RESOLUTION = 16u;
