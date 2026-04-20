@@ -80,6 +80,7 @@ void tag_invoke(ImReflect::ImInput_t, const char* name, game::MediumEnemy& value
             help("Offset from player");
             ImReflect::Input("Rotation Speed", value.missile_rotation_speed, type_settings, type_response);
             help("Speed at which missiles turn towards the direction they're going in");
+            ImReflect::Input("Explosion Radius", value.missile_explosion_radius, type_settings, type_response);
 
             ImGui::Spacing();
             ImGui::TextDisabled("Per-Missile Settings");

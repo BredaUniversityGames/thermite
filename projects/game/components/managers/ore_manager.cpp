@@ -37,6 +37,7 @@ void OreManager::update(const tmt::FrameData& time) {
         // update explosion list
         thermite_to_explode = new_thermite_to_explode;
         thermite_ore_explosion_cooldown_timer = 0.0f;
+        tmt::engine.ecs.get_dispatcher().trigger<ThermiteExplosionEvent>();
     }
     thermite_ore_explosion_cooldown_timer += time.delta_time;
 }

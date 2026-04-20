@@ -51,6 +51,7 @@ void game::Missile::start() {
 }
 
 void game::Missile::update(const tmt::FrameData& time) {
+    if (exploded) return;
     auto& enemy = tmt::engine.ecs.get_component<game::MediumEnemy>(enemy_entity);
     if (life_time > enemy.life_time) {
         explode();
@@ -125,11 +126,20 @@ void game::Missile::update(const tmt::FrameData& time) {
     if (hit.entity != entt::null && hit.distance < 0.1f /*&& hit.entity != entity*/) {
         explode();
     }
+
+    if(glm::distance(player_pos, position.get_world_position()) < enemy.missile_explosion_radius) {
+        explode();
+    }
 }
 
-void game::Missile::end() {}
+void game::Missile::end() {
+    tmt::engine.ecs.get_dispatcher().sink<ThermiteExplosionEvent>().disconnect<&Missile::empty_check>(this);
+}
 
-void game::Missile::explode() const {
+void game::Missile::explode() {
+    tmt::engine.ecs.get_dispatcher().sink<ThermiteExplosionEvent>().connect<&Missile::empty_check>(this);
+    exploded = true;
+
     auto& enemy = tmt::engine.ecs.get_component<MediumEnemy>(enemy_entity);
     enemy.ore_manager->initiate_thermite_explosion(entity, glm::uvec3(0, 0, 0));
 
@@ -144,6 +154,12 @@ void game::Missile::explode() const {
     auto& renderer = tmt::engine.ecs.get_component<tmt::VoxelRenderer>(entity);
 
     tmt::engine.ecs.systems.try_get<tmt::Physics>()->recalculate_physics_data(voxel_body, *renderer.resource.resource);
+}
 
-    tmt::engine.ecs.remove_component<Missile>(entity);
+void game::Missile::empty_check() {
+    auto& renderer = tmt::engine.ecs.get_component<tmt::VoxelRenderer>(entity);
+    uint32_t voxel_count = renderer.resource->blas->voxel_count;
+    if (voxel_count == 0) {
+        tmt::engine.ecs.destroy_entity(entity);
+    }
 }

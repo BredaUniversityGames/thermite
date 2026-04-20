@@ -15,9 +15,11 @@ struct Missile : public tmt::GameComponent<Missile> {
     void update(const tmt::FrameData& time) override;
     void end() override;
 
-    void explode() const;
+    void explode();
+    void empty_check();
 
-    enum State { LAUNCHED, HOMING } state = LAUNCHED;
+    bool exploded = false;  
+
     glm::vec3 velocity = glm::vec3(0, 0, 0);
 
     LayerMask enemy_projectile_mask {};
