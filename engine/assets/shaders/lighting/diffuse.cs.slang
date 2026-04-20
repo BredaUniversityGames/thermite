@@ -110,29 +110,9 @@ inline float3 direct_illuminance(const float3 point, const float3 normal, const 
 [shader("compute")]
 [numthreads(16, 8, 1)]
 void main(int2 thread_id: SV_DispatchThreadID) {
-    int2 pixel_id = thread_id;
-    int2 resolution = render_view.resolution;
-    if (render_view.shading_rate_di == 1u) {
-        /* Half-rate */
-        /*  [ XY ]  */
-        /*  [ YX ]  */
-        const int offset = (pixel_id.y + render_view.frame_index) & 0b1;
-        pixel_id.x = (pixel_id.x << 1) + offset;
-        resolution.x = resolution.x >> 1;
-    } else if (render_view.shading_rate_di == 2u) {
-        /* Quarter-rate */
-        /*  [ XY ]  */
-        /*  [ ZW ]  */
-        const int2 offset = int2(render_view.frame_index & 0b1, (render_view.frame_index >> 1) & 0b1);
-        pixel_id = (pixel_id << 1) + offset;
-        resolution = resolution >> 1;
-    }
-
     /* Bounds check */
-    if (any(pixel_id >= render_view.resolution)) {
-        lbuffer[thread_id] = 0.0f;
-        return;
-    }
+    const int2 pixel_id = rate_to_full(thread_id, render_view.diff_shading_rate);
+    if (any(pixel_id >= render_view.resolution)) return;
 
     /* Load visibility buffer data */
     const uint64_t facet_key = asuint64(vbuffer[pixel_id]);
@@ -160,10 +140,10 @@ void main(int2 thread_id: SV_DispatchThreadID) {
     const float3 hit_point = ray.origin + ray.dir * geo.depth + geo.normal * 0.001f;
 
     /* Generate a seed for the current pixel */
-    uint32_t seed = thread_id.x + thread_id.y * resolution.x + (render_view.frame_index * (resolution.x * resolution.y));
+    uint seed = pixel_id.x + pixel_id.y * render_view.resolution.x + (render_view.frame_index * (render_view.resolution.x * render_view.resolution.y));
 
     const float2 noise = r2(blue_noise[pixel_id % 512].rg, render_view.frame_index % 1024u);
     const float3 diffuse = direct_illuminance(hit_point, geo.normal, -ray.dir, geo.material, seed, noise);
 
-    lbuffer[thread_id] = scale * diffuse;
+    lbuffer[thread_id] = scale * diffuse + 0.0025f;
 }
