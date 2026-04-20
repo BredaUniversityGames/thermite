@@ -39,11 +39,6 @@ struct PickedLight {
     float rcp_pdf; /* Reciprocal probability distribution function. */
 };
 
-/* Pick a light to sample for a given sample point using reservoir sampling. */
-inline PickedLight pick_light(const float3 point, const float3 normal, inout uint32_t seed, const float2 noise) {
-    
-}
-
 inline float3 direct_illuminance(const float3 point, const float3 normal, const float3 view_dir, const Material mat, inout uint seed, const float2 noise) {
     float3 illuminance = mat.albedo() * mat.emission();
 
