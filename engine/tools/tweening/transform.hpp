@@ -94,12 +94,15 @@ struct Tweening::ITween<tmt::Entity, tmt::Transform> : public Tweening::Detail::
 
    public:
     ITween() = default;
-    ITween(const tmt::Entity entity) : owner(entity) {};
+    ITween(const tmt::Entity entity) : owner_entity(entity) {};
     static ITween create(const tmt::Entity& entity) { return ITween(entity); }
     static std::shared_ptr<ITween> make_shared_default() { return std::make_shared<ITween>(static_cast<tmt::Entity>(entt::null)); }
 
     void interpolate(const Tweening::Detail::TweenFrame& frame) {
-        auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(owner);
+        if (tmt::engine.ecs.valid(owner_entity) == false) {
+            return;
+        }
+        auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(owner_entity);
         const float t = frame.alpha;
 
         if (frame.frame_count == 0) {
@@ -165,6 +168,11 @@ struct Tweening::ITween<tmt::Entity, tmt::Transform> : public Tweening::Detail::
         );
     }
 
+    ITween& owner(const tmt::Entity entity) {
+        owner_entity = entity;
+        return *this;
+    }
+
     Move& move() {
         tween_variant.emplace<Move>(this);
         return std::get<Move>(tween_variant);
@@ -182,9 +190,9 @@ struct Tweening::ITween<tmt::Entity, tmt::Transform> : public Tweening::Detail::
 
    private:
     BEFRIEND_VISITABLE()
-    tmt::Entity owner = entt::null;
+    tmt::Entity owner_entity = entt::null;
 
     std::variant<Move, Rotate, Scale> tween_variant;
 };
 
-TMT_OBJECT_TEMPLATE((), Tweening::ITween, (tmt::Entity, tmt::Transform), owner);
+TMT_OBJECT_TEMPLATE((), Tweening::ITween, (tmt::Entity, tmt::Transform), owner_entity);

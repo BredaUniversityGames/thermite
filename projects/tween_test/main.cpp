@@ -102,7 +102,13 @@ void DragonScene::on_update(const tmt::FrameData& /*time*/) {}
 void DragonScene::on_end() {}
 
 void Tweener::start() {
-    Tweening::tween(my_tween_transform).move().offset(offset);
+    static int ease_offset = 0;
+    Tweening::tween(my_tween_transform)  //
+        .owner(entity)
+        .ease(static_cast<Tweening::Ease>(ease_offset % static_cast<int>(Tweening::Ease::IN_OUT_BOUNCE)))
+        .move()
+        .offset(offset);
+    ease_offset++;
 
     // my_tween = Tweening::tween(my_float)  //
     //                .from(0.0f)

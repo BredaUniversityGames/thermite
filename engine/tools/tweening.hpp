@@ -5,6 +5,8 @@
 #define BEFRIEND_MIXINS BEFRIEND_VISITABLE();
 #include <../type_tween/type_tween.hpp>
 
+#include "engine/tools/profiler.hpp"
+
 namespace tmt {
 
 // clang-format off
@@ -41,7 +43,10 @@ class Tweener : public ISystem {
     constexpr virtual std::string get_name() override { return "Tweener"; }
 
     virtual void on_start() {};
-    virtual void on_update(const tmt::FrameData& time) { Tweening::update(time.delta_time); };
+    virtual void on_update(const tmt::FrameData& time) {
+        TMT_ZONE_SCOPED_N("Tweening");
+        Tweening::update(time.delta_time);
+    };
     virtual void on_end() { Tweening::clear(); };
 };
 
