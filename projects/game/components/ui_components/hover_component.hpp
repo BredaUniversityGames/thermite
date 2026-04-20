@@ -1,5 +1,6 @@
 #pragma once
 #include "engine/systems/gameplay/game_component.hpp"
+#include "engine/core/components/button.hpp"
 
 namespace game {
 
@@ -16,8 +17,8 @@ class HoverComponent : public tmt::GameComponent<HoverComponent> {
     tmt::Entity hover_entity = entt::null;
 
    private:
-    void disable();
-    void enable();
+    void disable(tmt::Button::Context context);
+    void enable(tmt::Button::Context context);
 };
 
 }  // namespace game

@@ -1,6 +1,7 @@
 #pragma once
 #include "engine/systems/gameplay/game_component.hpp"
 #include "engine/core/components/camera.hpp"
+#include "engine/core/components/button.hpp"
 
 namespace game {
 
@@ -22,7 +23,7 @@ class EntityControlComponent : public tmt::GameComponent<EntityControlComponent>
     tmt::Entity entity_to_enable = entt::null;
 
    private:
-    void button_functionality();
+    void button_functionality(tmt::Button::Context context);
     void disable(tmt::Entity entity_to_disable);
     void enable(tmt::Entity entity_to_enable);
 };
