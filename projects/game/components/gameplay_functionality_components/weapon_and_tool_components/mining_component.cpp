@@ -59,8 +59,6 @@ void MiningComponent::start() {
         tmt::Log::warn("No ore manager found in scene, add one if you want to use custom ore behaviour");
     }
 
-    // TODO load data only if it is there
-
     auto mining_data { tmt::engine.player_data.try_get<MiningData>(MINING_DATA) };
     if (mining_data.has_value()) {
         ray_cylinder.ray_distance = mining_data->ray_distance;

@@ -18,6 +18,6 @@ constexpr auto RIFLE_FIRE_DATA = "rifle_fire_data";
 // gravity
 constexpr auto GRAVITY_GUN_DATA = "gravity_gun_data";
 // mining
-constexpr auto MINING_DATA = "gravity_gun_data";
+constexpr auto MINING_DATA = "mining_data";
 
 }  // namespace game
