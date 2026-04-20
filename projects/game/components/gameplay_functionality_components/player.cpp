@@ -528,8 +528,15 @@ void Player::on_attach(const AttachEvent& event) {
         reset_action_time(action::TRIGGER_BARGE_MOVEMENT);
         reset_action_time(action::TRIGGER_RUN_END);
         velocity = glm::vec3 { 0.0f };
+
+        set_player_hud_enabled(false); 
+        set_barge_hud_enabled(true); 
+
     } else {
         state = PlayerState::FREEMOVING;
+
+        set_barge_hud_enabled(false); 
+        set_player_hud_enabled(true); 
     }
 }
 
@@ -562,6 +569,42 @@ void Player::reset_action_time(std::string_view action_name) {
     auto& input_map = tmt::engine.input_map;
     auto* action = input_map.get_action(std::string { action_name });
     action->time_since_being_pressed = 0.0f;
+}
+
+void Player::set_player_hud_enabled(bool enabled) {
+    auto& ecs = tmt::engine.ecs;
+
+    auto toggle = [&](tmt::Entity e) {
+        if (ecs.valid(e)) {
+            if (enabled) {
+                ecs.remove_component<tmt::Disable>(e);
+            } else {
+                ecs.add_or_get_component<tmt::Disable>(e);
+            }
+        }
+    };
+
+    /*toggle(hp_bar_max);
+    toggle(hp_bar_current);
+    toggle(energy_bar_max);
+    toggle(energy_bar_current);*/
+    toggle(player_hud);
+}
+
+void Player::set_barge_hud_enabled(bool enabled) {
+    auto& ecs = tmt::engine.ecs;
+
+    auto toggle = [&](tmt::Entity e) {
+        if (ecs.valid(e)) {
+            if (enabled) {
+                ecs.remove_component<tmt::Disable>(e);
+            } else {
+                ecs.add_or_get_component<tmt::Disable>(e);
+            }
+        }
+    };
+
+    toggle(barge_hud);
 }
 
 }  // namespace game

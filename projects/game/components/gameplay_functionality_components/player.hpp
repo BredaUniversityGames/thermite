@@ -73,6 +73,10 @@ class Player : public tmt::GameComponent<Player> {
     tmt::Entity energy_bar_max = entt::null;
     tmt::Entity energy_bar_current = entt::null;
 
+    // HUD entities
+    tmt::Entity player_hud = entt::null;
+    tmt::Entity barge_hud = entt::null;
+
     tmt::Entity boost_availability = entt::null;
 
     // Barge point
@@ -88,6 +92,9 @@ class Player : public tmt::GameComponent<Player> {
     void reset_action_time(std::string_view action_name);
     void apply_boost();
     void reset_boost(float delta_time);
+    void set_player_hud_enabled(bool enabled);
+    void set_barge_hud_enabled(bool enabled);
+
     PlayerState state = PlayerState::FREEMOVING;
     glm::vec3 velocity = { 0.0f, 0.0f, 0.0f };
     glm::vec3 input_dir { 0.0f };
@@ -109,6 +116,6 @@ TMT_OBJECT(game::RayCollisionCheck, (collision_layer, player_radius, collision_s
 TMT_OBJECT(
     game::Player, (camera_sensitivity, acceleration, deceleration, drag, max_speed, boost_max_speed_multiplier, boost_acceleration_multiplier, boost_deceleration_factor,
                    boost_cost_per_second_per_additional_speed_above_max, boost_initial_cost, boost_availability, health, energy, energy_drain_per_second, out_of_energy_time_till_death,
-                   hp_bar_max, hp_bar_current, energy_bar_max, energy_bar_current, barge, recharge_distance, ray_check)
+                   hp_bar_max, hp_bar_current, energy_bar_max, energy_bar_current, player_hus, barge_hud, barge, recharge_distance, ray_check)
 
 );
