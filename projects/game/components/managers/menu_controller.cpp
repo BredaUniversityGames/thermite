@@ -24,7 +24,7 @@ namespace game {
 void MenuController::start() {
     // Bind end run to event
     tmt::engine.ecs.get_dispatcher().sink<EndRun>().connect<&MenuController::enable_end_of_game_menu>(this);
-    player_entity = tmt::engine.ecs.view<Player>().front().entity;  // Assuming there's only one player entity in the game
+    player_entity = Player::get().entity;  // Assuming there's only one player entity in the game
 }
 
 void MenuController::update(const tmt::FrameData& time) {
@@ -72,7 +72,7 @@ void MenuController::update(const tmt::FrameData& time) {
 
 void MenuController::end() {
     tmt::engine.ecs.get_dispatcher().sink<EndRun>().disconnect<&MenuController::enable_end_of_game_menu>(this);
-    auto has_ended { tmt::engine.ecs.get_component<Player>(tmt::engine.ecs.view<Player>().front().entity).player_ended_run };
+    auto has_ended { Player::get().player_ended_run };
     if (has_ended == false) {
         // trigger death of player if forced quit
         enable_end_of_game_menu({ true });

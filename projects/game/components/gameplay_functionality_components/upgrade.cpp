@@ -11,7 +11,7 @@ void Upgrade::start() {
     // if entities are not set, try to set them automatically
     if (!tmt::engine.ecs.valid(player_entity)) {
         tmt::Log::error("Player entity was invalid, trying to get it automatically.");
-        player_entity = tmt::engine.ecs.view<Player>().front().entity;  // Assuming there's only one player entity in the game
+        player_entity = Player::get().entity;  // Assuming there's only one player entity in the game
     }
 
     auto button_component = tmt::engine.ecs.try_get_component<tmt::Button>(entity);

@@ -25,6 +25,10 @@ enum class PlayerState { FREEMOVING, ATTACHED, PAUSED };
 class Player : public tmt::GameComponent<Player> {
    public:
     using GameComponent::GameComponent;
+    Player(tmt::Entity entity);
+    ~Player();
+
+    static Player& get();
 
     static std::string_view get_name() { return "Player"; }
 
