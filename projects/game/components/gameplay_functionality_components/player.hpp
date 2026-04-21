@@ -114,6 +114,8 @@ class Player : public tmt::GameComponent<Player> {
     void reset_action_time(std::string_view action_name);
     void apply_boost();
     void reset_boost(float delta_time);
+    void set_hud_enabled(tmt::Entity hud_root, bool enabled);
+
     PlayerState state = PlayerState::FREEMOVING;
     glm::vec3 velocity = { 0.0f, 0.0f, 0.0f };
     glm::vec3 input_dir { 0.0f };
