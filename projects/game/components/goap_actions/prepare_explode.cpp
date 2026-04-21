@@ -13,7 +13,7 @@ namespace game {
 
 void PrepareExplode::on_start(tmt::Entity agent) {
     if (!tmt::engine.ecs.valid(player_entity)) {
-        player_entity = tmt::engine.ecs.view<Player>().front().entity;
+        player_entity = Player::get().entity;
     }
 
     auto& registry = tmt::engine.ecs.get_registry();
@@ -28,10 +28,6 @@ void PrepareExplode::on_start(tmt::Entity agent) {
         tmt::Log::warn("Steering system not active.");
         return;
     }
-
-    // Get the SteeringAgent component & copy global steering params into this agent
-    auto& steering_agent = registry.get<SteeringAgent>(agent);
-    steering_agent.params = &steering->overrides().params;
 
     tmt::SteeringRequest request {};
     request.mode = SteeringMode::ARRIVE;
