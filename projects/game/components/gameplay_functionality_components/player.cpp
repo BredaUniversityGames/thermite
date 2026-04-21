@@ -81,14 +81,6 @@ void setup_inputs(tmt::InputMap& input_map) {
     input_map.add_key_to_action(action::TRIGGER_RUN_END, tmt::Key::LEFT_CTRL);
 }
 
-Player::Player(tmt::Entity entity) : GameComponent(entity) {
-    tmt::Log::info("Player component created");
-}
-
-Player::~Player() {
-    tmt::Log::info("Player component destroyed");
-}
-
 Player& Player::get() {
     auto view = tmt::engine.ecs.view<Player>(entt::exclude_t {});
     if (view.empty()) {
