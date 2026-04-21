@@ -529,14 +529,14 @@ void Player::on_attach(const AttachEvent& event) {
         reset_action_time(action::TRIGGER_RUN_END);
         velocity = glm::vec3 { 0.0f };
 
-        set_player_hud_enabled(false); 
-        set_barge_hud_enabled(true); 
+        set_hud_enabled(player_hud, false);
+        set_hud_enabled(barge_hud, true);
 
     } else {
         state = PlayerState::FREEMOVING;
 
-        set_barge_hud_enabled(false); 
-        set_player_hud_enabled(true); 
+        set_hud_enabled(player_hud, true);
+        set_hud_enabled(barge_hud, false);
     }
 }
 
@@ -571,40 +571,27 @@ void Player::reset_action_time(std::string_view action_name) {
     action->time_since_being_pressed = 0.0f;
 }
 
-void Player::set_player_hud_enabled(bool enabled) {
+void Player::set_hud_enabled(tmt::Entity hud_root, bool enabled) {
     auto& ecs = tmt::engine.ecs;
 
-    auto toggle = [&](tmt::Entity e) {
-        if (ecs.valid(e)) {
-            if (enabled) {
-                ecs.remove_component<tmt::Disable>(e);
-            } else {
-                ecs.add_or_get_component<tmt::Disable>(e);
-            }
-        }
-    };
+    if (!ecs.valid(hud_root)) return;
 
-    /*toggle(hp_bar_max);
-    toggle(hp_bar_current);
-    toggle(energy_bar_max);
-    toggle(energy_bar_current);*/
-    toggle(player_hud);
-}
+    // Toggle this entity
+    if (enabled) {
+        ecs.remove_component<tmt::Disable>(hud_root);
+    } else {
+        ecs.add_or_get_component<tmt::Disable>(hud_root);
+    }
 
-void Player::set_barge_hud_enabled(bool enabled) {
-    auto& ecs = tmt::engine.ecs;
+    // Get transform
+    if (!ecs.has_component<tmt::Transform>(hud_root)) return;
 
-    auto toggle = [&](tmt::Entity e) {
-        if (ecs.valid(e)) {
-            if (enabled) {
-                ecs.remove_component<tmt::Disable>(e);
-            } else {
-                ecs.add_or_get_component<tmt::Disable>(e);
-            }
-        }
-    };
+    auto& transform = ecs.get_component<tmt::Transform>(hud_root);
 
-    toggle(barge_hud);
+    // Recurse children
+    for (auto child : transform.get_all_children()) {
+        set_hud_enabled(child, enabled);
+    }
 }
 
 }  // namespace game
