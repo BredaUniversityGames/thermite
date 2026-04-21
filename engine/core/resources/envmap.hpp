@@ -16,6 +16,8 @@ class Envmap : public FileResource {
     bool load() override;
     void unload() override;
 
+    bool load_hdr();
+
     inline static const std::set<std::string_view> SUPPORTED_FILE_EXTENSIONS { ".env" };
 
     Texture full_texture {};

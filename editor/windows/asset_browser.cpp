@@ -498,6 +498,10 @@ void AssetBrowser::location_context_menu(const IO::FileLocation& location, const
         if (ImGui::MenuItem(ICON_MS_DOWNLOAD " Import as SVH")) {
             import_asset(location, viewing_location);
         }
+    } else if (ext == ".hdr" || ext == ".exr") {
+        if (ImGui::MenuItem(ICON_MS_DOWNLOAD " Import as ENV")) {
+            import_asset(location, viewing_location);
+        }
     }
 
     ImGui::BeginDisabled(location_is_bookmarked(location));
