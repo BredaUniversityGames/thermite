@@ -1,18 +1,20 @@
-#include "level_editor.hpp"
-#include "editor/editor.hpp"
-#include "editor/windows/viewport.hpp"
-#include "engine/core/renderer/renderer.hpp"
-#include "engine/engine.hpp"
-#include "imgui.h"
-#include "engine/core/polyline.hpp"
-#include "engine/tools/random.hpp"
-#include "engine/core/logger.hpp"
-#include "engine/tools/prefab_helper.hpp"
-#include "engine/core/scenes.hpp"
-#include "level_editor_diff.hpp"
-#include "projects/game/components/world_gen/generation_component.hpp"
-#include <ImReflect.hpp>
-#include "editor/core/systems/pop_up/pop_up.hpp"
+#ifdef THERMITE_EDITOR
+
+    #include "level_editor.hpp"
+    #include "editor/editor.hpp"
+    #include "editor/windows/viewport.hpp"
+    #include "engine/core/renderer/renderer.hpp"
+    #include "engine/engine.hpp"
+    #include "imgui.h"
+    #include "engine/core/polyline.hpp"
+    #include "engine/tools/random.hpp"
+    #include "engine/core/logger.hpp"
+    #include "engine/tools/prefab_helper.hpp"
+    #include "engine/core/scenes.hpp"
+    #include "level_editor_diff.hpp"
+    #include "projects/game/components/world_gen/generation_component.hpp"
+    #include <ImReflect.hpp>
+    #include "editor/core/systems/pop_up/pop_up.hpp"
 
 namespace tmt {
 
@@ -94,8 +96,7 @@ void tmt::LevelEditor::on_inspect() {
             grouper_entity = view.front().entity;
         }
 
-        if(grouper_entity != entt::null)
-        {
+        if (grouper_entity != entt::null) {
             auto& grouper_trans = engine.ecs.get_component<Transform>(grouper_entity);
             if (grouper_trans.has_children()) {
                 for (auto ent : grouper_trans.get_children()) {
@@ -142,8 +143,7 @@ void tmt::LevelEditor::on_inspect() {
             }
         }
     }
-    if(ImGui::Button("Save level config"))
-    {
+    if (ImGui::Button("Save level config")) {
         tmt::json config_json = Serializer::serialize(level_configuration);
         IO::write_text_file({ IO::Location::PROJECT, "level/config.json" }, config_json.dump(4));
         Notification::create().severity(tmt::Severity::INFO).message("Level config saved!");
@@ -212,9 +212,8 @@ void tmt::LevelEditor::on_inspect() {
     }
 }
 
-void tmt::LevelEditor::on_editor_start() 
-{
-    auto config_str = IO::read_text_file({IO::Location::PROJECT, "level/config.json"});
+void tmt::LevelEditor::on_editor_start() {
+    auto config_str = IO::read_text_file({ IO::Location::PROJECT, "level/config.json" });
     if (config_str.empty()) {
         tmt::Log::warn(tmt::Log::Scope::ENGINE, "No level configuration present yet");
         Notification::create().severity(tmt::Severity::WARNING).message("No level configuration present yet");
@@ -348,3 +347,5 @@ std::unordered_map<glm::ivec2, Cell>& LevelEditor::get_cells() {
 }
 
 }  // namespace tmt
+
+#endif

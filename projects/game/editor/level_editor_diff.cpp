@@ -1,3 +1,5 @@
+#ifdef THERMITE_EDITOR
+
 #include "editor/editor.hpp"
 #include "level_editor_diff.hpp"
 
@@ -38,3 +40,5 @@ void tmt::LevelEditorDiff::commit(const std::string& message) {
 
     send_to_manager(std::move(*this), message);
 }
+
+#endif
