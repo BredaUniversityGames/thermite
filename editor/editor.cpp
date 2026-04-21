@@ -40,7 +40,6 @@
 #include "editor/windows/goap_debugger.hpp"
 #include "editor/windows/goap_action_editor.hpp"
 #include "editor/windows/goap_agent_editor.hpp"
-#include "editor/windows/steering_data_editor.hpp"
 #include "editor/windows/physics_layers_editor.hpp"
 #include "editor/windows/font_control.hpp"
 #include "editor/windows/profiler_tracy.hpp"
@@ -106,7 +105,6 @@ void Editor::on_engine_init(const ApplicationSpecs&) {
     systems[Mode::SCENE].add<GoapActionEditor>();
     systems[Mode::SCENE].add<GoapAgentEditor>();
     systems[Mode::SCENE].add<PhysicsLayersEditor>();
-    systems[Mode::SCENE].add<SteeringDataEditor>();
     systems[Mode::SCENE].add<FontControl>();
     systems[Mode::SCENE].add<AudioMixer>();
     systems[Mode::SCENE].add<ScenesWindow>();
@@ -265,20 +263,33 @@ void Editor::main_menu_bar() {
                 }
             }
 
+            RendererSettings& settings = engine.player_data.get<RendererSettings>("RendererSettings");
+
             /* List of shading rate labels */
             static const std::vector<std::string> SHADING_RATE_LABELS { "Full-Rate", "Half-Rate (1:2)", "Quarter-Rate (1:4)" };
+            const std::string& diff_shading_rate = SHADING_RATE_LABELS[magic_enum::enum_index<ShadingRate>(settings.diff_shading_rate).value_or(0)];
+            const std::string& spec_shading_rate = SHADING_RATE_LABELS[magic_enum::enum_index<ShadingRate>(settings.spec_shading_rate).value_or(0)];
 
-            static uint32_t shading_rate_index = 0u;
-            const std::string& shading_rate = SHADING_RATE_LABELS[shading_rate_index];
-
-            if (ImGui::BeginMenu(("DI Shading Rate (" + shading_rate + ")").c_str())) {
+            if (ImGui::BeginMenu(("Diffuse Shading Rate (" + diff_shading_rate + ")").c_str())) {
                 /* Render all shading rate options */
                 for (uint32_t i = 0u; i < SHADING_RATE_LABELS.size(); ++i) {
-                    const bool selected = engine.renderer.render_view.get_shading_rate_di() == magic_enum::enum_cast<ShadingRate>(i).value_or(ShadingRate::FULL_RATE);
+                    const bool selected = settings.diff_shading_rate == magic_enum::enum_cast<ShadingRate>(i).value_or(ShadingRate::FULL_RATE);
 
                     if (ImGui::MenuItem(SHADING_RATE_LABELS[i].c_str(), nullptr, selected)) {
-                        shading_rate_index = i;
-                        engine.renderer.render_view.set_shading_rate_di(magic_enum::enum_cast<ShadingRate>(i).value_or(ShadingRate::FULL_RATE));
+                        settings.diff_shading_rate = magic_enum::enum_cast<ShadingRate>(i).value_or(ShadingRate::FULL_RATE);
+                        engine.renderer.render_view.update_gbuffers();
+                    }
+                }
+                ImGui::EndMenu();
+            }
+            if (ImGui::BeginMenu(("Specular Shading Rate (" + spec_shading_rate + ")").c_str())) {
+                /* Render all shading rate options */
+                for (uint32_t i = 0u; i < SHADING_RATE_LABELS.size(); ++i) {
+                    const bool selected = settings.spec_shading_rate == magic_enum::enum_cast<ShadingRate>(i).value_or(ShadingRate::FULL_RATE);
+
+                    if (ImGui::MenuItem(SHADING_RATE_LABELS[i].c_str(), nullptr, selected)) {
+                        settings.spec_shading_rate = magic_enum::enum_cast<ShadingRate>(i).value_or(ShadingRate::FULL_RATE);
+                        engine.renderer.render_view.update_gbuffers();
                     }
                 }
                 ImGui::EndMenu();
@@ -292,9 +303,22 @@ void Editor::main_menu_bar() {
                 engine.renderer.enable_taa = !engine.renderer.enable_taa;
             }
 
-            RendererSettings& settings = engine.player_data.get<RendererSettings>("RendererSettings");
-            ImGui::SliderFloat("Bloom Radius", &settings.bloom_radius, 0.0f, 1.0f);
-            ImGui::SliderFloat("Bloom Threshold", &settings.bloom_threshold, 0.0f, 10.0f);
+            if (ImGui::BeginMenu("Bloom")) {
+                ImGui::SliderFloat("Radius (px)", &settings.bloom_radius, 0.0f, 1.0f);
+                ImGui::SliderFloat("Threshold (lum)", &settings.bloom_threshold, 0.0f, 10.0f);
+                ImGui::SliderFloat("Trail (%)", &settings.bloom_trail, 0.0f, 1.0f);
+
+                ImGui::EndMenu();
+            }
+
+            if (ImGui::BeginMenu("Auto Exposure")) {
+                ImGui::DragFloat("Key Value", &settings.autox_key_value, 0.01f, 0.001f, 100.0f);
+                ImGui::DragFloat("Min (lum)", &settings.autox_lum_min, 0.01f, 0.0f, 100000.0f);
+                ImGui::DragFloat("Max (lum)", &settings.autox_lum_max, 0.01f, 0.0f, 100000.0f);
+                ImGui::SliderFloat("Response", &settings.autox_response, 0.01f, 10.0f);
+
+                ImGui::EndMenu();
+            }
 
             ImGui::EndMenu();
         }
