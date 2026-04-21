@@ -251,11 +251,11 @@ void Destruction::destroy_voxel(Entity entity, glm::uvec3 pos) {
         return;
     }
 
-    // NOTE: Replace this with custom recalculate graph function for a single voxel
-    // NOTE: This might need to happen before the early out
-    // Clear the graph and generate it a new one (to slow)
-    des->clear();
-    generate_connection_graph(*des, resource->blas.get());
+    //// NOTE: Replace this with custom recalculate graph function for a single voxel
+    //// NOTE: This might need to happen before the early out
+    //// Clear the graph and generate it a new one (to slow)
+    //des->clear();
+    //generate_connection_graph(*des, resource->blas.get());
 
     // Find where the objects separate and creates new entities for each part
     std::vector<Entity> seperated_entities = find_seperations(entity, neighbors, *des);
@@ -263,6 +263,14 @@ void Destruction::destroy_voxel(Entity entity, glm::uvec3 pos) {
     // Recalculate physics data for all separate voxel bodies
     for (Entity seperate_entity : seperated_entities) {
         if (!engine.ecs.get_registry().valid(seperate_entity)) continue;
+
+        // If its the original entity
+        if (seperate_entity == entity) {
+            // Clear the graph and generate it a new one (slow)
+            des->clear();
+            generate_connection_graph(*des, resource->blas.get());
+            continue;
+        }
 
         VoxelBody& seperate_vb = engine.ecs.get_component<VoxelBody>(seperate_entity);
         VoxelRenderer& seperate_vr = engine.ecs.get_component<VoxelRenderer>(seperate_entity);
@@ -763,7 +771,6 @@ void fill_volumes(const Svt64* original_tree, const std::vector<uint64_t>& tree_
 
         transform.set_world_position(vb.position);
         transform.set_world_rotation(vb.rotation);
-        // vb.position += rotated_pos;  //((glm::vec3)offset - (glm::vec3)diff) * 0.5f * UNITS_PER_VOXEL;
 
         // Update tree size
         vr.resource->size = max;
@@ -773,12 +780,23 @@ void fill_volumes(const Svt64* original_tree, const std::vector<uint64_t>& tree_
 
     for (size_t i = 0; i < entities.size(); i++) {
         VoxelRenderer& vr = engine.ecs.get_component<VoxelRenderer>(entities[i]);
+        VoxelBody& vb = engine.ecs.get_component<VoxelBody>(entities[i]);
         Svt64* tree = vr.resource.resource->blas.get();
         // Destroy very small objects
-        if (tree->voxel_count < 4) {
+        if (tree->voxel_count <= 4) {
             engine.ecs.disable(entities[i], true);
             // engine.ecs.destroy_entity(entities[i]);
             continue;
+        } else if (tree->voxel_count > 10'000) { // Big objects should be static
+            vb.velocity = glm::vec3(0);
+            vb.angular_velocity = glm::vec3(0);
+            vb.type = VoxelBody::Type::STATIC;
+        } else {
+            vb.type = VoxelBody::Type::DYNAMIC;
+
+            // Add a small random velocity to separated pieces
+            vb.velocity += glm::vec3(((float)(rand() % 100) / 100.0f - 0.5f), ((float)(rand() % 100) / 100.0f - 0.5f), ((float)(rand() % 100) / 100.0f - 0.5f)) * 1.0f;
+            vb.angular_velocity += glm::vec3(((float)(rand() % 100) / 100.0f - 0.5f), ((float)(rand() % 100) / 100.0f - 0.5f), ((float)(rand() % 100) / 100.0f - 0.5f));
         }
     }
 }
@@ -902,28 +920,32 @@ std::vector<Entity> Destruction::find_seperations(Entity entity, const std::vect
     std::vector<Entity> entities;
     entities.resize(flood_id);
 
+    // Get name of original entity
     std::string original_name = engine.ecs.get_component<Name>(entity).name;
 
     for (size_t i = 0; i < entities.size(); i++) {
+        // Create  the entity with the name based on the original name
         std::string new_name = std::format("{}{}", original_name, i);
         entities[i] = engine.ecs.create_entity(new_name);
 
+        // Add a voxel rendrer and create an empty resource
         VoxelRenderer& new_vr = engine.ecs.add_component<VoxelRenderer>(entities[i]);
         new_vr.resource = { {}, std::make_shared<VoxelVolume>() };
         new_vr.resource.resource->size = vr.resource->size;
 
-        // Transform& new_transform = engine.ecs.add_component<Transform>(entities[i]);
-
+        // Add destructible component
         engine.ecs.add_component<Destructible>(entities[i]);
+
+        // Add voxel body as it was in the original entity (that will be used in fill_volumes())
         VoxelBody& new_vb = engine.ecs.add_component<VoxelBody>(entities[i]);
         new_vb.position = vb.position;
         new_vb.rotation = vb.rotation;
         new_vb.gravity = 0.0f;
-        // if (i == 1) vb.gravity = 9.0f;
-        new_vb.type = VoxelBody::DYNAMIC;
-        // vr.resource = { {}, std::make_shared<tmt::VoxelVolume>() };
+        new_vb.velocity = vb.velocity;
+        new_vb.angular_velocity = vb.angular_velocity;
     }
 
+    // Fill the entities with the voxels from the original entities
     fill_volumes(tree, tree_masks, entities, graph);
 
     engine.ecs.destroy_entity(entity);
