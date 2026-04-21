@@ -161,10 +161,21 @@ const SceneInfo& Scenes::get_active_scene_info() const {
     return get_scene_info(active_scene_type);
 }
 
+std::optional<SceneInfo> Scenes::try_get_active_scene_info() const {
+    return try_get_scene_info(active_scene_type);
+}
+
 const SceneInfo& Scenes::get_scene_info(const SceneIndex& type_index) const {
     if (registered_scenes.contains(type_index) == false) {
         Log::error(Log::Scope::ENGINE, "[Scenes] get_scene_info: Scene not registered");
         throw std::runtime_error("Scene not registered");
+    }
+    return registered_scenes.at(type_index);
+}
+
+std::optional<SceneInfo> Scenes::try_get_scene_info(const SceneIndex& type_index) const {
+    if (registered_scenes.contains(type_index) == false) {
+        return std::nullopt;
     }
     return registered_scenes.at(type_index);
 }

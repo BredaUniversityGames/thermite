@@ -3,13 +3,14 @@
 #include "engine/events/input.hpp"
 #include "engine/core/entity.hpp"
 #include "engine/events/game.hpp"
+#include "engine/events/scene.hpp"
 
 struct ImVec2;
 struct ImDrawList;
 
 namespace tmt {
 
-class Viewport : public IWindow<>, public OnRetrieveMouseState, public OnBlockInputRequest, public OnGameStart {
+class Viewport : public IWindow<Viewport>, public OnPostLoadScene, public OnPreUnloadScene, public OnRetrieveMouseState, public OnBlockInputRequest, public OnGameStart {
    public:
     Viewport() = default;
     ~Viewport() = default;
@@ -25,6 +26,7 @@ class Viewport : public IWindow<>, public OnRetrieveMouseState, public OnBlockIn
     void end_display() override;
 
     std::string get_title() const override;
+    std::string get_serialize_title() const override;
     int get_window_flags() const override;
     constexpr bool is_closable() const override { return false; };
     constexpr bool default_open() const override { return true; }
@@ -49,10 +51,14 @@ class Viewport : public IWindow<>, public OnRetrieveMouseState, public OnBlockIn
 
    private:
     friend class ModelViewer;
+    BEFRIEND_VISITABLE();
 
     void update_debug_camera(const tmt::FrameData& frame_data);
     void toolbar();
     void selection_logic(const ImVec2& imgui_mouse_pos, const glm::vec2& image_pos, bool toolbar_buttons_hovered);
+
+    virtual void on_pre_unload_scene() override;
+    virtual void on_post_load_scene() override;
 
     float width = -1;
     float height = -1;
@@ -70,6 +76,8 @@ class Viewport : public IWindow<>, public OnRetrieveMouseState, public OnBlockIn
     ImDrawList* viewport_drawlist = nullptr;
 
     float y_frame_padding = 0.0f;
+
+    std::unordered_map<std::string, glm::vec3> scene_camera_positions {};
 
     struct Config {
         constexpr static float SPEED_CHANGE_FACTOR = 0.5f;
@@ -99,3 +107,4 @@ class Viewport : public IWindow<>, public OnRetrieveMouseState, public OnBlockIn
 };
 
 }  // namespace tmt
+TMT_OBJECT(tmt::Viewport, (scene_camera_positions));

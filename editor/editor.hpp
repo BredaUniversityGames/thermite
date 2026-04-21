@@ -28,6 +28,8 @@ class Editor : public OnEngineInit, public OnEngineUpdate, public OnEngineFixedU
     void init();
 
     void switch_mode(Mode new_mode, const std::any& meta_data = {});
+    
+    bool is_system_part_of_current_mode(const IEditorSystemBase* system) const;
 
     Mode editor_mode { Mode::SCENE };
     std::map<Mode, std::unique_ptr<IEditorMode>> mode_handlers;
@@ -45,6 +47,7 @@ class Editor : public OnEngineInit, public OnEngineUpdate, public OnEngineFixedU
 
     void main_menu_bar();
     void main_status_bar();
+
 };
 
 /* Singleton */

@@ -50,6 +50,9 @@ std::string tmt::Viewport::get_title() const {
     const auto scene_name = engine.scenes.is_scene_loaded() ? engine.scenes.get_active_scene_info().name : "UNKNOWN";
     return scene_name + window_id;
 }
+std::string tmt::Viewport::get_serialize_title() const {
+    return "Viewport";
+}
 int tmt::Viewport::get_window_flags() const {
     int flags = ImGuiWindowFlags_MenuBar;
 
@@ -430,6 +433,30 @@ void tmt::Viewport::selection_logic(const ImVec2& imgui_mouse_pos, const glm::ve
                 }
             }
         }
+    }
+}
+
+void tmt::Viewport::on_pre_unload_scene() {
+    if (!editor.is_system_part_of_current_mode(this)) return;
+
+    const auto scene_info = engine.scenes.try_get_active_scene_info();
+    if (!scene_info.has_value()) return;
+
+    const auto& name = scene_info->name;
+    const auto& position = engine.renderer.get_debug_transform().get_world_position();
+    scene_camera_positions[name] = position;
+}
+
+void tmt::Viewport::on_post_load_scene() {
+    if (!editor.is_system_part_of_current_mode(this)) return;
+
+    const auto scene_info = engine.scenes.try_get_active_scene_info();
+    if (!scene_info.has_value()) return;
+
+    const auto& name = scene_info->name;
+    const auto& it = scene_camera_positions.find(name);
+    if (it != scene_camera_positions.end()) {
+        engine.renderer.get_debug_transform().set_world_position(it->second);
     }
 }
 

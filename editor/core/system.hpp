@@ -20,6 +20,7 @@ class IEditorSystemBase {
     virtual void on_editor_end() {};
 
     virtual std::string get_title() const = 0;
+    virtual std::string get_serialize_title() const = 0;
 
     /* Optional, defaults to reflection */
     virtual tmt::json serialize() const { return {}; }
@@ -30,6 +31,7 @@ template <typename Derived = void>
 class IEditorSystem : public IEditorSystemBase {
    public:
     virtual std::string get_title() const override { return {}; }
+    virtual std::string get_serialize_title() const override { return get_title(); }
 
     virtual tmt::json serialize() const override {
         if constexpr (std::is_same_v<Derived, void> == false) {

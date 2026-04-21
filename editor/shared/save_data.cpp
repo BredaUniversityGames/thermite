@@ -10,7 +10,8 @@ void SaveData::save() const {
     for (const auto& system : editor.systems[editor.editor_mode]) {
         json result = system->serialize();
         if (result.empty()) continue;
-        const auto name = system->get_title();
+        const auto serialize_name = system->get_serialize_title();
+        const auto name = serialize_name.empty() ? system->get_title() : serialize_name;
         j[name] = std::move(result);
     }
     IO::write_text_file(Config::FILE_LOCATION, j.dump(), true);
@@ -22,7 +23,8 @@ void SaveData::load() {
     const json j = json::parse(file_content);
     tmt::Serializer::deserialize(j, *this);
     for (const auto& system : editor.systems[editor.editor_mode]) {
-        const auto name = system->get_title();
+        const auto serialize_name = system->get_serialize_title();
+        const auto name = serialize_name.empty() ? system->get_title() : serialize_name;
         if (j.contains(name)) {
             system->deserialize(j[name]);
         }

@@ -69,7 +69,9 @@ class Scenes : public OnBlockInputRequest {
     SceneIndex get_active_scene_type() const { return active_scene_type; }
 
     const SceneInfo& get_active_scene_info() const;
+    std::optional<SceneInfo> try_get_active_scene_info() const;
     const SceneInfo& get_scene_info(const SceneIndex& type_index) const;
+    std::optional<SceneInfo> try_get_scene_info(const SceneIndex& type_index) const;
 
     const std::unordered_map<SceneIndex, SceneInfo>& get_registered_scenes() const { return registered_scenes; }
 

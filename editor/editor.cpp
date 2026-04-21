@@ -87,6 +87,11 @@ void Editor::switch_mode(Mode new_mode, const std::any& meta_data) {
     mode_handlers[editor_mode]->on_switch_to(meta_data);
 }
 
+bool Editor::is_system_part_of_current_mode(const IEditorSystemBase* system) const {
+    const auto& current_systems = systems.at(editor_mode);
+    return std::any_of(current_systems.begin(), current_systems.end(), [system](const std::unique_ptr<IEditorSystemBase>& s) { return s.get() == system; });
+}
+
 void Editor::on_engine_init(const ApplicationSpecs&) {
     Log::info("Starting Thermite Editor...");
     imgui_manager.init();

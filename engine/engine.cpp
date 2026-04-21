@@ -196,8 +196,8 @@ void Engine::end() {
     OnEngineEnd::dispatch();
 
     salvo.end();
-    ecs.clear();
     scenes.end();
+    ecs.clear();
     audio.end();  // Needs to be ended after the ecs.
     player_data.serialize();
     resources.force_unload_all();
