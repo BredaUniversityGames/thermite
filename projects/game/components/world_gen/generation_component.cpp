@@ -66,8 +66,12 @@ void GenerationComponent::start()
 
         // spawning
         for (auto& point : local_points) {
-            auto spawn_obj = cell_template.field.layer_entries[point.entry_idx].spawnable;
+            auto& spawnables = cell_template.field.layer_entries[point.entry_idx].spawnables;
             // float size_factor = cell_template.field.layer_entries[point.entry_idx].radius_factor;
+
+            int obj_idx = static_cast<int>(Random::rand_range(0.f, static_cast<float>(spawnables.size())-1.f));
+
+            const auto& spawn_obj = spawnables[obj_idx];
 
             float pitch = Random::rand_range(0.f, 360.f);
             float yaw = Random::rand_range(0.f, 360.f);
