@@ -137,8 +137,8 @@ void Renderer::update() {
     {
         render_graph.add_compute_pass("light grid clear counts pass", "lightgrid/clear_counts.cs")
             .write(scene_view.light_grid)
-            .group_size(4, 4, 4)
-            .work_size(light_grid::CASCADES_RESOLUTION, light_grid::CASCADES_RESOLUTION, light_grid::CASCADES_RESOLUTION * light_grid::MAX_CASCADES);
+            .group_size(64)
+            .work_size(light_grid::CASCADES_RESOLUTION * light_grid::CASCADES_RESOLUTION * light_grid::CASCADES_RESOLUTION * light_grid::MAX_CASCADES);
 
         render_graph.add_compute_pass("light culling pass", "lightgrid/cull.cs")
             .read(scene_view.cascades_bitmasks)
@@ -179,13 +179,12 @@ void Renderer::update() {
     }
 
     if (engine.renderer.display_mode == DisplayMode::LIGHTS) {
-        render_graph.add_compute_pass("[debug] light grid pass", "debug/light_grid.cs")
+        render_graph.add_compute_pass("[debug] lights pass", "debug/lights.cs")
             .read(render_view.render_view_buffer)
-            .read(render_view.dbuffer.image)
+            .read(scene_view.object_data)
+            .read(render_view.vbuffer.image)
             .read(scene_view.light_grid)
-            .read(scene_view.lights_data)
             .write(render_view.get_render_image())
-            .push_constants(&scene_view.light_grid_center, 0, sizeof(glm::vec3))
             .group_size(16, 8)
             .work_size(render_view.gpu_view.resolution.x, render_view.gpu_view.resolution.y);
     }

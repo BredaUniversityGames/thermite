@@ -58,17 +58,12 @@ inline float3 direct_illuminance(const float3 point, const float3 normal, const 
     /* Index light grid cascades */
     PickedLight picked_light;
     const lgrid::CascadeIndex index = lgrid::index_cascades(point - grid_center);
-
-    if (index.cascade == 0xFFFFFFFFu)
-        return illuminance;
+    if (index.cascade == uint::maxValue) return illuminance;
 
     /* Compute cell index and base, and retrieve light count */
-    const uint32_t cell_index = (index.cascade * lgrid::CASCADES_RESOLUTION3) + (index.z * lgrid::CASCADES_RESOLUTION2) + (index.y * lgrid::CASCADES_RESOLUTION) + index.x;
-    const uint32_t cell_base = cell_index * lgrid::LIGHTS_PER_CELL;
+    const uint32_t cell_base = lgrid::cell_base(index.cascade, index.x, index.y, index.z);
     const uint32_t light_count = light_grid[cell_base];
-
-    if (light_count == 0u)
-        return illuminance;
+    if (light_count == 0u) return illuminance;
 
     /* Pick light */
     const uint32_t slot = uint32_t(rand_float(seed) * light_count);

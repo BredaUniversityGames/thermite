@@ -2,15 +2,13 @@ import lightgrid;
 
 RWStructuredBuffer<uint32_t> light_grid;
 
+/* Maximum valid ID for bounds check. */
+static const uint MAX_ID = lgrid::CASCADE_RESOLUTION3 * lgrid::CASCADE_COUNT;
+
 [shader("compute")]
-[numthreads(4, 4, 4)]
-void main(int3 thread_id: SV_DispatchThreadID, int3 group_id: SV_GroupID) {
-    /* Retrieve current cascade and z coord */
-    const uint32_t cascade_index = thread_id.z >> 4u; /* cascade_index = thread_id.z / 16u */
-    const uint32_t z_coord = thread_id.z & 0b1111u;   /* z_coord = thread_id.z % 16u */
-
-    const uint32_t cell_index = (cascade_index * lgrid::CASCADES_RESOLUTION3) + (z_coord * lgrid::CASCADES_RESOLUTION2) + (thread_id.y * lgrid::CASCADES_RESOLUTION) + thread_id.x;
-    const uint32_t cell_base = cell_index * lgrid::LIGHTS_PER_CELL;
-
-    light_grid[cell_base] = 0u;
+[numthreads(64, 1, 1)]
+void main(int thread_id: SV_DispatchThreadID) {
+    /* Bounds check */
+    if (thread_id >= MAX_ID) return;
+    light_grid[thread_id * lgrid::CELL_STRIDE] = 0u;
 }

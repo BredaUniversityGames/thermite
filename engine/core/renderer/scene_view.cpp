@@ -274,31 +274,20 @@ void SceneView::update_lights(RenderGraph& render_graph, const RenderView&) {
     }
 
     /* Allocate space for the cpu flatbit array */
-    std::vector light_bitmasks = reserved<uint32_t>((size_t)(light_grid::BITMASKS_PER_CASCADE * light_grid::MAX_CASCADES));
-    for (size_t i = 0; i < light_bitmasks.capacity(); i++) {
-        light_bitmasks.emplace_back();
-    }
-    std::vector cascade_counts = reserved<uint32_t>((size_t)light_grid::MAX_CASCADES);
+    std::vector light_bitmasks = std::vector<uint32_t>((size_t)(light_grid::BITMASKS_PER_CASCADE * light_grid::MAX_CASCADES));
 
     for (size_t cascade = 0; cascade < light_grid::MAX_CASCADES; cascade++) {
-        uint32_t& light_counter = cascade_counts.emplace_back();
-
         /* compute cascade half extent (in world space units) */
         const uint32_t cascade_half_extent = (light_grid::FIRST_CASCADE_BOUNDS << cascade) / 2u;
         light_grid_center = update_light_grid_center ? glm::vec3(engine.renderer.render_view.gpu_view.origin) : light_grid_center;
-        const glm::vec3 cascade_max = { light_grid_center.x + cascade_half_extent, light_grid_center.y + cascade_half_extent, light_grid_center.z + cascade_half_extent };
-        const glm::vec3 cascade_min = { light_grid_center.x - cascade_half_extent, light_grid_center.y - cascade_half_extent, light_grid_center.z - cascade_half_extent };
-
-        const Aabb cascade_aabb = Aabb(cascade_min, cascade_max);
+        const Aabb cascade_aabb = Aabb(light_grid_center - (float)cascade_half_extent, light_grid_center + (float)cascade_half_extent);
 
         /* compute inner aabb (the area covered by the previous cascade) */
         Aabb inner_aabb {};
         const bool has_inner = cascade > 0;
         if (has_inner) {
             const uint32_t inner_half_extent = (light_grid::FIRST_CASCADE_BOUNDS << (cascade - 1)) / 2u;
-            const glm::vec3 inner_max = { light_grid_center.x + inner_half_extent, light_grid_center.y + inner_half_extent, light_grid_center.z + inner_half_extent };
-            const glm::vec3 inner_min = { light_grid_center.x - inner_half_extent, light_grid_center.y - inner_half_extent, light_grid_center.z - inner_half_extent };
-            inner_aabb = Aabb(inner_min, inner_max);
+            inner_aabb = Aabb(light_grid_center - (float)inner_half_extent, light_grid_center + (float)inner_half_extent);
         }
 
         //engine.polyline.use_color({ 1.0f, 0.0f, 0.0f, 1.0f });
@@ -311,9 +300,7 @@ void SceneView::update_lights(RenderGraph& render_graph, const RenderView&) {
             /* TODO: Might be a good idea to use OBBs or Spheres instead of AABB */
             /* compute light aabb */
             const UniversalLightDesc& light = gpu_lights[light_index];
-            const glm::vec3 light_max = light.origin + light.culling_radius;
-            const glm::vec3 light_min = light.origin - light.culling_radius;
-            const Aabb light_aabb = Aabb(light_min, light_max);
+            const Aabb light_aabb = Aabb(light.origin - light.culling_radius, light.origin + light.culling_radius);
 
             //engine.polyline.use_color({ 1.0f, 1.0f, 0.0f, 1.0f });
             //engine.polyline.draw_aabb(light_min, light_max);
@@ -328,7 +315,6 @@ void SceneView::update_lights(RenderGraph& render_graph, const RenderView&) {
                 }
 
                 bitmask |= 1 << bit_index;
-                light_counter++;
             }
         }
 
