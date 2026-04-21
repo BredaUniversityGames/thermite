@@ -2,6 +2,7 @@
 #include "engine/systems/gameplay/game_component.hpp"
 #include "engine/core/components/text_renderer.hpp"
 #include "projects/game/data_headers/wallet.hpp"
+#include "engine/core/components/button.hpp"
 
 namespace game {
 
@@ -21,14 +22,10 @@ class SellOreComponent : public tmt::GameComponent<SellOreComponent> {
     float speed_up_factor = 1.2f;
 
    private:
-    OreProperties* ore_properties_component = nullptr;
-    Wallet* wallet_component = nullptr;
-    OreProperties::MiningOre* ore_entry = nullptr;
     void sell_ore();
-    void down_toggle();
-    void up_toggle();
+    void down_toggle(tmt::Button::Context context);
+    void up_toggle(tmt::Button::Context context);
     bool entity_check() const;
-    bool component_check() const;
     float timer = 0.0f;
     float current_cooldown = initial_hold_cooldown;
     bool is_held = false;
