@@ -63,7 +63,7 @@ void SceneView::init() {
 
     /* Fine light grid */
     light_grid = bank.create_buffer("Fine Light Grid", BufferUsage::TransferDst | BufferUsage::Storage, light_grid::LIGHT_GRID_BUFFER_SIZE, sizeof(uint32_t))
-                          .expect("failed to initialize the fine light grid buffer");
+                     .expect("failed to initialize the fine light grid buffer");
 
     /* Subscribe to EnTT */
     engine.ecs.get_registry().on_destroy<VoxelRenderer>().connect<&SceneView::on_renderer_destroyed>(this);
@@ -290,8 +290,8 @@ void SceneView::update_lights(RenderGraph& render_graph, const RenderView&) {
             inner_aabb = Aabb(light_grid_center - (float)inner_half_extent, light_grid_center + (float)inner_half_extent);
         }
 
-        //engine.polyline.use_color({ 1.0f, 0.0f, 0.0f, 1.0f });
-        //engine.polyline.draw_aabb(cascade_min, cascade_max);
+        // engine.polyline.use_color({ 1.0f, 0.0f, 0.0f, 1.0f });
+        // engine.polyline.draw_aabb(cascade_min, cascade_max);
 
         for (size_t light_index = 0; light_index < gpu_lights.size(); light_index++) {
             const uint32_t bitmask_index = (uint32_t)light_index >> 5;   /* light_index / 32 */
@@ -302,8 +302,8 @@ void SceneView::update_lights(RenderGraph& render_graph, const RenderView&) {
             const UniversalLightDesc& light = gpu_lights[light_index];
             const Aabb light_aabb = Aabb(light.origin - light.culling_radius, light.origin + light.culling_radius);
 
-            //engine.polyline.use_color({ 1.0f, 1.0f, 0.0f, 1.0f });
-            //engine.polyline.draw_aabb(light_min, light_max);
+            // engine.polyline.use_color({ 1.0f, 1.0f, 0.0f, 1.0f });
+            // engine.polyline.draw_aabb(light_min, light_max);
 
             /* get bitmask (32 bitmasks per cascade) */
             uint32_t& bitmask = light_bitmasks[cascade * light_grid::BITMASKS_PER_CASCADE + bitmask_index];
