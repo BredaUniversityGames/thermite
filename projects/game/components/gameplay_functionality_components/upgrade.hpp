@@ -1,6 +1,8 @@
 #pragma once
 #include "player.hpp"
 #include "projects/game/data_headers/wallet.hpp"
+#include "engine/core/components/button.hpp"
+
 namespace game {
 
 enum class UpgradeType : uint8_t { MAX_HEALTH = 0u, MAX_BATTERY = 1u, MAX_SPEED = 2u, ACCELERATION = 3u, PRIMARY_ATK_SPEED = 4u, SECONDARY_ATK_SPEED = 5u, GUN_DMG = 6u, BARGE_MAX_FUEL = 7u };
@@ -23,7 +25,7 @@ class Upgrade : public tmt::GameComponent<Upgrade> {
     uint64_t dollar_cost = 1.0f;
     std::vector<std::tuple<OreProperties::OreResources, uint64_t>> new_upgrade_costs = { { OreProperties::OreResources::NONE, 1.0f } };  // An initial cost
     bool apply_upgrade();
-    void button_apply();
+    void button_apply(tmt::Button::Context context);
 
    private:
 };

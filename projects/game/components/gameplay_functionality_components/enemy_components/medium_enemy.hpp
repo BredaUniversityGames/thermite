@@ -2,6 +2,7 @@
 #include "engine/systems/gameplay/game_component.hpp"
 #include "engine/core/entity.hpp"
 #include "../../../editor/all.hpp"
+#include "projects/game/data_headers/events.hpp"
 
 struct Missile;
 
@@ -18,11 +19,18 @@ class MediumEnemy : public tmt::GameComponent<MediumEnemy> {
     void end() override;
 
     void kite_player() const;
+    void die();
+
+    void on_game_paused(const game::GamePausedEvent&);
+    void on_game_unpaused(const game::GameUnpausedEvent&);
+
+    bool paused = false;
 
     tmt::Entity player = entt::null;
     tmt::Entity walkable_asteroid = entt::null;
     tmt::Entity missile_origin = entt::null;
     tmt::Entity laser_origin = entt::null;
+    // tmt::Entity core = entt::null;
     glm::vec3 velocity = glm::vec3(0, 0, 0);
     glm::quat rotation = glm::quat(1, 0, 0, 0);
     float rotation_speed = 2.5f;

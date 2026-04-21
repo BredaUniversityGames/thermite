@@ -1,7 +1,6 @@
 #include "upgrade.hpp"
 
 #include "fuel.hpp"
-#include "engine/core/components/button.hpp"
 #include "projects/game/components/gameplay_functionality_components/weapon_and_tool_components/mining_component.hpp"
 #include "player.hpp"
 #include "projects/game/components/gameplay_functionality_components/weapon_and_tool_components/weapon.hpp"
@@ -31,7 +30,9 @@ void Upgrade::end() {
     }
 }
 
-void Upgrade::button_apply() {
+void Upgrade::button_apply(tmt::Button::Context context) {
+    if (context.disabled) return;
+
     if (apply_upgrade()) {
         tmt::engine.ecs.disable(entity);
         tmt::Log::info("Applied upgrade.");
@@ -59,20 +60,20 @@ bool Upgrade::apply_upgrade() {
     }
 
     for (auto& [resource, cost] : new_upgrade_costs) {
-        if (wallet_component->resource_counts[resource] < cost) {
+        if (wallet_component->currencies.resource_counts[resource] < cost) {
             tmt::Log::info("Unable to buy upgrade, insufficient {}.", magic_enum::enum_name(resource));
             return false;
         }
     }
-    if (wallet_component->dollars <= dollar_cost) {
-        tmt::Log::info("Unable to buy upgrade, insufficient {} dollars", wallet_component->dollars);
+    if (wallet_component->currencies.dollars <= dollar_cost) {
+        tmt::Log::info("Unable to buy upgrade, insufficient {} dollars", wallet_component->currencies.dollars);
         return false;
     }
 
     for (auto& [resource, cost] : new_upgrade_costs) {
-        wallet_component->resource_counts[resource] -= cost;
+        wallet_component->currencies.resource_counts[resource] -= cost;
     }
-    wallet_component->dollars -= dollar_cost;
+    wallet_component->currencies.dollars -= dollar_cost;
 
     auto player_component = tmt::engine.ecs.try_get_component<Player>(upgrade_target);
     auto weapon_component = tmt::engine.ecs.try_get_component<Weapon>(upgrade_target);
