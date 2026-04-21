@@ -142,6 +142,11 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     tmt::engine.component_registry.register_component<game::SellOreComponent>();
     tmt::engine.component_registry.register_component<game::HoverComponent>();
 
+   #if THERMITE_EDITOR
+    tmt::editor.systems[tmt::Editor::Mode::SCENE].add<tmt::LevelEditor>();
+   #endif
+
+
     /* Register Goap Components */
     {
         if (!tmt::engine.ecs.systems.try_get<tmt::Goap>()) {

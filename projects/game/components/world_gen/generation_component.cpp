@@ -5,7 +5,6 @@
 #include "engine/core/polyline.hpp"
 #include "engine/core/ecs.hpp"
 #include "engine/core/io.hpp"
-#include "engine/core/components/cell_grouper_tag.hpp"
 
 namespace game {
 
@@ -19,15 +18,7 @@ void GenerationComponent::clear_children() {
 
 void GenerationComponent::start() 
 {
-    auto view = tmt::engine.ecs.view<tmt::LevelCellGrouperTag>();
-    tmt::Entity grouper_entity;
-    if (view.begin() == view.end()) {
-        grouper_entity = tmt::engine.ecs.create_entity("Level Cell Objects");
-        tmt::engine.ecs.add_component<tmt::LevelCellGrouperTag>(grouper_entity);
-    } else {
-        grouper_entity = view.front();
-    }
-    auto& grouper_trans = tmt::engine.ecs.get_component<tmt::Transform>(grouper_entity);
+    auto& grouper_trans = tmt::engine.ecs.get_component<tmt::Transform>(entity);
 
     if (grouper_trans.has_children()) {
         for (auto ent : grouper_trans.get_children()) {

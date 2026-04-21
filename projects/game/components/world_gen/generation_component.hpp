@@ -1,7 +1,5 @@
 #pragma once
-#include "engine/core/resources/voxel_volume.hpp"
 #include "engine/systems/gameplay/level_config.hpp"
-
 #include "engine/systems/gameplay/game_component.hpp"
 namespace game {
 

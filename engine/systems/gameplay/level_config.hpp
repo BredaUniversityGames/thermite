@@ -1,8 +1,7 @@
 #pragma once
+#include <glm/glm.hpp>
 #include "engine/tools/poisson_disc_walk.hpp"
 #include "engine/tools/types/color.hpp"
-
-#include <glm/glm.hpp>
 #include <functional>
 
 template <glm::qualifier Q>

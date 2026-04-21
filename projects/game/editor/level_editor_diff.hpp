@@ -1,6 +1,6 @@
 #pragma once
 #include "editor/core/systems/undo_redo/undo_redo_manager.hpp"
-#include "editor/windows/level_editor.hpp"
+#include "level_editor.hpp"
 #include "engine/systems/gameplay/level_config.hpp"
 
 namespace tmt {

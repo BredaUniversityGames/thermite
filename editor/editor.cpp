@@ -61,7 +61,6 @@
 #include "editor/windows/editor_settings.hpp"
 #include "editor/windows/rig_state_controller.hpp"
 #include "editor/windows/ui.hpp"
-#include "editor/windows/level_editor.hpp"
 #include "editor/windows/player_data.hpp"
 #include "editor/windows/voxel_editor_lights.hpp"
 
@@ -121,7 +120,6 @@ void Editor::on_engine_init(const ApplicationSpecs&) {
     systems[Mode::SCENE].add<EditorSettingsWindow>();
     systems[Mode::SCENE].add<BuildPackager>();
     systems[Mode::SCENE].add<UIEditor>();
-    systems[Mode::SCENE].add<LevelEditor>();
     systems[Mode::SCENE].add<PlayerDataWindow>();
     systems[Mode::SCENE].add<RigStateController>();
 
