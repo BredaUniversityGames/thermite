@@ -14,8 +14,6 @@
 
 #include "engine/systems/gameplay/game_component.hpp"
 
-#include "engine/tools/tweening.hpp"
-
 class Game : public tmt::Application {
    public:
     Game(const tmt::ApplicationSpecs& specs) : Application(specs) {}
@@ -79,8 +77,6 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     return std::make_unique<Game>(specs);
 }
 
-static float test_float = 0.0f;
-
 void MainScene::on_start() {
     /* Load the throwable box model */
     const tmt::ResourceRef box_scene = tmt::engine.resources.load_resource<tmt::VoxelScene>({ tmt::IO::Location::PROJECT, "box-10.vengi" });
@@ -91,28 +87,6 @@ void MainScene::on_update(const tmt::FrameData& time) {
     /* Update the time elapsed and cooldown timer */
     time_passed += time.delta_time;
     cooldown -= time.delta_time;
-
-    // tmt::Log::info("{}", test_float);
-
-    // move_tween.stop();    /* We can stop it */
-    // move_tween.start();   /* We can start it again */
-    // move_tween.restart(); /* Or restart it from the beginning (also starts it if it was stopped) */
-    // move_tween.finish();  /* Fast forward to the end */
-
-    /* input controls for tween testing */
-    if (tmt::engine.input.is_keyboard_button_just_pressed(tmt::Key::SPACE)) {
-        if (move_tween.is_paused()) {
-            move_tween.start();
-        } else {
-            move_tween.stop();
-        }
-    }
-    if (tmt::engine.input.is_keyboard_button_just_pressed(tmt::Key::R)) {
-        move_tween.restart();
-    }
-    if (tmt::engine.input.is_keyboard_button_just_pressed(tmt::Key::F)) {
-        move_tween.finish();
-    }
 
     // Use to test the logging please
     /*  static int i = 0;

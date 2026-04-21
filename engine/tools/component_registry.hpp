@@ -20,7 +20,7 @@ template <typename... Components>
 struct is_component_registry<ComponentRegistry<Components...>> : std::true_type {};
 
 template <typename T>
-inline constexpr bool is_component_registry_v = is_component_registry<T>::value;
+inline constexpr bool IS_COMPONENT_REGISTRY_V = is_component_registry<T>::value;
 
 template <typename... all_components>
 class ComponentRegistry {
@@ -40,7 +40,7 @@ class ComponentRegistry {
             return true;
         }
         /* If not, check if any nested registry contains T */
-        constexpr bool NESTED_RESULT = ((is_component_registry_v<all_components> && all_components::template contains<T>()) || ...);
+        constexpr bool NESTED_RESULT = ((IS_COMPONENT_REGISTRY_V<all_components> && all_components::template contains<T>()) || ...);
         return NESTED_RESULT;
     }
 
@@ -48,7 +48,7 @@ class ComponentRegistry {
     static void for_each(Func&& func) {
         if constexpr (Index < COUNT) {
             using ComponentType = get<Index>;
-            constexpr bool IS_REGISTRY = is_component_registry_v<ComponentType>;
+            constexpr bool IS_REGISTRY = IS_COMPONENT_REGISTRY_V<ComponentType>;
             if constexpr (IS_REGISTRY) {
                 /* If it's a nested registry, recurse into it */
                 ComponentType::for_each(std::forward<Func>(func));

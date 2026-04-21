@@ -42,12 +42,12 @@ using TweenMixinsInspect = ComponentRegistry<
 class Tweener : public ISystem {
     constexpr virtual std::string get_name() override { return "Tweener"; }
 
-    virtual void on_start() {};
-    virtual void on_update(const tmt::FrameData& time) {
+    virtual void on_start() override {};
+    virtual void on_update(const tmt::FrameData& time) override {
         TMT_ZONE_SCOPED_N("Tweening");
         Tweening::update(time.delta_time);
     };
-    virtual void on_end() { Tweening::clear(); };
+    virtual void on_end() override { Tweening::clear(); };
 };
 
 }  // namespace tmt

@@ -66,7 +66,7 @@ enum class LoopMode : uint8_t {
  * See ``ITween<T>`` Default specialization for an example of how to implement a tween specialization
  */
 template <typename T, typename... Args>
-class ITween;
+struct ITween;
 
 namespace Detail {
 

@@ -1,11 +1,13 @@
 #pragma once
 #include <variant>
 
+#include "engine/engine.hpp"
+#include "engine/core/ecs.hpp"
 #include "engine/core/components/transform.hpp"
 #include "engine/tools/tweening.hpp"
 #include "engine/core/reflection.hpp"
 
-namespace tmt::TransformTweening {
+namespace tmt::transform_tweening {
 
 enum class Space {
     LOCAL,
@@ -81,16 +83,16 @@ struct Scale : public Tweening::Detail::FromToMixin<Scale<ITween>, glm::vec3>,  
     Scale(ITween* parent) : Tweening::Detail::SubTweenMixin<ITween>(parent) {}
 };
 
-}  // namespace tmt::TransformTweening
+}  // namespace tmt::transform_tweening
 
-TMT_OBJECT_TEMPLATE((typename Derived), tmt::TransformTweening::WorldOrLocalMixin, (Derived), space);
-TMT_OBJECT_TEMPLATE((typename Derived, typename T), tmt::TransformTweening::OffsetMixin, (Derived, T), offset_value);
+TMT_OBJECT_TEMPLATE((typename Derived), tmt::transform_tweening::WorldOrLocalMixin, (Derived), space);
+TMT_OBJECT_TEMPLATE((typename Derived, typename T), tmt::transform_tweening::OffsetMixin, (Derived, T), offset_value);
 
 template <>
 struct Tweening::ITween<tmt::Entity, tmt::Transform> : public Tweening::Detail::TweenBase<ITween<tmt::Entity, tmt::Transform>> {
-    using Move = tmt::TransformTweening::Move<ITween>;
-    using Rotate = tmt::TransformTweening::Rotate<ITween>;
-    using Scale = tmt::TransformTweening::Scale<ITween>;
+    using Move = tmt::transform_tweening::Move<ITween>;
+    using Rotate = tmt::transform_tweening::Rotate<ITween>;
+    using Scale = tmt::transform_tweening::Scale<ITween>;
 
    public:
     ITween() = default;
@@ -112,7 +114,7 @@ struct Tweening::ITween<tmt::Entity, tmt::Transform> : public Tweening::Detail::
                 [&](auto& sub) {
                     using SubType = std::decay_t<decltype(sub)>;
                     const bool has_offset = sub.has_offset();
-                    const bool is_local = (sub.get_space() == tmt::TransformTweening::Space::LOCAL);
+                    const bool is_local = (sub.get_space() == tmt::transform_tweening::Space::LOCAL);
 
                     if constexpr (std::is_same_v<SubType, Move>) {
                         if (!sub.has_start()) sub.from(is_local ? transform.get_local_position() : transform.get_world_position());
@@ -141,7 +143,7 @@ struct Tweening::ITween<tmt::Entity, tmt::Transform> : public Tweening::Detail::
         std::visit(
             [&](auto& sub) {
                 using SubType = std::decay_t<decltype(sub)>;
-                const bool is_local = (sub.get_space() == tmt::TransformTweening::Space::LOCAL);
+                const bool is_local = (sub.get_space() == tmt::transform_tweening::Space::LOCAL);
                 if constexpr (std::is_same_v<SubType, Move>) {
                     if (is_local) {
                         transform.set_local_position(Tweening::Detail::lerp(sub.get_start(), sub.get_end(), t));
