@@ -2,6 +2,7 @@
 #include "engine/systems/gameplay/game_component.hpp"
 #include "engine/core/components/camera.hpp"
 #include "../../data_headers/scene_list.hpp"
+#include "engine/core/components/button.hpp"
 
 namespace game {
 
@@ -19,7 +20,7 @@ class SceneSwitchComponent : public tmt::GameComponent<SceneSwitchComponent> {
 
     TargetSceneEnum target_scene = TargetSceneEnum::MAIN_MENU;
 
-    void switch_scene();
+    void switch_scene(tmt::Button::Context context);
 
    private:
 };
