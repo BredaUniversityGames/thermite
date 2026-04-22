@@ -3,6 +3,7 @@
 #include "engine/core/ecs.hpp"
 // todo: make projects not have to use realtive paths
 #include "../components/gameplay_functionality_components/enemy_components/medium_enemy.hpp"
+#include "../components/gameplay_functionality_components/player.hpp"
 #include "engine/core/components/camera.hpp"
 #include "engine/core/polyline.hpp"
 

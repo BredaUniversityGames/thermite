@@ -4,6 +4,7 @@
 #include "engine/systems/ai/navigation/nav_mesh.hpp"
 // todo: make projects not have to use realtive paths
 #include "../components/gameplay_functionality_components/enemy_components/medium_enemy.hpp"
+#include "../components/gameplay_functionality_components/player.hpp"
 #include "engine/core/components/camera.hpp"
 
 #include "engine/core/polyline.hpp"
@@ -14,6 +15,7 @@
 #include "engine/core/renderer/renderer.hpp"
 #include "engine/systems/physics/physics_system.hpp"
 #include "engine/systems/physics/components/voxel_body.hpp"
+
 
 void FireLaser::cleanup(tmt::Entity enemy_entity) {
     game::MediumEnemy& enemy = tmt::engine.ecs.get_component<game::MediumEnemy>(enemy_entity);
