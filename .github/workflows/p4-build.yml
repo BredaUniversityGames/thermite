@@ -9,42 +9,13 @@
 # Date: February 3, 2026
 # Model: Claude Opus 4.5
 # =============================================================================
-# =============================================================================
-# Release Workflow
-# =============================================================================
-# Generated with AI assistance
-# First prompt: "how to make a release with versioning and all that is needed
-#               for pushing to a branch via CI CD github. I already have a
-#               project on main setup. I only want the github action for
-#               making a new release on push"
-# Date: February 3, 2026
-# Model: Claude Opus 4.5
-# -----------------------------------------------------------------------------
-# Extended with AI assistance to also produce a Steam zip
-# First prompt: "I want to upload my build to steam via a bat file, right now
-#                I have my developer packaging from github releases, now I need
-#                to upload a different version with Release instead of release
-#                info for steam. I would also like to have a way to delete all
-#                and get the steam version isstead of developer packaging one.
-#                I want to do this by having a zip file with the steam release
-#                via the CI"
-# Date: April 22, 2026
-# Model: Claude Opus 4.7
-# -----------------------------------------------------------------------------
-# Produces ONE zip per release: thermite-Developer-Packaging.zip
-# Contains:
-#   - thermite.exe           (editor build, Developer-Packaging preset)
-#   - thermite-steam.exe     (Release-Game build, renamed for clarity)
-#   - fmod DLLs, engine/assets, editor/assets, crash diagnostics
-# The Steam upload is assembled separately by a local bat file that
-# picks out thermite-steam.exe + engine assets + P4 project assets.
-# =============================================================================
+
 name: release
 on:
   workflow_dispatch:
     inputs:
       skip_editor:
-        description: 'Skip the editor build (Steam zip only, much faster)'
+        description: 'Skip the editor build (faster; produces a zip with just game.exe)'
         type: boolean
         default: false
       test_mode:
@@ -142,20 +113,11 @@ jobs:
         shell: pwsh
         run: cmake --build --preset Release-Game --target game -j
 
-      # Rename the release exe from game.exe to thermite-steam.exe.
-      # The editor build is already renamed to thermite.exe by CMake's
-      # OUTPUT_NAME rule, so there's no file-level conflict, but having
-      # a second ambiguously-named game.exe next to it is confusing.
-      # The rename makes it obvious which exe Steam is supposed to ship.
-      - name: Rename Release-Game exe for clarity
-        shell: pwsh
-        run: Rename-Item -Path build/Release-Game/bin/game/game.exe -NewName thermite-steam.exe
-
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: game-build
-          path: build/Release-Game/bin/game/thermite-steam.exe
+          path: build/Release-Game/bin/game/game.exe
 
   release:
     name: Create Release
