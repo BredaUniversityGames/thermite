@@ -34,11 +34,6 @@ RWTexture2D<float3> lbuffer;
 [[vk::push_constant]]
 float3 grid_center;
 
-struct PickedLight {
-    uint32_t i;    /* Selected light index. */
-    float rcp_pdf; /* Reciprocal probability distribution function. */
-};
-
 inline float3 direct_illuminance(const float3 point, const float3 normal, const float3 view_dir, const Material mat, inout uint seed, const float2 noise) {
     float3 illuminance = mat.albedo() * mat.emission();
 
@@ -55,44 +50,18 @@ inline float3 direct_illuminance(const float3 point, const float3 normal, const 
         }
     }
 
-    /* Index light grid cascades */
-    PickedLight picked_light;
-    const lgrid::CascadeIndex index = lgrid::index_cascades(point - grid_center);
-    if (index.cascade == uint::maxValue) return illuminance;
-
-    /* Compute cell index and base, and retrieve light count */
-    const uint32_t cell_base = lgrid::cell_base(index.cascade, index.x, index.y, index.z);
-    const uint32_t light_count = light_grid[cell_base];
-    if (light_count == 0u) return illuminance;
-
-    /* Pick light */
-    const uint32_t slot = uint32_t(rand_float(seed) * light_count);
-    const uint32_t light_index = light_grid[cell_base + 1u + slot];
-    picked_light = PickedLight(light_index, (float)light_count);
-
-    /* Fetch a light to sample */
-    const Light light = lights[picked_light.i];
+    /* Pick a light using the cascaded light grid */
+    const lgrid::PickedLight picked_light = lgrid::pick_light(light_grid, point - grid_center, seed);
+    if (picked_light.index == uint::maxValue) return illuminance;
+    const Light light = lights[picked_light.index];
 
     /* Generate a sample for the light we picked */
     const LightSample light_sample = sample_light(point, light, noise);
     const float t = occlusion_bvh2(tlas_nodes, object_indices, objects, custom_ray(point, light_sample.dir), light_sample.tmax);
-    if (t < light_sample.tmax)
-        return illuminance;
+    if (t < light_sample.tmax) return illuminance;
 
-    /* Distance based attenuation */
-    const float relative_dist = saturate(light_sample.tmax / light.attenuation_radius);
-    const float inverse_dist = 1.0f - relative_dist * relative_dist;
-    float attenuation = (inverse_dist * inverse_dist) / (1.0f + 4.0f * relative_dist);
-
-    /* Spot based attenuation */
-    if (light.type == LightType::SPOT_LIGHT) {
-        const float3 light_dir = normalize(point - light.origin);
-        const float cos_theta = dot(light_dir, light.direction);
-        const float cos_inner = lerp(light.cos_beam_angle, 1.0f, light.spot_blend * 2.0f);
-        const float spot = saturate((cos_theta - light.cos_beam_angle) / (cos_inner - light.cos_beam_angle));
-        attenuation *= spot * spot;
-    }
-
+    /* Light attenuation */
+    const float attenuation = attenuate_light(point, light, light_sample);
     /* Correct BRDF is 1.0f / PI however this cancels out with the PDF being 1.0f / PI, so it's just 1.0f */
     const float brdf = 1.0f;
 

@@ -1,5 +1,7 @@
 module lightgrid;
 
+import math;
+
 namespace lgrid {
 
 /* Size of one cell in words. */
@@ -46,7 +48,7 @@ public [ForceInline] uint cell_base(const uint cascade, const uint x, const uint
     return ((cascade * CASCADE_RESOLUTION3) + (z * CASCADE_RESOLUTION2) + (y * CASCADE_RESOLUTION) + x) * CELL_STRIDE;
 }
 
-/* Get the number of lights overlapping a given world-space point. */
+/* Get the number of lights overlapping a given view-space point. */
 public [ForceInline] uint light_occupancy(const StructuredBuffer<uint32_t> cascades, const float3 pos) {
     /* Find the cascade index */
     const CascadeIndex i = index_cascades(pos);
@@ -54,6 +56,28 @@ public [ForceInline] uint light_occupancy(const StructuredBuffer<uint32_t> casca
 
     /* Calculate the cell index and read the count from the cascades */
     return cascades[cell_base(i.cascade, i.x, i.y, i.z)];
+}
+
+public struct PickedLight {
+    public uint index;    /* Selected light index. */
+    public float rcp_pdf; /* Reciprocal probability distribution function. */
+};
+
+/* Pick a light overlapping a given view-space point. */
+public [ForceInline] PickedLight pick_light(const StructuredBuffer<uint32_t> cascades, const float3 pos, inout uint seed) {
+    /* Index light grid cascades */
+    const lgrid::CascadeIndex index = lgrid::index_cascades(pos);
+    if (index.cascade == uint::maxValue) return PickedLight(uint::maxValue, BIG_F32);
+
+    /* Compute cell index and base, and retrieve light count */
+    const uint32_t cell_base = lgrid::cell_base(index.cascade, index.x, index.y, index.z);
+    const uint32_t light_count = cascades[cell_base];
+    if (light_count == 0u) return PickedLight(uint::maxValue, BIG_F32);
+
+    /* Pick a random light uniformly */
+    const uint32_t slot = uint32_t(rand_float(seed) * light_count);
+    const uint32_t light_index = cascades[cell_base + 1u + slot];
+    return PickedLight(light_index, (float)light_count);
 }
 
 }

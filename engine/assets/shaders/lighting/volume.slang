@@ -1,5 +1,7 @@
 module volume;
 
+namespace iv {
+
 /* WARNING: Not all parts of the code actually respond correctly to the constants below! */
 
 /* Width of a probe in rays/texels, probes are 2D. */
@@ -93,4 +95,6 @@ public [ForceInline] float3 froxel_uvw(const float3 pos, const float4x4 world_to
     const float z_linear = far_z * near_z / (ndc.z * (near_z - far_z) + far_z);
     const float w = log(z_linear / near_z) / log(far_z / near_z);
     return float3(u, v, w);
+}
+
 }

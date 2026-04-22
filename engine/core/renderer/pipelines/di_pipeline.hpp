@@ -26,8 +26,10 @@ class DiPipeline {
     void deinit(GPUAdapter& gpu);
 
     /* Intermediate probe texture */
-    Texture probe_texture {};
-    Image probe_image {};
+    Texture probe_lum_texture {};
+    Image probe_lum_image {};
+    Texture probe_dir_texture {};
+    Image probe_dir_image {};
 
     bool cache_init = false;
 };
