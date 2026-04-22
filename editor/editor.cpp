@@ -40,7 +40,6 @@
 #include "editor/windows/goap_debugger.hpp"
 #include "editor/windows/goap_action_editor.hpp"
 #include "editor/windows/goap_agent_editor.hpp"
-#include "editor/windows/steering_data_editor.hpp"
 #include "editor/windows/physics_layers_editor.hpp"
 #include "editor/windows/font_control.hpp"
 #include "editor/windows/profiler_tracy.hpp"
@@ -106,7 +105,6 @@ void Editor::on_engine_init(const ApplicationSpecs&) {
     systems[Mode::SCENE].add<GoapActionEditor>();
     systems[Mode::SCENE].add<GoapAgentEditor>();
     systems[Mode::SCENE].add<PhysicsLayersEditor>();
-    systems[Mode::SCENE].add<SteeringDataEditor>();
     systems[Mode::SCENE].add<FontControl>();
     systems[Mode::SCENE].add<AudioMixer>();
     systems[Mode::SCENE].add<ScenesWindow>();
@@ -244,7 +242,7 @@ void Editor::main_menu_bar() {
         if (ImGui::BeginMenu("Renderer")) {
             /* List of display mode labels */
             static const std::vector<std::string> DISPLAY_MODE_LABELS { "Default", "Steps (0..128)", "Visibility", "Depth (0..100)", "Normals",
-                                                                        "Albedo",  "Illuminance",    "Cache",      "Motion Vectors" };
+                                                                        "Albedo",  "Illuminance",    "Cache",      "Motion Vectors", "Lights" };
 
             const uint32_t display_mode_index = (uint32_t)magic_enum::enum_index<DisplayMode>(engine.renderer.display_mode).value_or(0u);
             const std::string& display_mode = DISPLAY_MODE_LABELS[display_mode_index];

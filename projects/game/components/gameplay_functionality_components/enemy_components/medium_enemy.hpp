@@ -21,6 +21,7 @@ class MediumEnemy : public tmt::GameComponent<MediumEnemy> {
     void end() override;
 
     void kite_player() const;
+    void die();
 
     void on_game_paused(const game::GamePausedEvent&);
     void on_game_unpaused(const game::GameUnpausedEvent&);

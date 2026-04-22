@@ -7,10 +7,19 @@
 
 namespace game {
 
+struct PlayerMovement {
+    float acceleration = 20.0f;
+    float max_speed = 10.0f;
+    float boost_max_speed_multiplier = 2.0f;
+};
 struct PlayerStat {
     float max_value = 100.f;
     float value = 100.f;
     float increase_multiplier = 1.0f;
+};
+struct PlayerRecharge {
+    float recharge_distance = 20.0f;
+    float out_of_energy_time_till_death = 10.0f;
 };
 struct RayCollisionCheck {
     LayerMask collision_layer {};
@@ -26,8 +35,11 @@ class Player : public tmt::GameComponent<Player> {
    public:
     using GameComponent::GameComponent;
 
+    static Player& get();
+
     static std::string_view get_name() { return "Player"; }
 
+    void load_upgrades();
     void start() override;
     void look_camera();
     tmt::Hit check_collision() const;
@@ -73,6 +85,10 @@ class Player : public tmt::GameComponent<Player> {
     tmt::Entity energy_bar_max = entt::null;
     tmt::Entity energy_bar_current = entt::null;
 
+    // HUD entities
+    tmt::Entity player_hud = entt::null;
+    tmt::Entity barge_hud = entt::null;
+
     tmt::Entity boost_availability = entt::null;
 
     // Barge point
@@ -88,6 +104,8 @@ class Player : public tmt::GameComponent<Player> {
     void reset_action_time(std::string_view action_name);
     void apply_boost();
     void reset_boost(float delta_time);
+    void set_hud_enabled(tmt::Entity hud_root, bool enabled);
+
     PlayerState state = PlayerState::FREEMOVING;
     glm::vec3 velocity = { 0.0f, 0.0f, 0.0f };
     glm::vec3 input_dir { 0.0f };
@@ -105,10 +123,12 @@ class Player : public tmt::GameComponent<Player> {
 
 }  // namespace game
 TMT_OBJECT(game::PlayerStat, (max_value, value, increase_multiplier));
+TMT_OBJECT(game::PlayerMovement, (acceleration, max_speed, boost_max_speed_multiplier));
+TMT_OBJECT(game::PlayerRecharge, (recharge_distance, out_of_energy_time_till_death));
 TMT_OBJECT(game::RayCollisionCheck, (collision_layer, player_radius, collision_speed_damping, camera_near_distance));
 TMT_OBJECT(
     game::Player, (camera_sensitivity, acceleration, deceleration, drag, max_speed, boost_max_speed_multiplier, boost_acceleration_multiplier, boost_deceleration_factor,
                    boost_cost_per_second_per_additional_speed_above_max, boost_initial_cost, boost_availability, health, energy, energy_drain_per_second, out_of_energy_time_till_death,
-                   hp_bar_max, hp_bar_current, energy_bar_max, energy_bar_current, barge, recharge_distance, ray_check)
+                   hp_bar_max, hp_bar_current, energy_bar_max, energy_bar_current, player_hud, barge_hud, barge, recharge_distance, ray_check)
 
 );
