@@ -90,8 +90,8 @@ void tmt::LevelEditor::on_inspect() {
         auto view = engine.ecs.view<game::GenerationComponent>();
         tmt::Entity grouper_entity = entt::null;
         if (view.begin() == view.end()) {
-            tmt::Log::warn("Generation grouper entity not found, save the configuration to make it again.");
-            Notification::create().severity(tmt::Severity::WARNING).message("Please generate a level config first!");
+            tmt::Entity grouper_entity = engine.ecs.create_entity("Level Cell Objects");
+            engine.ecs.add_component<game::GenerationComponent>(grouper_entity);
         } else {
             grouper_entity = view.front().entity;
         }
