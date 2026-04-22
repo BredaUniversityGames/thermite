@@ -4,6 +4,10 @@
 #include "engine/systems/gameplay/game_component.hpp"
 #include "engine/shared/aabb.hpp"
 #include "projects/game/data_headers/layer_mask.hpp"
+
+#include "engine/tools/tweening.hpp"
+#include "engine/tools/tweening/transform.hpp"
+
 namespace game {
 
 class CollisionTrigger : public tmt::GameComponent<CollisionTrigger> {

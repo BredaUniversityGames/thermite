@@ -81,6 +81,33 @@ void setup_inputs(tmt::InputMap& input_map) {
     input_map.add_key_to_action(action::TRIGGER_RUN_END, tmt::Key::LEFT_CTRL);
 }
 
+Player& Player::get() {
+    auto view = tmt::engine.ecs.view<Player>(entt::exclude_t {});
+    if (view.empty()) {
+        tmt::Log::error("[CRITICAL] No Player component found in the scene");
+        throw std::runtime_error("No player entity found");
+    }
+    return view.front();
+}
+
+void Player::load_upgrades() {
+    // TODO only load if there is data there
+    health = tmt::engine.player_data.get<PlayerStat>(PLAYER_HEALTH_DATA, health);
+    energy = tmt::engine.player_data.get<PlayerStat>(PLAYER_ENERGY_DATA, energy);
+
+    auto movement_data = tmt::engine.player_data.try_get<PlayerMovement>(PLAYER_MOVEMENT_DATA);
+    if (movement_data.has_value()) {
+        acceleration = movement_data->acceleration;
+        max_speed = movement_data->max_speed;
+        boost_max_speed_multiplier = movement_data->boost_max_speed_multiplier;
+    }
+
+    auto recharge_data = tmt::engine.player_data.try_get<PlayerRecharge>(PLAYER_RECHARGE_DATA);
+    if (recharge_data.has_value()) {
+        out_of_energy_time_till_death = recharge_data->out_of_energy_time_till_death;
+        recharge_distance = recharge_data->recharge_distance;
+    }
+}
 void Player::start() {
     auto& resources { tmt::engine.player_data.get<Currencies>(PERSISTENT_RESOURCES) };
     // initialize wallet
@@ -99,6 +126,7 @@ void Player::start() {
         setup_inputs(tmt::engine.input_map);
         tmt::engine.ecs.get_dispatcher().sink<AttachEvent>().connect<&Player::on_attach>(this);
     }
+    load_upgrades();
 }
 void Player::end() {
     tmt::engine.ecs.get_dispatcher().sink<AttachEvent>().disconnect<&Player::on_attach>(this);
@@ -528,8 +556,15 @@ void Player::on_attach(const AttachEvent& event) {
         reset_action_time(action::TRIGGER_BARGE_MOVEMENT);
         reset_action_time(action::TRIGGER_RUN_END);
         velocity = glm::vec3 { 0.0f };
+
+        set_hud_enabled(player_hud, false);
+        set_hud_enabled(barge_hud, true);
+
     } else {
         state = PlayerState::FREEMOVING;
+
+        set_hud_enabled(player_hud, true);
+        set_hud_enabled(barge_hud, false);
     }
 }
 
@@ -562,6 +597,29 @@ void Player::reset_action_time(std::string_view action_name) {
     auto& input_map = tmt::engine.input_map;
     auto* action = input_map.get_action(std::string { action_name });
     action->time_since_being_pressed = 0.0f;
+}
+
+void Player::set_hud_enabled(tmt::Entity hud_root, bool enabled) {
+    auto& ecs = tmt::engine.ecs;
+
+    if (!ecs.valid(hud_root)) return;
+
+    // Toggle this entity
+    if (enabled) {
+        ecs.remove_component<tmt::Disable>(hud_root);
+    } else {
+        ecs.add_or_get_component<tmt::Disable>(hud_root);
+    }
+
+    // Get transform
+    if (!ecs.has_component<tmt::Transform>(hud_root)) return;
+
+    auto& transform = ecs.get_component<tmt::Transform>(hud_root);
+
+    // Recurse children
+    for (auto child : transform.get_all_children()) {
+        set_hud_enabled(child, enabled);
+    }
 }
 
 }  // namespace game

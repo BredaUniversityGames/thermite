@@ -26,6 +26,7 @@
 
 // Enemies
 #include "components/gameplay_functionality_components/enemy_components/medium_enemy.hpp"
+#include "components/gameplay_functionality_components/enemy_components/small_enemy.hpp"
 
 // Animation
 #include "components/animation_player.hpp"
@@ -52,13 +53,13 @@
 #include "components/ui_components/quit_game_component.hpp"
 #include "components/ui_components/wallet_ui_link_component.hpp"
 #include "components/ui_components/sell_ore_component.hpp"
-#include "components/ui_components/hover_component.hpp"
 // Managers
 #include "components/managers/ore_manager.hpp"
 #include "components/managers/menu_controller.hpp"
 // Development tools
 #include "components/development_tools/collision_trigger.hpp"
 #include "components/development_tools/attach_component.hpp"
+#include "components/development_tools/transform_tween.hpp";
 // World generation
 #include "components/world_gen/asteroid_field_component.hpp"
 #include "components/world_gen/random_prefab_spawner.hpp"
@@ -75,12 +76,31 @@
 #include "components/goap_actions/prepare_explode.hpp"
 #include "components/goap_actions/explode.hpp"
 #include "components/goap_actions/sensor_system.hpp"
+#include "data_headers/save_entries.hpp"
+#include "engine/tools/player_data.hpp"
+
+#include <bitset>
 
 class Game : public tmt::Application {
    public:
     Game(const tmt::ApplicationSpecs& specs) : Application(specs) {}
 
-    void on_start() override {};
+    void on_start() override {
+        //// player
+        // tmt::engine.player_data.get<game::PlayerStat>(game::PLAYER_HEALTH_DATA);
+        // tmt::engine.player_data.get<game::PlayerStat>(game::PLAYER_ENERGY_DATA);
+        // tmt::engine.player_data.get<game::PlayerMovement>(game::PLAYER_MOVEMENT_DATA);
+        // tmt::engine.player_data.get<game::PlayerRecharge>(game::PLAYER_RECHARGE_DATA);
+
+        //// barge
+
+        // tmt::engine.player_data.get<game::FuelData>(game::FUEL_DATA);
+        // tmt::engine.player_data.get<float>(game::BARGE_MOVE_DATA);
+
+        //// resources
+        // tmt::engine.player_data.get<game::Currencies>(game::PERSISTENT_RESOURCES);
+        //// tmt::engine.player_data.get<std::b>>(game::UPGRADES);
+    }
     void on_update(const tmt::FrameData& time) override {};
     void on_end() override {};
 };
@@ -103,6 +123,7 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     tmt::engine.scenes.register_scene<DanielTestScene>();
     tmt::engine.scenes.register_scene<MikaTestScene>();
     tmt::engine.scenes.register_scene<LoekTestScene>();
+    tmt::engine.scenes.register_scene<AnneTestScene>();
     tmt::engine.scenes.register_scene<WeaponMotionTest>();
     tmt::engine.scenes.register_scene<BogdanulTestScene>();
 
@@ -126,10 +147,12 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     tmt::engine.component_registry.register_component<game::MenuController>();
     tmt::engine.component_registry.register_component<game::FuelComponent>();
     tmt::engine.component_registry.register_component<game::MediumEnemy>();
+    tmt::engine.component_registry.register_component<game::SmallEnemy>();
     tmt::engine.component_registry.register_component<game::OreProperties>();
     tmt::engine.component_registry.register_component<game::OreManager>();
     tmt::engine.component_registry.register_component<game::Explosion>();
     tmt::engine.component_registry.register_component<game::DestroyTimed>();
+    tmt::engine.component_registry.register_component<game::TransformTween>();
     /* Register World Generation Components */
     tmt::engine.component_registry.register_component<game::AsteroidFieldComponent>();
     tmt::engine.component_registry.register_component<game::RandomPrefabSpawner>();
@@ -140,7 +163,6 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     tmt::engine.component_registry.register_component<game::QuitGameComponent>();
     tmt::engine.component_registry.register_component<game::WalletUiLink>();
     tmt::engine.component_registry.register_component<game::SellOreComponent>();
-    tmt::engine.component_registry.register_component<game::HoverComponent>();
 
     /* Register Goap Components */
     {
