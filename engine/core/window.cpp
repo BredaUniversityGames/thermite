@@ -39,20 +39,17 @@ void Window::init(const ApplicationSpecs&) {
 
 void Window::fullscreen_window(bool value) {
     if (value == fullscreen) return;
-    const Uint32 fullscreen_flag = SDL_WINDOW_FULLSCREEN;
-    if (value) {
-        if (SDL_SetWindowFullscreen(window, fullscreen_flag) != 0) {
-            Log::error(Log::Scope::ENGINE, "Couldn't set fullscreen mode: %s", SDL_GetError());
-        } else {
-            fullscreen = true;
-        }
-    } else {
-        if (SDL_SetWindowFullscreen(window, 0) != 0) {
-            Log::error(Log::Scope::ENGINE, "Couldn't exit fullscreen mode: %s", SDL_GetError());
-        } else {
-            fullscreen = false;
-        }
+    if (!SDL_SetWindowFullscreen(window, value)) {
+        Log::error(Log::Scope::ENGINE, "Couldn't set fullscreen mode: %s", SDL_GetError());
+        return;
     }
+
+    fullscreen = value;
+    SDL_SyncWindow(window);
+}
+
+void Window::toggle_fullscreen() {
+    fullscreen_window(!fullscreen);
 }
 
 void* Window::get_window_handle() const {
