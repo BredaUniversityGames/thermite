@@ -28,7 +28,8 @@ void tmt::Viewport::on_editor_update(const tmt::FrameData& frame_data) {
     update_debug_camera(frame_data);
 
     const bool f11_down = ImGui::IsKeyPressed(ImGuiKey_F11, false);
-    if (f11_down) {
+    const bool is_playing = engine.game_controller.is_running();
+    if (f11_down && is_playing == false) {
         engine.window.toggle_fullscreen();
     }
 }
