@@ -438,8 +438,7 @@ void Player::update(const tmt::FrameData& time) {
         was_above_threshold = (energy_percent > low_energy_threshold);
 
         // Second wanrning
-        if (use_second_warning)
-        {
+        if (use_second_warning) {
             if (was_above_threshold_2 && energy_percent <= low_energy_threshold_2) {
                 set_hud_enabled(low_energy_hud, true);
                 low_energy_timer_2 = low_energy_duration_2;
