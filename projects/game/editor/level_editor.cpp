@@ -29,6 +29,7 @@ void tmt::LevelEditor::on_inspect() {
     ImGui::Checkbox("Enable level editing", &enable_editing);
     ImGui::Checkbox("Mirror X", &mirror_x);
     ImGui::DragFloat("Cell size", &level_configuration.cell_size);
+    ImGui::DragFloat("Cell margin", &level_configuration.cell_margin, 1.f, 0.f, level_configuration.cell_size * 0.5f);
     ImGui::DragFloat3("Global field offset", &level_configuration.global_field_offset[0]);
 
     static const char* brush_previews[static_cast<int>(Brush::MAX)] = { "PLACE", "REMOVE", "REPLACE" };
@@ -86,11 +87,19 @@ void tmt::LevelEditor::on_inspect() {
         }
     }
 
-    if (ImGui::Button("Generate preview level")) {
+    if (ImGui::Button("Generate preview level (not persistent)")) {
         auto view = engine.ecs.view<game::GenerationComponent>();
         tmt::Entity grouper_entity = entt::null;
+
+        auto config_str = IO::read_text_file({ IO::Location::PROJECT, "level/config.json" });
+        if (config_str.empty()) {
+            tmt::Log::warn(tmt::Log::Scope::ENGINE, "No level configuration present yet, please generate one via Level Editor");
+            Notification::create().severity(tmt::Severity::WARNING).message("No level configuration present yet, please generate one via Level Editor");
+            return;
+        }
+
         if (view.begin() == view.end()) {
-            tmt::Entity grouper_entity = engine.ecs.create_entity("Level Cell Objects");
+            grouper_entity = engine.ecs.create_entity("Level Cell Objects");
             engine.ecs.add_component<game::GenerationComponent>(grouper_entity);
         } else {
             grouper_entity = view.front().entity;
@@ -111,7 +120,8 @@ void tmt::LevelEditor::on_inspect() {
             for (auto& [coord, cell] : cells) {
                 auto& cell_template = pickable_cell_templates[cell.template_index];
 
-                cell_template.field.size = { level_configuration.cell_size, cell_template.height, level_configuration.cell_size };
+                cell_template.field.size = { level_configuration.cell_size - level_configuration.cell_margin * 2.f, cell_template.height,
+                                             level_configuration.cell_size - level_configuration.cell_margin * 2.f };
 
                 if (cell_template.random_seed)
                     Random::set_seed(Random::irand());
@@ -138,7 +148,8 @@ void tmt::LevelEditor::on_inspect() {
 
                     auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(instantiated);
 
-                    glm::vec3 min = cell_pos - glm::vec3(level_configuration.cell_size * 0.5f, cell_template.height * 0.5f, level_configuration.cell_size * 0.5f);
+                    glm::vec3 min = cell_pos - glm::vec3(level_configuration.cell_size * 0.5f, cell_template.height * 0.5f, level_configuration.cell_size * 0.5f) +
+                                    glm::vec3(level_configuration.cell_margin, 0.f, level_configuration.cell_margin);
 
                     transform.set_local_position(min + point.pos);
                     transform.set_local_rotation(glm::vec3(pitch, yaw, roll));
@@ -331,6 +342,11 @@ void LevelEditor::draw_cell(ImDrawList* draw_list, glm::vec3 pos, const Cell& ce
     engine.polyline.use_color(edge_color);
     engine.polyline.use_line_width(5.f);
     engine.polyline.draw_aabb(pos - glm::vec3(extent, height_extent, extent), { pos + glm::vec3(extent, height_extent, extent) });
+    engine.polyline.use_line_width(1.f);
+    engine.polyline.draw_aabb(
+        pos - glm::vec3(extent - level_configuration.cell_margin, height_extent, extent - level_configuration.cell_margin),
+        { pos + glm::vec3(extent - level_configuration.cell_margin, height_extent, extent - level_configuration.cell_margin) }
+    );
 }
 
 glm::vec3 LevelEditor::coord_to_world(glm::ivec2 coord) {

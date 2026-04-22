@@ -52,7 +52,8 @@ void GenerationComponent::start() {
     for (auto& [coord, cell] : cells) {
         auto& cell_template = pickable_cell_templates[cell.template_index];
 
-        cell_template.field.size = { level_configuration.cell_size, cell_template.height, level_configuration.cell_size };
+        cell_template.field.size = { level_configuration.cell_size - level_configuration.cell_margin * 2.f, cell_template.height,
+                                     level_configuration.cell_size - level_configuration.cell_margin * 2.f };
 
         if (cell_template.random_seed)
             Random::set_seed(Random::irand());
@@ -65,10 +66,9 @@ void GenerationComponent::start() {
 
         // spawning
         for (auto& point : local_points) {
-            auto& spawnables = cell_template.field.layer_entries[point.entry_idx].spawnables;
+            auto spawnables = cell_template.field.layer_entries[point.entry_idx].spawnables;
             // float size_factor = cell_template.field.layer_entries[point.entry_idx].radius_factor;
-
-            int obj_idx = static_cast<int>(Random::rand_range(0.f, static_cast<float>(spawnables.size()) - 1.f));
+            int obj_idx = static_cast<int>(Random::rand_range(0.f, static_cast<float>(spawnables.size()) - 0.0001f));
 
             const auto& spawn_obj = spawnables[obj_idx];
 
@@ -80,7 +80,8 @@ void GenerationComponent::start() {
 
             auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(instantiated);
 
-            glm::vec3 min = cell_pos - glm::vec3(level_configuration.cell_size * 0.5f, cell_template.height * 0.5f, level_configuration.cell_size * 0.5f);
+            glm::vec3 min = cell_pos - glm::vec3(level_configuration.cell_size * 0.5f, cell_template.height * 0.5f, level_configuration.cell_size * 0.5f) +
+                            glm::vec3(level_configuration.cell_margin, 0.f, level_configuration.cell_margin);
 
             transform.set_local_position(min + point.pos);
             transform.set_local_rotation(glm::vec3(pitch, yaw, roll));
