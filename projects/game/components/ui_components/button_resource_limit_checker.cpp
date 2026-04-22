@@ -4,8 +4,8 @@
 #include "projects/game/components/gameplay_functionality_components/player.hpp"
 
 namespace game {
-void ResourceLimitChecker::start() {
 
+void ResourceLimitChecker::start() {
     if (wallet_entity == entt::null) {
         tmt::Log::warn("Wallet entity not set for resource limit checker on entity: {} Will attempt to default to player.", entity);
         wallet_entity = Player::get().entity;
@@ -14,7 +14,7 @@ void ResourceLimitChecker::start() {
             return;
         }
     }
-    
+
     auto* wallet_component = tmt::engine.ecs.try_get_component<Wallet>(wallet_entity);
     if (!wallet_component) {
         tmt::Log::error("Wallet entity set for resource checker has no wallet component: {}", wallet_entity);
@@ -30,14 +30,13 @@ void ResourceLimitChecker::start() {
     if (!resource_check()) {
         button_component->disabled = true;
         tmt::Log::warn("Button on entity: {} was disabled due to insufficient resources!", entity);
-    } 
+    }
     button_component->on_click.add(this, &ResourceLimitChecker::button_click);
 }
 
 void ResourceLimitChecker::update(const tmt::FrameData& time) {
     interval_counter += time.delta_time;
     if (interval_counter > check_interval) {
-
         auto* button_component = tmt::engine.ecs.try_get_component<tmt::Button>(entity);
         interval_counter = 0.0f;
         if (!button_component) return;
@@ -103,7 +102,7 @@ void ResourceLimitChecker::flash_ui() {
     }
     if (!tmt::engine.ecs.valid(flashing_ui_entity)) {
         tmt::Log::warn("Flashing entity set for resource limit component on entity: {}, is invalid", entity);
-        return;    
+        return;
     }
 
     if (tmt::engine.ecs.is_enabled(flashing_ui_entity)) {
@@ -126,4 +125,4 @@ void ResourceLimitChecker::stop_flash_ui() {
     is_flashing = false;
 }
 
-}
+}  // namespace game
