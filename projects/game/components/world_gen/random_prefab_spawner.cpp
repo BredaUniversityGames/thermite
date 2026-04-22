@@ -23,7 +23,7 @@ void game::RandomPrefabSpawner::update(const tmt::FrameData& time) {}
 
 void game::RandomPrefabSpawner::end() {}
 
-void game::RandomPrefabSpawner::spawn_prefab(const tmt::ResourceRef<tmt::Json>& prefab) const {
+void game::RandomPrefabSpawner::spawn_prefab(const tmt::ResourceRef<tmt::Json>& prefab) {
     auto instantiated = tmt::PrefabHelper::instantiate_prefab(prefab->file_location);
     auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(instantiated);
     auto& transform_parent = tmt::engine.ecs.get_component<tmt::Transform>(entity);
@@ -33,5 +33,6 @@ void game::RandomPrefabSpawner::spawn_prefab(const tmt::ResourceRef<tmt::Json>& 
     }
     transform.set_world_position(transform_parent.get_world_position());
 
-    // transform.set_world_rotation(transform_parent.get_world_rotation());
+    // add instantiated entity to list with chosen prefab
+    spawned_entities.insert({instantiated, prefab});
 }
