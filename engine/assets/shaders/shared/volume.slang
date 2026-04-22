@@ -57,9 +57,9 @@ public [ForceInline] int2 sample_texel(const int3 probe_id, const int cascade_in
     );
 }
 
-/* Get the top-left texel belonging to the probe at a given world-space position. */
+/* Get the top-left texel belonging to the probe at a given view-space position. */
 public [ForceInline] int2 probe_uv(const float3 pos) {
-    const int3 probe_id = int3(pos / (CASCADE_EXTENT / CASCADE_WIDTH));
+    const int3 probe_id = clamp(int3(pos / (CASCADE_EXTENT / CASCADE_WIDTH)) + (CASCADE_WIDTH / 2), 0, CASCADE_WIDTH);
     return sample_texel(probe_id, 0);
 }
 

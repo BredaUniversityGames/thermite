@@ -252,20 +252,23 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
 
     const glm::uvec2 render_res = render_view.gpu_view.resolution;
     RasterNode& billboard_pass = render_graph.add_raster_pass("billboard pass", "vfx/billboard.vx", "vfx/billboard.px")
-                                .topology(Topology::TriangleList)
-                                .attribute(AttrFormat::XY32_SFloat)  // Position
-                                .attribute(AttrFormat::XY32_SFloat)  // UVs
-                                .read(render_view.render_view_buffer, ShaderStages::Vertex | ShaderStages::Pixel)
-                                .read(particle_buffer, ShaderStages::Vertex)
-                                .read(alive_list, ShaderStages::Vertex)
-                                .read(render_view.blue_noise1d->image, ShaderStages::Pixel)
-                                .read(point_sampler, ShaderStages::Pixel | ShaderStages::Vertex)
-                                .depth_stencil(render_view.dbuffer.image, true, true)
-                                .load_op_depth(LoadOp::Load)
-                                .load_op_color(LoadOp::Load)
-                                .attach(render_view.lbuffer.image)
-                                .attach(render_view.mbuffer.image)
-                                .raster_extent(render_res.x, render_res.y);
+        .topology(Topology::TriangleList)
+        .attribute(AttrFormat::XY32_SFloat)  // Position
+        .attribute(AttrFormat::XY32_SFloat)  // UVs
+        .read(render_view.render_view_buffer, ShaderStages::Vertex | ShaderStages::Pixel)
+        .read(particle_buffer, ShaderStages::Vertex)
+        .read(alive_list, ShaderStages::Vertex)
+        .read(render_view.blue_noise1d->image, ShaderStages::Pixel)
+        .read(point_sampler, ShaderStages::Pixel | ShaderStages::Vertex)
+        /* Illuminance volume buffer */
+        .read(render_view.probe_image, ShaderStages::Pixel)
+        .read(engine.renderer.linear_sampler, ShaderStages::Pixel)
+        .depth_stencil(render_view.dbuffer.image, true, true)
+        .load_op_depth(LoadOp::Load)
+        .load_op_color(LoadOp::Load)
+        .attach(render_view.lbuffer.image)
+        .attach(render_view.mbuffer.image)
+        .raster_extent(render_res.x, render_res.y);
     billboard_pass.draw_indirect(billboard_vertices, instanced_draw_args_buffer);
 
     /* clang-format on */
