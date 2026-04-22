@@ -15,9 +15,6 @@ on:
   push:
     branches:
       - main
-  # pull_request:
-  #   branches:
-  #     - main
 jobs:
   version:
     name: Get Version
@@ -35,23 +32,18 @@ jobs:
           # Get current latest version
           CURRENT_VERSION=$(gh release view --json tagName -q .tagName)
           echo "📌 Current version: $CURRENT_VERSION"
-          
-          # Remove 'v' prefix if it exists
+
           VERSION_NUMBER=${CURRENT_VERSION#v}
-          echo "Version number: $VERSION_NUMBER"
-          
-          # Split version into major.minor.patch
           IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION_NUMBER"
-          echo "Current - Major: $MAJOR, Minor: $MINOR, Patch: $PATCH"
-          
-          # Increment patch version
+
           NEW_PATCH=$((PATCH + 1))
           NEW_VERSION="v$MAJOR.$MINOR.$NEW_PATCH"
-          
+
           echo "🚀 New version will be: $NEW_VERSION"
           echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
         env:
           GH_TOKEN: ${{ github.token }}
+
   build-editor:
     name: Build Developer-Packaging
     needs: version
@@ -92,15 +84,24 @@ jobs:
       - name: Build
         shell: pwsh
         run: cmake --build --preset Release-Game --target game -j
-      - name: Upload artifact
+
+
+      - name: Upload artifact (exe only, for developer zip)
         uses: actions/upload-artifact@v4
         with:
           name: game-build
           path: build/Release-Game/bin/game/*.exe
 
+
+      - name: Upload artifact (full folder, for Steam zip)
+        uses: actions/upload-artifact@v4
+        with:
+          name: steam-build
+          path: build/Release-Game/bin/game/*
+
   release:
     name: Create Release
-    needs: [version, build-editor, build-game]
+    needs: [ version, build-editor, build-game ]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -109,6 +110,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      # --- Developer zip (unchanged behavior) ---
       - name: Download editor artifact
         uses: actions/download-artifact@v4
         with:
@@ -119,10 +122,30 @@ jobs:
         with:
           name: game-build
           path: release-package
-      - name: Package build
+
+      # --- Steam zip (NEW): downloaded into its OWN folder so it
+      # stays separate from the editor files ---
+      - name: Download Steam artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: steam-build
+          path: steam-package
+
+      - name: Package builds
         run: |
+          # Developer zip: editor + release exe combined
           cd release-package
           zip -r ../thermite-Developer-Packaging.zip .
+          cd ..
+
+          # Steam zip: just the Release-Game output, clean
+          cd steam-package
+          zip -r ../thermite-Steam.zip .
+          cd ..
+
+          # Quick sanity check in the logs
+          ls -lh thermite-*.zip
+
       - name: Generate changelog
         id: changelog
         run: |
@@ -136,6 +159,7 @@ jobs:
           echo "changes<<EOF" >> $GITHUB_OUTPUT
           echo "$CHANGES" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
+
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
@@ -144,6 +168,9 @@ jobs:
           body: |
             ## What's Changed
             ${{ steps.changelog.outputs.changes }}
-          files: thermite-Developer-Packaging.zip
+          # Both zips get attached to the same release.
+          files: |
+            thermite-Developer-Packaging.zip
+            thermite-Steam.zip
           draft: false
           prerelease: false
