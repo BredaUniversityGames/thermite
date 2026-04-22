@@ -26,6 +26,7 @@
 
 // Enemies
 #include "components/gameplay_functionality_components/enemy_components/medium_enemy.hpp"
+#include "components/gameplay_functionality_components/enemy_components/missile.hpp"
 #include "components/gameplay_functionality_components/enemy_components/small_enemy.hpp"
 
 // Animation
@@ -61,7 +62,7 @@
 #include "components/development_tools/attach_component.hpp"
 #include "components/development_tools/transform_tween.hpp";
 // World generation
-#include "components/world_gen/asteroid_field_component.hpp"
+#include "components/world_gen/generation_component.hpp"
 #include "components/world_gen/random_prefab_spawner.hpp"
 // Data Headers
 #include "data_headers/scene_list.hpp"
@@ -147,6 +148,7 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     tmt::engine.component_registry.register_component<game::MenuController>();
     tmt::engine.component_registry.register_component<game::FuelComponent>();
     tmt::engine.component_registry.register_component<game::MediumEnemy>();
+    tmt::engine.component_registry.register_component<game::Missile>();
     tmt::engine.component_registry.register_component<game::SmallEnemy>();
     tmt::engine.component_registry.register_component<game::OreProperties>();
     tmt::engine.component_registry.register_component<game::OreManager>();
@@ -154,7 +156,7 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     tmt::engine.component_registry.register_component<game::DestroyTimed>();
     tmt::engine.component_registry.register_component<game::TransformTween>();
     /* Register World Generation Components */
-    tmt::engine.component_registry.register_component<game::AsteroidFieldComponent>();
+    tmt::engine.component_registry.register_component<game::GenerationComponent>();
     tmt::engine.component_registry.register_component<game::RandomPrefabSpawner>();
     /* Register Game UI Components */
     tmt::engine.component_registry.register_component<game::SceneSwitchComponent>();
@@ -163,6 +165,10 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     tmt::engine.component_registry.register_component<game::QuitGameComponent>();
     tmt::engine.component_registry.register_component<game::WalletUiLink>();
     tmt::engine.component_registry.register_component<game::SellOreComponent>();
+
+#if THERMITE_EDITOR
+    tmt::editor.systems[tmt::Editor::Mode::SCENE].add<tmt::LevelEditor>();
+#endif
 
     /* Register Goap Components */
     {
