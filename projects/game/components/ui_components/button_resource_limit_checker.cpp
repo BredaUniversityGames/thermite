@@ -29,8 +29,8 @@ void ResourceLimitChecker::start() {
 
     if (!resource_check()) {
         button_component->disabled = true;
-    }
-
+        tmt::Log::warn("Button on entity: {} was disabled due to insufficient resources!", entity);
+    } 
     button_component->on_click.add(this, &ResourceLimitChecker::button_click);
 }
 
@@ -80,7 +80,7 @@ bool ResourceLimitChecker::resource_check() {
     for (auto& resource_pair : resources) {
         count += static_cast<int>(resource_pair.second);
     }
-    if (count < wallet_component->total_resource_limit) return false;
+    if (count > wallet_component->total_resource_limit) return false;
     return true;
 }
 
