@@ -9,11 +9,11 @@ namespace game {
 struct Currencies {
     uint64_t dollars = 0u;
 
-    std::unordered_map<OreProperties::OreResources, float> resource_counts = { { OreProperties::OreResources::NONE, std::numeric_limits<float>().max() },
-                                                                               { OreProperties::OreResources::SCRAP, std::numeric_limits<float>().max() },
-                                                                               { OreProperties::OreResources::COPPER, std::numeric_limits<float>().max() },
-                                                                               { OreProperties::OreResources::THERMITE, std::numeric_limits<float>().max() },
-                                                                               { OreProperties::OreResources::TITANIUM, std::numeric_limits<float>().max() } };
+    std::unordered_map<OreProperties::OreResources, float> resource_counts = { { OreProperties::OreResources::NONE, 0.0f },
+                                                                               { OreProperties::OreResources::SCRAP, 0.0f },
+                                                                               { OreProperties::OreResources::COPPER, 0.0f },
+                                                                               { OreProperties::OreResources::THERMITE, 0.0f },
+                                                                               { OreProperties::OreResources::TITANIUM, 0.0f } };
 
     Currencies& operator+=(const Currencies& other) {
         dollars += other.dollars;
