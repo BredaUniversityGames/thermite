@@ -28,7 +28,6 @@ static void apply_multiplier(Currencies& currencies, float multiplier) {
     for (auto& [ore, count] : currencies.resource_counts) {
         count = count * multiplier;
     }
-    currencies.dollars = static_cast<uint64_t>(static_cast<float>(currencies.dollars) * multiplier);
 }
 
 static void save_resources_on_run(float multiplier_percentage) {
