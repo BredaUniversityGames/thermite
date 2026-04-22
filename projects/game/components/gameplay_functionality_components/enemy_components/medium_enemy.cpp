@@ -27,13 +27,15 @@ void game::MediumEnemy::start() {
     auto& dispatcher = tmt::engine.ecs.get_dispatcher();
     dispatcher.sink<game::GamePausedEvent>().connect<&MediumEnemy::on_game_paused>(this);
     dispatcher.sink<game::GameUnpausedEvent>().connect<&MediumEnemy::on_game_unpaused>(this);
+
+    auto resource = tmt::engine.ecs.get_component<tmt::VoxelRenderer>(core).resource;
+    core_voxels = resource->blas->voxel_count;
+
+    tmt::engine.ecs.get_component<tmt::RigController>(rig_controller).set_parameter_bool("walk", true);
 }
 
 void game::MediumEnemy::update(const tmt::FrameData& time) {
     if (paused) return;
-
-    // check core, if none, enemy dies
-    // if (this->core == entt::null) die();
 
     tmt::engine.polyline.use_color(1.0f, 0.0f, 0.0f);
     tmt::engine.polyline.use_line_width(2.0f);
@@ -47,6 +49,17 @@ void game::MediumEnemy::update(const tmt::FrameData& time) {
     if (!ws) return;
     const auto& player_pos = tmt::engine.ecs.get_component<tmt::Transform>(player).get_world_position();
     float dist = glm::length(player_pos - walking_transform.get_world_position());
+
+    // get core entity resource
+    auto resource = tmt::engine.ecs.get_component<tmt::VoxelRenderer>(core).resource;
+    uint32_t current_core_voxels = resource->blas->voxel_count;
+    if (current_core_voxels != core_voxels) {
+        tmt::engine.ecs.get_component<tmt::RigController>(rig_controller).set_parameter_bool("walk", false);
+        ws->set_fact(tmt::FactId("m_laser_intact"), false);
+        ws->set_fact(tmt::FactId("m_missiles_intact"), false);
+        tmt::Log::warn("core destroyed");
+        return;
+    }
 
     // ranges
     if (dist > aggro_range) {

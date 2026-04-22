@@ -16,7 +16,6 @@
 #include "engine/systems/physics/physics_system.hpp"
 #include "engine/systems/physics/components/voxel_body.hpp"
 
-
 void FireLaser::cleanup(tmt::Entity enemy_entity) {
     game::MediumEnemy& enemy = tmt::engine.ecs.get_component<game::MediumEnemy>(enemy_entity);
     if (tmt::engine.ecs.valid(laser_entity)) {
@@ -66,6 +65,7 @@ void FireLaser::on_tick(tmt::Entity enemy_entity, float dt) {
 
     switch (state) {
         case SITTING_DOWN: {
+            tmt::engine.ecs.get_component<tmt::RigController>(enemy.rig_controller).set_parameter_bool("laser", true);
             enemy.height_above_ground_offset = -enemy.height_above_ground + enemy.laser_sitting_down_height_offset;
             if (time > enemy.laser_sitting_down_time) {
                 state = WINDING_UP;
@@ -150,6 +150,7 @@ void FireLaser::on_tick(tmt::Entity enemy_entity, float dt) {
             direction = target_dir;
 
             if (time > enemy.laser_firing_time) {
+                tmt::engine.ecs.get_component<tmt::RigController>(enemy.rig_controller).set_parameter_bool("laser", false);
                 cleanup(enemy_entity);
                 return;
             }
@@ -174,7 +175,7 @@ void FireLaser::on_tick(tmt::Entity enemy_entity, float dt) {
             // deal damage to player and cutoff laser
             if (distance_to_player < enemy.laser_damage_radius) {
                 tmt::engine.ecs.get_component<game::Player>(enemy.player).health.value -= enemy.laser_damage * dt;
-                //end_pos = closest_point;
+                // end_pos = closest_point;
             }
 
             // scale laser voxel object between laser hit and laser pos
@@ -200,5 +201,7 @@ bool FireLaser::is_done(tmt::Entity /*enemy_entity*/) const {
 }
 
 void FireLaser::on_interrupt(tmt::Entity enemy_entity) {
+    auto& enemy = tmt::engine.ecs.get_component<game::MediumEnemy>(enemy_entity);
+    tmt::engine.ecs.get_component<tmt::RigController>(enemy.rig_controller).set_parameter_bool("laser", false);
     cleanup(enemy_entity);
 }
