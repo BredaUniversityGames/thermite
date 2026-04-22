@@ -47,6 +47,25 @@ void ResourceLimitChecker::update(const tmt::FrameData& time) {
             }
         }
     }
+
+    if (is_flashing) {
+        if (flashing_counter < flashing_time) {
+            // count up flashing counter
+            flashing_counter += time.delta_time;
+            // count up flash counter for individual flash time
+            flash_counter += time.delta_time;
+            if (flash_counter >= flash_time) {
+                flash_counter = 0.0f;
+                flash_ui();
+            }
+        } else {
+            // reset flashing counter
+            flashing_counter = 0.0f;
+            // set flash counter to flash time to instantly initiate flashing next time
+            flash_counter = flash_time;
+            stop_flash_ui();
+        }
+    }
 }
 
 void ResourceLimitChecker::end() {
@@ -72,7 +91,39 @@ void ResourceLimitChecker::button_click(tmt::Button::Context context) {
             button_component->disabled = false;
         } else {
             tmt::Log::info("Button stays disabled, resource check failed, sell some ores.");
+            is_flashing = true;
         }
     }
 }
+
+void ResourceLimitChecker::flash_ui() {
+    if (flashing_ui_entity == entt::null) {
+        tmt::Log::warn("No flashing entity set for resource limit component on entity: {}", entity);
+        return;
+    }
+    if (!tmt::engine.ecs.valid(flashing_ui_entity)) {
+        tmt::Log::warn("Flashing entity set for resource limit component on entity: {}, is invalid", entity);
+        return;    
+    }
+
+    if (tmt::engine.ecs.is_enabled(flashing_ui_entity)) {
+        tmt::engine.ecs.disable(flashing_ui_entity);
+    } else {
+        tmt::engine.ecs.enable(flashing_ui_entity);
+    }
+}
+
+void ResourceLimitChecker::stop_flash_ui() {
+    if (flashing_ui_entity == entt::null) {
+        tmt::Log::warn("No flashing entity set for resource limit component on entity: {}", entity);
+        return;
+    }
+    if (!tmt::engine.ecs.valid(flashing_ui_entity)) {
+        tmt::Log::warn("Flashing entity set for resource limit component on entity: {}, is invalid", entity);
+        return;
+    }
+    tmt::engine.ecs.enable(flashing_ui_entity);
+    is_flashing = false;
+}
+
 }
