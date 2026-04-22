@@ -14,7 +14,6 @@ struct GenerationComponent : public tmt::GameComponent<GenerationComponent> {
     void end() override;
 
    private:
-
     glm::vec3 coord_to_world(glm::ivec2 coord, const tmt::LevelConfiguration& level_configuration);
 };
 

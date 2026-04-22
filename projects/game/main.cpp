@@ -163,10 +163,9 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     tmt::engine.component_registry.register_component<game::WalletUiLink>();
     tmt::engine.component_registry.register_component<game::SellOreComponent>();
 
-   #if THERMITE_EDITOR
+#if THERMITE_EDITOR
     tmt::editor.systems[tmt::Editor::Mode::SCENE].add<tmt::LevelEditor>();
-   #endif
-
+#endif
 
     /* Register Goap Components */
     {

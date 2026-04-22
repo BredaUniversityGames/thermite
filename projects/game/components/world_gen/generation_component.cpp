@@ -16,8 +16,7 @@ void GenerationComponent::clear_children() {
     }
 }
 
-void GenerationComponent::start() 
-{
+void GenerationComponent::start() {
     auto& grouper_trans = tmt::engine.ecs.get_component<tmt::Transform>(entity);
 
     if (grouper_trans.has_children()) {
@@ -69,7 +68,7 @@ void GenerationComponent::start()
             auto& spawnables = cell_template.field.layer_entries[point.entry_idx].spawnables;
             // float size_factor = cell_template.field.layer_entries[point.entry_idx].radius_factor;
 
-            int obj_idx = static_cast<int>(Random::rand_range(0.f, static_cast<float>(spawnables.size())-1.f));
+            int obj_idx = static_cast<int>(Random::rand_range(0.f, static_cast<float>(spawnables.size()) - 1.f));
 
             const auto& spawn_obj = spawnables[obj_idx];
 

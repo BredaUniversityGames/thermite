@@ -13,8 +13,8 @@ struct std::hash<glm::vec<2, int, Q>> {
     }
 };
 
-namespace tmt 
-{
+namespace tmt {
+
 struct Cell {
     int template_index;
 };
@@ -35,6 +35,7 @@ struct LevelConfiguration {
     float cell_size;
     glm::vec3 global_field_offset;
 };
+
 }  // namespace tmt
 TMT_OBJECT(tmt::CellTemplate, (name, random_seed, seed, height, field, color));
 TMT_OBJECT(tmt::Cell, (template_index));
