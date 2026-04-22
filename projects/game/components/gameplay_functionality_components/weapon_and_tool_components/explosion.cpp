@@ -38,7 +38,7 @@ void game::Explosion::explode() const {
     for (const auto& [voxel_entity, voxels] : hits) {
         // If the entity is not valid anymore skip it
         if (!tmt::engine.ecs.valid(voxel_entity) || !tmt::engine.ecs.is_enabled(voxel_entity)) return;
-        
+
         auto* resource = tmt::engine.ecs.get_component<tmt::VoxelRenderer>(voxel_entity).resource.resource.get();
 
         for (const auto& [sqr_distance, voxel_coord] : voxels) {
@@ -66,7 +66,7 @@ void game::Explosion::explode() const {
                     float t = sqr_distance / (radius * radius);
                     auto power = (1.0f - param.distance_strength_curve.eval(t)) * param.explosion_power;
                     if (ore_toughness < power) {
-                        //resource->blas->remove_voxel(voxel_coord.x, voxel_coord.y, voxel_coord.z);
+                        // resource->blas->remove_voxel(voxel_coord.x, voxel_coord.y, voxel_coord.z);
                         tmt::engine.ecs.systems.get<tmt::Destruction>().destroy_voxel(voxel_entity, voxel_coord);
                     }
                 } break;

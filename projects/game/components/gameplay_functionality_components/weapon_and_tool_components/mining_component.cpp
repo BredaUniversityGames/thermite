@@ -121,7 +121,7 @@ void MiningComponent::on_stop_mining(const ReleaseShootEvent& e) {
 
 void MiningComponent::handle_voxel(const VoxelID& voxel_id) {
     // If the entity is not valid anymore skip it
-    if(!tmt::engine.ecs.valid(voxel_id.entity_id)) return;
+    if (!tmt::engine.ecs.valid(voxel_id.entity_id)) return;
 
     auto* resource = tmt::engine.ecs.get_component<tmt::VoxelRenderer>(voxel_id.entity_id).resource.resource.get();
     const auto voxel_coord = voxel_id.unpack_coord();
@@ -149,8 +149,8 @@ void MiningComponent::handle_voxel(const VoxelID& voxel_id) {
         case tmt::Material::Type::COPPER:
         case tmt::Material::Type::TITANIUM:
             if (ore_toughness < tmt::engine.frame_data().elapsed_time - mining_voxels.at(voxel_id)) {
-                //resource->blas->remove_voxel(voxel_coord.x, voxel_coord.y, voxel_coord.z);
-                //resource->set_dirty();
+                // resource->blas->remove_voxel(voxel_coord.x, voxel_coord.y, voxel_coord.z);
+                // resource->set_dirty();
                 tmt::engine.ecs.systems.get<tmt::Destruction>().destroy_voxel(voxel_id.entity_id, voxel_coord);
             }
             break;

@@ -35,13 +35,13 @@ void Destruction::on_update(const FrameData&) {
         generate_connection_graph(des, vr.resource->blas.get());
     }
 
-     for (const auto& [entity, des, vb] : engine.ecs.view<Destructible, VoxelBody>().each()) {
+    for (const auto& [entity, des, vb] : engine.ecs.view<Destructible, VoxelBody>().each()) {
         if (!des.initialized || !des.debug_view) continue;
 
-         engine.polyline.use_depth_testing(false);
-         // engine.polyline.use_color(0.1f, 0.3f, 0.9f);
-         for (DestructionNode& node : des.nodes) {
-             if (node.level == 10) continue;
+        engine.polyline.use_depth_testing(false);
+        // engine.polyline.use_color(0.1f, 0.3f, 0.9f);
+        for (DestructionNode& node : des.nodes) {
+            if (node.level == 10) continue;
 
             const glm::vec3 half_scale = glm::vec3(vb.width, vb.height, vb.depth) * 0.5f;
             const uint32_t node_size = (1u << (node.level * 2u));
@@ -231,7 +231,7 @@ void Destruction::destroy_voxel(Entity entity, glm::uvec3 pos) {
     Physics::recalculate_edge_normals(resource->blas.get(), neighbors);
 
     // Update destruction graph
-    //update_connection_graph_at(*des, resource->blas.get(), pos);
+    // update_connection_graph_at(*des, resource->blas.get(), pos);
 
     // Adjust mass
     // Remove voxel contribution from center of mass
@@ -254,8 +254,8 @@ void Destruction::destroy_voxel(Entity entity, glm::uvec3 pos) {
     //// NOTE: Replace this with custom recalculate graph function for a single voxel
     //// NOTE: This might need to happen before the early out
     //// Clear the graph and generate it a new one (to slow)
-    //des->clear();
-    //generate_connection_graph(*des, resource->blas.get());
+    // des->clear();
+    // generate_connection_graph(*des, resource->blas.get());
 
     // Find where the objects separate and creates new entities for each part
     std::vector<Entity> seperated_entities = find_seperations(entity, neighbors, *des);
@@ -284,8 +284,8 @@ bool Destruction::seperation_early_out(VoxelVolume* resource, const glm::uvec3& 
     if (neighbors.size() <= 1) return true;
 
     // 0 = center, 1-6 = cardinal directions
-    Svt64Node* nodes[7] = {}; // Nodes
-    uint64_t filled[7] = {}; // Flood fill results for each node
+    Svt64Node* nodes[7] = {};  // Nodes
+    uint64_t filled[7] = {};   // Flood fill results for each node
 
     // Get center node and flood from the deleted voxel's position
     nodes[0] = resource->blas->get_leaf(pos.x, pos.y, pos.z);
@@ -369,8 +369,8 @@ bool Destruction::seperation_early_out(VoxelVolume* resource, const glm::uvec3& 
         std::queue<glm::uvec3> to_visit;
 
         // Skip if the voxel is not solid anymore
-        if (resource->blas->get_voxel((uint32_t)n.x, (uint32_t)n.y, (uint32_t)n.z) == nullptr) continue;  
-        
+        if (resource->blas->get_voxel((uint32_t)n.x, (uint32_t)n.y, (uint32_t)n.z) == nullptr) continue;
+
         // Add first neighbor
         to_visit.push(n);
         visited.push_back(n);
@@ -421,7 +421,7 @@ void Destruction::fill_edge_indices(std::vector<glm::uvec3>& edge_indices, Entit
     auto* resource = vr.resource.resource.get();
     Svt64* tree = resource->blas.get();
 
-    //const glm::ivec3 dirs[] = { { -1, 0, 0 }, { 1, 0, 0 }, { 0, -1, 0 }, { 0, 1, 0 }, { 0, 0, -1 }, { 0, 0, 1 } };
+    // const glm::ivec3 dirs[] = { { -1, 0, 0 }, { 1, 0, 0 }, { 0, -1, 0 }, { 0, 1, 0 }, { 0, 0, -1 }, { 0, 0, 1 } };
 
     // Loop over the stencil and find all voxels where destruction happened next to
     for (uint32_t local_z = 0; local_z < stencil->size.z; local_z++) {
@@ -787,7 +787,7 @@ void fill_volumes(const Svt64* original_tree, const std::vector<uint64_t>& tree_
             engine.ecs.disable(entities[i], true);
             // engine.ecs.destroy_entity(entities[i]);
             continue;
-        } else if (tree->voxel_count > 10'000) { // Big objects should be static
+        } else if (tree->voxel_count > 10'000) {  // Big objects should be static
             vb.velocity = glm::vec3(0);
             vb.angular_velocity = glm::vec3(0);
             vb.type = VoxelBody::Type::STATIC;
@@ -1494,14 +1494,14 @@ void Destruction::update_connection_graph_at(Destructible& graph, Svt64* tree, c
     DestructionNode* node = nullptr;
     if (leaf != nullptr) {
         return;
-        //Log::error("Trying to ");
-        // The node is still alive, but we might have to update the connection graph
-        // Check nodes top down until we find the connection node
+        // Log::error("Trying to ");
+        //  The node is still alive, but we might have to update the connection graph
+        //  Check nodes top down until we find the connection node
 
-        //for (uint32_t level = 1u; level <= tree->depth; ++level) {
-        //     const uint32_t global_x = pos.x & (~3u << ((tree->depth - level) * 2u));
-        //     const uint32_t global_y = pos.y & (~3u << ((tree->depth - level) * 2u));
-        //     const uint32_t global_z = pos.z & (~3u << ((tree->depth - level) * 2u));
+        // for (uint32_t level = 1u; level <= tree->depth; ++level) {
+        //      const uint32_t global_x = pos.x & (~3u << ((tree->depth - level) * 2u));
+        //      const uint32_t global_y = pos.y & (~3u << ((tree->depth - level) * 2u));
+        //      const uint32_t global_z = pos.z & (~3u << ((tree->depth - level) * 2u));
 
         //     node = graph.get_node(global_x, global_y, global_z);
 
@@ -1515,19 +1515,19 @@ void Destruction::update_connection_graph_at(Destructible& graph, Svt64* tree, c
         //}
 
         //// Get global node position
-        //const uint32_t global_x = pos.x & ~3u;
-        //const uint32_t global_y = pos.y & ~3u;
-        //const uint32_t global_z = pos.z & ~3u;
+        // const uint32_t global_x = pos.x & ~3u;
+        // const uint32_t global_y = pos.y & ~3u;
+        // const uint32_t global_z = pos.z & ~3u;
 
-        //node = graph.get_node(global_x, global_y, global_z);
+        // node = graph.get_node(global_x, global_y, global_z);
 
         //// TODO: Check all levels of the graph to find the node, remove it, and add nodes for all parts of that node
         //// If we don't find a node, return for now
-        //if (node == nullptr) return;
+        // if (node == nullptr) return;
 
-        // the tree node exists, 
+        // the tree node exists,
 
-        //set_highest_level_neighbors()
+        // set_highest_level_neighbors()
     } else {
         // Get global node position
         const uint32_t global_x = pos.x & ~3u;

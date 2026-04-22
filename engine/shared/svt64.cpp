@@ -400,7 +400,7 @@ Svt64Node* Svt64::get_leaf(const uint32_t x, const uint32_t y, const uint32_t z)
         const uint32_t child_index = (x_index << 0u) | (z_index << 2u) | (y_index << 4u);
         if ((current->child_mask & (1ull << child_index)) == 0u) {  // No child node at this position, return nullptr
             return nullptr;
-        } else if (level == depth - 1) {  // Last level, return leaf node
+        } else if (level == depth - 1) {                            // Last level, return leaf node
             const uint32_t child_pos = (uint32_t)__popcnt64(current->child_mask & ((1ull << child_index) - 1u));
             return &nodes[current->abs_ptr() + child_pos];
         }
