@@ -3,6 +3,7 @@
 #include "engine/core/entity.hpp"
 #include "../../../editor/all.hpp"
 #include "projects/game/data_headers/events.hpp"
+#include "engine/core/components/rig_controller.hpp"
 
 struct Missile;
 
@@ -27,6 +28,7 @@ class MediumEnemy : public tmt::GameComponent<MediumEnemy> {
 
     tmt::Entity player = entt::null;
     tmt::Entity walkable_asteroid = entt::null;
+    tmt::Entity core = entt::null;
     tmt::Entity missile_origin = entt::null;
     tmt::Entity laser_origin = entt::null;
     glm::vec3 velocity = glm::vec3(0, 0, 0);
@@ -101,7 +103,7 @@ struct Missile {
 };
 
 TMT_OBJECT(
-    game::MediumEnemy, (walkable_asteroid, laser_origin, missile_origin, rotation_speed, height_above_ground, walk_speed, aggro_range, laser_range, stomp_range, missile_cooldown,
+    game::MediumEnemy, (walkable_asteroid, laser_origin, missile_origin, core, rotation_speed, height_above_ground, walk_speed, aggro_range, laser_range, stomp_range, missile_cooldown,
                         stop_launching_after, start_homing_after, launch_speed, home_speed, life_time, missile_burst, burst_interval, missile_max_randomness, laser_cooldown, laser_firing_time,
                         laser_sitting_down_time, laser_winding_up_time, laser_linear_speed, laser_exponential_speed, laser_linear_threshold, laser_max_randomness, laser_prediction_length)
 );
