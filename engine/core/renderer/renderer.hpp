@@ -21,6 +21,7 @@ enum class DisplayMode : uint32_t {
     ILLUMINANCE,   /* Visualize illuminance from the cache. */
     CACHE,         /* Visualize cache info. */
     MOTIONVECTORS, /* Visualize motion vectors. */
+    LIGHTS,        /* Visualize light cascades and heatmap. */
 };
 
 /* Shading rate. */
@@ -42,8 +43,15 @@ inline Size3D rated_resolution(Size3D base, ShadingRate rate) {
 }
 
 struct RendererSettings {
-    float bloom_radius = 0.2f;
+    float bloom_radius = 0.5f;
     float bloom_threshold = 1.0f;
+    float bloom_trail = 1.0f;
+
+    float autox_key_value = 0.01f;
+    float autox_lum_min = 0.001f;
+    float autox_lum_max = 100.0f;
+    float autox_response = 1.0f;
+
     ShadingRate diff_shading_rate = ShadingRate::HALF_RATE;
     ShadingRate spec_shading_rate = ShadingRate::QUARTER_RATE;
 };

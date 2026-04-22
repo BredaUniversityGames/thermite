@@ -18,6 +18,15 @@ public struct Range {
     public float max;
 };
 
+public struct Aabb {
+    public float3 min;
+    public float3 max;
+
+    public bool overlap(const Aabb other) {
+        return (min.x <= other.max.x && max.x >= other.min.x) && (min.y <= other.max.y && max.y >= other.min.y) && (min.z <= other.max.z && max.z >= other.min.z);
+    }
+};
+
 // Bezier Helpers
 float bezier_x(float t, float4 p) {
     const float u = 1.0f - t;
@@ -261,6 +270,17 @@ public [ForceInline] int2 rate_to_full(int2 thread_id, uint rate) {
         pixel_id = (pixel_id << 1);
     }
     return pixel_id;
+}
+
+/* Get the resolution for a given shading rate. */
+public [ForceInline] int2 rated_resolution(int2 full_rate, uint rate) {
+    if (rate == 1u) {
+        full_rate.x = full_rate.x >> 1;
+    } else if (rate == 2u) {
+        full_rate.x = full_rate.x >> 1;
+        full_rate.y = full_rate.y >> 1;
+    }
+    return full_rate;
 }
 
 public inline float3 spherical_to_dir(const float phi, const float theta) {
