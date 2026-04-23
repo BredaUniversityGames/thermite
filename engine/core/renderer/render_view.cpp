@@ -59,8 +59,9 @@ void RenderView::init() {
     vbuffer.texture = bank.create_texture("Visibility Buffer Texture", TextureUsage::Storage | TextureUsage::Sampled, TextureFormat::RG32Uint, full_rate).expect("failed to create vbuffer texture.");
     vbuffer.image = bank.create_image("Visibility Buffer Image", vbuffer.texture).expect("failed to create vbuffer image.");
     dbuffer.texture =
-        bank.create_texture("Depth Buffer Texture", TextureUsage::DepthStencil | TextureUsage::Sampled, TextureFormat::D32Sfloat, full_rate).expect("failed to create depth buffer texture.");
+        bank.create_texture("Depth/Stencil Buffer Texture", TextureUsage::DepthStencil | TextureUsage::Sampled, TextureFormat::D24UnormS8Uint, full_rate).expect("failed to create depth buffer texture.");
     dbuffer.image = bank.create_image("Depth Buffer Image", dbuffer.texture).expect("failed to create depth buffer image.");
+    stencil_image = bank.create_image("Stencil Buffer Image", dbuffer.texture, true).expect("failed to create stencil buffer image.");
 
     /* Calculate the specular and diffuse shading resolutions */
     const RendererSettings& settings = engine.player_data.get<RendererSettings>("RendererSettings");
@@ -90,7 +91,7 @@ void RenderView::init() {
         )
             .expect("failed to create tbuffer texture.");
     for (uint32_t curr_mip = 0; curr_mip < tbuffer.meta.mips; curr_mip++)
-        tbuffer.images.push_back(bank.create_image("Thresholded Luminance Buffer Image", tbuffer.texture, curr_mip).expect("failed to create tbuffer image."));
+        tbuffer.images.push_back(bank.create_image("Thresholded Luminance Buffer Image", tbuffer.texture, false, curr_mip).expect("failed to create tbuffer image."));
 
     /* History Screen Buffers */
     hbuffer1.texture = bank.create_texture("History1 Buffer Texture", 
@@ -196,6 +197,7 @@ void RenderView::deinit() {
     bank.destroy(vbuffer.image);
     bank.destroy(vbuffer.texture);
     bank.destroy(dbuffer.image);
+    bank.destroy(stencil_image);
     bank.destroy(dbuffer.texture);
     bank.destroy(lbuffer.image);
     bank.destroy(lbuffer.texture);

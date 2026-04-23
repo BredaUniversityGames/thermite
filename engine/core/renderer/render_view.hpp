@@ -97,6 +97,9 @@ struct RenderView {
     ScreenBuffer spec_buffer {};
     ScreenBuffer diff_buffer {};
 
+    /* Stencil image */
+    Image stencil_image {};
+
     /* Macrofacet buffers */
     Buffer macrofacet_cache {}; /* Macrofacet hash cache (10.000.000, 48 bytes) */
 
