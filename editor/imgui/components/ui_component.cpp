@@ -33,9 +33,6 @@ void tag_invoke(ImReflect::ImInput_t, const char*, tmt::UIComponent& value, ImSe
             const float w = (float)image->texture->width;
             const float h = (float)image->texture->height;
 
-            //value.size.x = w;
-            //value.size.y = h;
-
             /* Snap to a known aspect ratio, fall back to 1:1 */
             const float ratio = w / h;
             value.aspect_ratio = { 1.0f, 1.0f };
