@@ -24,8 +24,8 @@ void Physics::on_start() {
         vb.rotation = transform.get_world_rotation();
 
         if (vb.type == VoxelBody::DYNAMIC) {
-            // initialize_voxel_body(vb, *renderer.resource.resource);
-            recalculate_physics_data(vb, *renderer.resource.resource);
+            initialize_voxel_body(vb, *renderer.resource.resource);
+            // recalculate_physics_data(vb, *renderer.resource.resource);
             if (vb.gravity <= 0.0f) {
                 vb.type = VoxelBody::SLEEPING;
                 vb.accumulated_forces = 0.0f;
