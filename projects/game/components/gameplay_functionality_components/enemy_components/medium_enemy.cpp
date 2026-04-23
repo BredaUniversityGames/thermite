@@ -29,7 +29,7 @@ void game::MediumEnemy::start() {
     dispatcher.sink<game::GameUnpausedEvent>().connect<&MediumEnemy::on_game_unpaused>(this);
 
     auto resource = tmt::engine.ecs.get_component<tmt::VoxelRenderer>(core).resource;
-    core_voxels = resource->blas->voxel_count;
+    core_voxels = resource->blas->voxel_count - resource->blas->voxels_wasted;
 
     tmt::engine.ecs.get_component<tmt::RigController>(rig_controller).set_parameter_bool("walk", true);
 }
@@ -52,7 +52,7 @@ void game::MediumEnemy::update(const tmt::FrameData& time) {
 
     // get core entity resource
     auto resource = tmt::engine.ecs.get_component<tmt::VoxelRenderer>(core).resource;
-    uint32_t current_core_voxels = resource->blas->voxel_count;
+    uint32_t current_core_voxels = resource->blas->voxel_count - resource->blas->voxels_wasted;
     if (current_core_voxels != core_voxels) {
         tmt::engine.ecs.get_component<tmt::RigController>(rig_controller).set_parameter_bool("walk", false);
         ws->set_fact(tmt::FactId("m_laser_intact"), false);
