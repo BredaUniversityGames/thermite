@@ -2,6 +2,7 @@
 #include "engine/core/ecs.hpp"
 #include "engine/core/input/input.hpp"
 #include "engine/core/logger.hpp"
+#include "engine/core/window.hpp"
 
 #include "engine/core/scenes.hpp"
 #include "engine/systems/gameplay/game_component.hpp"
@@ -54,6 +55,7 @@
 #include "components/ui_components/quit_game_component.hpp"
 #include "components/ui_components/wallet_ui_link_component.hpp"
 #include "components/ui_components/sell_ore_component.hpp"
+#include "components/ui_components/button_resource_limit_checker.hpp"
 // Managers
 #include "components/managers/ore_manager.hpp"
 #include "components/managers/menu_controller.hpp"
@@ -102,7 +104,7 @@ class Game : public tmt::Application {
         // tmt::engine.player_data.get<game::Currencies>(game::PERSISTENT_RESOURCES);
         //// tmt::engine.player_data.get<std::b>>(game::UPGRADES);
     }
-    void on_update(const tmt::FrameData& time) override {};
+    void on_update(const tmt::FrameData& time) override;
     void on_end() override {};
 };
 
@@ -165,6 +167,7 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     tmt::engine.component_registry.register_component<game::QuitGameComponent>();
     tmt::engine.component_registry.register_component<game::WalletUiLink>();
     tmt::engine.component_registry.register_component<game::SellOreComponent>();
+    tmt::engine.component_registry.register_component<game::ResourceLimitChecker>();
 
 #if THERMITE_EDITOR
     tmt::editor.systems[tmt::Editor::Mode::SCENE].add<tmt::LevelEditor>();
@@ -285,4 +288,11 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     }
 
     return std::make_unique<Game>(specs);
+}
+
+void Game::on_update(const tmt::FrameData&) {
+    const bool f11_down = tmt::engine.input.is_keyboard_button_just_pressed(tmt::Key::F11);
+    if (f11_down) {
+        tmt::engine.window.toggle_fullscreen();
+    }
 }
