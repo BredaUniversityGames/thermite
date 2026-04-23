@@ -659,14 +659,14 @@ static void deserialize_scene(std::set<tmt::Entity>& new_entities, tmt::Deserial
                 prefab_state.current_prefab_instance_id = prefab_instance_id;
                 prefab_state.current_root_entity = prefab_info.root_entity;
                 prefab_state.current_prefab_location = prefab_info.source_location;
-                prefab_state.entity_mappings = state.entity_mappings;   /* Inherit mappings from parent prefab */
-                prefab_state.deleted_entities = state.deleted_entities; /* Inherit deleted entities from parent prefab */
+                prefab_state.entity_mappings = std::move(state.entity_mappings);   /* Inherit mappings from parent prefab */
+                prefab_state.deleted_entities = std::move(state.deleted_entities); /* Inherit deleted entities from parent prefab */
             }
 
             std::set<tmt::Entity> prefab_entities;
             deserialize_scene(prefab_entities, prefab_state);
-            state.entity_mappings = prefab_state.entity_mappings;   /* Update mappings after deserializing prefab instance */
-            state.deleted_entities = prefab_state.deleted_entities; /* Update deleted entities after deserializing prefab instance */
+            state.entity_mappings = std::move(prefab_state.entity_mappings);   /* Update mappings after deserializing prefab instance */
+            state.deleted_entities = std::move(prefab_state.deleted_entities); /* Update deleted entities after deserializing prefab instance */
             new_entities.insert(prefab_entities.begin(), prefab_entities.end());
         }
     }
