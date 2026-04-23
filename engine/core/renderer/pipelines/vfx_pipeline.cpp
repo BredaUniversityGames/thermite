@@ -252,7 +252,10 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
 
     const glm::uvec2 render_res = render_view.gpu_view.resolution;
 
-    const StencilState stencil_state {}; /* default stencil state */
+    StencilState stencil_state {}; /* default stencil state */
+    stencil_state.write_mask = 0xFF;
+    stencil_state.compare_mask = 0xFF;
+    stencil_state.reference_value = 1u;
 
     RasterNode& billboard_pass = render_graph.add_raster_pass("billboard pass", "vfx/billboard.vx", "vfx/billboard.px")
                                 .topology(Topology::TriangleList)
@@ -263,8 +266,8 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
                                 .read(alive_list, ShaderStages::Vertex)
                                 .read(render_view.blue_noise1d->image, ShaderStages::Pixel)
                                 .read(point_sampler, ShaderStages::Pixel | ShaderStages::Vertex)
-                                .depth(render_view.dbuffer.image, true, true)
-                                .stencil(render_view.stencil_image, stencil_state)
+                                .depth_stencil(render_view.dbuffer.image, true, true)
+                                .stencil(stencil_state)
                                 .load_op_depth(LoadOp::Load)
                                 .load_op_color(LoadOp::Load)
                                 .attach(render_view.lbuffer.image)

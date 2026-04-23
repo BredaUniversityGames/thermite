@@ -64,7 +64,7 @@ void PolylinePipeline::enqueue(RenderGraph& render_graph, RenderView& render_vie
         .alpha_blending(true)
         .read(render_view.render_view_buffer, ShaderStages::Vertex)
         .attach(render_image)
-        .depth(render_view.dbuffer.image)
+        .depth_stencil(render_view.dbuffer.image)
         .raster_extent(render_res.x, render_res.y);
     line_pass.draw(line_buffer, 6u, 0u, line_segment_count, 0u);
 

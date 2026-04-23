@@ -60,8 +60,14 @@ void RenderView::init() {
     vbuffer.image = bank.create_image("Visibility Buffer Image", vbuffer.texture).expect("failed to create vbuffer image.");
     dbuffer.texture =
         bank.create_texture("Depth/Stencil Buffer Texture", TextureUsage::DepthStencil | TextureUsage::Sampled, TextureFormat::D24UnormS8Uint, full_rate).expect("failed to create depth buffer texture.");
-    dbuffer.image = bank.create_image("Depth Buffer Image", dbuffer.texture).expect("failed to create depth buffer image.");
-    stencil_image = bank.create_image("Stencil Buffer Image", dbuffer.texture, true).expect("failed to create stencil buffer image.");
+    dbuffer.image = bank.create_image("Depth/Stencil Buffer Image", dbuffer.texture).expect("failed to create depth buffer image."); /* Depth Stencil Image View - Used for Writing in Raster Pass */
+    prev_dbuffer.texture =
+        bank.create_texture("Prev Depth/Stencil Buffer Texture", TextureUsage::DepthStencil | TextureUsage::Sampled, TextureFormat::D24UnormS8Uint, full_rate).expect("failed to create prev depth buffer texture.");
+    prev_dbuffer.image = bank.create_image("Prev Depth/Stencil Buffer Image", prev_dbuffer.texture).expect("failed to create prev depth buffer image."); /* Depth Stencil Image View - Used for Writing in Raster Pass */
+    
+    depth_image = bank.create_image("Depth Buffer Image", dbuffer.texture, true).expect("failed to create depth buffer image."); /* Depth Image View - Used for Reading in Compute Pass */
+    stencil_image = bank.create_image("Stencil Buffer Image", dbuffer.texture, false, true).expect("failed to create stencil buffer image."); /* Stencil Image View - Used for Reading in Compute Pass */
+    prev_stencil_image = bank.create_image("Prev Stencil Buffer Image", prev_dbuffer.texture, false, true).expect("failed to create prev stencil buffer image."); /* Stencil Image View - Used for Reading in Compute Pass */
 
     /* Calculate the specular and diffuse shading resolutions */
     const RendererSettings& settings = engine.player_data.get<RendererSettings>("RendererSettings");
@@ -91,7 +97,7 @@ void RenderView::init() {
         )
             .expect("failed to create tbuffer texture.");
     for (uint32_t curr_mip = 0; curr_mip < tbuffer.meta.mips; curr_mip++)
-        tbuffer.images.push_back(bank.create_image("Thresholded Luminance Buffer Image", tbuffer.texture, false, curr_mip).expect("failed to create tbuffer image."));
+        tbuffer.images.push_back(bank.create_image("Thresholded Luminance Buffer Image", tbuffer.texture, false, false, curr_mip).expect("failed to create tbuffer image."));
 
     /* History Screen Buffers */
     hbuffer1.texture = bank.create_texture("History1 Buffer Texture", 
@@ -198,6 +204,8 @@ void RenderView::deinit() {
     bank.destroy(vbuffer.texture);
     bank.destroy(dbuffer.image);
     bank.destroy(stencil_image);
+    bank.destroy(prev_stencil_image);
+    bank.destroy(depth_image);
     bank.destroy(dbuffer.texture);
     bank.destroy(lbuffer.image);
     bank.destroy(lbuffer.texture);
@@ -269,6 +277,7 @@ void RenderView::resize_textures() {
     bank.resize_texture(viewport.texture, full_rate).expect("failed to resize viewport texture.");
     bank.resize_texture(vbuffer.texture, full_rate).expect("failed to resize vbuffer texture.");
     bank.resize_texture(dbuffer.texture, full_rate).expect("failed to resize depth buffer texture.");
+    bank.resize_texture(prev_dbuffer.texture, full_rate).expect("failed to resize depth buffer texture.");
     bank.resize_texture(lbuffer.texture, full_rate).expect("failed to resize lbuffer texture.");
     bank.resize_texture(diff_buffer.texture, diff_rate).expect("failed to resize diffuse buffer texture.");
     bank.resize_texture(spec_buffer.texture, spec_rate).expect("failed to resize specular buffer texture.");

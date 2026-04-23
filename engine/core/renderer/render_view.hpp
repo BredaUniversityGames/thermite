@@ -84,12 +84,13 @@ struct RenderView {
     ResourceRef<Texture2D> blue_noise1d {};
 
     /* Screen buffers */
-    ScreenBuffer vbuffer {};  /* Visibility buffer (WxH, 6->8 bytes) */
-    ScreenBuffer dbuffer {};  /* Depth buffer (WxH, 4 bytes) */
-    ScreenBuffer lbuffer {};  /* Raw luminance buffer (WxH, 4 bytes) */
-    ScreenBuffer hbuffer1 {}; /* Accumulated (History) frame buffer (WxH, 8 bytes) */
-    ScreenBuffer hbuffer2 {}; /* Accumulated (History) frame buffer (WxH, 8 bytes) */
-    ScreenBuffer mbuffer {};  /* Motion Vector buffer (WxH, 4 bytes) */
+    ScreenBuffer vbuffer {};      /* Visibility buffer (WxH, 6->8 bytes) */
+    ScreenBuffer dbuffer {};      /* Depth buffer (WxH, 4 bytes) */
+    ScreenBuffer prev_dbuffer {}; /* Depth buffer (WxH, 4 bytes) */
+    ScreenBuffer lbuffer {};      /* Raw luminance buffer (WxH, 4 bytes) */
+    ScreenBuffer hbuffer1 {};     /* Accumulated (History) frame buffer (WxH, 8 bytes) */
+    ScreenBuffer hbuffer2 {};     /* Accumulated (History) frame buffer (WxH, 8 bytes) */
+    ScreenBuffer mbuffer {};      /* Motion Vector buffer (WxH, 4 bytes) */
     /* Post Process buffers */
     PostProcessBuffer tbuffer {}; /* Thresholded luminance buffer (WxH, 4 bytes) */
 
@@ -97,8 +98,11 @@ struct RenderView {
     ScreenBuffer spec_buffer {};
     ScreenBuffer diff_buffer {};
 
-    /* Stencil image */
+    /* Stencil images */
     Image stencil_image {};
+    Image prev_stencil_image {};
+    /* Depth image */
+    Image depth_image {};
 
     /* Macrofacet buffers */
     Buffer macrofacet_cache {}; /* Macrofacet hash cache (10.000.000, 48 bytes) */

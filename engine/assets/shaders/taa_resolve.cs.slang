@@ -10,6 +10,12 @@ SamplerState linear_sampler;
 Texture2D<float2> mbuffer;
 /* Depth buffer. */
 Texture2D<float> dbuffer;
+/* Current stencil buffer. */
+[vk::image_format("unknown")]
+Texture2D<uint32_t> stencil_buffer;
+/* Previous frame stencil buffer. */
+[vk::image_format("unknown")]
+Texture2D<uint32_t> prev_stencil_buffer;
 /* Luminance buffer. */
 RWTexture2D<float3> lbuffer;
 /* History buffers. */
@@ -82,9 +88,14 @@ void main(int2 thread_id: SV_DispatchThreadID) {
     float3 prev_luminance = hbuffer2.SampleLevel(linear_sampler, uv_last, 0.0f).rgb;
     prev_luminance = clip_aabb(var_min, var_max, prev_luminance);
 
+    uint32_t curr_stencil = stencil_buffer[thread_id];
+    uint32_t prev_stencil = prev_stencil_buffer.SampleLevel(linear_sampler, uv_last, 0.0f);
+
     /* Reject off-screen */
     const bool valid = all(uv_last >= 0.0f) && all(uv_last <= 1.0f);
-    const float blend = valid ? 0.95f : 0.0f;
+    float blend = valid ? 0.95f : 0.0f;
+
+    blend = curr_stencil == prev_stencil ? blend : 0.0f;
             
     output = lerp(curr_luminance, prev_luminance, blend);
 

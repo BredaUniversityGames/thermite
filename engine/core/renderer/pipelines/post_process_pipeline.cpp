@@ -74,7 +74,7 @@ void PostProcessPipeline::enqueue(RenderGraph& render_graph, RenderView render_v
 
         /* Apply exposure to luminance buffer */
         render_graph.add_compute_pass("AutoX Apply", "lighting/autox_apply.cs")
-            .read(render_view.dbuffer.image)
+            .read(render_view.depth_image)
             .write(render_view.lbuffer.image)
             .read(autox_image)
             .push_constants(&autox_constants, 0u, sizeof(AutoXConstants))
@@ -92,13 +92,17 @@ void PostProcessPipeline::enqueue(RenderGraph& render_graph, RenderView render_v
         .read(engine.renderer.point_sampler)
         .read(engine.renderer.linear_sampler)
         .read(render_view.mbuffer.image)
-        .read(render_view.dbuffer.image)
+        .read(render_view.depth_image)
+        .read(render_view.stencil_image)
+        .read(render_view.prev_stencil_image)
         .write(render_view.lbuffer.image)
         .write(frame_flag ? render_view.hbuffer1.image : render_view.hbuffer2.image)
         .read(frame_flag ? render_view.hbuffer2.image : render_view.hbuffer1.image)
         .push_constants(&taa_flag, 0, sizeof(uint32_t))
         .group_size(16, 8)
         .work_size(render_view.gpu_view.resolution.x, render_view.gpu_view.resolution.y);
+    std::swap(render_view.stencil_image, render_view.prev_stencil_image);
+    std::swap(render_view.dbuffer, render_view.prev_dbuffer);
     /* clang-format on */
 
     { /* Threshold the Luminance buffer */
