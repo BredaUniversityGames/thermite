@@ -309,13 +309,13 @@ void Destruction::destroy_voxel(Entity entity, glm::uvec3 pos) {
         VoxelRenderer& seperate_vr = engine.ecs.get_component<VoxelRenderer>(seperate_entity);
         Physics::initialize_voxel_body(seperate_vb, *seperate_vr.resource.resource.get());
 
-        glm::vec3 tensor_0 = glm::vec3(seperate_vb.inv_inertia[0][0], seperate_vb.inv_inertia[0][1], seperate_vb.inv_inertia[0][2]);
-        glm::vec3 tensor_1 = glm::vec3(seperate_vb.inv_inertia[1][0], seperate_vb.inv_inertia[1][1], seperate_vb.inv_inertia[1][2]);
-        glm::vec3 tensor_2 = glm::vec3(seperate_vb.inv_inertia[2][0], seperate_vb.inv_inertia[2][1], seperate_vb.inv_inertia[2][2]);
+        //glm::vec3 tensor_0 = glm::vec3(seperate_vb.inv_inertia[0][0], seperate_vb.inv_inertia[0][1], seperate_vb.inv_inertia[0][2]);
+        //glm::vec3 tensor_1 = glm::vec3(seperate_vb.inv_inertia[1][0], seperate_vb.inv_inertia[1][1], seperate_vb.inv_inertia[1][2]);
+        //glm::vec3 tensor_2 = glm::vec3(seperate_vb.inv_inertia[2][0], seperate_vb.inv_inertia[2][1], seperate_vb.inv_inertia[2][2]);
 
-        Log::info("inertia tensor 0: [{}, {}, {}]", tensor_0.x, tensor_0.y, tensor_0.z);
-        Log::info("inertia tensor 1: [{}, {}, {}]", tensor_1.x, tensor_1.y, tensor_1.z);
-        Log::info("inertia tensor 2: [{}, {}, {}]", tensor_2.x, tensor_2.y, tensor_2.z);
+        //Log::info("inertia tensor 0: [{}, {}, {}]", tensor_0.x, tensor_0.y, tensor_0.z);
+        //Log::info("inertia tensor 1: [{}, {}, {}]", tensor_1.x, tensor_1.y, tensor_1.z);
+        //Log::info("inertia tensor 2: [{}, {}, {}]", tensor_2.x, tensor_2.y, tensor_2.z);
     }
 }
 
