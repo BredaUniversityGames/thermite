@@ -9,9 +9,12 @@ import volume;
 Texture2D<float3> intermediate_buffer;
 Texture2D<float3> dir_buffer;
 /* Probe output buffer. */
+Texture2D<float3> prev_probe_buffer;
 RWTexture2D<float3> probe_buffer;
+SamplerState linear_sampler;
 
-[[vk::push_constant]] int cascade_index;
+/* .xyz = prev cascade origin, .w = cascade index */
+[[vk::push_constant]] float4 pc;
 
 /* 8x8 luminance values in LDS. */
 groupshared float gs_r[64];
@@ -64,14 +67,19 @@ void main(int2 thread_id: SV_DispatchThreadID, int2 texel_id: SV_GroupThreadID, 
     }
 
     /* Write out the illuminance into the illuminance volume */
+    const int cascade_index = asint(pc.w);
+    const float cascade_extent = iv::CASCADE_EXTENT << cascade_index;
     const int3 probe_id = int3(iv::thread_probe(thread_id));
     const int2 probe_origin = int2(
         probe_id.y * iv::CASCADE_WIDTH * iv::PROBE_STRIDE + probe_id.x * iv::PROBE_STRIDE + iv::PROBE_BORDER,
         cascade_index * iv::CASCADE_WIDTH * iv::PROBE_STRIDE + probe_id.z * iv::PROBE_STRIDE + iv::PROBE_BORDER
     );
     /* Interpolate history */
-    const float3 history = probe_buffer[probe_origin + texel_id];
-    illuminance = lerp(illuminance, history, 0.9f);
+    const float3 prev_probe_pos = pc.xyz + probe_id * (cascade_extent / iv::CASCADE_WIDTH) - cascade_extent * 0.5f;
+    const float3 history = iv::trilerp(prev_probe_buffer, linear_sampler, prev_probe_pos, texel_dir);
+
+    // const float3 history = prev_probe_buffer[probe_origin + texel_id];
+    illuminance = lerp(illuminance, history, 0.75f);
     probe_buffer[probe_origin + texel_id] = illuminance;
     GroupMemoryBarrierWithGroupSync();
 

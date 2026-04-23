@@ -24,10 +24,10 @@ struct GpuView {
     glm::mat4 prev_world_to_clip = glm::mat4(1.f);
     /* Clip-space to world-space transformation matrix. */
     glm::mat4 clip_to_world = glm::mat4(1.f);
-    /* Clip-space to view-space transformation matrix. */
-    glm::mat4 clip_to_view = glm::mat4(1.f);
     /* Origin of the view in world-space. */
     glm::vec4 origin {};
+    /* Previous origin of the view in world-space. */
+    glm::vec4 prev_origin {};
     /* Resolution of the view in pixels. */
     glm::uvec2 resolution { 1, 1 };
     /* Index of the current frame. */
@@ -99,6 +99,8 @@ struct RenderView {
     /* Irradiance volume texture */
     Texture probe_texture {};
     Image probe_image {};
+    Texture prev_probe_texture {};
+    Image prev_probe_image {};
 
     /* Macrofacet buffers */
     Buffer macrofacet_cache {}; /* Macrofacet hash cache (10.000.000, 48 bytes) */

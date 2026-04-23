@@ -33,7 +33,7 @@ RWTexture2D<float3> dir_buffer;
 [numthreads(8, 8, 1)]
 void main(int2 thread_id: SV_DispatchThreadID) {
     /* Center position of the cascade hierarchy */
-    const float3 cascade_center = 0.0f;
+    const float3 cascade_center = render_view.origin.xyz;
 
     /* Cascade size increases 2x with each subsequent cascade */
     const float c_half_extent = float(iv::CASCADE_HALF_EXTENT << cascade_index);

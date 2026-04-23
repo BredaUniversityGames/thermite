@@ -31,9 +31,7 @@ void DiPipeline::init(GPUAdapter& gpu) {
     VRAMBank& bank = gpu.get_vram_bank();
 
     /* Create the intermediate probe buffer */
-    constexpr uint32_t probe_width = 8u;
-    constexpr uint32_t cascade_width = 16u;
-    const Size3D probe_buffer_size = Size3D(cascade_width * probe_width * cascade_width, probe_width * cascade_width);
+    const Size3D probe_buffer_size = Size3D(PROBE_CASCADE_WIDTH * PROBE_WIDTH * PROBE_CASCADE_WIDTH, PROBE_WIDTH * PROBE_CASCADE_WIDTH);
     probe_lum_texture = bank.create_texture("Traced Probe Lum Atlas Texture", TextureUsage::Storage | TextureUsage::Sampled, TextureFormat::RGBA16Sfloat, probe_buffer_size).expect("failed to create probe atlas texture.");
     probe_lum_image = bank.create_image("Traced Probe Lum Atlas Image", probe_lum_texture).expect("failed to create probe atlas image.");
     probe_dir_texture = bank.create_texture("Traced Probe Dir Atlas Texture", TextureUsage::Storage | TextureUsage::Sampled, TextureFormat::RGBA16Sfloat, probe_buffer_size).expect("failed to create probe atlas texture.");
@@ -96,11 +94,16 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
     }
 
     { /* Illuminance Volume Update */
-        // constexpr uint32_t probe_border = 1u;
-        constexpr uint32_t probe_width = 8u;
-        // constexpr uint32_t probe_stride = probe_width + probe_border * 2u;
-        constexpr uint32_t cascade_width = 16u;
-        int cascade_index = 0;
+        int cascade_index = (int)render_view.frame_counter % PROBE_CASCADE_COUNT;
+
+        if (cascade_index == 0) {
+            Image t = render_view.prev_probe_image;
+            render_view.prev_probe_image = render_view.probe_image;
+            render_view.probe_image = t;
+        }
+
+        const uint32_t dispatch_x = PROBE_CASCADE_WIDTH * PROBE_WIDTH * PROBE_CASCADE_WIDTH;
+        const uint32_t dispatch_y = PROBE_CASCADE_WIDTH * PROBE_WIDTH;
 
         /* Illuminance probe tracing */
         render_graph.add_compute_pass("trace probes pass", "lighting/volume_trace.cs")
@@ -118,18 +121,26 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
             .write(probe_dir_image)
             .push_constants(&cascade_index, 0u, sizeof(int))
             .group_size(8, 8)
-            .work_size(cascade_width * probe_width * cascade_width, cascade_width * probe_width);
+            .work_size(dispatch_x, dispatch_y);
 
         /* Illuminance probe update */
+        struct UpdatePc {
+            glm::vec3 prev_origin;
+            int cascade_index;
+        } update_pc { cascade_positions[cascade_index], cascade_index };
         render_graph.add_compute_pass("update probes pass", "lighting/volume_update.cs")
             /* Intermediate probe buffer */
             .read(probe_lum_image)
             .read(probe_dir_image)
             /* Illuminance volume buffer */
+            .read(render_view.prev_probe_image)
             .write(render_view.probe_image)
-            .push_constants(&cascade_index, 0u, sizeof(int))
+            .read(engine.renderer.linear_sampler)
+            .push_constants(&update_pc, 0u, sizeof(UpdatePc))
             .group_size(8, 8)
-            .work_size(cascade_width * probe_width * cascade_width, cascade_width * probe_width);
+            .work_size(dispatch_x, dispatch_y);
+
+        cascade_positions[cascade_index] = render_view.gpu_view.origin;
     }
 
     { /* Specular illumination pass */

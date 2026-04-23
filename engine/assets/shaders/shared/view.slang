@@ -10,10 +10,10 @@ public struct RenderView {
     public float4x4 prev_world_to_clip;
     /* Clip-space to world-space transformation matrix. */
     public float4x4 clip_to_world;
-    /* Clip-space to view-space transformation matrix. */
-    public float4x4 clip_to_view;
     /* Origin of the view in world-space. */
     public float4 origin;
+    /* Previous origin of the view in world-space. */
+    public float4 prev_origin;
     /* Resolution of the view in pixels. */
     public uint2 resolution;
     /* Index of the current frame. */

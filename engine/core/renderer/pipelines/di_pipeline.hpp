@@ -11,6 +11,9 @@ struct RenderView;
 struct SceneView;
 
 constexpr uint32_t CACHE_SIZE = 10000000u;
+constexpr uint32_t PROBE_CASCADE_COUNT = 6u;
+constexpr uint32_t PROBE_WIDTH = 8u;
+constexpr uint32_t PROBE_CASCADE_WIDTH = 16u;
 
 /* Direct Illumination (DI) pipeline. */
 class DiPipeline {
@@ -30,6 +33,8 @@ class DiPipeline {
     Image probe_lum_image {};
     Texture probe_dir_texture {};
     Image probe_dir_image {};
+
+    glm::vec3 cascade_positions[PROBE_CASCADE_COUNT] {};
 
     bool cache_init = false;
 };

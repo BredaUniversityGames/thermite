@@ -35,7 +35,7 @@ void main(int2 thread_id: SV_DispatchThreadID) {
     const Ray ray = pinhole_ray(render_view, thread_id);
 
     /* Grid constants */
-    const float3 cascade_center = 0.0f;
+    const float3 cascade_center = render_view.origin.xyz;
     const float probe_extent = float(iv::CASCADE_EXTENT) / iv::CASCADE_WIDTH;
     const float3 grid_min = cascade_center - iv::CASCADE_HALF_EXTENT;
     const float3 grid_max = cascade_center + iv::CASCADE_HALF_EXTENT;
@@ -69,7 +69,7 @@ void main(int2 thread_id: SV_DispatchThreadID) {
     for (int i = 0; i < 48; i++) {
         /* For each cell trace against a sphere representing the probe */
         const float3 center = grid_min + (float3(cell) + 0.5f) * probe_extent;
-        const float t = trace_sphere(ray.origin, ray.dir, center, 0.2f);
+        const float t = trace_sphere(ray.origin, ray.dir, center, 0.1f);
 
         /* Check if we hit the probe sphere */
         if (t > 0.0f && t < closest_t) {

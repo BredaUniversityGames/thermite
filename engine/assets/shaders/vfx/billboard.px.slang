@@ -46,12 +46,11 @@ FragmentOutput main(BillboardVertexOutput input, uint32_t instance_id: SV_Instan
     FragmentOutput output;
 
     /* Sample the irradiance volume */
-    const float3 world_pos = input.world_pos;
-    const float2 probe_id = iv::probe_uv(world_pos);
-    const float2 ray_id = saturate(oct_encode(normalize(gpu_view.origin.xyz - world_pos))) * iv::PROBE_WIDTH;
-    const float2 uv = (probe_id + ray_id) / iv::ATLAS_SIZE;
+    const float3 view_pos = input.world_pos - gpu_view.origin.xyz;
+    const float3 normal = -normalize(view_pos);
+    const float3 illuminance = iv::trilerp(probe_buffer, linear_sampler, view_pos, normal) + iv::trilerp(probe_buffer, linear_sampler, view_pos, -normal);
 
-    output.color = float4(cs::r709_to_acescg(cs::linearize(tex_sample.rgb * probe_buffer.SampleLevel(linear_sampler, uv, 0))), 1.0f);
+    output.color = float4(cs::r709_to_acescg(cs::linearize(tex_sample.rgb * illuminance * 0.5f)), 1.0f);
     output.motion = input.motion_vec;
 
     return output;

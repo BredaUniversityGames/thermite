@@ -115,8 +115,10 @@ void RenderView::init() {
     constexpr uint32_t cascade_count = 6u;
     // constexpr uint32_t probe_padding = 2u;
     const Size3D probe_buffer_size = Size3D(cascade_width * probe_width * cascade_width, probe_width * cascade_width * cascade_count);
-    probe_texture = bank.create_texture("Irradiance Probe Buffer Texture", TextureUsage::Storage | TextureUsage::Sampled, TextureFormat::RGBA16Sfloat, probe_buffer_size).expect("failed to create probe texture.");
-    probe_image = bank.create_image("Irradiance Probe Buffer Image", probe_texture).expect("failed to create probe image.");
+    probe_texture = bank.create_texture("Irradiance Probe Buffer 1 Texture", TextureUsage::Storage | TextureUsage::Sampled, TextureFormat::RGBA16Sfloat, probe_buffer_size).expect("failed to create probe texture.");
+    probe_image = bank.create_image("Irradiance Probe Buffer 1 Image", probe_texture).expect("failed to create probe image.");
+    prev_probe_texture = bank.create_texture("Irradiance Probe Buffer 2 Texture", TextureUsage::Storage | TextureUsage::Sampled, TextureFormat::RGBA16Sfloat, probe_buffer_size).expect("failed to create probe texture.");
+    prev_probe_image = bank.create_image("Irradiance Probe Buffer 2 Image", prev_probe_texture).expect("failed to create probe image.");
 
     /* Create the macrofacet cache */
     const uint64_t cache_size = 10'000'000u; /* 480 MB */
@@ -174,7 +176,7 @@ void RenderView::update_gpu_view(RenderGraph& render_graph, const Camera& camera
     gpu_view.world_to_clip = p * glm::inverse(world);  // p * v
     gpu_view.prev_world_to_clip = prev_world_to_clip;
     gpu_view.clip_to_world = glm::inverse(gpu_view.world_to_clip);
-    gpu_view.clip_to_view = glm::inverse(p);
+    gpu_view.prev_origin = gpu_view.origin;
     gpu_view.origin = glm::vec4(transform.get_world_position(), 0.0f);
     gpu_view.frame_index = frame_counter;
     gpu_view.dt = engine.frame_data().delta_time;
@@ -224,6 +226,8 @@ void RenderView::deinit() {
     bank.destroy(mbuffer.texture);
     bank.destroy(probe_image);
     bank.destroy(probe_texture);
+    bank.destroy(prev_probe_image);
+    bank.destroy(prev_probe_texture);
     bank.destroy(viewport.image);
     bank.destroy(viewport.texture);
 
