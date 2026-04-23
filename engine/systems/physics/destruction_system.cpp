@@ -772,15 +772,15 @@ void shrink_tree(Svt64* tree, Svt64Node& current_node, glm::uvec3& offset) {
     }
 }
 
-void fill_volumes(const Svt64* original_tree, const std::vector<uint64_t>& tree_masks, std::vector<Entity>& entities, const Destructible& graph, Entity original) {
-    VoxelRenderer& original_vr = engine.ecs.get_component<VoxelRenderer>(original);
-    VoxelBody& original_vb = engine.ecs.get_component<VoxelBody>(original);
+void fill_volumes(const Svt64* original_tree, const std::vector<uint64_t>& tree_masks, std::vector<Entity>& entities, const Destructible& graph, Entity) {
+    //VoxelRenderer& original_vr = engine.ecs.get_component<VoxelRenderer>(original);
+    //VoxelBody& original_vb = engine.ecs.get_component<VoxelBody>(original);
 
     //uint32_t max_voxels = 0;
     //size_t biggest_index = 0;
 
     for (size_t i = 0; i < entities.size(); i++) {
-        VoxelRenderer vr {};
+        // VoxelRenderer vr {};
         // engine.ecs.add_component<VoxelRenderer>(entities[i]);
         //vr.resource = { {}, std::make_shared<VoxelVolume>() };
         //vr.resource.resource->size = original_vr.resource->size;
