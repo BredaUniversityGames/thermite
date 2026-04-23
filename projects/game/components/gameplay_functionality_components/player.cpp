@@ -23,6 +23,14 @@
 // TODO before we have a serializer for input, you can add all the needed keybindings here.
 //  TODO we still have to add the gamepad inputs here
 
+static glm::vec2 hash_noise(float t) {
+    glm::vec2 n;
+    n.x = glm::fract(std::sin(t * 12.9898f) * 43758.5453f);
+    n.y = glm::fract(std::sin((t + 1.0f) * 78.233f) * 43758.5453f);
+
+    return n * 2.0f - 1.0f;  // range [-1, 1]
+}
+
 namespace game {
 
 void setup_inputs(tmt::InputMap& input_map) {
@@ -166,7 +174,27 @@ void Player::look_camera() {
     front.y = sin(glm::radians(camera->pitch));
     front.z = sin(glm::radians(camera->yaw)) * cos(glm::radians(camera->pitch));
     front = glm::normalize(front);
-    transform.look_at(transform.get_world_position() + front, glm::vec3(0.0f, 1.0f, 0.0f));
+
+    glm::vec3 shake_offset(0.0f);
+
+    if (camera_shake_settings.enabled && current_shake > 0.0f) {
+        glm::vec2 n = hash_noise(tmt::engine.frame_data().elapsed_time);
+
+        glm::vec3 right = glm::normalize(glm::cross(front, glm::vec3(0, 1, 0)));
+        glm::vec3 up = glm::normalize(glm::cross(right, front));
+
+        glm::vec3 target_shake = right * n.x * current_shake + up * n.y * current_shake;
+
+        // removes harshness
+        float smooth = 12.0f * tmt::engine.frame_data().delta_time;
+
+        static glm::vec3 shake_current(0.0f);
+        shake_current = glm::mix(shake_current, target_shake, smooth);
+
+        shake_offset = shake_current;
+    }
+
+    transform.look_at(transform.get_world_position() + front + shake_offset, glm::vec3(0.0f, 1.0f, 0.0f));
 }
 
 tmt::Hit Player::check_collision() const {
@@ -313,8 +341,11 @@ void Player::prevent_camera_clip() const {
         transform.set_world_position(pos - forward * pushback);
     }
 }
+
 void Player::update(const tmt::FrameData& time) {
     auto& input = tmt::engine.input;
+
+    update_shake(time.delta_time);
 
     switch (state) {
         case game::PlayerState::FREEMOVING:
@@ -322,6 +353,8 @@ void Player::update(const tmt::FrameData& time) {
 
             if (input.is_action_just_pressed(action::BOOST)) {
                 energy.value = glm::min(energy.max_value, energy.value - boost_initial_cost);
+
+                add_camera_shake(camera_shake_settings.boost_intensity);
             }
             if (input.is_action_pressed(action::BOOST)) {
                 apply_boost();
@@ -486,6 +519,7 @@ void Player::update(const tmt::FrameData& time) {
         }
     }
 }
+
 void Player::draw_debug_lines() const {
     const auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
     const auto& physics = tmt::engine.ecs.systems.get<tmt::Physics>();
@@ -662,6 +696,17 @@ void Player::set_hud_enabled(tmt::Entity hud_root, bool enabled) {
     for (auto child : transform.get_all_children()) {
         set_hud_enabled(child, enabled);
     }
+}
+
+void Player::add_camera_shake(float intensity) {
+    if (!camera_shake_settings.enabled) return;
+
+    current_shake = glm::min(camera_shake_settings.max_intensity, current_shake + intensity);
+}
+
+void Player::update_shake(float dt) {
+    current_shake -= dt * camera_shake_settings.decay_speed;
+    current_shake = glm::max(0.0f, current_shake);
 }
 
 }  // namespace game
