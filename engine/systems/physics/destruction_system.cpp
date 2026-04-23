@@ -233,18 +233,18 @@ void Destruction::destroy_voxel(Entity entity, glm::uvec3 pos) {
     // Update destruction graph
     // update_connection_graph_at(*des, resource->blas.get(), pos);
 
-    // Adjust mass
-    // Remove voxel contribution from center of mass
-    const float voxel_mass = std::powf(UNITS_PER_VOXEL, 3) * vb->density;
-    const float old_mass = vb->inv_mass == 0.0f ? 0.0f : 1.0f / vb->inv_mass;
-    const float new_mass = old_mass - voxel_mass;
+    //// Adjust mass
+    //// Remove voxel contribution from center of mass
+    //const float voxel_mass = std::powf(UNITS_PER_VOXEL, 3) * vb->density;
+    //const float old_mass = vb->inv_mass == 0.0f ? 0.0f : 1.0f / vb->inv_mass;
+    //const float new_mass = old_mass - voxel_mass;
 
-    // World position of the removed voxels center in local space
-    const glm::vec3 voxel_local_pos = ((glm::vec3)pos + 0.5f) * UNITS_PER_VOXEL;
+    //// World position of the removed voxels center in local space
+    //const glm::vec3 voxel_local_pos = ((glm::vec3)pos + 0.5f) * UNITS_PER_VOXEL;
 
-    // Update center of mass through a weighted average
-    vb->com_local_offset = (vb->com_local_offset * old_mass - voxel_local_pos * voxel_mass) / new_mass;
-    vb->inv_mass = 1.0f / new_mass;
+    //// Update center of mass through a weighted average
+    //vb->com_local_offset = (vb->com_local_offset * old_mass - voxel_local_pos * voxel_mass) / new_mass;
+    //vb->inv_mass = 1.0f / new_mass;
 
     // Early out
     if (seperation_early_out(resource, pos, neighbors)) {
@@ -272,7 +272,15 @@ void Destruction::destroy_voxel(Entity entity, glm::uvec3 pos) {
             continue;
         }
 
+        // NOTE: We still need to initialize the voxel body somehow, but we can make some assumtions when we have static objects
         VoxelBody& seperate_vb = engine.ecs.get_component<VoxelBody>(seperate_entity);
+        if (seperate_vb.type == VoxelBody::STATIC) {
+            // Initialize the only neccecary values for static bodies
+            seperate_vb.com_local_offset = vb->com_local_offset;
+            seperate_vb.center_of_mass = vb->center_of_mass;  // seperate_vb.position + (seperate_vb.rotation * seperate_vb.com_local_offset);
+            continue;
+        }
+
         VoxelRenderer& seperate_vr = engine.ecs.get_component<VoxelRenderer>(seperate_entity);
         Physics::initialize_voxel_body(seperate_vb, *seperate_vr.resource.resource.get());
     }
