@@ -60,7 +60,6 @@
 #include "editor/windows/editor_settings.hpp"
 #include "editor/windows/rig_state_controller.hpp"
 #include "editor/windows/ui.hpp"
-#include "editor/windows/level_editor.hpp"
 #include "editor/windows/player_data.hpp"
 #include "editor/windows/voxel_editor_lights.hpp"
 
@@ -119,7 +118,6 @@ void Editor::on_engine_init(const ApplicationSpecs&) {
     systems[Mode::SCENE].add<EditorSettingsWindow>();
     systems[Mode::SCENE].add<BuildPackager>();
     systems[Mode::SCENE].add<UIEditor>();
-    systems[Mode::SCENE].add<LevelEditor>();
     systems[Mode::SCENE].add<PlayerDataWindow>();
     systems[Mode::SCENE].add<RigStateController>();
 
@@ -242,7 +240,7 @@ void Editor::main_menu_bar() {
         if (ImGui::BeginMenu("Renderer")) {
             /* List of display mode labels */
             static const std::vector<std::string> DISPLAY_MODE_LABELS { "Default", "Steps (0..128)", "Visibility", "Depth (0..100)", "Normals",
-                                                                        "Albedo",  "Illuminance",    "Cache",      "Motion Vectors" };
+                                                                        "Albedo",  "Illuminance",    "Cache",      "Motion Vectors", "Lights" };
 
             const uint32_t display_mode_index = (uint32_t)magic_enum::enum_index<DisplayMode>(engine.renderer.display_mode).value_or(0u);
             const std::string& display_mode = DISPLAY_MODE_LABELS[display_mode_index];
