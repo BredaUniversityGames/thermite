@@ -259,4 +259,11 @@ void RigModel::animate_scale(Pose& t, Bone& b) const {
     t.scale = (new_scale);
 }
 
+void ConstrainedRig::copy_reference_pose_from_keyframe(RigModel& rig_model)
+{ 
+    for (auto& [ent, pose] : constrained_poses) {
+        pose = rig_model.bone_keyframes[ent];
+    }
+}
+
 }  // namespace tmt

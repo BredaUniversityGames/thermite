@@ -72,6 +72,8 @@ struct ConstrainedRig
 {
     std::unordered_map<Entity, Pose> constrained_poses;
     float blend = 0.f;
+
+    void copy_reference_pose_from_keyframe(RigModel& from_rig);
 };
 
 }  // namespace tmt
