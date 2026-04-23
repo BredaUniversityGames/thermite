@@ -70,10 +70,12 @@ class RigModel {
 
 struct ConstrainedRig
 {
+    std::unordered_map<Entity, Pose> initial_reference_poses;
     std::unordered_map<Entity, Pose> constrained_poses;
     float blend = 0.f;
 
     void copy_reference_pose_from_keyframe(RigModel& from_rig);
+    void restore_reference_poses_from_keyframe();
 };
 
 }  // namespace tmt

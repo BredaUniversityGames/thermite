@@ -266,4 +266,12 @@ void ConstrainedRig::copy_reference_pose_from_keyframe(RigModel& rig_model)
     }
 }
 
+void ConstrainedRig::restore_reference_poses_from_keyframe()
+{
+    for(auto& [ent, pose] : constrained_poses) 
+    {
+        pose = initial_reference_poses[ent];
+    }
+}
+
 }  // namespace tmt
