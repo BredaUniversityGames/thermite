@@ -33,6 +33,7 @@ template <typename T, typename = void>
 struct EcsComponentTraits {
     static constexpr bool IS_GAME_COMPONENT = false;
     static T& add(Registry& registry, Entity entity) { return registry.emplace<T>(entity); }
+    static T& add(Registry& registry, Entity entity, T&& component) { return registry.emplace<T>(entity, std::move(component)); }
     static void remove(Registry& registry, Entity entity) { registry.remove<T>(entity); }
     static T& get(Registry& registry, Entity entity) { return registry.get<T>(entity); }
     static const T& get(const Registry& registry, Entity entity) { return registry.get<T>(entity); }
@@ -160,6 +161,12 @@ class Ecs : public OnGameStart, public OnGameUpdate, public OnGameFixedUpdate, p
         } else {
             return std::forward_as_tuple(add_component<Component>(entity)...);
         }
+    }
+
+    /* Only works on Engine components, if needed for game components, let Sven know */
+    template <typename Component>
+    decltype(auto) add_component(Entity entity, Component&& component) {
+        return EcsComponentTraits<Component>::add(registry, entity, std::move(component));
     }
 
     /* Single + Multiple remove */
