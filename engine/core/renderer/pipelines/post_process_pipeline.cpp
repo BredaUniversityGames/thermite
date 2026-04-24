@@ -8,6 +8,7 @@
 #include "engine.hpp"
 #include "core/renderer/renderer.hpp"
 #include "tools/player_data.hpp"
+#include "core/input/input.hpp"
 
 namespace tmt {
 
@@ -28,6 +29,8 @@ void PostProcessPipeline::init(GPUAdapter& gpu) {
     down_sampler = bank.create_sampler("Down Sampler", Filter::Linear, AddressMode::ClampToBorder).expect("failed to create down sampler.");
     up_sampler = bank.create_sampler("Up Sampler", Filter::Linear, AddressMode::ClampToEdge).expect("failed to create up sampler.");
 }
+
+static bool old_taa = false;
 
 void PostProcessPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
     const glm::uvec2 shading_res = render_view.gpu_view.resolution;
@@ -85,7 +88,11 @@ void PostProcessPipeline::enqueue(RenderGraph& render_graph, RenderView render_v
 
     /* TAA Resolve */
     const uint32_t frame_flag = (render_view.frame_counter & 1) == 0;
-    uint32_t taa_flag = engine.renderer.enable_taa ? 1u : 0u;
+    
+    // uint32_t taa_flag = engine.renderer.enable_taa ? 1u : 0u;
+    if (engine.input.is_keyboard_button_just_pressed(Key::P)) 
+        old_taa = !old_taa;
+    uint32_t taa_flag = old_taa ? 1u : 0u;
     /* clang-format off */
     render_graph.add_compute_pass("TAA Resolve", "taa_resolve.cs")
         .read(render_view.render_view_buffer)
@@ -101,8 +108,6 @@ void PostProcessPipeline::enqueue(RenderGraph& render_graph, RenderView render_v
         .push_constants(&taa_flag, 0, sizeof(uint32_t))
         .group_size(16, 8)
         .work_size(render_view.gpu_view.resolution.x, render_view.gpu_view.resolution.y);
-    std::swap(render_view.stencil_image, render_view.prev_stencil_image);
-    std::swap(render_view.dbuffer, render_view.prev_dbuffer);
     /* clang-format on */
 
     { /* Threshold the Luminance buffer */

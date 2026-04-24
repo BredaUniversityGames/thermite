@@ -208,6 +208,9 @@ void Renderer::update() {
         Log::error(Log::Scope::RENDERER, "failed to dispatch render graph.\nreason: {}", r.unwrap_err());
     }
     TMT_FRAME_MARK;
+
+    std::swap(render_view.stencil_image, render_view.prev_stencil_image);
+    std::swap(render_view.dbuffer, render_view.prev_dbuffer);
 }
 
 void Renderer::end() {

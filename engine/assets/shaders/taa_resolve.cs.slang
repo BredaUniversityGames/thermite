@@ -41,10 +41,10 @@ float3 clip_aabb(float3 aabb_min, float3 aabb_max, float3 history) {
 void main(int2 thread_id: SV_DispatchThreadID) {
     float3 curr_luminance = lbuffer[thread_id];
 
-    if (taa_flag != 1) {
-        lbuffer[thread_id] = curr_luminance;
-        return;
-    }
+    //if (taa_flag != 1u) {
+    //    lbuffer[thread_id] = curr_luminance;
+    //    return;
+    //}
 
     float3 output = float3(0.0f, 0.0f, 0.0f);
 
@@ -72,11 +72,14 @@ void main(int2 thread_id: SV_DispatchThreadID) {
         }
     }
 
+    /* Check for stenciled particles */
+    const uint32_t curr_stencil = stencil_buffer[thread_id];
+
     /* Variance clipping (build tighter aabb) */
     /* https://alextardif.com/TAA.html */
     const float3 mu = m1 / 9.0f;
     const float3 sigma = sqrt(abs(m2 / 9.0f - mu * mu));
-    const float gamma = 1.0f;
+    const float gamma = curr_stencil == 1u ? 2.0f : 1.0f; /* Allow higher color range for particles (widden the aabb) */
     const float3 var_min = max(mu - gamma * sigma, neighbour_min);
     const float3 var_max = min(mu + gamma * sigma, neighbour_max);
 
@@ -88,14 +91,14 @@ void main(int2 thread_id: SV_DispatchThreadID) {
     float3 prev_luminance = hbuffer2.SampleLevel(linear_sampler, uv_last, 0.0f).rgb;
     prev_luminance = clip_aabb(var_min, var_max, prev_luminance);
 
-    uint32_t curr_stencil = stencil_buffer[thread_id];
-    uint32_t prev_stencil = prev_stencil_buffer.SampleLevel(linear_sampler, uv_last, 0.0f);
-
     /* Reject off-screen */
     const bool valid = all(uv_last >= 0.0f) && all(uv_last <= 1.0f);
     float blend = valid ? 0.95f : 0.0f;
 
-    blend = curr_stencil == prev_stencil ? blend : 0.0f;
+    /* Use less of previous frame if we reproject particles */
+    const uint32_t prev_stencil = prev_stencil_buffer.SampleLevel(point_sampler, uv_last, 0.0f);
+    if (taa_flag != 1u)
+        blend = curr_stencil == prev_stencil ? blend : 0.1f;
             
     output = lerp(curr_luminance, prev_luminance, blend);
 
