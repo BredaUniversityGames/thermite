@@ -127,7 +127,7 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
         struct UpdatePc {
             glm::vec3 prev_origin;
             int cascade_index;
-        } update_pc { cascade_positions[cascade_index], cascade_index };
+        } update_pc { glm::floor(cascade_positions[cascade_index] / 2.0f) * 2.0f, cascade_index };
         render_graph.add_compute_pass("update probes pass", "lighting/volume_update.cs")
             /* Intermediate probe buffer */
             .read(probe_lum_image)

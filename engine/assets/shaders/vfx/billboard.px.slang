@@ -46,7 +46,7 @@ FragmentOutput main(BillboardVertexOutput input, uint32_t instance_id: SV_Instan
     FragmentOutput output;
 
     /* Sample the irradiance volume */
-    const float3 view_pos = input.world_pos - gpu_view.origin.xyz;
+    const float3 view_pos = input.world_pos - floor(gpu_view.origin.xyz / 2.0f) * 2.0f;
     const float3 normal = -normalize(view_pos);
     const float3 illuminance = iv::trilerp(probe_buffer, linear_sampler, view_pos, normal) + iv::trilerp(probe_buffer, linear_sampler, view_pos, -normal);
 
