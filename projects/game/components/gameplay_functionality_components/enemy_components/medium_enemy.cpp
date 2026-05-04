@@ -153,13 +153,14 @@ void game::MediumEnemy::update(const tmt::FrameData& time) {
     for (int i = 0; i < 4; i++) {
         if (available_positions[i].entity == entt::null) continue;
         auto& pos_transform = tmt::engine.ecs.get_component<tmt::Transform>(available_positions[i].entity);
+        tmt::engine.polyline.draw_sphere(pos_transform.get_world_position(), 0.1f, 8);
         tmt::Ray ray = tmt::Ray();
         normal = (*nodes)[nav_mesh.find_closest_node(pos_transform.get_world_position())].normal;
         ray.dir = nav_mesh.nodes_mesh->empty() ? glm::vec3(0, -1, 0) : -normal;
         ray.dir = glm::normalize(ray.dir);
         ray.origin = pos_transform.get_world_position() + normal * 0.5f;
         tmt::Hit hit = tmt::engine.ecs.systems.get<tmt::Physics>().raycast(ray, projectile_mask);
-        pos_transform.set_world_position(ray.origin + ray.dir * hit.distance - ray.dir * available_positions[i].height_offset);
+        //pos_transform.set_world_position(ray.origin + ray.dir * hit.distance - ray.dir * available_positions[i].height_offset);
     }
 }
 

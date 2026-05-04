@@ -41,7 +41,7 @@ class MediumEnemy : public tmt::GameComponent<MediumEnemy> {
     tmt::Entity core = entt::null;
     uint32_t core_voxels = 0u;
     tmt::Entity rig_controller = entt::null;
-    AvailablePosEntry available_positions[4];
+    std::array<AvailablePosEntry, 4> available_positions;
     tmt::Entity missile_origin = entt::null;
     tmt::Entity laser_origin = entt::null;
     game::OreManager* ore_manager;

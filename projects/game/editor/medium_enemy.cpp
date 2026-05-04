@@ -21,10 +21,21 @@ void tag_invoke(ImReflect::ImInput_t, const char* name, game::MediumEnemy& value
     ImReflect::Input("Missile Origin", value.missile_origin, type_settings, type_response);
     ImReflect::Input("Core", value.core, type_settings, type_response);
     ImReflect::Input("Rig Controller", value.rig_controller, type_settings, type_response);
-    ImReflect::Input("Available Positions", value.available_positions, type_settings, type_response);
+    if (ImGui::TreeNodeEx("Available Positions", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImReflect::Input("", value.available_positions, type_settings, type_response);
+        ImGui::TreePop();
+    }
+    
+    /* ── Layers ────────────────────────── */
+    if (ImGui::TreeNodeEx("Masks & Layers", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImReflect::Input("Enemy Mask", value.enemy_mask, type_settings, type_response);
+        ImReflect::Input("Projectile Layer Mask", value.projectile_mask, type_settings, type_response);
+        help("Mask that only excludes enemy projectiles, so they don't collide with themselves");
+        ImReflect::Input("Projectile Layer", value.projectile_layer, type_settings, type_response);
+        help("Layer all projectiles are put on");
+        ImGui::TreePop();
+    }
 
-    ImGui::Spacing();
-    ImGui::Separator();
     ImGui::Spacing();
 
     /* ── Movement & Detection ────────────────────────── */
@@ -37,17 +48,6 @@ void tag_invoke(ImReflect::ImInput_t, const char* name, game::MediumEnemy& value
         help("When the player enters aggro range, the enemy will start chasing and firing missiles");
         ImReflect::Input("Back Off Distance", value.back_off_distance, type_settings, type_response);
         help("Back Off Distance is the distance at which the enemy will change from trying to get closer to the player to backing away");
-        ImGui::TreePop();
-    }
-
-    ImGui::Spacing();
-
-    /* ── Projectile Layers ────────────────────────── */
-    if (ImGui::TreeNodeEx("Projectile Masks", ImGuiTreeNodeFlags_DefaultOpen)) {
-        ImReflect::Input("Projectile Layer Mask", value.projectile_mask, type_settings, type_response);
-        help("Mask that only excludes enemy projectiles, so they don't collide with themselves");
-        ImReflect::Input("Projectile Layer", value.projectile_layer, type_settings, type_response);
-        help("Layer all projectiles are put on");
         ImGui::TreePop();
     }
 

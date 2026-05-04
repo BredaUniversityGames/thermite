@@ -17,6 +17,7 @@ void Stomp::on_start(tmt::Entity enemy_entity) {
 
 void Stomp::on_tick(tmt::Entity enemy_entity, float dt) {
     auto& enemy = tmt::engine.ecs.get_component<game::MediumEnemy>(enemy_entity);
+    tmt::engine.ecs.get_component<tmt::RigController>(enemy.rig_controller).set_parameter_bool("stomp", true);
     time += dt;
     if (time > enemy.stomp_windup) {
         tmt::engine.ecs.get_component<tmt::RigController>(enemy.rig_controller).set_parameter_bool("stomp", false);
