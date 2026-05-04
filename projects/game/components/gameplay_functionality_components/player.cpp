@@ -352,16 +352,16 @@ void Player::update(const tmt::FrameData& time) {
 
     update_shake(time.delta_time);
 
-    float dt = time.delta_time;
-    dt = glm::min(dt, 1.0f / 30.0f);  // clamp to ~30 FPS
+    float dt_clamped = time.delta_time;
+    dt_clamped = glm::min(dt_clamped, 1.0f / 30.0f);  // clamp to ~30 FPS
 
     float stiffness = camera_shake_settings.recoil_speed * camera_shake_settings.recoil_speed;
     float damping = 2.0f * camera_shake_settings.recoil_speed * camera_shake_settings.recoil_damping;
 
     // spring motion
     glm::vec2 force = -recoil_current * stiffness - recoil_velocity * damping;
-    recoil_velocity += force * dt;
-    recoil_current += recoil_velocity * dt;
+    recoil_velocity += force * dt_clamped;
+    recoil_current += recoil_velocity * dt_clamped;
 
     switch (state) {
         case game::PlayerState::FREEMOVING:
