@@ -203,10 +203,12 @@ void RenderView::deinit() {
     bank.destroy(vbuffer.image);
     bank.destroy(vbuffer.texture);
     bank.destroy(dbuffer.image);
+    bank.destroy(prev_dbuffer.image);
     bank.destroy(stencil_image);
     bank.destroy(prev_stencil_image);
     bank.destroy(depth_image);
     bank.destroy(dbuffer.texture);
+    bank.destroy(prev_dbuffer.texture);
     bank.destroy(lbuffer.image);
     bank.destroy(lbuffer.texture);
     bank.destroy(diff_buffer.image);
