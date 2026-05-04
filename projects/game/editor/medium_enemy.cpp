@@ -21,6 +21,7 @@ void tag_invoke(ImReflect::ImInput_t, const char* name, game::MediumEnemy& value
     ImReflect::Input("Missile Origin", value.missile_origin, type_settings, type_response);
     ImReflect::Input("Core", value.core, type_settings, type_response);
     ImReflect::Input("Rig Controller", value.rig_controller, type_settings, type_response);
+    ImReflect::Input("Available Positions", value.available_positions, type_settings, type_response);
 
     ImGui::Spacing();
     ImGui::Separator();
