@@ -166,6 +166,9 @@ void Player::look_camera() {
     camera->yaw -= dx * camera_sensitivity;
     camera->pitch -= dy * camera_sensitivity;
 
+    camera->pitch += recoil_current.y;
+    camera->yaw += recoil_current.x;
+
     camera->pitch = glm::clamp(camera->pitch, -89.0f, 89.0f);
 
     glm::vec3 front = {};
@@ -347,17 +350,28 @@ void Player::update(const tmt::FrameData& time) {
 
     update_shake(time.delta_time);
 
+    float dt = time.delta_time;
+    dt = glm::min(dt, 1.0f / 30.0f);  // clamp to ~30 FPS
+
+    float stiffness = camera_shake_settings.recoil_speed * camera_shake_settings.recoil_speed;
+    float damping = 2.0f * camera_shake_settings.recoil_speed * camera_shake_settings.recoil_damping;
+
+    // spring motion
+    glm::vec2 force = -recoil_current * stiffness - recoil_velocity * damping;
+    recoil_velocity += force * dt;
+    recoil_current += recoil_velocity * dt;
+
     switch (state) {
         case game::PlayerState::FREEMOVING:
             // Handle player movement boost (initial cost)
 
             if (input.is_action_just_pressed(action::BOOST)) {
                 energy.value = glm::min(energy.max_value, energy.value - boost_initial_cost);
-
-                add_camera_shake(camera_shake_settings.boost_intensity);
             }
             if (input.is_action_pressed(action::BOOST)) {
                 apply_boost();
+
+                add_camera_shake(camera_shake_settings.boost_intensity);
             } else {
                 reset_boost(time.delta_time);
             }
@@ -707,6 +721,16 @@ void Player::add_camera_shake(float intensity) {
 void Player::update_shake(float dt) {
     current_shake -= dt * camera_shake_settings.decay_speed;
     current_shake = glm::max(0.0f, current_shake);
+}
+
+void Player::add_recoil() {
+    if (!camera_shake_settings.enabled) return;
+
+    recoil_velocity.y += camera_shake_settings.recoil_strength;
+
+    // small horizontal variation
+    float rand_x = (rand() / (float)RAND_MAX - 0.5f) * 2.0f;
+    recoil_velocity.x += rand_x * camera_shake_settings.recoil_horizontal;
 }
 
 }  // namespace game

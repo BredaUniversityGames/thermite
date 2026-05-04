@@ -49,7 +49,7 @@ void ProjectileSpawner::on_shoot(const WeaponFiredEvent& e) const {
 
     auto* player = tmt::engine.ecs.try_get_component<Player>(player_entity);
     if (player) {
-        player->add_camera_shake(player->camera_shake_settings.shoot_intensity);
+        player->add_recoil();
     }
 }
 

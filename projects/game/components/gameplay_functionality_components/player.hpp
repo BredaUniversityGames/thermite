@@ -31,12 +31,18 @@ struct RayCollisionCheck {
 };
 enum class PlayerState { FREEMOVING, ATTACHED, PAUSED };
 struct CameraShakeSettings {
+    // Camera shake
     bool enabled = true;          // global toggle for designers
     float max_intensity = 0.25f;  // absolute clamp
-    float boost_intensity = 0.2f;
-    float shoot_intensity = 0.15f;
+    float boost_intensity = 0.015f;
     float drill_intensity = 0.05f;
     float decay_speed = 5.0f;
+
+    // recoil
+    float recoil_strength = 6.0f;    // how strong each shot kicks
+    float recoil_speed = 40.0f;      // how fast it moves
+    float recoil_damping = 0.25f;    // 0 = very bouncy, 1 = no bounce
+    float recoil_horizontal = 0.2f;  // optional side movement
 };
 
 class Player : public tmt::GameComponent<Player> {
@@ -125,10 +131,13 @@ class Player : public tmt::GameComponent<Player> {
     bool player_ended_run = false;
 
     void add_camera_shake(float intensity);
+    void add_recoil();
 
     // screen shake
     CameraShakeSettings camera_shake_settings;
     float current_shake = 0.0f;
+    glm::vec2 recoil_current { 0.0f };
+    glm::vec2 recoil_velocity { 0.0f };
 
    private:
     void refill(float delta);
@@ -158,7 +167,7 @@ TMT_OBJECT(game::PlayerStat, (max_value, value, increase_multiplier));
 TMT_OBJECT(game::PlayerMovement, (acceleration, max_speed, boost_max_speed_multiplier));
 TMT_OBJECT(game::PlayerRecharge, (recharge_distance, out_of_energy_time_till_death));
 TMT_OBJECT(game::RayCollisionCheck, (collision_layer, player_radius, collision_speed_damping, camera_near_distance));
-TMT_OBJECT(game::CameraShakeSettings, (enabled, max_intensity, boost_intensity, shoot_intensity, drill_intensity, decay_speed));
+TMT_OBJECT(game::CameraShakeSettings, (enabled, max_intensity, boost_intensity, drill_intensity, decay_speed, recoil_strength, recoil_speed, recoil_damping, recoil_horizontal));
 TMT_OBJECT(
     game::Player, (camera_sensitivity, acceleration, deceleration, drag, max_speed, boost_max_speed_multiplier, boost_acceleration_multiplier, boost_deceleration_factor,
                    boost_cost_per_second_per_additional_speed_above_max, boost_initial_cost, boost_availability, health, energy, energy_drain_per_second, out_of_energy_time_till_death,
