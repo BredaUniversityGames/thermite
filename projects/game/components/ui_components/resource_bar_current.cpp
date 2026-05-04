@@ -4,6 +4,10 @@
 
 namespace game {
 void ResourceBarCurrentComponent::start() {
+    if (player_entity == entt::null) {
+        player_entity = Player::get().entity;
+    }
+
     auto* player_component = tmt::engine.ecs.try_get_component<Player>(player_entity);
     if (!player_component) {
         tmt::Log::error("Player component cannot be found for resource bar, please check entity: {} (resource bar) and {} (player)", entity, player_entity);
@@ -17,11 +21,9 @@ void ResourceBarCurrentComponent::start() {
         tmt::engine.ecs.get_dispatcher().sink<PlayerEnergyChanged>().connect<&ResourceBarCurrentComponent::energy_changed>(this);
         resource_bar_update(static_cast<int>(player_component->energy.value));
     }
-
 }
 
 void ResourceBarCurrentComponent::update(const tmt::FrameData& time) {
-    
 }
 
 void ResourceBarCurrentComponent::end() {
@@ -49,7 +51,7 @@ void ResourceBarCurrentComponent::energy_changed(PlayerEnergyChanged player_ener
         tmt::Log::error("Player component cannot be found for resource bar, please check entity: {} (resource bar) and {} (player)", entity, player_entity);
         return;
     }
-    
+
     resource_bar_update(new_val);
 }
 
@@ -79,4 +81,4 @@ void ResourceBarCurrentComponent::resource_bar_update(int new_val) {
 
     text_renderer_component->text = render_string;
 }
-}	// namespace game
+} // namespace game

@@ -398,7 +398,7 @@ void Player::update(const tmt::FrameData& time) {
 
     // Fire event energy changed
     if (previous_energy != energy.value) {
-        tmt::engine.ecs.get_dispatcher().trigger(PlayerMaxHealthChanged { entity, energy.value, previous_energy });
+        tmt::engine.ecs.get_dispatcher().trigger(PlayerEnergyChanged { entity, energy.value, previous_energy });
     }
     previous_energy = energy.value;
     // Update UI
