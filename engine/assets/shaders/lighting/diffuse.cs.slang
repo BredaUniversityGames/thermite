@@ -37,17 +37,21 @@ float3 grid_center;
 static const float SUN_CHANCE = 0.5f;
 
 inline float3 sample_lights(const float3 p, const float3 n, inout uint seed, const float2 noise) {
-    LightSample s;                 /* Sample a light source */
+    LightSample s; /* Sample a light source */
     const float sun_chance = any(scene_view.sun_luminance > 0.0f) ? SUN_CHANCE : 0.0f;
     const bool sun_sample = rand_float(seed) < sun_chance;
     if (sun_sample) {
+        /* Sample sun light */
         s = sample_sun(p, scene_view, noise);
     } else {
+        /* Sample any direct light */
         s = lgrid::sample_light(light_grid, lights, p, grid_center, seed, noise);
     }
 
+    /* Make sure the PDF is valid */
     if (s.rcp_pdf == 0.0f) return 0.0f;
 
+    /* Evaluate NdotL */
     const float ndotl = max(0.0f, dot(n, s.dir));
     if (ndotl <= 0.0f) return 0.0f;
 
@@ -55,10 +59,13 @@ inline float3 sample_lights(const float3 p, const float3 n, inout uint seed, con
     const float t = occlusion_bvh2(tlas_nodes, object_indices, objects, custom_ray(p, s.dir), s.tmax);
     if (t < s.tmax) return 0.0f;
 
+    /* Calculate the luminance for the light */
     float3 luminance = 0.0f;
     if (sun_sample) {
-        luminance = scene_view.sun_luminance;
+        /* Sun */
+        luminance = scene_view.sun_luminance * (1.0f / sun_chance);
     } else {
+        /* Direct light */
         const Light light = lights[s.index];
 
         /* Distance based attenuation */
@@ -74,7 +81,7 @@ inline float3 sample_lights(const float3 p, const float3 n, inout uint seed, con
             const float spot = saturate((cos_theta - light.cos_beam_angle) / (cos_inner - light.cos_beam_angle));
             attenuation *= spot * spot;
         }
-        luminance = attenuation * light.luminance;
+        luminance = attenuation * light.luminance * (1.0f / (1.0f - sun_chance));
     }
 
     /* Correct BRDF is 1.0f / PI however this cancels out with the PDF being 1.0f / PI, so it's just 1.0f */
