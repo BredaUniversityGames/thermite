@@ -166,8 +166,10 @@ void Player::look_camera() {
     camera->yaw -= dx * camera_sensitivity;
     camera->pitch -= dy * camera_sensitivity;
 
-    camera->pitch += recoil_current.y;
-    camera->yaw += recoil_current.x;
+    if (camera_shake_settings.enabled) {
+        camera->pitch += recoil_current.y;
+        camera->yaw += recoil_current.x;
+    }
 
     camera->pitch = glm::clamp(camera->pitch, -89.0f, 89.0f);
 
