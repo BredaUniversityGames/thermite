@@ -5,8 +5,10 @@
 namespace tmt {
 
 struct EntityLink {
+    EntityLink() = default;
+
     Entity connected_entity;
-    glm::uvec3 connection_voxel;
+    glm::uvec3 connection_voxel = glm::uvec3(0);
 };
 
 struct VoxelConnection {
