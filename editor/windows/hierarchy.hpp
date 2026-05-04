@@ -38,6 +38,8 @@ class Hierarchy : public IWindow<>, public OnGameEnd, public OnPreUnloadScene {
 
         start_section();
 
+        hierarchy_hovered = ImGui::IsWindowHovered();
+
         uint32_t index = 0;
         uint32_t row = 0;
         for (auto [entity, transform, name] : view.each()) {
@@ -62,7 +64,10 @@ class Hierarchy : public IWindow<>, public OnGameEnd, public OnPreUnloadScene {
     };
 
     const std::vector<Entity>& get_selected_entities() const { return selected_entities; };
-    void add_entity_to_selection(const Entity& entity) { selected_entities.insert(entity); };
+    void add_entity_to_selection(const Entity& entity) 
+    {
+        selected_entities.insert(entity); 
+    };
     void remove_entity_from_selection(const Entity& entity) { selected_entities.erase(entity); }
     void add_entity_to_forced_open(const Entity& entity) { force_open_entities.insert(entity); };
     bool is_entity_selected() const { return !selected_entities.empty(); }
@@ -83,7 +88,7 @@ class Hierarchy : public IWindow<>, public OnGameEnd, public OnPreUnloadScene {
     };
 
    private:
-    tmt::InsertionOrderedSet<Entity> selected_entities;
+    tmt::InsertionOrderedSet <Entity> selected_entities;
     tmt::InsertionOrderedSet<Entity> force_open_entities;
 
     static constexpr glm::uvec2 NULL_INDEX { std::numeric_limits<uint32_t>::max() };
@@ -102,6 +107,7 @@ class Hierarchy : public IWindow<>, public OnGameEnd, public OnPreUnloadScene {
     Entity selection_parent = entt::null;
 
     std::string filter = "";
+    bool hierarchy_hovered = false;
 
     static inline bool is_between(const glm::uvec2& value, const glm::uvec2& begin, const glm::uvec2& end) {
         if (begin == NULL_INDEX || end == NULL_INDEX) return false;
