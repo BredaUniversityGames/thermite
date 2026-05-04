@@ -135,6 +135,7 @@ void Player::start() {
         tmt::engine.ecs.get_dispatcher().sink<AttachEvent>().connect<&Player::on_attach>(this);
     }
     load_upgrades();
+    set_crosshair(rifle_crosshair);
 }
 void Player::end() {
     tmt::engine.ecs.get_dispatcher().sink<AttachEvent>().disconnect<&Player::on_attach>(this);
@@ -362,6 +363,16 @@ void Player::update(const tmt::FrameData& time) {
     glm::vec2 force = -recoil_current * stiffness - recoil_velocity * damping;
     recoil_velocity += force * dt_clamped;
     recoil_current += recoil_velocity * dt_clamped;
+    // Swapping crosshair
+    if (input.is_action_just_pressed(action::SWITCH_RIFLE)) {
+        set_crosshair(rifle_crosshair);
+    }
+    if (input.is_action_just_pressed(action::SWITCH_GRAVITY)) {
+        set_crosshair(gravity_crosshair);
+    }
+    if (input.is_action_just_pressed(action::SWITCH_MINING)) {
+        set_crosshair(mine_crosshair);
+    }
 
     switch (state) {
         case game::PlayerState::FREEMOVING:
@@ -733,6 +744,37 @@ void Player::add_recoil() {
     // small horizontal variation
     float rand_x = (rand() / (float)RAND_MAX - 0.5f) * 2.0f;
     recoil_velocity.x += rand_x * camera_shake_settings.recoil_horizontal;
+}
+
+void Player::set_crosshair(tmt::Entity active) {
+    auto& ecs = tmt::engine.ecs;
+
+    std::function<void(tmt::Entity, bool)> toggle = [&](tmt::Entity e, bool enabled) {
+        if (!ecs.valid(e)) return;
+
+        // Toggle this entity
+        if (enabled) {
+            ecs.remove_component<tmt::Disable>(e);
+        } else {
+            ecs.add_or_get_component<tmt::Disable>(e);
+        }
+
+        // Toggle children
+        if (!ecs.has_component<tmt::Transform>(e)) return;
+
+        auto& transform = ecs.get_component<tmt::Transform>(e);
+        for (auto child : transform.get_all_children()) {
+            toggle(child, enabled);
+        }
+    };
+
+    // Disable all
+    toggle(rifle_crosshair, false);
+    toggle(gravity_crosshair, false);
+    toggle(mine_crosshair, false);
+
+    // Enable the one we want
+    toggle(active, true);
 }
 
 }  // namespace game
