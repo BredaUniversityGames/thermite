@@ -64,10 +64,7 @@ class Hierarchy : public IWindow<>, public OnGameEnd, public OnPreUnloadScene {
     };
 
     const std::vector<Entity>& get_selected_entities() const { return selected_entities; };
-    void add_entity_to_selection(const Entity& entity) 
-    {
-        selected_entities.insert(entity); 
-    };
+    void add_entity_to_selection(const Entity& entity) { selected_entities.insert(entity); };
     void remove_entity_from_selection(const Entity& entity) { selected_entities.erase(entity); }
     void add_entity_to_forced_open(const Entity& entity) { force_open_entities.insert(entity); };
     bool is_entity_selected() const { return !selected_entities.empty(); }
@@ -88,7 +85,7 @@ class Hierarchy : public IWindow<>, public OnGameEnd, public OnPreUnloadScene {
     };
 
    private:
-    tmt::InsertionOrderedSet <Entity> selected_entities;
+    tmt::InsertionOrderedSet<Entity> selected_entities;
     tmt::InsertionOrderedSet<Entity> force_open_entities;
 
     static constexpr glm::uvec2 NULL_INDEX { std::numeric_limits<uint32_t>::max() };
