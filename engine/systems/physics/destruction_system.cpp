@@ -9,6 +9,7 @@
 #include "engine/tools/profiler.hpp"
 #include <queue>
 #include <core/components/voxel_renderer.hpp>
+#include "engine/systems/physics/components/voxel_connection.hpp"
 #include "engine/core/resources.hpp"
 
 namespace tmt {

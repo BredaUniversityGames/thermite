@@ -10,6 +10,7 @@
 #include "engine/core/components/component_collection.hpp"
 #include "engine/systems/physics/components/voxel_body.hpp"
 #include "engine/systems/physics/components/destructable.hpp"
+#include "engine/systems/physics/components/voxel_connection.hpp"
 #include "engine/systems/animation/components/constraints.hpp"
 #include "engine/systems/animation/components/bone_hierarchy_renderer.hpp"
 #include "engine/systems/ai/navigation/nav_mesh.hpp"
@@ -46,6 +47,7 @@ using SerializeComponents = ComponentRegistry<
 	Camera,
 	VoxelBody,
 	Destructible,
+	VoxelConnection,
 	ComponentCollection,
 	NavMesh,
 	AnimConstraints::DampedTransformConstraint,
@@ -83,6 +85,7 @@ using InspectComponents = ComponentRegistry<
 	Camera,
 	VoxelBody,
 	Destructible,
+	VoxelConnection,
 	NavMesh,
 	AnimConstraints::DampedTransformConstraint,
 	AnimConstraints::TwoBoneIKConstraint,
