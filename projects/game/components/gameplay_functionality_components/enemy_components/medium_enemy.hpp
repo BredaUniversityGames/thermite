@@ -46,7 +46,7 @@ class MediumEnemy : public tmt::GameComponent<MediumEnemy> {
     tmt::Entity laser_origin = entt::null;
     game::OreManager* ore_manager;
     LayerMask projectile_mask {};
-    //LayerMask enemy_mask {};
+    LayerMask enemy_mask {};
     int projectile_layer = 4;
 
     glm::vec3 velocity = glm::vec3(0, 0, 0);

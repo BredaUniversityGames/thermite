@@ -151,7 +151,7 @@ void game::MediumEnemy::update(const tmt::FrameData& time) {
     
     // leg available pos update
     for (int i = 0; i < 4; i++) {
-        if (available_positions[i] == entt::null) continue;
+        if (available_positions[i].entity == entt::null) continue;
         auto& pos_transform = tmt::engine.ecs.get_component<tmt::Transform>(available_positions[i].entity);
         tmt::Ray ray = tmt::Ray();
         normal = (*nodes)[nav_mesh.find_closest_node(pos_transform.get_world_position())].normal;
