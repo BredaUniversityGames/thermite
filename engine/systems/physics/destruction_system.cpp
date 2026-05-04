@@ -772,7 +772,7 @@ void shrink_tree(Svt64* tree, Svt64Node& current_node, glm::uvec3& offset) {
     }
 }
 
-void fill_volumes(const Svt64* original_tree, const std::vector<uint64_t>& tree_masks, std::vector<Entity>& entities, const Destructible& graph, uint8_t) {
+void fill_volumes(const Svt64* original_tree, const std::vector<uint64_t>& tree_masks, std::vector<Entity>& entities, const Destructible& graph) {
     for (size_t i = 0; i < entities.size(); i++) {
         // Get components
         VoxelRenderer& vr = engine.ecs.get_component<VoxelRenderer>(entities[i]);
@@ -1010,9 +1010,7 @@ std::vector<Entity> Destruction::find_seperations(Entity entity, const std::vect
     }
 
     // Fill the entities with the voxels from the original entities
-    fill_volumes(tree, tree_masks, entities, graph, biggest_id);
-
-    // engine.ecs.destroy_entity(entity);
+    fill_volumes(tree, tree_masks, entities, graph);
 
     return entities;
 }
