@@ -194,6 +194,7 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
             eff.flipbook_frames = effect.texture.resource->flipbook_frames;
             eff.anim_speed = effect.anim_speed;
             eff.dither_scale = effect.dither_scale;
+            eff.emission = effect.emission;
 
             em.total_spawn_count += eff.spawn_count;
 
