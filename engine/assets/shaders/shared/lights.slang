@@ -13,10 +13,10 @@ public enum LightType : uint {
 
 /* Universal light descriptor. */
 public struct Light {
-    float4 type_origin;
-    float4 luminance_source;
-    float4 attenuation_culling_beam_blend;
-    float4 direction_length;
+    public float4 type_origin;
+    public float4 luminance_source;
+    public float4 attenuation_culling_beam_blend;
+    public float4 direction_length;
 
     /* The kind of light source. */
     public property LightType type { get { return (LightType)asuint(type_origin.x); } }

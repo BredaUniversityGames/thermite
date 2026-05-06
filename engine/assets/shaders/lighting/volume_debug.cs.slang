@@ -35,7 +35,7 @@ void main(int2 thread_id: SV_DispatchThreadID) {
     const Ray ray = pinhole_ray(render_view, thread_id);
 
     /* Grid constants */
-    const float3 cascade_center = render_view.origin.xyz;
+    const float3 cascade_center = floor(render_view.origin.xyz / 2.0f) * 2.0f;
     const float probe_extent = float(iv::CASCADE_EXTENT) / iv::CASCADE_WIDTH;
     const float3 grid_min = cascade_center - iv::CASCADE_HALF_EXTENT;
     const float3 grid_max = cascade_center + iv::CASCADE_HALF_EXTENT;

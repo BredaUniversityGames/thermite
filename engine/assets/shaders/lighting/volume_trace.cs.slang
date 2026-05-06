@@ -42,21 +42,25 @@ void main(int2 thread_id: SV_DispatchThreadID) {
     /* Calculate the cascade min bounds and probe extent */
     const float3 cascade_min = cascade_center - c_half_extent;
     const float probe_extent = c_extent / iv::CASCADE_WIDTH;
-    const float3 probe_origin = cascade_min + probe_extent * iv::thread_probe(thread_id);
+    float3 probe_origin = cascade_min + probe_extent * iv::thread_probe(thread_id);
     const int2 atlas_texel = iv::thread_texel(thread_id, 0);
 
     /* Generate a seed for this thread */
     uint seed = thread_id.x + thread_id.y * iv::ATLAS_SIZE.x + (render_view.frame_index * (iv::ATLAS_SIZE.x * (iv::ATLAS_SIZE.y / iv::CASCADE_COUNT)));
+    const float3 offset_origin = probe_origin + (rand_float3(seed) - 0.5f) * probe_extent;
 
     /* Pick a light using the cascaded light grid */
-    const lgrid::PickedLight picked_light = lgrid::pick_light(light_grid, probe_origin - render_view.origin.xyz, seed);
+    const lgrid::PickedLight picked_light = lgrid::pick_light(light_grid, offset_origin - render_view.origin.xyz, seed);
     if (picked_light.index == uint::maxValue) EARLY_OUT;
-    const Light light = lights[picked_light.index];
+    Light light = lights[picked_light.index];
+    light.attenuation_culling_beam_blend.x += probe_extent * 0.5f;
 
     /* Generate a sample for the light we picked */
-    const LightSample light_sample = sample_light(probe_origin, light, rand_float2(seed));
-    const float t = occlusion_bvh2(tlas_nodes, object_indices, objects, custom_ray(probe_origin, light_sample.dir), light_sample.tmax);
-    if (t < light_sample.tmax) EARLY_OUT;
+    LightSample light_sample = sample_light(probe_origin, light, rand_float2(seed));
+    // light_sample.tmax -= probe_extent * 0.5f;
+    // const float t = occlusion_bvh2(tlas_nodes, object_indices, objects, custom_ray(probe_origin, light_sample.dir), light_sample.tmax);
+    // if (t < light_sample.tmax) EARLY_OUT;
+    const float t = light_sample.tmax;
 
     /* Light attenuation */
     const float attenuation = attenuate_light(probe_origin, light, light_sample);
