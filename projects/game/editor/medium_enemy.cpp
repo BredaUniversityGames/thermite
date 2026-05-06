@@ -69,8 +69,6 @@ void tag_invoke(ImReflect::ImInput_t, const char* name, game::MediumEnemy& value
 
         /* Missiles */
         if (ImGui::TreeNode("Missiles")) {
-            ImReflect::Input("Stencil", value.stencil, type_settings, type_response);
-            help("Stencil used for subtracting shapes from asteroids when missiles hit an asteroid");
             ImReflect::Input("Missile Voxel Body", value.missile_voxel_object, type_settings, type_response);
             ImReflect::Input("Missile Cooldown", value.missile_cooldown, type_settings, type_response);
             ImReflect::Input("Missile Burst", value.missile_burst, type_settings, type_response);
