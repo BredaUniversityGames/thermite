@@ -43,7 +43,7 @@ struct ParticleEffect {
     float anim_speed = 1.0f;
     float dither_scale = 1.0f;
 
-    float emission = 1.0f;
+    float emission = 0.0f;
 
     bool active = true;
     bool should_burst = false;
