@@ -161,7 +161,7 @@ void FireLaser::on_tick(tmt::Entity enemy_entity, float dt) {
 
             // scaling laser and checking for player collision
             const tmt::Ray ray_cast = tmt::Ray(laser_pos, glm::normalize(direction));
-            const tmt::Hit laser_hit = tmt::engine.ecs.systems.get<tmt::Physics>().raycast(ray_cast, enemy.projectile_mask);
+            const tmt::Hit laser_hit = tmt::engine.ecs.systems.get<tmt::Physics>().raycast(ray_cast, enemy.enemy_mask);
             auto hit_pos = laser_pos + direction * laser_hit.distance;
 
             const float MAX_RANGE = 50.0f;

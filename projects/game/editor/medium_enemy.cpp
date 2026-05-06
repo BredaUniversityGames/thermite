@@ -33,6 +33,8 @@ void tag_invoke(ImReflect::ImInput_t, const char* name, game::MediumEnemy& value
         help("Mask that only excludes enemy projectiles, so they don't collide with themselves");
         ImReflect::Input("Projectile Layer", value.projectile_layer, type_settings, type_response);
         help("Layer all projectiles are put on");
+        ImReflect::Input("Enemy Layer", value.enemy_layer, type_settings, type_response);
+        help("Layer all enemies are put on");
         ImGui::TreePop();
     }
 
