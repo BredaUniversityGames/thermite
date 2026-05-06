@@ -389,6 +389,29 @@ bool Svt64::is_empty(const uint32_t x, const uint32_t y, const uint32_t z) {
     return true;
 }
 
+Svt64Node* Svt64::get_leaf(const uint32_t x, const uint32_t y, const uint32_t z) {
+    Svt64Node* current = &nodes[0];
+
+    for (uint32_t level = 1u; level < depth; ++level) {
+        const uint32_t x_index = (x >> ((depth - level) * 2u)) & 3u;
+        const uint32_t y_index = (y >> ((depth - level) * 2u)) & 3u;
+        const uint32_t z_index = (z >> ((depth - level) * 2u)) & 3u;
+
+        const uint32_t child_index = (x_index << 0u) | (z_index << 2u) | (y_index << 4u);
+        if ((current->child_mask & (1ull << child_index)) == 0u) {  // No child node at this position, return nullptr
+            return nullptr;
+        } else if (level == depth - 1) {                            // Last level, return leaf node
+            const uint32_t child_pos = (uint32_t)__popcnt64(current->child_mask & ((1ull << child_index) - 1u));
+            return &nodes[current->abs_ptr() + child_pos];
+        }
+
+        const uint32_t child_pos = (uint32_t)__popcnt64(current->child_mask & ((1ull << child_index) - 1u));
+        current = &nodes[current->abs_ptr() + child_pos];
+    }
+
+    return current;
+}
+
 Material* Svt64::get_voxel(const uint32_t x, const uint32_t y, const uint32_t z) {
     TMT_ZONE_SCOPED
 
@@ -817,8 +840,11 @@ Svt64::Svt64(const Svt64& src) {
     nodes_capacity = src.nodes_capacity;
     voxels_capacity = src.voxels_capacity;
     depth = src.depth;
+    delete[] nodes;
     nodes = new Svt64Node[node_count + SVT64_BUFFER_MEMORY];
+    delete[] materials;
     materials = new MaterialIndex[voxel_count + SVT64_BUFFER_MEMORY];
+    delete[] physics_data;
     physics_data = new PhysicsVoxel[voxel_count + SVT64_BUFFER_MEMORY];
     memcpy(nodes, src.nodes, node_count * sizeof(Svt64Node));
     memcpy(materials, src.materials, voxel_count * sizeof(MaterialIndex));
@@ -835,8 +861,11 @@ Svt64& Svt64::operator=(const Svt64& src) {
     nodes_capacity = src.nodes_capacity;
     voxels_capacity = src.voxels_capacity;
     depth = src.depth;
+    delete[] nodes;
     nodes = new Svt64Node[node_count + SVT64_BUFFER_MEMORY];
+    delete[] materials;
     materials = new MaterialIndex[voxel_count + SVT64_BUFFER_MEMORY];
+    delete[] physics_data;
     physics_data = new PhysicsVoxel[voxel_count + SVT64_BUFFER_MEMORY];
     memcpy(nodes, src.nodes, node_count * sizeof(Svt64Node));
     memcpy(materials, src.materials, voxel_count * sizeof(MaterialIndex));

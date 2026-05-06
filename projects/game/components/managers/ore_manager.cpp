@@ -20,7 +20,8 @@ void OreManager::start() {
 
     auto ore_prop_view = tmt::engine.ecs.view<OreProperties>();
     if (!ore_prop_view.empty()) {
-        ore_properties = tmt::engine.ecs.try_get_component<OreProperties>(ore_prop_view.front().entity);
+        ore_properties_entity = ore_prop_view.front().entity;
+        auto* ore_properties = tmt::engine.ecs.try_get_component<OreProperties>(ore_prop_view.front().entity);
         ore_database = ore_properties->ores;
     } else {
         tmt::Log::warn("No ore properties found, needed for ore toughness checks");
@@ -32,11 +33,14 @@ void OreManager::update(const tmt::FrameData& time) {
     if (thermite_ore_explosion_cooldown_timer >= thermite_ore_settings.cooldown_explosion) {
         new_thermite_to_explode.clear();
         for (auto& thermite_voxel : thermite_to_explode) {
-            process_thermite_ore_explosion(thermite_voxel.first, thermite_voxel.second);
+            if (tmt::engine.ecs.valid(thermite_voxel.first)) {
+                process_thermite_ore_explosion(thermite_voxel.first, thermite_voxel.second);
+            }
         }
         // update explosion list
         thermite_to_explode = new_thermite_to_explode;
         thermite_ore_explosion_cooldown_timer = 0.0f;
+        tmt::engine.ecs.get_dispatcher().trigger<ThermiteExplosionEvent>();
     }
     thermite_ore_explosion_cooldown_timer += time.delta_time;
 }
@@ -50,6 +54,7 @@ void OreManager::initiate_thermite_explosion(tmt::Entity voxel_entity, glm::uvec
 void OreManager::process_thermite_ore_explosion(tmt::Entity voxel_entity, glm::uvec3 explosion_center) {  // explosion center is uint voxel position relative to entity transform
     auto origin_entity_world_pos = tmt::engine.ecs.get_component<tmt::Transform>(voxel_entity).get_world_position();
     auto vox_renderer = tmt::engine.ecs.try_get_component<tmt::VoxelRenderer>(voxel_entity);
+    if (!vox_renderer) return;
     auto& vox_entity_transform = tmt::engine.ecs.get_component<tmt::Transform>(voxel_entity);
     int cx = static_cast<int>(explosion_center.x);
     int cy = static_cast<int>(explosion_center.y);
@@ -85,7 +90,7 @@ void OreManager::process_thermite_ore_explosion(tmt::Entity voxel_entity, glm::u
                     new_thermite_to_explode.insert(std::make_pair(result_pair.first, result_voxel.second));
                 }
                 // Guard for ore properties
-                if (ore_properties) {
+                if (ore_properties_entity != entt::null) {
                     // Check for toughness
                     auto curr_vox_toughness = ore_database.at(curr_vox_type).toughness;
                     if (curr_vox_toughness <= thermite_ore_settings.explosion_strength) {

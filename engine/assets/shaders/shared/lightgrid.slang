@@ -1,6 +1,7 @@
 module lightgrid;
 
 import math;
+import lights;
 
 namespace lgrid {
 
@@ -78,6 +79,27 @@ public [ForceInline] PickedLight pick_light(const StructuredBuffer<uint32_t> cas
     const uint32_t slot = uint32_t(rand_float(seed) * light_count);
     const uint32_t light_index = cascades[cell_base + 1u + slot];
     return PickedLight(light_index, (float)light_count);
+}
+
+public [ForceInline] LightSample sample_light(const StructuredBuffer<uint32_t> cascades, StructuredBuffer<Light> lights, const float3 pos, const float3 view, inout uint seed, const float2 noise) {
+    /* Index light grid cascades */
+    const lgrid::CascadeIndex index = lgrid::index_cascades(pos - view);
+    if (index.cascade == uint::maxValue) return LightSample(0.0f, 0.0f, 0.0f);
+
+    /* Compute cell index and base, and retrieve light count */
+    const uint32_t cell_base = lgrid::cell_base(index.cascade, index.x, index.y, index.z);
+    const uint32_t light_count = cascades[cell_base];
+    if (light_count == 0u) return LightSample(0.0f, 0.0f, 0.0f);
+
+    /* Pick a random light uniformly */
+    const uint32_t slot = uint32_t(rand_float(seed) * light_count);
+    const uint32_t light_index = cascades[cell_base + 1u + slot];
+
+    /* Generate a sample for the light we picked */
+    LightSample s = sample_light(pos, lights[light_index], noise);
+    s.index = light_index;
+    s.rcp_pdf *= light_count; /* Update PDF */
+    return s;
 }
 
 }

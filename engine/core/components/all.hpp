@@ -9,6 +9,7 @@
 #include "engine/core/components/camera.hpp"
 #include "engine/core/components/component_collection.hpp"
 #include "engine/systems/physics/components/voxel_body.hpp"
+#include "engine/systems/physics/components/destructable.hpp"
 #include "engine/systems/animation/components/constraints.hpp"
 #include "engine/systems/animation/components/bone_hierarchy_renderer.hpp"
 #include "engine/systems/ai/navigation/nav_mesh.hpp"
@@ -17,7 +18,6 @@
 #include "engine/core/components/prefab.hpp"
 #include "engine/core/components/light.hpp"
 #include "engine/core/components/emitter.hpp"
-#include "engine/core/components/cell_grouper_tag.hpp"
 #include "engine/core/components/ui_component.hpp"
 #include "engine/core/components/image_renderer.hpp"
 #include "engine/core/components/text_renderer.hpp"
@@ -41,11 +41,11 @@ using SerializeComponents = ComponentRegistry<
 	Name,
 	Transform, 
 	DisableFlag,
-	tmt::LevelCellGrouperTag,
 	VoxelRenderer, 
 	Environment,
 	Camera,
 	VoxelBody,
+	Destructible,
 	ComponentCollection,
 	NavMesh,
 	AnimConstraints::DampedTransformConstraint,
@@ -82,6 +82,7 @@ using InspectComponents = ComponentRegistry<
 	Environment,
 	Camera,
 	VoxelBody,
+	Destructible,
 	NavMesh,
 	AnimConstraints::DampedTransformConstraint,
 	AnimConstraints::TwoBoneIKConstraint,
