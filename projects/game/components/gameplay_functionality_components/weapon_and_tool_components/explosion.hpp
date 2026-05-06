@@ -28,7 +28,7 @@ class Explosion : public tmt::GameComponent<Explosion> {
 
     tmt::Entity explosion = entt::null;
 
-    float explosion_lifetime = 2.f;
+    float explosion_lifetime = 1.f;
 
    private:
     glm::vec3 get_position() const;
