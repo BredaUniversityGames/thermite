@@ -75,7 +75,7 @@ void game::Explosion::explode() const {
         resource->set_dirty();
     }
 
-    //tmt::engine.ecs.destroy_entity(entity);
+    // tmt::engine.ecs.destroy_entity(entity);
 }
 void game::Explosion::start() {
     explode_time = 0.f;
@@ -91,8 +91,7 @@ void game::Explosion::start() {
 }
 void game::Explosion::update(const tmt::FrameData& time) {
     explode_time += time.delta_time;
-    if (explode_time >= explosion_lifetime) 
-        tmt::engine.ecs.destroy_entity(entity);
+    if (explode_time >= explosion_lifetime) tmt::engine.ecs.destroy_entity(entity);
 }
 
 void game::Explosion::draw_debug_lines() const {
