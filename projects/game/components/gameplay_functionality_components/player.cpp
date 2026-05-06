@@ -749,7 +749,7 @@ void Player::add_recoil() {
 void Player::set_crosshair(tmt::Entity active) {
     auto& ecs = tmt::engine.ecs;
 
-    std::function<void(tmt::Entity, bool)> toggle = [&](tmt::Entity e, bool enabled) {
+    auto toggle = [&](auto&& self, tmt::Entity e, bool enabled) -> void {
         if (!ecs.valid(e)) return;
 
         // Toggle this entity
@@ -764,17 +764,17 @@ void Player::set_crosshair(tmt::Entity active) {
 
         auto& transform = ecs.get_component<tmt::Transform>(e);
         for (auto child : transform.get_all_children()) {
-            toggle(child, enabled);
+            self(self, child, enabled);
         }
     };
 
-    // Disable all
-    toggle(rifle_crosshair, false);
-    toggle(gravity_crosshair, false);
-    toggle(mine_crosshair, false);
+    // Disable all crosshairs
+    toggle(toggle, rifle_crosshair, false);
+    toggle(toggle, gravity_crosshair, false);
+    toggle(toggle, mine_crosshair, false);
 
-    // Enable the one we want
-    toggle(active, true);
+    // Enable selected crosshair
+    toggle(toggle, active, true);
 }
 
 }  // namespace game
