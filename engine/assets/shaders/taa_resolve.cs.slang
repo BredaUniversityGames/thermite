@@ -41,10 +41,10 @@ float3 clip_aabb(float3 aabb_min, float3 aabb_max, float3 history) {
 void main(int2 thread_id: SV_DispatchThreadID) {
     float3 curr_luminance = lbuffer[thread_id];
 
-    //if (taa_flag != 1u) {
-    //    lbuffer[thread_id] = curr_luminance;
-    //    return;
-    //}
+    if (taa_flag != 1u) {
+        lbuffer[thread_id] = curr_luminance;
+        return;
+    }
 
     float3 output = float3(0.0f, 0.0f, 0.0f);
 
@@ -97,8 +97,7 @@ void main(int2 thread_id: SV_DispatchThreadID) {
 
     /* Use less of previous frame if we reproject particles */
     const uint32_t prev_stencil = prev_stencil_buffer.SampleLevel(point_sampler, uv_last, 0.0f);
-    if (taa_flag != 1u)
-        blend = curr_stencil == prev_stencil ? blend : 0.1f;
+    blend = curr_stencil == prev_stencil ? blend : 0.1f;
             
     output = lerp(curr_luminance, prev_luminance, blend);
 

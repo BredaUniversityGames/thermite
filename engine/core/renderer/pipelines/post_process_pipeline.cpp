@@ -14,8 +14,6 @@ namespace tmt {
 
 void PostProcessPipeline::init(GPUAdapter&) {}
 
-static bool old_taa = false;
-
 void PostProcessPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
     const glm::uvec2 shading_res = render_view.gpu_view.resolution;
 
@@ -23,9 +21,7 @@ void PostProcessPipeline::enqueue(RenderGraph& render_graph, RenderView render_v
     const uint32_t frame_flag = (render_view.frame_counter & 1) == 0;
 
     /* TAA Resolve */
-    // uint32_t taa_flag = engine.renderer.enable_taa ? 1u : 0u;
-    if (engine.input.is_keyboard_button_just_pressed(Key::P)) old_taa = !old_taa;
-    uint32_t taa_flag = old_taa ? 1u : 0u;
+    uint32_t taa_flag = engine.renderer.enable_taa ? 1u : 0u;
     /* clang-format off */
     render_graph.add_compute_pass("TAA Resolve", "taa_resolve.cs")
         .read(render_view.render_view_buffer)
