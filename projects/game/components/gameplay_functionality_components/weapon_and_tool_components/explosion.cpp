@@ -6,6 +6,7 @@
 #include "projects/game/components/managers/ore_manager.hpp"
 #include "projects/game/data_headers/ore_properties.hpp"
 #include <engine/systems/physics/destruction_system.hpp>
+#include "engine/core/components/emitter.hpp"
 
 void game::Explosion::explode() const {
     // for thermite explosions
