@@ -66,6 +66,7 @@ void RenderView::init() {
     prev_dbuffer.image = bank.create_image("Prev Depth/Stencil Buffer Image", prev_dbuffer.texture).expect("failed to create prev depth buffer image."); /* Depth Stencil Image View - Used for Writing in Raster Pass */
     
     depth_image = bank.create_image("Depth Buffer Image", dbuffer.texture, true).expect("failed to create depth buffer image."); /* Depth Image View - Used for Reading in Compute Pass */
+    prev_depth_image = bank.create_image("Prev Depth Buffer Image", prev_dbuffer.texture, true).expect("failed to create depth buffer image."); /* Depth Image View - Used for Reading in Compute Pass */
     stencil_image = bank.create_image("Stencil Buffer Image", dbuffer.texture, false, true).expect("failed to create stencil buffer image."); /* Stencil Image View - Used for Reading in Compute Pass */
     prev_stencil_image = bank.create_image("Prev Stencil Buffer Image", prev_dbuffer.texture, false, true).expect("failed to create prev stencil buffer image."); /* Stencil Image View - Used for Reading in Compute Pass */
 
@@ -207,6 +208,7 @@ void RenderView::deinit() {
     bank.destroy(stencil_image);
     bank.destroy(prev_stencil_image);
     bank.destroy(depth_image);
+    bank.destroy(prev_depth_image);
     bank.destroy(dbuffer.texture);
     bank.destroy(prev_dbuffer.texture);
     bank.destroy(lbuffer.image);

@@ -103,6 +103,7 @@ struct RenderView {
     Image prev_stencil_image {};
     /* Depth image */
     Image depth_image {};
+    Image prev_depth_image {};
 
     /* Macrofacet buffers */
     Buffer macrofacet_cache {}; /* Macrofacet hash cache (10.000.000, 48 bytes) */

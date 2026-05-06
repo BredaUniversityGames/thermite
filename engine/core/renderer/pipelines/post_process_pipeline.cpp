@@ -36,6 +36,7 @@ void PostProcessPipeline::enqueue(RenderGraph& render_graph, RenderView render_v
     const glm::uvec2 shading_res = render_view.gpu_view.resolution;
 
     RendererSettings& settings = engine.player_data.get<RendererSettings>("RendererSettings");
+    const uint32_t frame_flag = (render_view.frame_counter & 1) == 0;
 
     { /* Auto-exposure */
         /* clang-format off */
@@ -77,7 +78,7 @@ void PostProcessPipeline::enqueue(RenderGraph& render_graph, RenderView render_v
 
         /* Apply exposure to luminance buffer */
         render_graph.add_compute_pass("AutoX Apply", "lighting/autox_apply.cs")
-            .read(render_view.depth_image)
+            .read(frame_flag ? render_view.depth_image : render_view.prev_depth_image)
             .write(render_view.lbuffer.image)
             .read(autox_image)
             .push_constants(&autox_constants, 0u, sizeof(AutoXConstants))
@@ -87,8 +88,6 @@ void PostProcessPipeline::enqueue(RenderGraph& render_graph, RenderView render_v
     }
 
     /* TAA Resolve */
-    const uint32_t frame_flag = (render_view.frame_counter & 1) == 0;
-    
     // uint32_t taa_flag = engine.renderer.enable_taa ? 1u : 0u;
     if (engine.input.is_keyboard_button_just_pressed(Key::P)) 
         old_taa = !old_taa;
@@ -99,9 +98,9 @@ void PostProcessPipeline::enqueue(RenderGraph& render_graph, RenderView render_v
         .read(engine.renderer.point_sampler)
         .read(engine.renderer.linear_sampler)
         .read(render_view.mbuffer.image)
-        .read(render_view.depth_image)
-        .read(render_view.stencil_image)
-        .read(render_view.prev_stencil_image)
+        .read(frame_flag ? render_view.depth_image : render_view.prev_depth_image)
+        .read(frame_flag ? render_view.stencil_image : render_view.prev_stencil_image)
+        .read(frame_flag ? render_view.prev_stencil_image : render_view.stencil_image)
         .write(render_view.lbuffer.image)
         .write(frame_flag ? render_view.hbuffer1.image : render_view.hbuffer2.image)
         .read(frame_flag ? render_view.hbuffer2.image : render_view.hbuffer1.image)

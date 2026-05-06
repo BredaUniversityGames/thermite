@@ -252,6 +252,7 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
 
 
     const glm::uvec2 render_res = render_view.gpu_view.resolution;
+    const uint32_t frame_flag = (render_view.frame_counter & 1) == 0;
 
     StencilState stencil_state {}; /* default stencil state */
     stencil_state.write_mask = 0xFF;
@@ -268,7 +269,7 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
                                 .read(alive_list, ShaderStages::Vertex)
                                 .read(render_view.blue_noise1d->image, ShaderStages::Pixel)
                                 .read(engine.renderer.linear_sampler, ShaderStages::Pixel | ShaderStages::Vertex)
-                                .depth_stencil(render_view.dbuffer.image, true, true, stencil_state)
+                                .depth_stencil(frame_flag ? render_view.dbuffer.image : render_view.prev_dbuffer.image, true, true, stencil_state)
                                 .load_op_depth(LoadOp::Load)
                                 .load_op_color(LoadOp::Load)
                                 .attach(render_view.lbuffer.image)
