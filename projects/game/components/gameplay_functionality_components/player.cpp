@@ -31,6 +31,14 @@ static glm::vec2 hash_noise(float t) {
     return n * 2.0f - 1.0f;  // range [-1, 1]
 }
 
+static float move_towards(float current, float target, float max_delta) {
+    float delta = target - current;
+
+    if (glm::abs(delta) <= max_delta) return target;
+
+    return current + glm::sign(delta) * max_delta;
+}
+
 namespace game {
 
 void setup_inputs(tmt::InputMap& input_map) {
@@ -145,40 +153,43 @@ void Player::end() {
 void Player::look_camera() {
     auto& input = tmt::engine.input;
 
-    // Guard for camera existence
     auto camera = tmt::engine.ecs.try_get_component<tmt::Camera>(entity);
     if (!camera) {
         state = PlayerState::PAUSED;
+
         if (input.is_mouse_locked()) {
             input.lock_mouse(false);
             input.set_mouse_relative_to_window(false);
         }
         return;
     }
-    const bool mouse_locked = input.is_mouse_locked();
-    if (!mouse_locked) return;
+
+    if (!input.is_mouse_locked()) return;
 
     auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
 
-    // Mouse look
     const float dx = input.get_mouse_delta_x();
     const float dy = input.get_mouse_delta_y();
 
-    camera->yaw -= dx * camera_sensitivity;
-    camera->pitch -= dy * camera_sensitivity;
+    base_yaw -= dx * camera_sensitivity;
+    base_pitch -= dy * camera_sensitivity;
+
+    base_pitch = glm::clamp(base_pitch, -89.0f, 89.0f);
+
+    float yaw = base_yaw;
+    float pitch = base_pitch;
 
     if (camera_shake_settings.enabled) {
-        camera->pitch += recoil_current.y;
-        camera->yaw += recoil_current.x;
+        yaw += recoil_offset.x;
+        pitch += recoil_offset.y;
     }
 
-    camera->pitch = glm::clamp(camera->pitch, -89.0f, 89.0f);
+    glm::vec3 front;
 
-    glm::vec3 front = {};
+    front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+    front.y = sin(glm::radians(pitch));
+    front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
 
-    front.x = cos(glm::radians(camera->yaw)) * cos(glm::radians(camera->pitch));
-    front.y = sin(glm::radians(camera->pitch));
-    front.z = sin(glm::radians(camera->yaw)) * cos(glm::radians(camera->pitch));
     front = glm::normalize(front);
 
     glm::vec3 shake_offset(0.0f);
@@ -191,7 +202,6 @@ void Player::look_camera() {
 
         glm::vec3 target_shake = right * n.x * current_shake + up * n.y * current_shake;
 
-        // removes harshness
         float smooth = 12.0f * tmt::engine.frame_data().delta_time;
 
         static glm::vec3 shake_current(0.0f);
@@ -353,16 +363,16 @@ void Player::update(const tmt::FrameData& time) {
 
     update_shake(time.delta_time);
 
-    float dt_clamped = time.delta_time;
-    dt_clamped = glm::min(dt_clamped, 1.0f / 30.0f);  // clamp to ~30 FPS
+    // --- Recoil recovery ---
+    float dt = glm::min(time.delta_time, 1.0f / 30.0f);
 
-    float stiffness = camera_shake_settings.recoil_speed * camera_shake_settings.recoil_speed;
-    float damping = 2.0f * camera_shake_settings.recoil_speed * camera_shake_settings.recoil_damping;
+    // how fast it returns
+    float return_speed = camera_shake_settings.recoil_return_speed;
 
-    // spring motion
-    glm::vec2 force = -recoil_current * stiffness - recoil_velocity * damping;
-    recoil_velocity += force * dt_clamped;
-    recoil_current += recoil_velocity * dt_clamped;
+    // move back toward zero at a constant speed
+    recoil_offset.x = move_towards(recoil_offset.x, 0.0f, return_speed * dt);
+    recoil_offset.y = move_towards(recoil_offset.y, 0.0f, return_speed * dt);
+
     // Swapping crosshair
     if (input.is_action_just_pressed(action::SWITCH_RIFLE)) {
         set_crosshair(rifle_crosshair);
@@ -737,13 +747,10 @@ void Player::update_shake(float dt) {
 }
 
 void Player::add_recoil() {
-    if (!camera_shake_settings.enabled) return;
+    recoil_offset.y += camera_shake_settings.recoil_strength;
 
-    recoil_velocity.y += camera_shake_settings.recoil_strength;
-
-    // small horizontal variation
     float rand_x = (rand() / (float)RAND_MAX - 0.5f) * 2.0f;
-    recoil_velocity.x += rand_x * camera_shake_settings.recoil_horizontal;
+    recoil_offset.x += rand_x * camera_shake_settings.recoil_horizontal;
 }
 
 void Player::set_crosshair(tmt::Entity active) {
