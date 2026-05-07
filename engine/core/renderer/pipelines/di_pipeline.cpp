@@ -69,6 +69,24 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
             .work_size(div_up(CACHE_SIZE, 8u));
     }
 
+    {
+        const bool flip = (render_view.frame_counter & 0b1u) == 0u;
+        render_graph.add_compute_pass("froxel pass", "lighting/froxel_trace.cs")
+            /* Render & Scene view */
+            .read(render_view.render_view_buffer)
+            .read(scene_view.scene_view)
+            /* Ray-tracing buffers */
+            .read(scene_view.bvh_nodes)
+            .read(scene_view.object_indices)
+            .read(scene_view.object_data)
+            /* Froxel data */
+            .read(flip ? render_view.prev_froxel_image : render_view.froxel_image)
+            .write(flip ? render_view.froxel_image : render_view.prev_froxel_image)
+            .read(render_view.froxel_sampler)
+            .group_size(4, 4, 4)
+            .work_size(160, 90, 64);
+    }
+
     { /* Diffuse illumination pass */
         const Size3D rate = rated_resolution(output_res, settings.diff_shading_rate);
         render_graph.add_compute_pass("diffuse pass", "lighting/diffuse.cs")
@@ -110,55 +128,55 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
             .work_size(rate.x, rate.y);
     }
 
-    { /* Illuminance Volume Update */
-        int cascade_index = (int)render_view.frame_counter % PROBE_CASCADE_COUNT;
+    // { /* Illuminance Volume Update */
+    //     int cascade_index = (int)render_view.frame_counter % PROBE_CASCADE_COUNT;
 
-        if (cascade_index == 0) {
-            Image t = render_view.prev_probe_image;
-            render_view.prev_probe_image = render_view.probe_image;
-            render_view.probe_image = t;
-        }
+    //     if (cascade_index == 0) {
+    //         Image t = render_view.prev_probe_image;
+    //         render_view.prev_probe_image = render_view.probe_image;
+    //         render_view.probe_image = t;
+    //     }
 
-        const uint32_t dispatch_x = PROBE_CASCADE_WIDTH * PROBE_WIDTH * PROBE_CASCADE_WIDTH;
-        const uint32_t dispatch_y = PROBE_CASCADE_WIDTH * PROBE_WIDTH;
+    //     const uint32_t dispatch_x = PROBE_CASCADE_WIDTH * PROBE_WIDTH * PROBE_CASCADE_WIDTH;
+    //     const uint32_t dispatch_y = PROBE_CASCADE_WIDTH * PROBE_WIDTH;
 
-        /* Illuminance probe tracing */
-        render_graph.add_compute_pass("trace probes pass", "lighting/volume_trace.cs")
-            /* Render view */
-            .read(render_view.render_view_buffer)
-            /* Ray-tracing buffers */
-            .read(scene_view.bvh_nodes)
-            .read(scene_view.object_indices)
-            .read(scene_view.object_data)
-            /* Light buffers */
-            .read(scene_view.lights_data)
-            .read(scene_view.light_grid)
-            /* Intermediate probe buffer */
-            .write(probe_lum_image)
-            .write(probe_dir_image)
-            .push_constants(&cascade_index, 0u, sizeof(int))
-            .group_size(8, 8)
-            .work_size(dispatch_x, dispatch_y);
+    //     /* Illuminance probe tracing */
+    //     render_graph.add_compute_pass("trace probes pass", "lighting/volume_trace.cs")
+    //         /* Render view */
+    //         .read(render_view.render_view_buffer)
+    //         /* Ray-tracing buffers */
+    //         .read(scene_view.bvh_nodes)
+    //         .read(scene_view.object_indices)
+    //         .read(scene_view.object_data)
+    //         /* Light buffers */
+    //         .read(scene_view.lights_data)
+    //         .read(scene_view.light_grid)
+    //         /* Intermediate probe buffer */
+    //         .write(probe_lum_image)
+    //         .write(probe_dir_image)
+    //         .push_constants(&cascade_index, 0u, sizeof(int))
+    //         .group_size(8, 8)
+    //         .work_size(dispatch_x, dispatch_y);
 
-        /* Illuminance probe update */
-        struct UpdatePc {
-            glm::vec3 prev_origin;
-            int cascade_index;
-        } update_pc { glm::floor(cascade_positions[cascade_index] / 2.0f) * 2.0f, cascade_index };
-        render_graph.add_compute_pass("update probes pass", "lighting/volume_update.cs")
-            /* Intermediate probe buffer */
-            .read(probe_lum_image)
-            .read(probe_dir_image)
-            /* Illuminance volume buffer */
-            .read(render_view.prev_probe_image)
-            .write(render_view.probe_image)
-            .read(engine.renderer.linear_sampler)
-            .push_constants(&update_pc, 0u, sizeof(UpdatePc))
-            .group_size(8, 8)
-            .work_size(dispatch_x, dispatch_y);
+    //     /* Illuminance probe update */
+    //     struct UpdatePc {
+    //         glm::vec3 prev_origin;
+    //         int cascade_index;
+    //     } update_pc { glm::floor(cascade_positions[cascade_index] / 2.0f) * 2.0f, cascade_index };
+    //     render_graph.add_compute_pass("update probes pass", "lighting/volume_update.cs")
+    //         /* Intermediate probe buffer */
+    //         .read(probe_lum_image)
+    //         .read(probe_dir_image)
+    //         /* Illuminance volume buffer */
+    //         .read(render_view.prev_probe_image)
+    //         .write(render_view.probe_image)
+    //         .read(engine.renderer.linear_sampler)
+    //         .push_constants(&update_pc, 0u, sizeof(UpdatePc))
+    //         .group_size(8, 8)
+    //         .work_size(dispatch_x, dispatch_y);
 
-        cascade_positions[cascade_index] = render_view.gpu_view.origin;
-    }
+    //     cascade_positions[cascade_index] = render_view.gpu_view.origin;
+    // }
 
     { /* Specular illumination pass */
         const Size3D rate = rated_resolution(output_res, settings.spec_shading_rate);

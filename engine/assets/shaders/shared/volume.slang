@@ -66,17 +66,19 @@ public [ForceInline] int2 probe_uv(const float3 pos) {
 }
 
 /* Size of the froxel grid in froxels. */
-static const int3 FROXEL_GRID_SIZE = int3(160 / 4, 90 / 4, 64 / 4);
+public static const int3 FROXEL_GRID_SIZE = int3(160, 90, 64);
+public static const float FROXEL_NEAR_Z = 0.1f;
+public static const float FROXEL_FAR_Z = 320.0f;
 
-/* Get the center position of a froxel in world-space. */
-public [ForceInline] float3 froxel_to_world(const int3 froxel, const float4x4 clip_to_world, const float near_z, const float far_z) {
+/* Get the position of a froxel id in world-space. */
+public [ForceInline] float3 froxel_to_world(const float3 froxel, const float4x4 clip_to_world, const float near_z, const float far_z) {
     /* Calculate the normalized device z coordinate (exponential distribution) */
-    const float z_center = near_z * pow(far_z / near_z, (float(froxel.z) + 0.5f) / FROXEL_GRID_SIZE.z);
+    const float z_center = near_z * pow(far_z / near_z, froxel.z / FROXEL_GRID_SIZE.z);
     const float z_ndc = (far_z * near_z / z_center - far_z) / (near_z - far_z);
 
     /* Calculate the normalize device x and y coordinates */
-    const float x_ndc = (float(froxel.x) + 0.5f) / (FROXEL_GRID_SIZE.x * 0.5f) - 1.0f;
-    const float y_ndc = (float(froxel.y) + 0.5f) / (FROXEL_GRID_SIZE.y * 0.5f) - 1.0f;
+    const float x_ndc = froxel.x / (FROXEL_GRID_SIZE.x * 0.5f) - 1.0f;
+    const float y_ndc = froxel.y / (FROXEL_GRID_SIZE.y * 0.5f) - 1.0f;
 
     /* Transform from clip-space to world-space */
     const float4 view = mul(clip_to_world, float4(x_ndc, y_ndc, z_ndc, 1.0f));

@@ -171,19 +171,37 @@ void PostProcessPipeline::enqueue(RenderGraph& render_graph, RenderView render_v
     /* clang-format on */
 
     // if (engine.renderer.display_mode == DisplayMode::ILLUMINANCE) {
-        uint32_t cascade_index = 0u;
-        /* Illuminance probe update */
-        render_graph.add_compute_pass("debug probes pass", "lighting/volume_debug.cs")
+        // uint32_t cascade_index = 0u;
+        // /* Illuminance probe update */
+        // render_graph.add_compute_pass("debug probes pass", "lighting/volume_debug.cs")
+        //     /* Render view */
+        //     .read(render_view.render_view_buffer)
+        //     /* Illuminance volume buffer */
+        //     .read(render_view.probe_image)
+        //     .read(engine.renderer.linear_sampler)
+        //     .write(render_view.get_render_image()) /* Render target */
+        //     .push_constants(&cascade_index, 0u, sizeof(uint32_t))
+        //     .group_size(16, 8)
+        //     .work_size(render_view.gpu_view.resolution.x, render_view.gpu_view.resolution.y);
+    // }
+
+    {
+        const bool flip = (render_view.frame_counter & 0b1u) == 0u;
+        render_graph.add_compute_pass("[debug] froxel pass", "lighting/froxel_debug.cs")
             /* Render view */
             .read(render_view.render_view_buffer)
-            /* Illuminance volume buffer */
-            .read(render_view.probe_image)
-            .read(engine.renderer.linear_sampler)
-            .write(render_view.get_render_image()) /* Render target */
-            .push_constants(&cascade_index, 0u, sizeof(uint32_t))
+            .read(render_view.blue_noise1d->image)
+            /* Vis buffer */
+            .read(render_view.vbuffer.image)
+            .read(engine.renderer.scene_view.object_data)
+            /* Froxel data */
+            .read(flip ? render_view.froxel_image : render_view.prev_froxel_image)
+            .read(render_view.froxel_sampler)
+            /* Render target */
+            .write(render_view.get_render_image()) 
             .group_size(16, 8)
             .work_size(render_view.gpu_view.resolution.x, render_view.gpu_view.resolution.y);
-    // }
+    }
 }
 
 void PostProcessPipeline::deinit(GPUAdapter& gpu) {

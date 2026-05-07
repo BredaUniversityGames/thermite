@@ -120,6 +120,12 @@ void RenderView::init() {
     prev_probe_texture = bank.create_texture("Irradiance Probe Buffer 2 Texture", TextureUsage::Storage | TextureUsage::Sampled, TextureFormat::RGBA16Sfloat, probe_buffer_size).expect("failed to create probe texture.");
     prev_probe_image = bank.create_image("Irradiance Probe Buffer 2 Image", prev_probe_texture).expect("failed to create probe image.");
 
+    froxel_texture = bank.create_texture("Froxel Texture", TextureUsage::Storage | TextureUsage::Sampled, TextureFormat::RGBA16Sfloat, {160, 90, 64}).expect("failed to create froxel texture.");
+    froxel_image = bank.create_image("Froxel Image", froxel_texture).expect("failed to create froxel image.");
+    prev_froxel_texture = bank.create_texture("Prev Froxel Texture", TextureUsage::Storage | TextureUsage::Sampled, TextureFormat::RGBA16Sfloat, {160, 90, 64}).expect("failed to create froxel texture.");
+    prev_froxel_image = bank.create_image("Prev Froxel Image", prev_froxel_texture).expect("failed to create froxel image.");
+    froxel_sampler = bank.create_sampler("Froxel Sampler", Filter::Linear, AddressMode::ClampToEdge).expect("failed to create froxel sampler.");
+
     /* Create the macrofacet cache */
     const uint64_t cache_size = 10'000'000u; /* 480 MB */
     macrofacet_cache = bank.create_buffer("Macrofacet Cache Buffer", BufferUsage::Storage, cache_size, 48ull /* bytes */).expect("failed to create macrofacet cache buffer.");
@@ -230,6 +236,12 @@ void RenderView::deinit() {
     bank.destroy(prev_probe_texture);
     bank.destroy(viewport.image);
     bank.destroy(viewport.texture);
+    
+    bank.destroy(froxel_image);
+    bank.destroy(froxel_texture);
+    bank.destroy(prev_froxel_image);
+    bank.destroy(prev_froxel_texture);
+    bank.destroy(froxel_sampler);
 
     bank.destroy(render_view_buffer);
     bank.destroy(render_target);

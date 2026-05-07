@@ -102,6 +102,12 @@ struct RenderView {
     Texture prev_probe_texture {};
     Image prev_probe_image {};
 
+    Texture froxel_texture {};
+    Image froxel_image {};
+    Texture prev_froxel_texture {};
+    Image prev_froxel_image {};
+    Sampler froxel_sampler {};
+
     /* Macrofacet buffers */
     Buffer macrofacet_cache {}; /* Macrofacet hash cache (10.000.000, 48 bytes) */
 
