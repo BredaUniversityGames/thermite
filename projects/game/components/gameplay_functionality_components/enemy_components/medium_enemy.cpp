@@ -168,7 +168,8 @@ void game::MediumEnemy::update(const tmt::FrameData& time) {
         if (available_positions[i].entity == entt::null) continue;
         if (available_positions[i].reference_entity == entt::null) continue;
         auto& pos_transform = tmt::engine.ecs.get_component<tmt::Transform>(available_positions[i].entity);
-        auto ref_pos = walking_transform.get_world_position() + available_positions[i].stored_offset_from_ref_entity;
+        auto world_matrix = walking_transform.get_world_matrix();
+        auto ref_pos = glm::vec3(world_matrix * glm::vec4(available_positions[i].stored_offset_from_ref_entity, 1.0f));
         tmt::Ray ray = tmt::Ray();
         //normal = (*nodes)[nav_mesh.find_closest_node(pos_transform.get_world_position())].normal;
         ray.dir = -normal;
