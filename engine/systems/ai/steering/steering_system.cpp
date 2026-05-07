@@ -11,16 +11,7 @@
 
 namespace tmt {
 
-void SteeringSystem::on_start() {
-    /*Log::info("Steering on_start");
-
-    overrides().load();
-
-    auto view = engine.ecs.view<SteeringAgent>();
-    for (auto [entity, agent] : view.each()) {
-        agent.params = &overrides().params;
-    }*/
-}
+void SteeringSystem::on_start() {}
 
 /**
  * Main per-frame physics update for steering agents.
@@ -64,21 +55,23 @@ void SteeringSystem::on_fixed_update(const FrameData& time) {
         glm::vec3 desired_forward = body.velocity;
         desired_forward.y = 0.0f;
 
-        if (glm::length2(desired_forward) > 0.0001f) {
-            desired_forward = glm::normalize(desired_forward);
-
-            glm::quat target_rot = glm::quatLookAt(desired_forward, glm::vec3(0, 1, 0));
-
-            // you may need this depending on your model orientation
-            target_rot *= glm::angleAxis(glm::radians(180.0f), glm::vec3(0, 1, 0));
-
-            glm::quat current_rot = body.rotation;
-
-            float turn_speed = 5.0f;
-            glm::quat new_rot = glm::slerp(current_rot, target_rot, turn_speed * time.delta_time);
-
-            body.rotation = new_rot;
+        // Ignore tiny unstable velocities caused by collisions/explosions
+        if (glm::length2(desired_forward) < 0.05f) {
+            continue;
         }
+
+        desired_forward = glm::normalize(desired_forward);
+
+        glm::quat target_rot = glm::quatLookAt(-desired_forward, glm::vec3(0, 1, 0));
+
+        target_rot *= glm::angleAxis(glm::radians(180.0f), glm::vec3(0, 1, 0));
+
+        glm::quat current_rot = body.rotation;
+
+        float turn_speed = 5.0f;
+        glm::quat new_rot = glm::slerp(current_rot, target_rot, turn_speed * time.delta_time);
+
+        body.rotation = new_rot;
 
         check_completion(agent, request, transform, body);
     }

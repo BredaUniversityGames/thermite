@@ -84,11 +84,6 @@ void SensorsSystem::on_update(const tmt::FrameData& /*time*/) {
             ws->set_fact(tmt::FactId("s_ready_to_explode"), false);
         }
     });
-
-    // update medium enemy to check the core
-    /*ecs.view<MediumEnemy>().each([&](tmt::Entity agent, MediumEnemy& medium_enemy) {
-
-    });*/
 }
 
 void SensorsSystem::on_end() {
