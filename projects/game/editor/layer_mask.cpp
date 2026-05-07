@@ -1,3 +1,4 @@
+#if THERMITE_EDITOR
 // =============================================================================
 // LayerMask ImGui Widget
 // =============================================================================
@@ -6,12 +7,12 @@
 // Date: March 18, 2026
 // Model: Claude Opus 4.6
 // =============================================================================
-#include "layer_mask.hpp"
-#include "engine/systems/physics/physics_layers.hpp"
-#include "engine/systems/physics/physics_system.hpp"
-#include "projects/game/data_headers/layer_mask.hpp"
+    #include "layer_mask.hpp"
+    #include "engine/systems/physics/physics_layers.hpp"
+    #include "engine/systems/physics/physics_system.hpp"
+    #include "projects/game/data_headers/layer_mask.hpp"
 
-#include "engine/engine.hpp"
+    #include "engine/engine.hpp"
 
 void tag_invoke(ImReflect::ImInput_t, const char* name, game::LayerMask& mask, ImSettings& settings, ImResponse& response) {
     constexpr uint32_t count = tmt::MAX_LAYERS;
@@ -86,3 +87,4 @@ void tag_invoke(ImReflect::ImInput_t, const char* name, game::LayerMask& mask, I
         }
     }
 }
+#endif
