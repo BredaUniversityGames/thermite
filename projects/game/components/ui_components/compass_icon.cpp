@@ -1,7 +1,10 @@
 #include "compass_icon.hpp"
-
 #include "engine/core/polyline.hpp"
+#include "glm/ext/matrix_common.hpp"
 #include "projects/game/components/gameplay_functionality_components/player.hpp"
+
+#include <extern/type_tween/type_tween.hpp>
+
 void game::CompassIcon::follow_relative_transform(const glm::vec3 relative_vector) const {
     const auto& player_transform { tmt::engine.ecs.get_component<tmt::Transform>(game::Player::get().entity) };
     const auto player_forward { player_transform.get_forward() };
@@ -51,5 +54,11 @@ void game::CompassIcon::update(const tmt::FrameData&) {
     }
 }
 void game::CompassIcon::move_to_position(float factor) const {
+    // between 0 and 1
+    auto close_to_edge { glm::abs(factor) / max_threshold };
+    // get the alpha
+    if (close_to_edge > transition_threshold) {
+        tmt::engine.ecs.get_dispatcher().trigger(IconTransitionEvent { entity, close_to_edge, transition_threshold, max_threshold });
+    }
     tmt::engine.ecs.get_component<tmt::Transform>(entity).set_local_position({ factor * radius, 0.0f, 0.0f });
 }

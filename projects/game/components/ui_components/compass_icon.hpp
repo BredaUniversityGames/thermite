@@ -15,10 +15,14 @@ class CompassIcon : public tmt::GameComponent<CompassIcon> {
 
     tmt::Entity relative_entity { entt::null };
     float radius { 50.f };
+    float transition_threshold { 0.8f };
+    float max_threshold { glm::pi<float>() };
     glm::vec2 default_placement { 1.0f, 0.0f };
     tmt::Entity enable_above { entt::null };
     tmt::Entity enable_below { entt::null };
+
+   private:
 };
 
 }  // namespace game
-TMT_OBJECT(game::CompassIcon, (relative_entity, radius, default_placement, enable_above, enable_below));
+TMT_OBJECT(game::CompassIcon, (relative_entity, radius, default_placement, enable_above, enable_below, transition_threshold, max_threshold));
