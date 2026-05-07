@@ -10,45 +10,45 @@
 
 namespace tmt {
 
-void ButtonManager::on_start() {
-    auto view = engine.ecs.view<Button>();
-    for (auto [entity, button] : view.each()) {
-        button.state = ButtonState::IDLE;
+void UIElementManager::on_start() {
+    auto view = engine.ecs.view<UIInteractable>();
+    for (auto [entity, interactable] : view.each()) {
+        interactable.state = ButtonState::IDLE;
     }
     set_default_button();
 }
 
-void ButtonManager::on_update(const tmt::FrameData& time) {
+void UIElementManager::on_update(const tmt::FrameData& time) {
     update_move_state(time.delta_time);
     update_states(time);
 }
 
-void ButtonManager::update_states(const tmt::FrameData& time) {
+void UIElementManager::update_states(const tmt::FrameData& time) {
     /* group with buttons and image renderers */
-    auto group = engine.ecs.group<Button>(entt::get<ImageRenderer>);
-    for (const auto& [entity, button, image_renderer] : group.each()) {
-        image_renderer.color = button.colors.at(static_cast<uint8_t>(button.state));
-        Button::Context context { entity, button.state, button.disabled };
+    auto button_view = engine.ecs.view<Button, UIInteractable, ImageRenderer>();
+    for (const auto& [entity, button, interactable, image_renderer] : button_view.each()) {
+        image_renderer.color = button.colors.at(static_cast<uint8_t>(interactable.state));
+        Button::Context context { entity, interactable.state, interactable.disabled };
 
-        switch (button.state) {
+        switch (interactable.state) {
             case ButtonState::IDLE:
                 break;
             case ButtonState::ON_SELECT:
-                button.on_select(context);
-                button.state = ButtonState::SELECTED;
+                interactable.on_select({ entity, interactable.state, interactable.disabled });
+                interactable.state = ButtonState::SELECTED;
                 break;
             case ButtonState::SELECTED:
-                button.on_selected(context);
+                interactable.on_selected({ entity, interactable.state, interactable.disabled });
                 break;
             case ButtonState::ON_DESELECT:
-                button.on_deselect(context);
-                button.state = ButtonState::IDLE;
+                interactable.on_deselect({ entity, interactable.state, interactable.disabled });
+                interactable.state = ButtonState::IDLE;
                 break;
             case ButtonState::DISABLED:
                 break;
             case ButtonState::ON_CLICK:
                 button.on_click(context);
-                button.state = ButtonState::ON_HOLD;
+                interactable.state = ButtonState::ON_HOLD;
                 break;
             case ButtonState::ON_HOLD:
                 button.on_hold(context, time.delta_time);
@@ -56,21 +56,48 @@ void ButtonManager::update_states(const tmt::FrameData& time) {
                 break;
             case ButtonState::ON_RELEASE:
                 button.on_release(context);
-                button.state = ButtonState::SELECTED;
+                interactable.state = ButtonState::SELECTED;
                 hold_time = 0.0f;
+                break;
+        }
+    }
+
+    auto slider_view = engine.ecs.view<Slider, UIInteractable>();
+    for (const auto& [entity, slider, interactable] : slider_view.each()) {
+        Slider::Context context { entity, interactable.state, interactable.disabled, slider.value };
+
+        switch (interactable.state) {
+            case ButtonState::IDLE:
+                break;
+            case ButtonState::ON_SELECT:
+                interactable.on_select({ entity, interactable.state, interactable.disabled });
+                interactable.state = ButtonState::SELECTED;
+                break;
+            case ButtonState::SELECTED:
+                interactable.on_selected({ entity, interactable.state, interactable.disabled });
+                break;
+            case ButtonState::ON_DESELECT:
+                interactable.on_deselect({ entity, interactable.state, interactable.disabled });
+                interactable.state = ButtonState::IDLE;
+                break;
+            case ButtonState::DISABLED:
+                break;
+            case ButtonState::ON_CLICK:
+            case ButtonState::ON_HOLD:
+            case ButtonState::ON_RELEASE:
                 break;
         }
     }
 }
 
-void ButtonManager::on_end() {}
+void UIElementManager::on_end() {}
 
-void ButtonManager::select_button(const Entity button) {
+void UIElementManager::select_button(const Entity button) {
     if (selected_button == button) return;
 
     /* Deselect previous button */
     if (selected_button != entt::null) {
-        auto* prev_button = engine.ecs.try_get_component<Button>(selected_button);
+        auto* prev_button = engine.ecs.try_get_component<UIInteractable>(selected_button);
         if (prev_button) prev_button->state = ButtonState::ON_DESELECT;
         previous_button = selected_button;
     }
@@ -81,32 +108,32 @@ void ButtonManager::select_button(const Entity button) {
     /* Select new button */
     if (selected_button == entt::null) return;
 
-    auto* new_button = engine.ecs.try_get_component<Button>(selected_button);
+    auto* new_button = engine.ecs.try_get_component<UIInteractable>(selected_button);
     if (new_button) new_button->state = ButtonState::ON_SELECT;
 }
 
-void ButtonManager::next_button(Direction direction) {
+void UIElementManager::next_button(Direction direction) {
     if (selected_button == entt::null) {
         set_default_button();
         return;
     }
 
-    auto* button = engine.ecs.try_get_component<Button>(selected_button);
-    if (!button) {
+    auto* interactable = engine.ecs.try_get_component<UIInteractable>(selected_button);
+    if (!interactable) {
         set_default_button();
         return;
     }
 
     int dir = static_cast<int>(direction);
-    if (dir < 0 || dir >= static_cast<int>(button->flow_direction.size())) return;
+    if (dir < 0 || dir >= static_cast<int>(interactable->flow_direction.size())) return;
 
-    Entity next_entity = button->flow_direction[dir];
+    Entity next_entity = interactable->flow_direction[dir];
     if (next_entity == entt::null) return;
 
     select_button(next_entity);
 }
 
-void ButtonManager::set_default_button() {
+void UIElementManager::set_default_button() {
     if (previous_button != entt::null) {
         select_button(previous_button);
         return;
@@ -132,15 +159,15 @@ void ButtonManager::set_default_button() {
     }
 }
 
-void ButtonManager::set_state(ButtonState state) {
+void UIElementManager::set_state(ButtonState state) {
     if (selected_button == entt::null) return;
 
-    auto* button = engine.ecs.try_get_component<Button>(selected_button);
-    if (!button) return;
-    button->state = state;
+    auto* interactable = engine.ecs.try_get_component<UIInteractable>(selected_button);
+    if (!interactable) return;
+    interactable->state = state;
 }
 
-void ButtonManager::update_move_state(float dt) {
+void UIElementManager::update_move_state(float dt) {
     if (move_state == MoveState::INITIAL_MOVE || move_state == MoveState::REPEAT_MOVE) {
         hold_move_duration += dt;
     } else if (move_state == MoveState::IDLE) {
@@ -148,7 +175,7 @@ void ButtonManager::update_move_state(float dt) {
     }
 }
 
-void ButtonManager::on_mouse_move(MouseMoveEvent& event) {
+void UIElementManager::on_mouse_move(MouseMoveEvent& event) {
     const auto mouse_pos = glm::vec2(event.x, event.y);
     auto view = engine.ecs.view<Button>();
     for (auto [entity, button] : view.each()) {
@@ -160,7 +187,7 @@ void ButtonManager::on_mouse_move(MouseMoveEvent& event) {
     select_button(entt::null);
 }
 
-void ButtonManager::on_mouse_button(MouseButtonEvent& event) {
+void UIElementManager::on_mouse_button(MouseButtonEvent& event) {
     if (event.state == MouseButtonState::JUST_PRESSED) {
         switch (event.button) {
             case MouseButton::LEFT:
@@ -188,7 +215,7 @@ void ButtonManager::on_mouse_button(MouseButtonEvent& event) {
     }
 }
 
-void ButtonManager::on_keyboard(KeyboardEvent& event) {
+void UIElementManager::on_keyboard(KeyboardEvent& event) {
     if (event.state == KeyState::JUST_PRESSED) {
         switch (event.key) {
             case Key::UP:
@@ -273,7 +300,7 @@ void ButtonManager::on_keyboard(KeyboardEvent& event) {
     }
 }
 
-void ButtonManager::on_gamepad_button(GamepadButtonEvent& event) {
+void UIElementManager::on_gamepad_button(GamepadButtonEvent& event) {
     if (event.state == GamepadButtonState::JUST_PRESSED) {
         switch (event.button) {
             case GamepadButton::DPAD_UP:
@@ -358,7 +385,7 @@ void ButtonManager::on_gamepad_button(GamepadButtonEvent& event) {
     }
 }
 
-void ButtonManager::on_gamepad_axis(GamepadAxisEvent& event) {
+void UIElementManager::on_gamepad_axis(GamepadAxisEvent& event) {
     if (event.axis != GamepadAxis::LEFT_X && event.axis != GamepadAxis::LEFT_Y) return;
 
     // Get both axis values - we need to check the combined stick position

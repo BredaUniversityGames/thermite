@@ -13,9 +13,9 @@ enum class MoveState {
     REPEAT_MOVE,
 };
 
-class ButtonManager : public ISystem, public OnMouseMove, public OnMouseButton, public OnKeyboard, public OnGamepadButton, public OnGamepadAxis {
+class UIElementManager : public ISystem, public OnMouseMove, public OnMouseButton, public OnKeyboard, public OnGamepadButton, public OnGamepadAxis {
    public:
-    std::string get_name() override { return "ButtonManager"; }
+    std::string get_name() override { return "UIElementManager"; }
     void on_start() override;
     void on_update(const tmt::FrameData& time) override;
     void update_states(const tmt::FrameData& time);
