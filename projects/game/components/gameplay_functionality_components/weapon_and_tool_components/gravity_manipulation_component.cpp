@@ -13,8 +13,6 @@ void GravityManipulationComponent::start() {
     tmt::engine.ecs.get_dispatcher().sink<WeaponFiredEvent>().connect<&GravityManipulationComponent::on_weapon_fired>(this);
 
     max_mass = tmt::engine.player_data.get<float>(GRAVITY_GUN_DATA, max_mass);
-
-    rig_controller = tmt::engine.ecs.try_get_component<tmt::RigController>(animated_tool_entity);
 }
 
 void GravityManipulationComponent::update(const tmt::FrameData& time) {}
@@ -37,6 +35,8 @@ void GravityManipulationComponent::on_weapon_fired(const WeaponFiredEvent& e) {
     } else {
         grav_shoot();
 
+        // Get the animated rig for the tool animations
+        auto* rig_controller = tmt::engine.ecs.try_get_component<tmt::RigController>(animated_tool_entity);
         if (rig_controller) {
             rig_controller->set_parameter_trigger("Shoot");
         }

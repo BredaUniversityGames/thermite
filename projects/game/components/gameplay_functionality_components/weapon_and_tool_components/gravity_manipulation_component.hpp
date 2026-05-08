@@ -26,7 +26,6 @@ class GravityManipulationComponent : public tmt::GameComponent<GravityManipulati
     entt::entity animated_tool_entity;     // entity with the animation state machine to animate
 
    private:
-    tmt::RigController* rig_controller;    // rig controller set in the start function, from the animated_tool_entity
     std::vector<entt::entity> currently_manipulated_entities;
     void grav_point_check();
     void grav_attract();

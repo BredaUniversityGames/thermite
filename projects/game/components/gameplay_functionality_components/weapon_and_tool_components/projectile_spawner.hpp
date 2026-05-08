@@ -17,8 +17,6 @@ class ProjectileSpawner : public tmt::GameComponent<ProjectileSpawner> {
     entt::entity animated_tool_entity;   // entity with the animation state machine to animate
 
    private:
-    tmt::RigController* rig_controller;  // rig controller set in the start function, from the animated_tool_entity
-
     void on_shoot(const WeaponFiredEvent& e) const;
     tmt::Entity player_entity = entt::null;
 };

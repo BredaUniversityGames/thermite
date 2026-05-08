@@ -22,8 +22,6 @@ void ProjectileSpawner::start() {
     if (!tmt::engine.ecs.valid(player_entity)) {
         player_entity = tmt::engine.ecs.view<Player>(entt::exclude_t {}).front().entity;  // Assuming there's only one player entity in the game
     }
-
-    rig_controller = tmt::engine.ecs.try_get_component<tmt::RigController>(animated_tool_entity);
 }
 void ProjectileSpawner::update(const tmt::FrameData& time) {}
 void ProjectileSpawner::end() {
@@ -35,6 +33,8 @@ void ProjectileSpawner::on_shoot(const WeaponFiredEvent& e) const {
         return;
     }
 
+    // Get the animated rig for the tool animations
+    auto* rig_controller = tmt::engine.ecs.try_get_component<tmt::RigController>(animated_tool_entity);
     if (rig_controller) {
         rig_controller->set_parameter_trigger("Shoot");
     }
