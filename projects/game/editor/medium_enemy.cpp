@@ -25,7 +25,7 @@ void tag_invoke(ImReflect::ImInput_t, const char* name, game::MediumEnemy& value
         ImReflect::Input("", value.available_positions, type_settings, type_response);
         ImGui::TreePop();
     }
-    
+
     /* ── Layers ────────────────────────── */
     if (ImGui::TreeNodeEx("Masks & Layers", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImReflect::Input("Enemy Mask", value.enemy_mask, type_settings, type_response);

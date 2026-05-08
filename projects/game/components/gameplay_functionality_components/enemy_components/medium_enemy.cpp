@@ -66,9 +66,9 @@ void game::MediumEnemy::update(const tmt::FrameData& time) {
         tmt::engine.ecs.get_component<tmt::RigController>(rig_controller).set_parameter_bool("walk", false);
         ws->set_fact(tmt::FactId("m_laser_intact"), false);
         ws->set_fact(tmt::FactId("m_missiles_intact"), false);
-        //while (true) {
-        //    
-        //}
+        // while (true) {
+        //
+        // }
         return;
     }
 
@@ -162,7 +162,7 @@ void game::MediumEnemy::update(const tmt::FrameData& time) {
     } else {
         tmt::engine.ecs.get_component<tmt::RigController>(rig_controller).set_parameter_bool("walk", false);
     }
-    
+
     // leg available pos update
     for (int i = 0; i < 4; i++) {
         if (available_positions[i].entity == entt::null) continue;
@@ -171,7 +171,7 @@ void game::MediumEnemy::update(const tmt::FrameData& time) {
         auto world_matrix = walking_transform.get_world_matrix();
         auto ref_pos = glm::vec3(world_matrix * glm::vec4(available_positions[i].stored_offset_from_ref_entity, 1.0f));
         tmt::Ray ray = tmt::Ray();
-        //normal = (*nodes)[nav_mesh.find_closest_node(pos_transform.get_world_position())].normal;
+        // normal = (*nodes)[nav_mesh.find_closest_node(pos_transform.get_world_position())].normal;
         ray.dir = -normal;
         ray.dir = glm::normalize(ray.dir);
         ray.origin = ref_pos + normal * 1.0f;

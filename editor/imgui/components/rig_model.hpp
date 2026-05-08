@@ -82,7 +82,6 @@ inline void tag_invoke(ImReflect::ImInput_t, const char*, tmt::RigModel& value, 
     }
 }
 
-inline void tag_invoke(ImReflect::ImInput_t, const char*, tmt::ConstrainedRig& value, ImSettings&, ImResponse&)
-{
+inline void tag_invoke(ImReflect::ImInput_t, const char*, tmt::ConstrainedRig& value, ImSettings&, ImResponse&) {
     ImGui::SliderFloat("Blend", &value.blend, 0.f, 1.f);
 }

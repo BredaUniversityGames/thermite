@@ -477,7 +477,7 @@ inline void evict_node(Svt64Node* node, Svt64Node* root_node, const uint32_t pos
 }
 
 /* Remove child node from node without corrupting child indices. */
-inline void evict_voxel(Svt64* tree,Svt64Node* node, MaterialIndex* material_data, PhysicsVoxel* physics_data, const uint32_t pos, const uint32_t idx) {
+inline void evict_voxel(Svt64* tree, Svt64Node* node, MaterialIndex* material_data, PhysicsVoxel* physics_data, const uint32_t pos, const uint32_t idx) {
     /* Find the number of children present in the node */
     const uint32_t child_count = popcnt(node->child_mask);
 

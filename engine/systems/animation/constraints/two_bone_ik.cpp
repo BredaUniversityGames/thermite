@@ -8,6 +8,7 @@
 namespace tmt {
 namespace AnimConstraints {
 namespace TwoBoneIK {
+
 TwoBoneIKSolverOutput solve_two_bone_ik(const TwoBoneInputData& input_data) {
     // world space solver input state variables
     glm::vec3 in_root, in_mid, in_end;
@@ -121,7 +122,7 @@ TwoBoneIKSolverOutput solve_two_bone_ik(const TwoBoneInputData& input_data) {
 
     output.mid_rot = glm::normalize(mid_swing * input_data.mid_orig_twist);
 
-   // output.mid_rot = mid_local_rot;
+    // output.mid_rot = mid_local_rot;
 
     output.bend_angle = glm::pi<float>() - glm::angle(glm::rotation(glm::normalize(in_root - output.mid), glm::normalize(output.end - output.mid)));
 
@@ -134,8 +135,7 @@ TwoBoneIKSolverOutput solve_two_bone_ik(const TwoBoneInputData& input_data) {
     return output;
 }
 
-void decompose_swing_twist(const glm::quat& rotation, const glm::vec3& twist_axis, glm::quat& out_swing, glm::quat& out_twist) 
-{
+void decompose_swing_twist(const glm::quat& rotation, const glm::vec3& twist_axis, glm::quat& out_swing, glm::quat& out_twist) {
     glm::vec3 ra(rotation.x, rotation.y, rotation.z);
     glm::vec3 proj = glm::dot(ra, twist_axis) * twist_axis;
 

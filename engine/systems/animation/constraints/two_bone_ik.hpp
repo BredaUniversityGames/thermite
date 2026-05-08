@@ -43,6 +43,7 @@ struct TwoBoneInputData {
 TwoBoneIKSolverOutput solve_two_bone_ik(const TwoBoneInputData& input_data);
 // AI given
 void decompose_swing_twist(const glm::quat& rotation, const glm::vec3& twist_axis, glm::quat& out_swing, glm::quat& out_twist);
+
 }  // namespace TwoBoneIK
 }  // namespace AnimConstraints
 }  // namespace tmt

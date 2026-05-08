@@ -26,7 +26,7 @@ class RigModel {
     IO::FileLocation vox_path = {};
     ResourceRef<RigData> data;
     std::vector<Entity> bone_entities;
-    
+
     float time = 0.05f;
     float animation_speed = 1.0f;
     float transfer_time = 0.0f;
@@ -68,8 +68,7 @@ class RigModel {
     void init_bones(const Bone& b, Entity p);
 };
 
-struct ConstrainedRig
-{
+struct ConstrainedRig {
     std::unordered_map<Entity, Pose> initial_reference_poses;
     std::unordered_map<Entity, Pose> constrained_poses;
     float blend = 0.f;
@@ -79,7 +78,6 @@ struct ConstrainedRig
 };
 
 }  // namespace tmt
-
 
 JSON_REFLECT(tmt::BoneComp, id);
 TMT_COMPONENT(tmt::RigModel, "Animated Rig", (vox_is_loaded, vox_path, data));

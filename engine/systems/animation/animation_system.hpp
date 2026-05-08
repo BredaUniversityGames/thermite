@@ -33,8 +33,7 @@ class AnimationConstraintSystem : public ISystem {
     std::string get_name() override;
 };
 
-class AnimationPoseEvaluator : public ISystem
-{
+class AnimationPoseEvaluator : public ISystem {
    public:
     void on_start() override {};
     void on_update(const tmt::FrameData& time) override;

@@ -25,7 +25,7 @@ void Stomp::on_tick(tmt::Entity enemy_entity, float dt) {
         tmt::Transform& enemy_transform = tmt::engine.ecs.get_component<tmt::Transform>(enemy_entity);
         const auto& enemy_entity_pos = enemy_transform.get_world_position();
 
-        //if player in range, deal damage
+        // if player in range, deal damage
         auto& player_transform = tmt::engine.ecs.get_component<tmt::Transform>(enemy.player);
         const auto& player_pos = player_transform.get_world_position();
         if (glm::length(player_pos - enemy_entity_pos) <= enemy.stomp_radius) {
@@ -47,4 +47,4 @@ bool Stomp::is_done(tmt::Entity enemy_entity) const {
 void Stomp::on_interrupt(tmt::Entity enemy_entity) {
     auto& enemy = tmt::engine.ecs.get_component<game::MediumEnemy>(enemy_entity);
     tmt::engine.ecs.get_component<tmt::RigController>(enemy.rig_controller).set_parameter_bool("stomp", false);
-}   
+}
