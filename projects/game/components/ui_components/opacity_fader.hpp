@@ -11,8 +11,11 @@ class OpacityFader : public tmt::GameComponent<OpacityFader> {
     void update(const tmt::FrameData& time) override {};
     void end() override;
 
+    tmt::BezierCurve curve;
+
    private:
     void on_transition(const game::IconTransitionEvent& event);
 };
 
 }  // namespace game
+TMT_OBJECT(game::OpacityFader, (curve));

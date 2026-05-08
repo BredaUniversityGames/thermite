@@ -17,5 +17,5 @@ void game::OpacityFader::on_transition(const game::IconTransitionEvent& event) {
     auto factor { event.current_value - event.min_value };
     factor /= 1.0f - event.min_value;
 
-    ui->color.get().a = glm::mix(0.0f, 1.0f, 1.0f - factor);
+    ui->color.get().a = 1.0f - curve.eval(factor);
 }
