@@ -60,6 +60,7 @@ void game::CompassIcon::move_to_position(float factor) {
     if (close_to_edge > min_threshold) {
         tmt::engine.ecs.get_dispatcher().trigger(IconTransitionEvent { entity, close_to_edge, min_threshold });
     }
-    auto increment { factor - glm::mod(factor, move_increments) };
+    auto increment { glm::round(factor / move_increments) * move_increments };
+    tmt::Log::info("Factor {:.2f} substracts {:.2f} =  {:.2f}", factor, glm::mod(factor, move_increments), increment);
     tmt::engine.ecs.get_component<tmt::Transform>(entity).set_local_position({ increment * radius, 0.0f, 0.0f });
 }
