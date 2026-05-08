@@ -57,7 +57,7 @@ void game::CompassIcon::move_to_position(float factor) {
     // between 0 and 1
     auto close_to_edge { glm::abs(factor) / max_threshold };
     // get the alpha
-    
+
     tmt::engine.ecs.get_dispatcher().trigger(IconTransitionEvent { entity, close_to_edge, min_threshold });
 
     auto increment { glm::round(factor / move_increments) * move_increments };
