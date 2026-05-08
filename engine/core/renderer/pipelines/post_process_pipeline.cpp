@@ -34,54 +34,54 @@ void PostProcessPipeline::enqueue(RenderGraph& render_graph, RenderView render_v
 
     RendererSettings& settings = engine.player_data.get<RendererSettings>("RendererSettings");
 
-    { /* Auto-exposure */
-        /* clang-format off */
-        /* Initial 256x256 aliased gather */
-        render_graph.add_compute_pass("AutoX Gather", "lighting/autox_gather.cs")
-            .read(render_view.render_view_buffer)
-            .read(render_view.lbuffer.image)
-            .write(autox_partial_image)
-            .group_size(8, 8)
-            .work_size(256, 256);
+    // { /* Auto-exposure */
+    //     /* clang-format off */
+    //     /* Initial 256x256 aliased gather */
+    //     render_graph.add_compute_pass("AutoX Gather", "lighting/autox_gather.cs")
+    //         .read(render_view.render_view_buffer)
+    //         .read(render_view.lbuffer.image)
+    //         .write(autox_partial_image)
+    //         .group_size(8, 8)
+    //         .work_size(256, 256);
 
-        /* 256x256 to 16x16 downsampling using LDS */
-        render_graph.add_compute_pass("AutoX Average", "lighting/autox_average.cs")
-            .read(autox_partial_image)
-            .write(autox_tiny_image)
-            .read(down_sampler)
-            .group_size(8, 8)
-            .work_size(128, 128);
+    //     /* 256x256 to 16x16 downsampling using LDS */
+    //     render_graph.add_compute_pass("AutoX Average", "lighting/autox_average.cs")
+    //         .read(autox_partial_image)
+    //         .write(autox_tiny_image)
+    //         .read(down_sampler)
+    //         .group_size(8, 8)
+    //         .work_size(128, 128);
 
-        /* Final 16x16 average and temporal response */
-        render_graph.add_compute_pass("AutoX Final", "lighting/autox_final.cs")
-            .read(render_view.render_view_buffer)
-            .read(autox_tiny_image)
-            .write(autox_image)
-            .read(down_sampler)
-            .push_constants(&settings.autox_response, 0u, sizeof(float))
-            .group_size(8, 8)
-            .work_size(8, 8);
+    //     /* Final 16x16 average and temporal response */
+    //     render_graph.add_compute_pass("AutoX Final", "lighting/autox_final.cs")
+    //         .read(render_view.render_view_buffer)
+    //         .read(autox_tiny_image)
+    //         .write(autox_image)
+    //         .read(down_sampler)
+    //         .push_constants(&settings.autox_response, 0u, sizeof(float))
+    //         .group_size(8, 8)
+    //         .work_size(8, 8);
 
-        struct AutoXConstants {
-            float key_value;
-            float lum_min;
-            float lum_max;
-        } autox_constants;
+    //     struct AutoXConstants {
+    //         float key_value;
+    //         float lum_min;
+    //         float lum_max;
+    //     } autox_constants;
         
-        autox_constants.key_value = settings.autox_key_value;
-        autox_constants.lum_min = settings.autox_lum_min;
-        autox_constants.lum_max = settings.autox_lum_max;
+    //     autox_constants.key_value = settings.autox_key_value;
+    //     autox_constants.lum_min = settings.autox_lum_min;
+    //     autox_constants.lum_max = settings.autox_lum_max;
 
-        /* Apply exposure to luminance buffer */
-        render_graph.add_compute_pass("AutoX Apply", "lighting/autox_apply.cs")
-            .read(render_view.dbuffer.image)
-            .write(render_view.lbuffer.image)
-            .read(autox_image)
-            .push_constants(&autox_constants, 0u, sizeof(AutoXConstants))
-            .group_size(16, 8)
-            .work_size(render_view.gpu_view.resolution.x, render_view.gpu_view.resolution.y);
-        /* clang-format on */
-    }
+    //     /* Apply exposure to luminance buffer */
+    //     render_graph.add_compute_pass("AutoX Apply", "lighting/autox_apply.cs")
+    //         .read(render_view.dbuffer.image)
+    //         .write(render_view.lbuffer.image)
+    //         .read(autox_image)
+    //         .push_constants(&autox_constants, 0u, sizeof(AutoXConstants))
+    //         .group_size(16, 8)
+    //         .work_size(render_view.gpu_view.resolution.x, render_view.gpu_view.resolution.y);
+    //     /* clang-format on */
+    // }
 
     /* TAA Resolve */
     const uint32_t frame_flag = (render_view.frame_counter & 1) == 0;
@@ -185,23 +185,23 @@ void PostProcessPipeline::enqueue(RenderGraph& render_graph, RenderView render_v
         //     .work_size(render_view.gpu_view.resolution.x, render_view.gpu_view.resolution.y);
     // }
 
-    {
-        const bool flip = (render_view.frame_counter & 0b1u) == 0u;
-        render_graph.add_compute_pass("[debug] froxel pass", "lighting/froxel_debug.cs")
-            /* Render view */
-            .read(render_view.render_view_buffer)
-            .read(render_view.blue_noise1d->image)
-            /* Vis buffer */
-            .read(render_view.vbuffer.image)
-            .read(engine.renderer.scene_view.object_data)
-            /* Froxel data */
-            .read(flip ? render_view.froxel_image : render_view.prev_froxel_image)
-            .read(render_view.froxel_sampler)
-            /* Render target */
-            .write(render_view.get_render_image()) 
-            .group_size(16, 8)
-            .work_size(render_view.gpu_view.resolution.x, render_view.gpu_view.resolution.y);
-    }
+    // {
+    //     const bool flip = (render_view.frame_counter & 0b1u) == 0u;
+    //     render_graph.add_compute_pass("[debug] froxel pass", "lighting/froxel_debug.cs")
+    //         /* Render view */
+    //         .read(render_view.render_view_buffer)
+    //         .read(render_view.blue_noise1d->image)
+    //         /* Vis buffer */
+    //         .read(render_view.vbuffer.image)
+    //         .read(engine.renderer.scene_view.object_data)
+    //         /* Froxel data */
+    //         .read(flip ? render_view.froxel_image : render_view.prev_froxel_image)
+    //         .read(render_view.froxel_sampler)
+    //         /* Render target */
+    //         .write(render_view.get_render_image()) 
+    //         .group_size(16, 8)
+    //         .work_size(render_view.gpu_view.resolution.x, render_view.gpu_view.resolution.y);
+    // }
 }
 
 void PostProcessPipeline::deinit(GPUAdapter& gpu) {

@@ -16,8 +16,8 @@ StructuredBuffer<float4> nodes;
 StructuredBuffer<uint> indices;
 StructuredBuffer<VoxelObject> objects;
 /* Froxel buffer. */
-Texture3D<float3> prev_froxel_buffer;
-RWTexture3D<float3> froxel_buffer;
+Texture3D<float4> prev_froxel_buffer;
+RWTexture3D<float4> froxel_buffer;
 /* Linear sampler. */
 SamplerState linear_sampler;
 
@@ -38,16 +38,17 @@ void main(int3 thread_id: SV_DispatchThreadID) {
     /* Trace occlusion for the sun */
     const float3 froxel_pos = iv::froxel_to_world(froxel_id, render_view.clip_to_world, iv::FROXEL_NEAR_Z, iv::FROXEL_FAR_Z);
     const float t = occlusion_bvh2(nodes, indices, objects, custom_ray(froxel_pos, scene_view.sun_dir), BIG_F32);
+    const float3 luminance = select(t < BIG_F32, 0.0f, scene_view.sun_luminance);
 
     /* Re-project history */
     const float3 froxel_center = iv::froxel_to_world(float3(thread_id) + 0.5f, render_view.clip_to_world, iv::FROXEL_NEAR_Z, iv::FROXEL_FAR_Z);
     const float3 history_uvw = iv::froxel_uvw(froxel_center, render_view.prev_world_to_clip, iv::FROXEL_NEAR_Z, iv::FROXEL_FAR_Z);
     if (any(history_uvw < 0.0f) || any(history_uvw >= 1.0f)) {
-        froxel_buffer[thread_id] = select(t < BIG_F32, 0.0f, 1.0f);
+        froxel_buffer[thread_id] = float4(luminance, 0.5f);
         return;
     }
-    const float3 history = prev_froxel_buffer.SampleLevel(linear_sampler, history_uvw, 0);
+    const float4 history = prev_froxel_buffer.SampleLevel(linear_sampler, history_uvw, 0);
 
     /* Blend over-time with history */
-    froxel_buffer[thread_id] = lerp(history, select(t < BIG_F32, 0.0f, 1.0f), 0.025f);
+    froxel_buffer[thread_id] = float4(lerp(history.rgb, luminance, 0.05f), /* max(0.05f, history.a * 0.5f) */ 0.05f);
 }

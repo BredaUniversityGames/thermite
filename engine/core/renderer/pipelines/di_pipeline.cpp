@@ -69,24 +69,6 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
             .work_size(div_up(CACHE_SIZE, 8u));
     }
 
-    {
-        const bool flip = (render_view.frame_counter & 0b1u) == 0u;
-        render_graph.add_compute_pass("froxel pass", "lighting/froxel_trace.cs")
-            /* Render & Scene view */
-            .read(render_view.render_view_buffer)
-            .read(scene_view.scene_view)
-            /* Ray-tracing buffers */
-            .read(scene_view.bvh_nodes)
-            .read(scene_view.object_indices)
-            .read(scene_view.object_data)
-            /* Froxel data */
-            .read(flip ? render_view.prev_froxel_image : render_view.froxel_image)
-            .write(flip ? render_view.froxel_image : render_view.prev_froxel_image)
-            .read(render_view.froxel_sampler)
-            .group_size(4, 4, 4)
-            .work_size(160, 90, 64);
-    }
-
     { /* Diffuse illumination pass */
         const Size3D rate = rated_resolution(output_res, settings.diff_shading_rate);
         render_graph.add_compute_pass("diffuse pass", "lighting/diffuse.cs")
@@ -277,6 +259,38 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
             .read(render_view.vbuffer.image) /* Visibility buffer */
             .write(render_view.macrofacet_cache) /* Cache buffer */
             .write(output_buffer) /* Luminance Output */
+            .group_size(16, 8)
+            .work_size(output_res.x, output_res.y);
+
+        /* Volumetric lighting passes */
+        const bool flip = (render_view.frame_counter & 0b1u) == 0u;
+        render_graph.add_compute_pass("froxel pass", "lighting/froxel_trace.cs")
+            /* Render & Scene view */
+            .read(render_view.render_view_buffer)
+            .read(scene_view.scene_view)
+            /* Ray-tracing buffers */
+            .read(scene_view.bvh_nodes)
+            .read(scene_view.object_indices)
+            .read(scene_view.object_data)
+            /* Froxel data */
+            .read(flip ? render_view.prev_froxel_image : render_view.froxel_image)
+            .write(flip ? render_view.froxel_image : render_view.prev_froxel_image)
+            .read(render_view.froxel_sampler)
+            .group_size(4, 4, 4)
+            .work_size(160, 90, 64);
+
+        render_graph.add_compute_pass("volumetric pass", "lighting/volumetric.cs")
+            /* Render view */
+            .read(render_view.render_view_buffer)
+            .read(render_view.blue_noise1d->image)
+            /* Vis buffer */
+            .read(render_view.vbuffer.image)
+            .read(engine.renderer.scene_view.object_data)
+            /* Froxel data */
+            .read(flip ? render_view.froxel_image : render_view.prev_froxel_image)
+            .read(render_view.froxel_sampler)
+            /* Output buffer */
+            .write(output_buffer) 
             .group_size(16, 8)
             .work_size(output_res.x, output_res.y);
     }
