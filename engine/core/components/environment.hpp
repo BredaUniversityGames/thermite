@@ -25,8 +25,10 @@ struct Environment {
     float fog_scatter_strength = 0.25f;
     /* Fog absorption as RGB triplet. */
     glm::vec3 fog_absorption = glm::vec3(0.02f);
+    /* What percentage of light is reflected off of particles. */
+    float particle_reflectance = 0.1f;
 };
 
 }  // namespace tmt
 
-TMT_COMPONENT(tmt::Environment, "Environment", (resource, object_opaque_distance, object_transparent_distance, object_opacity_transition, fog_anisotropy, fog_scatter_strength, fog_absorption));
+TMT_COMPONENT(tmt::Environment, "Environment", (resource, object_opaque_distance, object_transparent_distance, object_opacity_transition, fog_anisotropy, fog_scatter_strength, fog_absorption, particle_reflectance));

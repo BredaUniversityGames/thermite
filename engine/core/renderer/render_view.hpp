@@ -98,10 +98,14 @@ struct RenderView {
     ScreenBuffer diff_buffer {};
 
     /* Froxel volume */
-    Texture froxel_texture {};
-    Image froxel_image {};
-    Texture prev_froxel_texture {};
-    Image prev_froxel_image {};
+    Texture froxel_scatter_texture {};
+    Image froxel_scatter_image {};
+    Texture prev_froxel_scatter_texture {};
+    Image prev_froxel_scatter_image {};
+    Texture froxel_luminance_texture {};
+    Image froxel_luminance_image {};
+    Texture prev_froxel_luminance_texture {};
+    Image prev_froxel_luminance_image {};
     Sampler froxel_sampler {};
 
     /* Stencil images */

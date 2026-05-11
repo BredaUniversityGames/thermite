@@ -265,9 +265,11 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
         struct Fpc {
             float fog_anisotropy = 0.6f;
             float scatter_strength = 0.0025f;
+            float particle_reflectance = 0.1f;
         } froxel_p {};
         froxel_p.fog_anisotropy = scene_view.fog_anisotropy;
         froxel_p.scatter_strength = scene_view.fog_scatter_strength / 100.0f;
+        froxel_p.particle_reflectance = scene_view.particle_reflectance;
 
         /* Volumetric lighting passes */
         const bool flip = (render_view.frame_counter & 0b1u) == 0u;
@@ -279,9 +281,11 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
             .read(scene_view.bvh_nodes)
             .read(scene_view.object_indices)
             .read(scene_view.object_data)
-            /* Froxel data */
-            .read(flip ? render_view.prev_froxel_image : render_view.froxel_image)
-            .write(flip ? render_view.froxel_image : render_view.prev_froxel_image)
+            /* Froxel buffers */
+            .read(flip ? render_view.prev_froxel_scatter_image : render_view.froxel_scatter_image)
+            .write(flip ? render_view.froxel_scatter_image : render_view.prev_froxel_scatter_image)
+            .read(flip ? render_view.prev_froxel_luminance_image : render_view.froxel_luminance_image)
+            .write(flip ? render_view.froxel_luminance_image : render_view.prev_froxel_luminance_image)
             .read(render_view.froxel_sampler)
             .push_constants(&froxel_p, 0u, sizeof(Fpc))
             .group_size(4, 4, 4)
@@ -304,7 +308,7 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
             .read(render_view.vbuffer.image)
             .read(engine.renderer.scene_view.object_data)
             /* Froxel data */
-            .read(flip ? render_view.froxel_image : render_view.prev_froxel_image)
+            .read(flip ? render_view.froxel_scatter_image : render_view.prev_froxel_scatter_image)
             .read(render_view.froxel_sampler)
             /* Output buffer */
             .write(output_buffer) 

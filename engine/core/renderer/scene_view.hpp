@@ -92,6 +92,7 @@ struct SceneView {
     float fog_anisotropy = 0.6f;
     float fog_scatter_strength = 0.25f;
     glm::vec3 fog_absorption = glm::vec3(0.02f);
+    float particle_reflectance = 0.1f;
 
    private:
     /* Collect and upload all voxel objects in the scene. */

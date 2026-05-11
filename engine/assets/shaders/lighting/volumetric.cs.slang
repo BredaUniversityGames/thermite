@@ -15,9 +15,9 @@ Texture2D<float4> blue_noise;
 Texture2D<uint2> vbuffer;
 StructuredBuffer<VoxelObject> objects;
 /* Froxel buffer. */
-Texture3D<float3> froxel_buffer;
+Texture3D<float3> froxel_scatter;
 /* Linear sampler. */
-SamplerState linear_sampler;
+SamplerState froxel_sampler;
 /* Luminance buffer. */
 RWTexture2D<float3> lbuffer;
 
@@ -67,7 +67,7 @@ void main(int2 thread_id: SV_DispatchThreadID) {
 
         /* Calculate transmittance and inscattering at each step */
         const float3 step_transmittance = beer_lambert(p.fog_absorb, step_size);
-        inscattered += transmittance * froxel_buffer.SampleLevel(linear_sampler, uvw, 0) * (1.0f - step_transmittance);
+        inscattered += transmittance * froxel_scatter.SampleLevel(froxel_sampler, uvw, 0) * (1.0f - step_transmittance);
         transmittance *= step_transmittance;
 
         /* Step forward */
