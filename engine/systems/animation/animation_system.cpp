@@ -290,12 +290,14 @@ void tmt::AnimationConstraintSystem::on_update(const tmt::FrameData& time) {
 
             local_keyframe_root.rotation = output.root_rot;
             local_keyframe_mid.rotation = output.mid_rot;
-            local_keyframe_tip.rotation = output.end_rot;
-        } else {
+            if(two_bone_constraint.obey_foot_bind_pose) local_keyframe_tip.rotation = output.end_rot;                                                                                                                                                                                                                                                                                                                   
+        }
+        else
+        {
             // just set it directly
             root_transform.set_local_rotation(output.root_rot);
             mid_transform.set_local_rotation(output.mid_rot);
-            tip_transform.set_local_rotation(output.end_rot);
+            if (two_bone_constraint.obey_foot_bind_pose) tip_transform.set_local_rotation(output.end_rot);
         }
     }
     for (const auto&& [entity, transform, walk_cycle] : engine.ecs.view<Transform, AnimConstraints::EffectorWalkCycle>().each()) {

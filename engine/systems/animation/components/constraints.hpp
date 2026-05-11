@@ -39,6 +39,7 @@ struct TwoBoneIKConstraint {
     glm::quat foot_parent_rest_rotation;
 
     tmt::Entity constrained_rig_ent = entt::null;
+    bool obey_foot_bind_pose = false;
 };
 struct EffectorWalkCycle {
     // step after how much time?
@@ -84,7 +85,7 @@ struct EffectorWalkCycle {
 }  // namespace AnimConstraints
 }  // namespace tmt
 TMT_COMPONENT(tmt::AnimConstraints::DampedTransformConstraint, "Damped Transform Constraint", (damp));
-TMT_COMPONENT(tmt::AnimConstraints::TwoBoneIKConstraint, "Two Bone IK Constraint", (mid, tip, target_position_entity, bend_position_entity));
+TMT_COMPONENT(tmt::AnimConstraints::TwoBoneIKConstraint, "Two Bone IK Constraint", (mid, tip, target_position_entity, bend_position_entity, obey_foot_bind_pose));
 TMT_COMPONENT(
     tmt::AnimConstraints::EffectorWalkCycle, "Effector Walk Cycle",
     (step_time, step_duration, step_height, desired_target_entity, effector_entity, ground_entity, cycle_offset, grounded, step_prediction_strength, stepping_curve, height_curve)
