@@ -14,14 +14,14 @@
 
 void game::MediumEnemy::start() {
     player = Player::get().entity;
-    
+
     auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
     float closest_dist = std::numeric_limits<float>::max();
     for (const auto&& [nav_mesh_entity, nav_mesh] : tmt::engine.ecs.view<tmt::NavMesh>().each()) {
         if (walkable_asteroid == entt::null) walkable_asteroid = nav_mesh_entity;
         auto& nav_mesh_transform = tmt::engine.ecs.get_component<tmt::Transform>(nav_mesh_entity);
         auto& current_walkable_transform = tmt::engine.ecs.get_component<tmt::Transform>(walkable_asteroid);
-        
+
         float dist = glm::length(nav_mesh_transform.get_world_position() - transform.get_world_position());
         float current_dist = glm::length(current_walkable_transform.get_world_position() - transform.get_world_position());
         if (dist < closest_dist) {
@@ -135,7 +135,7 @@ void game::MediumEnemy::update(const tmt::FrameData& time) {
     // height correction
     auto& nav_mesh = tmt::engine.ecs.get_component<tmt::NavMesh>(walkable_asteroid);
     if (!nav_mesh.nav_nodes_valid()) return;
-    
+
     int closest_node = nav_mesh.find_closest_node(walking_transform.get_world_position());
 
     auto* nodes = nav_mesh.nodes_mesh;
@@ -185,8 +185,8 @@ void game::MediumEnemy::update(const tmt::FrameData& time) {
 
     // if distance to closest node is too high, teleport to it and set rotation
     // this is for when an enemy is spawned in, it is not in on start becuase the navmesh isn't fully generated yet
-    //float distance_to_node = glm::distance(walking_transform.get_world_position(), (*nav_mesh.nodes_mesh)[closest_node].world_pos);
-    //if (distance_to_node > 5.0f) {
+    // float distance_to_node = glm::distance(walking_transform.get_world_position(), (*nav_mesh.nodes_mesh)[closest_node].world_pos);
+    // if (distance_to_node > 5.0f) {
     //    walking_transform.set_world_position((*nav_mesh.nodes_mesh)[closest_node].world_pos);
     //    walking_transform.set_world_rotation(glm::normalize(rot_velocity));
     //}
