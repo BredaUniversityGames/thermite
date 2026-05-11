@@ -72,7 +72,8 @@ void tmt::LevelEditor::on_inspect() {
     }
 
     auto response = ImReflect::Input("Cell templates", &pickable_cell_templates);
-    if (response.get<std::vector>().has_erased()) {
+    const bool has_erased = response.push<PoissonField>().push<std::vector>().has_erased();
+    if (has_erased) {
         size_t erased_idx = response.get<std::vector>().get_erased_index();
         if (erased_idx == selected_template) selected_template = -1;
 
