@@ -16,10 +16,10 @@ void ResourceBarCurrentComponent::start() {
 
     if (resource == DisplayTypeResourceBar::HEALTH) {
         tmt::engine.ecs.get_dispatcher().sink<PlayerHealthChanged>().connect<&ResourceBarCurrentComponent::health_changed>(this);
-        resource_bar_update(static_cast<int>(player_component->health.value));
+        resource_bar_update(static_cast<int>(player_component->health.value), player_component->health.max_value);
     } else if (resource == DisplayTypeResourceBar::ENERGY) {
         tmt::engine.ecs.get_dispatcher().sink<PlayerEnergyChanged>().connect<&ResourceBarCurrentComponent::energy_changed>(this);
-        resource_bar_update(static_cast<int>(player_component->energy.value));
+        resource_bar_update(static_cast<int>(player_component->energy.value), player_component->energy.max_value);
     }
 }
 
@@ -41,7 +41,8 @@ void ResourceBarCurrentComponent::health_changed(PlayerHealthChanged player_heal
         tmt::Log::error("Player component cannot be found for resource bar, please check entity: {} (resource bar) and {} (player)", entity, player_entity);
         return;
     }
-    resource_bar_update(new_val);
+    float max_resource_value = player_component->health.max_value;
+    resource_bar_update(new_val, max_resource_value);
 }
 
 void ResourceBarCurrentComponent::energy_changed(PlayerEnergyChanged player_energy_changed) {
@@ -51,13 +52,15 @@ void ResourceBarCurrentComponent::energy_changed(PlayerEnergyChanged player_ener
         tmt::Log::error("Player component cannot be found for resource bar, please check entity: {} (resource bar) and {} (player)", entity, player_entity);
         return;
     }
+    float max_resource_value = player_component->energy.max_value;
 
-    resource_bar_update(new_val);
+    resource_bar_update(new_val, max_resource_value);
 }
 
-void ResourceBarCurrentComponent::resource_bar_update(int new_val) {
+void ResourceBarCurrentComponent::resource_bar_update(int new_val, float max_resource_value) {
     auto* text_renderer_component = tmt::engine.ecs.try_get_component<tmt::TextRenderer>(entity);
 
+    // guards
     if (!text_renderer_component) {
         tmt::Log::error("Text renderer not found for resource bar, please check entity: {}", entity);
         return;
@@ -67,7 +70,9 @@ void ResourceBarCurrentComponent::resource_bar_update(int new_val) {
         return;
     }
 
+    // segment counts
     int displayed_bars = new_val / resource_per_segment;
+    int max_segments = static_cast<int>(max_resource_value) / resource_per_segment;
 
     if (new_val > 0 && displayed_bars <= 0) {
         displayed_bars = 1;
@@ -80,5 +85,14 @@ void ResourceBarCurrentComponent::resource_bar_update(int new_val) {
     }
 
     text_renderer_component->text = render_string;
+    if (max_segments == 1) {
+        tmt::Log::warn("Cannot set letter spacing because max segments is 1. Check entity {}", entity);
+        return;
+    }
+    float max_w = text_renderer_component->max_width;
+    float font_size_in_pixels = text_renderer_component->font_size;
+    tmt::ResourceRef<tmt::Font> curr_font = text_renderer_component->font;
+    float segment_width = curr_font->measure_text(rendered_string, font_size_in_pixels);
+    text_renderer_component->letter_spacing = (max_w - (segment_width * static_cast<float>(max_segments))) / (static_cast<float>(max_segments) - 1.0f);
 }
 } // namespace game

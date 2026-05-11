@@ -29,7 +29,7 @@ class ResourceBarCurrentComponent : public tmt::GameComponent<ResourceBarCurrent
    private:
     void health_changed(PlayerHealthChanged);
     void energy_changed(PlayerEnergyChanged);
-    void resource_bar_update(int);
+    void resource_bar_update(int, float);
 };
 
 }  // namespace game

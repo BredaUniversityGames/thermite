@@ -78,13 +78,6 @@ class Player : public tmt::GameComponent<Player> {
     tmt::Camera& get_camera() const { return tmt::engine.ecs.get_component<tmt::Camera>(entity); }
     void set_state(PlayerState new_state) { state = new_state; };
 
-    // UI
-    tmt::Entity hp_bar_max = entt::null;
-    tmt::Entity hp_bar_current = entt::null;
-
-    tmt::Entity energy_bar_max = entt::null;
-    tmt::Entity energy_bar_current = entt::null;
-
     // HUD entities
     tmt::Entity player_hud = entt::null;
     tmt::Entity barge_hud = entt::null;
