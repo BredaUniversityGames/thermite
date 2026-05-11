@@ -41,6 +41,10 @@ void SteeringSystem::on_fixed_update(const FrameData& time) {
 
         glm::vec3 steering = calculate_force(agent, request, transform, body, time.delta_time);
 
+        // separating from other steering agents
+        glm::vec3 position = transform.get_world_position();
+        steering += separation(entity, agent, position);
+
         // Clamp steering acceleration
         float len = glm::length(steering);
         if (len > agent.max_force) steering = (steering / len) * agent.max_force;
@@ -73,8 +77,6 @@ void SteeringSystem::on_fixed_update(const FrameData& time) {
         glm::quat new_rot = glm::slerp(current_rot, target_rot, turn_speed * time.delta_time);
 
         body.rotation = new_rot;
-
-        //check_completion(agent, request, transform, body);
     }
 }
 
@@ -209,6 +211,45 @@ glm::vec3 SteeringSystem::collision_avoidance(const SteeringAgent& agent, const 
     }
 
     return total_avoid;
+}
+
+/**
+ * Returns a force to avoid other small enemies.
+ *
+ * Steps:
+ *  - Find other steering agent, and get their position.
+ *  - Mov away from the enemy with a force which is stronger the closer you are.
+ */
+glm::vec3 SteeringSystem::separation(entt::entity self, const SteeringAgent& agent, const glm::vec3& position) {
+    glm::vec3 force(0.0f);
+
+    auto view = engine.ecs.view<SteeringAgent, Transform>();
+
+    const float desired_distance = 3.0f;
+    const float desired_distance2 = desired_distance * desired_distance;
+
+    for (auto [other, other_agent, other_transform] : view.each()) {
+        // exclude self using entity id
+        if (other == self) continue;
+
+        glm::vec3 diff = position - other_transform.get_world_position();
+
+        float dist2 = glm::length2(diff);
+
+        if (dist2 < 0.0001f) continue;
+
+        // only affect nearby agents
+        if (dist2 < desired_distance2) {
+            float dist = sqrt(dist2);
+
+            // stronger push when closer
+            glm::vec3 dir = diff / dist;
+
+            force += dir / dist;
+        }
+    }
+
+    return force * agent.max_force;
 }
 
 /**
