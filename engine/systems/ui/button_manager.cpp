@@ -94,7 +94,6 @@ void UIElementManager::update_states(const tmt::FrameData& time) {
                 break;
         }
 
-        tmt::Log::info("{}", interactable.state);
         const auto allowed_states = { ButtonState::ON_CLICK, ButtonState::ON_HOLD };
         if (std::find(allowed_states.begin(), allowed_states.end(), interactable.state) == allowed_states.end()) {
             continue;
