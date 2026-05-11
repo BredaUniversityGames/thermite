@@ -318,6 +318,15 @@ void Editor::main_menu_bar() {
                 ImGui::EndMenu();
             }
 
+            if (ImGui::BeginMenu("Fog")) {
+                ImGui::DragFloat("Base Step Size", &settings.fog_base_step_size, 0.01f, 0.001f, 0.1f);
+                int count = (int)settings.fog_step_count;
+                if (ImGui::DragInt("Step Count", &count, 1.0f, 16, 128)) {
+                    settings.fog_step_count = (uint32_t)count;
+                }
+                ImGui::EndMenu();
+            }
+
             ImGui::EndMenu();
         }
 

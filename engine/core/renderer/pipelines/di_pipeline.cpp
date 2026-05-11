@@ -266,6 +266,8 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
             float fog_anisotropy = 0.6f;
             float scatter_strength = 0.0025f;
         } froxel_p {};
+        froxel_p.fog_anisotropy = scene_view.fog_anisotropy;
+        froxel_p.scatter_strength = scene_view.fog_scatter_strength / 100.0f;
 
         /* Volumetric lighting passes */
         const bool flip = (render_view.frame_counter & 0b1u) == 0u;
@@ -290,6 +292,9 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
             float base_step_size = 0.01f;
             uint32_t step_count = 64u;
         } volume_p {};
+        volume_p.fog_absorb = scene_view.fog_absorption;
+        volume_p.base_step_size = settings.fog_base_step_size;
+        volume_p.step_count = settings.fog_step_count;
 
         render_graph.add_compute_pass("volumetric pass", "lighting/volumetric.cs")
             /* Render view */

@@ -55,7 +55,7 @@ void main(int3 thread_id: SV_DispatchThreadID) {
     const float t = occlusion_bvh2(nodes, indices, objects, custom_ray(froxel_pos, scene_view.sun_dir), BIG_F32);
 
     /* Calculate scattering */
-    const float phase = henyey_greenstein(dot(normalize(froxel_pos - render_view.origin.xyz), scene_view.sun_dir), p.fog_anisotropy);
+    const float phase = henyey_greenstein(dot(normalize(froxel_pos - render_view.origin.xyz), scene_view.sun_dir), frac(p.fog_anisotropy));
     const float3 luminance = select(t < BIG_F32, 0.0f, scene_view.sun_luminance) * phase * p.scatter_strength;
 
     /* Re-project history */

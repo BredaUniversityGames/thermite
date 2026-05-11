@@ -348,6 +348,9 @@ void SceneView::update_lights(RenderGraph& render_graph, const RenderView&) {
             object_opaque_distance = env.object_opaque_distance;
             object_transparent_distance = env.object_transparent_distance;
             object_opacity_transition = env.object_opacity_transition;
+            fog_anisotropy = env.fog_anisotropy;
+            fog_scatter_strength = env.fog_scatter_strength;
+            fog_absorption = env.fog_absorption;
             break;
         }
     }

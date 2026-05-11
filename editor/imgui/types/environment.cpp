@@ -13,4 +13,11 @@ void tag_invoke(ImReflect::ImInput_t, const char*, tmt::Environment& value, ImSe
     tooltip("Transparent Distance", "Distance after which objects will become completely transparent.");
     ImGui::DragFloat("Object Opacity Transition", &value.object_opacity_transition, 0.01f, 10.0f, 100.0f, "%.1f");
     tooltip("Opacity Transition", "Controls the interpolation curve of the opacity from opaque to transparent, higher values make the transition more harsh.");
+
+    ImGui::DragFloat("Fog Anisotropy", &value.fog_anisotropy, 0.01f, 0.0f, 1.0f, "%.2f");
+    tooltip("Anisotropy", "Higher values bias scattering in the forward direction, lower values reduce that bias.");
+    ImGui::DragFloat("Fog Scattering Strength", &value.fog_scatter_strength, 0.1f, 0.0f, 1.0f, "%.3f");
+    tooltip("Scattering Strength", "Controls the strength of light scattered by fog.");
+    ImGui::ColorEdit3("Fog Absorption", &value.fog_absorption.x);
+    tooltip("Absorption", "Controls the absorption of the fog.");
 }
