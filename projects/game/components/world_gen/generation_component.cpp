@@ -50,12 +50,9 @@ void GenerationComponent::start() {
     }
 
     main_sun_entity = entt::null;
-    for(const auto& [entity, transform, light] : tmt::engine.ecs.view<tmt::Transform, tmt::Light>().each())
-    {
-        if(light.type == tmt::LightType::SUN_LIGHT)
-        {
-            if(main_sun_entity != entt::null) 
-            {
+    for (const auto& [entity, transform, light] : tmt::engine.ecs.view<tmt::Transform, tmt::Light>().each()) {
+        if (light.type == tmt::LightType::SUN_LIGHT) {
+            if (main_sun_entity != entt::null) {
                 tmt::Log::warn("[GenerationComponent]: multiple sun lights found, setting light placement influence sun to last one..");
             }
             main_sun_entity = entity;
@@ -95,7 +92,6 @@ void GenerationComponent::start() {
 
             auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(instantiated);
 
-           
             glm::vec3 min = cell_pos - glm::vec3(level_configuration.cell_size * 0.5f, cell_template.height * 0.5f, level_configuration.cell_size * 0.5f) +
                             glm::vec3(level_configuration.cell_margin, 0.f, level_configuration.cell_margin);
 
@@ -112,12 +108,9 @@ glm::vec3 GenerationComponent::coord_to_world(glm::ivec2 coord, const tmt::Level
            glm::vec3(coord.x * level_configuration.cell_size + level_configuration.cell_size * 0.5f, 0.f, coord.y * level_configuration.cell_size + level_configuration.cell_size * 0.5f);
 }
 
-void GenerationComponent::update(const tmt::FrameData& time) 
-{
-    if(lighting_pass_data.size() > 0)
-    {
-        for (size_t i = 0; i < lighting_pass_data.size();)
-        {
+void GenerationComponent::update(const tmt::FrameData& time) {
+    if (lighting_pass_data.size() > 0) {
+        for (size_t i = 0; i < lighting_pass_data.size();) {
             auto& [cell_template_idx, point, spawned_entity] = lighting_pass_data[i];
 
             bool remove_entry = false;
@@ -148,19 +141,18 @@ void GenerationComponent::update(const tmt::FrameData& time)
                     light_transform.set_world_position(transform.get_world_position() + sun_transform.get_forward() * light_spacing);
                     light_transform.set_parent(entity);
 
-                    light.light = tmt::SpotLight{};
+                    light.light = tmt::SpotLight {};
                     light.type = tmt::LightType::SPOT_LIGHT;
                     auto& spot_light = std::get<tmt::SpotLight>(light.light);
                     spot_light.attenuation_distance = light_spacing + 10.f;
                     spot_light.luminous_intensity = 450.f;
                     spot_light.beam_angle = glm::radians(60.f);
-                    
+
                     light_transform.set_world_rotation(glm::quatLookAt(sun_transform.get_forward(), glm::vec3(0.f, 1.f, 0.f)));
 
-                    light.color = {1.f, 1.f, 1.f};
+                    light.color = { 1.f, 1.f, 1.f };
 
-                    if(!cell_template.possible_light_colors.empty())
-                    {
+                    if (!cell_template.possible_light_colors.empty()) {
                         int color_idx = static_cast<int>(Random::rand_range(0.f, static_cast<float>(cell_template.possible_light_colors.size()) - 0.01f));
                         auto& rgba = cell_template.possible_light_colors[color_idx];
                         light.color = rgba.get();
@@ -172,7 +164,7 @@ void GenerationComponent::update(const tmt::FrameData& time)
                 lighting_pass_data.erase(lighting_pass_data.begin() + i);
             } else {
                 ++i;
-            }                                                                                                                                                                                                                                                 
+            }
         }
     }
 }
