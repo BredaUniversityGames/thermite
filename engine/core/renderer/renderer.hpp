@@ -58,7 +58,7 @@ struct RendererSettings {
     ShadingRate spec_shading_rate = ShadingRate::QUARTER_RATE;
 };
 
-class Renderer : public ISystem {
+class Renderer {
     GPUAdapter& gpu;
     RenderGraph& render_graph;
 
@@ -116,10 +116,6 @@ class Renderer : public ISystem {
     void update();
     void end();
 
-    constexpr virtual std::string get_name() override { return "Renderer"; };
-    virtual json serialize() const override;
-    virtual void deserialize(const json& value) override;
-
     Hit trace_ray(const Ray& ray) const;
 
     /* Get a reference to the primary vram bank, for resource creation. */
@@ -136,6 +132,17 @@ class Renderer : public ISystem {
 #ifdef THERMITE_EDITOR
     void set_imgui(ImGUI* imgui);
 #endif
+};
+
+class RendererSerializer : public ISystem {
+   public:
+    RendererSerializer() = default;
+    ~RendererSerializer() = default;
+
+    constexpr virtual std::string get_name() override { return "Renderer"; };
+
+    virtual json serialize() const override;
+    virtual void deserialize(const json& value) override;
 
     virtual void on_start() override {};
     virtual void on_update(const tmt::FrameData&) override {};

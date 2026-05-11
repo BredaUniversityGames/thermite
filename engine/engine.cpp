@@ -91,7 +91,6 @@ void Engine::init(std::unique_ptr<Application> user_app) {
     audio.init();
     salvo.init();
 
-    ecs.systems.add_pointer<Renderer>(&renderer);
     ecs.systems.add<Physics>();
     ecs.systems.add<Destruction>();
     ecs.systems.add<RigModelManager>();
@@ -104,6 +103,7 @@ void Engine::init(std::unique_ptr<Application> user_app) {
     ecs.systems.add<MotionMathSystem>();
     ecs.systems.add<ButtonManager>();
     ecs.systems.add<Tweener>();
+    ecs.systems.add<RendererSerializer>();
     ecs.systems.add<Gameplay>(); /* Should be last */
 
     OnEngineInit::dispatch(app->specs);

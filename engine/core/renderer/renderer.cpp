@@ -313,15 +313,15 @@ void Renderer::end() {
     gpu.deinit().expect("failed to destroy gpu adapter.");
 }
 
-json Renderer::serialize() const {
+json RendererSerializer::serialize() const {
     tmt::json result = json::object();
-    result["post_process_pipeline"] = Serializer::serialize(post_process_pipeline);
+    result["post_process_pipeline"] = Serializer::serialize(engine.renderer.post_process_pipeline);
     return result;
 }
 
-void Renderer::deserialize(const json& value) {
+void RendererSerializer::deserialize(const json& value) {
     if (value.contains("post_process_pipeline")) {
-        Serializer::deserialize(value["post_process_pipeline"], post_process_pipeline);
+        Serializer::deserialize(value["post_process_pipeline"], engine.renderer.post_process_pipeline);
     }
 }
 
