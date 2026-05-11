@@ -261,7 +261,7 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
         .read(render_view.blue_noise1d->image, ShaderStages::Pixel)
         .read(point_sampler, ShaderStages::Pixel | ShaderStages::Vertex)
         /* Illuminance volume buffer */
-        .read(render_view.probe_image, ShaderStages::Pixel)
+        .read(render_view.froxel_image, ShaderStages::Pixel)
         .read(engine.renderer.linear_sampler, ShaderStages::Pixel)
         .depth_stencil(render_view.dbuffer.image, true, true)
         .load_op_depth(LoadOp::Load)

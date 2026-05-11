@@ -13,9 +13,8 @@ Texture2D<float4> blue_noise1d;
 [[vk::binding(4, 0)]]
 SamplerState point_sampler;
 
-/* Probe output buffer. */
 [[vk::binding(5, 0)]]
-Texture2D<float3> probe_buffer;
+Texture3D<float3> froxel_buffer;
 [[vk::binding(6, 0)]]
 SamplerState linear_sampler;
 
@@ -45,12 +44,12 @@ FragmentOutput main(BillboardVertexOutput input) {
 
     FragmentOutput output;
 
-    /* Sample the irradiance volume */
-    const float3 view_pos = input.world_pos - floor(gpu_view.origin.xyz / 2.0f) * 2.0f;
-    const float3 normal = -normalize(view_pos);
-    const float3 illuminance = iv::trilerp(probe_buffer, linear_sampler, view_pos, normal) + iv::trilerp(probe_buffer, linear_sampler, view_pos, -normal);
+    /* Sample froxel volume for lighting data */
+    // const float3 uvw = iv::froxel_uvw(input.world_pos, gpu_view.world_to_clip, iv::FROXEL_NEAR_Z, iv::FROXEL_FAR_Z);
+    // const float3 li = froxel_buffer.SampleLevel(linear_sampler, uvw, 0);
+    const float3 li = 1.0f;
 
-    output.color = float4(cs::r709_to_acescg(cs::linearize(tex_sample.rgb * illuminance * 0.5f)), 1.0f);
+    output.color = float4(cs::r709_to_acescg(cs::linearize(tex_sample.rgb * li)), 1.0f);
     output.motion = input.motion_vec;
 
     return output;

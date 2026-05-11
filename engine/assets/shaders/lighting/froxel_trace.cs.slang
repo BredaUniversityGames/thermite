@@ -68,5 +68,5 @@ void main(int3 thread_id: SV_DispatchThreadID) {
     const float3 history = prev_froxel_buffer.SampleLevel(linear_sampler, history_uvw, 0);
 
     /* Blend over-time with history */
-    froxel_buffer[thread_id] = lerp(history.rgb, luminance, 0.05f);
+    froxel_buffer[thread_id] = lerp(history.rgb, luminance, 0.1f);
 }

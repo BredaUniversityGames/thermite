@@ -23,8 +23,8 @@ RWTexture2D<float3> lbuffer;
 
 struct Pc {
     float3 fog_absorb; /* default: 0.02 */
-    float base_step_size; /* default: 0.01 */
-    uint step_count; /* default: 64 */
+    float base_step_size; /* default: 0.1 */
+    uint step_count; /* default: 32 */
 };
 [[vk::push_constant]] Pc p;
 
@@ -52,7 +52,7 @@ void main(int2 thread_id: SV_DispatchThreadID) {
     }
 
     /* Jitter the base step size to improve quality */
-    const float jitter = blue_noise[thread_id % 512].r;
+    const float jitter = r1(blue_noise[thread_id % 512].r, render_view.frame_index % 1024u);
     float step_size = p.base_step_size * jitter;
 
     /* Ray march the froxel volume */

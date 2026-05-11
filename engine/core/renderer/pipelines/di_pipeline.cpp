@@ -289,8 +289,8 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
 
         struct Vpc {
             glm::vec3 fog_absorb = glm::vec3(0.02f);
-            float base_step_size = 0.01f;
-            uint32_t step_count = 64u;
+            float base_step_size = 0.1f;
+            uint32_t step_count = 16u;
         } volume_p {};
         volume_p.fog_absorb = scene_view.fog_absorption;
         volume_p.base_step_size = settings.fog_base_step_size;

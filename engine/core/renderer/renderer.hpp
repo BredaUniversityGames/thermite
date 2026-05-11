@@ -55,8 +55,8 @@ struct RendererSettings {
     float autox_response = 1.0f;
 
     /* Fog/Volumetrics settings */
-    float fog_base_step_size = 0.01f;
-    uint32_t fog_step_count = 64u;
+    float fog_base_step_size = 0.1f;
+    uint32_t fog_step_count = 16u;
 
     /* Shading rate settings */
     ShadingRate diff_shading_rate = ShadingRate::HALF_RATE;
