@@ -150,10 +150,15 @@ FMOD_3D_ATTRIBUTES AudioInstance3D::get_3d_attributes() const {
 }
 
 bool AudioEvent::is_valid() const {
+    if (*this == AudioEvent {}) return false; // Check if the audio event has an invalid uuid (in which case it, itself is invalid).
+
+    const FMOD::Studio::EventDescription* description = engine.audio.get_event_description(uuid);
     return source_bank && description->isValid();
 }
 
 bool AudioEvent::is_3d() const {
+    const FMOD::Studio::EventDescription* description = engine.audio.get_event_description(uuid);
+
     bool is_3d = false;
     const FMOD_RESULT result = description->is3D(&is_3d);
     TryLogError(result, "Failed check if event is 3D");
@@ -164,6 +169,8 @@ bool AudioEvent::is_3d() const {
 std::string AudioEvent::get_path() const {
 #if defined(THERMITE_EDITOR) || defined(THERMITE_DEBUG)
     if (TryLogError(!is_valid(), "Invalid AudioEvent for get_path")) return "";
+
+    const FMOD::Studio::EventDescription* description = engine.audio.get_event_description(uuid);
 
     // This function only returns useful paths in the editor or in debug mode, since these aren't necessary for audio to function, and it allows us to skip loading string banks in release
     // game.
@@ -182,17 +189,9 @@ std::string AudioEvent::get_path() const {
 #endif
 }
 
-FMOD_GUID AudioEvent::get_guid() const {
-    if (TryLogError(!is_valid(), "Invalid AudioEvent for get_guid")) return {};
-
-    FMOD_GUID guid {};
-    const FMOD_RESULT result = description->getID(&guid);
-    TryLogError(result, "Failed to get the path of the audio event");
-
-    return guid;
-}
-
 std::vector<AudioParameter> AudioEvent::get_parameters() const {
+    const FMOD::Studio::EventDescription* description = engine.audio.get_event_description(uuid);
+
     int parameter_count = 0;
     FMOD_RESULT result = description->getParameterDescriptionCount(&parameter_count);
     if (TryLogError(result, "Failed to get event parameter count")) return {};
@@ -214,6 +213,8 @@ std::vector<AudioParameter> AudioEvent::get_parameters() const {
 
 AudioInstance AudioEvent::play() const {
     if (TryLogError(!is_valid(), "Invalid AudioEvent for play.")) return { nullptr };
+
+    const FMOD::Studio::EventDescription* description = engine.audio.get_event_description(uuid);
 
     // Play the event, creating an instance.
     FMOD::Studio::EventInstance* event_instance = nullptr;
@@ -244,6 +245,8 @@ AudioInstance3D AudioEvent::play_3d() const {
 glm::vec2 AudioEvent::get_min_max_distance() const {
     if (TryLogError(!is_valid(), "Invalid VolumeControl for get_min_max")) return {};
 
+    const FMOD::Studio::EventDescription* description = engine.audio.get_event_description(uuid);
+
     float min = 0;
     float max = 0;
     const FMOD_RESULT result = description->getMinMaxDistance(&min, &max);
@@ -253,12 +256,17 @@ glm::vec2 AudioEvent::get_min_max_distance() const {
 }
 
 bool VolumeControl::is_valid() const {
+    if (*this == VolumeControl {}) return false; // Check if the volume control has an invalid uuid (in which case it, itself is invalid).
+
+    const FMOD::Studio::VCA* vca = engine.audio.get_vca(uuid);
     return source_bank && vca->isValid();
 }
 
 std::string VolumeControl::get_path() const {
 #if defined(THERMITE_EDITOR) || defined(THERMITE_DEBUG)
     if (TryLogError(!is_valid(), "Invalid VolumeControl for get_path")) return "";
+
+    const FMOD::Studio::VCA* vca = engine.audio.get_vca(uuid);
 
     // This function only returns useful paths in the editor or in debug mode, since these aren't necessary for audio to function, and it allows us to skip loading string banks in release
     // game.
@@ -277,18 +285,10 @@ std::string VolumeControl::get_path() const {
 #endif
 }
 
-FMOD_GUID VolumeControl::get_guid() const {
-    if (TryLogError(!is_valid(), "Invalid VolumeControl for get_guid")) return {};
-
-    FMOD_GUID guid {};
-    const FMOD_RESULT result = vca->getID(&guid);
-    TryLogError(result, "Failed to get the path of the volume control");
-
-    return guid;
-}
-
 float VolumeControl::get_volume() const {
     if (TryLogError(!is_valid(), "Invalid VolumeControl for get_volume")) return 0.0f;
+
+    const FMOD::Studio::VCA* vca = engine.audio.get_vca(uuid);
 
     float volume = 0.0f;
     const FMOD_RESULT result = vca->getVolume(&volume);
@@ -299,6 +299,8 @@ float VolumeControl::get_volume() const {
 
 void VolumeControl::set_volume(const float volume) const {
     if (TryLogError(!is_valid(), "Invalid VolumeControl for set_volume")) return;
+
+    FMOD::Studio::VCA* vca = engine.audio.get_vca(uuid);
 
     const FMOD_RESULT result = vca->setVolume(volume);
     TryLogError(result, "Failed to set VCA volume");
