@@ -23,6 +23,15 @@ class Collection {
         return ref;
     }
 
+    template <typename T, typename... Args>
+    requires std::is_base_of_v<CollectionType, T>
+    void add_pointer(T* system) {
+        if (try_get<T>() != nullptr) {
+            throw std::runtime_error("System of this type already exists");
+        }
+        systems.push_back(std::unique_ptr<CollectionType>(system));
+    }
+
     template <typename T>
     requires std::is_base_of_v<CollectionType, T>
     T& get() {

@@ -58,7 +58,7 @@ struct RendererSettings {
     ShadingRate spec_shading_rate = ShadingRate::QUARTER_RATE;
 };
 
-class Renderer : ISystem {
+class Renderer : public ISystem {
     GPUAdapter& gpu;
     RenderGraph& render_graph;
 
@@ -136,9 +136,12 @@ class Renderer : ISystem {
 #ifdef THERMITE_EDITOR
     void set_imgui(ImGUI* imgui);
 #endif
+
+    virtual void on_start() override {};
+    virtual void on_update(const tmt::FrameData&) override {};
+    virtual void on_end() override {};
 };
 
 }  // namespace tmt
 
 TMT_OBJECT(tmt::RendererSettings, (bloom_radius));
-TMT_OBJECT(tmt::Renderer, (post_process_pipeline));

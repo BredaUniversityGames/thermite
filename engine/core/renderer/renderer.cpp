@@ -25,6 +25,8 @@
 
 #include "tools/profiler.hpp"
 #include "tools/player_data.hpp"
+#include "tools/serializer.hpp"
+#include "tools/serializer/all.hpp"
 
 namespace tmt {
 
@@ -312,11 +314,15 @@ void Renderer::end() {
 }
 
 json Renderer::serialize() const {
-    return Serializer::serialize(*this);
+    tmt::json result = json::object();
+    result["post_process_pipeline"] = Serializer::serialize(post_process_pipeline);
+    return result;
 }
 
 void Renderer::deserialize(const json& value) {
-    Serializer::deserialize(value, *this);
+    if (value.contains("post_process_pipeline")) {
+        Serializer::deserialize(value["post_process_pipeline"], post_process_pipeline);
+    }
 }
 
 Hit Renderer::trace_ray(const Ray& ray) const {
