@@ -13,11 +13,6 @@ Texture2D<float4> blue_noise1d;
 [[vk::binding(4, 0)]]
 SamplerState point_sampler;
 
-[[vk::binding(5, 0)]]
-Texture3D<float3> froxel_buffer;
-[[vk::binding(6, 0)]]
-SamplerState linear_sampler;
-
 struct FragmentOutput {
     float4 color : SV_Target0;
     float2 motion : SV_Target1;
@@ -49,7 +44,7 @@ FragmentOutput main(BillboardVertexOutput input) {
     // const float3 li = froxel_buffer.SampleLevel(linear_sampler, uvw, 0);
     const float3 li = 1.0f;
 
-    output.color = float4(cs::r709_to_acescg(cs::linearize(tex_sample.rgb * li)), 1.0f);
+    output.color = float4(cs::r709_to_acescg(cs::linearize(tex_sample.rgb * li + tex_sample.rgb * (1.0f + input.emission))), 1.0f);
     output.motion = input.motion_vec;
 
     return output;
