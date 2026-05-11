@@ -7,10 +7,7 @@
 
 namespace game {
 
-enum class DisplayTypeResourceBar : uint8_t {
-    HEALTH,
-    ENERGY
-};
+enum class DisplayTypeResourceBar : uint8_t { HEALTH, ENERGY };
 class ResourceBarCurrentComponent : public tmt::GameComponent<ResourceBarCurrentComponent> {
    public:
     using GameComponent::GameComponent;

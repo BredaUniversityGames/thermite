@@ -59,7 +59,6 @@
 #include "components/ui_components/compass_icon.hpp"
 #include "components/ui_components/resource_bar_current.hpp"
 
-
 // Managers
 #include "components/managers/ore_manager.hpp"
 #include "components/managers/menu_controller.hpp"
@@ -89,15 +88,13 @@
 #include <bitset>
 
 class Game : public tmt::Application {
-public:
-    Game(const tmt::ApplicationSpecs& specs) : Application(specs) {
-    }
+   public:
+    Game(const tmt::ApplicationSpecs& specs) : Application(specs) {}
 
     void on_start() override;
     void on_update(const tmt::FrameData& time) override;
 
-    void on_end() override {
-    };
+    void on_end() override {};
 };
 
 std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs& args) {
@@ -164,9 +161,9 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     tmt::engine.component_registry.register_component<game::CompassIcon>();
     tmt::engine.component_registry.register_component<game::ResourceBarCurrentComponent>();
 
-    #if THERMITE_EDITOR
+#if THERMITE_EDITOR
     tmt::editor.systems[tmt::Editor::Mode::SCENE].add<tmt::LevelEditor>();
-    #endif
+#endif
 
     /* Register Goap Components */
     {
@@ -286,10 +283,10 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
 }
 
 void Game::on_start() {
-    #ifdef THERMITE_EDITOR
-    #else
+#ifdef THERMITE_EDITOR
+#else
     tmt::engine.window.fullscreen_window(true);
-    #endif
+#endif
 }
 
 void Game::on_update(const tmt::FrameData&) {

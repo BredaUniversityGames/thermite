@@ -66,8 +66,7 @@ struct EndRun {
     bool player_dead;
 };
 
-struct ThermiteExplosionEvent {
-};
+struct ThermiteExplosionEvent {};
 
 struct GamePausedEvent {};
 

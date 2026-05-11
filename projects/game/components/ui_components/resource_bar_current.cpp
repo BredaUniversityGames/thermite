@@ -3,6 +3,7 @@
 #include "engine/core/components/text_renderer.hpp"
 
 namespace game {
+
 void ResourceBarCurrentComponent::start() {
     if (player_entity == entt::null) {
         player_entity = Player::get().entity;
@@ -23,8 +24,7 @@ void ResourceBarCurrentComponent::start() {
     }
 }
 
-void ResourceBarCurrentComponent::update(const tmt::FrameData& time) {
-}
+void ResourceBarCurrentComponent::update(const tmt::FrameData& time) {}
 
 void ResourceBarCurrentComponent::end() {
     if (resource == DisplayTypeResourceBar::HEALTH) {
@@ -95,4 +95,5 @@ void ResourceBarCurrentComponent::resource_bar_update(int new_val, float max_res
     float segment_width = curr_font->measure_text(rendered_string, font_size_in_pixels);
     text_renderer_component->letter_spacing = (max_w - (segment_width * static_cast<float>(max_segments))) / (static_cast<float>(max_segments) - 1.0f);
 }
-} // namespace game
+
+}  // namespace game
