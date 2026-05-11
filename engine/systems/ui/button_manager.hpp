@@ -57,6 +57,10 @@ class UIElementManager : public ISystem, public OnMouseMove, public OnMouseButto
     // Inherited via OnGamepadButton
     void on_gamepad_button(GamepadButtonEvent& event) override;
 
+    void handle_pressed_controller(tmt::GamepadButtonEvent& event);
+
+    void handle_just_pressed_controller(tmt::GamepadButtonEvent& event);
+
     // Inherited via OnGamepadAxis
     void on_gamepad_axis(GamepadAxisEvent& event) override;
 };

@@ -131,4 +131,4 @@ TMT_COMPONENT_DEPENDENCIES(tmt::Slider, tmt::UIInteractable);
 
 TMT_COMPONENT(tmt::UIInteractable, "UIInteractable", (disabled, flow_direction));
 TMT_COMPONENT(tmt::Button, "Button", (colors));
-TMT_COMPONENT(tmt::Slider, "Slider", (value, min, max, step));
+TMT_COMPONENT(tmt::Slider, "Slider", (value, min, max, step, handle_entity));

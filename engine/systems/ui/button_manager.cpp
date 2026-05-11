@@ -6,6 +6,8 @@
 #include "engine/core/components/image_renderer.hpp"
 #include "engine/core/components/ui_component.hpp"
 #include "engine/core/components/transform.hpp"
+#include "engine/core/polyline.hpp"
+#include "engine/core/renderer/renderer.hpp"
 #include <cmath>
 
 namespace tmt {
@@ -62,8 +64,12 @@ void UIElementManager::update_states(const tmt::FrameData& time) {
         }
     }
 
-    auto slider_view = engine.ecs.view<Slider, UIInteractable, ImageRenderer>();
-    for (const auto& [entity, slider, interactable, image_renderer] : slider_view.each()) {
+    const glm::vec2 screen_size = engine.renderer.viewport_size();
+    const glm::vec2 mouse_pos = engine.input.get_mouse_position();
+    const glm::vec2 mouse_world = mouse_pos - screen_size * 0.5f;
+
+    auto slider_view = engine.ecs.view<Slider, UIInteractable, UIComponent, Transform>();
+    for (const auto& [entity, slider, interactable, ui_component, transform] : slider_view.each()) {
         Slider::Context context { entity, interactable.state, interactable.disabled, slider.value };
 
         switch (interactable.state) {
@@ -87,6 +93,30 @@ void UIElementManager::update_states(const tmt::FrameData& time) {
             case ButtonState::ON_RELEASE:
                 break;
         }
+
+        tmt::Log::info("{}", interactable.state);
+        const auto allowed_states = { ButtonState::ON_CLICK, ButtonState::ON_HOLD };
+        if (std::find(allowed_states.begin(), allowed_states.end(), interactable.state) == allowed_states.end()) {
+            continue;
+        }
+
+        const float image_width = ui_component.size.x;
+
+        const glm::vec3 slider_position = transform.get_world_position();
+
+        const float relative_x = (mouse_world.x - (slider_position.x - image_width * 0.5f)) / image_width;
+        float new_value = std::clamp(relative_x * (slider.max - slider.min) + slider.min, slider.min, slider.max);
+        /* Round to step */
+        new_value = std::round(new_value / slider.step) * slider.step;
+
+        slider.value = new_value;
+        slider.on_value_changed(context);
+
+        auto& handle_transform = engine.ecs.get_component<Transform>(slider.handle_entity);
+        const float handle_x = slider_position.x - image_width * 0.5f + (slider.value - slider.min) / (slider.max - slider.min) * image_width;
+
+        const glm::vec3 handle_position = handle_transform.get_world_position();
+        handle_transform.set_world_position({ handle_x, handle_position.y, handle_position.z });
     }
 }
 
@@ -185,6 +215,29 @@ void UIElementManager::on_mouse_move(MouseMoveEvent& event) {
             return;
         }
     }
+
+    auto slider_view = engine.ecs.view<Slider>();
+    for (auto [entity, slider] : slider_view.each()) {
+        if (AnchorHelper::is_inside(entity, mouse_pos)) {
+            select_button(entity);
+            return;
+        }
+        if (slider.handle_entity != entt::null && AnchorHelper::is_inside(slider.handle_entity, mouse_pos)) {
+            select_button(entity);
+            return;
+        }
+    }
+
+    /* if it has a slider in drag state, don't deselect */
+    if (selected_entity != entt::null) {
+        auto* slider = engine.ecs.try_get_component<Slider>(selected_entity);
+        if (slider) {
+            auto* interactable = engine.ecs.try_get_component<UIInteractable>(selected_entity);
+            if (interactable && (interactable->state == ButtonState::ON_HOLD || interactable->state == ButtonState::ON_CLICK)) {
+                return;
+            }
+        }
+    }
     select_button(entt::null);
 }
 
@@ -267,7 +320,7 @@ void UIElementManager::handle_just_pressed_keyboard(tmt::KeyboardEvent& event) {
         return;
     }
 
-    //const auto& interactable = engine.ecs.get_component<UIInteractable>(selected_entity);
+    // const auto& interactable = engine.ecs.get_component<UIInteractable>(selected_entity);
 
     if (auto* slider = engine.ecs.try_get_component<Slider>(selected_entity)) {
         if (direction == Direction::EAST) {
@@ -321,79 +374,26 @@ void UIElementManager::handle_pressed_keyboard(tmt::KeyboardEvent& event) {
     }
 
     /* Handle component input... */
+    if (selected_entity == entt::null || call_next_button == false) {
+        return;
+    }
+
+    if (auto* slider = engine.ecs.try_get_component<Slider>(selected_entity)) {
+        if (event.key == Key::RIGHT) {
+            slider->value = std::min(slider->value + slider->step, slider->max);
+            event.handled = true;
+        } else if (event.key == Key::LEFT) {
+            slider->value = std::max(slider->value - slider->step, slider->min);
+            event.handled = true;
+        }
+    }
 }
 
 void UIElementManager::on_gamepad_button(GamepadButtonEvent& event) {
     if (event.state == GamepadButtonState::JUST_PRESSED) {
-        switch (event.button) {
-            case GamepadButton::DPAD_UP:
-                next_button(Direction::NORTH);
-                event.handled = true;
-                break;
-            case GamepadButton::DPAD_DOWN:
-                next_button(Direction::SOUTH);
-                event.handled = true;
-                break;
-            case GamepadButton::DPAD_LEFT:
-                next_button(Direction::WEST);
-                event.handled = true;
-                break;
-            case GamepadButton::DPAD_RIGHT:
-                next_button(Direction::EAST);
-                event.handled = true;
-                break;
-            case GamepadButton::SOUTH:
-                set_state(ButtonState::ON_CLICK);
-                event.handled = true;
-                break;
-            default:
-                break;
-        }
+        handle_just_pressed_controller(event);
     } else if (event.state == GamepadButtonState::PRESSED) {
-        if (move_state == MoveState::IDLE) {
-            move_state = MoveState::INITIAL_MOVE;
-        }
-
-        bool call_next_button = false;
-        if (move_state == MoveState::INITIAL_MOVE) {
-            if (hold_move_duration > INITIAL_DELAY) {
-                move_state = MoveState::REPEAT_MOVE;
-                hold_move_duration = 0.0f;
-                call_next_button = true;
-            }
-        } else if (move_state == MoveState::REPEAT_MOVE) {
-            if (hold_move_duration > REPEAT_DELAY) {
-                hold_move_duration = 0.0f;
-                call_next_button = true;
-            }
-        }
-
-        if (call_next_button) {
-            switch (event.button) {
-                case GamepadButton::DPAD_UP:
-                    next_button(Direction::NORTH);
-                    event.handled = true;
-                    break;
-                case GamepadButton::DPAD_DOWN:
-                    next_button(Direction::SOUTH);
-                    event.handled = true;
-                    break;
-                case GamepadButton::DPAD_LEFT:
-                    next_button(Direction::WEST);
-                    event.handled = true;
-                    break;
-                case GamepadButton::DPAD_RIGHT:
-                    next_button(Direction::EAST);
-                    event.handled = true;
-                    break;
-                case GamepadButton::SOUTH:
-                    set_state(ButtonState::ON_HOLD);
-                    event.handled = true;
-                    break;
-                default:
-                    break;
-            }
-        }
+        handle_pressed_controller(event);
     } else if (event.state == GamepadButtonState::JUST_RELEASED) {
         move_state = MoveState::IDLE;
         switch (event.button) {
@@ -404,6 +404,109 @@ void UIElementManager::on_gamepad_button(GamepadButtonEvent& event) {
                 break;
             default:
                 break;
+        }
+    }
+}
+
+void UIElementManager::handle_pressed_controller(tmt::GamepadButtonEvent& event) {
+    if (move_state == MoveState::IDLE) {
+        move_state = MoveState::INITIAL_MOVE;
+    }
+
+    bool call_next_button = false;
+    if (move_state == MoveState::INITIAL_MOVE) {
+        if (hold_move_duration > INITIAL_DELAY) {
+            move_state = MoveState::REPEAT_MOVE;
+            hold_move_duration = 0.0f;
+            call_next_button = true;
+        }
+    } else if (move_state == MoveState::REPEAT_MOVE) {
+        if (hold_move_duration > REPEAT_DELAY) {
+            hold_move_duration = 0.0f;
+            call_next_button = true;
+        }
+    }
+
+    if (event.button == GamepadButton::SOUTH) {
+        set_state(ButtonState::ON_HOLD);
+        event.handled = true;
+        return;
+    }
+
+    static std::map<tmt::GamepadButton, tmt::Direction> key_direction_map = {
+        { GamepadButton::DPAD_UP, Direction::NORTH },
+        { GamepadButton::DPAD_DOWN, Direction::SOUTH },
+        { GamepadButton::DPAD_LEFT, Direction::WEST },
+        { GamepadButton::DPAD_RIGHT, Direction::EAST },
+    };
+
+    auto it = key_direction_map.find(event.button);
+
+    if (it == key_direction_map.end()) {
+        return;
+    }
+
+    const tmt::Direction direction = it->second;
+    const bool swapped = next_button(direction);
+    if (swapped) {
+        event.handled = true;
+        return;
+    }
+
+    /* Handle component input... */
+    if (selected_entity == entt::null) {
+        return;
+    }
+
+    if (auto* slider = engine.ecs.try_get_component<Slider>(selected_entity)) {
+        if (event.button == GamepadButton::DPAD_RIGHT) {
+            slider->value = std::min(slider->value + slider->step, slider->max);
+            event.handled = true;
+        } else if (event.button == GamepadButton::DPAD_LEFT) {
+            slider->value = std::max(slider->value - slider->step, slider->min);
+            event.handled = true;
+        }
+    }
+}
+
+void UIElementManager::handle_just_pressed_controller(tmt::GamepadButtonEvent& event) {
+    static std::map<tmt::GamepadButton, tmt::Direction> key_direction_map = {
+        { GamepadButton::DPAD_UP, Direction::NORTH },
+        { GamepadButton::DPAD_DOWN, Direction::SOUTH },
+        { GamepadButton::DPAD_LEFT, Direction::WEST },
+        { GamepadButton::DPAD_RIGHT, Direction::EAST },
+    };
+
+    if (event.button == GamepadButton::SOUTH) {
+        set_state(ButtonState::ON_CLICK);
+        event.handled = true;
+        return;
+    }
+
+    auto it = key_direction_map.find(event.button);
+    if (it == key_direction_map.end()) {
+        return;
+    }
+
+    const tmt::Direction direction = it->second;
+    const bool swapped = next_button(direction);
+    if (swapped) {
+        event.handled = true;
+        return;
+    }
+
+    /* Handle component input... */
+    if (selected_entity == entt::null) {
+        return;
+    }
+
+    if (auto* slider = engine.ecs.try_get_component<Slider>(selected_entity)) {
+        if (event.button == GamepadButton::DPAD_RIGHT) {
+            slider->value = std::min(slider->value + slider->step, slider->max);
+            event.handled = true;
+        } else if (event.button == GamepadButton::DPAD_LEFT) {
+            slider->value = std::max(slider->value - slider->step, slider->min);
+            event.handled = true;
         }
     }
 }
@@ -453,6 +556,27 @@ void UIElementManager::on_gamepad_axis(GamepadAxisEvent& event) {
                 next_button(Direction::SOUTH);
             } else if (y_value < -MIN_AXIS_VALUE) {
                 next_button(Direction::NORTH);
+            }
+        }
+
+        /* Handle component input... */
+        if (selected_entity == entt::null) {
+            return;
+        }
+
+        if (auto* slider = engine.ecs.try_get_component<Slider>(selected_entity)) {
+            if (is_horizontal) {
+                if (x_value > MIN_AXIS_VALUE) {
+                    slider->value = std::min(slider->value + slider->step, slider->max);
+                } else if (x_value < -MIN_AXIS_VALUE) {
+                    slider->value = std::max(slider->value - slider->step, slider->min);
+                }
+            } else {
+                if (y_value > MIN_AXIS_VALUE) {
+                    slider->value = std::min(slider->value + slider->step, slider->max);
+                } else if (y_value < -MIN_AXIS_VALUE) {
+                    slider->value = std::max(slider->value - slider->step, slider->min);
+                }
             }
         }
     }
