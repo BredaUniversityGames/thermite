@@ -3,6 +3,8 @@
 #include "render_view.hpp"
 #include "scene_view.hpp"
 
+#include "engine/core/system.hpp"
+
 class GPUAdapter;
 class RenderGraph;
 class VRAMBank;
@@ -56,7 +58,7 @@ struct RendererSettings {
     ShadingRate spec_shading_rate = ShadingRate::QUARTER_RATE;
 };
 
-class Renderer {
+class Renderer : ISystem {
     GPUAdapter& gpu;
     RenderGraph& render_graph;
 
@@ -114,6 +116,10 @@ class Renderer {
     void update();
     void end();
 
+    constexpr virtual std::string get_name() override { return "Renderer"; };
+    virtual json serialize() const override;
+    virtual void deserialize(const json& value) override;
+
     Hit trace_ray(const Ray& ray) const;
 
     /* Get a reference to the primary vram bank, for resource creation. */
@@ -135,3 +141,4 @@ class Renderer {
 }  // namespace tmt
 
 TMT_OBJECT(tmt::RendererSettings, (bloom_radius));
+TMT_OBJECT(tmt::Renderer, (post_process_pipeline));

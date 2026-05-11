@@ -2,7 +2,7 @@
 
 #include <graphite/resources/handle.hh>
 
-#include "core/renderer/render_view.hpp"
+#include "engine/core/renderer/render_view.hpp"
 
 class GPUAdapter;
 class RenderGraph;
@@ -20,6 +20,9 @@ class PostProcessPipeline {
     void init(GPUAdapter& gpu);
     void enqueue(RenderGraph& render_graph, RenderView render_view);
     void deinit(GPUAdapter& gpu);
+
+    glm::vec3 hsl_packed = {};
 };
 
 }  // namespace tmt
+TMT_OBJECT(tmt::PostProcessPipeline, (hsl_packed));

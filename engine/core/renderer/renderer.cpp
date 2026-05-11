@@ -311,6 +311,14 @@ void Renderer::end() {
     gpu.deinit().expect("failed to destroy gpu adapter.");
 }
 
+json Renderer::serialize() const {
+    return Serializer::serialize(*this);
+}
+
+void Renderer::deserialize(const json& value) {
+    Serializer::deserialize(value, *this);
+}
+
 Hit Renderer::trace_ray(const Ray& ray) const {
     Hit hit = scene_view.bvh.trace(ray);
     if (hit) hit.entity = scene_view.entities[(uint32_t)hit.entity];

@@ -104,6 +104,7 @@ void PostProcessPipeline::enqueue(RenderGraph& render_graph, RenderView render_v
         .read(render_view.lbuffer.image)
         .read(render_view.tbuffer.images[0])
         .write(render_view.get_render_image())
+        .push_constants(&hsl_packed, 0, sizeof(glm::vec3))
         .group_size(16, 8)
         .work_size(render_view.gpu_view.resolution.x, render_view.gpu_view.resolution.y);
     /* clang-format on */
