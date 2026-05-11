@@ -1,4 +1,6 @@
 #include "engine/systems/gameplay/game_component.hpp"
+#include "engine/core/components/button.hpp"
+
 namespace game {
 
 class TutorialButton : public tmt::GameComponent<TutorialButton> {
