@@ -145,10 +145,14 @@ void GenerationComponent::update(const tmt::FrameData& time)
                     light_transform.set_world_position(transform.get_world_position() + sun_transform.get_forward() * light_spacing);
                     light_transform.set_parent(entity);
 
-                    light.type = tmt::LightType::SPHERE_LIGHT;
-                    auto& sphere_light = std::get<tmt::SphereLight>(light.light);
-                    sphere_light.attenuation_radius = light_spacing + 5.f;
-                    sphere_light.luminous_flux = 100000.f;
+                    light.light = tmt::SpotLight{};
+                    light.type = tmt::LightType::SPOT_LIGHT;
+                    auto& spot_light = std::get<tmt::SpotLight>(light.light);
+                    spot_light.attenuation_distance = light_spacing + 10.f;
+                    spot_light.luminous_intensity = 450.f;
+                    spot_light.beam_angle = glm::radians(60.f);
+                    
+                    light_transform.set_world_rotation(glm::quatLookAt(-sun_transform.get_forward(), glm::vec3(0.f, 1.f, 0.f)));
 
                     light.color = {1.f, 1.f, 1.f};
 

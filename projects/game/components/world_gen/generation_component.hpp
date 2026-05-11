@@ -21,3 +21,5 @@ struct GenerationComponent : public tmt::GameComponent<GenerationComponent> {
     glm::vec3 coord_to_world(glm::ivec2 coord, const tmt::LevelConfiguration& level_configuration);
 };
 }  // namespace game
+TMT_COMPONENT_INSPECT_EMPTY(game::GenerationComponent);
+TMT_COMPONENT_SERIALIZE_EMPTY(game::GenerationComponent);
