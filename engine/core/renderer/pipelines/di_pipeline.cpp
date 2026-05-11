@@ -262,6 +262,11 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
             .group_size(16, 8)
             .work_size(output_res.x, output_res.y);
 
+        struct Fpc {
+            float fog_anisotropy = 0.6f;
+            float scatter_strength = 0.0025f;
+        } froxel_p {};
+
         /* Volumetric lighting passes */
         const bool flip = (render_view.frame_counter & 0b1u) == 0u;
         render_graph.add_compute_pass("froxel pass", "lighting/froxel_trace.cs")
@@ -276,8 +281,15 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
             .read(flip ? render_view.prev_froxel_image : render_view.froxel_image)
             .write(flip ? render_view.froxel_image : render_view.prev_froxel_image)
             .read(render_view.froxel_sampler)
+            .push_constants(&froxel_p, 0u, sizeof(Fpc))
             .group_size(4, 4, 4)
             .work_size(160, 90, 64);
+
+        struct Vpc {
+            glm::vec3 fog_absorb = glm::vec3(0.02f);
+            float base_step_size = 0.01f;
+            uint32_t step_count = 64u;
+        } volume_p {};
 
         render_graph.add_compute_pass("volumetric pass", "lighting/volumetric.cs")
             /* Render view */
@@ -291,6 +303,7 @@ void DiPipeline::enqueue(RenderGraph& render_graph, RenderView& render_view, Sce
             .read(render_view.froxel_sampler)
             /* Output buffer */
             .write(output_buffer) 
+            .push_constants(&volume_p, 0u, sizeof(Vpc))
             .group_size(16, 8)
             .work_size(output_res.x, output_res.y);
     }
