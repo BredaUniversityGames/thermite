@@ -119,6 +119,35 @@ void FireLaser::on_tick(tmt::Entity enemy_entity, float dt) {
                 return;
             }
 
+            // rotating enemy to face player
+            auto& nav_mesh = tmt::engine.ecs.get_component<tmt::NavMesh>(enemy.walkable_asteroid);
+            if (!nav_mesh.nav_nodes_valid()) return;
+
+            int closest_node = nav_mesh.find_closest_node(enemy_pos);
+            auto dir = nav_mesh.follow_path(enemy_pos, player_pos);
+
+            auto* nodes = nav_mesh.nodes_mesh;
+            auto& normal = (*nodes)[closest_node].normal;
+            glm::vec3 ground_up = glm::normalize(normal);
+            glm::quat rot_velocity = glm::quat(1, 0, 0, 0);
+            if (glm::dot(*dir, *dir) > 0.00001f) {
+                // project velocity onto tangent plane of the ground
+                glm::vec3 forward = *dir - ground_up * glm::dot(*dir, ground_up);
+
+                if (glm::dot(forward, forward) > 0.00001f) {
+                    forward = glm::normalize(forward);
+                    glm::vec3 right = glm::normalize(glm::cross(ground_up, forward));
+                    glm::vec3 up = glm::cross(forward, right);
+
+                    glm::mat3 basis(right, up, forward);
+                    rot_velocity = glm::normalize(glm::quat_cast(basis));
+                }
+            }
+            float f = dt * enemy.rotation_speed_during_laser;
+            enemy.rotation = glm::slerp(enemy.rotation, rot_velocity, glm::clamp(f, 0.0f, 1.0f));
+            enemy.rotation = glm::normalize(enemy.rotation);
+            tmt::engine.ecs.get_component<tmt::Transform>(enemy_entity).set_world_rotation(enemy.rotation);
+
             glm::vec3 raw_vel = (player_pos - last_player_pos) / dt;
             last_player_pos = player_pos;
 

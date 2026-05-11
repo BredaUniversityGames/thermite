@@ -84,6 +84,7 @@ class MediumEnemy : public tmt::GameComponent<MediumEnemy> {
     tmt::IO::FileLocation laser_voxel_object;
     float laser_cooldown = 5.0f;
     float laser_timer = 0.0f;
+    float rotation_speed_during_laser = 0.8f;
     float laser_sitting_down_time = 0.5f;
     float laser_winding_up_time = 0.5f;
     float laser_sitting_down_height_offset = 0.2f;
@@ -113,7 +114,8 @@ TMT_OBJECT(
     game::MediumEnemy, (walkable_asteroid, laser_origin, missile_origin, core, rig_controller, available_positions, missile_voxel_object, projectile_mask, enemy_mask, projectile_layer,
                         enemy_layer, rotation_speed, height_above_ground, walk_speed, aggro_range, laser_range, stomp_range, missile_cooldown, stop_launching_after, start_homing_after,
                         slow_homing_accuracy_after, launch_speed, home_speed, life_time, missile_rotation_speed, target_offset, missile_burst, burst_interval, missile_max_randomness,
-                        missile_explosion_radius, laser_cooldown, laser_charge_voxel_object, laser_voxel_object, laser_firing_time, laser_sitting_down_time, laser_winding_up_time,
+                        missile_explosion_radius, laser_cooldown, rotation_speed_during_laser, laser_charge_voxel_object, laser_voxel_object, laser_firing_time, laser_sitting_down_time,
+                        laser_winding_up_time,
                         laser_damage, laser_damage_radius, laser_target_offset, laser_linear_speed, laser_exponential_speed, laser_linear_threshold, laser_max_randomness,
                         laser_prediction_length, laser_vel_smoothing, stomp_cooldown, stomp_timer, stomp_windup, stomp_radius, stomp_damage)
 );
