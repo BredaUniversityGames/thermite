@@ -6,6 +6,7 @@
 #include "engine/core/ecs.hpp"
 #include "engine/core/io.hpp"
 #include "engine/core/renderer/renderer.hpp"
+#include "engine/core/components/light.hpp"
 
 namespace game {
 
