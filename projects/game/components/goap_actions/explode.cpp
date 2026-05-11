@@ -151,7 +151,8 @@ void Explode::on_tick(tmt::Entity agent, float dt) {
 
                 glm::vec3 explosion_velocity = normal * force * strength;
 
-                // apply an impulse
+                // apply an impulse, not for enemies
+                // if (body.layer != (1 << 2))
                 body.velocity += explosion_velocity;
             }
         }

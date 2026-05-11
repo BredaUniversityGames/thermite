@@ -28,7 +28,8 @@ void SteeringSystem::on_fixed_update(const FrameData& time) {
         if (!agent.active) continue;
 
         body.type = VoxelBody::DYNAMIC;
-        if (body.type != VoxelBody::DYNAMIC) continue;
+
+        check_completion(agent, request, transform, body);
 
         if (request.mode == SteeringMode::NONE) continue;
 
@@ -73,7 +74,7 @@ void SteeringSystem::on_fixed_update(const FrameData& time) {
 
         body.rotation = new_rot;
 
-        check_completion(agent, request, transform, body);
+        //check_completion(agent, request, transform, body);
     }
 }
 

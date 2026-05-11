@@ -60,7 +60,6 @@ void SteerToPlayer::on_start(tmt::Entity agent) {
 }
 
 void SteerToPlayer::on_fixed_tick(tmt::Entity agent, float /*dt*/) {
-    player_entity = Player::get().entity;
     if (!tmt::engine.ecs.valid(player_entity)) return;
 
     auto& registry = tmt::engine.ecs.get_registry();
@@ -72,6 +71,19 @@ void SteerToPlayer::on_fixed_tick(tmt::Entity agent, float /*dt*/) {
     if (!player_transform) return;
 
     request.target_position = player_transform->get_world_position();
+
+    glm::vec3 player_pos = player_transform->get_world_position();
+
+     tmt::Log::info(
+        "[Agent {}] | "
+        "Player Pos: ({}, {}, {}) | "
+        "Request Target: ({}, {}, {})",
+        static_cast<uint32_t>(agent),
+
+        player_pos.x, player_pos.y, player_pos.z,
+
+        request.target_position.x, request.target_position.y, request.target_position.z
+    );
 }
 
 bool SteerToPlayer::is_done(tmt::Entity agent) const {
@@ -98,7 +110,8 @@ bool SteerToPlayer::is_done(tmt::Entity agent) const {
 void SteerToPlayer::on_finished(tmt::Entity agent) {
     auto& registry = tmt::engine.ecs.get_registry();
     if (registry.any_of<tmt::SteeringRequest>(agent)) {
-        registry.remove<tmt::SteeringRequest>(agent);
+        auto& req = registry.get<tmt::SteeringRequest>(agent);
+        req.mode = SteeringMode::NONE;
     }
 }
 
