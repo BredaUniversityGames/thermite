@@ -143,6 +143,11 @@ void Player::start() {
         tmt::engine.ecs.get_dispatcher().sink<AttachEvent>().connect<&Player::on_attach>(this);
     }
     load_upgrades();
+    auto saved_cam_settings { tmt::engine.player_data.try_get<CameraShakeSettings>(CAMERA_SHAKE) };
+    if (saved_cam_settings.has_value()) {
+        camera_shake_settings = saved_cam_settings.value();
+    }
+
     set_crosshair(rifle_crosshair);
 }
 void Player::end() {
