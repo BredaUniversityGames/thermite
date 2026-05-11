@@ -62,8 +62,8 @@ void UIElementManager::update_states(const tmt::FrameData& time) {
         }
     }
 
-    auto slider_view = engine.ecs.view<Slider, UIInteractable>();
-    for (const auto& [entity, slider, interactable] : slider_view.each()) {
+    auto slider_view = engine.ecs.view<Slider, UIInteractable, ImageRenderer>();
+    for (const auto& [entity, slider, interactable, image_renderer] : slider_view.each()) {
         Slider::Context context { entity, interactable.state, interactable.disabled, slider.value };
 
         switch (interactable.state) {
@@ -92,51 +92,50 @@ void UIElementManager::update_states(const tmt::FrameData& time) {
 
 void UIElementManager::on_end() {}
 
-void UIElementManager::select_button(const Entity button) {
-    if (selected_button == button) return;
+bool UIElementManager::select_button(const Entity button) {
+    if (selected_entity == button) return true;
 
     /* Deselect previous button */
-    if (selected_button != entt::null) {
-        auto* prev_button = engine.ecs.try_get_component<UIInteractable>(selected_button);
+    if (selected_entity != entt::null) {
+        auto* prev_button = engine.ecs.try_get_component<UIInteractable>(selected_entity);
         if (prev_button) prev_button->state = ButtonState::ON_DESELECT;
-        previous_button = selected_button;
+        previous_entity = selected_entity;
     }
 
-    if (previous_button == button) previous_button = entt::null;
-    selected_button = button;
+    if (previous_entity == button) previous_entity = entt::null;
+    selected_entity = button;
 
     /* Select new button */
-    if (selected_button == entt::null) return;
+    if (selected_entity == entt::null) return false;
 
-    auto* new_button = engine.ecs.try_get_component<UIInteractable>(selected_button);
+    auto* new_button = engine.ecs.try_get_component<UIInteractable>(selected_entity);
     if (new_button) new_button->state = ButtonState::ON_SELECT;
+    return true;
 }
 
-void UIElementManager::next_button(Direction direction) {
-    if (selected_button == entt::null) {
+bool UIElementManager::next_button(Direction direction) {
+    if (selected_entity == entt::null) {
         set_default_button();
-        return;
+        return false;
     }
 
-    auto* interactable = engine.ecs.try_get_component<UIInteractable>(selected_button);
+    auto* interactable = engine.ecs.try_get_component<UIInteractable>(selected_entity);
     if (!interactable) {
-        set_default_button();
-        return;
+        return set_default_button();
     }
 
     int dir = static_cast<int>(direction);
-    if (dir < 0 || dir >= static_cast<int>(interactable->flow_direction.size())) return;
+    if (dir < 0 || dir >= static_cast<int>(interactable->flow_direction.size())) return false;
 
     Entity next_entity = interactable->flow_direction[dir];
-    if (next_entity == entt::null) return;
+    if (next_entity == entt::null) return false;
 
-    select_button(next_entity);
+    return select_button(next_entity);
 }
 
-void UIElementManager::set_default_button() {
-    if (previous_button != entt::null) {
-        select_button(previous_button);
-        return;
+bool UIElementManager::set_default_button() {
+    if (previous_entity != entt::null) {
+        return select_button(previous_entity);
     }
 
     auto view = engine.ecs.view<Button>();
@@ -155,14 +154,16 @@ void UIElementManager::set_default_button() {
     }
 
     if (default_button != entt::null) {
-        select_button(default_button);
+        return select_button(default_button);
     }
+
+    return false;
 }
 
 void UIElementManager::set_state(ButtonState state) {
-    if (selected_button == entt::null) return;
+    if (selected_entity == entt::null) return;
 
-    auto* interactable = engine.ecs.try_get_component<UIInteractable>(selected_button);
+    auto* interactable = engine.ecs.try_get_component<UIInteractable>(selected_entity);
     if (!interactable) return;
     interactable->state = state;
 }
@@ -217,75 +218,10 @@ void UIElementManager::on_mouse_button(MouseButtonEvent& event) {
 
 void UIElementManager::on_keyboard(KeyboardEvent& event) {
     if (event.state == KeyState::JUST_PRESSED) {
-        switch (event.key) {
-            case Key::UP:
-                next_button(Direction::NORTH);
-                event.handled = true;
-                break;
-            case Key::DOWN:
-                next_button(Direction::SOUTH);
-                event.handled = true;
-                break;
-            case Key::LEFT:
-                next_button(Direction::WEST);
-                event.handled = true;
-                break;
-            case Key::RIGHT:
-                next_button(Direction::EAST);
-                event.handled = true;
-                break;
-            case Key::RETURN:
-                set_state(ButtonState::ON_CLICK);
-                event.handled = true;
-                break;
-            default:
-                break;
-        }
+        handle_just_pressed_keyboard(event);
+
     } else if (event.state == KeyState::PRESSED) {
-        if (move_state == MoveState::IDLE) {
-            move_state = MoveState::INITIAL_MOVE;
-        }
-
-        bool call_next_button = false;
-        if (move_state == MoveState::INITIAL_MOVE) {
-            if (hold_move_duration > INITIAL_DELAY) {
-                move_state = MoveState::REPEAT_MOVE;
-                hold_move_duration = 0.0f;
-                call_next_button = true;
-            }
-        } else if (move_state == MoveState::REPEAT_MOVE) {
-            if (hold_move_duration > REPEAT_DELAY) {
-                hold_move_duration = 0.0f;
-                call_next_button = true;
-            }
-        }
-
-        if (call_next_button) {
-            switch (event.key) {
-                case Key::UP:
-                    next_button(Direction::NORTH);
-                    event.handled = true;
-                    break;
-                case Key::DOWN:
-                    next_button(Direction::SOUTH);
-                    event.handled = true;
-                    break;
-                case Key::LEFT:
-                    next_button(Direction::WEST);
-                    event.handled = true;
-                    break;
-                case Key::RIGHT:
-                    next_button(Direction::EAST);
-                    event.handled = true;
-                    break;
-                case Key::RETURN:
-                    set_state(ButtonState::ON_HOLD);
-                    event.handled = true;
-                    break;
-                default:
-                    break;
-            }
-        }
+        handle_pressed_keyboard(event);
     } else if (event.state == KeyState::JUST_RELEASED) {
         move_state = MoveState::IDLE;
         switch (event.key) {
@@ -298,6 +234,93 @@ void UIElementManager::on_keyboard(KeyboardEvent& event) {
                 break;
         }
     }
+}
+
+void UIElementManager::handle_just_pressed_keyboard(tmt::KeyboardEvent& event) {
+    static std::map<tmt::Key, tmt::Direction> key_direction_map = {
+        { Key::UP, Direction::NORTH },
+        { Key::DOWN, Direction::SOUTH },
+        { Key::LEFT, Direction::WEST },
+        { Key::RIGHT, Direction::EAST },
+    };
+
+    if (event.key == Key::RETURN) {
+        set_state(ButtonState::ON_CLICK);
+        event.handled = true;
+        return;
+    }
+
+    auto it = key_direction_map.find(event.key);
+    if (it == key_direction_map.end()) {
+        return;
+    }
+
+    const tmt::Direction direction = it->second;
+    const bool swapped = next_button(direction);
+    if (swapped) {
+        event.handled = true;
+        return;
+    }
+
+    /* Handle component input... */
+    if (selected_entity == entt::null) {
+        return;
+    }
+
+    //const auto& interactable = engine.ecs.get_component<UIInteractable>(selected_entity);
+
+    if (auto* slider = engine.ecs.try_get_component<Slider>(selected_entity)) {
+        if (direction == Direction::EAST) {
+            slider->value = std::min(slider->value + slider->step, slider->max);
+            event.handled = true;
+        } else if (direction == Direction::WEST) {
+            slider->value = std::max(slider->value - slider->step, slider->min);
+            event.handled = true;
+        }
+    }
+}
+
+void UIElementManager::handle_pressed_keyboard(tmt::KeyboardEvent& event) {
+    if (move_state == MoveState::IDLE) {
+        move_state = MoveState::INITIAL_MOVE;
+    }
+
+    bool call_next_button = false;
+    if (move_state == MoveState::INITIAL_MOVE) {
+        if (hold_move_duration > INITIAL_DELAY) {
+            move_state = MoveState::REPEAT_MOVE;
+            hold_move_duration = 0.0f;
+            call_next_button = true;
+        }
+    } else if (move_state == MoveState::REPEAT_MOVE) {
+        if (hold_move_duration > REPEAT_DELAY) {
+            hold_move_duration = 0.0f;
+            call_next_button = true;
+        }
+    }
+
+    if (call_next_button) {
+        static std::map<tmt::Key, tmt::Direction> key_direction_map = {
+            { Key::UP, Direction::NORTH },
+            { Key::DOWN, Direction::SOUTH },
+            { Key::LEFT, Direction::WEST },
+            { Key::RIGHT, Direction::EAST },
+        };
+
+        auto it = key_direction_map.find(event.key);
+        if (it == key_direction_map.end()) {
+            return;
+        }
+
+        const tmt::Direction direction = it->second;
+        const bool swapped = next_button(direction);
+        if (swapped) {
+            event.handled = true;
+            return;
+        }
+    }
+
+    /* Handle component input... */
 }
 
 void UIElementManager::on_gamepad_button(GamepadButtonEvent& event) {

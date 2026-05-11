@@ -21,16 +21,16 @@ class UIElementManager : public ISystem, public OnMouseMove, public OnMouseButto
     void update_states(const tmt::FrameData& time);
     void on_end() override;
 
-    void select_button(const Entity button);
+    bool select_button(const Entity button);
 
    private:
-    void next_button(Direction direction);
-    void set_default_button();
+    bool next_button(Direction direction);
+    bool set_default_button();
     void set_state(ButtonState state);
     void update_move_state(float dt);
 
-    Entity selected_button = entt::null;
-    Entity previous_button = entt::null;
+    Entity selected_entity = entt::null;
+    Entity previous_entity = entt::null;
     float hold_time = 0.0f;
 
     MoveState move_state = MoveState::IDLE;
@@ -49,6 +49,10 @@ class UIElementManager : public ISystem, public OnMouseMove, public OnMouseButto
 
     // Inherited via OnKeyboard
     void on_keyboard(KeyboardEvent& event) override;
+
+    void handle_pressed_keyboard(tmt::KeyboardEvent& event);
+
+    void handle_just_pressed_keyboard(tmt::KeyboardEvent& event);
 
     // Inherited via OnGamepadButton
     void on_gamepad_button(GamepadButtonEvent& event) override;

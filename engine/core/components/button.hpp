@@ -120,11 +120,14 @@ struct Slider {
     float max = 1.0f;
 
     float step = 0.01f;
+
+    Entity handle_entity = entt::null;
 };
 
 }  // namespace tmt
 
 TMT_COMPONENT_DEPENDENCIES(tmt::Button, tmt::UIInteractable);
+TMT_COMPONENT_DEPENDENCIES(tmt::Slider, tmt::UIInteractable);
 
 TMT_COMPONENT(tmt::UIInteractable, "UIInteractable", (disabled, flow_direction));
 TMT_COMPONENT(tmt::Button, "Button", (colors));
