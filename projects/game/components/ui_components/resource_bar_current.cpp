@@ -93,7 +93,8 @@ void ResourceBarCurrentComponent::resource_bar_update(int new_val, float max_res
     float font_size_in_pixels = text_renderer_component->font_size;
     tmt::ResourceRef<tmt::Font> curr_font = text_renderer_component->font;
     float segment_width = curr_font->measure_text(rendered_string, font_size_in_pixels);
-    text_renderer_component->letter_spacing = (max_w - (segment_width * static_cast<float>(max_segments))) / (static_cast<float>(max_segments) - 1.0f);
+    float chars_per_segment = static_cast<float>(rendered_string.size());
+    text_renderer_component->letter_spacing = ((max_w - (segment_width * static_cast<float>(max_segments))) / (static_cast<float>(max_segments) - 1.0f)) / chars_per_segment;
 }
 
 }  // namespace game
