@@ -114,11 +114,14 @@ glm::vec3 GenerationComponent::coord_to_world(glm::ivec2 coord, const tmt::Level
 
 void GenerationComponent::update(const tmt::FrameData& time) 
 {
-    if(!generated_lights)
+    if(lighting_pass_data.size() > 0)
     {
-
-        for(auto& [cell_template_idx, point, spawned_entity] : lighting_pass_data)
+        for (size_t i = 0; i < lighting_pass_data.size();)
         {
+            auto& [cell_template_idx, point, spawned_entity] = lighting_pass_data[i];
+
+            bool remove_entry = false;
+
             auto& cell_template = level_configuration.scene_pickable_cell_templates[cell_template_idx];
             auto& layer_entry = cell_template.field.layer_entries[point.entry_idx];
 
@@ -132,7 +135,7 @@ void GenerationComponent::update(const tmt::FrameData& time)
                 tmt::Hit hit = tmt::engine.renderer.trace_ray(ray);
 
                 if (!hit.miss()) {
-                    generated_lights = true;
+                    remove_entry = true;
 
                     tmt::Entity asteroid_light_entity = tmt::engine.ecs.create_entity("AsteroidLight");
                     auto& light = tmt::engine.ecs.add_component<tmt::Light>(asteroid_light_entity);
@@ -152,7 +155,7 @@ void GenerationComponent::update(const tmt::FrameData& time)
                     spot_light.luminous_intensity = 450.f;
                     spot_light.beam_angle = glm::radians(60.f);
                     
-                    light_transform.set_world_rotation(glm::quatLookAt(-sun_transform.get_forward(), glm::vec3(0.f, 1.f, 0.f)));
+                    light_transform.set_world_rotation(glm::quatLookAt(sun_transform.get_forward(), glm::vec3(0.f, 1.f, 0.f)));
 
                     light.color = {1.f, 1.f, 1.f};
 
@@ -164,12 +167,14 @@ void GenerationComponent::update(const tmt::FrameData& time)
                     }
                 }
             }
+
+            if (remove_entry) {
+                lighting_pass_data.erase(lighting_pass_data.begin() + i);
+            } else {
+                ++i;
+            }                                                                                                                                                                                                                                                 
         }
-
-        
     }
-
-    
 }
 
 }  // namespace game
