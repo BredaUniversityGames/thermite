@@ -57,8 +57,10 @@
 #include "components/ui_components/sell_ore_component.hpp"
 #include "components/ui_components/button_resource_limit_checker.hpp"
 #include "components/ui_components/compass_icon.hpp"
+#include "components/ui_components/tutorial_button.hpp"
 #include "components/ui_components/resource_bar_current.hpp"
 #include "components/ui_components/opacity_fader.hpp"
+#include "components/ui_components/depth_tracker.hpp"
 
 // Managers
 #include "components/managers/ore_manager.hpp"
@@ -117,6 +119,7 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     tmt::engine.scenes.register_scene<DanielTestScene>();
     tmt::engine.scenes.register_scene<MikaTestScene>();
     tmt::engine.scenes.register_scene<LoekTestScene>();
+    tmt::engine.scenes.register_scene<LoekTestScene2>();
     tmt::engine.scenes.register_scene<AnneTestScene>();
     tmt::engine.scenes.register_scene<WeaponMotionTest>();
     tmt::engine.scenes.register_scene<BogdanulTestScene>();
@@ -161,8 +164,11 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     tmt::engine.component_registry.register_component<game::SellOreComponent>();
     tmt::engine.component_registry.register_component<game::ResourceLimitChecker>();
     tmt::engine.component_registry.register_component<game::CompassIcon>();
+    tmt::engine.component_registry.register_component<game::TutorialButton>();
     tmt::engine.component_registry.register_component<game::ResourceBarCurrentComponent>();
     tmt::engine.component_registry.register_component<game::OpacityFader>();
+    tmt::engine.component_registry.register_component<game::DepthTracker>();
+
     /* Register Game Settings */
     tmt::engine.component_registry.register_component<game::AudioVolumeChangeComponent>();
 
