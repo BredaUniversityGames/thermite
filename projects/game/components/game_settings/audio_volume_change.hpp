@@ -13,8 +13,8 @@ class AudioVolumeChangeComponent : public tmt::GameComponent<AudioVolumeChangeCo
     void on_value_changed(tmt::Slider::Context context);
 
     void update(const tmt::FrameData& time) override;
-    ;
-    void end() override {};
+
+    void end() override;
 
     tmt::VolumeControl volume_control;
 };

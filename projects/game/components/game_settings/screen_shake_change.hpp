@@ -8,11 +8,12 @@ class ScreenShakeChangeComponent : public tmt::GameComponent<ScreenShakeChangeCo
    public:
     using GameComponent::GameComponent;
     static std::string_view get_name() { return "ScreenShakeChangeComponent"; }
-    void start() override {};
-    void on_value_changed(tmt::Slider::Context context) {};
+    void start() override;
+    void on_value_changed(tmt::Slider::Context context);
 
     void update(const tmt::FrameData& time) override {};
-    void end() override {};
+    void end() override;
+    ;
 };
 
 }  // namespace game

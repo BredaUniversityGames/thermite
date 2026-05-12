@@ -12,3 +12,8 @@ void game::AudioVolumeChangeComponent::on_value_changed(tmt::Slider::Context con
     volume_control.set_volume(context.value);
 }
 void game::AudioVolumeChangeComponent::update(const tmt::FrameData& time) {}
+void game::AudioVolumeChangeComponent::end() {
+    if (auto* button_component = tmt::engine.ecs.try_get_component<tmt::Slider>(entity)) {
+        button_component->on_value_changed.clear();
+    }
+}
