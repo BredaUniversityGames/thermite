@@ -66,12 +66,25 @@ void GenerationComponent::start() {
         cell_template.field.size = { level_configuration.cell_size - level_configuration.cell_margin * 2.f, cell_template.height,
                                      level_configuration.cell_size - level_configuration.cell_margin * 2.f };
 
+        cell_template.field.use_noise = level_configuration.use_noise;
+        cell_template.field.noise_treshold = level_configuration.threshold;
+        cell_template.field.noise_scale = level_configuration.noise_scale;
+
         if (cell_template.random_seed)
             Random::set_seed(Random::irand());
         else
             Random::set_seed(cell_template.seed);
 
         auto local_points = tmt::get_poisson_points(cell_template.field);
+
+        if (level_configuration.use_noise) {
+            std::erase_if(local_points, [this, &coord](const auto& point) {
+                const auto& p = (coord_to_world(coord, level_configuration) + point.pos) * level_configuration.noise_scale;
+                float noise = Random::noise3D(p.x, p.y, p.z);
+
+                return noise < level_configuration.threshold;
+            });
+        }
 
         glm::vec3 cell_pos = coord_to_world(coord, level_configuration);
 
