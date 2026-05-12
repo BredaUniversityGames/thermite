@@ -8,6 +8,7 @@
 
 #include "engine/events/game.hpp"
 #include "engine/core/resource.hpp"
+#include "engine/events/debug.hpp"
 
 struct FMOD_GUID;
 struct FMOD_STUDIO_PARAMETER_ID;
@@ -153,7 +154,7 @@ class VolumeControl {
 class AudioListener;
 using Entity = entt::entity;
 
-class Audio : public OnGamePause, public OnGameResume, public OnGameEnd {
+class Audio : public OnGamePause, public OnGameResume, public OnGameEnd, public OnDrawLines {
     friend class AudioParameter;
     friend class AudioInstance;
     friend class AudioEvent;
@@ -204,11 +205,10 @@ class Audio : public OnGamePause, public OnGameResume, public OnGameEnd {
     FMOD::System* core_system;
 
     std::set<FMOD::Studio::EventInstance*> active_instances;
+
+    // Inherited from OnDrawLines
+    void on_draw_lines() const override;
+    constexpr std::string get_name() const override { return "Audio Distance Bounds"; }
 };
 
 }  // namespace tmt
-
-//JSON_REFLECT(FMOD_GUID, Data1, Data2, Data3, Data4);
-
-//JSON_REFLECT(tmt::AudioEvent, source_bank, uuid);
-//JSON_REFLECT(tmt::VolumeControl, source_bank, uuid);

@@ -7,6 +7,7 @@
 #include "engine/tools/serializer/audio.hpp"
 #include "engine/tools/serializer.hpp"
 
+#include <fmod_studio.hpp>
 #include <imgui.h>
 #include <imgui_stdlib.h>
 
@@ -104,6 +105,13 @@ void AudioMixer::on_inspect() {
                     if (!parameters.empty()) ImGui::Text("Parameters:");
 
                     ImGui::Indent();
+
+                    const glm::vec2 min_max_distance = event.get_min_max_distance();
+
+                    ImGui::Text("Min/Max distance:");
+                    ImGui::Text("Range: %.1f-%.1f", min_max_distance.x, min_max_distance.y);
+                    ImGui::NewLine();
+
                     for (const AudioParameter& parameter : parameters) {
                         ImGui::Text("Name: %s", parameter.get_name().c_str());
                         ImGui::Text("Range: %.1f-%.1f", parameter.get_min(), parameter.get_max());

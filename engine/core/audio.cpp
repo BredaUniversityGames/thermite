@@ -8,6 +8,7 @@
 #include <fmod_errors.h>
 
 #include "ecs.hpp"
+#include "polyline.hpp"
 #include "components/audio_emitter.hpp"
 #include "systems/physics/components/voxel_body.hpp"
 
@@ -532,6 +533,30 @@ void Audio::remove_listener() const {
 
     result = system->setNumListeners(fmod_listener_count - 1);
     TryLogError(result, "Failed to increase listener count");
+}
+
+void Audio::on_draw_lines() const {
+    // Loop over the all emitters to draw distance bounds of their playing sounds.
+    const entt::basic_group emitter_group = engine.ecs.group<AudioEmitter>(entt::get<Transform>);
+    for (const auto&& [entity, audio_emitter, transform] : emitter_group.each()) {
+        FMOD_3D_ATTRIBUTES attributes;
+
+        for (const AudioInstance3D& instance : audio_emitter.playing_instances) {
+            FMOD_RESULT result = instance.instance->get3DAttributes(&attributes);
+            if (TryLogError(result, "Failed to get 3d audio instance attributes")) continue;
+
+            float min_distance;
+            float max_distance;
+            result = instance.instance->getMinMaxDistance(&min_distance, &max_distance);
+            if (TryLogError(result, "Failed to get 3d audio instance min/max distance")) continue;
+
+            engine.polyline.use_line_width(1.5f);
+            engine.polyline.use_color(glm::vec3 { 1.0f, 0.0f, 0.0f });
+            engine.polyline.draw_sphere(std::bit_cast<glm::vec3>(attributes.position), min_distance);
+            engine.polyline.use_color(glm::vec3 { 0.0f, 1.0f, 0.0f });
+            engine.polyline.draw_sphere(std::bit_cast<glm::vec3>(attributes.position), max_distance);
+        }
+    }
 }
 
 }  // namespace tmt
