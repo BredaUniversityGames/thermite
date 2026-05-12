@@ -252,7 +252,7 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
 
 
     const glm::uvec2 render_res = render_view.gpu_view.resolution;
-    const uint32_t frame_flag = (render_view.frame_counter & 1) == 0;
+    const bool flip = (render_view.frame_counter & 0b1u) == 0u;
 
     StencilState stencil_state {}; /* default stencil state */
     stencil_state.write_mask = 0xFF;
@@ -260,7 +260,6 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
     stencil_state.reference_value = 1u;
     stencil_state.test = true;
 
-    const bool flip = (render_view.frame_counter & 0b1u) == 0u;
     RasterNode& billboard_pass = render_graph.add_raster_pass("billboard pass", "vfx/billboard.vx", "vfx/billboard.px")
         .topology(Topology::TriangleList)
         .attribute(AttrFormat::XY32_SFloat)  // Position
@@ -273,7 +272,7 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
         /* Froxel data */
         .read(flip ? render_view.froxel_luminance_image : render_view.prev_froxel_luminance_image, ShaderStages::Pixel)
         .read(render_view.froxel_sampler, ShaderStages::Pixel)
-        .depth_stencil(frame_flag ? render_view.dbuffer.image : render_view.prev_dbuffer.image, true, true, stencil_state)
+        .depth_stencil(flip ? render_view.dbuffer.image : render_view.prev_dbuffer.image, true, true, stencil_state)
         .load_op_depth(LoadOp::Load)
         .load_op_color(LoadOp::Load)
         .attach(render_view.lbuffer.image)
