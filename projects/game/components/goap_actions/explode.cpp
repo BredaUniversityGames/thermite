@@ -200,7 +200,7 @@ void Explode::on_tick(tmt::Entity agent, float dt) {
     }
 }
 
-bool Explode::is_done(tmt::Entity agent) const {
+bool Explode::is_done(tmt::Entity /*agent*/) const {
     return exploded;
 }
 

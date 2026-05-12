@@ -73,17 +73,6 @@ void SteerToPlayer::on_fixed_tick(tmt::Entity agent, float /*dt*/) {
     request.target_position = player_transform->get_world_position();
 
     glm::vec3 player_pos = player_transform->get_world_position();
-
-     tmt::Log::info(
-        "[Agent {}] | "
-        "Player Pos: ({}, {}, {}) | "
-        "Request Target: ({}, {}, {})",
-        static_cast<uint32_t>(agent),
-
-        player_pos.x, player_pos.y, player_pos.z,
-
-        request.target_position.x, request.target_position.y, request.target_position.z
-    );
 }
 
 bool SteerToPlayer::is_done(tmt::Entity agent) const {
