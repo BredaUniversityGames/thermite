@@ -31,4 +31,7 @@ struct Environment {
 
 }  // namespace tmt
 
-TMT_COMPONENT(tmt::Environment, "Environment", (resource, object_opaque_distance, object_transparent_distance, object_opacity_transition, fog_anisotropy, fog_scatter_strength, fog_absorption, particle_reflectance));
+TMT_COMPONENT(
+    tmt::Environment, "Environment",
+    (resource, object_opaque_distance, object_transparent_distance, object_opacity_transition, fog_anisotropy, fog_scatter_strength, fog_absorption, particle_reflectance)
+);

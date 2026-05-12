@@ -22,7 +22,7 @@ void tag_invoke(ImReflect::ImInput_t, const char*, tmt::Environment& value, ImSe
     tooltip("Scattering Strength", "Controls the strength of light scattered by fog.");
     ImGui::DragFloat3("Fog Absorption", &value.fog_absorption.x, 0.01f, 0.0f, 10.0f);
     tooltip("Absorption", "Controls the absorption of the fog.");
-    
+
     ImGui::SeparatorText("Miscellaneous Options");
     ImGui::DragFloat("Particle Reflectance", &value.particle_reflectance, 0.01f, 0.0f, 1.0f, "%.3f");
     tooltip("Reflectance", "Controls what percentage of incoming light is reflected for particles.");

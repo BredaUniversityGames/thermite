@@ -205,6 +205,7 @@ void Renderer::update() {
 
     /* Sky composite pass */
     if (engine.renderer.display_mode == DisplayMode::DEFAULT) {
+        /* clang-format off */
         render_graph.add_compute_pass("sky composite pass", "sky.cs")
             .read(render_view.render_view_buffer) /* Render view buffer */
             .read(scene_view.scene_view) /* Scene view buffer */
@@ -213,6 +214,7 @@ void Renderer::update() {
             .write(render_view.lbuffer.image) /* Luminance Output */
             .group_size(16, 8)
             .work_size(render_view.gpu_view.resolution.x, render_view.gpu_view.resolution.y);
+        /* clang-format on */
     }
 
     /* VFX */

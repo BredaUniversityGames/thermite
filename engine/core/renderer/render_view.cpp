@@ -239,7 +239,7 @@ void RenderView::deinit() {
     bank.destroy(mbuffer.texture);
     bank.destroy(viewport.image);
     bank.destroy(viewport.texture);
-    
+
     bank.destroy(froxel_scatter_image);
     bank.destroy(froxel_scatter_texture);
     bank.destroy(prev_froxel_scatter_image);
