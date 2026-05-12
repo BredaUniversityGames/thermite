@@ -22,6 +22,7 @@
 #include "game_flow.hpp"
 
 #include "editor/imgui/tools/buttons.hpp"
+#include "engine/core/components/text_renderer.hpp"
 
 void tmt::Viewport::on_editor_start() {}
 
@@ -410,12 +411,17 @@ void tmt::Viewport::selection_logic(const ImVec2& imgui_mouse_pos, const glm::ve
         if (not_multiple_select_modifier) hierarchy.clear_selection();
 
         if (engine.renderer.ui_pipeline.render_ui_pipeline) {
-            auto view = engine.ecs.view<UIComponent, ImageRenderer, Transform>();
+            auto image_view = engine.ecs.view<UIComponent, ImageRenderer, Transform>();
+            auto text_view = engine.ecs.view<UIComponent, TextRenderer, Transform>();
 
             std::vector<std::tuple<Entity, UIComponent, float>> ui_entities;
-            ui_entities.reserve(view.size_hint());
+            ui_entities.reserve(image_view.size_hint() + text_view.size_hint());
 
-            for (auto [entity, ui_comp, image_renderer, transform] : view.each()) {
+            for (auto [entity, ui_comp, image_renderer, transform] : image_view.each()) {
+                const float z_distance = transform.get_world_position().z;
+                ui_entities.emplace_back(entity, ui_comp, z_distance);
+            }
+            for (auto [entity, ui_comp, text_renderer, transform] : text_view.each()) {
                 const float z_distance = transform.get_world_position().z;
                 ui_entities.emplace_back(entity, ui_comp, z_distance);
             }
