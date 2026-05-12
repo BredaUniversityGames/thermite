@@ -4,10 +4,11 @@
 #include "projects/game/components/gameplay_functionality_components/player.hpp"
 
 namespace game {
+
 void DepthTracker::start() {
     // Default get player one if not set
     if (player_entity == entt::null) {
-        player_entity = Player::get().entity;        
+        player_entity = Player::get().entity;
     }
 }
 
@@ -53,4 +54,5 @@ void DepthTracker::change_text() const {
     }
     text_renderer_component->text = std::to_string(distance);
 }
-}
+
+}  // namespace game

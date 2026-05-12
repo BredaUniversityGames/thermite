@@ -2,9 +2,7 @@
 #include "engine/systems/gameplay/game_component.hpp"
 namespace game {
 
-enum class DepthTrackerDistanceType : uint8_t {
-    TOTAL_DISTANCE, PATH_DISTANCE
-};
+enum class DepthTrackerDistanceType : uint8_t { TOTAL_DISTANCE, PATH_DISTANCE };
 
 class DepthTracker : public tmt::GameComponent<DepthTracker> {
    public:
