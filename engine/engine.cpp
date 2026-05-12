@@ -14,6 +14,7 @@
 #include "core/polyline.hpp"
 #include "core/renderer/renderer.hpp"
 #include "engine/tools/player_data.hpp"
+#include "engine/tools/fps_limiter.hpp"
 
 #include "systems/physics/physics_system.hpp"
 #include "systems/physics/destruction_system.hpp"
@@ -54,6 +55,7 @@ Engine::Engine() :
     scenes(*new Scenes()),
     polyline(*new Polyline()),
     component_registry(*new GameComponentRegistry()),
+    fps_limiter(*new FpsLimiter()),
     player_data(*new PlayerData()) {}
 
 Engine::~Engine() {
@@ -118,6 +120,7 @@ void Engine::run() {
     size_t frame_count = 0;
     while (is_running) {
         TMT_ZONE_SCOPED_N("Frame");
+        fps_limiter.begin();
 
         if (game_controller.should_game_end()) {
             end_game();
@@ -184,6 +187,8 @@ void Engine::run() {
         scenes.update();
         resources.unload_unused();
         frame_count++;
+
+        fps_limiter.end();
     }
 
     if (game_controller.is_playing()) {
