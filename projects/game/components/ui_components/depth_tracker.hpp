@@ -18,6 +18,8 @@ class DepthTracker : public tmt::GameComponent<DepthTracker> {
 
     DepthTrackerDistanceType distance_type = DepthTrackerDistanceType::TOTAL_DISTANCE;
 
+    int displayed_decimals = 2;
+
     void measure_distance();
     void change_text() const;
 
@@ -26,4 +28,4 @@ class DepthTracker : public tmt::GameComponent<DepthTracker> {
 };
 
 }  // namespace game
-TMT_OBJECT(game::DepthTracker, (player_entity, barge_entity, distance_type));
+TMT_OBJECT(game::DepthTracker, (player_entity, barge_entity, distance_type, displayed_decimals));

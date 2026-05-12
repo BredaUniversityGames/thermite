@@ -52,7 +52,10 @@ void DepthTracker::change_text() const {
         tmt::Log::error("Unable to change text on depth tracker component due to missing text renderer component. Check entity {}", entity);
         return;
     }
-    text_renderer_component->text = std::to_string(distance);
+
+    std::stringstream ss;
+    ss << std::fixed << std::setprecision(displayed_decimals) << distance;
+    text_renderer_component->text = ss.str();
 }
 
 }  // namespace game
