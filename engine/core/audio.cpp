@@ -38,7 +38,7 @@ std::vector<AudioInstance> paused_game_audio;
 }  // namespace
 
 bool AudioInstance::is_valid() const {
-    return engine.audio.active_instances.contains(instance);
+    return engine.audio.active_instances.contains(instance) && instance->isValid();
 }
 
 void AudioInstance::stop(const FMOD_STUDIO_STOP_MODE stop_mode) const {
@@ -544,12 +544,15 @@ void Audio::on_draw_lines() const {
     // Loop over the all emitters to draw distance bounds of their sounds.
     const entt::basic_group emitter_group = engine.ecs.group<AudioEmitter>(entt::get<Transform>);
     for (const auto&& [entity, audio_emitter, transform] : emitter_group.each()) {
-        const bool will_play_on_start = audio_emitter.play_on_start && audio_emitter.event.is_valid();
+        const bool will_play_on_start = audio_emitter.play_on_start && audio_emitter.event_on_start.is_valid();
 
         if (game_active) {
             // During pause or gameplay, draw the distance bounds of the active playing sounds.
             FMOD_3D_ATTRIBUTES attributes;
             for (const AudioInstance3D& instance : audio_emitter.playing_instances) {
+                // on_draw_lines() is called before the audio update function, so we have to make sure the instance is still valid.
+                if (not instance.is_valid()) continue;
+
                 FMOD_RESULT result = instance.instance->get3DAttributes(&attributes);
                 if (TryLogError(result, "Failed to get 3d audio instance attributes")) continue;
 
@@ -566,7 +569,7 @@ void Audio::on_draw_lines() const {
             }
         } else if (will_play_on_start) {
             // When not playing the game, draw the distance bounds of the active playing sounds in the viewport.
-            const glm::vec2 distance = audio_emitter.event.get_min_max_distance();
+            const glm::vec2 distance = audio_emitter.event_on_start.get_min_max_distance();
             const glm::vec3 position = transform.get_world_position();
 
             engine.polyline.use_line_width(1.5f);
