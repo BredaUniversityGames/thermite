@@ -32,7 +32,7 @@ void SensorsSystem::on_start() {
 void SensorsSystem::on_update(const tmt::FrameData& /*time*/) {
     auto& ecs = tmt::engine.ecs;
 
-    ecs.view<tmt::WorldState, tmt::GoapAgent>().each([&](tmt::Entity agent_entity, tmt::WorldState& ws, tmt::GoapAgent& agent) {
+    ecs.view<tmt::WorldState, tmt::GoapAgent>().each([&](tmt::Entity /*agent_entity*/, tmt::WorldState& ws, tmt::GoapAgent& agent) {
         // propagate world state change to agent
         if (ws.needs_replan) {
             agent.needs_replan = true;
