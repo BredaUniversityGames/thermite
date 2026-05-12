@@ -327,9 +327,13 @@ void Audio::init() {
 }
 
 void Audio::update() {
-    update_listeners();
-    update_emitters();
+    // Game components should only update their position if the game is running and not paused.
+    if (engine.game_controller.is_playing() && not engine.game_controller.is_paused()) {
+        update_listeners();
+        update_emitters();
+    }
 
+    // Audio updates should always keep updating, this makes sure we can preview sounds in the editor.
     system->update();
 
     std::erase_if(active_instances, [](const FMOD::Studio::EventInstance* instance) {
@@ -501,7 +505,6 @@ void Audio::add_listener(entt::registry& registry, const Entity entity) const {
     // Only increase the FMOD listener count if the listener count doesn't already match (FMOD always has 1 listener by default).
     const size_t listener_comp_count = engine.ecs.group<AudioListener>(entt::get<Transform>).size();
     if (listener_comp_count != static_cast<size_t>(fmod_listener_count)) {
-
         listener_index = fmod_listener_count + 1;
 
         result = system->setNumListeners(listener_index);
@@ -536,25 +539,41 @@ void Audio::remove_listener() const {
 }
 
 void Audio::on_draw_lines() const {
-    // Loop over the all emitters to draw distance bounds of their playing sounds.
+    const bool game_active = engine.game_controller.is_playing();
+
+    // Loop over the all emitters to draw distance bounds of their sounds.
     const entt::basic_group emitter_group = engine.ecs.group<AudioEmitter>(entt::get<Transform>);
     for (const auto&& [entity, audio_emitter, transform] : emitter_group.each()) {
-        FMOD_3D_ATTRIBUTES attributes;
+        const bool will_play_on_start = audio_emitter.play_on_start && audio_emitter.event.is_valid();
 
-        for (const AudioInstance3D& instance : audio_emitter.playing_instances) {
-            FMOD_RESULT result = instance.instance->get3DAttributes(&attributes);
-            if (TryLogError(result, "Failed to get 3d audio instance attributes")) continue;
+        if (game_active) {
+            // During pause or gameplay, draw the distance bounds of the active playing sounds.
+            FMOD_3D_ATTRIBUTES attributes;
+            for (const AudioInstance3D& instance : audio_emitter.playing_instances) {
+                FMOD_RESULT result = instance.instance->get3DAttributes(&attributes);
+                if (TryLogError(result, "Failed to get 3d audio instance attributes")) continue;
 
-            float min_distance;
-            float max_distance;
-            result = instance.instance->getMinMaxDistance(&min_distance, &max_distance);
-            if (TryLogError(result, "Failed to get 3d audio instance min/max distance")) continue;
+                float min_distance;
+                float max_distance;
+                result = instance.instance->getMinMaxDistance(&min_distance, &max_distance);
+                if (TryLogError(result, "Failed to get 3d audio instance min/max distance")) continue;
+
+                engine.polyline.use_line_width(1.5f);
+                engine.polyline.use_color(glm::vec3 { 1.0f, 0.0f, 0.0f });
+                engine.polyline.draw_sphere(std::bit_cast<glm::vec3>(attributes.position), min_distance);
+                engine.polyline.use_color(glm::vec3 { 0.0f, 1.0f, 0.0f });
+                engine.polyline.draw_sphere(std::bit_cast<glm::vec3>(attributes.position), max_distance);
+            }
+        } else if (will_play_on_start) {
+            // When not playing the game, draw the distance bounds of the active playing sounds in the viewport.
+            const glm::vec2 distance = audio_emitter.event.get_min_max_distance();
+            const glm::vec3 position = transform.get_world_position();
 
             engine.polyline.use_line_width(1.5f);
             engine.polyline.use_color(glm::vec3 { 1.0f, 0.0f, 0.0f });
-            engine.polyline.draw_sphere(std::bit_cast<glm::vec3>(attributes.position), min_distance);
+            engine.polyline.draw_sphere(position, distance.x);
             engine.polyline.use_color(glm::vec3 { 0.0f, 1.0f, 0.0f });
-            engine.polyline.draw_sphere(std::bit_cast<glm::vec3>(attributes.position), max_distance);
+            engine.polyline.draw_sphere(position, distance.y);
         }
     }
 }
