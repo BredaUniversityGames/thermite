@@ -136,6 +136,7 @@ void Explode::on_tick(tmt::Entity agent, float dt) {
 
         // Copy params from agent
         explosion.param = small_enemy->explosion_parameters;
+        // explosion.explode();
 
         // Get everything (with voxel body) within radius and push away
         float radius = small_enemy->logic_paramaters.push_radius;
