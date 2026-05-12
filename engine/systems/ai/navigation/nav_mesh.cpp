@@ -127,6 +127,7 @@ void NavMesh::average_neighbor_normals(int iterations) {
             node_normal += (*generating_nodes)[idx].normal;
         }
         node.normal = glm::normalize(node_normal);
+        node.normal = glm::vec3(0, 1, 0);
     }
     if (!entered_loop) {
         generation_iteration = -1;

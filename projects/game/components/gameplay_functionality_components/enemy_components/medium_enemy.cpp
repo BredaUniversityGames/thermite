@@ -51,13 +51,15 @@ void game::MediumEnemy::start() {
     core_voxels = resource->blas->voxel_count - resource->blas->voxels_wasted;
 
     tmt::engine.ecs.get_component<tmt::RigController>(rig_controller).set_parameter_bool("walk", true);
+    tmt::engine.ecs.get_component<tmt::ConstrainedRig>(rig_controller).blend = 1.0f;
 
     auto pos = tmt::engine.ecs.get_component<tmt::Transform>(entity).get_world_position();
     for (int i = 0; i < 4; i++) {
         if (available_positions[i].entity == entt::null) continue;
         if (available_positions[i].reference_entity == entt::null) continue;
         auto ref_pos = tmt::engine.ecs.get_component<tmt::Transform>(available_positions[i].reference_entity).get_world_position();
-        available_positions[i].stored_offset_from_ref_entity = ref_pos - pos;
+        available_positions[i].base_offset_from_ref_entity = ref_pos - pos;
+        available_positions[i].stored_offset_from_ref_entity = available_positions[i].base_offset_from_ref_entity;
     }
 }
 
@@ -244,6 +246,24 @@ void game::MediumEnemy::die() {
     /*auto& registry = tmt::engine.ecs.get_registry();
     auto& agent = registry.get<tmt::GoapAgent>(this);
     tmt::engine.ecs.remove_component<tmt::GoapAgent>(this);*/
+}
+
+void game::MediumEnemy::set_stored_offsets_to_ref_entity() {
+    auto pos = tmt::engine.ecs.get_component<tmt::Transform>(entity).get_world_position();
+    for (int i = 0; i < 4; i++) {
+        if (available_positions[i].entity == entt::null) continue;
+        if (available_positions[i].reference_entity == entt::null) continue;
+        auto ref_pos = tmt::engine.ecs.get_component<tmt::Transform>(available_positions[i].reference_entity).get_world_position();
+        available_positions[i].stored_offset_from_ref_entity = ref_pos - pos;
+    }
+}
+
+void game::MediumEnemy::set_stored_offsets_to_base() {
+    for (int i = 0; i < 4; i++) {
+        if (available_positions[i].entity == entt::null) continue;
+        if (available_positions[i].reference_entity == entt::null) continue;
+        available_positions[i].stored_offset_from_ref_entity = available_positions[i].base_offset_from_ref_entity;
+    }
 }
 
 void game::MediumEnemy::on_game_paused(const game::GamePausedEvent&) {

@@ -15,6 +15,7 @@ struct AvailablePosEntry {
     float height_offset = 0.0f;
     tmt::Entity reference_entity = entt::null;
     glm::vec3 stored_offset_from_ref_entity = glm::vec3(0, 0, 0);
+    glm::vec3 base_offset_from_ref_entity = glm::vec3(0, 0, 0);
 };
 
 class MediumEnemy : public tmt::GameComponent<MediumEnemy> {
@@ -29,6 +30,8 @@ class MediumEnemy : public tmt::GameComponent<MediumEnemy> {
 
     void kite_player() const;
     void die();
+    void set_stored_offsets_to_ref_entity();
+    void set_stored_offsets_to_base();
 
     void on_game_paused(const game::GamePausedEvent&);
     void on_game_unpaused(const game::GameUnpausedEvent&);
@@ -108,7 +111,7 @@ class MediumEnemy : public tmt::GameComponent<MediumEnemy> {
 
 }  // namespace game
 
-TMT_OBJECT(game::AvailablePosEntry, (entity, height_offset, reference_entity, stored_offset_from_ref_entity));
+TMT_OBJECT(game::AvailablePosEntry, (entity, height_offset, reference_entity));
 
 TMT_OBJECT(
     game::MediumEnemy, (walkable_asteroid, laser_origin, missile_origin, core, rig_controller, available_positions, missile_voxel_object, projectile_mask, enemy_mask, projectile_layer,
