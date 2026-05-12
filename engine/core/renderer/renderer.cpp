@@ -195,7 +195,6 @@ void Renderer::update() {
 
         /* Apply exposure to luminance buffer */
         render_graph.add_compute_pass("autox apply", "lighting/autox_apply.cs")
-            .read(frame_flag ? render_view.depth_image : render_view.prev_depth_image)
             .write(render_view.lbuffer.image)
             .read(autox_image)
             .push_constants(&autox_constants, 0u, sizeof(AutoXConstants))
