@@ -5,10 +5,10 @@ void game::AudioVolumeChangeComponent::start() {
         return;
     }
     slider->value = volume_control.get_volume();
-
     slider->on_value_changed.add(this, &AudioVolumeChangeComponent::on_value_changed);
 }
 void game::AudioVolumeChangeComponent::on_value_changed(tmt::Slider::Context context) {
     if (context.disabled) return;
     volume_control.set_volume(context.value);
 }
+void game::AudioVolumeChangeComponent::update(const tmt::FrameData& time) {}

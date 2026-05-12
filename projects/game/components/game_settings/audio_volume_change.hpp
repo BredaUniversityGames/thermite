@@ -1,6 +1,7 @@
 #pragma once
 #include "engine/systems/gameplay/game_component.hpp"
 #include "engine/core/audio.hpp"
+#include "engine/core/components/button.hpp"
 
 namespace game {
 
@@ -11,7 +12,8 @@ class AudioVolumeChangeComponent : public tmt::GameComponent<AudioVolumeChangeCo
     void start() override;
     void on_value_changed(tmt::Slider::Context context);
 
-    void update(const tmt::FrameData& time) override {};
+    void update(const tmt::FrameData& time) override;
+    ;
     void end() override {};
 
     tmt::VolumeControl volume_control;
