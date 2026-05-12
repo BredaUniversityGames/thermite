@@ -45,9 +45,10 @@ class SmallEnemy : public tmt::GameComponent<SmallEnemy> {
     LogicParameters logic_paramaters;
     MovementParameters movement_paramaters;
 
+    bool core_destroyed = false;
+
    private:
     uint32_t core_voxels = 0u;
-    bool core_destroyed = false;
 };
 
 }  // namespace game
