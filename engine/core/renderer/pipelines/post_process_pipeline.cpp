@@ -23,7 +23,7 @@ void PostProcessPipeline::enqueue(RenderGraph& render_graph, RenderView render_v
     /* TAA Resolve */
     uint32_t taa_flag = engine.renderer.enable_taa ? 1u : 0u;
     /* clang-format off */
-    render_graph.add_compute_pass("TAA Resolve", "taa_resolve.cs")
+    render_graph.add_compute_pass("taa resolve", "taa_resolve.cs")
         .read(render_view.render_view_buffer)
         .read(engine.renderer.point_sampler)
         .read(engine.renderer.linear_sampler)
@@ -49,7 +49,7 @@ void PostProcessPipeline::enqueue(RenderGraph& render_graph, RenderView render_v
         threshold_constants.trail = settings.bloom_trail;
 
         /* clang-format off */
-        render_graph.add_compute_pass("Luminance Threshold", "luminance_threshold.cs")
+        render_graph.add_compute_pass("luminance threshold", "luminance_threshold.cs")
                     .read(render_view.lbuffer.image)
                     .write(render_view.tbuffer.images[0])
                     .push_constants(&threshold_constants, 0u, sizeof(ThresholdConstants))
@@ -63,7 +63,7 @@ void PostProcessPipeline::enqueue(RenderGraph& render_graph, RenderView render_v
         const uint32_t mip_h = shading_res.y >> curr_mip;
 
         /* clang-format off */
-        render_graph.add_compute_pass("Bloom Downsample", "bloom/downsample.cs")
+        render_graph.add_compute_pass("bloom downsample", "bloom/downsample.cs")
                     .read(render_view.render_view_buffer)
                     .read(engine.renderer.down_sampler)
                     .write(render_view.tbuffer.images[curr_mip])
@@ -87,7 +87,7 @@ void PostProcessPipeline::enqueue(RenderGraph& render_graph, RenderView render_v
         upsample_constants.bloom_radius = settings.bloom_radius;
 
         /* clang-format off */
-        render_graph.add_compute_pass("Bloom Upsample", "bloom/upsample.cs")
+        render_graph.add_compute_pass("bloom upsample", "bloom/upsample.cs")
                     .read(render_view.render_view_buffer)
                     .read(engine.renderer.up_sampler)
                     .write(render_view.tbuffer.images[curr_mip])
@@ -100,46 +100,13 @@ void PostProcessPipeline::enqueue(RenderGraph& render_graph, RenderView render_v
 
     /* Bloom Addition, Color Grading and Tonemapping */
     /* clang-format off */
-    render_graph.add_compute_pass("Color Grading and Tonemapping", "cg_tonemap.cs")
+    render_graph.add_compute_pass("color grading and tonemapping", "cg_tonemap.cs")
         .read(render_view.lbuffer.image)
         .read(render_view.tbuffer.images[0])
         .write(render_view.get_render_image())
         .group_size(16, 8)
         .work_size(render_view.gpu_view.resolution.x, render_view.gpu_view.resolution.y);
     /* clang-format on */
-
-    // if (engine.renderer.display_mode == DisplayMode::ILLUMINANCE) {
-        // uint32_t cascade_index = 0u;
-        // /* Illuminance probe update */
-        // render_graph.add_compute_pass("debug probes pass", "lighting/volume_debug.cs")
-        //     /* Render view */
-        //     .read(render_view.render_view_buffer)
-        //     /* Illuminance volume buffer */
-        //     .read(render_view.probe_image)
-        //     .read(engine.renderer.linear_sampler)
-        //     .write(render_view.get_render_image()) /* Render target */
-        //     .push_constants(&cascade_index, 0u, sizeof(uint32_t))
-        //     .group_size(16, 8)
-        //     .work_size(render_view.gpu_view.resolution.x, render_view.gpu_view.resolution.y);
-    // }
-
-    // {
-    //     const bool flip = (render_view.frame_counter & 0b1u) == 0u;
-    //     render_graph.add_compute_pass("[debug] froxel pass", "lighting/froxel_debug.cs")
-    //         /* Render view */
-    //         .read(render_view.render_view_buffer)
-    //         .read(render_view.blue_noise1d->image)
-    //         /* Vis buffer */
-    //         .read(render_view.vbuffer.image)
-    //         .read(engine.renderer.scene_view.object_data)
-    //         /* Froxel data */
-    //         .read(flip ? render_view.froxel_image : render_view.prev_froxel_image)
-    //         .read(render_view.froxel_sampler)
-    //         /* Render target */
-    //         .write(render_view.get_render_image()) 
-    //         .group_size(16, 8)
-    //         .work_size(render_view.gpu_view.resolution.x, render_view.gpu_view.resolution.y);
-    // }
 }
 
 void PostProcessPipeline::deinit(GPUAdapter&) {}

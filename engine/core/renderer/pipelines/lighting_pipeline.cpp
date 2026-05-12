@@ -27,16 +27,7 @@ glm::uvec2 div_up(const glm::uvec2 a, const uint32_t ax, const uint32_t ay) {
     return glm::uvec2(div_up(a.x, ax), div_up(a.y, ay));
 }
 
-void LightingPipeline::init(GPUAdapter& gpu) {
-    VRAMBank& bank = gpu.get_vram_bank();
-
-    /* Create the intermediate probe buffer */
-    const Size3D probe_buffer_size = Size3D(PROBE_CASCADE_WIDTH * PROBE_WIDTH * PROBE_CASCADE_WIDTH, PROBE_WIDTH * PROBE_CASCADE_WIDTH);
-    probe_lum_texture = bank.create_texture("Traced Probe Lum Atlas Texture", TextureUsage::Storage | TextureUsage::Sampled, TextureFormat::RGBA16Sfloat, probe_buffer_size).expect("failed to create probe atlas texture.");
-    probe_lum_image = bank.create_image("Traced Probe Lum Atlas Image", probe_lum_texture).expect("failed to create probe atlas image.");
-    probe_dir_texture = bank.create_texture("Traced Probe Dir Atlas Texture", TextureUsage::Storage | TextureUsage::Sampled, TextureFormat::RGBA16Sfloat, probe_buffer_size).expect("failed to create probe atlas texture.");
-    probe_dir_image = bank.create_image("Traced Probe Dir Atlas Image", probe_dir_texture).expect("failed to create probe atlas image.");
-}
+void LightingPipeline::init(GPUAdapter&) {}
 
 /* clang-format off */
 
@@ -281,13 +272,6 @@ void LightingPipeline::enqueue(RenderGraph& render_graph, RenderView& render_vie
 
 /* clang-format on */
 
-void LightingPipeline::deinit(GPUAdapter& gpu) {
-    VRAMBank& bank = gpu.get_vram_bank();
-
-    bank.destroy(probe_lum_image);
-    bank.destroy(probe_lum_texture);
-    bank.destroy(probe_dir_image);
-    bank.destroy(probe_dir_texture);
-}
+void LightingPipeline::deinit(GPUAdapter&) {}
 
 }  // namespace tmt

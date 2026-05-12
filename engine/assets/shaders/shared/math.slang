@@ -294,20 +294,3 @@ public inline float3 spherical_to_dir(const float phi, const float theta) {
               sinTheta * sin(phi),
               cos(theta));
 }
-
-[ForceInline] float2 sign_nzero(const float2 v) {
-    return float2((v.x >= 0.0) ? 1.0 : -1.0, (v.y >= 0.0) ? 1.0 : -1.0);
-}
-
-public [ForceInline] float2 oct_encode(float3 v) {
-    const float2 p = v.xy * (1.0f / (abs(v.x) + abs(v.y) + abs(v.z)));
-    const float2 e = (v.z <= 0.0f) ? ((1.0f - abs(p.yx)) * sign_nzero(p)) : p;
-    return e * 0.5f + 0.5f;
-}
-
-public [ForceInline] float3 oct_decode(float2 e) {
-    e = e * 2.0f - 1.0f;
-    float3 v = float3(e.xy, 1.0 - abs(e.x) - abs(e.y));
-    if (v.z < 0.0) v.xy = (1.0 - abs(v.yx)) * sign_nzero(v.xy);
-    return normalize(v);
-}
