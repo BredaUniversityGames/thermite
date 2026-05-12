@@ -13,7 +13,7 @@
 #include "engine/core/ecs.hpp"
 #include "engine/core/logger.hpp"
 #include "engine/core/renderer/renderer.hpp"
-#include "engine/core/renderer/pipelines/di_pipeline.hpp"
+#include "engine/core/renderer/pipelines/lighting_pipeline.hpp"
 #include "engine/core/renderer/pipelines/ui_pipeline.hpp"
 #include "engine/core/scenes.hpp"
 #include "engine/tools/player_data.hpp"

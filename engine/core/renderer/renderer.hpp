@@ -100,7 +100,7 @@ class Renderer {
 
     /* Pipelines */
     class GeometryPipeline& geometry_pipeline;
-    class DiPipeline& di_pipeline;
+    class LightingPipeline& lighting_pipeline;
     class PolylinePipeline& polyline_pipeline;
     class VfxPipeline& vfx_pipeline;
     class UiPipeline& ui_pipeline;

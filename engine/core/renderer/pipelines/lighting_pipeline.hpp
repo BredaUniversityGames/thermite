@@ -15,14 +15,14 @@ constexpr uint32_t PROBE_CASCADE_COUNT = 6u;
 constexpr uint32_t PROBE_WIDTH = 8u;
 constexpr uint32_t PROBE_CASCADE_WIDTH = 16u;
 
-/* Direct Illumination (DI) pipeline. */
-class DiPipeline {
+/* Lighting pipeline. */
+class LightingPipeline {
    public:
-    DiPipeline() {}
-    ~DiPipeline() {}
+    LightingPipeline() {}
+    ~LightingPipeline() {}
 
-    DiPipeline(const DiPipeline&) = delete;
-    DiPipeline& operator=(const DiPipeline&) = delete;
+    LightingPipeline(const LightingPipeline&) = delete;
+    LightingPipeline& operator=(const LightingPipeline&) = delete;
 
     void init(GPUAdapter& gpu);
     void enqueue(RenderGraph& render_graph, RenderView& render_view, SceneView& scene_view);

@@ -158,7 +158,7 @@ public inline uint voxel_hash(const uint voxel_index, const uint object_index, c
     uint h = hash_combine(0u, voxel_index);
     h = hash_combine(h, object_index);
     h = hash_combine(h, face_index);
-    return fmix32(h);
+    return jenkins32(h);
 }
 
 public inline uint voxel_hash(const uint64_t packed) {
