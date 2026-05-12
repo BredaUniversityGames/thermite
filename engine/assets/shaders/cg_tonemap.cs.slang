@@ -13,23 +13,30 @@ float3 hue2rgb(float hue) {
     return saturate(float3(abs(hue * 6.0f - 3.0f) - 1.0f, 2.0f - abs(hue * 6.0f - 2.0f), 2.0f - abs(hue * 6.0f - 4.0f)));
 }
 
-float3 rgb2hsl(float3 c) {
-    float cMin = min(min(c.r, c.g), c.b), cMax = max(max(c.r, c.g), c.b), delta = cMax - cMin;
-    float3 hsl = float3(0., 0., (cMax + cMin) / 2.);
-    if (delta != 0.0) {                          // If it has chroma and isn't gray.
-        if (hsl.z < .5) {
-            hsl.y = delta / (cMax + cMin);       // Saturation.
+float3 rgb2hsl(float3 color) {
+    const float color_min = min(min(color.r, color.g), color.b);
+    const float color_max = max(max(color.r, color.g), color.b);
+    const float delta = color_max - color_min;
+
+    float3 hsl = float3(0.0f, 0.0f, (color_max + color_min) / 2.0f);
+    if (delta != 0.0f) { /* If it has chroma and isn't gray */
+        if (hsl.z < 0.5f) {
+            hsl.y = delta / (color_max + color_min);       /* Saturation */
         } else {
-            hsl.y = delta / (2. - cMax - cMin);  // Saturation.
+            hsl.y = delta / (2.0f - color_max - color_min);  /* Saturation */
         }
-        float deltaR = (((cMax - c.r) / 6.) + (delta / 2.)) / delta, deltaG = (((cMax - c.g) / 6.) + (delta / 2.)) / delta, deltaB = (((cMax - c.b) / 6.) + (delta / 2.)) / delta;
+
+        float delta_r = (((color_max - color.r) / 6.0f) + (delta / 2.0f)) / delta;
+        float delta_g = (((color_max - color.g) / 6.0f) + (delta / 2.0f)) / delta;
+        float delta_b = (((color_max - color.b) / 6.0f) + (delta / 2.0f)) / delta;
+
         // Hue.
-        if (c.r == cMax) {
-            hsl.x = deltaB - deltaG;
-        } else if (c.g == cMax) {
-            hsl.x = (1. / 3.) + deltaR - deltaB;
-        } else {  // if(c.b==cMax){
-            hsl.x = (2. / 3.) + deltaG - deltaR;
+        if (color.r == color_max) {
+            hsl.x = delta_b - delta_g;
+        } else if (color.g == color_max) {
+            hsl.x = (1.0f / 3.0f) + delta_r - delta_b;
+        } else { // if(c.b==cMax){
+            hsl.x = (2.0f / 3.0f) + delta_g - delta_r;
         }
         hsl.x = fract(hsl.x);
     }
@@ -37,16 +44,16 @@ float3 rgb2hsl(float3 c) {
 }
 
 float3 hsl2rgb(float3 hsl) {
-    if (hsl.y == 0.) {
-        return float3(hsl.z);  // Luminance.
+    if (hsl.y == 0.0f) {
+        return float3(hsl.z);  /* lightness */
     } else {
         float b;
-        if (hsl.z < .5) {
-            b = hsl.z * (1. + hsl.y);
+        if (hsl.z < 0.5f) {
+            b = hsl.z * (1.0f + hsl.y);
         } else {
             b = hsl.z + hsl.y - hsl.y * hsl.z;
         }
-        float a = 2. * hsl.z - b;
+        float a = 2.0f * hsl.z - b;
         return a + hue2rgb(hsl.x) * (b - a);
     }
 }
@@ -69,6 +76,7 @@ void main(int2 thread_id: SV_DispatchThreadID) {
     luminance = cs::agx_eotf(luminance);
 
     /* Output device transform */
+    luminance = cs::delinearize(luminance);
 
     /* HSL editor */
     float3 hsl = rgb2hsl(luminance);
@@ -77,11 +85,10 @@ void main(int2 thread_id: SV_DispatchThreadID) {
     hsl.y *= hsl_packed.y;
     hsl.z *= hsl_packed.z;
 
-    /* Wrap hue around */
-    hsl.x = fmod(hsl.x, 1.0f);
+    hsl.y = saturate(hsl.y);
+    hsl.z = saturate(hsl.z);
 
     luminance = hsl2rgb(hsl);
-    luminance = cs::delinearize(luminance);
 
     render_target[thread_id] = float4(luminance, 1.0f);
 }

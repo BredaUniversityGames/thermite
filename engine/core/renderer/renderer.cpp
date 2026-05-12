@@ -1,5 +1,11 @@
 #include "renderer.hpp"
 
+#pragma warning(push)
+#pragma warning(disable : 4996)
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include <stb_image_write.h>
+#pragma warning(pop)
+
 #include <graphite/imgui.hh>
 #include <graphite/vram_bank.hh>
 #include <graphite/gpu_adapter.hh>
@@ -11,6 +17,7 @@
 #include "core/ecs.hpp"
 #include "core/window.hpp"
 #include "core/logger.hpp"
+#include "core/input/input.hpp"
 #include "core/components/camera.hpp"
 #include "core/components/transform.hpp"
 
@@ -130,6 +137,8 @@ void Renderer::init() {
 
     debug_transform.set_local_position({ 0.0f, 0.0f, -1.0f });
 }
+
+static void* data = nullptr;
 
 void Renderer::update() {
     TMT_ZONE_SCOPED_N("Rendering")
@@ -278,6 +287,17 @@ void Renderer::update() {
     if (const Result r = render_graph.dispatch(); r.is_err()) {
         Log::error(Log::Scope::RENDERER, "failed to dispatch render graph.\nreason: {}", r.unwrap_err());
     }
+
+    if (engine.input.is_keyboard_button_just_pressed(Key::P)) {
+        int width, height, channels;
+        gpu.get_vram_bank().readback_texture(render_view.viewport.image, &data, &width, &height, &channels).expect("failed to readback viewport image");
+
+        if (stbi_write_png("screenshot.png", width, height, channels, data, width * channels) == 0) {
+            Log::error("failed to write screenshot to disk!");
+        }
+    }
+
+
     TMT_FRAME_MARK;
 }
 

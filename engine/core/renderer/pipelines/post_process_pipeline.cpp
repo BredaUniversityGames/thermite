@@ -8,7 +8,6 @@
 #include "engine.hpp"
 #include "core/renderer/renderer.hpp"
 #include "tools/player_data.hpp"
-#include "core/input/input.hpp"
 
 namespace tmt {
 
@@ -99,12 +98,13 @@ void PostProcessPipeline::enqueue(RenderGraph& render_graph, RenderView render_v
     }
 
     /* Bloom Addition, Color Grading and Tonemapping */
+    glm::vec3 adjusted_hsl = { hsl_packed.x / 360.0f, 1.0f + hsl_packed.y / 100.0f, 1.0f + hsl_packed.z / 100.0f };
     /* clang-format off */
     render_graph.add_compute_pass("Color Grading and Tonemapping", "cg_tonemap.cs")
         .read(render_view.lbuffer.image)
         .read(render_view.tbuffer.images[0])
         .write(render_view.get_render_image())
-        .push_constants(&hsl_packed, 0, sizeof(glm::vec3))
+        .push_constants(&adjusted_hsl, 0, sizeof(glm::vec3))
         .group_size(16, 8)
         .work_size(render_view.gpu_view.resolution.x, render_view.gpu_view.resolution.y);
     /* clang-format on */
