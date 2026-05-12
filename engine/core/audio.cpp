@@ -150,7 +150,7 @@ FMOD_3D_ATTRIBUTES AudioInstance3D::get_3d_attributes() const {
 }
 
 bool AudioEvent::is_valid() const {
-    if (*this == AudioEvent {}) return false; // Check if the audio event has an invalid uuid (in which case it, itself is invalid).
+    if (*this == AudioEvent {}) return false;  // Check if the audio event has an invalid uuid (in which case it, itself is invalid).
 
     const FMOD::Studio::EventDescription* description = engine.audio.get_event_description(uuid);
     return source_bank && description->isValid();
@@ -256,7 +256,7 @@ glm::vec2 AudioEvent::get_min_max_distance() const {
 }
 
 bool VolumeControl::is_valid() const {
-    if (*this == VolumeControl {}) return false; // Check if the volume control has an invalid uuid (in which case it, itself is invalid).
+    if (*this == VolumeControl {}) return false;  // Check if the volume control has an invalid uuid (in which case it, itself is invalid).
 
     const FMOD::Studio::VCA* vca = engine.audio.get_vca(uuid);
     return source_bank && vca->isValid();
@@ -491,21 +491,33 @@ void Audio::update_emitters() {
 }
 
 void Audio::add_listener(entt::registry& registry, const Entity entity) const {
-    int listener_count;
-    FMOD_RESULT result = system->getNumListeners(&listener_count);
+    int fmod_listener_count;
+    FMOD_RESULT result = system->getNumListeners(&fmod_listener_count);
     if (TryLogError(result, "Failed to get listener count")) return;
 
-    result = system->setNumListeners(listener_count + 1);
-    if (TryLogError(result, "Failed to increase listener count")) return;
+    int listener_index = 0;
+
+    // Only increase the FMOD listener count if the listener count doesn't already match (FMOD always has 1 listener by default).
+    const size_t listener_comp_count = engine.ecs.group<AudioListener>(entt::get<Transform>).size();
+    if (listener_comp_count != static_cast<size_t>(fmod_listener_count)) {
+
+        listener_index = fmod_listener_count + 1;
+
+        result = system->setNumListeners(listener_index);
+        if (TryLogError(result, "Failed to increase listener count")) return;
+    }
 
     AudioListener& audio_listener = registry.get<AudioListener>(entity);
-    audio_listener.listener_index = listener_count;  // Set to the old listener count aka, the *new* last index.
+    audio_listener.listener_index = listener_index;  // Set to the old listener count aka, the *new* last index.
 }
 
 void Audio::remove_listener() const {
-    int listener_count;
-    FMOD_RESULT result = system->getNumListeners(&listener_count);
+    int fmod_listener_count;
+    FMOD_RESULT result = system->getNumListeners(&fmod_listener_count);
     if (TryLogError(result, "Failed to get listener count")) return;
+
+    // FMOD needs 1 listener minimum, if we remove the last listener component, we should keep the 1 FMOD listener and thus return without updating anything.
+    if (fmod_listener_count <= 1) return;
 
     int new_listener_index = 0;
     const entt::basic_group listener_group = engine.ecs.group<AudioListener>(entt::get<Transform>);
@@ -518,7 +530,7 @@ void Audio::remove_listener() const {
         ++new_listener_index;
     }
 
-    result = system->setNumListeners(listener_count - 1);
+    result = system->setNumListeners(fmod_listener_count - 1);
     TryLogError(result, "Failed to increase listener count");
 }
 
