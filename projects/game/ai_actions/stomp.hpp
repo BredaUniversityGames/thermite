@@ -1,6 +1,7 @@
 #pragma once
 #include "engine/systems/ai/goap/components/goap_action.hpp"
 #include "engine/systems/ai/goap/components/goap_action_registry.hpp"
+#include "engine/tools/tweening.hpp"
 
 class Stomp : public tmt::GoapAction {
    public:
@@ -12,6 +13,8 @@ class Stomp : public tmt::GoapAction {
     }
 
     float time = 0.0f;
+    mutable Tweening::Tween on_start_tween;
+    mutable Tweening::Tween on_clean_tween;
 
     std::string get_id() const override { return "a_Stomp"; }
     void clean_up(tmt::Entity enemy_entity) const;
