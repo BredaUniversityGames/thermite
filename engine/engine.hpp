@@ -6,6 +6,8 @@
 
 namespace tmt {
 
+class SteamAPI;
+
 /* Forward declarations */
 class InputMap;
 class Input;
@@ -19,7 +21,7 @@ class Scenes;
 class GameComponentRegistry;
 class Polyline;
 class PlayerData;
-
+class SteamAPI;
 class Engine {
    public:
     Engine();
@@ -46,7 +48,7 @@ class Engine {
 
     ~Engine() { delete &my_system; };
     */
-
+    SteamAPI& steam;
     Window& window;
     Audio& audio;
 

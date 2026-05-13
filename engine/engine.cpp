@@ -33,6 +33,7 @@
 #include "core/resources.hpp"
 #include "core/salvo.hpp"
 #include "core/input/input_map.hpp"
+#include "steam/steam_api.hpp"
 #include "tools/profiler.hpp"
 #include "tools/timer.hpp"
 #include "tools/tweening.hpp"
@@ -43,6 +44,7 @@ tmt::Engine tmt::engine;
 namespace tmt {
 
 Engine::Engine() :
+    steam(*new SteamAPI()),
     window(*new Window()),
     audio(*new Audio()),
     input_map(*new InputMap()),
@@ -70,6 +72,7 @@ Engine::~Engine() {
     delete &input_map;
     delete &audio;
     delete &window;
+    delete &steam;
 }
 
 void Engine::init(std::unique_ptr<Application> user_app) {
@@ -118,7 +121,7 @@ void Engine::run() {
     size_t frame_count = 0;
     while (is_running) {
         TMT_ZONE_SCOPED_N("Frame");
-
+        steam.update();
         if (game_controller.should_game_end()) {
             end_game();
             audio.stop_all_audio_instances();
