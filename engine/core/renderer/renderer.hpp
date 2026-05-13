@@ -91,6 +91,7 @@ class Renderer {
     DisplayMode display_mode = DisplayMode::DEFAULT;
     bool enable_taa = true;
     bool kill_particles = false;
+    bool take_screenshot = false;
     float bloom_radius = 0.25f;
 
     /* Pipelines */

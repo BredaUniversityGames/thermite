@@ -288,7 +288,9 @@ void Renderer::update() {
         Log::error(Log::Scope::RENDERER, "failed to dispatch render graph.\nreason: {}", r.unwrap_err());
     }
 
-    if (engine.input.is_keyboard_button_just_pressed(Key::P)) {
+    if (take_screenshot) {
+        take_screenshot = false;
+
         int width, height, channels;
         gpu.get_vram_bank().readback_texture(render_view.viewport.image, &data, &width, &height, &channels).expect("failed to readback viewport image");
 
@@ -296,7 +298,6 @@ void Renderer::update() {
             Log::error("failed to write screenshot to disk!");
         }
     }
-
 
     TMT_FRAME_MARK;
 }
