@@ -10,18 +10,22 @@
 #include <cstdlib>
 
 void Stomp::on_start(tmt::Entity enemy_entity) {
+    auto& enemy = tmt::engine.ecs.get_component<game::MediumEnemy>(enemy_entity);
+    tmt::engine.ecs.get_component<tmt::RigController>(enemy.rig_controller).set_parameter_bool("stomp", true);
     time = 0.0f;
 }
 
 void Stomp::on_tick(tmt::Entity enemy_entity, float dt) {
     auto& enemy = tmt::engine.ecs.get_component<game::MediumEnemy>(enemy_entity);
+    tmt::engine.ecs.get_component<tmt::RigController>(enemy.rig_controller).set_parameter_bool("stomp", true);
     time += dt;
     if (time > enemy.stomp_windup) {
+        tmt::engine.ecs.get_component<tmt::RigController>(enemy.rig_controller).set_parameter_bool("stomp", false);
         enemy.stomp_timer = 0.0f;
         tmt::Transform& enemy_transform = tmt::engine.ecs.get_component<tmt::Transform>(enemy_entity);
         const auto& enemy_entity_pos = enemy_transform.get_world_position();
 
-        //if player in range, deal damage
+        // if player in range, deal damage
         auto& player_transform = tmt::engine.ecs.get_component<tmt::Transform>(enemy.player);
         const auto& player_pos = player_transform.get_world_position();
         if (glm::length(player_pos - enemy_entity_pos) <= enemy.stomp_radius) {
@@ -35,5 +39,12 @@ void Stomp::on_tick(tmt::Entity enemy_entity, float dt) {
 }
 
 bool Stomp::is_done(tmt::Entity enemy_entity) const {
+    auto& enemy = tmt::engine.ecs.get_component<game::MediumEnemy>(enemy_entity);
+    tmt::engine.ecs.get_component<tmt::RigController>(enemy.rig_controller).set_parameter_bool("stomp", false);
     return false;
+}
+
+void Stomp::on_interrupt(tmt::Entity enemy_entity) {
+    auto& enemy = tmt::engine.ecs.get_component<game::MediumEnemy>(enemy_entity);
+    tmt::engine.ecs.get_component<tmt::RigController>(enemy.rig_controller).set_parameter_bool("stomp", false);
 }

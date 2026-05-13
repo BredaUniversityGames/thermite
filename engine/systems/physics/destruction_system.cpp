@@ -290,11 +290,13 @@ void Destruction::destroy_voxel(Entity entity, glm::uvec3 pos) {
     for (Entity seperate_entity : seperated_entities) {
         if (!engine.ecs.get_registry().valid(seperate_entity)) continue;
 
+        VoxelRenderer& seperate_vr = engine.ecs.get_component<VoxelRenderer>(seperate_entity);
+
         // If its the original entity
         if (seperate_entity == entity) {
             // Clear the graph and generate it a new one (slow)
             des->clear();
-            generate_connection_graph(*des, resource->blas.get());
+            generate_connection_graph(*des, seperate_vr.resource->blas.get());
             continue;
         }
 
@@ -307,7 +309,6 @@ void Destruction::destroy_voxel(Entity entity, glm::uvec3 pos) {
             continue;
         }
 
-        VoxelRenderer& seperate_vr = engine.ecs.get_component<VoxelRenderer>(seperate_entity);
         Physics::initialize_voxel_body(seperate_vb, *seperate_vr.resource.resource.get());
 
         // glm::vec3 tensor_0 = glm::vec3(seperate_vb.inv_inertia[0][0], seperate_vb.inv_inertia[0][1], seperate_vb.inv_inertia[0][2]);
@@ -979,6 +980,9 @@ std::vector<Entity> Destruction::find_seperations(Entity entity, const std::vect
     // Get name of original entity
     std::string original_name = engine.ecs.get_component<Name>(entity).name;
     glm::uvec3 resource_size = vr.resource->size;
+
+    // Keep old resource alive so blas stays valid throughout fill_volumes()
+    auto old_resource_handle = vr.resource.resource;
 
     // Create new resources for the original entity
     vr.resource = { {}, std::make_shared<VoxelVolume>() };

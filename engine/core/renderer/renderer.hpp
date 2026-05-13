@@ -43,15 +43,22 @@ inline Size3D rated_resolution(Size3D base, ShadingRate rate) {
 }
 
 struct RendererSettings {
+    /* Bloom settings */
     float bloom_radius = 0.5f;
     float bloom_threshold = 1.0f;
     float bloom_trail = 1.0f;
 
+    /* Auto exposure settings */
     float autox_key_value = 0.01f;
     float autox_lum_min = 0.001f;
     float autox_lum_max = 100.0f;
     float autox_response = 1.0f;
 
+    /* Fog/Volumetrics settings */
+    float fog_base_step_size = 0.1f;
+    uint32_t fog_step_count = 16u;
+
+    /* Shading rate settings */
     ShadingRate diff_shading_rate = ShadingRate::HALF_RATE;
     ShadingRate spec_shading_rate = ShadingRate::QUARTER_RATE;
 };
@@ -69,8 +76,21 @@ class Renderer {
     RenderView render_view {};
     SceneView scene_view {};
 
+    /* Samplers */
     Sampler linear_sampler {};
     Sampler point_sampler {};
+    Sampler down_sampler {};
+    Sampler up_sampler {};
+
+    /* Partial AutoX texture (256x256) */
+    Texture autox_partial_texture {};
+    Image autox_partial_image {};
+    /* Tiny AutoX texture (16x16) */
+    Texture autox_tiny_texture {};
+    Image autox_tiny_image {};
+    /* Final AutoX texture (1x1) */
+    Texture autox_texture {};
+    Image autox_image {};
 
     /* Display mode for debugging */
     DisplayMode display_mode = DisplayMode::DEFAULT;
@@ -80,7 +100,7 @@ class Renderer {
 
     /* Pipelines */
     class GeometryPipeline& geometry_pipeline;
-    class DiPipeline& di_pipeline;
+    class LightingPipeline& lighting_pipeline;
     class PolylinePipeline& polyline_pipeline;
     class VfxPipeline& vfx_pipeline;
     class UiPipeline& ui_pipeline;

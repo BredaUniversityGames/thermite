@@ -194,6 +194,7 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
             eff.flipbook_frames = effect.texture.resource->flipbook_frames;
             eff.anim_speed = effect.anim_speed;
             eff.dither_scale = effect.dither_scale;
+            eff.emission = effect.emission;
 
             em.total_spawn_count += eff.spawn_count;
 
@@ -251,21 +252,32 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
 
 
     const glm::uvec2 render_res = render_view.gpu_view.resolution;
+    const bool flip = (render_view.frame_counter & 0b1u) == 0u;
+
+    StencilState stencil_state {}; /* default stencil state */
+    stencil_state.write_mask = 0xFF;
+    stencil_state.compare_mask = 0xFF;
+    stencil_state.reference_value = 1u;
+    stencil_state.test = true;
+
     RasterNode& billboard_pass = render_graph.add_raster_pass("billboard pass", "vfx/billboard.vx", "vfx/billboard.px")
-                                .topology(Topology::TriangleList)
-                                .attribute(AttrFormat::XY32_SFloat)  // Position
-                                .attribute(AttrFormat::XY32_SFloat)  // UVs
-                                .read(render_view.render_view_buffer, ShaderStages::Vertex | ShaderStages::Pixel)
-                                .read(particle_buffer, ShaderStages::Vertex)
-                                .read(alive_list, ShaderStages::Vertex)
-                                .read(render_view.blue_noise1d->image, ShaderStages::Pixel)
-                                .read(point_sampler, ShaderStages::Pixel | ShaderStages::Vertex)
-                                .depth_stencil(render_view.dbuffer.image, true, true)
-                                .load_op_depth(LoadOp::Load)
-                                .load_op_color(LoadOp::Load)
-                                .attach(render_view.lbuffer.image)
-                                .attach(render_view.mbuffer.image)
-                                .raster_extent(render_res.x, render_res.y);
+        .topology(Topology::TriangleList)
+        .attribute(AttrFormat::XY32_SFloat)  // Position
+        .attribute(AttrFormat::XY32_SFloat)  // UVs
+        .read(render_view.render_view_buffer, ShaderStages::Vertex | ShaderStages::Pixel)
+        .read(particle_buffer, ShaderStages::Vertex)
+        .read(alive_list, ShaderStages::Vertex)
+        .read(render_view.blue_noise1d->image, ShaderStages::Pixel)
+        .read(engine.renderer.point_sampler, ShaderStages::Pixel | ShaderStages::Vertex)
+        /* Froxel data */
+        .read(flip ? render_view.froxel_luminance_image : render_view.prev_froxel_luminance_image, ShaderStages::Pixel)
+        .read(render_view.froxel_sampler, ShaderStages::Pixel)
+        .depth_stencil(flip ? render_view.dbuffer.image : render_view.prev_dbuffer.image, true, true, stencil_state)
+        .load_op_depth(LoadOp::Load)
+        .load_op_color(LoadOp::Load)
+        .attach(render_view.lbuffer.image)
+        .attach(render_view.mbuffer.image)
+        .raster_extent(render_res.x, render_res.y);
     billboard_pass.draw_indirect(billboard_vertices, instanced_draw_args_buffer);
 
     /* clang-format on */

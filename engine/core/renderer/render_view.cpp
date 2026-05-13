@@ -59,8 +59,16 @@ void RenderView::init() {
     vbuffer.texture = bank.create_texture("Visibility Buffer Texture", TextureUsage::Storage | TextureUsage::Sampled, TextureFormat::RG32Uint, full_rate).expect("failed to create vbuffer texture.");
     vbuffer.image = bank.create_image("Visibility Buffer Image", vbuffer.texture).expect("failed to create vbuffer image.");
     dbuffer.texture =
-        bank.create_texture("Depth Buffer Texture", TextureUsage::DepthStencil | TextureUsage::Sampled, TextureFormat::D32Sfloat, full_rate).expect("failed to create depth buffer texture.");
-    dbuffer.image = bank.create_image("Depth Buffer Image", dbuffer.texture).expect("failed to create depth buffer image.");
+        bank.create_texture("Depth/Stencil Buffer Texture", TextureUsage::DepthStencil | TextureUsage::Sampled, TextureFormat::D24UnormS8Uint, full_rate).expect("failed to create depth buffer texture.");
+    dbuffer.image = bank.create_image("Depth/Stencil Buffer Image", dbuffer.texture).expect("failed to create depth buffer image."); /* Depth Stencil Image View - Used for Writing in Raster Pass */
+    prev_dbuffer.texture =
+        bank.create_texture("Prev Depth/Stencil Buffer Texture", TextureUsage::DepthStencil | TextureUsage::Sampled, TextureFormat::D24UnormS8Uint, full_rate).expect("failed to create prev depth buffer texture.");
+    prev_dbuffer.image = bank.create_image("Prev Depth/Stencil Buffer Image", prev_dbuffer.texture).expect("failed to create prev depth buffer image."); /* Depth Stencil Image View - Used for Writing in Raster Pass */
+    
+    depth_image = bank.create_image("Depth Buffer Image", dbuffer.texture, true).expect("failed to create depth buffer image."); /* Depth Image View - Used for Reading in Compute Pass */
+    prev_depth_image = bank.create_image("Prev Depth Buffer Image", prev_dbuffer.texture, true).expect("failed to create depth buffer image."); /* Depth Image View - Used for Reading in Compute Pass */
+    stencil_image = bank.create_image("Stencil Buffer Image", dbuffer.texture, false, true).expect("failed to create stencil buffer image."); /* Stencil Image View - Used for Reading in Compute Pass */
+    prev_stencil_image = bank.create_image("Prev Stencil Buffer Image", prev_dbuffer.texture, false, true).expect("failed to create prev stencil buffer image."); /* Stencil Image View - Used for Reading in Compute Pass */
 
     /* Calculate the specular and diffuse shading resolutions */
     const RendererSettings& settings = engine.player_data.get<RendererSettings>("RendererSettings");
@@ -90,7 +98,7 @@ void RenderView::init() {
         )
             .expect("failed to create tbuffer texture.");
     for (uint32_t curr_mip = 0; curr_mip < tbuffer.meta.mips; curr_mip++)
-        tbuffer.images.push_back(bank.create_image("Thresholded Luminance Buffer Image", tbuffer.texture, curr_mip).expect("failed to create tbuffer image."));
+        tbuffer.images.push_back(bank.create_image("Thresholded Luminance Buffer Image", tbuffer.texture, false, false, curr_mip).expect("failed to create tbuffer image."));
 
     /* History Screen Buffers */
     hbuffer1.texture = bank.create_texture("History1 Buffer Texture", 
@@ -107,6 +115,17 @@ void RenderView::init() {
         TextureUsage::ColorAttachment | TextureUsage::Sampled | TextureUsage::Storage, TextureFormat::RG16Sfloat, full_rate
     ).expect("failed to initialize motion vector buffer texture");
     mbuffer.image = bank.create_image("Motion Vector Buffer Image", mbuffer.texture).expect("failed to initialize motion vector buffer image.");
+
+    /* Froxel volume buffers */
+    froxel_scatter_texture = bank.create_texture("Froxel Scatter Texture", TextureUsage::Storage | TextureUsage::Sampled, TextureFormat::RGBA16Sfloat, {160, 90, 64}).expect("failed to create froxel texture.");
+    froxel_scatter_image = bank.create_image("Froxel Scatter Image", froxel_scatter_texture).expect("failed to create froxel image.");
+    prev_froxel_scatter_texture = bank.create_texture("Prev Froxel Scatter Texture", TextureUsage::Storage | TextureUsage::Sampled, TextureFormat::RGBA16Sfloat, {160, 90, 64}).expect("failed to create froxel texture.");
+    prev_froxel_scatter_image = bank.create_image("Prev Froxel Scatter Image", prev_froxel_scatter_texture).expect("failed to create froxel image.");
+    froxel_luminance_texture = bank.create_texture("Froxel Luminance Texture", TextureUsage::Storage | TextureUsage::Sampled, TextureFormat::RGBA16Sfloat, {160, 90, 64}).expect("failed to create froxel texture.");
+    froxel_luminance_image = bank.create_image("Froxel Luminance Image", froxel_luminance_texture).expect("failed to create froxel image.");
+    prev_froxel_luminance_texture = bank.create_texture("Prev Froxel Luminance Texture", TextureUsage::Storage | TextureUsage::Sampled, TextureFormat::RGBA16Sfloat, {160, 90, 64}).expect("failed to create froxel texture.");
+    prev_froxel_luminance_image = bank.create_image("Prev Froxel Luminance Image", prev_froxel_luminance_texture).expect("failed to create froxel image.");
+    froxel_sampler = bank.create_sampler("Froxel Volume Sampler", Filter::Linear, AddressMode::ClampToEdge).expect("failed to create froxel sampler.");
 
     /* Create the macrofacet cache */
     const uint64_t cache_size = 10'000'000u; /* 480 MB */
@@ -164,6 +183,7 @@ void RenderView::update_gpu_view(RenderGraph& render_graph, const Camera& camera
     gpu_view.world_to_clip = p * glm::inverse(world);  // p * v
     gpu_view.prev_world_to_clip = prev_world_to_clip;
     gpu_view.clip_to_world = glm::inverse(gpu_view.world_to_clip);
+    gpu_view.prev_origin = gpu_view.origin;
     gpu_view.origin = glm::vec4(transform.get_world_position(), 0.0f);
     gpu_view.frame_index = frame_counter;
     gpu_view.dt = engine.frame_data().delta_time;
@@ -196,7 +216,13 @@ void RenderView::deinit() {
     bank.destroy(vbuffer.image);
     bank.destroy(vbuffer.texture);
     bank.destroy(dbuffer.image);
+    bank.destroy(prev_dbuffer.image);
+    bank.destroy(stencil_image);
+    bank.destroy(prev_stencil_image);
+    bank.destroy(depth_image);
+    bank.destroy(prev_depth_image);
     bank.destroy(dbuffer.texture);
+    bank.destroy(prev_dbuffer.texture);
     bank.destroy(lbuffer.image);
     bank.destroy(lbuffer.texture);
     bank.destroy(diff_buffer.image);
@@ -213,6 +239,16 @@ void RenderView::deinit() {
     bank.destroy(mbuffer.texture);
     bank.destroy(viewport.image);
     bank.destroy(viewport.texture);
+
+    bank.destroy(froxel_scatter_image);
+    bank.destroy(froxel_scatter_texture);
+    bank.destroy(prev_froxel_scatter_image);
+    bank.destroy(prev_froxel_scatter_texture);
+    bank.destroy(froxel_luminance_image);
+    bank.destroy(froxel_luminance_texture);
+    bank.destroy(prev_froxel_luminance_image);
+    bank.destroy(prev_froxel_luminance_texture);
+    bank.destroy(froxel_sampler);
 
     bank.destroy(render_view_buffer);
     bank.destroy(render_target);
@@ -267,6 +303,7 @@ void RenderView::resize_textures() {
     bank.resize_texture(viewport.texture, full_rate).expect("failed to resize viewport texture.");
     bank.resize_texture(vbuffer.texture, full_rate).expect("failed to resize vbuffer texture.");
     bank.resize_texture(dbuffer.texture, full_rate).expect("failed to resize depth buffer texture.");
+    bank.resize_texture(prev_dbuffer.texture, full_rate).expect("failed to resize depth buffer texture.");
     bank.resize_texture(lbuffer.texture, full_rate).expect("failed to resize lbuffer texture.");
     bank.resize_texture(diff_buffer.texture, diff_rate).expect("failed to resize diffuse buffer texture.");
     bank.resize_texture(spec_buffer.texture, spec_rate).expect("failed to resize specular buffer texture.");

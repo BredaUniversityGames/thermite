@@ -23,6 +23,22 @@
 // TODO before we have a serializer for input, you can add all the needed keybindings here.
 //  TODO we still have to add the gamepad inputs here
 
+static glm::vec2 hash_noise(float t) {
+    glm::vec2 n;
+    n.x = glm::fract(std::sin(t * 12.9898f) * 43758.5453f);
+    n.y = glm::fract(std::sin((t + 1.0f) * 78.233f) * 43758.5453f);
+
+    return n * 2.0f - 1.0f;  // range [-1, 1]
+}
+
+static float move_towards(float current, float target, float max_delta) {
+    float delta = target - current;
+
+    if (glm::abs(delta) <= max_delta) return target;
+
+    return current + glm::sign(delta) * max_delta;
+}
+
 namespace game {
 
 void setup_inputs(tmt::InputMap& input_map) {
@@ -65,12 +81,9 @@ void setup_inputs(tmt::InputMap& input_map) {
     input_map.add_action_mouse(action::SECONDARY_TOOL_USE, tmt::MouseButton::RIGHT);
 
     // menus
-    input_map.add_action(action::OPEN_INVENTORY);
-    input_map.add_key_to_action(action::OPEN_INVENTORY, tmt::Key::I);
+
     input_map.add_action(action::OPEN_PAUSE_MENU);
-    input_map.add_key_to_action(action::OPEN_PAUSE_MENU, tmt::Key::P);
-    input_map.add_action(action::OPEN_UPGRADE_MENU);
-    input_map.add_key_to_action(action::OPEN_UPGRADE_MENU, tmt::Key::U);
+    input_map.add_key_to_action(action::OPEN_PAUSE_MENU, tmt::Key::ESCAPE);
 
     // barge
     input_map.add_action(action::ATTACH_KEY);
@@ -117,6 +130,8 @@ void Player::start() {
 
         return;
     }
+    auto& cam_shake { tmt::engine.player_data.get<float>(CAMERA_SHAKE) };
+    camera_shake_settings.set_multiplier(cam_shake);
     wallet->currencies = resources;
     if (tmt::engine.ecs.is_enabled(entity)) {
         tmt::engine.input.set_mouse_relative_to_window(true);
@@ -127,6 +142,9 @@ void Player::start() {
         tmt::engine.ecs.get_dispatcher().sink<AttachEvent>().connect<&Player::on_attach>(this);
     }
     load_upgrades();
+    set_crosshair(rifle_crosshair);
+    // attach player to component
+    tmt::engine.ecs.get_dispatcher().trigger<AttachAttemptEvent>({ .entity = entity });
 }
 void Player::end() {
     tmt::engine.ecs.get_dispatcher().sink<AttachEvent>().disconnect<&Player::on_attach>(this);
@@ -136,37 +154,65 @@ void Player::end() {
 void Player::look_camera() {
     auto& input = tmt::engine.input;
 
-    // Guard for camera existence
     auto camera = tmt::engine.ecs.try_get_component<tmt::Camera>(entity);
     if (!camera) {
         state = PlayerState::PAUSED;
+
         if (input.is_mouse_locked()) {
             input.lock_mouse(false);
             input.set_mouse_relative_to_window(false);
         }
         return;
     }
-    const bool mouse_locked = input.is_mouse_locked();
-    if (!mouse_locked) return;
+
+    if (!input.is_mouse_locked()) return;
 
     auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
 
-    // Mouse look
     const float dx = input.get_mouse_delta_x();
     const float dy = input.get_mouse_delta_y();
 
-    camera->yaw -= dx * camera_sensitivity;
-    camera->pitch -= dy * camera_sensitivity;
+    base_yaw -= dx * camera_sensitivity;
+    base_pitch -= dy * camera_sensitivity;
 
-    camera->pitch = glm::clamp(camera->pitch, -89.0f, 89.0f);
+    float yaw = base_yaw;
+    float pitch = base_pitch;
 
-    glm::vec3 front = {};
+    if (camera_shake_settings.enabled) {
+        yaw += recoil_offset.x;
+        pitch += recoil_offset.y;
+    }
 
-    front.x = cos(glm::radians(camera->yaw)) * cos(glm::radians(camera->pitch));
-    front.y = sin(glm::radians(camera->pitch));
-    front.z = sin(glm::radians(camera->yaw)) * cos(glm::radians(camera->pitch));
+    // Clamp after recoil
+    pitch = glm::clamp(pitch, -89.0f, 89.0f);
+
+    glm::vec3 front;
+
+    front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+    front.y = sin(glm::radians(pitch));
+    front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+
     front = glm::normalize(front);
-    transform.look_at(transform.get_world_position() + front, glm::vec3(0.0f, 1.0f, 0.0f));
+
+    glm::vec3 shake_offset(0.0f);
+
+    if (camera_shake_settings.enabled && current_shake > 0.0f) {
+        glm::vec2 n = hash_noise(tmt::engine.frame_data().elapsed_time);
+
+        glm::vec3 right = glm::normalize(glm::cross(front, glm::vec3(0, 1, 0)));
+        glm::vec3 up = glm::normalize(glm::cross(right, front));
+
+        glm::vec3 target_shake = right * n.x * current_shake + up * n.y * current_shake;
+
+        float smooth = 1.0f - expf(-12.0f * tmt::engine.frame_data().delta_time);
+
+        static glm::vec3 shake_current(0.0f);
+        shake_current = glm::mix(shake_current, target_shake, smooth);
+
+        shake_offset = shake_current;
+    }
+
+    transform.look_at(transform.get_world_position() + front + shake_offset, glm::vec3(0.0f, 1.0f, 0.0f));
 }
 
 tmt::Hit Player::check_collision() const {
@@ -313,8 +359,32 @@ void Player::prevent_camera_clip() const {
         transform.set_world_position(pos - forward * pushback);
     }
 }
+
 void Player::update(const tmt::FrameData& time) {
     auto& input = tmt::engine.input;
+
+    update_shake(time.delta_time);
+
+    // --- Recoil recovery ---
+    float dt = time.delta_time;
+
+    // how fast it returns
+    float recovery = 1.0f - expf(-camera_shake_settings.get_recoil_return_speed() * dt);
+
+    // move back toward zero at a constant speed
+    recoil_offset.x = glm::mix(recoil_offset.x, 0.0f, recovery);
+    recoil_offset.y = glm::mix(recoil_offset.y, 0.0f, recovery);
+
+    // Swapping crosshair
+    if (input.is_action_just_pressed(action::SWITCH_RIFLE)) {
+        set_crosshair(rifle_crosshair);
+    }
+    if (input.is_action_just_pressed(action::SWITCH_GRAVITY)) {
+        set_crosshair(gravity_crosshair);
+    }
+    if (input.is_action_just_pressed(action::SWITCH_MINING)) {
+        set_crosshair(mine_crosshair);
+    }
 
     switch (state) {
         case game::PlayerState::FREEMOVING:
@@ -325,6 +395,8 @@ void Player::update(const tmt::FrameData& time) {
             }
             if (input.is_action_pressed(action::BOOST)) {
                 apply_boost();
+
+                add_camera_shake(camera_shake_settings.get_boost_intensity() * dt);
             } else {
                 reset_boost(time.delta_time);
             }
@@ -371,41 +443,21 @@ void Player::update(const tmt::FrameData& time) {
         tmt::engine.ecs.get_dispatcher().trigger(PlayerMaxHealthChanged { entity, health.max_value, previous_max_health });
     }
     previous_max_health = health.max_value;
-    // Update UI
-    if (tmt::engine.ecs.valid(hp_bar_max)) {
-        if (auto component_hp_max = tmt::engine.ecs.try_get_component<tmt::UIComponent>(hp_bar_max)) component_hp_max->size.x = health.max_value + 2.0f;
-    }
-
     // Fire event health changed
     if (previous_health != health.value) {
         tmt::engine.ecs.get_dispatcher().trigger(PlayerHealthChanged { entity, health.value, previous_health });
     }
     previous_health = health.value;
-    // Update UI
-    if (tmt::engine.ecs.valid(hp_bar_current)) {
-        if (auto component_curr_hp = tmt::engine.ecs.try_get_component<tmt::UIComponent>(hp_bar_current)) component_curr_hp->size.x = std::clamp(health.value, 0.0f, health.max_value);
-    }
-
     // Fire event max energy changed
     if (previous_max_energy != energy.max_value) {
         tmt::engine.ecs.get_dispatcher().trigger(PlayerMaxEnergyChanged { entity, energy.max_value, previous_max_energy });
     }
     previous_max_energy = energy.max_value;
-    // Update UI
-    if (tmt::engine.ecs.valid(energy_bar_max)) {
-        if (auto component_energy_max = tmt::engine.ecs.try_get_component<tmt::UIComponent>(energy_bar_max)) component_energy_max->size.x = energy.max_value + 2.0f;
-    }
-
     // Fire event energy changed
     if (previous_energy != energy.value) {
-        tmt::engine.ecs.get_dispatcher().trigger(PlayerMaxHealthChanged { entity, energy.value, previous_energy });
+        tmt::engine.ecs.get_dispatcher().trigger(PlayerEnergyChanged { entity, energy.value, previous_energy });
     }
     previous_energy = energy.value;
-    // Update UI
-    if (tmt::engine.ecs.valid(energy_bar_current)) {
-        if (auto component_curr_energy = tmt::engine.ecs.try_get_component<tmt::UIComponent>(energy_bar_current))
-            component_curr_energy->size.x = std::clamp(energy.value, 0.0f, energy.max_value);
-    }
 
     // --- Energy low pop up ---
     {
@@ -486,6 +538,7 @@ void Player::update(const tmt::FrameData& time) {
         }
     }
 }
+
 void Player::draw_debug_lines() const {
     const auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
     const auto& physics = tmt::engine.ecs.systems.get<tmt::Physics>();
@@ -662,6 +715,55 @@ void Player::set_hud_enabled(tmt::Entity hud_root, bool enabled) {
     for (auto child : transform.get_all_children()) {
         set_hud_enabled(child, enabled);
     }
+}
+
+void Player::add_camera_shake(float intensity) {
+    if (!camera_shake_settings.enabled) return;
+
+    current_shake = glm::min(camera_shake_settings.max_intensity, current_shake + intensity);
+}
+
+void Player::update_shake(float dt) {
+    current_shake -= dt * camera_shake_settings.get_decay_speed();
+    current_shake = glm::max(0.0f, current_shake);
+}
+
+void Player::add_recoil() {
+    recoil_offset.y += camera_shake_settings.get_recoil_strength();
+
+    float rand_x = (rand() / (float)RAND_MAX - 0.5f) * 2.0f;
+    recoil_offset.x += rand_x * camera_shake_settings.get_recoil_horizontal();
+}
+
+void Player::set_crosshair(tmt::Entity active) {
+    auto& ecs = tmt::engine.ecs;
+
+    auto toggle = [&](auto&& self, tmt::Entity e, bool enabled) -> void {
+        if (!ecs.valid(e)) return;
+
+        // Toggle this entity
+        if (enabled) {
+            ecs.remove_component<tmt::Disable>(e);
+        } else {
+            ecs.add_or_get_component<tmt::Disable>(e);
+        }
+
+        // Toggle children
+        if (!ecs.has_component<tmt::Transform>(e)) return;
+
+        auto& transform = ecs.get_component<tmt::Transform>(e);
+        for (auto child : transform.get_all_children()) {
+            self(self, child, enabled);
+        }
+    };
+
+    // Disable all crosshairs
+    toggle(toggle, rifle_crosshair, false);
+    toggle(toggle, gravity_crosshair, false);
+    toggle(toggle, mine_crosshair, false);
+
+    // Enable selected crosshair
+    toggle(toggle, active, true);
 }
 
 }  // namespace game
