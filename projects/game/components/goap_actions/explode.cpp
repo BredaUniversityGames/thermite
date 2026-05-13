@@ -181,6 +181,14 @@ void Explode::on_tick(tmt::Entity agent, float dt) {
             if (ecs.try_get_component<tmt::RigModel>(child)) {
                 ecs.remove_component<tmt::RigModel>(child);
             }
+
+            if (ecs.try_get_component < tmt::VoxelBody>(child)) {
+                tmt::VoxelBody* body = ecs.try_get_component<tmt::VoxelBody>(child);
+                if (body->type == tmt::VoxelBody::STATIC)
+                {
+                    body->type = tmt::VoxelBody::DYNAMIC;
+                }
+            }
         }
 
         // Explosion component

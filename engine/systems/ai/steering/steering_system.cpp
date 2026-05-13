@@ -67,7 +67,7 @@ void SteeringSystem::on_fixed_update(const FrameData& time) {
 
         desired_forward = glm::normalize(desired_forward);
 
-        glm::quat target_rot = glm::quatLookAt(-desired_forward, glm::vec3(0, 1, 0));
+        glm::quat target_rot = glm::quatLookAt(desired_forward, glm::vec3(0, 1, 0));
 
         target_rot *= glm::angleAxis(glm::radians(180.0f), glm::vec3(0, 1, 0));
 
@@ -185,7 +185,7 @@ glm::vec3 SteeringSystem::collision_avoidance(const SteeringAgent& agent, const 
     if (!physics) return glm::vec3(0);
 
     uint32_t layer_mask = 0xFFFFFFFF & ~(1 << 2) & ~(1 << 1);  // ignore enemies and player
-    float avoid_distance = 30.0f;
+    float avoid_distance = 15.0f;
 
     glm::vec3 total_avoid(0.0f);
 

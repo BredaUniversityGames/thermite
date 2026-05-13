@@ -51,10 +51,14 @@ void GravityManipulationComponent::grav_point_check() {
     auto physical_entity_view = tmt::engine.ecs.view<tmt::VoxelBody>();
     for (entt::entity e : physical_entity_view) {
         auto& vb = tmt::engine.ecs.get_component<tmt::VoxelBody>(e);
-        if (vb.type == tmt::VoxelBody::STATIC) continue;
+
+        // Ignore static bodies unless its enemies (layer 2)
+        if (vb.type == tmt::VoxelBody::STATIC && vb.layer != 2) continue;
+
         if (vb.get_mass() >= max_mass) continue;
 
         float distance = glm::distance(vb.center_of_mass, attraction_pos);
+
         if (distance < range) {
             currently_manipulated_entities.push_back(e);
         }
