@@ -33,7 +33,6 @@ class WalletUiLink : public tmt::GameComponent<WalletUiLink> {
     void change_text() const;
     void update_value();
     bool wallet_entity_check() const;
-    int previous_value = -1;
     int current_value = 0;
 };
 
