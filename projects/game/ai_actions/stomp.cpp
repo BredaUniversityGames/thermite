@@ -18,11 +18,16 @@ void Stomp::clean_up(tmt::Entity enemy_entity) const {
 void Stomp::on_start(tmt::Entity enemy_entity) {
     auto& enemy = tmt::engine.ecs.get_component<game::MediumEnemy>(enemy_entity);
     tmt::engine.ecs.get_component<tmt::RigController>(enemy.rig_controller).set_parameter_bool("stomp", true);
-    static float blend = 1.0f;
-    blend = 1.0f;
-    Tweening::tween(blend).from(1.0f).to(0.0f).duration(0.5f).ease(Tweening::Ease::IN_OUT_QUAD).on_update([&](float, const float& value) {
-        tmt::engine.ecs.get_component<tmt::ConstrainedRig>(enemy.rig_controller).blend = value;
-    });
+
+    Tweening::tween<float>()  //
+        ->from(1.0f)
+        .to(0.0f)
+        .duration(0.5f)
+        .ease(Tweening::Ease::IN_OUT_QUAD)
+        .on_update([&](float alpha, const float* value) {
+            //
+            tmt::engine.ecs.get_component<tmt::ConstrainedRig>(enemy.rig_controller).blend = *value;
+        });
     time = 0.0f;
 
     tmt::Transform& enemy_transform = tmt::engine.ecs.get_component<tmt::Transform>(enemy_entity);
@@ -56,7 +61,7 @@ void Stomp::on_tick(tmt::Entity enemy_entity, float dt) {
     }
 }
 
-bool Stomp::is_done(tmt::Entity enemy_entity)const {
+bool Stomp::is_done(tmt::Entity enemy_entity) const {
     clean_up(enemy_entity);
     return false;
 }
