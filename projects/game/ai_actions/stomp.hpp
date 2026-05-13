@@ -14,6 +14,7 @@ class Stomp : public tmt::GoapAction {
     float time = 0.0f;
 
     std::string get_id() const override { return "a_Stomp"; }
+    void clean_up(tmt::Entity enemy_entity) const;
 
     void on_start(tmt::Entity) override;
     void on_tick(tmt::Entity agent, float dt) override;

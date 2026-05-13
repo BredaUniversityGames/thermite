@@ -20,7 +20,6 @@ void FireLaser::cleanup(tmt::Entity enemy_entity) {
     game::MediumEnemy& enemy = tmt::engine.ecs.get_component<game::MediumEnemy>(enemy_entity);
     enemy.set_stored_offsets_to_base();
     tmt::engine.ecs.get_component<tmt::RigController>(enemy.rig_controller).set_parameter_bool("laser", false);
-    tmt::engine.ecs.get_component<tmt::ConstrainedRig>(enemy.rig_controller).blend = 1.0f;
     if (tmt::engine.ecs.valid(laser_entity)) {
         tmt::engine.ecs.destroy_entity(laser_entity);
     }
@@ -69,6 +68,7 @@ void FireLaser::rotate_to_face_player(tmt::Entity enemy_entity, float dt) {
 
 void FireLaser::on_start(tmt::Entity enemy_entity) {
     auto& enemy = tmt::engine.ecs.get_component<game::MediumEnemy>(enemy_entity);
+    Tweening::tween(tmt::engine.ecs.get_component<tmt::ConstrainedRig>(enemy.rig_controller).blend).from(1.0f).to(0.0f).duration(0.2f).ease(Tweening::Ease::IN_OUT_QUAD);
     state = SITTING_DOWN;
     time = 0.0f;
 
@@ -103,11 +103,11 @@ void FireLaser::on_tick(tmt::Entity enemy_entity, float dt) {
     switch (state) {
         case SITTING_DOWN: {
             tmt::engine.ecs.get_component<tmt::RigController>(enemy.rig_controller).set_parameter_bool("laser", true);
-            tmt::engine.ecs.get_component<tmt::ConstrainedRig>(enemy.rig_controller).blend = 0.0f;
             enemy.height_above_ground_offset = -enemy.height_above_ground + enemy.laser_sitting_down_height_offset;
             if (time > enemy.laser_sitting_down_time) {
-                //auto& constrained_rig = tmt::engine.ecs.get_component<tmt::ConstrainedRig>(enemy.rig_controller);
-                //constrained_rig.copy_reference_pose_from_keyframe(tmt::engine.ecs.get_component<tmt::RigModel>(enemy.rig_controller));
+                // auto& constrained_rig = tmt::engine.ecs.get_component<tmt::ConstrainedRig>(enemy.rig_controller);
+                // constrained_rig.copy_reference_pose_from_keyframe(tmt::engine.ecs.get_component<tmt::RigModel>(enemy.rig_controller));
+                Tweening::tween(tmt::engine.ecs.get_component<tmt::ConstrainedRig>(enemy.rig_controller).blend).from(0.0f).to(1.0f).duration(0.2f).ease(Tweening::Ease::IN_OUT_QUAD);
                 enemy.set_stored_offsets_to_ref_entity();
                 state = WINDING_UP;
                 time = 0.0f;
@@ -115,7 +115,6 @@ void FireLaser::on_tick(tmt::Entity enemy_entity, float dt) {
             break;
         }
         case WINDING_UP: {
-            tmt::engine.ecs.get_component<tmt::ConstrainedRig>(enemy.rig_controller).blend = 1.0f;
             rotate_to_face_player(enemy_entity, dt);
 
             enemy.height_above_ground_offset = -enemy.height_above_ground + enemy.laser_sitting_down_height_offset;
