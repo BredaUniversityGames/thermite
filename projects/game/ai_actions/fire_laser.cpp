@@ -68,7 +68,16 @@ void FireLaser::rotate_to_face_player(tmt::Entity enemy_entity, float dt) {
 
 void FireLaser::on_start(tmt::Entity enemy_entity) {
     auto& enemy = tmt::engine.ecs.get_component<game::MediumEnemy>(enemy_entity);
-    Tweening::tween(tmt::engine.ecs.get_component<tmt::ConstrainedRig>(enemy.rig_controller).blend).from(1.0f).to(0.0f).duration(0.2f).ease(Tweening::Ease::IN_OUT_QUAD);
+    Tweening::tween<float>()  //
+        .from(1.0f)
+        .to(0.0f)
+        .duration(0.2f)
+        .ease(Tweening::Ease::IN_OUT_QUAD)
+        .on_update([enemy_entity](float alpha, const float* value) {
+            //
+            auto& enemy_comp = tmt::engine.ecs.get_component<game::MediumEnemy>(enemy_entity);
+            tmt::engine.ecs.get_component<tmt::ConstrainedRig>(enemy_comp.rig_controller).blend = *value;
+        });
     state = SITTING_DOWN;
     time = 0.0f;
 
@@ -107,7 +116,16 @@ void FireLaser::on_tick(tmt::Entity enemy_entity, float dt) {
             if (time > enemy.laser_sitting_down_time) {
                 // auto& constrained_rig = tmt::engine.ecs.get_component<tmt::ConstrainedRig>(enemy.rig_controller);
                 // constrained_rig.copy_reference_pose_from_keyframe(tmt::engine.ecs.get_component<tmt::RigModel>(enemy.rig_controller));
-                Tweening::tween(tmt::engine.ecs.get_component<tmt::ConstrainedRig>(enemy.rig_controller).blend).from(0.0f).to(1.0f).duration(0.2f).ease(Tweening::Ease::IN_OUT_QUAD);
+                Tweening::tween<float>()  //
+                    .from(0.0f)
+                    .to(1.0f)
+                    .duration(0.2f)
+                    .ease(Tweening::Ease::IN_OUT_QUAD)
+                    .on_update([enemy_entity](float alpha, const float* value) {
+                        //
+                        auto& enemy_comp = tmt::engine.ecs.get_component<game::MediumEnemy>(enemy_entity);
+                        tmt::engine.ecs.get_component<tmt::ConstrainedRig>(enemy_comp.rig_controller).blend = *value;
+                    });
                 enemy.set_stored_offsets_to_ref_entity();
                 state = WINDING_UP;
                 time = 0.0f;

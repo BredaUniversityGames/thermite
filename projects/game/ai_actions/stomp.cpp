@@ -21,7 +21,6 @@ void Stomp::clean_up(tmt::Entity enemy_entity) const {
             //
             auto& enemy_comp = tmt::engine.ecs.get_component<game::MediumEnemy>(enemy_entity);
             tmt::engine.ecs.get_component<tmt::ConstrainedRig>(enemy_comp.rig_controller).blend = *value;
-            tmt::Log::info("on clean Blend: {}", *value);
         });
 }
 
@@ -38,7 +37,6 @@ void Stomp::on_start(tmt::Entity enemy_entity) {
             //
             auto& enemy_comp = tmt::engine.ecs.get_component<game::MediumEnemy>(enemy_entity);
             tmt::engine.ecs.get_component<tmt::ConstrainedRig>(enemy_comp.rig_controller).blend = *value;
-            tmt::Log::info("on start Blend: {}", *value);
         });
     time = 0.0f;
 
