@@ -65,6 +65,29 @@ struct RendererSettings {
     ShadingRate spec_shading_rate = ShadingRate::QUARTER_RATE;
 };
 
+struct ScreenshotSettings {
+    enum class CaptureResolution {
+        MatchViewport,
+        HD_720p,
+        FullHD_1080p,
+        QHD_1440p,
+        UHD_4K,
+        UHD_8K,
+    } resolution_preset = CaptureResolution::MatchViewport;
+
+    std::string directory = "screenshots";
+    std::string filename = "unknown-screenshot";
+
+    uint32_t width = 1920u;
+    uint32_t height = 1080u;
+
+    bool include_ui = true;
+    bool request_capture = false;
+
+    bool warming_up = true;
+    uint32_t warmup_frames = 0u;
+};
+
 class Renderer {
     GPUAdapter& gpu;
     RenderGraph& render_graph;
@@ -98,8 +121,10 @@ class Renderer {
     DisplayMode display_mode = DisplayMode::DEFAULT;
     bool enable_taa = true;
     bool kill_particles = false;
-    bool take_screenshot = false;
     float bloom_radius = 0.25f;
+
+    /* Screenshot settings */
+    ScreenshotSettings screenshot_settings {};
 
     /* Pipelines */
     class GeometryPipeline& geometry_pipeline;
@@ -123,6 +148,8 @@ class Renderer {
     void init();
     void update();
     void end();
+
+    void capture_screenshot();
 
     Hit trace_ray(const Ray& ray) const;
 

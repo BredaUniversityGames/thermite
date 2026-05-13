@@ -138,8 +138,6 @@ void Renderer::init() {
     debug_transform.set_local_position({ 0.0f, 0.0f, -1.0f });
 }
 
-static void* data = nullptr;
-
 void Renderer::update() {
     TMT_ZONE_SCOPED_N("Rendering")
 
@@ -268,7 +266,7 @@ void Renderer::update() {
 
     /* Polyline & UI */
     polyline_pipeline.enqueue(render_graph, render_view);
-    ui_pipeline.enqueue(render_graph, render_view);
+    if (screenshot_settings.include_ui) ui_pipeline.enqueue(render_graph, render_view);
 
 #ifdef THERMITE_EDITOR
     /* Add the immediate mode GUI to the render graph */
@@ -286,14 +284,23 @@ void Renderer::update() {
         Log::error(Log::Scope::RENDERER, "failed to dispatch render graph.\nreason: {}", r.unwrap_err());
     }
 
-    if (take_screenshot) {
-        take_screenshot = false;
+    /* Don't capture on first frame, since we need a few frames to warm up. */
+    if (screenshot_settings.request_capture && !screenshot_settings.warming_up) {
+        screenshot_settings.request_capture = false;
+        capture_screenshot();
+    }
 
-        int width, height, channels;
-        gpu.get_vram_bank().readback_texture(render_view.viewport.image, &data, &width, &height, &channels).expect("failed to readback viewport image");
+    /* On first frame that screenshot capturing gets triggered, set internal res to desired screenshot res and begin warm up. */
+    if (screenshot_settings.request_capture) {
+        if (screenshot_settings.warmup_frames == 0u) render_view.set_viewport_size(screenshot_settings.width, screenshot_settings.height);
 
-        if (stbi_write_png("screenshot.png", width, height, channels, data, width * channels) == 0) {
-            Log::error("failed to write screenshot to disk!");
+        /* Increment warm up frames. */
+        screenshot_settings.warmup_frames += 1u;
+
+        /* Warming up done, signal next frame for screenshot capture. */
+        if (screenshot_settings.warmup_frames > 3u) {
+            screenshot_settings.warming_up = false;
+            screenshot_settings.warmup_frames = 0u;
         }
     }
 
@@ -330,6 +337,33 @@ void Renderer::end() {
     render_graph.deinit().expect("failed to destroy render graph.");
     bank.deinit().expect("failed to destroy vram bank.");
     gpu.deinit().expect("failed to destroy gpu adapter.");
+}
+
+void Renderer::capture_screenshot() {
+    /* Resolve the output path */
+    std::string name = screenshot_settings.filename;
+    name += ".png";
+    const auto path = std::filesystem::absolute(std::filesystem::path(screenshot_settings.directory) / name);
+
+    /* Ensure the output directory exists */
+    std::error_code ec;
+    std::filesystem::create_directories(path.parent_path(), ec);
+    if (ec) {
+        Log::error("failed to create screenshot directory '{}': {}", path.parent_path().string(), ec.message());
+    } else {
+        /* Readback and save */
+        void* data = nullptr;
+        int width, height, channels;
+        gpu.get_vram_bank().readback_texture(render_view.viewport.image, &data, &width, &height, &channels).expect("failed to readback viewport image");
+
+        if (stbi_write_png(path.string().c_str(), width, height, channels, data, width * channels) == 0) {
+            Log::error("failed to write screenshot to '{}'!", path.string());
+        } else {
+            Log::info("screenshot saved: {}", path.string());
+        }
+
+        free(data);
+    }
 }
 
 json RendererSerializer::serialize() const {
