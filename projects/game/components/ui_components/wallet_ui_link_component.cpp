@@ -15,14 +15,16 @@ void WalletUiLink::update(const tmt::FrameData& time) {
 void WalletUiLink::end() {}
 
 bool WalletUiLink::wallet_entity_check() const {
-    if (entity_with_wallet == entt::null) {
-        tmt::Log::error("No wallet entity set for wallet ui link component on entity: {}", entity);
-        return false;
-    }
+    for (tmt::Entity entity_with_wallet : entities_with_wallet) {
+        if (entity_with_wallet == entt::null) {
+            tmt::Log::error("No wallet entity set for wallet ui link component on entity: {}", entity);
+            return false;
+        }
 
-    if (!tmt::engine.ecs.valid(entity_with_wallet)) {
-        tmt::Log::error("Wallet entity is set to invalid entity, in wallet ui link component on entity: {}", entity);
-        return false;
+        if (!tmt::engine.ecs.valid(entity_with_wallet)) {
+            tmt::Log::error("Wallet entity is set to invalid entity, in wallet ui link component on entity: {}", entity);
+            return false;
+        }
     }
     return true;
 }
