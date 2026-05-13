@@ -12,7 +12,17 @@
 void Stomp::clean_up(tmt::Entity enemy_entity) const {
     auto& enemy = tmt::engine.ecs.get_component<game::MediumEnemy>(enemy_entity);
     tmt::engine.ecs.get_component<tmt::RigController>(enemy.rig_controller).set_parameter_bool("stomp", false);
-    Tweening::tween(tmt::engine.ecs.get_component<tmt::ConstrainedRig>(enemy.rig_controller).blend).from(0.0f).to(1.0f).duration(0.2f).ease(Tweening::Ease::IN_OUT_QUAD);
+    Tweening::tween<float>()  //
+        ->from(0.0f)
+        .to(1.0f)
+        .duration(10.0f)
+        .ease(Tweening::Ease::IN_OUT_QUAD)
+        .on_update([enemy_entity](float alpha, const float* value) {
+            //
+            auto& enemy_comp = tmt::engine.ecs.get_component<game::MediumEnemy>(enemy_entity);
+            tmt::engine.ecs.get_component<tmt::ConstrainedRig>(enemy_comp.rig_controller).blend = *value;
+            tmt::Log::info("Blend: {}", *value);
+        });
 }
 
 void Stomp::on_start(tmt::Entity enemy_entity) {
@@ -22,11 +32,13 @@ void Stomp::on_start(tmt::Entity enemy_entity) {
     Tweening::tween<float>()  //
         ->from(1.0f)
         .to(0.0f)
-        .duration(0.5f)
+        .duration(10.0f)
         .ease(Tweening::Ease::IN_OUT_QUAD)
-        .on_update([&](float alpha, const float* value) {
+        .on_update([enemy_entity](float alpha, const float* value) {
             //
-            tmt::engine.ecs.get_component<tmt::ConstrainedRig>(enemy.rig_controller).blend = *value;
+            auto& enemy_comp = tmt::engine.ecs.get_component<game::MediumEnemy>(enemy_entity);
+            tmt::engine.ecs.get_component<tmt::ConstrainedRig>(enemy_comp.rig_controller).blend = *value;
+            tmt::Log::info("Blend: {}", *value);
         });
     time = 0.0f;
 
