@@ -48,7 +48,7 @@ void SmallEnemy::die(tmt::Entity agent) {
     auto& registry = ecs.get_registry();
 
     auto& transform = registry.get<tmt::Transform>(agent);
-    
+
     std::set<tmt::Entity> children = transform.get_all_children();
 
     for (tmt::Entity child : children) {
