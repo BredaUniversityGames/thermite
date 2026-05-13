@@ -21,6 +21,26 @@ struct GenerationComponent : public tmt::GameComponent<GenerationComponent> {
     glm::vec3 coord_to_world(glm::ivec2 coord, const tmt::LevelConfiguration& level_configuration);
 };
 
+struct ClearanceVolume : public tmt::GameComponent<ClearanceVolume> 
+{
+    using GameComponent::GameComponent;
+
+
+
+// Inherited via GameComponent
+    void start() override;
+    void update(const tmt::FrameData& time) override;
+    void end() override;
+    void draw_debug_lines() const override;
+    static std::string_view get_name() { return "Clearance Volume Component"; }
+
+    glm::vec3 size = glm::vec3(0.f);
+
+    bool contains(const glm::vec3& pos);
+};
+
 }  // namespace game
 TMT_COMPONENT_INSPECT_EMPTY(game::GenerationComponent);
 TMT_COMPONENT_SERIALIZE_EMPTY(game::GenerationComponent);
+
+TMT_OBJECT(game::ClearanceVolume, (size));

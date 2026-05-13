@@ -102,15 +102,27 @@ void GenerationComponent::start() {
             float roll = Random::rand_range(0.f, 360.f);
 
             auto instantiated = tmt::PrefabHelper::instantiate_prefab(spawn_obj->file_location, entity);
-            lighting_pass_data.push_back(std::make_tuple(cell.template_index, point, instantiated));
 
             auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(instantiated);
 
             glm::vec3 min = cell_pos - glm::vec3(level_configuration.cell_size * 0.5f, cell_template.height * 0.5f, level_configuration.cell_size * 0.5f) +
                             glm::vec3(level_configuration.cell_margin, 0.f, level_configuration.cell_margin);
-
             transform.set_local_position(min + point.pos);
             transform.set_local_rotation(glm::vec3(pitch, yaw, roll));
+
+            bool is_cleared = false;
+            for(auto& [entity, clearance_volume] : tmt::engine.ecs.view<ClearanceVolume>())
+            {
+               if(clearance_volume.contains(transform.get_world_position())) 
+               {
+                    is_cleared = true; 
+                    break;
+               }
+            }
+
+            if(is_cleared) tmt::engine.ecs.destroy_entity(instantiated);
+            else lighting_pass_data.push_back(std::make_tuple(cell.template_index, point, instantiated));
+            
         }
     }
 }
@@ -181,6 +193,33 @@ void GenerationComponent::update(const tmt::FrameData& time) {
             }
         }
     }
+}
+
+void ClearanceVolume::start() {}
+
+void ClearanceVolume::update(const tmt::FrameData& time) {}
+
+void ClearanceVolume::end() {}
+
+void ClearanceVolume::draw_debug_lines() const 
+{
+    auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
+
+    glm::vec3 pos = transform.get_world_position();
+
+    tmt::engine.polyline.use_color({1.f, 0.f, 0.f, 1.f});
+    tmt::engine.polyline.draw_aabb(pos - size * 0.5f, pos + size * 0.5f);
+}
+
+bool ClearanceVolume::contains(const glm::vec3& pos) {
+    auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
+    glm::vec3 mid_pos = transform.get_world_position();
+
+    glm::vec3 min = mid_pos - size * 0.5f;
+    glm::vec3 max = mid_pos + size * 0.5f;
+
+    if(pos.x > min.x && pos.x < max.x && pos.y > min.y && pos.y < max.y && pos.z > min.z && pos.z < max.z)return true;
+    else return false;
 }
 
 }  // namespace game

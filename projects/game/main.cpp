@@ -154,6 +154,7 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     tmt::engine.component_registry.register_component<game::TransformTween>();
     /* Register World Generation Components */
     tmt::engine.component_registry.register_component<game::GenerationComponent>();
+    tmt::engine.component_registry.register_component<game::ClearanceVolume>();
     tmt::engine.component_registry.register_component<game::RandomPrefabSpawner>();
     /* Register Game UI Components */
     tmt::engine.component_registry.register_component<game::SceneSwitchComponent>();
