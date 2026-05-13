@@ -81,12 +81,9 @@ void setup_inputs(tmt::InputMap& input_map) {
     input_map.add_action_mouse(action::SECONDARY_TOOL_USE, tmt::MouseButton::RIGHT);
 
     // menus
-    input_map.add_action(action::OPEN_INVENTORY);
-    input_map.add_key_to_action(action::OPEN_INVENTORY, tmt::Key::I);
+
     input_map.add_action(action::OPEN_PAUSE_MENU);
-    input_map.add_key_to_action(action::OPEN_PAUSE_MENU, tmt::Key::P);
-    input_map.add_action(action::OPEN_UPGRADE_MENU);
-    input_map.add_key_to_action(action::OPEN_UPGRADE_MENU, tmt::Key::U);
+    input_map.add_key_to_action(action::OPEN_PAUSE_MENU, tmt::Key::ESCAPE);
 
     // barge
     input_map.add_action(action::ATTACH_KEY);
@@ -133,6 +130,8 @@ void Player::start() {
 
         return;
     }
+    auto& cam_shake { tmt::engine.player_data.get<float>(CAMERA_SHAKE) };
+    camera_shake_settings.set_multiplier(cam_shake);
     wallet->currencies = resources;
     if (tmt::engine.ecs.is_enabled(entity)) {
         tmt::engine.input.set_mouse_relative_to_window(true);
@@ -144,6 +143,8 @@ void Player::start() {
     }
     load_upgrades();
     set_crosshair(rifle_crosshair);
+    // attach player to component
+    tmt::engine.ecs.get_dispatcher().trigger<AttachAttemptEvent>({ .entity = entity });
 }
 void Player::end() {
     tmt::engine.ecs.get_dispatcher().sink<AttachEvent>().disconnect<&Player::on_attach>(this);
@@ -174,8 +175,6 @@ void Player::look_camera() {
     base_yaw -= dx * camera_sensitivity;
     base_pitch -= dy * camera_sensitivity;
 
-    base_pitch = glm::clamp(base_pitch, -89.0f, 89.0f);
-
     float yaw = base_yaw;
     float pitch = base_pitch;
 
@@ -183,6 +182,9 @@ void Player::look_camera() {
         yaw += recoil_offset.x;
         pitch += recoil_offset.y;
     }
+
+    // Clamp after recoil
+    pitch = glm::clamp(pitch, -89.0f, 89.0f);
 
     glm::vec3 front;
 
@@ -202,7 +204,7 @@ void Player::look_camera() {
 
         glm::vec3 target_shake = right * n.x * current_shake + up * n.y * current_shake;
 
-        float smooth = 12.0f * tmt::engine.frame_data().delta_time;
+        float smooth = 1.0f - expf(-12.0f * tmt::engine.frame_data().delta_time);
 
         static glm::vec3 shake_current(0.0f);
         shake_current = glm::mix(shake_current, target_shake, smooth);
@@ -364,14 +366,14 @@ void Player::update(const tmt::FrameData& time) {
     update_shake(time.delta_time);
 
     // --- Recoil recovery ---
-    float dt = glm::min(time.delta_time, 1.0f / 30.0f);
+    float dt = time.delta_time;
 
     // how fast it returns
-    float return_speed = camera_shake_settings.recoil_return_speed;
+    float recovery = 1.0f - expf(-camera_shake_settings.get_recoil_return_speed() * dt);
 
     // move back toward zero at a constant speed
-    recoil_offset.x = move_towards(recoil_offset.x, 0.0f, return_speed * dt);
-    recoil_offset.y = move_towards(recoil_offset.y, 0.0f, return_speed * dt);
+    recoil_offset.x = glm::mix(recoil_offset.x, 0.0f, recovery);
+    recoil_offset.y = glm::mix(recoil_offset.y, 0.0f, recovery);
 
     // Swapping crosshair
     if (input.is_action_just_pressed(action::SWITCH_RIFLE)) {
@@ -394,7 +396,7 @@ void Player::update(const tmt::FrameData& time) {
             if (input.is_action_pressed(action::BOOST)) {
                 apply_boost();
 
-                add_camera_shake(camera_shake_settings.boost_intensity);
+                add_camera_shake(camera_shake_settings.get_boost_intensity() * dt);
             } else {
                 reset_boost(time.delta_time);
             }
@@ -441,41 +443,21 @@ void Player::update(const tmt::FrameData& time) {
         tmt::engine.ecs.get_dispatcher().trigger(PlayerMaxHealthChanged { entity, health.max_value, previous_max_health });
     }
     previous_max_health = health.max_value;
-    // Update UI
-    if (tmt::engine.ecs.valid(hp_bar_max)) {
-        if (auto component_hp_max = tmt::engine.ecs.try_get_component<tmt::UIComponent>(hp_bar_max)) component_hp_max->size.x = health.max_value + 2.0f;
-    }
-
     // Fire event health changed
     if (previous_health != health.value) {
         tmt::engine.ecs.get_dispatcher().trigger(PlayerHealthChanged { entity, health.value, previous_health });
     }
     previous_health = health.value;
-    // Update UI
-    if (tmt::engine.ecs.valid(hp_bar_current)) {
-        if (auto component_curr_hp = tmt::engine.ecs.try_get_component<tmt::UIComponent>(hp_bar_current)) component_curr_hp->size.x = std::clamp(health.value, 0.0f, health.max_value);
-    }
-
     // Fire event max energy changed
     if (previous_max_energy != energy.max_value) {
         tmt::engine.ecs.get_dispatcher().trigger(PlayerMaxEnergyChanged { entity, energy.max_value, previous_max_energy });
     }
     previous_max_energy = energy.max_value;
-    // Update UI
-    if (tmt::engine.ecs.valid(energy_bar_max)) {
-        if (auto component_energy_max = tmt::engine.ecs.try_get_component<tmt::UIComponent>(energy_bar_max)) component_energy_max->size.x = energy.max_value + 2.0f;
-    }
-
     // Fire event energy changed
     if (previous_energy != energy.value) {
-        tmt::engine.ecs.get_dispatcher().trigger(PlayerMaxHealthChanged { entity, energy.value, previous_energy });
+        tmt::engine.ecs.get_dispatcher().trigger(PlayerEnergyChanged { entity, energy.value, previous_energy });
     }
     previous_energy = energy.value;
-    // Update UI
-    if (tmt::engine.ecs.valid(energy_bar_current)) {
-        if (auto component_curr_energy = tmt::engine.ecs.try_get_component<tmt::UIComponent>(energy_bar_current))
-            component_curr_energy->size.x = std::clamp(energy.value, 0.0f, energy.max_value);
-    }
 
     // --- Energy low pop up ---
     {
@@ -742,15 +724,15 @@ void Player::add_camera_shake(float intensity) {
 }
 
 void Player::update_shake(float dt) {
-    current_shake -= dt * camera_shake_settings.decay_speed;
+    current_shake -= dt * camera_shake_settings.get_decay_speed();
     current_shake = glm::max(0.0f, current_shake);
 }
 
 void Player::add_recoil() {
-    recoil_offset.y += camera_shake_settings.recoil_strength;
+    recoil_offset.y += camera_shake_settings.get_recoil_strength();
 
     float rand_x = (rand() / (float)RAND_MAX - 0.5f) * 2.0f;
-    recoil_offset.x += rand_x * camera_shake_settings.recoil_horizontal;
+    recoil_offset.x += rand_x * camera_shake_settings.get_recoil_horizontal();
 }
 
 void Player::set_crosshair(tmt::Entity active) {
