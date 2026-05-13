@@ -57,6 +57,7 @@ void game::WeaponManager::start() {
     // Connect to the GamePausedEvent and GameUnpausedEvent
     tmt::engine.ecs.get_dispatcher().sink<game::GamePausedEvent>().connect<&WeaponManager::on_game_paused>(this);
     tmt::engine.ecs.get_dispatcher().sink<game::GameUnpausedEvent>().connect<&WeaponManager::on_game_unpaused>(this);
+    tmt::engine.ecs.get_dispatcher().sink<WeaponFiredEvent>().connect<&WeaponManager::on_weapon_shoot>(this);
 
     current_weapon = starting_weapon;
     tmt::Log::info("[WeaponManager] Starting with weapon: {}", magic_enum::enum_name(starting_weapon));
@@ -107,9 +108,6 @@ void game::WeaponManager::check_trigger_shoot_event() {
     auto& input = tmt::engine.input;
 
     if (input.is_action_pressed(action::SHOOT)) {
-        fired = true;
-        upward_response = true;
-
         tmt::engine.ecs.get_dispatcher().trigger(ShootEvent { shooting_entity, false });
 
         auto* rig_controller = tmt::engine.ecs.try_get_component<tmt::RigController>(tool_rig);
@@ -236,6 +234,12 @@ void game::WeaponManager::draw_debug_lines() const {
     tmt::engine.polyline.draw_line(start, start + fwd * weapon_procanim_data.anti_overlap.check_length);
 }
 
+void game::WeaponManager::on_weapon_shoot(const WeaponFiredEvent& event) 
+{
+    fired = true;
+    upward_response = true;
+}
+
 game::WeaponManager::RotTrans game::WeaponManager::animate_antioverlap() {
     auto& weapon_procanim_data = weapons.at(current_weapon).proc_anim_data;
 
@@ -333,6 +337,7 @@ game::WeaponManager::RotTrans game::WeaponManager::animate_sway(RotTrans aa_rott
 
 void game::WeaponManager::update_procedural_motion(float dt) {
     auto& weapon_procanim_data = weapons.at(current_weapon).proc_anim_data;
+
     if (fired || updating_recoil_impulse) {
         static tmt::SecondOrderSolver::State<glm::quat> rot_state { .current_state = recoil_impulse.rotation };
         static tmt::SecondOrderSolver::State<glm::vec3> pos_state { .current_state = recoil_impulse.translation };

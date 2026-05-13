@@ -19,6 +19,7 @@ class WeaponManager : public tmt::GameComponent<WeaponManager> {
     void subscribe_weapon(WeaponType slot);
     void unsubscribe_weapon(WeaponType slot);
     void draw_debug_lines() const override;
+    void on_weapon_shoot(const WeaponFiredEvent& event);
 
     struct MotionParams {
         float frequency = 1.f;
