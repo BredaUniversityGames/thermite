@@ -85,7 +85,7 @@ void Engine::init(std::unique_ptr<Application> user_app) {
     std::string build_ver = BUILD_VERSION;
     if (build_ver == "") build_ver = "dev";
     Log::info(Log::Scope::GLOBAL, "Build version: {}", build_ver);
-
+    Log::info("Steam is {}, account name is {}", steam.get_success_init(), steam.get_persona_name());
     IO::init_mounts(app->specs.organization, app->specs.name);
     player_data.init();
     window.init(app->specs);

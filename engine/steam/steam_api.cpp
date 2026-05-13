@@ -4,10 +4,13 @@
 tmt::SteamAPI::SteamAPI() {
     if (SteamAPI_RestartAppIfNecessary(APP_ID)) {
         success_init = false;
-        exit(1);
+        exit(0);
     }
     if (!SteamAPI_Init()) {
         success_init = false;
+    }
+    if (success_init) {
+        account_name = SteamFriends()->GetPersonaName();
     }
 }
 tmt::SteamAPI::~SteamAPI() {
