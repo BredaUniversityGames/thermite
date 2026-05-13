@@ -30,7 +30,7 @@ void Stomp::on_start(tmt::Entity enemy_entity) {
     tmt::engine.ecs.get_component<tmt::RigController>(enemy.rig_controller).set_parameter_bool("stomp", true);
 
     Tweening::tween<float>()  //
-        ->from(1.0f)
+        .from(1.0f)
         .to(0.0f)
         .duration(10.0f)
         .ease(Tweening::Ease::IN_OUT_QUAD)
