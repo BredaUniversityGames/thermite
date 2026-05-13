@@ -893,26 +893,24 @@ ITween<T, Args...>& tween(TypedTweenHandle<ITween<T, Args...>>& handle) {
 
 template <typename T, typename... Args, typename Context>
 requires Traits::HasITween<T, Args...>
-TypedTweenHandle<ITween<T, Args..., Owned>> tween_owned_impl(Ctx<Context>) {
+ITween<T, Args..., Owned>& tween_owned_impl(Ctx<Context>) {
     using BareT = std::remove_cvref_t<T>;
     using TweenT = ITween<BareT, Args..., Owned>;
-
     auto ptr = std::make_shared<TweenT>();
     Detail::TweenCollection<Context, BareT, Args..., Owned>::add_existing(ptr);
-    return TypedTweenHandle<TweenT>(ptr);
+    return *ptr;
 }
 
 /* Owned type entry */
 template <typename T, typename... Args, typename Context>
 requires Traits::HasITween<T, Args...>
-TypedTweenHandle<ITween<T, Args..., Owned>> tween(Ctx<Context>) {
+ITween<T, Args..., Owned>& tween_owned(Ctx<Context>) {
     return tween_owned_impl<T, Args...>(Ctx<Context> {});
 }
 
-/* Default-context overload for owned type */
 template <typename T, typename... Args>
 requires Traits::HasITween<T, Args...>
-TypedTweenHandle<ITween<T, Args..., Owned>> tween() {
+ITween<T, Args..., Owned>& tween() {
     return tween_owned_impl<T, Args...>(Ctx<Detail::Default> {});
 }
 
