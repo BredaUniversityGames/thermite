@@ -9,8 +9,9 @@
 #include "projects/game/components/gameplay_functionality_components/player.hpp"
 
 namespace game {
+
 void OreManager::start() {
-    auto player_view = tmt::engine.ecs.view<Player>(entt::exclude_t{});
+    auto player_view = tmt::engine.ecs.view<Player>(entt::exclude_t {});
 
     if (!player_view.empty()) {
         player_entity = player_view.front().entity;
@@ -44,8 +45,7 @@ void OreManager::update(const tmt::FrameData& time) {
     thermite_ore_explosion_cooldown_timer += time.delta_time;
 }
 
-void OreManager::end() {
-}
+void OreManager::end() {}
 
 void OreManager::initiate_thermite_explosion(tmt::Entity voxel_entity, glm::uvec3 voxel_position) {
     thermite_to_explode.insert(std::make_pair(voxel_entity, voxel_position));
@@ -108,4 +108,5 @@ void OreManager::process_thermite_ore_explosion(tmt::Entity voxel_entity, glm::u
         }
     }
 }
-} // namespace game
+
+}  // namespace game

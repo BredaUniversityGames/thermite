@@ -1,6 +1,7 @@
 #include "wallet_ui_link_component.hpp"
 
 namespace game {
+
 void WalletUiLink::start() {
     if (wallet_entity_check()) {
         update_value();
@@ -11,8 +12,7 @@ void WalletUiLink::update(const tmt::FrameData& time) {
     update_value();
 }
 
-void WalletUiLink::end() {
-}
+void WalletUiLink::end() {}
 
 bool WalletUiLink::wallet_entity_check() const {
     for (tmt::Entity entity_with_wallet : entities_with_wallet) {
@@ -78,6 +78,7 @@ void WalletUiLink::update_value() {
 
     current_value = value_accumulator;
 
-   change_text();
+    change_text();
 }
-} // namespace game
+
+}  // namespace game
