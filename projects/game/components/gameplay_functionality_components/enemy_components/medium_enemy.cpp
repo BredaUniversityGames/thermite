@@ -249,12 +249,14 @@ void game::MediumEnemy::die() {
 }
 
 void game::MediumEnemy::set_stored_offsets_to_ref_entity() {
-    auto pos = tmt::engine.ecs.get_component<tmt::Transform>(entity).get_world_position();
+    auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
+    glm::mat4 inv_world = glm::inverse(transform.get_world_matrix());
     for (int i = 0; i < 4; i++) {
         if (available_positions[i].entity == entt::null) continue;
         if (available_positions[i].reference_entity == entt::null) continue;
-        auto ref_pos = tmt::engine.ecs.get_component<tmt::Transform>(available_positions[i].reference_entity).get_world_position();
-        available_positions[i].stored_offset_from_ref_entity = ref_pos - pos;
+        auto ref_world_pos = tmt::engine.ecs.get_component<tmt::Transform>(available_positions[i].reference_entity).get_world_position();
+        // Store as local-space position so world_matrix * offset in update() is correct
+        available_positions[i].stored_offset_from_ref_entity = glm::vec3(inv_world * glm::vec4(ref_world_pos, 1.0f));
     }
 }
 
