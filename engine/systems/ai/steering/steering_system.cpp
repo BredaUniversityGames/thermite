@@ -27,6 +27,15 @@ void SteeringSystem::on_fixed_update(const FrameData& time) {
     for (auto [entity, agent, request, transform, body] : view.each()) {
         if (!agent.active) continue;
 
+        // Gravity gun or other external system overrides steering completely
+        if (agent.force_override) {
+            glm::vec3 target = agent.override_force;
+
+            // smooth toward target instead of snapping
+            body.velocity = glm::mix(glm::vec3(body.velocity), glm::vec3(target), 0.2f);
+            continue;
+        }
+
         body.type = VoxelBody::DYNAMIC;
 
         check_completion(agent, request, transform, body);
