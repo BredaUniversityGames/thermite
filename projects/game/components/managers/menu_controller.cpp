@@ -74,9 +74,9 @@ void MenuController::end() {
     tmt::engine.ecs.get_dispatcher().sink<EndRun>().disconnect<&MenuController::enable_end_of_game_menu>(this);
 
     if (Player::get().player_ended_run == true) {
-        handle_saving({ true });
-    } else {
         handle_saving({ false });
+    } else {
+        handle_saving({ true });
     }
 }
 

@@ -2,7 +2,7 @@
 #include "engine/systems/gameplay/game_component.hpp"
 #include "engine/core/components/text_renderer.hpp"
 #include "projects/game/data_headers/wallet.hpp"
-
+#include "engine/tools/types/bezier_curve.hpp"
 namespace game {
 
 enum class DisplayTextType : uint8_t {
@@ -15,7 +15,7 @@ enum class DisplayTextType : uint8_t {
     ALL_RESOURCES
 };
 
-enum class DisplayType : uint8_t { CURRENT, LIMIT, PENALTY };
+enum class DisplayType : uint8_t { CURRENT, LIMIT, PENALTY, TOTAL };
 
 class WalletUiLink : public tmt::GameComponent<WalletUiLink> {
    public:
@@ -28,6 +28,9 @@ class WalletUiLink : public tmt::GameComponent<WalletUiLink> {
     tmt::Entity entity_with_wallet = entt::null;
     DisplayTextType resource_to_display = DisplayTextType::DOLLARS;
     DisplayType display_type = DisplayType::CURRENT;
+    tmt::BezierCurve ramp_up_curve;
+    bool use_ramp_up_curve = true;
+    float ramp_duration = 0.75f;
 
    private:
     void change_text() const;
@@ -35,8 +38,12 @@ class WalletUiLink : public tmt::GameComponent<WalletUiLink> {
     bool wallet_entity_check() const;
     bool component_check() const;
     int previous_value = -1;
-    int current_value = 0;
+    int target_value = 0;
+    float ramp_start_value = 0.0f;
+    float ramp_target_value = 0.0f;
+    float ramp_elapsed = 0.0f;
+    bool is_ramping = false;
 };
 
 }  // namespace game
-TMT_OBJECT(game::WalletUiLink, (entity_with_wallet, resource_to_display, display_type));
+TMT_OBJECT(game::WalletUiLink, (entity_with_wallet, resource_to_display, display_type, ramp_up_curve, use_ramp_up_curve, ramp_duration));
