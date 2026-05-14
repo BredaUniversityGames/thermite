@@ -1,12 +1,19 @@
 import colorspace;
 import visibility;
 import math;
+import view;
+import bindless;
 
+/* Active scene view. */
+ConstantBuffer<SceneView> scene_view;
 /* Luminance buffer. */
 Texture2D<float3> lbuffer;
+/* Bloom buffer. */
 Texture2D<float3> tbuffer;
 /* Render Target. */
 RWTexture2D<float4> render_target;
+/* Color grading LUT 3D Sampler */
+SamplerState lut_sampler;
 
 float3 hue2rgb(float hue) {
     hue = fract(hue);
@@ -19,11 +26,11 @@ float3 rgb2hsl(float3 color) {
     const float delta = color_max - color_min;
 
     float3 hsl = float3(0.0f, 0.0f, (color_max + color_min) / 2.0f);
-    if (delta != 0.0f) { /* If it has chroma and isn't gray */
+    if (delta != 0.0f) {                                    /* If it has chroma and isn't gray */
         if (hsl.z < 0.5f) {
-            hsl.y = delta / (color_max + color_min);       /* Saturation */
+            hsl.y = delta / (color_max + color_min);        /* Saturation */
         } else {
-            hsl.y = delta / (2.0f - color_max - color_min);  /* Saturation */
+            hsl.y = delta / (2.0f - color_max - color_min); /* Saturation */
         }
 
         float delta_r = (((color_max - color.r) / 6.0f) + (delta / 2.0f)) / delta;
@@ -35,7 +42,7 @@ float3 rgb2hsl(float3 color) {
             hsl.x = delta_b - delta_g;
         } else if (color.g == color_max) {
             hsl.x = (1.0f / 3.0f) + delta_r - delta_b;
-        } else { // if(c.b==cMax){
+        } else {  // if(c.b==cMax){
             hsl.x = (2.0f / 3.0f) + delta_g - delta_r;
         }
         hsl.x = fract(hsl.x);
@@ -45,7 +52,7 @@ float3 rgb2hsl(float3 color) {
 
 float3 hsl2rgb(float3 hsl) {
     if (hsl.y == 0.0f) {
-        return float3(hsl.z);  /* lightness */
+        return float3(hsl.z); /* lightness */
     } else {
         float b;
         if (hsl.z < 0.5f) {
@@ -59,7 +66,7 @@ float3 hsl2rgb(float3 hsl) {
 }
 
 [[vk::push_constant]]
-float3 hsl_packed;
+float lut_size;
 
 [shader("compute")]
 [numthreads(16, 8, 1)]
@@ -78,17 +85,14 @@ void main(int2 thread_id: SV_DispatchThreadID) {
     /* Output device transform */
     luminance = cs::delinearize(luminance);
 
-    /* HSL editor */
-    float3 hsl = rgb2hsl(luminance);
+    /* Apply LUT Color Grading */
+    if (scene_view.lut_handle != 0u) {
+        const float scale = (lut_size - 1.0f) / lut_size;
+        const float offset = 0.5f / lut_size;
+        const float3 uvw = saturate(luminance) * scale + offset;
 
-    hsl.x += hsl_packed.x;
-    hsl.y *= hsl_packed.y;
-    hsl.z *= hsl_packed.z;
-
-    hsl.y = saturate(hsl.y);
-    hsl.z = saturate(hsl.z);
-
-    luminance = hsl2rgb(hsl);
+        luminance = bindless::texture_sampled<Texture3D<float4>>(scene_view.lut_handle).SampleLevel(lut_sampler, uvw, 0).rgb;
+    }
 
     render_target[thread_id] = float4(luminance, 1.0f);
 }

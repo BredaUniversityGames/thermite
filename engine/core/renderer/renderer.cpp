@@ -239,7 +239,7 @@ void Renderer::update() {
 
     /* Post Processing */
     if (engine.renderer.display_mode == DisplayMode::DEFAULT) {
-        post_process_pipeline.enqueue(render_graph, render_view);
+        post_process_pipeline.enqueue(render_graph, render_view, scene_view);
     }
 
     if (scene_view.render_outlines) {
