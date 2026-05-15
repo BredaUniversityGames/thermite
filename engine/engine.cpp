@@ -61,6 +61,7 @@ Engine::Engine() :
 Engine::~Engine() {
     /* Destruction should be in reverse order */
     delete &player_data;
+    delete &fps_limiter;
     delete &component_registry;
     delete &polyline;
     delete &scenes;
