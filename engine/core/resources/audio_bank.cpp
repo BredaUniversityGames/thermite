@@ -105,6 +105,9 @@ std::vector<AudioEvent> AudioBank::get_audio_events() const {
         description->getID(&guid);
         events.emplace_back(self_bank, guid);
     }
+
+    std::ranges::sort(events, std::less {}, &AudioEvent::get_path);
+
     return events;
 }
 
@@ -135,6 +138,9 @@ std::vector<VolumeControl> AudioBank::get_volume_controls() const {
         vca->getID(&guid);
         volume_controls.emplace_back(self_bank, guid);
     }
+
+    std::ranges::sort(volume_controls, std::less {}, &VolumeControl::get_path);
+
     return volume_controls;
 }
 

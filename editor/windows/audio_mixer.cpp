@@ -99,6 +99,18 @@ void AudioMixer::on_inspect() {
 
                     ImGui::Text("Path: %s", event.get_path().c_str());
 
+                    // Visualize if the sound is 3D using a checkbox (the checkbox is disabled).
+                    {
+                        bool is_3d = event.is_3d();
+                        ImGui::Text("Is 3D: ");
+
+                        ImGui::SameLine();
+
+                        ImGui::BeginDisabled();
+                        ImGui::Checkbox("##3D Visual", &is_3d);
+                        ImGui::EndDisabled();
+                    }
+
                     ImGui::NewLine();
 
                     const std::vector<AudioParameter> parameters = event.get_parameters();
