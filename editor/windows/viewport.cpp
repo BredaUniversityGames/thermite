@@ -25,7 +25,11 @@
 #include "engine/core/components/text_renderer.hpp"
 #include "engine/tools/fps_limiter.hpp"
 
-void tmt::Viewport::on_editor_start() {}
+void tmt::Viewport::on_editor_start() {
+    if (auto value = editor.save_data.fps_limit) {
+        engine.fps_limiter.set_target_fps(*value);
+    }
+}
 
 void tmt::Viewport::on_editor_update(const tmt::FrameData& frame_data) {
     update_debug_camera(frame_data);
@@ -356,6 +360,7 @@ void tmt::Viewport::toolbar() {
             if (current_limit == limit) label = ICON_MS_CHECK " " + label;
             if (ImGui::MenuItem(label.c_str())) {
                 engine.fps_limiter.set_target_fps(limit);
+                editor.save_data.fps_limit = limit;
             }
         }
 
@@ -363,6 +368,7 @@ void tmt::Viewport::toolbar() {
         if (is_unlimited) label = ICON_MS_CHECK " " + label;
         if (ImGui::MenuItem(label.c_str())) {
             engine.fps_limiter.disable();
+            editor.save_data.fps_limit = std::nullopt;
         }
 
         ImGui::EndMenu();
