@@ -16,6 +16,9 @@ class SVHSpawner : public tmt::GameComponent<SVHSpawner> {
     void end() override;
 
     tmt::ResourceRef<tmt::VoxelScene> scene_to_spawn;
+
+   private:
+    void init_children(const tmt::Entity parent);
 };
 
 }  // namespace game
