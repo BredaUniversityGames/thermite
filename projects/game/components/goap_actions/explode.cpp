@@ -180,31 +180,13 @@ void Explode::on_tick(tmt::Entity agent, float dt) {
         explosion.param = small_enemy->explosion_parameters;
         explosion.explode();
 
-        std::set<tmt::Entity> children = transform.get_all_children();
-
-        for (tmt::Entity child : children) {
-            if (!ecs.valid(child)) continue;
-
-            if (ecs.try_get_component<tmt::RigModel>(child)) {
-                ecs.remove_component<tmt::RigModel>(child);
-            }
-
-            if (ecs.try_get_component < tmt::VoxelBody>(child)) {
-                tmt::VoxelBody* body = ecs.try_get_component<tmt::VoxelBody>(child);
-                if (body->type == tmt::VoxelBody::STATIC)
-                {
-                    body->type = tmt::VoxelBody::DYNAMIC;
-                }
-            }
-        }
-
         // destroy core entity & explosion
         ecs.destroy_entity(thermite);
 
         tmt::engine.ecs.remove_component<SteeringAgent>(agent);
         tmt::engine.ecs.remove_component<tmt::GoapAgent>(agent);
 
-        //exploded = true;
+        small_enemy->die(agent);
     }
 }
 
