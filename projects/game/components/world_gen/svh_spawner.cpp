@@ -30,16 +30,16 @@ void SVHSpawner::init_children(const tmt::Entity parent) {
     const auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(parent);
     const auto children = transform.get_children();
     for (const auto child : children) {
+        auto* voxel_renderer = tmt::engine.ecs.try_get_component<tmt::VoxelRenderer>(child);
+        if (voxel_renderer == nullptr) continue;
+
+        voxel_renderer->distance_culling = needs_distance_culling;
         init_children(child);
         /* Add voxel body */
         auto& voxel_body = tmt::engine.ecs.add_component<tmt::VoxelBody>(child);
         voxel_body.type = tmt::VoxelBody::STATIC;
 
         tmt::engine.ecs.add_component<tmt::Destructible>(child);
-
-        if (auto* voxel_renderer = tmt::engine.ecs.try_get_component<tmt::VoxelRenderer>(child)) {
-            voxel_renderer->distance_culling = needs_distance_culling;
-        }
     }
 }
 
