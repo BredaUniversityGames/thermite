@@ -825,8 +825,8 @@ void fill_volumes(const Svt64* original_tree, const std::vector<uint64_t>& tree_
         Svt64* tree = vr.resource.resource->blas.get();
         // Destroy very small objects
         if (tree->voxel_count <= 4) {
-            engine.ecs.disable(entities[i], true);
-            // engine.ecs.destroy_entity(entities[i]);
+            // engine.ecs.disable(entities[i], true);
+            engine.ecs.destroy_entity(entities[i]);
             continue;
         } else if (tree->voxel_count > 10'000) {  // Big objects should be static
             vb.velocity = glm::vec3(0);
