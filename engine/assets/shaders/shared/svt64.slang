@@ -105,7 +105,6 @@ public [ForceInline] Svt64Hit trace_svt64<let DEBUG : bool>(
 
     /* Mirror ray origin for more efficient ray-octant traversal */
     ray.origin = mirror_pos(ray.origin, ray.dir, true);
-    // ray.rcp_dir = 1.0f / -abs(ray.dir);
 
     /* Mirror coordinates to simplify cell intersections */
     uint mirror_mask = 0x00u;
@@ -202,7 +201,6 @@ public [ForceInline] float3 occlusion_svt64(
 
     /* Mirror ray origin for more efficient ray-octant traversal */
     ray.origin = mirror_pos(ray.origin, ray.dir, true);
-    // ray.rcp_dir = 1.0f / -abs(ray.dir);
 
     /* Mirror coordinates to simplify cell intersections */
     uint mirror_mask = 0x00u;
