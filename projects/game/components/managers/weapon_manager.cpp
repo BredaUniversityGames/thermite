@@ -109,7 +109,7 @@ void game::WeaponManager::check_trigger_shoot_event() {
 
     if (input.is_action_pressed(action::SHOOT)) {
         tmt::engine.ecs.get_dispatcher().trigger(ShootEvent { shooting_entity, false });
-		
+
         auto* rig_controller = tmt::engine.ecs.try_get_component<tmt::RigController>(tool_rig);
         if (rig_controller) {
             rig_controller->set_parameter_bool("InUse", true);
@@ -234,8 +234,7 @@ void game::WeaponManager::draw_debug_lines() const {
     tmt::engine.polyline.draw_line(start, start + fwd * weapon_procanim_data.anti_overlap.check_length);
 }
 
-void game::WeaponManager::on_weapon_shoot(const WeaponFiredEvent& event) 
-{
+void game::WeaponManager::on_weapon_shoot(const WeaponFiredEvent& event) {
     fired = true;
     upward_response = true;
 }
