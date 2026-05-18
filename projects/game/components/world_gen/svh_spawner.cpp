@@ -3,6 +3,7 @@
 #include "engine/core/ecs.hpp"
 #include "engine/systems/physics/components/voxel_body.hpp"
 #include "engine/systems/physics/components/destructable.hpp"
+#include "engine/core/components/voxel_renderer.hpp"
 
 namespace game {
 
@@ -31,8 +32,14 @@ void SVHSpawner::init_children(const tmt::Entity parent) {
     for (const auto child : children) {
         init_children(child);
         /* Add voxel body */
-        tmt::engine.ecs.add_component<tmt::VoxelBody>(child);
+        auto& voxel_body = tmt::engine.ecs.add_component<tmt::VoxelBody>(child);
+        voxel_body.type = tmt::VoxelBody::STATIC;
+
         tmt::engine.ecs.add_component<tmt::Destructible>(child);
+
+        if (auto* voxel_renderer = tmt::engine.ecs.try_get_component<tmt::VoxelRenderer>(child)) {
+            voxel_renderer->distance_culling = needs_distance_culling;
+        }
     }
 }
 

@@ -16,6 +16,7 @@ class SVHSpawner : public tmt::GameComponent<SVHSpawner> {
     void end() override;
 
     tmt::ResourceRef<tmt::VoxelScene> scene_to_spawn;
+    bool needs_distance_culling = true;
 
    private:
     void init_children(const tmt::Entity parent);
@@ -23,4 +24,4 @@ class SVHSpawner : public tmt::GameComponent<SVHSpawner> {
 
 }  // namespace game
 
-TMT_OBJECT(game::SVHSpawner, (scene_to_spawn));
+TMT_OBJECT(game::SVHSpawner, (scene_to_spawn, needs_distance_culling));
