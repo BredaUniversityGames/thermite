@@ -62,7 +62,6 @@
 #include "editor/windows/ui.hpp"
 #include "editor/windows/player_data.hpp"
 #include "editor/windows/voxel_editor_lights.hpp"
-#include "editor/windows/post_fx/post_fx.hpp"
 #include "editor/windows/screenshot.hpp"
 
 /* Singleton */
@@ -122,7 +121,6 @@ void Editor::on_engine_init(const ApplicationSpecs&) {
     systems[Mode::SCENE].add<UIEditor>();
     systems[Mode::SCENE].add<PlayerDataWindow>();
     systems[Mode::SCENE].add<RigStateController>();
-    systems[Mode::SCENE].add<PostFxWindow>();
     systems[Mode::SCENE].add<ScreenshotWindow>();
 
     engine.scenes.register_scene<VoxelEditScene>();
