@@ -26,7 +26,6 @@ void OreManager::start() {
         ore_database = ore_properties->ores;
     } else {
         tmt::Log::warn("No ore properties found, needed for ore toughness checks");
-        return;
     }
 }
 
@@ -52,7 +51,8 @@ void OreManager::initiate_thermite_explosion(tmt::Entity voxel_entity, glm::uvec
     thermite_to_explode.insert(std::make_pair(voxel_entity, voxel_position));
 }
 
-void OreManager::process_thermite_ore_explosion(tmt::Entity voxel_entity, glm::uvec3 explosion_center) {  // explosion center is uint voxel position relative to entity transform
+void OreManager::process_thermite_ore_explosion(tmt::Entity voxel_entity, glm::uvec3 explosion_center) {
+    // explosion center is uint voxel position relative to entity transform
     auto origin_entity_world_pos = tmt::engine.ecs.get_component<tmt::Transform>(voxel_entity).get_world_position();
     auto vox_renderer = tmt::engine.ecs.try_get_component<tmt::VoxelRenderer>(voxel_entity);
     if (!vox_renderer) return;
@@ -62,7 +62,7 @@ void OreManager::process_thermite_ore_explosion(tmt::Entity voxel_entity, glm::u
     int cz = static_cast<int>(explosion_center.z);
 
     glm::vec3 explosion_center_local_pos = (glm::vec3(explosion_center) - glm::vec3(vox_renderer->resource->size) / 2.0f) * UNITS_PER_VOXEL;
-    glm::vec3 explosion_world_pos = glm::vec3(vox_entity_transform.get_world_matrix() * glm::vec4(explosion_center_local_pos, 1.0f));
+    auto explosion_world_pos = glm::vec3(vox_entity_transform.get_world_matrix() * glm::vec4(explosion_center_local_pos, 1.0f));
 
     // check if player is within explosion
     if (glm::length(tmt::engine.ecs.get_component<tmt::Transform>(player_entity).get_world_position() - explosion_world_pos) <= thermite_ore_settings.radius_explosion) {
@@ -79,6 +79,9 @@ void OreManager::process_thermite_ore_explosion(tmt::Entity voxel_entity, glm::u
         auto result_entity_world_pos = tmt::engine.ecs.get_component<tmt::Transform>(result_pair.first).get_world_position();
         auto result_entity_local_pos = tmt::engine.ecs.get_component<tmt::Transform>(result_pair.first).get_local_position();
 
+        // voxel list to accumulate all voxels that need to be destroyed
+        std::vector<glm::uvec3> voxel_list;
+
         // Guard for voxel renderer
         if (auto result_vox_renderer = tmt::engine.ecs.try_get_component<tmt::VoxelRenderer>(result_pair.first)) {
             // Loop over resulting voxels
@@ -91,21 +94,24 @@ void OreManager::process_thermite_ore_explosion(tmt::Entity voxel_entity, glm::u
                 auto curr_vox_type = curr_vox_material->type;
                 if (curr_vox_type == tmt::Material::Type::THERMITE) {
                     // Add to " new thermite to explode"
-                    new_thermite_to_explode.insert(std::make_pair(result_pair.first, result_voxel.second));
+                    // new_thermite_to_explode.insert(std::make_pair(result_pair.first, result_voxel.second));
                 }
                 // Guard for ore properties
                 if (ore_properties_entity != entt::null) {
                     // Check for toughness
                     auto curr_vox_toughness = ore_database.at(curr_vox_type).toughness;
                     if (curr_vox_toughness <= thermite_ore_settings.explosion_strength) {
-                        tmt::engine.ecs.systems.get<tmt::Destruction>().destroy_voxel(result_pair.first, result_voxel.second);
+                        // tmt::engine.ecs.systems.get<tmt::Destruction>().destroy_voxel(result_pair.first, result_voxel.second);
+                        voxel_list.push_back(result_voxel.second);
                     }
                 } else {
                     tmt::Log::warn("No ore properties found, will explode and remove all voxels on thermite explosion");
-                    tmt::engine.ecs.systems.get<tmt::Destruction>().destroy_voxel(result_pair.first, result_voxel.second);
+                    // tmt::engine.ecs.systems.get<tmt::Destruction>().destroy_voxel(result_pair.first, result_voxel.second);
+                    voxel_list.push_back(result_voxel.second);
                 }
             }
         }
+        tmt::engine.ecs.systems.get<tmt::Destruction>().destroy_voxels(result_pair.first, voxel_list);
     }
 }
 

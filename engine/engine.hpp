@@ -6,6 +6,8 @@
 
 namespace tmt {
 
+class SteamAPI;
+
 /* Forward declarations */
 class InputMap;
 class Input;
@@ -19,6 +21,8 @@ class Scenes;
 class GameComponentRegistry;
 class Polyline;
 class PlayerData;
+class SteamAPI;
+class FpsLimiter;
 
 class Engine {
    public:
@@ -46,7 +50,7 @@ class Engine {
 
     ~Engine() { delete &my_system; };
     */
-
+    SteamAPI& steam;
     Window& window;
     Audio& audio;
 
@@ -60,6 +64,7 @@ class Engine {
     GameComponentRegistry& component_registry;
     Polyline& polyline;
     PlayerData& player_data;
+    FpsLimiter& fps_limiter;
 
     GameController game_controller;
 
@@ -79,6 +84,7 @@ class Engine {
     FrameData current_frame_data {};
     bool is_running { true };
     std::unique_ptr<Application> app;
+    int max_frame_rate = -1;  // -1 for uncapped
 
     /* Engine events */
     void update_engine(const FrameData& frame_data);

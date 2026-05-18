@@ -109,7 +109,7 @@ void game::WeaponManager::check_trigger_shoot_event() {
 
     if (input.is_action_pressed(action::SHOOT)) {
         tmt::engine.ecs.get_dispatcher().trigger(ShootEvent { shooting_entity, false });
-
+		
         auto* rig_controller = tmt::engine.ecs.try_get_component<tmt::RigController>(tool_rig);
         if (rig_controller) {
             rig_controller->set_parameter_bool("InUse", true);

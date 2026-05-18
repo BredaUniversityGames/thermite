@@ -518,7 +518,7 @@ void Player::update(const tmt::FrameData& time) {
 
     if (out_of_energy_timer >= out_of_energy_time_till_death && !player_ended_run) {
         tmt::engine.ecs.get_dispatcher().trigger(EndRun { true });
-        player_ended_run = true;
+
         state = PlayerState::PAUSED;
     }
 
@@ -526,7 +526,7 @@ void Player::update(const tmt::FrameData& time) {
     if (health.value <= 0.0f && !player_ended_run) {
         // player ded -> call end run event with player ded
         tmt::engine.ecs.get_dispatcher().trigger(EndRun { true });
-        player_ended_run = true;
+
         state = PlayerState::PAUSED;
     }
 

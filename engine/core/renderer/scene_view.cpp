@@ -11,6 +11,7 @@
 #include "engine/core/components/voxel_renderer.hpp"
 #include "engine/core/components/light.hpp"
 #include "engine/core/components/environment.hpp"
+#include "engine/core/components/color_grading_component.hpp"
 #include <tools/profiler.hpp>
 
 #include "engine/core/polyline.hpp"
@@ -154,7 +155,7 @@ void SceneView::update_voxel_objects(RenderGraph& render_graph) {
 
         /* Calculate object opacity based on distance from the camera */
         const float object_d = glm::distance(transform.get_world_position(), glm::vec3(engine.renderer.render_view.gpu_view.origin));
-        const float range_d = object_transparent_distance - object_opaque_distance;
+        const float range_d = glm::max(0.0001f, object_transparent_distance - object_opaque_distance);
         const float opacity_t = 1.0f - glm::clamp(object_d - object_opaque_distance, 0.0f, range_d) / range_d;
         const float opacity = (renderer.distance_culling ? (1.0f - powf(2.0f, -object_opacity_transition * opacity_t)) : 1.0f) * renderer.opacity;
         if (opacity <= 0.0f) continue; /* Skip fully transparent objects */
@@ -356,6 +357,19 @@ void SceneView::update_lights(RenderGraph& render_graph, const RenderView&) {
             fog_scatter_strength = env.fog_scatter_strength;
             fog_absorption = env.fog_absorption;
             particle_reflectance = env.particle_reflectance;
+            break;
+        }
+    }
+
+    /* Capture all Color Grading components in the scene */
+    const entt::basic_group cg_group = engine.ecs.group<const ColorGrading>();
+    gpu_view.lut_handle = 0u;
+
+    /* Iterate over all Color Grading components */
+    for (auto&& [entity, cg] : cg_group.each()) {
+        if (cg.resource) {
+            gpu_view.lut_handle = cg.resource->image.get_index();
+            lut_size = cg.resource->lut_size;
             break;
         }
     }
