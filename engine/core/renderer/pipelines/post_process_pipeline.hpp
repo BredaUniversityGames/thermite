@@ -22,10 +22,7 @@ class PostProcessPipeline {
     void enqueue(RenderGraph& render_graph, RenderView& render_view, SceneView& scene_view);
     void deinit(GPUAdapter& gpu);
 
-    glm::vec3 hsl_packed = {};
-
     Sampler lut_sampler;
 };
 
 }  // namespace tmt
-TMT_OBJECT(tmt::PostProcessPipeline, (hsl_packed));
