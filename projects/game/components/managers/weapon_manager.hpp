@@ -42,6 +42,9 @@ class WeaponManager : public tmt::GameComponent<WeaponManager> {
             float look_max_rotation_factor = 0.3f;
             float look_sensitivity = 1.f;
             float look_roll_factor = 1.f;
+            float displacement_player_acceleration_multiplier = 0.1f;
+            float displacement_player_velocity_multiplier = 0.1f;
+
             MotionParams displacement_motion;
             MotionParams rotational_motion;
         } sway;
@@ -117,7 +120,10 @@ class WeaponManager : public tmt::GameComponent<WeaponManager> {
 TMT_OBJECT(game::WeaponManager::MotionParams, (frequency, damping, initial_response));
 
 TMT_OBJECT(game::WeaponManager::WeaponProcAnimData::OverlapParams, (start_offset, check_length, scan_extent, length_to_shoulder, shoulder_eulers));
-TMT_OBJECT(game::WeaponManager::WeaponProcAnimData::SwayParams, (look_displacement, look_max_rotation_factor, look_sensitivity, look_roll_factor, displacement_motion, rotational_motion));
+TMT_OBJECT(
+    game::WeaponManager::WeaponProcAnimData::SwayParams, (look_displacement, look_max_rotation_factor, look_sensitivity, look_roll_factor, displacement_player_acceleration_multiplier,
+                                                          displacement_player_velocity_multiplier, displacement_motion, rotational_motion)
+);
 TMT_OBJECT(
     game::WeaponManager::WeaponProcAnimData::RecoilParams, (upward_allowed_time, rot_time_offset, angle_impulse, min_max_roll_deviation, min_max_yaw_deviation, pos_impulse,
                                                             displacement_motion, rotational_motion, out_displacement_motion, out_rotational_motion)

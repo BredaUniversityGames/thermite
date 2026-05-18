@@ -302,8 +302,21 @@ game::WeaponManager::RotTrans game::WeaponManager::animate_sway(RotTrans aa_rott
     if (tmt::engine.ecs.valid(shooting_entity)) {
         auto shooter_player = tmt::engine.ecs.try_get_component<game::Player>(shooting_entity);
         if (shooter_player) {
+            static glm::vec3 last_player_velocity = {}, player_velocity = {};
+
             float d_pitch = (shooter_player->base_pitch - last_pitch);
             float d_yaw = (shooter_player->base_yaw - last_yaw);
+
+            last_player_velocity = player_velocity;
+            player_velocity = shooter_player->get_velocity();
+
+            glm::vec3 vel_delta = (player_velocity - last_player_velocity);
+
+            glm::vec3 local_delta = glm::inverse(shooter_player->get_transform().get_world_matrix()) * glm::vec4(vel_delta, 0.f);
+            glm::vec3 local_vel = glm::inverse(shooter_player->get_transform().get_world_matrix()) * glm::vec4(player_velocity, 0.f);
+
+            aa_rottrans.translation += -local_delta * weapon_procanim_data.sway.displacement_player_acceleration_multiplier;
+            aa_rottrans.translation += -local_vel * weapon_procanim_data.sway.displacement_player_velocity_multiplier;
 
             if (d_pitch || d_yaw) {
                 glm::vec3 displaced_vec = glm::vec3 { d_yaw, -d_pitch, 0.f } * 0.1f;
