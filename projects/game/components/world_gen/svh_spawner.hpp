@@ -20,6 +20,7 @@ class SVHSpawner : public tmt::GameComponent<SVHSpawner> {
 
    private:
     void init_children(const tmt::Entity parent);
+    void add_required(const entt::entity child);
 };
 
 }  // namespace game
