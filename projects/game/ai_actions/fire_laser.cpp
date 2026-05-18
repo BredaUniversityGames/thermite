@@ -15,6 +15,8 @@
 #include "engine/core/renderer/renderer.hpp"
 #include "engine/systems/physics/physics_system.hpp"
 #include "engine/systems/physics/components/voxel_body.hpp"
+#define GLM_ENABLE_EXPERIMENTAL
+#include "glm/gtx/quaternion.hpp"
 
 void FireLaser::cleanup(tmt::Entity enemy_entity) {
     game::MediumEnemy& enemy = tmt::engine.ecs.get_component<game::MediumEnemy>(enemy_entity);
@@ -64,6 +66,34 @@ void FireLaser::rotate_to_face_player(tmt::Entity enemy_entity, float dt) {
     enemy.rotation = glm::slerp(enemy.rotation, rot_velocity, glm::clamp(f, 0.0f, 1.0f));
     enemy.rotation = glm::normalize(enemy.rotation);
     tmt::engine.ecs.get_component<tmt::Transform>(enemy_entity).set_world_rotation(enemy.rotation);
+}
+
+void FireLaser::update_formation(tmt::Entity enemy_entity) {
+    auto& enemy = tmt::engine.ecs.get_component<game::MediumEnemy>(enemy_entity);
+    if (formation_cache.empty() || enemy.laser_voxel_entities.empty()) return;
+
+    auto& enemy_transform = tmt::engine.ecs.get_component<tmt::Transform>(enemy_entity);
+    glm::vec3 enemy_pos = enemy_transform.get_world_position();
+    glm::quat enemy_rot = enemy_transform.get_world_rotation();
+
+    // Pivot is the back entity, reconstructed from enemy-local space
+    size_t back_idx = formation_cache.size() - 1;
+    glm::vec3 pivot = enemy_pos + enemy_rot * formation_cache[back_idx].relative_offset;
+
+    const glm::vec3 reference_axis = glm::vec3(0.f, 0.f, 1.f);
+    glm::quat current_rotation = glm::rotation(reference_axis, direction);
+    glm::quat delta = current_rotation * glm::inverse(formation_initial_rotation);
+
+    for (size_t i = 0; i < enemy.laser_voxel_entities.size(); ++i) {
+        auto entity = enemy.laser_voxel_entities[i];
+        if (!tmt::engine.ecs.valid(entity) || i >= formation_cache.size()) continue;
+        auto& t = tmt::engine.ecs.get_component<tmt::Transform>(entity);
+
+        // Reconstruct base world pos from enemy transform, then rotate around pivot
+        glm::vec3 base_world_pos = enemy_pos + enemy_rot * formation_cache[i].relative_offset;
+        t.set_world_position(pivot + delta * (base_world_pos - pivot));
+        t.set_world_rotation(delta * (enemy_rot * formation_cache[i].relative_rotation));
+    }
 }
 
 void FireLaser::on_start(tmt::Entity enemy_entity) {
@@ -160,6 +190,20 @@ void FireLaser::on_tick(tmt::Entity enemy_entity, float dt) {
 
                 state = FIRING;
                 time = 0.0f;
+
+                tmt::Transform& enemy_transform = tmt::engine.ecs.get_component<tmt::Transform>(enemy_entity);
+                glm::vec3 enemy_pos = enemy_transform.get_world_position();
+                glm::quat inv_enemy_rot = glm::inverse(enemy_transform.get_world_rotation());
+
+                const glm::vec3 reference_axis = glm::vec3(0.f, 0.f, 1.f);
+                formation_initial_rotation = glm::rotation(reference_axis, direction);
+
+                formation_cache.clear();
+                for (auto e : enemy.laser_voxel_entities) {
+                    if (!tmt::engine.ecs.valid(e)) continue;
+                    auto& t = tmt::engine.ecs.get_component<tmt::Transform>(e);
+                    formation_cache.push_back({ inv_enemy_rot * (t.get_world_position() - enemy_pos), inv_enemy_rot * t.get_world_rotation() });
+                }
             }
             break;
         }
@@ -178,6 +222,7 @@ void FireLaser::on_tick(tmt::Entity enemy_entity, float dt) {
             }
 
             rotate_to_face_player(enemy_entity, dt);
+            update_formation(enemy_entity);
 
             glm::vec3 raw_vel = (player_pos - last_player_pos) / dt;
             last_player_pos = player_pos;

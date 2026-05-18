@@ -1,6 +1,13 @@
 #pragma once
 #include "engine/systems/ai/goap/components/goap_action.hpp"
 #include "engine/systems/ai/goap/components/goap_action_registry.hpp"
+#include "engine/core/components/transform.hpp"
+
+struct FormationEntry {
+    glm::vec3 relative_offset;
+    glm::quat relative_rotation;
+    tmt::Transform initial_transform;
+};
 
 class FireLaser : public tmt::GoapAction {
    public:
@@ -21,6 +28,9 @@ class FireLaser : public tmt::GoapAction {
     tmt::Entity laser_entity = entt::null;
     std::vector<tmt::Entity> laser_charge_entities;
 
+    std::vector<FormationEntry> formation_cache;
+    glm::quat formation_initial_rotation { 1.0f, 0.0f, 0.0f, 0.0f };
+
     float time = 0.0f;
     float original_height = 0.0f;
     float dist_between_laser_spheres = 10.0f;
@@ -34,6 +44,7 @@ class FireLaser : public tmt::GoapAction {
 
     void cleanup(tmt::Entity enemy_entity);
     void rotate_to_face_player(tmt::Entity enemy_entity, float dt);
+    void update_formation(tmt::Entity enemy_entity);
 
     void on_start(tmt::Entity) override;
     void on_tick(tmt::Entity agent, float dt) override;
