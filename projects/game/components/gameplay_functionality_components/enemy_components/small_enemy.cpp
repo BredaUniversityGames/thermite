@@ -63,12 +63,12 @@ void SmallEnemy::die(tmt::Entity agent) {
 
             if (body->type == tmt::VoxelBody::STATIC) {
                 // Preserve current world transform
-                auto& child_transform = registry.get<tmt::Transform>(child);
+                /*auto& child_transform = registry.get<tmt::Transform>(child);
                 auto pos = child_transform.get_world_position();
                 auto rot = child_transform.get_world_rotation();
 
                 auto pos2 = body->position;
-                auto rot2 = body->rotation;
+                auto rot2 = body->rotation;*/
 
                 body->type = tmt::VoxelBody::DYNAMIC;
 
