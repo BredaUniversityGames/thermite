@@ -6,10 +6,10 @@
 #include "projects/game/components/gameplay_functionality_components/player.hpp"
 
 namespace game {
+enum class DisplayTypeResourceBar : uint8_t { HEALTH, ENERGY, FUEL };
 
-enum class DisplayTypeResourceBar : uint8_t { HEALTH, ENERGY };
 class ResourceBarCurrentComponent : public tmt::GameComponent<ResourceBarCurrentComponent> {
-   public:
+public:
     using GameComponent::GameComponent;
 
     static std::string_view get_name() { return "Resource Bar Component"; }
@@ -19,15 +19,16 @@ class ResourceBarCurrentComponent : public tmt::GameComponent<ResourceBarCurrent
     void end() override;
 
     tmt::Entity player_entity = entt::null;
+    tmt::Entity barge_fuel_entity = entt::null;
     int resource_per_segment = 5;
     std::string rendered_string = "/";
     DisplayTypeResourceBar resource = DisplayTypeResourceBar::HEALTH;
 
-   private:
+private:
     void health_changed(PlayerHealthChanged);
     void energy_changed(PlayerEnergyChanged);
+    void fuel_changed(BargeFuelChanged);
     void resource_bar_update(int, float);
 };
-
-}  // namespace game
-TMT_OBJECT(game::ResourceBarCurrentComponent, (player_entity, resource, resource_per_segment, rendered_string));
+} // namespace game
+TMT_OBJECT(game::ResourceBarCurrentComponent, (player_entity, barge_fuel_entity, resource, resource_per_segment, rendered_string));

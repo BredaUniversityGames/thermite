@@ -1,12 +1,16 @@
 #include "resource_bar_current.hpp"
 
 #include "engine/core/components/text_renderer.hpp"
+#include "projects/game/components/gameplay_functionality_components/fuel.hpp"
 
 namespace game {
-
 void ResourceBarCurrentComponent::start() {
     if (player_entity == entt::null) {
         player_entity = Player::get().entity;
+    }
+    if (barge_fuel_entity == entt::null) {
+        auto view_fuel = tmt::engine.ecs.view<FuelComponent>();
+        barge_fuel_entity = view_fuel.front().entity;
     }
 
     auto* player_component = tmt::engine.ecs.try_get_component<Player>(player_entity);
@@ -14,17 +18,31 @@ void ResourceBarCurrentComponent::start() {
         tmt::Log::error("Player component cannot be found for resource bar, please check entity: {} (resource bar) and {} (player)", entity, player_entity);
         return;
     }
+    auto barge_fuel_component = tmt::engine.ecs.try_get_component<FuelComponent>(barge_fuel_entity);
+    if (!barge_fuel_component) {
+        tmt::Log::error("Barge fuel component missing for resource bar, please check entity {} (resource bar) and {} (player)", entity, barge_fuel_entity);
+    }
 
-    if (resource == DisplayTypeResourceBar::HEALTH) {
-        tmt::engine.ecs.get_dispatcher().sink<PlayerHealthChanged>().connect<&ResourceBarCurrentComponent::health_changed>(this);
-        resource_bar_update(static_cast<int>(player_component->health.value), player_component->health.max_value);
-    } else if (resource == DisplayTypeResourceBar::ENERGY) {
-        tmt::engine.ecs.get_dispatcher().sink<PlayerEnergyChanged>().connect<&ResourceBarCurrentComponent::energy_changed>(this);
-        resource_bar_update(static_cast<int>(player_component->energy.value), player_component->energy.max_value);
+    switch (resource) {
+        case DisplayTypeResourceBar::HEALTH:
+            tmt::engine.ecs.get_dispatcher().sink<PlayerHealthChanged>().connect<&ResourceBarCurrentComponent::health_changed>(this);
+            resource_bar_update(static_cast<int>(player_component->health.value), player_component->health.max_value);
+            break;
+        case DisplayTypeResourceBar::ENERGY:
+            tmt::engine.ecs.get_dispatcher().sink<PlayerEnergyChanged>().connect<&ResourceBarCurrentComponent::energy_changed>(this);
+            resource_bar_update(static_cast<int>(player_component->energy.value), player_component->energy.max_value);
+            break;
+        case DisplayTypeResourceBar::FUEL:
+            tmt::engine.ecs.get_dispatcher().sink<BargeFuelChanged>().connect<&ResourceBarCurrentComponent::fuel_changed>(this);
+            break;
+        default:
+            return;
+            break;
     }
 }
 
-void ResourceBarCurrentComponent::update(const tmt::FrameData& time) {}
+void ResourceBarCurrentComponent::update(const tmt::FrameData& time) {
+}
 
 void ResourceBarCurrentComponent::end() {
     if (resource == DisplayTypeResourceBar::HEALTH) {
@@ -53,6 +71,18 @@ void ResourceBarCurrentComponent::energy_changed(PlayerEnergyChanged player_ener
         return;
     }
     float max_resource_value = player_component->energy.max_value;
+
+    resource_bar_update(new_val, max_resource_value);
+}
+
+void ResourceBarCurrentComponent::fuel_changed(BargeFuelChanged fuel_changed) {
+    int new_val = static_cast<int>(fuel_changed.new_value);
+    auto* fuel_component = tmt::engine.ecs.try_get_component<FuelComponent>(barge_fuel_entity);
+    if (!fuel_component) {
+        tmt::Log::error("Fuel component not found for resource bar please check entity: {} (resource bar) and {} (barge fuel entity)", entity, barge_fuel_entity);
+        return;
+    }
+    float max_resource_value = fuel_component->fuel_data.max_fuel;
 
     resource_bar_update(new_val, max_resource_value);
 }
@@ -96,5 +126,4 @@ void ResourceBarCurrentComponent::resource_bar_update(int new_val, float max_res
     float chars_per_segment = static_cast<float>(rendered_string.size());
     text_renderer_component->letter_spacing = ((max_w - (segment_width * static_cast<float>(max_segments))) / (static_cast<float>(max_segments) - 1.0f)) / chars_per_segment;
 }
-
-}  // namespace game
+} // namespace game
