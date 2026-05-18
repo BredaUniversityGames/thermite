@@ -14,6 +14,7 @@
 #include "core/polyline.hpp"
 #include "core/renderer/renderer.hpp"
 #include "engine/tools/player_data.hpp"
+#include "engine/tools/fps_limiter.hpp"
 
 #include "systems/physics/physics_system.hpp"
 #include "systems/physics/destruction_system.hpp"
@@ -33,6 +34,7 @@
 #include "core/resources.hpp"
 #include "core/salvo.hpp"
 #include "core/input/input_map.hpp"
+#include "steam/steam_api.hpp"
 #include "tools/profiler.hpp"
 #include "tools/timer.hpp"
 #include "tools/tweening.hpp"
@@ -43,6 +45,7 @@ tmt::Engine tmt::engine;
 namespace tmt {
 
 Engine::Engine() :
+    steam(*new SteamAPI()),
     window(*new Window()),
     audio(*new Audio()),
     input_map(*new InputMap()),
@@ -54,11 +57,13 @@ Engine::Engine() :
     scenes(*new Scenes()),
     polyline(*new Polyline()),
     component_registry(*new GameComponentRegistry()),
+    fps_limiter(*new FpsLimiter()),
     player_data(*new PlayerData()) {}
 
 Engine::~Engine() {
     /* Destruction should be in reverse order */
     delete &player_data;
+    delete &fps_limiter;
     delete &component_registry;
     delete &polyline;
     delete &scenes;
@@ -70,6 +75,7 @@ Engine::~Engine() {
     delete &input_map;
     delete &audio;
     delete &window;
+    delete &steam;
 }
 
 void Engine::init(std::unique_ptr<Application> user_app) {
@@ -82,7 +88,7 @@ void Engine::init(std::unique_ptr<Application> user_app) {
     std::string build_ver = BUILD_VERSION;
     if (build_ver == "") build_ver = "dev";
     Log::info(Log::Scope::GLOBAL, "Build version: {}", build_ver);
-
+    Log::info("Steam is {}, account name is {}", steam.get_success_init(), steam.get_persona_name());
     IO::init_mounts(app->specs.organization, app->specs.name);
     player_data.init();
     window.init(app->specs);
@@ -118,6 +124,8 @@ void Engine::run() {
     size_t frame_count = 0;
     while (is_running) {
         TMT_ZONE_SCOPED_N("Frame");
+        fps_limiter.begin();
+        steam.update();
 
         if (game_controller.should_game_end()) {
             end_game();
@@ -184,6 +192,8 @@ void Engine::run() {
         scenes.update();
         resources.unload_unused();
         frame_count++;
+
+        fps_limiter.end();
     }
 
     if (game_controller.is_playing()) {
