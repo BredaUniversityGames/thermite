@@ -13,7 +13,7 @@ class LUT : public FileResource {
     bool load() override;
     void unload() override;
 
-    //bool fallback(FallbackReason reason) override;
+    // bool fallback(FallbackReason reason) override;
 
     inline static const std::set<std::string_view> SUPPORTED_FILE_EXTENSIONS { ".cube" };
 

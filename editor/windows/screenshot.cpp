@@ -37,10 +37,9 @@ void ScreenshotWindow::on_inspect() {
 
     int idx = (int)s.resolution_preset;
     if (ImGui::Combo("Resolution", &idx, labels, IM_ARRAYSIZE(labels))) {
-
         s.resolution_preset = (ScreenshotSettings::CaptureResolution)idx;
 
-        switch (s.resolution_preset) { 
+        switch (s.resolution_preset) {
             case ScreenshotSettings::CaptureResolution::MatchViewport:
                 s.width = engine.renderer.render_view.gpu_view.resolution.x;
                 s.height = engine.renderer.render_view.gpu_view.resolution.y;
