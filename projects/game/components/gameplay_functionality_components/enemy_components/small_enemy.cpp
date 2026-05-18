@@ -7,7 +7,7 @@ namespace game {
 
 void SmallEnemy::start() {
     auto& ecs = tmt::engine.ecs;
-
+    
     // Update each agent with a SteeringAgent component
     ecs.view<SteeringAgent>().each([&](tmt::Entity agent, SteeringAgent& steering) {
         steering.min_explosion_range = logic_paramaters.min_explosion_range;

@@ -2,6 +2,7 @@
 
 #include "engine/engine.hpp"
 #include "engine/core/ecs.hpp"
+#include "engine/core/components/audio_emitter.hpp"
 
 #include "engine/systems/physics/components/voxel_body.hpp"
 #include "engine/systems/ai/steering/components/steering_mode.hpp"
@@ -10,6 +11,7 @@
 #include "engine/systems/animation/rig_model.hpp"
 #include "../gameplay_functionality_components/player.hpp"
 #include "../gameplay_functionality_components/enemy_components/small_enemy.hpp"
+#include "../gameplay_functionality_components/enemy_components/medium_enemy.hpp"
 
 namespace game {
 
@@ -56,6 +58,24 @@ void SteerToPlayer::on_start(tmt::Entity agent) {
             rig_controller->set_parameter_bool("Wandering", false);
             rig_controller->set_parameter_bool("ChargingExplosion", false);
         }
+    }
+
+    // Check if the agent has an audio emitter.
+    auto* audio_emitter = tmt::engine.ecs.try_get_component<tmt::AudioEmitter>(agent);
+    if (audio_emitter == nullptr) return;
+
+    // Play the correct aggro sound based on what type of enemy the agent is.
+    const auto* small_enemy = tmt::engine.ecs.try_get_component<SmallEnemy>(agent);
+    if (small_enemy != nullptr) {
+        const tmt::AudioInstance3D instance = audio_emitter->play(small_enemy->aggroed_audio);
+        instance.set_maximum_distance(small_enemy->logic_paramaters.activation_range * 1.25f);
+        return;
+    }
+
+    const auto* medium_enemy = tmt::engine.ecs.try_get_component<MediumEnemy>(agent);
+    if (medium_enemy != nullptr) {
+        const tmt::AudioInstance3D instance = audio_emitter->play(medium_enemy->aggroed_audio);
+        instance.set_maximum_distance(medium_enemy->aggro_range * 1.25f);
     }
 }
 

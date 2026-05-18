@@ -107,6 +107,8 @@ class MediumEnemy : public tmt::GameComponent<MediumEnemy> {
     float stomp_windup = 0.5f;
     float stomp_radius = 1.0f;
     float stomp_damage = 0.5f;
+
+    tmt::AudioEvent aggroed_audio;
 };
 
 }  // namespace game
@@ -119,5 +121,5 @@ TMT_OBJECT(
                         slow_homing_accuracy_after, launch_speed, home_speed, life_time, missile_rotation_speed, target_offset, missile_burst, burst_interval, missile_max_randomness,
                         missile_explosion_radius, laser_cooldown, rotation_speed_during_laser, laser_charge_voxel_object, laser_voxel_object, laser_firing_time, laser_sitting_down_time,
                         laser_winding_up_time, laser_damage, laser_damage_radius, laser_target_offset, laser_linear_speed, laser_exponential_speed, laser_linear_threshold,
-                        laser_max_randomness, laser_prediction_length, laser_vel_smoothing, stomp_cooldown, stomp_timer, stomp_windup, stomp_radius, stomp_damage)
+                        laser_max_randomness, laser_prediction_length, laser_vel_smoothing, stomp_cooldown, stomp_timer, stomp_windup, stomp_radius, stomp_damage, aggroed_audio)
 );
