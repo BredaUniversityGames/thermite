@@ -42,53 +42,55 @@ void WalletUiLink::update_value() {
         auto* wallet_component = tmt::engine.ecs.try_get_component<Wallet>(entity_with_wallet);
         // wallet guard
         if (wallet_component) {
-            if (display_type == DisplayType::CURRENT) {
-                if (resource_to_display == DisplayTextType::DOLLARS) {
-                    target_value += static_cast<int>(wallet_component->currencies.dollars);
-                } else if (resource_to_display == DisplayTextType::ALL_RESOURCES) {
-                    // accumulate resource counts
-                    for (auto resource_pair : wallet_component->currencies.resource_counts) {
-                        target_value += static_cast<int>(resource_pair.second);
-                    }
-                } else {
-                    // Cast enum to OreResources and use directly
-                    auto ore_type = static_cast<OreProperties::OreResources>(resource_to_display);
-                    float current_count = wallet_component->currencies.resource_counts.at(ore_type);
-                    if (use_ramp_up_curve) {
-                        if (current_count != ramp_target_value) {
-                            if (is_ramping && ramp_duration > 0.0f) {
+            auto view_elements = tmt::engine.ecs.view<MenuController>();
+            switch (display_type) {
+                case DisplayType::CURRENT:
+                    if (resource_to_display == DisplayTextType::DOLLARS) {
+                        target_value += static_cast<int>(wallet_component->currencies.dollars);
+                    } else if (resource_to_display == DisplayTextType::ALL_RESOURCES) {
+                        // accumulate resource counts
+                        for (auto resource_pair : wallet_component->currencies.resource_counts) {
+                            target_value += static_cast<int>(resource_pair.second);
+                        }
+                    } else {
+                        // Cast enum to OreResources and use directly
+                        auto ore_type = static_cast<OreProperties::OreResources>(resource_to_display);
+                        float current_count = wallet_component->currencies.resource_counts.at(ore_type);
+                        if (use_ramp_up_curve) {
+                            if (current_count != ramp_target_value) {
+                                if (is_ramping && ramp_duration > 0.0f) {
+                                    const float t = glm::clamp(ramp_elapsed / ramp_duration, 0.0f, 1.0f);
+                                    const float eased = ramp_up_curve.eval(t);
+                                    ramp_start_value = ramp_start_value + (ramp_target_value - ramp_start_value) * eased;
+                                }
+
+                                ramp_target_value = current_count;
+                                ramp_elapsed = 0.0f;
+                                is_ramping = true;
+                            }
+
+                            float displayed;
+                            if (is_ramping) {
+                                ramp_elapsed += tmt::engine.frame_data().delta_time;
                                 const float t = glm::clamp(ramp_elapsed / ramp_duration, 0.0f, 1.0f);
                                 const float eased = ramp_up_curve.eval(t);
-                                ramp_start_value = ramp_start_value + (ramp_target_value - ramp_start_value) * eased;
+                                displayed = ramp_start_value + (ramp_target_value - ramp_start_value) * eased;
+
+                                if (t >= 1.0f) {
+                                    ramp_start_value = ramp_target_value;
+                                    is_ramping = false;
+                                }
+                            } else {
+                                displayed = ramp_target_value;
                             }
 
-                            ramp_target_value = current_count;
-                            ramp_elapsed = 0.0f;
-                            is_ramping = true;
-                        }
-
-                        float displayed;
-                        if (is_ramping) {
-                            ramp_elapsed += tmt::engine.frame_data().delta_time;
-                            const float t = glm::clamp(ramp_elapsed / ramp_duration, 0.0f, 1.0f);
-                            const float eased = ramp_up_curve.eval(t);
-                            displayed = ramp_start_value + (ramp_target_value - ramp_start_value) * eased;
-
-                            if (t >= 1.0f) {
-                                ramp_start_value = ramp_target_value;
-                                is_ramping = false;
-                            }
+                            target_value = static_cast<int>(displayed);
                         } else {
-                            displayed = ramp_target_value;
+                            target_value = static_cast<int>(current_count);
                         }
-
-                        target_value = static_cast<int>(displayed);
-                    } else {
-                        target_value = static_cast<int>(current_count);
                     }
-                }
 
-                break;
+                    break;
                 case DisplayType::LIMIT:
                     if (resource_to_display == DisplayTextType::DOLLARS) {
                         target_value = static_cast<int>(wallet_component->limits.dollars);
@@ -142,6 +144,7 @@ void WalletUiLink::update_value() {
                         const auto ore_type = static_cast<OreProperties::OreResources>(resource_to_display);
                         target_value = static_cast<int>(total.resource_counts.at(ore_type));
                     }
+                    break;
             }
         }
 
@@ -149,5 +152,6 @@ void WalletUiLink::update_value() {
 
         change_text();
     }
+}
 
 }  // namespace game
