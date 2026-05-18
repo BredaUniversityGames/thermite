@@ -80,6 +80,9 @@ class AudioInstance3D : public AudioInstance {
     using AudioInstance::AudioInstance;
 
    public:
+    void set_minimum_distance(float min) const;
+    void set_maximum_distance(float max) const;
+
     void set_3d_position(const glm::vec3& position) const;
     // Set the velocity of the sound, used to calculate the sound's doppler effect.
     void set_3d_velocity(const glm::vec3& velocity) const;
@@ -94,6 +97,9 @@ class AudioInstance3D : public AudioInstance {
     void set_listener_mask(unsigned int mask) const;
     // Get the bitmask of which listeners should listen to this sound instance (default is all on).
     unsigned int get_listener_mask() const;
+
+    float get_minimum_distance() const;
+    float get_maximum_distance() const;
 
    private:
     [[nodiscard]] FMOD_3D_ATTRIBUTES get_3d_attributes() const;

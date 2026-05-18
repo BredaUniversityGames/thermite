@@ -81,6 +81,18 @@ void AudioInstance::set_label_parameter(const AudioParameter& event_parameter, c
     TryLogError(result, "Failed to set parameter with label");
 }
 
+void AudioInstance3D::set_minimum_distance(const float min) const {
+    const FMOD_RESULT result = instance->setProperty(FMOD_STUDIO_EVENT_PROPERTY_MINIMUM_DISTANCE, min);
+
+    TryLogError(result, "Failed to set minimum distance");
+}
+
+void AudioInstance3D::set_maximum_distance(const float max) const {
+    const FMOD_RESULT result = instance->setProperty(FMOD_STUDIO_EVENT_PROPERTY_MAXIMUM_DISTANCE, max);
+
+    TryLogError(result, "Failed to set maximum distance");
+}
+
 void AudioInstance3D::set_3d_position(const glm::vec3& position) const {
     FMOD_3D_ATTRIBUTES attributes = get_3d_attributes();
     attributes.position = std::bit_cast<FMOD_VECTOR>(position);
@@ -140,6 +152,24 @@ unsigned int AudioInstance3D::get_listener_mask() const {
     TryLogError(result, "Failed to get instance listener mask");
 
     return mask;
+}
+
+float AudioInstance3D::get_minimum_distance() const {
+    float min = 0.0f;
+    const FMOD_RESULT result = instance->getProperty(FMOD_STUDIO_EVENT_PROPERTY_MINIMUM_DISTANCE, &min);
+
+    TryLogError(result, "Failed to get minimum distance");
+
+    return min;
+}
+
+float AudioInstance3D::get_maximum_distance() const {
+    float max = 0.0f;
+    const FMOD_RESULT result = instance->getProperty(FMOD_STUDIO_EVENT_PROPERTY_MAXIMUM_DISTANCE, &max);
+
+    TryLogError(result, "Failed to get maximum distance");
+
+    return max;
 }
 
 FMOD_3D_ATTRIBUTES AudioInstance3D::get_3d_attributes() const {
