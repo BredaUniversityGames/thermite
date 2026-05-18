@@ -384,4 +384,17 @@ std::unordered_map<glm::ivec2, Cell>& LevelEditor::get_cells() {
 
 }  // namespace tmt
 
+inline void tag_invoke(ImReflect::ImInput_t, const char* name, tmt::CellTemplate& value, ImSettings& settings, ImResponse& response) {
+    if (ImGui::CollapsingHeader(value.name.c_str())) {
+        ImReflect::Detail::imgui_input_visit_field(name, value, settings, response);
+    }
+}
+
+inline void tag_invoke(ImReflect::ImInput_t, const char* name, tmt::LayerEntry& value, ImSettings& settings, ImResponse& response) {
+    if (ImGui::CollapsingHeader("Layer entry")) {
+        ImReflect::Detail::imgui_input_visit_field(name, value, settings, response);
+    }
+}
+
+
 #endif
