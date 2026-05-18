@@ -18,6 +18,7 @@ void SVHSpawner::start() {
     }
 
     for (const tmt::Entity root : roots) {
+        add_required(root);
         init_children(root);
     }
 }
@@ -30,17 +31,21 @@ void SVHSpawner::init_children(const tmt::Entity parent) {
     const auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(parent);
     const auto children = transform.get_children();
     for (const auto child : children) {
-        auto* voxel_renderer = tmt::engine.ecs.try_get_component<tmt::VoxelRenderer>(child);
-        if (voxel_renderer == nullptr) continue;
-
-        voxel_renderer->distance_culling = needs_distance_culling;
+        add_required(child);
         init_children(child);
-        /* Add voxel body */
-        auto& voxel_body = tmt::engine.ecs.add_component<tmt::VoxelBody>(child);
-        voxel_body.type = tmt::VoxelBody::STATIC;
-
-        tmt::engine.ecs.add_component<tmt::Destructible>(child);
     }
+}
+
+void SVHSpawner::add_required(const entt::entity child) {
+    auto* voxel_renderer = tmt::engine.ecs.try_get_component<tmt::VoxelRenderer>(child);
+    if (voxel_renderer == nullptr) return;
+    voxel_renderer->distance_culling = needs_distance_culling;
+
+    /* Add voxel body */
+    auto& voxel_body = tmt::engine.ecs.add_component<tmt::VoxelBody>(child);
+    voxel_body.type = tmt::VoxelBody::STATIC;
+
+    tmt::engine.ecs.add_component<tmt::Destructible>(child);
 }
 
 }  // namespace game
