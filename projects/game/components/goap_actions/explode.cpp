@@ -173,6 +173,13 @@ void Explode::on_tick(tmt::Entity agent, float dt) {
             }
         }
 
+        // Explosion component
+        auto& explosion = ecs.add_component<Explosion>(explosion_entity);
+
+        // Copy params from agent
+        explosion.param = small_enemy->explosion_parameters;
+        explosion.explode();
+
         std::set<tmt::Entity> children = transform.get_all_children();
 
         for (tmt::Entity child : children) {
@@ -191,17 +198,10 @@ void Explode::on_tick(tmt::Entity agent, float dt) {
             }
         }
 
-        // Explosion component
-        auto& explosion = ecs.add_component<Explosion>(explosion_entity);
-
-        // Copy params from agent
-        explosion.param = small_enemy->explosion_parameters;
-        explosion.explode();
-
         // destroy core entity & explosion
         ecs.destroy_entity(thermite);
 
-        exploded = true;
+        //exploded = true;
     }
 }
 
