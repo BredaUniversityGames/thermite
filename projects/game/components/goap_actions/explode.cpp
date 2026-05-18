@@ -201,6 +201,9 @@ void Explode::on_tick(tmt::Entity agent, float dt) {
         // destroy core entity & explosion
         ecs.destroy_entity(thermite);
 
+        tmt::engine.ecs.remove_component<SteeringAgent>(agent);
+        tmt::engine.ecs.remove_component<tmt::GoapAgent>(agent);
+
         //exploded = true;
     }
 }

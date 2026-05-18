@@ -60,7 +60,9 @@ void GravityManipulationComponent::grav_point_check() {
         auto& vb = tmt::engine.ecs.get_component<tmt::VoxelBody>(e);
 
         // Ignore static bodies unless its enemies (layer 2)
-        if (vb.type == tmt::VoxelBody::STATIC && vb.layer != 2) continue;
+        // if (vb.type == tmt::VoxelBody::STATIC && vb.layer != 2) continue;
+        if (vb.type == tmt::VoxelBody::STATIC) continue;
+        if (vb.layer == 2) continue;
 
         if (vb.get_mass() >= max_mass) continue;
 

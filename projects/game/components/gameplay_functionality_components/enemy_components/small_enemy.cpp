@@ -60,8 +60,21 @@ void SmallEnemy::die(tmt::Entity agent) {
 
         if (ecs.try_get_component<tmt::VoxelBody>(child)) {
             tmt::VoxelBody* body = ecs.try_get_component<tmt::VoxelBody>(child);
+
             if (body->type == tmt::VoxelBody::STATIC) {
+                // Preserve current world transform
+                auto& child_transform = registry.get<tmt::Transform>(child);
+                auto pos = child_transform.get_world_position();
+                auto rot = child_transform.get_world_rotation();
+                // auto pos = body->position;
+                // auto rot = body->rotation;
+
                 body->type = tmt::VoxelBody::DYNAMIC;
+                body->gravity = 0.f;
+
+                // Force sync physics transform
+                body->position = pos;
+                body->rotation = rot;
             }
         }
     }
