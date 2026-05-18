@@ -100,6 +100,15 @@ void tag_invoke(ImReflect::ImInput_t, const char* name, game::MediumEnemy& value
             ImReflect::Input("Slow Homing Accuracy After", value.slow_homing_accuracy_after, type_settings, type_response);
             help("Time after which the homing will start becoming less effective");
             ImReflect::Input("Lifetime", value.life_time, type_settings, type_response);
+
+            if (ImGui::TreeNode("Missile Destruction Entities")) {
+                ImReflect::Input("Missile Voxel Entities", value.missile_voxel_entities, type_settings, type_response);
+                help("All the entities that will be taken into account for checking wether the missiles have been destroyed.");
+                ImReflect::Input("Amount of voxels to lose", value.missile_voxel_to_lose, type_settings, type_response);
+                help("Amount of voxels that need to be destroyed for the missiles to be destroyed.");
+                ImGui::TreePop();
+            }
+
             ImGui::TreePop();
         }
 
@@ -133,6 +142,14 @@ void tag_invoke(ImReflect::ImInput_t, const char* name, game::MediumEnemy& value
             ImReflect::Input("Prediction Length", value.laser_prediction_length, type_settings, type_response);
             help("Length of the offset added to the laser's target position, in the direction the player is moving");
             ImReflect::Input("Laser Velocity Smoothing", value.laser_vel_smoothing, type_settings, type_response);
+
+            if (ImGui::TreeNode("Laser Destruction Entities")) {
+                ImReflect::Input("Laser Voxel Entities", value.laser_voxel_entities, type_settings, type_response);
+                help("All the entities that will be taken into account for checking wether the laser has been destroyed.");
+                ImReflect::Input("Amount of voxels to lose", value.laser_voxel_to_lose, type_settings, type_response);
+                help("Amount of voxels that need to be destroyed for the laser to be destroyed.");
+                ImGui::TreePop();
+            }
 
             ImGui::TreePop();
         }
