@@ -82,10 +82,8 @@ void FireLaser::update_formation(tmt::Entity enemy_entity) {
     auto rest_world_pos = [&](size_t i) { return enemy_pos + enemy_rot * rest_local_positions[i]; };
     auto rest_world_rot = [&](size_t i) { return enemy_rot * rest_local_rotations[i]; };
 
-    // Pivot = last entity (back of the gun).
+    // Pivot = last entity
     glm::vec3 pivot_pos = rest_world_pos(voxels.size() - 1);
-
-    // Rest-forward in world space, derived from cached local + the enemy's current rotation.
     glm::vec3 rest_forward_world = glm::normalize(enemy_rot * rest_local_forward);
 
     glm::vec3 dir = glm::normalize(direction);
@@ -225,15 +223,12 @@ void FireLaser::on_tick(tmt::Entity enemy_entity, float dt) {
                         rest_local_positions.push_back(enemy_rot_inv * (vt.get_world_position() - enemy_pos));
                         rest_local_rotations.push_back(enemy_rot_inv * vt.get_world_rotation());
                     }
-
-                    // Rest-forward in enemy-local space: from the back of the gun (last) to the tip (first).
-                    // Safe because we now guarantee index 0 = tip.
                     if (rest_local_positions.size() >= 2) {
                         glm::vec3 tip_to_back_local = rest_local_positions.front() - rest_local_positions.back();
                         if (glm::dot(tip_to_back_local, tip_to_back_local) > 1e-8f) {
                             rest_local_forward = glm::normalize(tip_to_back_local);
                         } else {
-                            rest_local_forward = glm::vec3(0.0f, 0.0f, 1.0f);  // degenerate; fall back.
+                            rest_local_forward = glm::vec3(0.0f, 0.0f, 1.0f);
                         }
                     } else {
                         rest_local_forward = glm::vec3(0.0f, 0.0f, 1.0f);
