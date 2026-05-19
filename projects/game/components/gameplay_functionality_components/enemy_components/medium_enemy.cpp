@@ -101,9 +101,18 @@ void game::MediumEnemy::update(const tmt::FrameData& time) {
             tmt::engine.ecs.get_component<tmt::RigController>(rig_controller).set_parameter_bool("walk", false);
             ws->set_fact(tmt::FactId("m_laser_intact"), false);
             ws->set_fact(tmt::FactId("m_missiles_intact"), false);
-            // while (true) {
-            //
-            // }
+            auto children = walking_transform.get_all_children();
+            for (const auto& child : children) {
+                if (!tmt::engine.ecs.try_get_component<tmt::VoxelBody>(child)) continue;
+                auto& child_transform = tmt::engine.ecs.get_component<tmt::Transform>(child);
+                child_transform.set_parent(entt::null);
+                auto& child_voxel_body = tmt::engine.ecs.get_component<tmt::VoxelBody>(child);
+                child_voxel_body.velocity = glm::normalize(child_transform.get_world_position() - walking_transform.get_world_position()) * 2.0f;
+                child_voxel_body.type = tmt::VoxelBody::DYNAMIC;
+                child_voxel_body.gravity = 0.0f;
+                child_voxel_body.position = child_transform.get_world_position();
+                child_voxel_body.rotation = child_transform.get_world_rotation();
+            }
             return;
         }
     }

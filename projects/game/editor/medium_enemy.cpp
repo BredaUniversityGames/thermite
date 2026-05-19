@@ -50,6 +50,8 @@ void tag_invoke(ImReflect::ImInput_t, const char* name, game::MediumEnemy& value
         help("When the player enters aggro range, the enemy will start chasing and firing missiles");
         ImReflect::Input("Back Off Distance", value.back_off_distance, type_settings, type_response);
         help("Back Off Distance is the distance at which the enemy will change from trying to get closer to the player to backing away");
+        ImReflect::Input("Velocity of Objects on Death", value.velocity_of_objects_on_death, type_settings, type_response);
+        help("When the enemy dies, it applies an outward force to all objects that the enemy is made up of. This is the strength of that force.");
         ImGui::TreePop();
     }
 
