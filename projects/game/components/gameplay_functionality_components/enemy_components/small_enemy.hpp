@@ -48,8 +48,10 @@ class SmallEnemy : public tmt::GameComponent<SmallEnemy> {
     tmt::AudioEvent idle_chatter_audio;
     tmt::AudioEvent aggroed_audio;
     tmt::AudioEvent explosion_charge_audio;
+    tmt::AudioParameter explode_audio_param;
 
     bool core_destroyed = false;
+    tmt::AudioInstance3D explosion_audio_instance;
 
    private:
     uint32_t core_voxels = 0u;
@@ -58,4 +60,6 @@ class SmallEnemy : public tmt::GameComponent<SmallEnemy> {
 }  // namespace game
 TMT_OBJECT(game::LogicParameters, (min_explosion_range, max_explosion_range, charge_time, explosion_damage, explosion_force, activation_range, push_radius));
 TMT_OBJECT(game::MovementParameters, (max_speed, max_force, arrive_radius, wander_radius_limit));
-TMT_OBJECT(game::SmallEnemy, (core, explosion, thermite, explosion_parameters, logic_paramaters, movement_paramaters, idle_chatter_audio, aggroed_audio, explosion_charge_audio));
+TMT_OBJECT(
+    game::SmallEnemy, (core, explosion, thermite, explosion_parameters, logic_paramaters, movement_paramaters, idle_chatter_audio, aggroed_audio, explosion_charge_audio, explode_audio_param)
+);
