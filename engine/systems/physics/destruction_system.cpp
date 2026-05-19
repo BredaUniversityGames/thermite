@@ -854,7 +854,7 @@ std::vector<Entity> Destruction::find_seperations(Entity entity, const std::vect
     uint8_t flood_id = 0;
 
     // To keep track of which objects is the biggest (so we can make it the original)
-    uint8_t biggest_id = 0;
+    uint8_t original_id = 0;
     uint32_t biggest_count = 0;
 
     std::vector<uint64_t> tree_masks;
@@ -965,7 +965,7 @@ std::vector<Entity> Destruction::find_seperations(Entity entity, const std::vect
         // Update biggest object
         if (next_count > biggest_count) {
             biggest_count = next_count;
-            biggest_id = flood_id - 1u;
+            original_id = flood_id - 1u;
         }
         // flood_id++;
     }
@@ -975,7 +975,19 @@ std::vector<Entity> Destruction::find_seperations(Entity entity, const std::vect
 
     std::vector<Entity> entities;
     entities.resize(flood_id);
-    entities[biggest_id] = entity;
+
+    // Figure out which entity should remain the original one
+    VoxelConnection* connection = engine.ecs.try_get_component<VoxelConnection>(entity);
+    if (connection != nullptr) {
+        // TODO: Find out which part connects to the core connection
+        //connection->connections[0].connection_voxel
+
+        for (;;) {
+        }
+    } 
+        
+    // If we have no connection we can just make the biggest the original
+    entities[original_id] = entity;
 
     // Get name of original entity
     std::string original_name = engine.ecs.get_component<Name>(entity).name;
@@ -989,7 +1001,7 @@ std::vector<Entity> Destruction::find_seperations(Entity entity, const std::vect
     vr.resource.resource->size = resource_size;
 
     for (size_t i = 0; i < entities.size(); i++) {
-        if (i == biggest_id) {
+        if (i == original_id) {
             continue;
         }
 

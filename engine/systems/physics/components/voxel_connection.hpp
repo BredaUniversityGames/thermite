@@ -15,8 +15,9 @@ struct EntityLink {
 
 struct VoxelConnection {
     std::vector<EntityLink> connections;
+    bool is_core = false;
 };
 
 }  // namespace tmt
 TMT_OBJECT(tmt::EntityLink, (connected_entity, connection_voxel));
-TMT_COMPONENT(tmt::VoxelConnection, "VoxelConnection", (connections));
+TMT_COMPONENT(tmt::VoxelConnection, "VoxelConnection", (connections, is_core));
