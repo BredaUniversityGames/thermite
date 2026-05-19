@@ -24,6 +24,12 @@ class GameComponentRegistry {
     template <typename T>
     requires std::is_base_of_v<IGameComponent, T>
     void register_component() {
+        auto key = std::type_index(typeid(T));
+        if (registered_components.contains(key)) {
+            std::cerr << "[WARN] Duplicate registration: " << typeid(T).name() << "\n";
+            return;
+        }
+
         ComponentInfo info {
             .name = std::string(T::name()),
             .type_id = typeid(T),
