@@ -236,7 +236,7 @@ std::vector<AudioParameter> AudioEvent::get_parameters() const {
         result = description->getParameterDescriptionByIndex(i, &parameter_description);
         if (TryLogError(result, "Failed to get event parameter by index")) return {};
 
-        parameters.emplace_back(parameter_description);
+        parameters.emplace_back(*this, parameter_description.id);
     }
 
     return parameters;
@@ -284,6 +284,36 @@ glm::vec2 AudioEvent::get_min_max_distance() const {
     if (TryLogError(result, "Failed to get VCA volume")) return {};
 
     return { min, max };
+}
+
+FMOD_STUDIO_PARAMETER_DESCRIPTION AudioEvent::get_parameter_description(const FMOD_STUDIO_PARAMETER_ID& id) const {
+    const FMOD::Studio::EventDescription* description = engine.audio.get_event_description(uuid);
+
+    FMOD_STUDIO_PARAMETER_DESCRIPTION parameter_description {};
+    const FMOD_RESULT result = description->getParameterDescriptionByID(id, &parameter_description);
+    if (TryLogError(result, "Failed to get event parameter by ID")) return {};
+
+    return parameter_description;
+}
+
+bool AudioParameter::is_valid() const {
+    if (*this == AudioParameter {}) return false;                       // Check if the audio parameter has an invalid uuid (in which case it, itself is invalid).
+
+    if (!source_event.is_valid()) return false;                         // Check if the source event is still valid.
+
+    return source_event.get_parameter_description(id).name != nullptr;  // Check if the audio parameter description is valid.
+}
+
+std::string AudioParameter::get_name() const {
+    return source_event.get_parameter_description(id).name;
+}
+
+float AudioParameter::get_min() const {
+    return source_event.get_parameter_description(id).minimum;
+}
+
+float AudioParameter::get_max() const {
+    return source_event.get_parameter_description(id).maximum;
 }
 
 bool VolumeControl::is_valid() const {
