@@ -35,6 +35,7 @@ void ResourceBarCurrentComponent::start() {
             break;
         case DisplayTypeResourceBar::FUEL:
             tmt::engine.ecs.get_dispatcher().sink<BargeFuelChanged>().connect<&ResourceBarCurrentComponent::fuel_changed>(this);
+            resource_bar_update(static_cast<int>(barge_fuel_component->current_fuel), barge_fuel_component->fuel_data.max_fuel);
             break;
         default:
             return;
