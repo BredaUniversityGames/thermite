@@ -112,6 +112,8 @@ void game::MediumEnemy::update(const tmt::FrameData& time) {
                 child_voxel_body.gravity = 0.0f;
                 child_voxel_body.position = child_transform.get_world_position();
                 child_voxel_body.rotation = child_transform.get_world_rotation();
+                auto& renderer = tmt::engine.ecs.get_component<tmt::VoxelRenderer>(child);
+                tmt::engine.ecs.systems.try_get<tmt::Physics>()->recalculate_physics_data(child_voxel_body, *renderer.resource.resource);
             }
             return;
         }
