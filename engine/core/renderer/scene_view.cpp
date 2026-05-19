@@ -127,6 +127,7 @@ bool validate_transform(const glm::mat4 m) {
 void SceneView::update_voxel_objects(RenderGraph& render_graph) {
     /* Capture all voxel renderers in the scene */
     const entt::basic_group group = engine.ecs.group<VoxelRenderer>(entt::get<Transform>);
+    [[maybe_unused]] volatile const std::size_t groupSize = group.size();
 
     /* Iterate over all voxel renderers */
     size_t uuid_count = (size_t)next_uuid;
