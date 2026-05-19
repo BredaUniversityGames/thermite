@@ -68,14 +68,7 @@ void SteerToPlayer::on_start(tmt::Entity agent) {
     const auto* small_enemy = tmt::engine.ecs.try_get_component<SmallEnemy>(agent);
     if (small_enemy != nullptr) {
         const tmt::AudioInstance3D instance = audio_emitter->play(small_enemy->aggroed_audio);
-        instance.set_maximum_distance(small_enemy->logic_paramaters.activation_range * 1.25f);
-        return;
-    }
-
-    const auto* medium_enemy = tmt::engine.ecs.try_get_component<MediumEnemy>(agent);
-    if (medium_enemy != nullptr) {
-        const tmt::AudioInstance3D instance = audio_emitter->play(medium_enemy->aggroed_audio);
-        instance.set_maximum_distance(medium_enemy->aggro_range * 1.25f);
+        instance.set_maximum_distance(small_enemy->logic_paramaters.activation_range * 1.25f); // Multiply be 1.25f to ensure the player can hear it even when at the edge of the range.
     }
 }
 
