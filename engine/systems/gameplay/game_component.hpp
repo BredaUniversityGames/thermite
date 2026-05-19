@@ -3,6 +3,7 @@
 #include "engine/core/frame_data.hpp"
 #include "engine/tools/serializer.hpp"
 #include "engine/tools/serializer/all.hpp"
+#include "engine/systems/gameplay/game_component_registry.hpp"
 #if defined(THERMITE_EDITOR) && !defined(THERMITE_ENGINE)
     #include <ImReflect.hpp>
     #include "editor/imgui/types/all.hpp"
@@ -11,6 +12,27 @@
 // class ImSettings;
 // class ImResponse;
 #endif
+
+/* Hide behind details namespace, to not clutter the tmt namespace */
+namespace tmt::details {
+
+template <typename T>
+struct AutoRegister {
+    AutoRegister() {
+        //
+        GameComponentRegistry::instance().register_component<T>();
+    }
+};
+
+}  // namespace tmt::details
+
+#define TMT_GAME_COMPONENT(Type, Fields)                                          \
+    namespace {                                                                   \
+                                                                                  \
+    [[maybe_unused]] tmt::details::AutoRegister<Type> _auto_reg_##__COUNTER__ {}; \
+                                                                                  \
+    }                                                                             \
+    TMT_OBJECT(Type, Fields)
 
 /* Forward declare */
 namespace tmt {
