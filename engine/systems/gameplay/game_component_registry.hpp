@@ -26,7 +26,6 @@ class GameComponentRegistry {
     void register_component() {
         auto key = std::type_index(typeid(T));
         if (registered_components.contains(key)) {
-            std::cerr << "[WARN] Duplicate registration: " << typeid(T).name() << "\n";
             return;
         }
 
