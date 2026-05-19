@@ -13,27 +13,6 @@
 // class ImResponse;
 #endif
 
-/* Hide behind details namespace, to not clutter the tmt namespace */
-namespace tmt::details {
-
-template <typename T>
-struct AutoRegister {
-    AutoRegister() {
-        //
-        GameComponentRegistry::instance().register_component<T>();
-    }
-};
-
-}  // namespace tmt::details
-
-#define TMT_GAME_COMPONENT(Type, Fields)                                          \
-    namespace {                                                                   \
-                                                                                  \
-    [[maybe_unused]] tmt::details::AutoRegister<Type> _auto_reg_##__COUNTER__ {}; \
-                                                                                  \
-    }                                                                             \
-    TMT_OBJECT(Type, Fields)
-
 /* Forward declare */
 namespace tmt {
 
@@ -155,3 +134,23 @@ class GameComponent : public IGameComponent {
 };
 
 }  // namespace tmt
+
+/* Hide behind details namespace, to not clutter the tmt namespace */
+namespace tmt::details {
+
+template <typename T>
+requires std::is_base_of_v<IGameComponent, T>
+struct AutoRegister {
+    AutoRegister() { GameComponentRegistry::instance().register_component<T>(); }
+};
+
+}  // namespace tmt::details
+
+#define TMT_GAME_COMPONENT(Type, Fields)                                                                       \
+    namespace {                                                                                                \
+                                                                                                               \
+    static_assert(std::is_base_of_v<IGameComponent, T>, "AutoRegister<T>: T must derive from IGameComponent"); \
+    [[maybe_unused]] tmt::details::AutoRegister<Type> _auto_reg_##__COUNTER__ {};                              \
+                                                                                                               \
+    }                                                                                                          \
+    TMT_OBJECT(Type, Fields)
