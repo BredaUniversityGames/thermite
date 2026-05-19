@@ -42,7 +42,7 @@ struct ThermiteOreSettings {
 
 struct VFXSettings {
     float vfx_lifetime_thermite_explosion = 0.5f;
-    tmt::ParticleEffect vfx_thermite_explosion;
+    tmt::ResourceRef<tmt::Json> thermite_explosion_prefab;
 };
 
 class OreManager : public tmt::GameComponent<OreManager> {
@@ -73,5 +73,5 @@ class OreManager : public tmt::GameComponent<OreManager> {
 
 }  // namespace game
 TMT_OBJECT(game::ThermiteOreSettings, (radius_explosion, damage_explosion, cooldown_explosion, explosion_strength, layer_mask));
-TMT_OBJECT(game::VFXSettings, (vfx_lifetime_thermite_explosion, vfx_thermite_explosion));
+TMT_OBJECT(game::VFXSettings, (vfx_lifetime_thermite_explosion, explosion_emitter_prefab));
 TMT_OBJECT(game::OreManager, (thermite_ore_settings, vfx_settings));
