@@ -31,7 +31,6 @@ void OreManager::start() {
 }
 
 void OreManager::update(const tmt::FrameData& time) {
-
     // explosion vfx handling
     std::unordered_set<tmt::Entity> destroyed_emitters;
     for (std::pair<const tmt::Entity, float>& emitter_entity : emitter_lifetime_table) {
@@ -136,7 +135,6 @@ void OreManager::process_thermite_ore_explosion(tmt::Entity voxel_entity, glm::u
 }
 
 void OreManager::spawn_emitter(glm::vec3 spawn_pos) {
-    
     auto explosion_prefab = vfx_settings.explosion_emitter_prefab;
     float lifetime = vfx_settings.vfx_lifetime_thermite_explosion;
 
@@ -152,4 +150,5 @@ void OreManager::spawn_emitter(glm::vec3 spawn_pos) {
 
     emitter_lifetime_table.emplace(instantiated_entity, lifetime);
 }
+
 }  // namespace game

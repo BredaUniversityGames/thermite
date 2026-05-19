@@ -41,7 +41,7 @@ struct ThermiteOreSettings {
 };
 
 struct VFXSettings {
-    float vfx_lifetime_thermite_explosion = -1.0f; // set to negative to catch if it hasnt been set properly and try to read it from the emitter that was spawned
+    float vfx_lifetime_thermite_explosion = -1.0f;  // set to negative to catch if it hasnt been set properly and try to read it from the emitter that was spawned
     tmt::ResourceRef<tmt::Json> explosion_emitter_prefab;
 };
 
