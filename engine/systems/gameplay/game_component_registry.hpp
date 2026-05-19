@@ -11,8 +11,14 @@ namespace tmt {
 class IGameComponent;
 
 class GameComponentRegistry {
-   public:
     GameComponentRegistry() = default;
+
+   public:
+    static GameComponentRegistry& instance() {
+        static GameComponentRegistry instance {};
+        return instance;
+    }
+
     ~GameComponentRegistry() = default;
 
     template <typename T>
