@@ -46,7 +46,8 @@ public [ForceInline] void trace_voxel_object<let DEBUG : bool>(Ray ray, VoxelObj
     const float3 t_max = max(t_to_min, t_to_max);
     const float t_near = max(max(max(t_min.x, t_min.y), t_min.z), 0.0f);
     const float t_far = min(min(min(t_max.x, t_max.y), t_max.z), hit.t);
-    if (t_near > t_far) return;
+    if (t_near >= t_far) return;
+    if (DEBUG) hit.steps += 1u;
 
     /* Calculate the ratio between the object size and its tree size */
     const float3 width_ratio = float3(object.size_rcp_width.xyz) * asfloat(object.size_rcp_width.w);
@@ -69,7 +70,7 @@ public [ForceInline] void trace_voxel_object<let DEBUG : bool>(Ray ray, VoxelObj
     const float3 hit_ndc = hit_uvw * 2.0f - 1.0f;
     const float3 hit_point = mul(object.local_to_world, float4(hit_ndc * half_extent, 1.0f)).xyz;
     const float hit_dist = distance(world_origin, hit_point);
-    if (hit_dist > hit.t) return;
+    if (hit_dist >= hit.t) return;
 
     /* Overwrite the current hit with the closer one */
     hit.t = hit_dist;
@@ -136,8 +137,29 @@ uint jenkins32(uint a) {
     return a;
 }
 
+uint hash_combine(uint seed, uint v) {
+    v *= 0xcc9e2d51u;
+    v = (v << 15) | (v >> 17);
+    v *= 0x1b873593u;
+    seed ^= v;
+    seed = (seed << 13) | (seed >> 19);
+    return seed * 5u + 0xe6546b64u;
+}
+
+uint fmix32(uint h) {
+    h ^= h >> 16;
+    h *= 0x85ebca6bu;
+    h ^= h >> 13;
+    h *= 0xc2b2ae35u;
+    h ^= h >> 16;
+    return h;
+}
+
 public inline uint voxel_hash(const uint voxel_index, const uint object_index, const uint face_index) {
-    return jenkins32(voxel_index) ^ jenkins32(object_index | (face_index << 16));
+    uint h = hash_combine(0u, voxel_index);
+    h = hash_combine(h, object_index);
+    h = hash_combine(h, face_index);
+    return jenkins32(h);
 }
 
 public inline uint voxel_hash(const uint64_t packed) {

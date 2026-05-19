@@ -13,7 +13,7 @@
 #include "engine/core/ecs.hpp"
 #include "engine/core/logger.hpp"
 #include "engine/core/renderer/renderer.hpp"
-#include "engine/core/renderer/pipelines/di_pipeline.hpp"
+#include "engine/core/renderer/pipelines/lighting_pipeline.hpp"
 #include "engine/core/renderer/pipelines/ui_pipeline.hpp"
 #include "engine/core/scenes.hpp"
 #include "engine/tools/player_data.hpp"
@@ -62,6 +62,7 @@
 #include "editor/windows/ui.hpp"
 #include "editor/windows/player_data.hpp"
 #include "editor/windows/voxel_editor_lights.hpp"
+#include "editor/windows/screenshot.hpp"
 
 /* Singleton */
 tmt::Editor tmt::editor;
@@ -120,6 +121,7 @@ void Editor::on_engine_init(const ApplicationSpecs&) {
     systems[Mode::SCENE].add<UIEditor>();
     systems[Mode::SCENE].add<PlayerDataWindow>();
     systems[Mode::SCENE].add<RigStateController>();
+    systems[Mode::SCENE].add<ScreenshotWindow>();
 
     engine.scenes.register_scene<VoxelEditScene>();
     systems[Mode::VOXEL].add<ModelViewer>();
@@ -143,13 +145,13 @@ void Editor::on_engine_init(const ApplicationSpecs&) {
     systems[Mode::PREFAB].add<DebugLines>();
     systems[Mode::PREFAB].add<RigStateController>();
 
+    save_data.load();
+
     for (auto& [mode, collection] : systems) {
         for (const auto& system : collection) {
             system->on_editor_start();
         }
     }
-
-    save_data.load();
 }
 
 void Editor::on_engine_update(const FrameData& time) {
@@ -316,6 +318,15 @@ void Editor::main_menu_bar() {
                 ImGui::DragFloat("Max (lum)", &settings.autox_lum_max, 0.01f, 0.0f, 100000.0f);
                 ImGui::SliderFloat("Response", &settings.autox_response, 0.01f, 10.0f);
 
+                ImGui::EndMenu();
+            }
+
+            if (ImGui::BeginMenu("Fog")) {
+                ImGui::DragFloat("Base Step Size", &settings.fog_base_step_size, 0.01f, 0.001f, 0.1f);
+                int count = (int)settings.fog_step_count;
+                if (ImGui::DragInt("Step Count", &count, 1.0f, 16, 128)) {
+                    settings.fog_step_count = (uint32_t)count;
+                }
                 ImGui::EndMenu();
             }
 

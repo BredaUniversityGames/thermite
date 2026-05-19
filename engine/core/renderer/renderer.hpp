@@ -3,6 +3,8 @@
 #include "render_view.hpp"
 #include "scene_view.hpp"
 
+#include "engine/core/system.hpp"
+
 class GPUAdapter;
 class RenderGraph;
 class VRAMBank;
@@ -43,17 +45,47 @@ inline Size3D rated_resolution(Size3D base, ShadingRate rate) {
 }
 
 struct RendererSettings {
+    /* Bloom settings */
     float bloom_radius = 0.5f;
     float bloom_threshold = 1.0f;
     float bloom_trail = 1.0f;
 
+    /* Auto exposure settings */
     float autox_key_value = 0.01f;
     float autox_lum_min = 0.001f;
     float autox_lum_max = 100.0f;
     float autox_response = 1.0f;
 
+    /* Fog/Volumetrics settings */
+    float fog_base_step_size = 0.1f;
+    uint32_t fog_step_count = 16u;
+
+    /* Shading rate settings */
     ShadingRate diff_shading_rate = ShadingRate::HALF_RATE;
     ShadingRate spec_shading_rate = ShadingRate::QUARTER_RATE;
+};
+
+struct ScreenshotSettings {
+    enum class CaptureResolution {
+        MatchViewport,
+        HD_720p,
+        FullHD_1080p,
+        QHD_1440p,
+        UHD_4K,
+        UHD_8K,
+    } resolution_preset = CaptureResolution::MatchViewport;
+
+    std::string directory = "screenshots";
+    std::string filename = "unknown-screenshot";
+
+    uint32_t width = 1920u;
+    uint32_t height = 1080u;
+
+    bool include_ui = true;
+    bool request_capture = false;
+
+    bool warming_up = true;
+    uint32_t warmup_frames = 0u;
 };
 
 class Renderer {
@@ -91,9 +123,12 @@ class Renderer {
     bool kill_particles = false;
     float bloom_radius = 0.25f;
 
+    /* Screenshot settings */
+    ScreenshotSettings screenshot_settings {};
+
     /* Pipelines */
     class GeometryPipeline& geometry_pipeline;
-    class DiPipeline& di_pipeline;
+    class LightingPipeline& lighting_pipeline;
     class PolylinePipeline& polyline_pipeline;
     class VfxPipeline& vfx_pipeline;
     class UiPipeline& ui_pipeline;
@@ -114,6 +149,8 @@ class Renderer {
     void update();
     void end();
 
+    void capture_screenshot();
+
     Hit trace_ray(const Ray& ray) const;
 
     /* Get a reference to the primary vram bank, for resource creation. */
@@ -130,6 +167,21 @@ class Renderer {
 #ifdef THERMITE_EDITOR
     void set_imgui(ImGUI* imgui);
 #endif
+};
+
+class RendererSerializer : public ISystem {
+   public:
+    RendererSerializer() = default;
+    ~RendererSerializer() = default;
+
+    constexpr virtual std::string get_name() override { return "Renderer"; };
+
+    virtual json serialize() const override;
+    virtual void deserialize(const json& value) override;
+
+    virtual void on_start() override {};
+    virtual void on_update(const tmt::FrameData&) override {};
+    virtual void on_end() override {};
 };
 
 }  // namespace tmt

@@ -12,6 +12,8 @@ public struct RenderView {
     public float4x4 clip_to_world;
     /* Origin of the view in world-space. */
     public float4 origin;
+    /* Previous origin of the view in world-space. */
+    public float4 prev_origin;
     /* Resolution of the view in pixels. */
     public uint2 resolution;
     /* Index of the current frame. */
@@ -42,6 +44,8 @@ public struct SceneView {
     public uint envmap_full_handle;
     /* Environment map (filtered) bindless handle. */
     public uint envmap_filtered_handle;
+    /* Color grading lut bindless handle. */
+    public uint lut_handle;
 };
 
 /* Represents a ray that can be traced. */

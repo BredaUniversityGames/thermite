@@ -130,6 +130,8 @@ void Player::start() {
 
         return;
     }
+    auto& cam_shake { tmt::engine.player_data.get<float>(CAMERA_SHAKE) };
+    camera_shake_settings.set_multiplier(cam_shake);
     wallet->currencies = resources;
     if (tmt::engine.ecs.is_enabled(entity)) {
         tmt::engine.input.set_mouse_relative_to_window(true);
@@ -367,7 +369,7 @@ void Player::update(const tmt::FrameData& time) {
     float dt = time.delta_time;
 
     // how fast it returns
-    float recovery = 1.0f - expf(-camera_shake_settings.recoil_return_speed * dt);
+    float recovery = 1.0f - expf(-camera_shake_settings.get_recoil_return_speed() * dt);
 
     // move back toward zero at a constant speed
     recoil_offset.x = glm::mix(recoil_offset.x, 0.0f, recovery);
@@ -394,7 +396,7 @@ void Player::update(const tmt::FrameData& time) {
             if (input.is_action_pressed(action::BOOST)) {
                 apply_boost();
 
-                add_camera_shake(camera_shake_settings.boost_intensity * dt);
+                add_camera_shake(camera_shake_settings.get_boost_intensity() * dt);
             } else {
                 reset_boost(time.delta_time);
             }
@@ -515,7 +517,7 @@ void Player::update(const tmt::FrameData& time) {
 
     if (out_of_energy_timer >= out_of_energy_time_till_death && !player_ended_run) {
         tmt::engine.ecs.get_dispatcher().trigger(EndRun { true });
-        player_ended_run = true;
+
         state = PlayerState::PAUSED;
     }
 
@@ -523,7 +525,7 @@ void Player::update(const tmt::FrameData& time) {
     if (health.value <= 0.0f && !player_ended_run) {
         // player ded -> call end run event with player ded
         tmt::engine.ecs.get_dispatcher().trigger(EndRun { true });
-        player_ended_run = true;
+
         state = PlayerState::PAUSED;
     }
 
@@ -722,46 +724,26 @@ void Player::add_camera_shake(float intensity) {
 }
 
 void Player::update_shake(float dt) {
-    current_shake -= dt * camera_shake_settings.decay_speed;
+    current_shake -= dt * camera_shake_settings.get_decay_speed();
     current_shake = glm::max(0.0f, current_shake);
 }
 
 void Player::add_recoil() {
-    recoil_offset.y += camera_shake_settings.recoil_strength;
+    recoil_offset.y += camera_shake_settings.get_recoil_strength();
 
     float rand_x = (rand() / (float)RAND_MAX - 0.5f) * 2.0f;
-    recoil_offset.x += rand_x * camera_shake_settings.recoil_horizontal;
+    recoil_offset.x += rand_x * camera_shake_settings.get_recoil_horizontal();
 }
 
 void Player::set_crosshair(tmt::Entity active) {
     auto& ecs = tmt::engine.ecs;
-
-    auto toggle = [&](auto&& self, tmt::Entity e, bool enabled) -> void {
-        if (!ecs.valid(e)) return;
-
-        // Toggle this entity
-        if (enabled) {
-            ecs.remove_component<tmt::Disable>(e);
-        } else {
-            ecs.add_or_get_component<tmt::Disable>(e);
-        }
-
-        // Toggle children
-        if (!ecs.has_component<tmt::Transform>(e)) return;
-
-        auto& transform = ecs.get_component<tmt::Transform>(e);
-        for (auto child : transform.get_all_children()) {
-            self(self, child, enabled);
-        }
-    };
-
     // Disable all crosshairs
-    toggle(toggle, rifle_crosshair, false);
-    toggle(toggle, gravity_crosshair, false);
-    toggle(toggle, mine_crosshair, false);
+    ecs.disable(rifle_crosshair);
+    ecs.disable(gravity_crosshair);
+    ecs.disable(mine_crosshair);
 
     // Enable selected crosshair
-    toggle(toggle, active, true);
+    ecs.enable(active);
 }
 
 }  // namespace game

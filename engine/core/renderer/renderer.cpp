@@ -1,5 +1,11 @@
 #include "renderer.hpp"
 
+#pragma warning(push)
+#pragma warning(disable : 4996)
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include <stb_image_write.h>
+#pragma warning(pop)
+
 #include <graphite/imgui.hh>
 #include <graphite/vram_bank.hh>
 #include <graphite/gpu_adapter.hh>
@@ -11,12 +17,13 @@
 #include "core/ecs.hpp"
 #include "core/window.hpp"
 #include "core/logger.hpp"
+#include "core/input/input.hpp"
 #include "core/components/camera.hpp"
 #include "core/components/transform.hpp"
 
 #include "engine/engine.hpp"
 
-#include "pipelines/di_pipeline.hpp"
+#include "pipelines/lighting_pipeline.hpp"
 #include "pipelines/ui_pipeline.hpp"
 #include "pipelines/vfx_pipeline.hpp"
 #include "pipelines/polyline_pipeline.hpp"
@@ -25,6 +32,8 @@
 
 #include "tools/profiler.hpp"
 #include "tools/player_data.hpp"
+#include "tools/serializer.hpp"
+#include "tools/serializer/all.hpp"
 
 namespace tmt {
 
@@ -32,7 +41,7 @@ Renderer::Renderer() :
     gpu(*new GPUAdapter()),
     render_graph(*new RenderGraph()),
     geometry_pipeline(*new GeometryPipeline()),
-    di_pipeline(*new DiPipeline()),
+    lighting_pipeline(*new LightingPipeline()),
     polyline_pipeline(*new PolylinePipeline()),
     vfx_pipeline(*new VfxPipeline()),
     ui_pipeline(*new UiPipeline()),
@@ -40,7 +49,7 @@ Renderer::Renderer() :
 
 Renderer::~Renderer() {
     delete &polyline_pipeline;
-    delete &di_pipeline;
+    delete &lighting_pipeline;
     delete &vfx_pipeline;
     delete &geometry_pipeline;
     delete &ui_pipeline;
@@ -68,7 +77,7 @@ void thermite_logger(const DebugSeverity severity, const char* msg, void*) {
 void Renderer::init() {
     gpu.set_logger(thermite_logger, DebugLevel::Verbose);
     gpu.set_max_render_targets(4u);
-    gpu.set_max_buffers(8192u);
+    gpu.set_max_buffers(16384u);
     gpu.set_max_textures(256u);
     gpu.set_max_images(256u);
     gpu.set_max_samplers(32u);
@@ -102,7 +111,7 @@ void Renderer::init() {
 
     /* Initialize pipelines */
     polyline_pipeline.init(gpu);
-    di_pipeline.init(gpu);
+    lighting_pipeline.init(gpu);
     vfx_pipeline.init(gpu);
     ui_pipeline.init(gpu);
     post_process_pipeline.init(gpu);
@@ -149,33 +158,16 @@ void Renderer::update() {
         render_view.update_gpu_view(render_graph, debug_camera, debug_transform);
     }
 
-    /* Light Culling Pass */
-    {
-        render_graph.add_compute_pass("light grid clear counts pass", "lightgrid/clear_counts.cs")
-            .write(scene_view.light_grid)
-            .group_size(64)
-            .work_size(light_grid::CASCADES_RESOLUTION * light_grid::CASCADES_RESOLUTION * light_grid::CASCADES_RESOLUTION * light_grid::MAX_CASCADES);
-
-        render_graph.add_compute_pass("light culling pass", "lightgrid/cull.cs")
-            .read(scene_view.cascades_bitmasks)
-            .read(scene_view.lights_data)
-            .write(scene_view.light_grid)
-            .push_constants(&scene_view.light_grid_center, 0, sizeof(glm::vec3))
-            .group_size(4, 4, 4)
-            .work_size(light_grid::CASCADES_RESOLUTION, light_grid::CASCADES_RESOLUTION, light_grid::CASCADES_RESOLUTION * light_grid::MAX_CASCADES);
-    }
-
-    /* Enqueue pipelines */
+    /* Geometry & Lighting */
     geometry_pipeline.enqueue(render_graph, render_view, scene_view);
-    di_pipeline.enqueue(render_graph, render_view, scene_view);
+    lighting_pipeline.enqueue(render_graph, render_view, scene_view);
 
     RendererSettings& settings = engine.player_data.get<RendererSettings>("RendererSettings");
     const uint32_t frame_flag = (render_view.frame_counter & 1) == 0;
-    /* Auto exposure */
-    {
+    { /* Auto exposure */
         /* clang-format off */
         /* Initial 256x256 aliased gather */
-        render_graph.add_compute_pass("AutoX Gather", "lighting/autox_gather.cs")
+        render_graph.add_compute_pass("autox gather", "lighting/autox_gather.cs")
             .read(render_view.render_view_buffer)
             .read(render_view.lbuffer.image)
             .write(autox_partial_image)
@@ -183,7 +175,7 @@ void Renderer::update() {
             .work_size(256, 256);
 
         /* 256x256 to 16x16 downsampling using LDS */
-        render_graph.add_compute_pass("AutoX Average", "lighting/autox_average.cs")
+        render_graph.add_compute_pass("autox average", "lighting/autox_average.cs")
             .read(autox_partial_image)
             .write(autox_tiny_image)
             .read(down_sampler)
@@ -191,7 +183,7 @@ void Renderer::update() {
             .work_size(128, 128);
 
         /* Final 16x16 average and temporal response */
-        render_graph.add_compute_pass("AutoX Final", "lighting/autox_final.cs")
+        render_graph.add_compute_pass("autox final", "lighting/autox_final.cs")
             .read(render_view.render_view_buffer)
             .read(autox_tiny_image)
             .write(autox_image)
@@ -211,8 +203,7 @@ void Renderer::update() {
         autox_constants.lum_max = settings.autox_lum_max;
 
         /* Apply exposure to luminance buffer */
-        render_graph.add_compute_pass("AutoX Apply", "lighting/autox_apply.cs")
-            .read(frame_flag ? render_view.depth_image : render_view.prev_depth_image)
+        render_graph.add_compute_pass("autox apply", "lighting/autox_apply.cs")
             .write(render_view.lbuffer.image)
             .read(autox_image)
             .push_constants(&autox_constants, 0u, sizeof(AutoXConstants))
@@ -221,6 +212,21 @@ void Renderer::update() {
         /* clang-format on */
     }
 
+    /* Sky composite pass */
+    if (engine.renderer.display_mode == DisplayMode::DEFAULT) {
+        /* clang-format off */
+        render_graph.add_compute_pass("sky composite pass", "sky.cs")
+            .read(render_view.render_view_buffer) /* Render view buffer */
+            .read(scene_view.scene_view) /* Scene view buffer */
+            .read(engine.renderer.linear_sampler)
+            .read(frame_flag ? render_view.depth_image : render_view.prev_depth_image) /* Depth buffer */
+            .write(render_view.lbuffer.image) /* Luminance Output */
+            .group_size(16, 8)
+            .work_size(render_view.gpu_view.resolution.x, render_view.gpu_view.resolution.y);
+        /* clang-format on */
+    }
+
+    /* VFX */
     vfx_pipeline.enqueue(render_graph, render_view);
 
     if (engine.renderer.display_mode == DisplayMode::MOTIONVECTORS) {
@@ -231,8 +237,9 @@ void Renderer::update() {
             .work_size(render_view.gpu_view.resolution.x, render_view.gpu_view.resolution.y);
     }
 
-    if (engine.renderer.display_mode == DisplayMode::DEFAULT || engine.renderer.display_mode == DisplayMode::LIGHTS) {
-        post_process_pipeline.enqueue(render_graph, render_view);
+    /* Post Processing */
+    if (engine.renderer.display_mode == DisplayMode::DEFAULT) {
+        post_process_pipeline.enqueue(render_graph, render_view, scene_view);
     }
 
     if (scene_view.render_outlines) {
@@ -244,7 +251,6 @@ void Renderer::update() {
             .write(render_view.get_render_image())
             .group_size(16, 8)
             .work_size(render_view.gpu_view.resolution.x, render_view.gpu_view.resolution.y);
-        /* clang-format on */
     }
 
     if (engine.renderer.display_mode == DisplayMode::LIGHTS) {
@@ -258,8 +264,9 @@ void Renderer::update() {
             .work_size(render_view.gpu_view.resolution.x, render_view.gpu_view.resolution.y);
     }
 
+    /* Polyline & UI */
     polyline_pipeline.enqueue(render_graph, render_view);
-    ui_pipeline.enqueue(render_graph, render_view);
+    if (screenshot_settings.include_ui) ui_pipeline.enqueue(render_graph, render_view);
 
 #ifdef THERMITE_EDITOR
     /* Add the immediate mode GUI to the render graph */
@@ -276,6 +283,27 @@ void Renderer::update() {
     if (const Result r = render_graph.dispatch(); r.is_err()) {
         Log::error(Log::Scope::RENDERER, "failed to dispatch render graph.\nreason: {}", r.unwrap_err());
     }
+
+    /* Don't capture on first frame, since we need a few frames to warm up. */
+    if (screenshot_settings.request_capture && !screenshot_settings.warming_up) {
+        screenshot_settings.request_capture = false;
+        capture_screenshot();
+    }
+
+    /* On first frame that screenshot capturing gets triggered, set internal res to desired screenshot res and begin warm up. */
+    if (screenshot_settings.request_capture) {
+        if (screenshot_settings.warmup_frames == 0u) render_view.set_viewport_size(screenshot_settings.width, screenshot_settings.height);
+
+        /* Increment warm up frames. */
+        screenshot_settings.warmup_frames += 1u;
+
+        /* Warming up done, signal next frame for screenshot capture. */
+        if (screenshot_settings.warmup_frames > 3u) {
+            screenshot_settings.warming_up = false;
+            screenshot_settings.warmup_frames = 0u;
+        }
+    }
+
     TMT_FRAME_MARK;
 }
 
@@ -288,7 +316,7 @@ void Renderer::end() {
 
     /* Pipelines cleanup */
     polyline_pipeline.deinit(gpu);
-    di_pipeline.deinit(gpu);
+    lighting_pipeline.deinit(gpu);
     vfx_pipeline.deinit(gpu);
     ui_pipeline.deinit(gpu);
     post_process_pipeline.deinit(gpu);
@@ -309,6 +337,45 @@ void Renderer::end() {
     render_graph.deinit().expect("failed to destroy render graph.");
     bank.deinit().expect("failed to destroy vram bank.");
     gpu.deinit().expect("failed to destroy gpu adapter.");
+}
+
+void Renderer::capture_screenshot() {
+    /* Resolve the output path */
+    std::string name = screenshot_settings.filename;
+    name += ".png";
+    const auto path = std::filesystem::absolute(std::filesystem::path(screenshot_settings.directory) / name);
+
+    /* Ensure the output directory exists */
+    std::error_code ec;
+    std::filesystem::create_directories(path.parent_path(), ec);
+    if (ec) {
+        Log::error("failed to create screenshot directory '{}': {}", path.parent_path().string(), ec.message());
+    } else {
+        /* Readback and save */
+        void* data = nullptr;
+        int width, height, channels;
+        gpu.get_vram_bank().readback_texture(render_view.viewport.image, &data, &width, &height, &channels).expect("failed to readback viewport image");
+
+        if (stbi_write_png(path.string().c_str(), width, height, channels, data, width * channels) == 0) {
+            Log::error("failed to write screenshot to '{}'!", path.string());
+        } else {
+            Log::info("screenshot saved: {}", path.string());
+        }
+
+        free(data);
+    }
+}
+
+json RendererSerializer::serialize() const {
+    tmt::json result = json::object();
+    // result["post_process_pipeline"] = Serializer::serialize(engine.renderer.post_process_pipeline);
+    return result;
+}
+
+void RendererSerializer::deserialize(const json& /* value */) {
+    // if (value.contains("post_process_pipeline")) {
+    //     Serializer::deserialize(value["post_process_pipeline"], engine.renderer.post_process_pipeline);
+    // }
 }
 
 Hit Renderer::trace_ray(const Ray& ray) const {

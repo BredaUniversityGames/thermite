@@ -47,6 +47,8 @@
 #include "components/gameplay_functionality_components/weapon_and_tool_components/weapon.hpp"
 #include "components/gameplay_functionality_components/weapon_and_tool_components/mining_component.hpp"
 #include "components/gameplay_functionality_components/weapon_and_tool_components/gravity_manipulation_component.hpp"
+#include "components/gameplay_functionality_components/weapon_and_tool_components/drill_vfx_spawner.hpp"
+
 // Ui
 #include "components/ui_components/text_component.hpp"
 #include "components/ui_components/scene_switch_component.hpp"
@@ -60,6 +62,7 @@
 #include "components/ui_components/tutorial_button.hpp"
 #include "components/ui_components/resource_bar_current.hpp"
 #include "components/ui_components/opacity_fader.hpp"
+#include "components/game_settings/screen_shake_change.hpp"
 #include "components/ui_components/depth_tracker.hpp"
 
 // Managers
@@ -72,6 +75,7 @@
 // World generation
 #include "components/world_gen/generation_component.hpp"
 #include "components/world_gen/random_prefab_spawner.hpp"
+#include "components/world_gen/svh_spawner.hpp"
 // Data Headers
 #include "data_headers/scene_list.hpp"
 #include "data_headers/wallet.hpp"
@@ -152,10 +156,13 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     tmt::engine.component_registry.register_component<game::Explosion>();
     tmt::engine.component_registry.register_component<game::DestroyTimed>();
     tmt::engine.component_registry.register_component<game::TransformTween>();
+    tmt::engine.component_registry.register_component<game::DrillVFXSpawner>();
+
     /* Register World Generation Components */
     tmt::engine.component_registry.register_component<game::GenerationComponent>();
     tmt::engine.component_registry.register_component<game::ClearanceVolume>();
     tmt::engine.component_registry.register_component<game::RandomPrefabSpawner>();
+    tmt::engine.component_registry.register_component<game::SVHSpawner>();
     /* Register Game UI Components */
     tmt::engine.component_registry.register_component<game::SceneSwitchComponent>();
     tmt::engine.component_registry.register_component<game::EntityControlComponent>();
@@ -168,6 +175,7 @@ std::unique_ptr<tmt::Application> create_application(const tmt::CommandLineArgs&
     tmt::engine.component_registry.register_component<game::TutorialButton>();
     tmt::engine.component_registry.register_component<game::ResourceBarCurrentComponent>();
     tmt::engine.component_registry.register_component<game::OpacityFader>();
+    tmt::engine.component_registry.register_component<game::ScreenShakeChangeComponent>();
     tmt::engine.component_registry.register_component<game::DepthTracker>();
 
     /* Register Game Settings */
