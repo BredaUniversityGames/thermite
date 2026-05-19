@@ -146,11 +146,22 @@ struct AutoRegister {
 
 }  // namespace tmt::details
 
-#define TMT_GAME_COMPONENT(Type, Fields)                                                                       \
-    namespace {                                                                                                \
-                                                                                                               \
-    static_assert(std::is_base_of_v<IGameComponent, T>, "AutoRegister<T>: T must derive from IGameComponent"); \
-    [[maybe_unused]] tmt::details::AutoRegister<Type> _auto_reg_##__COUNTER__ {};                              \
-                                                                                                               \
-    }                                                                                                          \
+#define TMT_GAME_COMPONENT_IMPL(Type)                                                                                   \
+    namespace {                                                                                                         \
+                                                                                                                        \
+    static_assert(std::is_base_of_v<IGameComponent, Type>, "AutoRegister<Type>: Type must derive from IGameComponent"); \
+    [[maybe_unused]] tmt::details::AutoRegister<Type> _auto_reg_##__COUNTER__ {};                                       \
+                                                                                                                        \
+    }
+
+#define TMT_GAME_COMPONENT(Type, Fields) \
+    TMT_GAME_COMPONENT_IMPL(Type)        \
     TMT_OBJECT(Type, Fields)
+
+#define TMT_GAME_COMPONENT_EX(Type, JsonFields, ImguiFields) \
+    TMT_GAME_COMPONENT_IMPL(Type)                            \
+    TMT_OBJECT_EX(Type, JsonFields, ImguiFields)
+
+#define TMT_GAME_COMPONENT_EMPTY(Type) \
+    TMT_GAME_COMPONENT_IMPL(Type)      \
+    TMT_OBJECT_EMPTY(Type)
