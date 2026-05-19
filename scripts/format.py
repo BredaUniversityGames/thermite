@@ -10,8 +10,7 @@ FILE_EXTENSIONS = (".h", ".hpp", ".c", ".cpp", ".cc", ".cxx")
 # Directories or paths to ignore
 IGNORE_PATHS = {
     "extern",  # Ignore the "external" directory
-    "build",
-    "engine"
+    "build"
 }
 
 def should_ignore_file(file_path):
