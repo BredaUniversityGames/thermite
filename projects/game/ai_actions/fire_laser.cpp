@@ -1,4 +1,4 @@
-#include "fire_laser.hpp"
+﻿#include "fire_laser.hpp"
 #include "engine/engine.hpp"
 #include "engine/core/ecs.hpp"
 #include "engine/systems/ai/navigation/nav_mesh.hpp"
@@ -21,6 +21,8 @@
 void FireLaser::cleanup(tmt::Entity enemy_entity) {
     game::MediumEnemy& enemy = tmt::engine.ecs.get_component<game::MediumEnemy>(enemy_entity);
     enemy.set_stored_offsets_to_base();
+    rest_local_positions.clear();
+    rest_local_rotations.clear();
     tmt::engine.ecs.get_component<tmt::RigController>(enemy.rig_controller).set_parameter_bool("laser", false);
     if (tmt::engine.ecs.valid(laser_entity)) {
         tmt::engine.ecs.destroy_entity(laser_entity);
@@ -70,29 +72,45 @@ void FireLaser::rotate_to_face_player(tmt::Entity enemy_entity, float dt) {
 
 void FireLaser::update_formation(tmt::Entity enemy_entity) {
     auto& enemy = tmt::engine.ecs.get_component<game::MediumEnemy>(enemy_entity);
-    if (formation_cache.empty() || enemy.laser_voxel_entities.empty()) return;
+    auto& voxels = enemy.laser_voxel_entities;
+    if (voxels.empty() || rest_local_positions.size() != voxels.size()) return;
 
     auto& enemy_transform = tmt::engine.ecs.get_component<tmt::Transform>(enemy_entity);
     glm::vec3 enemy_pos = enemy_transform.get_world_position();
     glm::quat enemy_rot = enemy_transform.get_world_rotation();
 
-    // Pivot is the back entity, reconstructed from enemy-local space
-    size_t back_idx = formation_cache.size() - 1;
-    glm::vec3 pivot = enemy_pos + enemy_rot * formation_cache[back_idx].relative_offset;
+    auto rest_world_pos = [&](size_t i) { return enemy_pos + enemy_rot * rest_local_positions[i]; };
+    auto rest_world_rot = [&](size_t i) { return enemy_rot * rest_local_rotations[i]; };
 
-    const glm::vec3 reference_axis = glm::vec3(0.f, 0.f, 1.f);
-    glm::quat current_rotation = glm::rotation(reference_axis, direction);
-    glm::quat delta = current_rotation * glm::inverse(formation_initial_rotation);
+    // Pivot = last entity (back of the gun).
+    glm::vec3 pivot_pos = rest_world_pos(voxels.size() - 1);
 
-    for (size_t i = 0; i < enemy.laser_voxel_entities.size(); ++i) {
-        auto entity = enemy.laser_voxel_entities[i];
-        if (!tmt::engine.ecs.valid(entity) || i >= formation_cache.size()) continue;
-        auto& t = tmt::engine.ecs.get_component<tmt::Transform>(entity);
+    // Rest-forward in world space, derived from cached local + the enemy's current rotation.
+    glm::vec3 rest_forward_world = glm::normalize(enemy_rot * rest_local_forward);
 
-        // Reconstruct base world pos from enemy transform, then rotate around pivot
-        glm::vec3 base_world_pos = enemy_pos + enemy_rot * formation_cache[i].relative_offset;
-        t.set_world_position(pivot + delta * (base_world_pos - pivot));
-        t.set_world_rotation(delta * (enemy_rot * formation_cache[i].relative_rotation));
+    glm::vec3 dir = glm::normalize(direction);
+    glm::quat aim_rotation;
+    float cos_a = glm::dot(rest_forward_world, dir);
+    if (cos_a > 0.99999f) {
+        aim_rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+    } else if (cos_a < -0.99999f) {
+        glm::vec3 axis = glm::cross(rest_forward_world, glm::vec3(0.0f, 1.0f, 0.0f));
+        if (glm::dot(axis, axis) < 0.0001f) axis = glm::cross(rest_forward_world, glm::vec3(1.0f, 0.0f, 0.0f));
+        aim_rotation = glm::angleAxis(glm::pi<float>(), glm::normalize(axis));
+    } else {
+        aim_rotation = glm::rotation(rest_forward_world, dir);
+    }
+
+    for (size_t i = 0; i < voxels.size(); ++i) {
+        auto voxel = voxels[i];
+        if (!tmt::engine.ecs.valid(voxel)) continue;
+        auto& vt = tmt::engine.ecs.get_component<tmt::Transform>(voxel);
+
+        glm::vec3 rp = rest_world_pos(i);
+        glm::quat rr = rest_world_rot(i);
+
+        vt.set_world_position(pivot_pos + aim_rotation * (rp - pivot_pos));
+        vt.set_world_rotation(aim_rotation * rr);
     }
 }
 
@@ -115,16 +133,11 @@ void FireLaser::on_start(tmt::Entity enemy_entity) {
     const auto& enemy_entity_pos = enemy_transform.get_world_position();
     const auto& player_pos = tmt::engine.ecs.get_component<tmt::Transform>(enemy.player).get_world_position();
 
-    direction = player_pos - enemy_entity_pos +
-                glm::vec3(
-                    (static_cast<float>(rand()) / RAND_MAX - 0.5f) * enemy.laser_max_randomness, (static_cast<float>(rand()) / RAND_MAX - 0.5f) * enemy.laser_max_randomness,
-                    (static_cast<float>(rand()) / RAND_MAX - 0.5f) * enemy.laser_max_randomness
-                );
-    direction = glm::normalize(direction);
-    target_pos = player_pos + glm::vec3(
-                                  (static_cast<float>(rand()) / RAND_MAX - 0.5f) * enemy.laser_max_randomness, (static_cast<float>(rand()) / RAND_MAX - 0.5f) * enemy.laser_max_randomness,
-                                  (static_cast<float>(rand()) / RAND_MAX - 0.5f) * enemy.laser_max_randomness
-                              );
+    // target_pos = player_pos + glm::vec3(
+    //                               (static_cast<float>(rand()) / RAND_MAX - 0.5f) * enemy.laser_max_randomness, (static_cast<float>(rand()) / RAND_MAX - 0.5f) * enemy.laser_max_randomness,
+    //                               (static_cast<float>(rand()) / RAND_MAX - 0.5f) * enemy.laser_max_randomness
+    //                           );
+    target_pos = enemy_transform.get_world_position() + enemy_transform.get_forward() * enemy.laser_range * 0.8f;
 }
 
 void FireLaser::on_tick(tmt::Entity enemy_entity, float dt) {
@@ -164,6 +177,8 @@ void FireLaser::on_tick(tmt::Entity enemy_entity, float dt) {
         }
         case WINDING_UP: {
             rotate_to_face_player(enemy_entity, dt);
+            tmt::Transform& enemy_transform = tmt::engine.ecs.get_component<tmt::Transform>(enemy_entity);
+            target_pos = enemy_transform.get_world_position() + enemy_transform.get_forward() * enemy.laser_range * 0.8f;
 
             enemy.height_above_ground_offset = -enemy.height_above_ground + enemy.laser_sitting_down_height_offset;
             glm::vec3 target_dir = glm::normalize(target_pos - laser_pos);
@@ -183,7 +198,6 @@ void FireLaser::on_tick(tmt::Entity enemy_entity, float dt) {
                 auto& voxel_renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(laser_entity);
                 auto ref = tmt::engine.resources.copy_resource<tmt::VoxelVolume>(enemy.laser_voxel_object);
                 voxel_renderer.resource = ref;
-
                 // auto& voxel_body = tmt::engine.ecs.add_component<tmt::VoxelBody>(laser_entity);
                 // voxel_body.layer = enemy.projectile_layer;
                 // voxel_body.type = tmt::VoxelBody::STATIC;
@@ -191,18 +205,39 @@ void FireLaser::on_tick(tmt::Entity enemy_entity, float dt) {
                 state = FIRING;
                 time = 0.0f;
 
-                tmt::Transform& enemy_transform = tmt::engine.ecs.get_component<tmt::Transform>(enemy_entity);
-                glm::vec3 enemy_pos = enemy_transform.get_world_position();
-                glm::quat inv_enemy_rot = glm::inverse(enemy_transform.get_world_rotation());
+                {
+                    auto& et = tmt::engine.ecs.get_component<tmt::Transform>(enemy_entity);
+                    glm::vec3 enemy_pos = et.get_world_position();
+                    glm::quat enemy_rot_inv = glm::inverse(et.get_world_rotation());
 
-                const glm::vec3 reference_axis = glm::vec3(0.f, 0.f, 1.f);
-                formation_initial_rotation = glm::rotation(reference_axis, direction);
+                    rest_local_positions.clear();
+                    rest_local_rotations.clear();
+                    rest_local_positions.reserve(enemy.laser_voxel_entities.size());
+                    rest_local_rotations.reserve(enemy.laser_voxel_entities.size());
 
-                formation_cache.clear();
-                for (auto e : enemy.laser_voxel_entities) {
-                    if (!tmt::engine.ecs.valid(e)) continue;
-                    auto& t = tmt::engine.ecs.get_component<tmt::Transform>(e);
-                    formation_cache.push_back({ inv_enemy_rot * (t.get_world_position() - enemy_pos), inv_enemy_rot * t.get_world_rotation() });
+                    for (auto voxel : enemy.laser_voxel_entities) {
+                        if (!tmt::engine.ecs.valid(voxel)) {
+                            rest_local_positions.push_back(glm::vec3(0.0f));
+                            rest_local_rotations.push_back(glm::quat(1, 0, 0, 0));
+                            continue;
+                        }
+                        auto& vt = tmt::engine.ecs.get_component<tmt::Transform>(voxel);
+                        rest_local_positions.push_back(enemy_rot_inv * (vt.get_world_position() - enemy_pos));
+                        rest_local_rotations.push_back(enemy_rot_inv * vt.get_world_rotation());
+                    }
+
+                    // Rest-forward in enemy-local space: from the back of the gun (last) to the tip (first).
+                    // Safe because we now guarantee index 0 = tip.
+                    if (rest_local_positions.size() >= 2) {
+                        glm::vec3 tip_to_back_local = rest_local_positions.front() - rest_local_positions.back();
+                        if (glm::dot(tip_to_back_local, tip_to_back_local) > 1e-8f) {
+                            rest_local_forward = glm::normalize(tip_to_back_local);
+                        } else {
+                            rest_local_forward = glm::vec3(0.0f, 0.0f, 1.0f);  // degenerate; fall back.
+                        }
+                    } else {
+                        rest_local_forward = glm::vec3(0.0f, 0.0f, 1.0f);
+                    }
                 }
             }
             break;

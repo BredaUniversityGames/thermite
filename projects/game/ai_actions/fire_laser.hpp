@@ -3,12 +3,6 @@
 #include "engine/systems/ai/goap/components/goap_action_registry.hpp"
 #include "engine/core/components/transform.hpp"
 
-struct FormationEntry {
-    glm::vec3 relative_offset;
-    glm::quat relative_rotation;
-    tmt::Transform initial_transform;
-};
-
 class FireLaser : public tmt::GoapAction {
    public:
     FireLaser() {
@@ -28,8 +22,9 @@ class FireLaser : public tmt::GoapAction {
     tmt::Entity laser_entity = entt::null;
     std::vector<tmt::Entity> laser_charge_entities;
 
-    std::vector<FormationEntry> formation_cache;
-    glm::quat formation_initial_rotation { 1.0f, 0.0f, 0.0f, 0.0f };
+    std::vector<glm::vec3> rest_local_positions;
+    std::vector<glm::quat> rest_local_rotations;
+    glm::vec3 rest_local_forward = glm::vec3(0.0f, 0.0f, 1.0f);
 
     float time = 0.0f;
     float original_height = 0.0f;
