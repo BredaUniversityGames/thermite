@@ -4,6 +4,7 @@
 #include "projects/game/components/gameplay_functionality_components/fuel.hpp"
 
 namespace game {
+
 void ResourceBarCurrentComponent::start() {
     if (player_entity == entt::null) {
         player_entity = Player::get().entity;
@@ -41,8 +42,7 @@ void ResourceBarCurrentComponent::start() {
     }
 }
 
-void ResourceBarCurrentComponent::update(const tmt::FrameData& time) {
-}
+void ResourceBarCurrentComponent::update(const tmt::FrameData& time) {}
 
 void ResourceBarCurrentComponent::end() {
     if (resource == DisplayTypeResourceBar::HEALTH) {
@@ -126,4 +126,5 @@ void ResourceBarCurrentComponent::resource_bar_update(int new_val, float max_res
     float chars_per_segment = static_cast<float>(rendered_string.size());
     text_renderer_component->letter_spacing = ((max_w - (segment_width * static_cast<float>(max_segments))) / (static_cast<float>(max_segments) - 1.0f)) / chars_per_segment;
 }
-} // namespace game
+
+}  // namespace game

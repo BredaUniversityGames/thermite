@@ -4,10 +4,12 @@
 #include "projects/game/data_headers/save_entries.hpp"
 
 namespace {
+
 game::MoverComponent& get_mover_component(tmt::Entity entity) {
     return tmt::engine.ecs.get_component<game::MoverComponent>(entity);
 }
-} // namespace
+
+}  // namespace
 void game::FuelComponent::start() {
     // TODO check if data is there
     fuel_data = tmt::engine.player_data.get<FuelData>(FUEL_DATA, fuel_data);
