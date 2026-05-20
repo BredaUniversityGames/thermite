@@ -245,6 +245,11 @@ void game::MediumEnemy::kite_player() const {
     auto& nav_mesh = tmt::engine.ecs.get_component<tmt::NavMesh>(enemy.walkable_asteroid);
     if (!nav_mesh.nav_nodes_valid()) return;
 
+    if (enemy.audio_emitter != nullptr) {
+        const tmt::AudioInstance3D instance = enemy.audio_emitter->play(enemy.sounds.sound_walk);
+        instance.set_maximum_distance(enemy.aggro_range * 1.5f);  // Multiply be 1.5f to ensure the player can hear it even when at the edge of the range
+    }
+
     tmt::Transform& enemy_transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
     const auto& enemy_entity_pos = enemy_transform.get_world_position();
     const auto& player_pos = tmt::engine.ecs.get_component<tmt::Transform>(player).get_world_position();

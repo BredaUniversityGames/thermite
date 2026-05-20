@@ -58,10 +58,10 @@ void Stomp::on_tick(tmt::Entity enemy_entity, float dt) {
         tmt::Transform& enemy_transform = tmt::engine.ecs.get_component<tmt::Transform>(enemy_entity);
         const auto& enemy_entity_pos = enemy_transform.get_world_position();
 
-        //if (enemy.audio_emitter != nullptr) {
-        //    const tmt::AudioInstance3D instance = enemy.audio_emitter->play(enemy.sounds.sound_shield_slam);
-        //    instance.set_maximum_distance(enemy.aggro_range * 1.25f);  // Multiply be 1.25f to ensure the player can hear it even when at the edge of the range
-        //}
+        if (enemy.audio_emitter != nullptr) {
+            const tmt::AudioInstance3D instance = enemy.audio_emitter->play(enemy.sounds.sound_shield_slam);
+            instance.set_maximum_distance(enemy.aggro_range * 1.25f);  // Multiply be 1.25f to ensure the player can hear it even when at the edge of the range
+        }
 
         // if player in range, deal damage
         auto& player_transform = tmt::engine.ecs.get_component<tmt::Transform>(enemy.player);

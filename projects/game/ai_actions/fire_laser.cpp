@@ -182,12 +182,6 @@ void FireLaser::on_tick(tmt::Entity enemy_entity, float dt) {
                 return;
             }
 
-            //if (enemy.audio_emitter != nullptr)
-            //{
-            //    const tmt::AudioInstance3D instance = enemy.audio_emitter->play(enemy.sounds.sound_laser);
-            //    instance.set_maximum_distance(enemy.aggro_range * 1.25f);  // Multiply be 1.25f to ensure the player can hear it even when at the edge of the range
-            //}
-
             rotate_to_face_player(enemy_entity, dt);
 
             glm::vec3 raw_vel = (player_pos - last_player_pos) / dt;

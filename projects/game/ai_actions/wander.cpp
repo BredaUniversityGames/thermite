@@ -20,10 +20,10 @@ void Wander::on_tick(tmt::Entity enemy_entity, float dt) {
     auto& enemy = tmt::engine.ecs.get_component<game::MediumEnemy>(enemy_entity);
     auto& nav_mesh = tmt::engine.ecs.get_component<tmt::NavMesh>(enemy.walkable_asteroid);
 
-    //if (enemy.audio_emitter != nullptr) {
-    //    const tmt::AudioInstance3D instance = enemy.audio_emitter->play(enemy.sounds.sound_walk);
-    //    instance.set_maximum_distance(enemy.aggro_range * 1.5f);  // Multiply be 1.5f to ensure the player can hear it even when at the edge of the range
-    //}
+    if (enemy.audio_emitter != nullptr) {
+        const tmt::AudioInstance3D instance = enemy.audio_emitter->play(enemy.sounds.sound_walk);
+        instance.set_maximum_distance(enemy.aggro_range * 1.5f);  // Multiply be 1.5f to ensure the player can hear it even when at the edge of the range
+    }
 
     if (!nav_mesh.nav_nodes_valid()) {
         tmt::Log::warn("Nav mesh not generated yet for wander action!");
