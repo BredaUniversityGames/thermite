@@ -308,7 +308,7 @@ void Player::start_detach_camera_transition() {
     Tweening::tween<tmt::Transform>(attached_camera_entity)
         .duration(detach_camera_transition_settings.duration)
         .ease(detach_camera_transition_settings.ease)
-        .on_complete([this]() { 
+        .on_complete([this]() {
             if (detach_camera_transition_settings.align_player_to_camera) {
                 align_player_camera_to_attached();
             }
