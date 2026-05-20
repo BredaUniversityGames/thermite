@@ -52,6 +52,8 @@ void game::Missile::start() {
 
 void game::Missile::update(const tmt::FrameData& time) {
     auto& enemy = tmt::engine.ecs.get_component<game::MediumEnemy>(enemy_entity);
+    auto& voxel_body = tmt::engine.ecs.get_component<tmt::VoxelBody>(entity);
+    //voxel_body.layer = 0;
     if (life_time > enemy.life_time) {
         explode();
         return;
@@ -117,7 +119,7 @@ void game::Missile::update(const tmt::FrameData& time) {
     // const tmt::Ray ray_cast = tmt::Ray(previous_position, glm::normalize(delta));
     // const tmt::Hit hit = tmt::engine.ecs.systems.get<tmt::Physics>().raycast(ray_cast, layer_mask);
 
-    const tmt::Ray ray_cast = tmt::Ray(position.get_world_position(), glm::normalize(velocity));
+    const tmt::Ray ray_cast = tmt::Ray(position.get_world_position() + glm::normalize(velocity), glm::normalize(velocity));
 
     const tmt::Hit hit = tmt::engine.ecs.systems.get<tmt::Physics>().raycast(ray_cast, enemy_projectile_mask);
 
