@@ -56,7 +56,7 @@ Engine::Engine() :
     salvo(*new Salvo()),
     scenes(*new Scenes()),
     polyline(*new Polyline()),
-    component_registry(*new GameComponentRegistry()),
+    component_registry(GameComponentRegistry::instance()),
     fps_limiter(*new FpsLimiter()),
     player_data(*new PlayerData()) {}
 
@@ -64,7 +64,7 @@ Engine::~Engine() {
     /* Destruction should be in reverse order */
     delete &player_data;
     delete &fps_limiter;
-    delete &component_registry;
+    //delete &component_registry;
     delete &polyline;
     delete &scenes;
     delete &salvo;
@@ -150,11 +150,15 @@ void Engine::run() {
             game_controller.should_resume_game = false;
         }
 
-        current_frame_data = {
-            .frame_number = frame_count,
-            .delta_time = timer.tick(),
-            .elapsed_time = timer.elapsed(),
-        };
+        {
+            float frame_time = timer.tick();
+            current_frame_data = {
+                .frame_number = frame_count,
+                .delta_time = std::min(frame_time, Config::MAX_DELTA_TIME),
+                .uncapped_delta_time = frame_time,
+                .elapsed_time = timer.elapsed(),
+            };
+        }
 
         input.update(current_frame_data);
 
