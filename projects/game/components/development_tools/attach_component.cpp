@@ -31,8 +31,15 @@ void game::AttachComponent::update(const tmt::FrameData& time) {
     if (is_attached == false) {
         is_moving = false;
         has_started_pressing = false;
+
+        if (entity_that_attaches != entt::null) {
+            // triggers when we are in range to attach, will display press E to attach
+            tmt::engine.ecs.get_dispatcher().trigger(InRangeEvent { .entity = entity, .in_range = check_inside_range({ entity_that_attaches }) });
+        }
         return;
     }
+    tmt::engine.ecs.get_dispatcher().trigger(InRangeEvent { .entity = entity, .in_range = false });
+
     auto& input = tmt::engine.input;
     if (input.is_action_just_pressed(action::TRIGGER_BARGE_MOVEMENT)) {
         has_started_pressing = true;
