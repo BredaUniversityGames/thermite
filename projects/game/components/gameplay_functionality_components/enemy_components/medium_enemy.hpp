@@ -149,7 +149,7 @@ TMT_OBJECT(
     game::Sounds, (sound_aggroed_audio, sound_laser, sound_missile_explosion, sound_missile_fire, sound_random_chatter, sound_shield_slam, sound_taunt, sound_walk, sound_core_destroyed)
 );
 
-TMT_OBJECT(
+TMT_GAME_COMPONENT(
     game::MediumEnemy,
     (walkable_asteroid, laser_origin, missile_origin, core, rig_controller, available_positions, missile_voxel_object, projectile_mask, enemy_mask, projectile_layer, enemy_layer,
      rotation_speed, height_above_ground, velocity_of_objects_on_death, aggro_range, laser_range, stomp_range, missile_cooldown, stop_launching_after, start_homing_after,
