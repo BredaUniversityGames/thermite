@@ -38,7 +38,6 @@ void game::AttachComponent::update(const tmt::FrameData& time) {
         }
         return;
     }
-    tmt::engine.ecs.get_dispatcher().trigger(InRangeEvent { .entity = entity, .in_range = false });
 
     auto& input = tmt::engine.input;
     if (input.is_action_just_pressed(action::TRIGGER_BARGE_MOVEMENT)) {
