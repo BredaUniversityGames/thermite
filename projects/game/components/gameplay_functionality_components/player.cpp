@@ -174,6 +174,7 @@ void Player::look_camera() {
 
     base_yaw -= dx * camera_sensitivity;
     base_pitch -= dy * camera_sensitivity;
+    base_pitch = glm::clamp(base_pitch, -89.f, 89.f);
 
     float yaw = base_yaw;
     float pitch = base_pitch;
@@ -737,33 +738,21 @@ void Player::add_recoil() {
 
 void Player::set_crosshair(tmt::Entity active) {
     auto& ecs = tmt::engine.ecs;
-
-    auto toggle = [&](auto&& self, tmt::Entity e, bool enabled) -> void {
-        if (!ecs.valid(e)) return;
-
-        // Toggle this entity
-        if (enabled) {
-            ecs.remove_component<tmt::Disable>(e);
-        } else {
-            ecs.add_or_get_component<tmt::Disable>(e);
-        }
-
-        // Toggle children
-        if (!ecs.has_component<tmt::Transform>(e)) return;
-
-        auto& transform = ecs.get_component<tmt::Transform>(e);
-        for (auto child : transform.get_all_children()) {
-            self(self, child, enabled);
-        }
-    };
-
     // Disable all crosshairs
-    toggle(toggle, rifle_crosshair, false);
-    toggle(toggle, gravity_crosshair, false);
-    toggle(toggle, mine_crosshair, false);
+    if (ecs.valid(rifle_crosshair)) {
+        ecs.disable(rifle_crosshair);
+    }
+    if (ecs.valid(gravity_crosshair)) {
+        ecs.disable(gravity_crosshair);
+    }
+    if (ecs.valid(mine_crosshair)) {
+        ecs.disable(mine_crosshair);
+    }
 
     // Enable selected crosshair
-    toggle(toggle, active, true);
+    if (ecs.valid(active)) {
+        ecs.enable(active);
+    }
 }
 
 }  // namespace game
