@@ -200,7 +200,6 @@ class Player : public tmt::GameComponent<Player> {
     float previous_energy = energy.value;
     float out_of_energy_timer = 0.0f;
     tmt::Entity attached_camera_entity = entt::null;
-    Tweening::TypedTween<tmt::Entity, tmt::Transform> attached_camera_move_tween;
     float attached_camera_yaw = 0.0f;
     float attached_camera_pitch = 0.0f;
     bool detach_camera_transition_active = false;

@@ -304,10 +304,16 @@ void Player::start_detach_camera_transition() {
 
     detach_camera_transition_active = true;
 
-    Tweening::tween(attached_camera_move_tween)
-        .owner(attached_camera_entity)
+    Tweening::tween<tmt::Transform>(attached_camera_entity)
         .duration(detach_camera_transition_settings.duration)
         .ease(detach_camera_transition_settings.ease)
+        .on_complete([this]() { 
+            if (detach_camera_transition_settings.align_player_to_camera) {
+                align_player_camera_to_attached();
+            }
+            tmt::Camera::set_active_camera(entity);
+            detach_camera_transition_active = false;
+        })
         .move()
         .world_space()
         .from(attached_pos)
@@ -328,13 +334,6 @@ void Player::start_detach_camera_transition() {
             }
             glm::vec3 dir = glm::normalize(blended);
             transform.look_at(transform.get_world_position() + dir, glm::vec3(0.0f, 1.0f, 0.0f));
-        })
-        .on_complete([this]() {
-            if (detach_camera_transition_settings.align_player_to_camera) {
-                align_player_camera_to_attached();
-            }
-            tmt::Camera::set_active_camera(entity);
-            detach_camera_transition_active = false;
         });
 }
 
