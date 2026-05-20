@@ -36,6 +36,7 @@ struct CameraShakeSettings {
     float max_intensity = 0.25f;  // absolute clamp
     float boost_intensity = 0.015f;
     float drill_intensity = 0.05f;
+    float damage_intensity = 0.02f;
     float decay_speed = 5.0f;
 
     // recoil
@@ -49,6 +50,7 @@ struct CameraShakeSettings {
     float get_recoil_strength() const { return recoil_strength * multiplier; }
     float get_recoil_horizontal() const { return recoil_horizontal * multiplier; }
     float get_drill_intensity() const { return drill_intensity * multiplier; }
+    float get_damage_intensity() const { return damage_intensity * multiplier; }
 
     void set_multiplier(float _multiplier) { multiplier = _multiplier; }
 
@@ -181,7 +183,7 @@ TMT_OBJECT(game::PlayerStat, (max_value, value, increase_multiplier));
 TMT_OBJECT(game::PlayerMovement, (acceleration, max_speed, boost_max_speed_multiplier));
 TMT_OBJECT(game::PlayerRecharge, (recharge_distance, out_of_energy_time_till_death));
 TMT_OBJECT(game::RayCollisionCheck, (collision_layer, player_radius, collision_speed_damping, camera_near_distance));
-TMT_OBJECT(game::CameraShakeSettings, (enabled, max_intensity, boost_intensity, drill_intensity, decay_speed, recoil_strength, recoil_return_speed, recoil_horizontal));
+TMT_OBJECT(game::CameraShakeSettings, (enabled, max_intensity, boost_intensity, drill_intensity, damage_intensity, decay_speed, recoil_strength, recoil_return_speed, recoil_horizontal));
 TMT_OBJECT(
     game::Player, (camera_sensitivity, acceleration, deceleration, drag, max_speed, boost_max_speed_multiplier, boost_acceleration_multiplier, boost_deceleration_factor,
                    boost_cost_per_second_per_additional_speed_above_max, boost_initial_cost, boost_availability, health, energy, energy_drain_per_second, out_of_energy_time_till_death,

@@ -446,6 +446,9 @@ void Player::update(const tmt::FrameData& time) {
     previous_max_health = health.max_value;
     // Fire event health changed
     if (previous_health != health.value) {
+        if (health.value < previous_health) {
+            add_camera_shake(camera_shake_settings.get_damage_intensity());
+        }
         tmt::engine.ecs.get_dispatcher().trigger(PlayerHealthChanged { entity, health.value, previous_health });
     }
     previous_health = health.value;
