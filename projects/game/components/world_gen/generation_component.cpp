@@ -120,8 +120,13 @@ void GenerationComponent::start() {
                }
             }
 
+            auto sub_location_path = tmt::IO::get_sub_location_path(cell_template.light_prefab.file_location.sub_location);
+            auto absolute_path = cell_template.light_prefab.file_location.get_relative_path();
+
+            bool has_lantern_prefab = sub_location_path != absolute_path; // i dont like this, but idk how else
+
             if(is_cleared) tmt::engine.ecs.destroy_entity(instantiated);
-            else lighting_pass_data.push_back(std::make_tuple(cell.template_index, point, instantiated));
+            else lighting_pass_data.push_back(std::make_tuple(cell.template_index, point, instantiated, has_lantern_prefab));
             
         }
     }
@@ -135,54 +140,85 @@ glm::vec3 GenerationComponent::coord_to_world(glm::ivec2 coord, const tmt::Level
 }
 
 void GenerationComponent::update(const tmt::FrameData& time) {
-    if (lighting_pass_data.size() > 0) {
+
+    static unsigned int max_iterations = 1000;
+
+    if (lighting_pass_data.size() > 0 && max_iterations) {
         for (size_t i = 0; i < lighting_pass_data.size();) {
-            auto& [cell_template_idx, point, spawned_entity] = lighting_pass_data[i];
+            auto& [cell_template_idx, point, spawned_entity, has_lantern_prefab] = lighting_pass_data[i];
 
             bool remove_entry = false;
 
             auto& cell_template = level_configuration.scene_pickable_cell_templates[cell_template_idx];
             auto& layer_entry = cell_template.field.layer_entries[point.entry_idx];
 
-            if (layer_entry.can_spawn_lights && Random::rand_range(0.f, 1.f) < layer_entry.light_spawn_chance && main_sun_entity != entt::null) {
+            if (layer_entry.can_spawn_lights && Random::rand_range(0.f, 1.f) < layer_entry.light_spawn_chance && main_sun_entity != entt::null && layer_entry.radius_factor < cell_template.light_spawn_radius_factor_threshold) {
                 auto& sun_transform = tmt::engine.ecs.get_component<tmt::Transform>(main_sun_entity);
                 auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(spawned_entity);
 
-                glm::vec3 pos_check_start = transform.get_world_position() + sun_transform.get_forward() * cell_template.field.spacing_radius * layer_entry.radius_factor;
+                glm::quat rot = glm::angleAxis(glm::radians(Random::rand_range(0.f, 360.f)), sun_transform.get_forward());
+                glm::vec3 slanted_vec = glm::normalize(glm::mix(sun_transform.get_forward(), glm::normalize(rot * sun_transform.get_up()), 0.2f));
 
-                auto ray = tmt::Ray(pos_check_start, -sun_transform.get_forward());
+                glm::vec3 pos_check_start = transform.get_world_position() + slanted_vec * cell_template.field.spacing_radius * layer_entry.radius_factor;
+
+                auto ray = tmt::Ray(pos_check_start, -slanted_vec);
                 tmt::Hit hit = tmt::engine.renderer.trace_ray(ray);
 
                 if (!hit.miss()) {
                     remove_entry = true;
 
-                    tmt::Entity asteroid_light_entity = tmt::engine.ecs.create_entity("AsteroidLight");
-                    auto& light = tmt::engine.ecs.add_component<tmt::Light>(asteroid_light_entity);
+                    if(hit.distance > 1.f)
+                    {
+                        tmt::Entity asteroid_light_entity;
 
-                    auto& light_transform = tmt::engine.ecs.get_component<tmt::Transform>(asteroid_light_entity);
+                        glm::vec3 color = {1.f, 1.f, 1.f};
+                        if (!cell_template.possible_light_colors.empty()) {
+                            int color_idx = static_cast<int>(Random::rand_range(0.f, static_cast<float>(cell_template.possible_light_colors.size()) - 0.01f));
+                            auto& rgba = cell_template.possible_light_colors[color_idx];
+                            color = rgba.get();
+                        }
 
-                    float surface_dist = cell_template.field.spacing_radius * layer_entry.radius_factor - hit.distance;
-                    float light_spacing = surface_dist + 12.f;
+                        if (has_lantern_prefab) {
+                            asteroid_light_entity = tmt::PrefabHelper::instantiate_prefab(cell_template.light_prefab);
 
-                    light_transform.set_world_position(transform.get_world_position() + sun_transform.get_forward() * light_spacing);
-                    light_transform.set_parent(entity);
+                            tmt::Entity point_light_entity = tmt::engine.ecs.create_entity("Point Light Entity");
+                            auto& point_light_transform = tmt::engine.ecs.get_component<tmt::Transform>(point_light_entity);
 
-                    light.light = tmt::SpotLight {};
-                    light.type = tmt::LightType::SPOT_LIGHT;
-                    auto& spot_light = std::get<tmt::SpotLight>(light.light);
-                    spot_light.attenuation_distance = light_spacing + 10.f;
-                    spot_light.luminous_intensity = 450.f;
-                    spot_light.beam_angle = glm::radians(60.f);
+                            point_light_transform.set_parent(asteroid_light_entity);
+                            point_light_transform.set_local_position({0.f, 0.f, 0.f});
 
-                    light_transform.set_world_rotation(glm::quatLookAt(sun_transform.get_forward(), glm::vec3(0.f, 1.f, 0.f)));
+                            auto& light = tmt::engine.ecs.add_component<tmt::Light>(point_light_entity);
+                            auto& sphere_light = std::get<tmt::SphereLight>(light.light);
 
-                    light.color = { 1.f, 1.f, 1.f };
+                            light.color = color;
+                            sphere_light.attenuation_radius = 5.f;
+                            sphere_light.luminous_flux = 400.f;
 
-                    if (!cell_template.possible_light_colors.empty()) {
-                        int color_idx = static_cast<int>(Random::rand_range(0.f, static_cast<float>(cell_template.possible_light_colors.size()) - 0.01f));
-                        auto& rgba = cell_template.possible_light_colors[color_idx];
-                        light.color = rgba.get();
+                        } else
+                            asteroid_light_entity = tmt::engine.ecs.create_entity("AsteroidLight");
+
+                        auto& light = tmt::engine.ecs.add_component<tmt::Light>(asteroid_light_entity);
+                        
+                        auto& light_transform = tmt::engine.ecs.get_component<tmt::Transform>(asteroid_light_entity);
+
+                        float surface_dist = cell_template.field.spacing_radius * layer_entry.radius_factor - hit.distance;
+                        float light_spacing = surface_dist + 12.f;
+
+                        light_transform.set_world_position(transform.get_world_position() + slanted_vec * light_spacing);
+                        light_transform.set_parent(entity);
+
+                        light.light = tmt::SpotLight {};
+                        light.type = tmt::LightType::SPOT_LIGHT;
+                        auto& spot_light = std::get<tmt::SpotLight>(light.light);
+                        spot_light.attenuation_distance = light_spacing + 10.f;
+                        spot_light.luminous_intensity = cell_template.spot_light_power;
+                        spot_light.beam_angle = glm::radians(cell_template.spot_light_angle);
+
+                        light_transform.set_world_rotation(glm::quatLookAt(slanted_vec, glm::vec3(0.f, 1.f, 0.f)));
+
+                        light.color = color;
                     }
+                    
                 }
             }
 
@@ -192,6 +228,8 @@ void GenerationComponent::update(const tmt::FrameData& time) {
                 ++i;
             }
         }
+
+        --max_iterations;
     }
 }
 
