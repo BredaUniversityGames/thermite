@@ -99,10 +99,11 @@ void game::MediumEnemy::update(const tmt::FrameData& time) {
         auto resource = tmt::engine.ecs.get_component<tmt::VoxelRenderer>(core).resource;
         uint32_t current_core_voxels = resource->blas->voxel_count - resource->blas->voxels_wasted;
         if (current_core_voxels != core_voxels) {
-
             if (audio_emitter != nullptr) {
                 const tmt::AudioInstance3D instance = audio_emitter->play(sounds.sound_core_destroyed);
                 instance.set_maximum_distance(aggro_range * 1.5f);  // Multiply be 1.25f to ensure the player can hear it even when at the edge of the range
+                walk_instance.stop();
+                laser_instance.stop();
             }
 
             core_destroyed = true;
@@ -163,11 +164,11 @@ void game::MediumEnemy::update(const tmt::FrameData& time) {
         // Play only once when entering aggro
         if (!played_aggro_sound) {
             // Check if the agent has an audio emitter
-            if (audio_emitter == nullptr) return;
-
-            const tmt::AudioInstance3D instance = audio_emitter->play(sounds.sound_aggroed_audio);
-            instance.set_maximum_distance(aggro_range * 1.5f);  // Multiply be 1.25f to ensure the player can hear it even when at the edge of the range
-            played_aggro_sound = true;
+            if (audio_emitter != nullptr) {
+                const tmt::AudioInstance3D instance = audio_emitter->play(sounds.sound_aggroed_audio);
+                instance.set_maximum_distance(aggro_range * 1.5f);  // Multiply be 1.25f to ensure the player can hear it even when at the edge of the range
+                played_aggro_sound = true;
+            }
         }
     }
 
@@ -289,13 +290,15 @@ void game::MediumEnemy::update(const tmt::FrameData& time) {
 void game::MediumEnemy::end() {}
 
 void game::MediumEnemy::kite_player() const {
+    if (paused || core_destroyed) return;
+
     auto& enemy = tmt::engine.ecs.get_component<MediumEnemy>(entity);
     auto& nav_mesh = tmt::engine.ecs.get_component<tmt::NavMesh>(enemy.walkable_asteroid);
     if (!nav_mesh.nav_nodes_valid()) return;
 
-    if (enemy.audio_emitter != nullptr) {
-        const tmt::AudioInstance3D instance = enemy.audio_emitter->play(enemy.sounds.sound_walk);
-        instance.set_maximum_distance(enemy.aggro_range * 1.5f);  // Multiply be 1.5f to ensure the player can hear it even when at the edge of the range
+    if (enemy.audio_emitter != nullptr && !enemy.walk_instance.is_valid()) {
+        enemy.walk_instance = enemy.audio_emitter->play(enemy.sounds.sound_walk);
+        enemy.walk_instance.set_maximum_distance(enemy.aggro_range * 1.5f);  // Multiply be 1.5f to ensure the player can hear it even when at the edge of the range
     }
 
     tmt::Transform& enemy_transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
