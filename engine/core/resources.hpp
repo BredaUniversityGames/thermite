@@ -38,8 +38,7 @@ class Resources {
     ResourceRef<T> load_resource(const IO::FileLocation& file_location, Args&&... args) {
         TMT_ZONE_SCOPED_N("Resources::load_resource");
 
-        if(file_location.relative_path.empty()) 
-        {
+        if (file_location.relative_path.empty()) {
             Log::error(Log::Scope::ENGINE, "[Resources] Empty file location passed");
             return ResourceRef<T>(file_location);
         }
