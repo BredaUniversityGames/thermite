@@ -96,37 +96,40 @@ void GenerationComponent::start() {
             int obj_idx = static_cast<int>(Random::rand_range(0.f, static_cast<float>(spawnables.size()) - 0.0001f));
 
             const auto& spawn_obj = spawnables[obj_idx];
-
-            float pitch = Random::rand_range(0.f, 360.f);
-            float yaw = Random::rand_range(0.f, 360.f);
-            float roll = Random::rand_range(0.f, 360.f);
-
-            auto instantiated = tmt::PrefabHelper::instantiate_prefab(spawn_obj->file_location, entity);
-
-            auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(instantiated);
-
-            glm::vec3 min = cell_pos - glm::vec3(level_configuration.cell_size * 0.5f, cell_template.height * 0.5f, level_configuration.cell_size * 0.5f) +
-                            glm::vec3(level_configuration.cell_margin, 0.f, level_configuration.cell_margin);
-            transform.set_local_position(min + point.pos);
-            transform.set_local_rotation(glm::vec3(pitch, yaw, roll));
-
-            bool is_cleared = false;
-            for(auto& [entity, clearance_volume] : tmt::engine.ecs.view<ClearanceVolume>())
+            if(spawn_obj)
             {
-               if(clearance_volume.contains(transform.get_world_position())) 
-               {
-                    is_cleared = true; 
-                    break;
-               }
+                float pitch = Random::rand_range(0.f, 360.f);
+                float yaw = Random::rand_range(0.f, 360.f);
+                float roll = Random::rand_range(0.f, 360.f);
+
+                auto instantiated = tmt::PrefabHelper::instantiate_prefab(spawn_obj->file_location, entity);
+
+                auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(instantiated);
+
+                glm::vec3 min = cell_pos - glm::vec3(level_configuration.cell_size * 0.5f, cell_template.height * 0.5f, level_configuration.cell_size * 0.5f) +
+                                glm::vec3(level_configuration.cell_margin, 0.f, level_configuration.cell_margin);
+                transform.set_local_position(min + point.pos);
+                transform.set_local_rotation(glm::vec3(pitch, yaw, roll));
+
+                bool is_cleared = false;
+                for (auto& [entity, clearance_volume] : tmt::engine.ecs.view<ClearanceVolume>()) {
+                    if (clearance_volume.contains(transform.get_world_position())) {
+                        is_cleared = true;
+                        break;
+                    }
+                }
+
+                auto sub_location_path = tmt::IO::get_sub_location_path(cell_template.light_prefab.file_location.sub_location);
+                auto absolute_path = cell_template.light_prefab.file_location.get_relative_path();
+
+                bool has_lantern_prefab = sub_location_path != absolute_path;  // i dont like this, but idk how else
+
+                if (is_cleared)
+                    tmt::engine.ecs.destroy_entity(instantiated);
+                else
+                    lighting_pass_data.push_back(std::make_tuple(cell.template_index, point, instantiated, has_lantern_prefab));
             }
-
-            auto sub_location_path = tmt::IO::get_sub_location_path(cell_template.light_prefab.file_location.sub_location);
-            auto absolute_path = cell_template.light_prefab.file_location.get_relative_path();
-
-            bool has_lantern_prefab = sub_location_path != absolute_path; // i dont like this, but idk how else
-
-            if(is_cleared) tmt::engine.ecs.destroy_entity(instantiated);
-            else lighting_pass_data.push_back(std::make_tuple(cell.template_index, point, instantiated, has_lantern_prefab));
+            
             
         }
     }
