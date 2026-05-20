@@ -178,7 +178,7 @@ void GenerationComponent::update(const tmt::FrameData& time) {
                             color = rgba.get();
                         }
 
-                        if (has_lantern_prefab) {
+                        if (cell_template.light_prefab) {
                             asteroid_light_entity = tmt::PrefabHelper::instantiate_prefab(cell_template.light_prefab);
 
                             tmt::Entity point_light_entity = tmt::engine.ecs.create_entity("Point Light Entity");
