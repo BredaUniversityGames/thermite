@@ -61,6 +61,8 @@ void game::MediumEnemy::start() {
         available_positions[i].base_offset_from_ref_entity = ref_pos - pos;
         available_positions[i].stored_offset_from_ref_entity = available_positions[i].base_offset_from_ref_entity;
     }
+
+    audio_emitter = tmt::engine.ecs.try_get_component<tmt::AudioEmitter>(entity);
 }
 
 void game::MediumEnemy::update(const tmt::FrameData& time) {
@@ -83,6 +85,12 @@ void game::MediumEnemy::update(const tmt::FrameData& time) {
     auto resource = tmt::engine.ecs.get_component<tmt::VoxelRenderer>(core).resource;
     uint32_t current_core_voxels = resource->blas->voxel_count - resource->blas->voxels_wasted;
     if (current_core_voxels != core_voxels) {
+        // Check if the agent has an audio emitter
+        if (audio_emitter == nullptr) return;
+
+        const tmt::AudioInstance3D instance = audio_emitter->play(sounds.sound_core_destroyed);
+        instance.set_maximum_distance(aggro_range * 1.25f);  // Multiply be 1.25f to ensure the player can hear it even when at the edge of the range
+
         core_destroyed = true;
         tmt::engine.ecs.get_component<tmt::RigController>(rig_controller).set_parameter_bool("walk", false);
         ws->set_fact(tmt::FactId("m_laser_intact"), false);
@@ -96,8 +104,23 @@ void game::MediumEnemy::update(const tmt::FrameData& time) {
     // ranges
     if (dist > aggro_range) {
         ws->set_fact(tmt::FactId("m_in_aggro_range"), false);
+
+        // Reset so sound can play again next time
+        if (played_aggro_sound) {
+            played_aggro_sound = false;
+        }
     } else {
         ws->set_fact(tmt::FactId("m_in_aggro_range"), true);
+
+        // Play only once when entering aggro
+        if (!played_aggro_sound) {
+            // Check if the agent has an audio emitter
+            if (audio_emitter == nullptr) return;
+
+            const tmt::AudioInstance3D instance = audio_emitter->play(sounds.sound_aggroed_audio);
+            instance.set_maximum_distance(aggro_range * 1.5f);  // Multiply be 1.25f to ensure the player can hear it even when at the edge of the range
+            played_aggro_sound = true;
+        }
     }
 
     if (dist > laser_range) {
@@ -241,12 +264,7 @@ void game::MediumEnemy::kite_player() const {
     }
 }
 
-void game::MediumEnemy::die() {
-    // remove GOAP so it doesn't keep acting
-    /*auto& registry = tmt::engine.ecs.get_registry();
-    auto& agent = registry.get<tmt::GoapAgent>(this);
-    tmt::engine.ecs.remove_component<tmt::GoapAgent>(this);*/
-}
+void game::MediumEnemy::die() {}
 
 void game::MediumEnemy::set_stored_offsets_to_ref_entity() {
     auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);

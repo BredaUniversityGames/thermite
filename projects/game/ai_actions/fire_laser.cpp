@@ -135,6 +135,11 @@ void FireLaser::on_tick(tmt::Entity enemy_entity, float dt) {
         case WINDING_UP: {
             rotate_to_face_player(enemy_entity, dt);
 
+            if (enemy.audio_emitter != nullptr) {
+                const tmt::AudioInstance3D instance = enemy.audio_emitter->play(enemy.sounds.sound_laser);
+                instance.set_maximum_distance(enemy.aggro_range * 1.25f);  // Multiply be 1.25f to ensure the player can hear it even when at the edge of the range
+            }
+
             enemy.height_above_ground_offset = -enemy.height_above_ground + enemy.laser_sitting_down_height_offset;
             glm::vec3 target_dir = glm::normalize(target_pos - laser_pos);
             direction = target_dir;
@@ -176,6 +181,12 @@ void FireLaser::on_tick(tmt::Entity enemy_entity, float dt) {
 
                 return;
             }
+
+            //if (enemy.audio_emitter != nullptr)
+            //{
+            //    const tmt::AudioInstance3D instance = enemy.audio_emitter->play(enemy.sounds.sound_laser);
+            //    instance.set_maximum_distance(enemy.aggro_range * 1.25f);  // Multiply be 1.25f to ensure the player can hear it even when at the edge of the range
+            //}
 
             rotate_to_face_player(enemy_entity, dt);
 

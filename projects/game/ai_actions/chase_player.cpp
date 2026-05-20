@@ -20,6 +20,10 @@ void ChasePlayer::on_start(tmt::Entity enemy_entity) {
 
 void ChasePlayer::on_tick(tmt::Entity enemy_entity, float dt) {
     auto& enemy = tmt::engine.ecs.get_component<game::MediumEnemy>(enemy_entity);
+    //if (enemy.audio_emitter != nullptr) {
+    //    const tmt::AudioInstance3D instance = enemy.audio_emitter->play(enemy.sounds.sound_walk);
+    //    instance.set_maximum_distance(enemy.aggro_range * 1.5f);  // Multiply be 1.5f to ensure the player can hear it even when at the edge of the range
+    //}
     enemy.kite_player();
 }
 
