@@ -70,7 +70,10 @@ class NavMesh {
     std::vector<NavNode>* generating_nodes = nullptr;
     std::vector<int> path;
 
-    tmt::ResourceRef<tmt::VoxelVolume> voxel_volume;
+    // tmt::ResourceRef<tmt::VoxelScene> voxel_volume;
+    // tmt::ResourceRef<tmt::VoxelVolume> voxel_volume;
+    std::vector<Entity> nav_mesh_entities;
+    int selected_entity_index = 0;
     int lod_level = 0;
     glm::vec3 inflation = glm::vec3(1.0f);
 
@@ -80,6 +83,7 @@ class NavMesh {
 
    private:
     std::unordered_map<uint32_t, int>* node_map;
+    int generating_entity_index = 0;
     Volume volume;
 
     int generating_lod = 0;
@@ -117,4 +121,4 @@ class NavMesh {
 };
 
 }  // namespace tmt
-TMT_COMPONENT(tmt::NavMesh, "Navigation Mesh", (voxel_volume, lod_level, draw_nodes, draw_gen_nodes, draw_path));
+TMT_COMPONENT(tmt::NavMesh, "Navigation Mesh", (lod_level, draw_nodes, draw_gen_nodes, draw_path));

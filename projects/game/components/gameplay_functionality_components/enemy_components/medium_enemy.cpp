@@ -151,6 +151,7 @@ void game::MediumEnemy::update(const tmt::FrameData& time) {
     if (glm::isnan(desired_velocity.x)) {
         tmt::Log::warn("desired vel is nan");
     } else {
+        if (glm::length(desired_velocity) > 10.0f) tmt::Log::warn("Desired velocity is very high: {}", glm::length(desired_velocity));
         velocity += desired_velocity;
     }
 
@@ -231,8 +232,10 @@ void game::MediumEnemy::kite_player() const {
         if (distance < back_off_distance) {
             glm::vec3 target_pos = enemy_entity_pos - *direction;
             direction = nav_mesh.follow_path(enemy_entity_pos, target_pos);
+            if (glm::length(glm::vec3(*direction * enemy.walk_speed)) > 10.0f) tmt::Log::warn("Kite back off velocity is very high: {}", glm::length(glm::vec3(*direction * enemy.walk_speed)));
             enemy.velocity += glm::vec3(*direction * enemy.walk_speed);
         } else {
+            if (glm::length(glm::vec3(*direction * enemy.walk_speed)) > 10.0f) tmt::Log::warn("Kite velocity is very high: {}", glm::length(glm::vec3(*direction * enemy.walk_speed)));
             enemy.velocity += glm::vec3(*direction * enemy.walk_speed);
         }
     } else {
