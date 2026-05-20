@@ -4,8 +4,6 @@
 #include "engine/tools/types/bezier_curve.hpp"
 namespace game {
 
-struct IconTransitionEvent;
-
 class AttachTip : public tmt::GameComponent<AttachTip> {
    public:
     using GameComponent::GameComponent;
