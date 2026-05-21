@@ -17,11 +17,16 @@ void game::OreCollector::start() {
 void game::OreCollector::update(const tmt::FrameData& time) {
     auto& collector_transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
 
-    auto barge = collector_transform.get_parent();
-    auto barge_transform = tmt::engine.ecs.get_component<tmt::Transform>(barge);
+    auto barge_entity = collector_transform.get_parent();
+    if (!tmt::engine.ecs.valid(barge_entity)) return;
+
+    auto& barge_transform = tmt::engine.ecs.get_component<tmt::Transform>(barge_entity);
+
     glm::vec3 barge_pos = barge_transform.get_world_position();
 
-    for (const auto&& [physics_entity, body, transform] : tmt::engine.ecs.view<tmt::VoxelBody, tmt::Transform>().each()) {
+    float dt = time.delta_time;
+
+    for (auto&& [physics_entity, body, transform] : tmt::engine.ecs.view<tmt::VoxelBody, tmt::Transform>().each()) {
         if (physics_entity == entity) continue;
         if (body.type != tmt::VoxelBody::DYNAMIC) continue;
 
@@ -29,20 +34,29 @@ void game::OreCollector::update(const tmt::FrameData& time) {
         glm::vec3 to_barge = barge_pos - pos;
 
         float dist = glm::length(to_barge);
+        if (dist < 0.001f || dist > attraction_range) continue;
 
-        if (dist > attraction_range || dist < 0.001f) continue;
-
-        // direction toward collector
         glm::vec3 dir = to_barge / dist;
+
+        // stop the bodies
+        const float capture_radius = 1.5f;
+        if (dist < capture_radius) {
+            body.velocity = glm::vec3(0.0f);
+            transform.set_world_position(barge_pos);
+            continue;
+        }
 
         // falloff
         float t = 1.0f - (dist / attraction_range);
         t = t * t;
 
-        float force = attraction_strength * t;
+        // addative attraction only
+        float accel = attraction_strength * t;
 
-        // apply force
-        body.velocity += dir * force * time.delta_time;
+        body.velocity += dir * accel * dt;
+
+        // damping
+        body.velocity *= 0.985f;
     }
 }
 
