@@ -26,15 +26,12 @@ void SteerToPlayer::on_start(tmt::Entity agent) {
         registry.emplace<SteeringAgent>(agent);
     }
 
-    auto* steering = tmt::engine.ecs.systems.try_get<tmt::SteeringSystem>();
+    const auto* steering = tmt::engine.ecs.systems.try_get<tmt::SteeringSystem>();
 
     if (!steering) {
         tmt::Log::warn("Steering system not active.");
         return;
     }
-
-    // Get the SteeringAgent component & copy global steering params into this agent
-    auto& steering_agent = registry.get<SteeringAgent>(agent);
 
     tmt::SteeringRequest request {};
     request.mode = SteeringMode::SEEK;
@@ -58,17 +55,6 @@ void SteerToPlayer::on_start(tmt::Entity agent) {
             rig_controller->set_parameter_bool("Wandering", false);
             rig_controller->set_parameter_bool("ChargingExplosion", false);
         }
-    }
-
-    // Check if the agent has an audio emitter.
-    auto* audio_emitter = tmt::engine.ecs.try_get_component<tmt::AudioEmitter>(agent);
-    if (audio_emitter == nullptr) return;
-
-    // Play the correct aggro sound based on what type of enemy the agent is.
-    const auto* small_enemy = tmt::engine.ecs.try_get_component<SmallEnemy>(agent);
-    if (small_enemy != nullptr) {
-        const tmt::AudioInstance3D instance = audio_emitter->play(small_enemy->sound_parameters.aggroed_audio);
-        instance.set_maximum_distance(small_enemy->logic_paramaters.activation_range * 1.25f); // Multiply be 1.25f to ensure the player can hear it even when at the edge of the range.
     }
 }
 

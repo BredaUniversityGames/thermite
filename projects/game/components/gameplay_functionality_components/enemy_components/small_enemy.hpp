@@ -44,6 +44,7 @@ class SmallEnemy : public tmt::GameComponent<SmallEnemy> {
     void end() override {}
 
     void die(tmt::Entity agent);
+    void play_aggro_sound() const;
 
     tmt::Entity core = entt::null;
     tmt::Entity explosion = entt::null;
@@ -58,6 +59,8 @@ class SmallEnemy : public tmt::GameComponent<SmallEnemy> {
     bool core_destroyed = false;
     tmt::AudioInstance3D explosion_audio_instance;
     float next_chatter_time = 0.0f;
+
+    bool in_active_range = false;
 
    private:
     uint32_t core_voxels = 0u;
