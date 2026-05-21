@@ -83,6 +83,8 @@ void game::OreCollector::on_collision_trigger(const TriggerCollisionEvent& trigg
 
     auto& ore_properties = ore_view.front().get<OreProperties>();
     for (auto& [mat_type, ore] : ore_properties.ores) {
+        if (mat_type == tmt::Material::Type::NONE) continue;
+
         auto count = type_counts[static_cast<uint8_t>(mat_type)];
         if (count == 0) continue;
 
