@@ -31,14 +31,16 @@ void game::MovementTip::update(const tmt::FrameData& time) {
         auto percentage = tmt::engine.frame_data().elapsed_time - elapsed_time;
         percentage = std::min(percentage, time_to_fade);
         percentage /= time_to_fade;
-        tmt::engine.ecs.get_dispatcher().trigger(
-            IconTransitionEvent {
-                .icon_entity = ui_entity,
-                .current_value = percentage,
-                .min_value = percentage_for_starting_to_fade,
-                .max_value = 1.0f,
-            }
-        );
+        for (auto ui_entity : ui_entities) {
+            tmt::engine.ecs.get_dispatcher().trigger(
+                IconTransitionEvent {
+                    .icon_entity = ui_entity,
+                    .current_value = percentage,
+                    .min_value = percentage_for_starting_to_fade,
+                    .max_value = 1.0f,
+                }
+            );
+        }
     }
 }
 void game::MovementTip::on_entity_disabled() {}
