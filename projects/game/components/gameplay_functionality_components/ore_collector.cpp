@@ -21,10 +21,6 @@ void game::OreCollector::update(const tmt::FrameData& time) {
     auto barge_transform = tmt::engine.ecs.get_component<tmt::Transform>(barge);
     glm::vec3 barge_pos = barge_transform.get_world_position();
 
-    tmt::engine.polyline.use_color(1.0f, 0.0f, 0.0f);
-    tmt::engine.polyline.use_line_width(0.5f);
-    tmt::engine.polyline.draw_sphere(barge_pos, attraction_range);
-
     for (const auto&& [physics_entity, body, transform] : tmt::engine.ecs.view<tmt::VoxelBody, tmt::Transform>().each()) {
         if (physics_entity == entity) continue;
         if (body.type != tmt::VoxelBody::DYNAMIC) continue;
@@ -48,6 +44,18 @@ void game::OreCollector::update(const tmt::FrameData& time) {
         // 3. apply force
         body.velocity += dir * force * time.delta_time;
     }
+}
+
+void game::OreCollector::draw_debug_lines() const {
+    auto& collector_transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
+
+    auto barge = collector_transform.get_parent();
+    auto barge_transform = tmt::engine.ecs.get_component<tmt::Transform>(barge);
+    glm::vec3 barge_pos = barge_transform.get_world_position();
+
+    tmt::engine.polyline.use_color(1.0f, 0.0f, 0.0f);
+    tmt::engine.polyline.use_line_width(0.5f);
+    tmt::engine.polyline.draw_sphere(barge_pos, attraction_range);
 }
 
 void game::OreCollector::end() {
