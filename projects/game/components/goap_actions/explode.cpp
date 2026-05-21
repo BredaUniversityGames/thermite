@@ -194,6 +194,11 @@ void Explode::on_tick(tmt::Entity agent, float dt) {
         // destroy core entity & explosion
         ecs.destroy_entity(thermite);
 
+        tmt::engine.ecs.remove_component<SteeringAgent>(agent);
+        tmt::engine.ecs.remove_component<tmt::GoapAgent>(agent);
+
+        small_enemy->die(agent);
+
         // Check if the agent has an audio emitter.
         auto* audio_emitter = tmt::engine.ecs.try_get_component<tmt::AudioEmitter>(agent);
         if (audio_emitter == nullptr) return;
@@ -202,10 +207,6 @@ void Explode::on_tick(tmt::Entity agent, float dt) {
         if (small_enemy->explosion_audio_instance.is_valid()) {
             small_enemy->explosion_audio_instance.set_parameter(small_enemy->explode_audio_param, true);
         }
-        tmt::engine.ecs.remove_component<SteeringAgent>(agent);
-        tmt::engine.ecs.remove_component<tmt::GoapAgent>(agent);
-
-        small_enemy->die(agent);
     }
 }
 
