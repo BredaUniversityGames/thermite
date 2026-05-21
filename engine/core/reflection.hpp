@@ -79,7 +79,7 @@ struct Component {
 /* Used to reflect components */
 #define TMT_COMPONENT_IMPL(Type, Name, ImguiFields, JsonFields) \
     TMT_COMPONENT_NAME(Type, Name);                             \
-    TMT_REFLECTION_IMPL(Type, ImguiFields, JsonFields);
+    TMT_REFLECTION_IMPL(Type, JsonFields, ImguiFields);
 
 #define TMT_COMPONENT(Type, Name, Fields) TMT_COMPONENT_IMPL(Type, Name, Fields, Fields)
 
