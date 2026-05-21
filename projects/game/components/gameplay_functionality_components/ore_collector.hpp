@@ -17,10 +17,14 @@ class OreCollector : public tmt::GameComponent<OreCollector> {
     // debugging settings
     tmt::Entity wallet_entity { entt::null };
 
+    // Attraction variables
+    float attraction_range = 20.f;
+    float attraction_strength = 50.f;
+
    private:
     uint64_t ore_count = 0u;
     void on_collision_trigger(const TriggerCollisionEvent& trigger);
 };
 
 }  // namespace game
-TMT_GAME_COMPONENT(game::OreCollector, (radius, wallet_entity));
+TMT_GAME_COMPONENT(game::OreCollector, (radius, wallet_entity, attraction_range, attraction_strength));

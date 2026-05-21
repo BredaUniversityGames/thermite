@@ -3,6 +3,7 @@
 #include "projects/game/components/development_tools/collision_trigger.hpp"
 #include "engine/core/polyline.hpp"
 #include "engine/core/components/voxel_renderer.hpp"
+#include "engine/systems/physics/components/voxel_body.hpp"
 #include "engine/tools/player_data.hpp"
 #include "projects/game/data_headers/save_entries.hpp"
 #include "projects/game/data_headers/wallet.hpp"
@@ -12,7 +13,42 @@ void game::OreCollector::start() {
         wallet_entity = entity;
     }
 }
-void game::OreCollector::update(const tmt::FrameData& time) {}
+
+void game::OreCollector::update(const tmt::FrameData& time) {
+    auto& collector_transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
+
+    auto barge = collector_transform.get_parent();
+    auto barge_transform = tmt::engine.ecs.get_component<tmt::Transform>(barge);
+    glm::vec3 barge_pos = barge_transform.get_world_position();
+
+    tmt::engine.polyline.use_color(1.0f, 0.0f, 0.0f);
+    tmt::engine.polyline.use_line_width(0.5f);
+    tmt::engine.polyline.draw_sphere(barge_pos, attraction_range);
+
+    for (const auto&& [physics_entity, body, transform] : tmt::engine.ecs.view<tmt::VoxelBody, tmt::Transform>().each()) {
+        if (physics_entity == entity) continue;
+        if (body.type != tmt::VoxelBody::DYNAMIC) continue;
+
+        glm::vec3 pos = transform.get_world_position();
+        glm::vec3 to_barge = barge_pos - pos;
+
+        float dist = glm::length(to_barge);
+
+        if (dist > attraction_range || dist < 0.001f) continue;
+
+        // 1. direction toward collector
+        glm::vec3 dir = to_barge / dist;
+
+        // 2. Smooth falloff
+        float t = 1.0f - (dist / attraction_range);
+        t = t * t;  // quadratic falloff
+
+        float force = attraction_strength * t;
+
+        // 3. apply force
+        body.velocity += dir * force * time.delta_time;
+    }
+}
 
 void game::OreCollector::end() {
     tmt::engine.ecs.get_dispatcher().sink<TriggerCollisionEvent>().disconnect<&OreCollector::on_collision_trigger>(this);
