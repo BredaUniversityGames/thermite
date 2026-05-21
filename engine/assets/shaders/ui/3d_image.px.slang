@@ -19,7 +19,7 @@ float4 main(VertexOutput input) : SV_Target {
 
     /* Compute flipbook UVs */
     const float frame = floor(instance.flipbook_frame());
-    const float2 anim_uv = float2((frame + input.uvs.x) / instance.flipbook_frames(), input.uvs.y);
+    const float2 anim_uv = float2((frame + input.uvs.x) / instance.flipbook_frames(), 1.0f - input.uvs.y);
 
     /* Sampler the texture */
     return sampler.SampleLevel(image_sampler, anim_uv, 0) * instance.color;

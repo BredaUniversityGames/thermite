@@ -24,6 +24,7 @@ class UiPipeline {
 
     /* Text Rendering */
     Buffer glyphs_buffer {};
+    Buffer glyphs_3d_buffer {};
     Buffer glyph_vertex_buffer {};
     Sampler text_sampler {};
     uint32_t glyph_count = 0u;
