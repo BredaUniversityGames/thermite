@@ -20,7 +20,7 @@ class OreCollector : public tmt::GameComponent<OreCollector> {
 
     // Attraction variables
     float attraction_range = 20.f;
-    float attraction_strength = 50.f;
+    float attraction_strength = 100.f;
 
    private:
     uint64_t ore_count = 0u;
