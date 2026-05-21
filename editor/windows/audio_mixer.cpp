@@ -107,6 +107,7 @@ void AudioMixer::on_inspect() {
                     if (ImGui::Button(ICON_MS_STOP " Stop") && playing_instance.is_valid()) playing_instance.stop();
 
                     ImGui::Text("Path: %s", event.get_path().c_str());
+                    ImGui::Text("Length: %.3fs", event.get_length());
 
                     // Visualize if the sound is 3D using a checkbox (the checkbox is disabled).
                     {

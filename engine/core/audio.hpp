@@ -101,6 +101,8 @@ class AudioEvent {
 
     [[nodiscard]] bool is_valid() const;
     [[nodiscard]] bool is_3d() const;
+    // Get the length of the audio event's timeline in seconds.
+    [[nodiscard]] float get_length() const;
     // Get the path/name of the AudioEvent (returns empty string when not in debug mode and not using the editor).
     [[nodiscard]] std::string get_path() const;
     [[nodiscard]] FMOD_GUID get_guid() const { return uuid; }

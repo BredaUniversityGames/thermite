@@ -197,6 +197,16 @@ bool AudioEvent::is_3d() const {
     return is_3d;
 }
 
+float AudioEvent::get_length() const {
+    const FMOD::Studio::EventDescription* description = engine.audio.get_event_description(uuid);
+
+    int length = 0;
+    const FMOD_RESULT result = description->getLength(&length);
+    TryLogError(result, "Failed get event length");
+
+    return static_cast<float>(length) / 1000.0f;  // Length in seconds.
+}
+
 std::string AudioEvent::get_path() const {
 #if defined(THERMITE_EDITOR) || defined(THERMITE_DEBUG)
     if (TryLogError(!is_valid(), "Invalid AudioEvent for get_path")) return "";
