@@ -26,6 +26,10 @@ struct ProjectileHitEvent {
     tmt::Entity projectile_entity;
     tmt::Entity hit_entity;
 };
+struct BargeFuelChanged {
+    tmt::Entity barge_fuel_entity;
+    float new_value;
+};
 
 struct TriggerCollisionEvent {
     tmt::Entity trigger;
@@ -45,6 +49,10 @@ struct AttachAttemptEvent {
 struct AttachEvent {
     tmt::Entity entity;
     bool is_attached;
+};
+struct InRangeEvent {
+    tmt::Entity entity;
+    bool in_range;
 };
 struct PlayerMaxHealthChanged {
     tmt::Entity player_entity;
@@ -80,7 +88,7 @@ struct IconTransitionEvent {
     tmt::Entity icon_entity;
     float current_value;
     float min_value;
-    float max_value;
+    float max_value = 1.0f;
 };
 
 struct MineVoxelEvent {

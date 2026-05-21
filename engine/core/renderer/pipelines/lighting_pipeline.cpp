@@ -196,7 +196,7 @@ void LightingPipeline::enqueue(RenderGraph& render_graph, RenderView& render_vie
         struct Fpc {
             float fog_anisotropy = 0.6f;
             float scatter_strength = 0.0025f;
-            float particle_reflectance = 0.1f;
+            float particle_reflectance = 0.01f;
         } froxel_p {};
         froxel_p.fog_anisotropy = scene_view.fog_anisotropy;
         froxel_p.scatter_strength = scene_view.fog_scatter_strength / 100.0f;
@@ -219,7 +219,7 @@ void LightingPipeline::enqueue(RenderGraph& render_graph, RenderView& render_vie
             .write(flip ? render_view.froxel_luminance_image : render_view.prev_froxel_luminance_image)
             .read(render_view.froxel_sampler)
             .push_constants(&froxel_p, 0u, sizeof(Fpc))
-            .group_size(4, 4, 4)
+            .group_size(16, 8, 1)
             .work_size(160, 90, 64);
 
         /* Froxel volumetric integration settings */

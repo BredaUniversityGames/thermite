@@ -30,8 +30,12 @@ class GravityManipulationComponent : public tmt::GameComponent<GravityManipulati
     void grav_point_check();
     void grav_attract();
     void grav_shoot();
+
+    void apply_enemy_override();
+    void clear_enemy_override();
+
     // TODO the same, this could be primarily handled through weapon, a second timer could be used for the second shot
 };
 
 }  // namespace game
-TMT_OBJECT(game::GravityManipulationComponent, (range, max_mass, pull_strength, push_strength, attraction_acceleration, attraction_point_entity, animated_tool_entity));
+TMT_GAME_COMPONENT(game::GravityManipulationComponent, (range, max_mass, pull_strength, push_strength, attraction_acceleration, attraction_point_entity, animated_tool_entity));

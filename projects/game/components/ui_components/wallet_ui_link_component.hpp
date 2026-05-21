@@ -33,8 +33,6 @@ class WalletUiLink : public tmt::GameComponent<WalletUiLink> {
     float ramp_duration = 0.75f;
 
    private:
-    int current_value = 0;
-
     void change_text() const;
     void update_value();
     bool wallet_entity_check() const;
@@ -48,4 +46,4 @@ class WalletUiLink : public tmt::GameComponent<WalletUiLink> {
 };
 
 }  // namespace game
-TMT_OBJECT(game::WalletUiLink, (entities_with_wallet, resource_to_display, display_type, ramp_up_curve, use_ramp_up_curve, ramp_duration));
+TMT_GAME_COMPONENT(game::WalletUiLink, (entities_with_wallet, resource_to_display, display_type, ramp_up_curve, use_ramp_up_curve, ramp_duration));

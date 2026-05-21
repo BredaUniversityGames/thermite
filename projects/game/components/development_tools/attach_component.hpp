@@ -30,8 +30,9 @@ class AttachComponent : public tmt::GameComponent<AttachComponent> {
     bool is_attached = false;
     bool is_moving = false;
     bool has_started_pressing = false;
-    bool firstFrame = true;
+    bool first_frame = true;
+    bool once = true;
 };
 
 }  // namespace game
-TMT_OBJECT(game::AttachComponent, (radius, time_to_start_stop_barge_movement, time_to_end_run, entity_that_attaches, cfg));
+TMT_GAME_COMPONENT(game::AttachComponent, (radius, time_to_start_stop_barge_movement, time_to_end_run, entity_that_attaches, cfg));

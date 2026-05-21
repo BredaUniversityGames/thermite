@@ -6,7 +6,7 @@ class CompassIcon : public tmt::GameComponent<CompassIcon> {
    public:
     using GameComponent::GameComponent;
     static std::string_view get_name() { return "CompassIcon"; }
-    void start() override {};
+    void start() override {}
     void follow_relative_transform(glm::vec3 relative_vector);
     void follow_world_direction(glm::vec3 world_dir);
     void update(const tmt::FrameData& time) override;
@@ -27,4 +27,4 @@ class CompassIcon : public tmt::GameComponent<CompassIcon> {
 };
 
 }  // namespace game
-TMT_OBJECT(game::CompassIcon, (relative_entity, radius, default_placement, enable_above, enable_below, min_threshold, max_threshold, move_increments));
+TMT_GAME_COMPONENT(game::CompassIcon, (relative_entity, radius, default_placement, enable_above, enable_below, min_threshold, max_threshold, move_increments));
