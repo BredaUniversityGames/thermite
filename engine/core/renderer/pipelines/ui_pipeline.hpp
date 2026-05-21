@@ -18,6 +18,7 @@ class UiPipeline {
    private:
     /* Image Rendering */
     Buffer images_buffer {};
+    Buffer images_3d_buffer {};
     Buffer image_vertex_buffer {};
     Sampler image_sampler {};
 
