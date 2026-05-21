@@ -32,16 +32,16 @@ void game::OreCollector::update(const tmt::FrameData& time) {
 
         if (dist > attraction_range || dist < 0.001f) continue;
 
-        // 1. direction toward collector
+        // direction toward collector
         glm::vec3 dir = to_barge / dist;
 
-        // 2. Smooth falloff
+        // falloff
         float t = 1.0f - (dist / attraction_range);
-        t = t * t;  // quadratic falloff
+        t = t * t;
 
         float force = attraction_strength * t;
 
-        // 3. apply force
+        // apply force
         body.velocity += dir * force * time.delta_time;
     }
 }
