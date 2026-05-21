@@ -11,11 +11,15 @@ class MoverComponent : public tmt::GameComponent<MoverComponent> {
     static std::string_view get_name() { return "MoverComponent"; }
 
     void start() override;
-    void update(const tmt::FrameData& time) override {}
+    void update(const tmt::FrameData& time) override;
     void end() override {};
     void draw_debug_lines() const;
     void update_movement(const TriggerMovementEvent& event);
+    void stop_movement(const TriggerMovementStopEvent& event);
+
     float movement_speed = 1.0f;
+    float acceleration = 1.f;
+    float deceleration = 1.f;
     bool can_move = true;
     DebugLineConfig cfg;
 
@@ -23,7 +27,9 @@ class MoverComponent : public tmt::GameComponent<MoverComponent> {
     tmt::Entity trigger_entity;
 
    private:
+    float velocity = 0.f;
+    bool stop = false;
 };
 
 }  // namespace game
-TMT_GAME_COMPONENT(game::MoverComponent, (movement_speed, can_move, cfg, trigger_entity));
+TMT_GAME_COMPONENT(game::MoverComponent, (movement_speed, can_move, cfg, trigger_entity, acceleration, deceleration));
