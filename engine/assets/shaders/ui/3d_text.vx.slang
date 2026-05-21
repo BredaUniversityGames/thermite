@@ -17,6 +17,7 @@ TextVertexOutput main(TextVertexInput input, int instance_id: SV_InstanceID) {
     TextVertexOutput output;
     const float4 world = mul(glyph.local_to_world, float4(float2(glyph.pos().x, -glyph.pos().y - glyph.size().y) + input.pos.xy * glyph.size(), 0.0f, 1.0f));
     output.pos = mul(gpu_view.world_to_clip, world);
+    output.pos.xy -= gpu_view.jitter * output.pos.w; /* undo TAA jitter */
     output.uvs = uvs;
     output.instance_id = instance_id;
     return output;
