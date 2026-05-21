@@ -2,6 +2,7 @@
 
 #include "engine/systems/ai/steering/components/steering_agent.hpp"
 #include "engine\core\components\voxel_renderer.hpp"
+#include "engine/core/components/audio_emitter.hpp"
 #include "engine/systems/physics/components/voxel_body.hpp"
 #include "engine/core/polyline.hpp"
 #include "engine/systems/physics/physics_system.hpp"
@@ -10,7 +11,7 @@ namespace game {
 
 void SmallEnemy::start() {
     auto& ecs = tmt::engine.ecs;
-    
+
     // Update each agent with a SteeringAgent component
     ecs.view<SteeringAgent>().each([&](tmt::Entity agent, SteeringAgent& steering) {
         steering.min_explosion_range = logic_paramaters.min_explosion_range;
@@ -42,6 +43,22 @@ void SmallEnemy::update(const tmt::FrameData& time) {
     if (current_core_voxels != core_voxels) {
         core_destroyed = true;
         return;
+    }
+
+    auto* audio_emitter = tmt::engine.ecs.try_get_component<tmt::AudioEmitter>(entity);
+    if (audio_emitter) {
+        static std::random_device random_device;
+        static std::mt19937 random_generator(random_device());
+        constexpr float MAX_RANDOM_VALUE = static_cast<float>(std::mt19937::max());
+
+        if (time.elapsed_time >= next_chatter_time) {
+            audio_emitter->play(sound_parameters.idle_chatter_audio);
+
+            const float lerp = static_cast<float>(random_generator()) / MAX_RANDOM_VALUE;
+            const float interval = glm::mix(sound_parameters.chatter_play_intervals.x, sound_parameters.chatter_play_intervals.x, lerp);
+
+            next_chatter_time = time.elapsed_time + interval;
+        }
     }
 }
 

@@ -66,7 +66,7 @@ void Explode::on_start(tmt::Entity agent) {
     // Play the small enemy explosion charge audio.
     auto* small_enemy = tmt::engine.ecs.try_get_component<SmallEnemy>(agent);
     if (small_enemy != nullptr) {
-        small_enemy->explosion_audio_instance = audio_emitter->play(small_enemy->explosion_charge_audio, true, true);
+        small_enemy->explosion_audio_instance = audio_emitter->play(small_enemy->sound_parameters.explosion_charge_audio, true, true);
     }
 }
 
@@ -205,7 +205,7 @@ void Explode::on_tick(tmt::Entity agent, float dt) {
 
         // Trigger the explosion to start on the current wind up sound.
         if (small_enemy->explosion_audio_instance.is_valid()) {
-            small_enemy->explosion_audio_instance.set_parameter(small_enemy->explode_audio_param, true);
+            small_enemy->explosion_audio_instance.set_parameter(small_enemy->sound_parameters.explode_audio_param, true);
         }
     }
 }

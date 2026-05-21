@@ -25,6 +25,14 @@ struct MovementParameters {
     float wander_radius_limit = 25.f;  // Max distance it can wander
 };
 
+struct SmallEnemySounds {
+    tmt::AudioEvent idle_chatter_audio;
+    glm::vec2 chatter_play_intervals;
+    tmt::AudioEvent aggroed_audio;
+    tmt::AudioEvent explosion_charge_audio;
+    tmt::AudioParameter explode_audio_param;
+};
+
 class SmallEnemy : public tmt::GameComponent<SmallEnemy> {
    public:
     using GameComponent::GameComponent;
@@ -45,13 +53,11 @@ class SmallEnemy : public tmt::GameComponent<SmallEnemy> {
     LogicParameters logic_paramaters;
     MovementParameters movement_paramaters;
 
-    tmt::AudioEvent idle_chatter_audio;
-    tmt::AudioEvent aggroed_audio;
-    tmt::AudioEvent explosion_charge_audio;
-    tmt::AudioParameter explode_audio_param;
+    SmallEnemySounds sound_parameters;
 
     bool core_destroyed = false;
     tmt::AudioInstance3D explosion_audio_instance;
+    float next_chatter_time = 0.0f;
 
    private:
     uint32_t core_voxels = 0u;
@@ -60,4 +66,5 @@ class SmallEnemy : public tmt::GameComponent<SmallEnemy> {
 }  // namespace game
 TMT_OBJECT(game::LogicParameters, (min_explosion_range, max_explosion_range, charge_time, explosion_damage, explosion_force, activation_range, push_radius));
 TMT_OBJECT(game::MovementParameters, (max_speed, max_force, arrive_radius, wander_radius_limit));
-TMT_GAME_COMPONENT(game::SmallEnemy, (core, explosion, thermite, explosion_parameters, logic_paramaters, movement_paramaters, idle_chatter_audio, aggroed_audio, explosion_charge_audio, explode_audio_param));
+TMT_OBJECT(game::SmallEnemySounds, (idle_chatter_audio, chatter_play_intervals, aggroed_audio, explosion_charge_audio, explode_audio_param));
+TMT_GAME_COMPONENT(game::SmallEnemy, (core, explosion, thermite, explosion_parameters, logic_paramaters, movement_paramaters, sound_parameters));

@@ -67,7 +67,7 @@ void SteerToPlayer::on_start(tmt::Entity agent) {
     // Play the correct aggro sound based on what type of enemy the agent is.
     const auto* small_enemy = tmt::engine.ecs.try_get_component<SmallEnemy>(agent);
     if (small_enemy != nullptr) {
-        const tmt::AudioInstance3D instance = audio_emitter->play(small_enemy->aggroed_audio);
+        const tmt::AudioInstance3D instance = audio_emitter->play(small_enemy->sound_parameters.aggroed_audio);
         instance.set_maximum_distance(small_enemy->logic_paramaters.activation_range * 1.25f); // Multiply be 1.25f to ensure the player can hear it even when at the edge of the range.
     }
 }
