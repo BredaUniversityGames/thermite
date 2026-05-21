@@ -11,6 +11,7 @@
 #include <core/components/voxel_renderer.hpp>
 #include "engine/systems/physics/components/voxel_connection.hpp"
 #include "engine/core/resources.hpp"
+#include <stack>
 
 namespace tmt {
 
@@ -244,7 +245,7 @@ std::vector<Entity> Destruction::destroy_voxels(Entity entity, const std::vector
         Physics::initialize_voxel_body(seperate_vb, *seperate_vr.resource.resource.get());
     }
 
-        // Remove disabled or deleted entities from the seperated entities list
+    // Remove disabled or deleted entities from the seperated entities list
     seperated_entities.erase(
         std::remove_if(
             seperated_entities.begin(), seperated_entities.end(),
@@ -347,7 +348,7 @@ std::vector<Entity> Destruction::destroy_voxel(Entity entity, glm::uvec3 pos) {
 
     // Early out
     if (seperation_early_out(resource, pos, neighbors)) {
-        return {entity};
+        return { entity };
     }
 
     //// NOTE: Replace this with custom recalculate graph function for a single voxel
@@ -386,7 +387,11 @@ std::vector<Entity> Destruction::destroy_voxel(Entity entity, glm::uvec3 pos) {
     }
 
     // Remove disabled or deleted entities from the seperated entities list
-    seperated_entities.erase(std::remove_if(seperated_entities.begin(), seperated_entities.end(), [](Entity e) { return engine.ecs.try_get_component<Disable>(e) != nullptr || engine.ecs.try_get_component<Delete>(e) != nullptr; }),
+    seperated_entities.erase(
+        std::remove_if(
+            seperated_entities.begin(), seperated_entities.end(),
+            [](Entity e) { return engine.ecs.try_get_component<Disable>(e) != nullptr || engine.ecs.try_get_component<Delete>(e) != nullptr; }
+        ),
         seperated_entities.end()
     );
 
@@ -1051,13 +1056,136 @@ std::vector<Entity> Destruction::find_seperations(Entity entity, const std::vect
     // Figure out which entity should remain the original one
     VoxelConnection* connection = engine.ecs.try_get_component<VoxelConnection>(entity);
     if (connection != nullptr) {
-        // TODO: Find out which part connects to the core connection
-        //connection->connections[0].connection_voxel
+        std::unordered_set<Entity> visited;
+        visited.insert(entity);
+        std::vector<std::vector<Entity>> flood_connections;
+        flood_connections.reserve(flood_id);
+        // uint8_t core_flood_id = 0;
 
-        for (;;) {
+        // Gather all connections from entity and group them by flood id
+        for (size_t id = 0; id < flood_id; id++) {
+            flood_connections.push_back(std::vector<Entity>());
+
+            // For all connections on this entity
+            for (size_t i = 0; i < connection->connections.size(); i++) {
+                // Check if we already visited the connection
+                if (visited.contains(connection->connections[i].connected_entity)) continue;
+
+                // Check if the voxel still exists
+                if (tree->get_voxel(connection->connections[i].connection_voxel.x, connection->connections[i].connection_voxel.y, connection->connections[i].connection_voxel.z) == nullptr) {
+                    // Break the connection from the other to this entity
+                    VoxelConnection* other_connection = engine.ecs.try_get_component<VoxelConnection>(connection->connections[i].connected_entity);
+                    if (other_connection != nullptr) {
+                        for (size_t j = 0; j < other_connection->connections.size(); j++) {
+                            if (other_connection->connections[j].connected_entity == entity) {
+                                other_connection->connections.erase(other_connection->connections.begin() + j);
+                                break;
+                            }
+                        }
+                    }
+                    // Break the connection from this entity to the other
+                    connection->connections.erase(connection->connections.begin() + i);
+
+                    Log::warn("Broke Connection");
+
+                    // Adjust index and continue
+                    i--;
+                    continue;
+                }
+
+                const glm::uvec3 local_pos =
+                    glm::uvec3(connection->connections[i].connection_voxel.x & 3u, connection->connections[i].connection_voxel.y & 3u, connection->connections[i].connection_voxel.z & 3u);
+
+                // Check if this connection is on this flood id in the separation
+                DestructionNode* node = graph.get_node(
+                    connection->connections[i].connection_voxel.x - local_pos.x, connection->connections[i].connection_voxel.y - local_pos.y,
+                    connection->connections[i].connection_voxel.z - local_pos.z
+                );
+                // If there is no node, we know it would be a higher level node
+                if (node == nullptr) {
+                    Log::warn("tried to get a leaf node, but found a higher level node instead");
+                    flood_connections[id].push_back(connection->connections[i].connected_entity);
+                    visited.insert(connection->connections[i].connected_entity);
+                    continue;
+                }
+
+                // Get local position of the voxel within the node
+                uint8_t index = (uint8_t)((local_pos.x << 0u) | (local_pos.z << 2u) | (local_pos.y << 4u));
+
+                // Check all the flood masks and check if the voxels in there match the flood id
+                for (auto& mask : node->flood_masks) {
+                    if (mask.first != id) continue;
+
+                    // If the voxel of the connection is in that flood mask
+                    if (mask.second & (1ull << index)) {
+                        flood_connections[id].push_back(connection->connections[i].connected_entity);
+                        visited.insert(connection->connections[i].connected_entity);
+                        break;
+                    }
+                }
+            }
         }
-    } 
-        
+
+        // Find out which id is the core, and group all remaining objects by their connections
+        for (size_t id = 0; id < flood_id; id++) {
+            std::stack<Entity> to_visit;
+            for (size_t i = 0; i < flood_connections[id].size(); i++) {
+                to_visit.push(flood_connections[id][i]);
+            }
+
+            // Flood fill on all connections
+            while (!to_visit.empty()) {
+                // Get first element from the stack and remove it
+                Entity current = to_visit.top();
+                to_visit.pop();
+
+                VoxelConnection* conn = engine.ecs.try_get_component<VoxelConnection>(current);
+                if (conn == nullptr) continue;
+
+                // Set the original id to the part that is connected to the core
+                if (conn->is_core) original_id = (uint8_t)id;
+
+                // For all connections on this entity
+                for (size_t i = 0; i < conn->connections.size(); i++) {
+                    // Check if we already visited the connection
+                    if (visited.contains(conn->connections[i].connected_entity)) continue;
+
+                    // Add the connection ot the flood connections, add it to the stack, and mark it as visited
+                    flood_connections[id].push_back(conn->connections[i].connected_entity);
+                    to_visit.push(conn->connections[i].connected_entity);
+                    visited.insert(conn->connections[i].connected_entity);
+                }
+            }
+        }
+
+        // Remove voxel connections for all non core floods, and break connections between different floods
+        for (size_t id = 0; id < flood_id; id++) {
+            if (id == original_id) continue;
+            for (Entity& conn_entity : flood_connections[id]) {
+                VoxelConnection* conn = engine.ecs.try_get_component<VoxelConnection>(conn_entity);
+                if (conn == nullptr) continue;
+
+                // Check if this entity is in the connections of the starting connection
+                for (size_t i = 0; i < connection->connections.size(); i++) {
+                    if (connection->connections[i].connected_entity != conn_entity) continue;
+
+                    // Remove connection
+                    connection->connections.erase(connection->connections.begin() + i);
+                }
+
+                engine.ecs.remove_component<VoxelConnection>(conn_entity);
+            }
+        }
+
+        // Print results (for debugging)
+        for (size_t id = 0; id < flood_id; id++) {
+            Log::info("flood id {} has {} connections", id, flood_connections[id].size());
+            for (size_t i = 0; i < flood_connections[id].size(); i++) {
+                Log::info("connected to entity {}", flood_connections[id][i]);
+            }
+        }
+    }
+
     // If we have no connection we can just make the biggest the original
     entities[original_id] = entity;
 
