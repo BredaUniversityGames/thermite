@@ -20,6 +20,11 @@ Constants ca;
 [shader("compute")]
 [numthreads(16, 8, 1)]
 void main(int2 thread_id: SV_DispatchThreadID) {
+    if (ca.strength == 0.0f) {
+        render_target[thread_id] = float4(post_tonemap[thread_id], 1.0f);
+        return;
+    }
+
     const float2 res = float2(render_view.resolution);
     const float2 uv = (float2(thread_id) + 0.5f) / res;
 
