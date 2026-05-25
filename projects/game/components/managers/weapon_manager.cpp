@@ -12,6 +12,7 @@
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include "glm/gtx/norm.hpp"
+#include "projects/game/components/ui_components/weapon_tip.hpp"
 
 void game::WeaponManager::switch_to(WeaponType weapon_slot) {
     if (weapon_slot == current_weapon) {
@@ -195,6 +196,13 @@ void game::WeaponManager::subscribe_weapon(WeaponType slot) {
     }
     tmt::Log::info("[WeaponManager] Subscribed {} (entity: {})", magic_enum::enum_name(slot), static_cast<uint32_t>(e));
     tmt::engine.ecs.get_dispatcher().sink<ShootEvent>().connect<&Weapon::on_shoot>(weapon);
+    // trigger weapon tips
+    auto view { tmt::engine.ecs.view<WeaponTip>(entt::exclude_t {}) };
+    if (view.empty() == false) {
+        for (auto tip : view) {
+            std::get<0>(tip.components).on_weapon_switched(slot);
+        }
+    }
 }
 
 void game::WeaponManager::unsubscribe_weapon(WeaponType slot) {
