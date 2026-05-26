@@ -8,9 +8,9 @@ class MovementTip : public tmt::GameComponent<MovementTip> {
    public:
     using GameComponent::GameComponent;
     static std::string_view get_name() { return "MovementTip"; }
-    void start() override{};
+    void start() override {};
     void update(const tmt::FrameData& time) override;
-    void end() override{};
+    void end() override {};
     void on_entity_disabled() override;
     void on_entity_enabled() override;
 

@@ -94,10 +94,9 @@ void OreManager::process_thermite_ore_explosion(tmt::Entity voxel_entity, glm::u
 
     // spawn an emitter if the center actually still exists
     spawn_emitter(explosion_world_pos);
-    
-    // delete the initial voxel 
-    tmt::engine.ecs.systems.get<tmt::Destruction>().destroy_voxel(voxel_entity, explosion_center);
 
+    // delete the initial voxel
+    tmt::engine.ecs.systems.get<tmt::Destruction>().destroy_voxel(voxel_entity, explosion_center);
 
     // refactor: use sphere check instead
     auto sphere_check_result = tmt::engine.ecs.systems.get<tmt::Physics>().overlap_sphere(explosion_world_pos, thermite_ore_settings.radius_explosion, thermite_ore_settings.layer_mask);
@@ -160,7 +159,7 @@ void OreManager::spawn_emitter(glm::vec3 spawn_pos) {
         tmt::Log::error("Cant spawn particle on emitter, check prefab on ore manager component on entity: {}", entity);
         return;
     }
-    
+
     emitter_component->active = false;
     emitter_component->should_burst = true;
     for (auto& particle_component : emitter_component->effects) {
