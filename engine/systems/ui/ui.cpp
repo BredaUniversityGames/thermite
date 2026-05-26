@@ -26,10 +26,7 @@ void UI::on_update(const FrameData&) {
 
 void UI::set_size(tmt::UIComponent& ui_component, const tmt::Transform& transform, const glm::uvec2& screen_size) {
     /* Scale factor converts authored (1920x1080) sizes to actual screen pixels. */
-    const glm::vec2 scale_factor(
-        static_cast<float>(screen_size.x) / UIComponent::REFERENCE_WIDTH,
-        static_cast<float>(screen_size.y) / UIComponent::REFERENCE_HEIGHT
-    );
+    const glm::vec2 scale_factor(static_cast<float>(screen_size.x) / UIComponent::REFERENCE_WIDTH, static_cast<float>(screen_size.y) / UIComponent::REFERENCE_HEIGHT);
 
     /* Default: scale the authored size to the current resolution. */
     ui_component.real_size = ui_component.size * scale_factor;

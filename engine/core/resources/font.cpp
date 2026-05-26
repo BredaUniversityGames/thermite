@@ -355,10 +355,10 @@ bool Font::generate_msdf_atlas(const char* font_file) {
                Multiply by base_font_size to convert to pixels at the atlas generation size,
                matching the pixel units used for glyph size, bearing, and advance. */
             auto msdf_metrics = fontGeometry.getMetrics();
-            metrics.ascender    = (float)msdf_metrics.ascenderY  * base_font_size;
-            metrics.descender   = (float)msdf_metrics.descenderY * base_font_size;
-            metrics.line_height = (float)msdf_metrics.lineHeight  * base_font_size;
-            metrics.base_size   = base_font_size;
+            metrics.ascender = (float)msdf_metrics.ascenderY * base_font_size;
+            metrics.descender = (float)msdf_metrics.descenderY * base_font_size;
+            metrics.line_height = (float)msdf_metrics.lineHeight * base_font_size;
+            metrics.base_size = base_font_size;
 
             /* Store glyph info */
             for (const auto& glyph_geo : glyphs_geo) {

@@ -78,10 +78,7 @@ bool Gizmo::manip(
     /* Scale factor: converts authored (1920x1080) positions to actual viewport pixels.
        The ortho projection covers [0..width] x [0..height], so gizmo positions must
        be in that same real-pixel space. */
-    const glm::vec2 pos_scale_factor(
-        width  / UIComponent::REFERENCE_WIDTH,
-        height / UIComponent::REFERENCE_HEIGHT
-    );
+    const glm::vec2 pos_scale_factor(width / UIComponent::REFERENCE_WIDTH, height / UIComponent::REFERENCE_HEIGHT);
 
     // --- 1. Build the gizmo matrix ---
     const bool use_average = (multiselect_mode != 0);
@@ -94,9 +91,9 @@ bool Gizmo::manip(
     glm::vec2 ui_pivot(0.5f);
     if (has_ui && selected_entities.size() == 1) {
         const UIComponent& ui = engine.ecs.get_component<UIComponent>(primary);
-        ui_size_real     = ui.real_size;
+        ui_size_real = ui.real_size;
         ui_size_authored = ui.size;
-        ui_pivot         = ui.pivot;
+        ui_pivot = ui.pivot;
     }
 
     if (!use_average) {
@@ -123,11 +120,7 @@ bool Gizmo::manip(
 
             if (has_ui) {
                 /* Scale each entity's authored translation to real pixels before averaging. */
-                avg_translation += glm::vec3(
-                    wm[3].x * pos_scale_factor.x + ui_offset.x,
-                    wm[3].y * pos_scale_factor.y + ui_offset.y,
-                    wm[3].z
-                );
+                avg_translation += glm::vec3(wm[3].x * pos_scale_factor.x + ui_offset.x, wm[3].y * pos_scale_factor.y + ui_offset.y, wm[3].z);
             } else {
                 avg_translation += glm::vec3(wm[3]) + glm::vec3(ui_offset, 0.f);
             }
@@ -157,9 +150,9 @@ bool Gizmo::manip(
         local_bounds[0] = -ui_size_real.x * ui_pivot.x;
         local_bounds[1] = -ui_size_real.y * ui_pivot.y;
         local_bounds[2] = -0.5f;
-        local_bounds[3] =  ui_size_real.x * (1.f - ui_pivot.x);
-        local_bounds[4] =  ui_size_real.y * (1.f - ui_pivot.y);
-        local_bounds[5] =  0.5f;
+        local_bounds[3] = ui_size_real.x * (1.f - ui_pivot.x);
+        local_bounds[4] = ui_size_real.y * (1.f - ui_pivot.y);
+        local_bounds[5] = 0.5f;
     }
 
     // Determine the operation to use
@@ -256,11 +249,7 @@ bool Gizmo::manip(
                 } else {
                     // Gizmo matrix translation is in real pixel space — unscale back to authored space.
                     const glm::vec2 ui_offset = AnchorHelper::calculate_anchor_offset(primary);
-                    glm::vec3 new_pos(
-                        (gizmo_matrix[3].x - ui_offset.x) / pos_scale_factor.x,
-                        (gizmo_matrix[3].y - ui_offset.y) / pos_scale_factor.y,
-                        gizmo_matrix[3].z
-                    );
+                    glm::vec3 new_pos((gizmo_matrix[3].x - ui_offset.x) / pos_scale_factor.x, (gizmo_matrix[3].y - ui_offset.y) / pos_scale_factor.y, gizmo_matrix[3].z);
                     t.set_local_position(new_pos);
                 }
 

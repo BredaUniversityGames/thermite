@@ -127,8 +127,7 @@ void UiPipeline::enqueue_images(RenderGraph& render_graph, RenderView& render_vi
 
     /* Factor to convert authored (1920x1080) positions to actual screen pixels. */
     const glm::vec2 pos_scale_factor(
-        static_cast<float>(render_view.gpu_view.resolution.x) / UIComponent::REFERENCE_WIDTH,
-        static_cast<float>(render_view.gpu_view.resolution.y) / UIComponent::REFERENCE_HEIGHT
+        static_cast<float>(render_view.gpu_view.resolution.x) / UIComponent::REFERENCE_WIDTH, static_cast<float>(render_view.gpu_view.resolution.y) / UIComponent::REFERENCE_HEIGHT
     );
 
     { /* Collect all the images in the scene (Game ECS) */
@@ -203,8 +202,7 @@ void UiPipeline::enqueue_text(RenderGraph& render_graph, RenderView& render_view
 
     /* Factor to convert authored (1920x1080) positions to actual screen pixels. */
     const glm::vec2 pos_scale_factor(
-        static_cast<float>(render_view.gpu_view.resolution.x) / UIComponent::REFERENCE_WIDTH,
-        static_cast<float>(render_view.gpu_view.resolution.y) / UIComponent::REFERENCE_HEIGHT
+        static_cast<float>(render_view.gpu_view.resolution.x) / UIComponent::REFERENCE_WIDTH, static_cast<float>(render_view.gpu_view.resolution.y) / UIComponent::REFERENCE_HEIGHT
     );
 
     { /* Collect all the text in the scene (Game ECS) */
@@ -230,13 +228,13 @@ void UiPipeline::enqueue_text(RenderGraph& render_graph, RenderView& render_view
                are in 1920x1080 space and must be converted to real screen pixels.
                We never write back to the component — this copy is layout-only. */
             TextRenderer layout_tr = text_renderer;
-            layout_tr.font_size      = text_renderer.font_size      * pos_scale_factor.y;
+            layout_tr.font_size = text_renderer.font_size * pos_scale_factor.y;
             layout_tr.letter_spacing = text_renderer.letter_spacing * pos_scale_factor.y;
             if (text_renderer.use_ui_component_size) {
-                layout_tr.max_width  = ui_component.real_size.x;
+                layout_tr.max_width = ui_component.real_size.x;
                 layout_tr.max_height = ui_component.real_size.y;
             } else {
-                if (text_renderer.max_width  > 0) layout_tr.max_width  = text_renderer.max_width  * pos_scale_factor.x;
+                if (text_renderer.max_width > 0) layout_tr.max_width = text_renderer.max_width * pos_scale_factor.x;
                 if (text_renderer.max_height > 0) layout_tr.max_height = text_renderer.max_height * pos_scale_factor.y;
             }
 
