@@ -41,7 +41,8 @@ struct ThermiteOreSettings {
 };
 
 struct VFXSettings {
-    tmt::ResourceRef<tmt::Json> explosion_vfx_prefab;
+    float vfx_lifetime_thermite_explosion = -1.0f;  // set to negative to catch if it hasnt been set properly and try to read it from the emitter that was spawned
+    tmt::ResourceRef<tmt::Json> explosion_emitter_prefab;
 };
 
 class OreManager : public tmt::GameComponent<OreManager> {
@@ -69,10 +70,9 @@ class OreManager : public tmt::GameComponent<OreManager> {
     void process_thermite_ore_explosion(tmt::Entity voxel_entity, glm::uvec3 explosion_center);
     void spawn_emitter(glm::vec3);
     tmt::Entity player_entity = entt::null;
-    float vfx_lifetime_thermite_explosion = 5.0f;
 };
 
 }  // namespace game
 TMT_OBJECT(game::ThermiteOreSettings, (radius_explosion, damage_explosion, cooldown_explosion, explosion_strength, layer_mask));
-TMT_OBJECT(game::VFXSettings, (explosion_vfx_prefab));
+TMT_OBJECT(game::VFXSettings, (vfx_lifetime_thermite_explosion, explosion_emitter_prefab));
 TMT_GAME_COMPONENT(game::OreManager, (thermite_ore_settings, vfx_settings));

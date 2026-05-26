@@ -53,7 +53,6 @@ struct OffsetMixin {
 template <typename ITween>
 struct Move : public Tweening::Detail::FromToMixin<Move<ITween>, glm::vec3>,  //
               public Tweening::Detail::TypedCallbackMixin<Move<ITween>, tmt::Transform&>,
-              public Tweening::Detail::CallbackMixin<Move<ITween>>,
               public Tweening::Detail::SubTweenMixin<ITween>,
               public WorldOrLocalMixin<Move<ITween>>,
               public OffsetMixin<Move<ITween>, glm::vec3> {
@@ -65,7 +64,6 @@ struct Move : public Tweening::Detail::FromToMixin<Move<ITween>, glm::vec3>,  //
 template <typename ITween>
 struct Rotate : public Tweening::Detail::FromToMixin<Rotate<ITween>, glm::vec3>,  //
                 public Tweening::Detail::TypedCallbackMixin<Rotate<ITween>, tmt::Transform&>,
-                public Tweening::Detail::CallbackMixin<Rotate<ITween>>,
                 public Tweening::Detail::SubTweenMixin<ITween>,
                 public WorldOrLocalMixin<Rotate<ITween>>,
                 public OffsetMixin<Rotate<ITween>, glm::vec3> {
@@ -77,7 +75,6 @@ struct Rotate : public Tweening::Detail::FromToMixin<Rotate<ITween>, glm::vec3>,
 template <typename ITween>
 struct Scale : public Tweening::Detail::FromToMixin<Scale<ITween>, glm::vec3>,  //
                public Tweening::Detail::TypedCallbackMixin<Scale<ITween>, tmt::Transform&>,
-               public Tweening::Detail::CallbackMixin<Scale<ITween>>,
                public Tweening::Detail::SubTweenMixin<ITween>,
                public WorldOrLocalMixin<Scale<ITween>>,
                public OffsetMixin<Scale<ITween>, glm::vec3> {

@@ -3,7 +3,6 @@
 #include "engine/core/polyline.hpp"
 #include "engine/core/input/input.hpp"
 #include "glm/gtx/norm.inl"
-#include "projects/game/components/gameplay_functionality_components/enable_movement_tips.hpp"
 #include "projects/game/components/gameplay_functionality_components/player.hpp"
 #include "projects/game/components/ui_components/movement_tip.hpp"
 #include "projects/game/data_headers/game_input.hpp"
@@ -41,9 +40,10 @@ void game::AttachComponent::update(const tmt::FrameData& time) {
         // enable movement tip if possible on the first exit from the barge
         if (once) {
             once = false;
-            auto view { tmt::engine.ecs.view<EnableMovementTips>(entt::exclude_t {}) };
+            auto view { tmt::engine.ecs.view<MovementTip>(entt::exclude_t {}) };
             if (view.empty() == false) {
-                std::get<0>(view.front().components).enable_entities_in_order();
+                // enable movement tips, they will disable themselves if already shown
+                tmt::engine.ecs.enable(std::get<0>(view.front().components).entity);
             }
         }
         return;

@@ -18,9 +18,6 @@ struct Currencies {
     Currencies& operator+=(const Currencies& other) {
         dollars += other.dollars;
         for (const auto& [ore, count] : other.resource_counts) {
-            if (ore == OreProperties::OreResources::NONE) {
-                continue;
-            }
             resource_counts[ore] += count;
         }
         return *this;
@@ -34,9 +31,6 @@ struct Currencies {
     Currencies& operator-=(const Currencies& other) {
         dollars -= other.dollars;
         for (const auto& [ore, count] : other.resource_counts) {
-            if (ore == OreProperties::OreResources::NONE) {
-                continue;
-            }
             resource_counts[ore] -= count;
         }
         return *this;

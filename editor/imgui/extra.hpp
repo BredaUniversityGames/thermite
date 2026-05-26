@@ -1,5 +1,3 @@
-#pragma once
-
 #include <imgui.h>
 
 inline void push_tooltip_style() {
