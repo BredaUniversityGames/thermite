@@ -210,7 +210,7 @@ void NavMesh::generate_mesh_over_time() {
             if (!nodes_mesh) {
                 init();
                 nodes_mesh->clear();
-            } 
+            }
             generation_state = NavMeshGenerationState::INITIALISING_VOLUME;
             generation_iteration = -1;
             break;
@@ -516,7 +516,7 @@ void tmt::NavMesh::check_if_should_regenerate() {
         amount_of_voxels_remaining += current_voxels;
     }
     if (voxels_since_generation - amount_of_voxels_remaining > voxels_to_lose) {
-        generation_state = NavMeshGenerationState::UNINITIALISED; 
+        generation_state = NavMeshGenerationState::UNINITIALISED;
         generate_mesh_over_time();
     }
 }
