@@ -29,5 +29,4 @@ struct Missile : public tmt::GameComponent<Missile> {
 };
 
 }  // namespace game
-
-TMT_GAME_COMPONENT(game::Missile, (stencil, enemy_entity, life_time, offset, damage));
+TMT_GAME_COMPONENT_EMPTY(game::Missile);

@@ -54,16 +54,28 @@ void RenderView::init() {
         BufferUsage::Constant | BufferUsage::TransferDst, sizeof(RenderView)
     ).expect("failed to create render view buffer.");
 
-    /* Create the visibility & depth buffer */
+    /* Create the visibility */
     const Size3D full_rate { gpu_view.resolution.x, gpu_view.resolution.y };
     vbuffer.texture = bank.create_texture("Visibility Buffer Texture", TextureUsage::Storage | TextureUsage::Sampled, TextureFormat::RG32Uint, full_rate).expect("failed to create vbuffer texture.");
     vbuffer.image = bank.create_image("Visibility Buffer Image", vbuffer.texture).expect("failed to create vbuffer image.");
-    dbuffer.texture =
-        bank.create_texture("Depth/Stencil Buffer Texture", TextureUsage::DepthStencil | TextureUsage::Sampled, TextureFormat::D24UnormS8Uint, full_rate).expect("failed to create depth buffer texture.");
-    dbuffer.image = bank.create_image("Depth/Stencil Buffer Image", dbuffer.texture).expect("failed to create depth buffer image."); /* Depth Stencil Image View - Used for Writing in Raster Pass */
-    prev_dbuffer.texture =
-        bank.create_texture("Prev Depth/Stencil Buffer Texture", TextureUsage::DepthStencil | TextureUsage::Sampled, TextureFormat::D24UnormS8Uint, full_rate).expect("failed to create prev depth buffer texture.");
-    prev_dbuffer.image = bank.create_image("Prev Depth/Stencil Buffer Image", prev_dbuffer.texture).expect("failed to create prev depth buffer image."); /* Depth Stencil Image View - Used for Writing in Raster Pass */
+    
+    { /* Create depth buffers */
+        const Result r0 = bank.create_texture("Depth/Stencil Buffer Texture", TextureUsage::DepthStencil | TextureUsage::Sampled, TextureFormat::D32SfloatS8Uint, full_rate);
+        const Result r1 = bank.create_texture("Prev Depth/Stencil Buffer Texture", TextureUsage::DepthStencil | TextureUsage::Sampled, TextureFormat::D32SfloatS8Uint, full_rate);
+        if (r0.is_ok() && r1.is_ok()) {
+            /* Try the 32 bit format first */
+            dbuffer.texture = r0.unwrap();
+            dbuffer.image = bank.create_image("Depth/Stencil Buffer Image", dbuffer.texture).expect("failed to create depth buffer image.");
+            prev_dbuffer.texture = r1.unwrap();
+            prev_dbuffer.image = bank.create_image("Prev Depth/Stencil Buffer Image", prev_dbuffer.texture).expect("failed to create prev depth buffer image.");
+        } else {
+            /* Otherwise try the 24 bit format */
+            dbuffer.texture = bank.create_texture("Depth/Stencil Buffer Texture", TextureUsage::DepthStencil | TextureUsage::Sampled, TextureFormat::D24UnormS8Uint, full_rate).expect("failed to create depth buffer texture.");
+            dbuffer.image = bank.create_image("Depth/Stencil Buffer Image", dbuffer.texture).expect("failed to create depth buffer image.");
+            prev_dbuffer.texture = bank.create_texture("Prev Depth/Stencil Buffer Texture", TextureUsage::DepthStencil | TextureUsage::Sampled, TextureFormat::D24UnormS8Uint, full_rate).expect("failed to create prev depth buffer texture.");
+            prev_dbuffer.image = bank.create_image("Prev Depth/Stencil Buffer Image", prev_dbuffer.texture).expect("failed to create prev depth buffer image.");
+        }
+    }
     
     depth_image = bank.create_image("Depth Buffer Image", dbuffer.texture, true).expect("failed to create depth buffer image."); /* Depth Image View - Used for Reading in Compute Pass */
     prev_depth_image = bank.create_image("Prev Depth Buffer Image", prev_dbuffer.texture, true).expect("failed to create depth buffer image."); /* Depth Image View - Used for Reading in Compute Pass */
@@ -99,6 +111,11 @@ void RenderView::init() {
             .expect("failed to create tbuffer texture.");
     for (uint32_t curr_mip = 0; curr_mip < tbuffer.meta.mips; curr_mip++)
         tbuffer.images.push_back(bank.create_image("Thresholded Luminance Buffer Image", tbuffer.texture, false, false, curr_mip).expect("failed to create tbuffer image."));
+
+    /* Create the post cg and tonemap buffer (pre chromatic aberration) */
+    post_tonemap.texture = bank.create_texture("Post CG/Tonemap Buffer Texture", TextureUsage::Storage | TextureUsage::Sampled, TextureFormat::RGBA8Unorm, full_rate)
+                          .expect("failed to create post cg/tonemap texture.");
+    post_tonemap.image = bank.create_image("Post CG/Tonemap Buffer Image", post_tonemap.texture).expect("failed to create post cg/tonemap image.");
 
     /* History Screen Buffers */
     hbuffer1.texture = bank.create_texture("History1 Buffer Texture", 
@@ -229,6 +246,8 @@ void RenderView::deinit() {
     bank.destroy(diff_buffer.texture);
     for (auto& timage : tbuffer.images) bank.destroy(timage);
     bank.destroy(tbuffer.texture);
+    bank.destroy(post_tonemap.image);
+    bank.destroy(post_tonemap.texture);
     bank.destroy(spec_buffer.image);
     bank.destroy(spec_buffer.texture);
     bank.destroy(hbuffer1.image);
@@ -311,6 +330,7 @@ void RenderView::resize_textures() {
     bank.resize_texture(hbuffer2.texture, full_rate).expect("failed to resize hbuffer texture.");
     bank.resize_texture(mbuffer.texture, full_rate).expect("failed to resize mbuffer texture.");
     bank.resize_texture(tbuffer.texture, full_rate, tbuffer.meta).expect("failed to resize tbuffer texture.");
+    bank.resize_texture(post_tonemap.texture, full_rate).expect("failed to resize post cg/tonemap texture.");
 }
 
 }  // namespace tmt

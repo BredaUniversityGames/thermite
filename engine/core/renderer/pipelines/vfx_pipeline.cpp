@@ -133,14 +133,29 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
     /* clang-format off */
     const entt::basic_group group = engine.ecs.group<ParticleEmitter>(entt::get<Transform>);
     for (auto&& [entity, emitter, transform] : group.each()) {
-        /* Skip inactive emitters */
-        if (!emitter.active && !emitter.should_burst) continue;
+        /* Emitter-level burst: fan out to all active effects, restart their timelines */
+        if (emitter.should_burst) {
+            for (auto& effect : emitter.effects) {
+                if (effect.active) {
+                    effect.should_burst = true;
+                    effect.spawn_timer  = 0.0f;  /* delay starts from now */
+                }
+            }
+            emitter.should_burst = false;
+        }
+
+        /* Skip emitter if neither continuous emission nor any pending burst needs processing */
+        bool needs_processing = emitter.active;
+        if (!needs_processing) {
+            for (const auto& effect : emitter.effects) {
+                if (effect.should_burst) { needs_processing = true; break; }
+            }
+        }
+        if (!needs_processing) continue;
 
         if (emitters.size() >= MAX_EMITTERS) break;
 
         if (effects.size() >= MAX_EMITTERS * MAX_EFFECTS_PER_EMITTER) break;
-
-        emitter.should_burst = !emitter.should_burst;
 
         GpuEmitter em {};
         em.effects_count = static_cast<uint32_t>(emitter.effects.size());
@@ -148,22 +163,34 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
 
         for (auto& effect : emitter.effects) {
             if (!effect.active && !effect.should_burst) continue;
-            
-            effect.should_burst = !effect.should_burst;
 
             uint32_t actual_spawn_count = 0u;
 
             GpuParticleEffect eff {};
 
-            if (effect.spawn_interval <= 0.0f) {
-                // No interval so we spawn every frame
-                actual_spawn_count = effect.spawn_count;
-            } 
-            else {
-                effect.spawn_timer += render_view.gpu_view.dt;
-                while (effect.spawn_timer >= effect.spawn_interval) {
-                    actual_spawn_count += effect.spawn_count;
-                    effect.spawn_timer -= effect.spawn_interval;
+            if (effect.should_burst) {
+                /* Bursting */
+                if (effect.spawn_interval <= 0.0f) {
+                    actual_spawn_count  = effect.spawn_count;
+                    effect.should_burst = false;
+                } else {
+                    effect.spawn_timer += render_view.gpu_view.dt;
+                    if (effect.spawn_timer >= effect.spawn_interval) {
+                        actual_spawn_count  = effect.spawn_count;
+                        effect.spawn_timer  = 0.0f;
+                        effect.should_burst = false;
+                    }
+                }
+            } else if (emitter.active) {
+                /* Continuous emission */
+                if (effect.spawn_interval <= 0.0f) {
+                    actual_spawn_count = effect.spawn_count;
+                } else {
+                    effect.spawn_timer += render_view.gpu_view.dt;
+                    while (effect.spawn_timer >= effect.spawn_interval) {
+                        actual_spawn_count += effect.spawn_count;
+                        effect.spawn_timer -= effect.spawn_interval;
+                    }
                 }
             }
 
@@ -173,8 +200,15 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
 
             // Get emitter's world rotation
             const glm::quat world_rot = transform.get_world_rotation();
-
             eff.pos = transform.get_world_position() + world_rot * effect.pos_offset;
+
+            /* Calculate emitter opacity based on distance from the camera */
+            const float object_d = glm::distance(eff.pos, glm::vec3(render_view.gpu_view.origin));
+            const float range_d = glm::max(0.0001f, engine.renderer.scene_view.object_transparent_distance - engine.renderer.scene_view.object_opaque_distance);
+            const float opacity_t = 1.0f - glm::clamp(object_d - engine.renderer.scene_view.object_opaque_distance, 0.0f, range_d) / range_d;
+            const float opacity = (1.0f - powf(2.0f, -engine.renderer.scene_view.object_opacity_transition * opacity_t));
+            if (opacity <= 0.0f) continue; /* Skip fully transparent objects */
+
             eff.dir = glm::normalize(world_rot * local_dir);
             eff.cone_angle = glm::cos(glm::radians(effect.cone_angle));
             eff.start_speed = effect.start_speed;
@@ -184,8 +218,8 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
             eff.start_size = effect.start_size;
             eff.end_size = effect.end_size;
             eff.size_curve.points = effect.size_curve.get_vec4();
-            eff.start_opacity = effect.start_opacity;
-            eff.end_opacity = effect.end_opacity;
+            eff.start_opacity = Range(effect.start_opacity.min * opacity, effect.start_opacity.max * opacity);
+            eff.end_opacity = Range(effect.end_opacity.min * opacity, effect.end_opacity.max * opacity);
             eff.opacity_curve.points = effect.opacity_curve.get_vec4();
             eff.rotation_speed = effect.rotation_speed;
             eff.pos_jitter = effect.pos_jitter;
@@ -200,6 +234,7 @@ void VfxPipeline::enqueue(RenderGraph& render_graph, RenderView render_view) {
 
             effects.push_back(eff);
         }
+        emitter.should_burst = false;
         emitters.push_back(em);
     }
 
