@@ -61,7 +61,11 @@ void undo_material_member(Type tmt::Material::* member, const std::unordered_map
 
     // Loop over every renderer in the scene and modify their palettes.
     for (const auto&& [entity, renderer, transform] : group.each()) {
-        const std::vector<Type>& values = previous_values.at(renderer.resource->uuid);
+        const auto value_iterator = previous_values.find(renderer.resource->uuid);
+
+        if (value_iterator == previous_values.end()) continue;
+
+        const std::vector<Type>& values = value_iterator->second;
 
         for (size_t i = 0; i < selected_material_indices.size(); i++) {
             tmt::Material& material = renderer.resource->blas->palette.entries[selected_material_indices[i]];
