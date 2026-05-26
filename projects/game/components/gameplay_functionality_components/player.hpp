@@ -125,6 +125,8 @@ class Player : public tmt::GameComponent<Player> {
     tmt::Camera& get_camera() const { return tmt::engine.ecs.get_component<tmt::Camera>(entity); }
     PlayerState get_state() { return state; };
     void set_state(PlayerState new_state) { state = new_state; };
+    PlayerState get_state_before_pause() { return state_before_pause; };
+    void set_state_before_pause(PlayerState new_state) { state_before_pause = new_state; }
     glm::vec3 get_velocity() const { return velocity; };
 
     // HUD entities
@@ -193,6 +195,7 @@ class Player : public tmt::GameComponent<Player> {
     void align_player_camera_to_attached();
 
     PlayerState state = PlayerState::FREEMOVING;
+    PlayerState state_before_pause;
     glm::vec3 velocity = { 0.0f, 0.0f, 0.0f };
     glm::vec3 input_dir { 0.0f };
     float max_speed_calculated = max_speed;
