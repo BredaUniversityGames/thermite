@@ -20,7 +20,6 @@ struct Missile : public tmt::GameComponent<Missile> {
 
     glm::vec3 velocity = glm::vec3(0, 0, 0);
 
-    LayerMask enemy_projectile_mask {};
     tmt::ResourceRef<tmt::Stencil> stencil;
     tmt::Entity enemy_entity;
 

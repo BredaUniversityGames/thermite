@@ -46,7 +46,7 @@ void FireLaser::rotate_to_face_player(tmt::Entity enemy_entity, float dt) {
 
     int closest_node = nav_mesh.find_closest_node(enemy_pos);
     auto dir = nav_mesh.follow_path(enemy_pos, player_pos);
-
+    if (!dir) return;
     auto* nodes = nav_mesh.nodes_mesh;
     auto& normal = (*nodes)[closest_node].normal;
     glm::vec3 ground_up = glm::normalize(normal);

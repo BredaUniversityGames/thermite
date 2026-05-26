@@ -28,9 +28,21 @@ void tag_invoke(ImReflect::ImInput_t, const char* name, game::MediumEnemy& value
 
     /* ── Layers ────────────────────────── */
     if (ImGui::TreeNodeEx("Masks & Layers", ImGuiTreeNodeFlags_DefaultOpen)) {
-        ImReflect::Input("Enemy Mask", value.enemy_mask, type_settings, type_response);
-        ImReflect::Input("Projectile Layer Mask", value.projectile_mask, type_settings, type_response);
-        help("Mask that only excludes enemy projectiles, so they don't collide with themselves");
+        if (ImGui::TreeNode("Enemy Mask")) {
+            ImReflect::Input("Enemy Mask", value.enemy_mask, type_settings, type_response);
+            help("Mask that excludes enemies");
+            ImGui::TreePop();
+        }
+        if (ImGui::TreeNode("Projectile Mask")) {
+            ImReflect::Input("Projectile Mask", value.projectile_mask, type_settings, type_response);
+            help("Mask that only excludes enemy projectiles, so they don't collide with themselves");
+            ImGui::TreePop();
+        }
+        if (ImGui::TreeNode("Enemy Projectile Mask")) {
+            ImReflect::Input("Enemy Projectile Mask", value.enemy_projectile_mask, type_settings, type_response);
+            help("Mask that excludes enemies and projectiles");
+            ImGui::TreePop();
+        }
         ImReflect::Input("Projectile Layer", value.projectile_layer, type_settings, type_response);
         help("Layer all projectiles are put on");
         ImReflect::Input("Enemy Layer", value.enemy_layer, type_settings, type_response);
