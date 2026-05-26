@@ -225,10 +225,19 @@ void UiPipeline::enqueue_text(RenderGraph& render_graph, RenderView& render_view
             /* Skip empty text */
             if (text_renderer.text.empty()) continue;
 
-            /* Sync max_width/max_height with UIComponent size if enabled */
+            /* Build a scaled copy of the renderer for layout.
+               All authored pixel values (font_size, letter_spacing, max_width, max_height)
+               are in 1920x1080 space and must be converted to real screen pixels.
+               We never write back to the component — this copy is layout-only. */
+            TextRenderer layout_tr = text_renderer;
+            layout_tr.font_size      = text_renderer.font_size      * pos_scale_factor.y;
+            layout_tr.letter_spacing = text_renderer.letter_spacing * pos_scale_factor.y;
             if (text_renderer.use_ui_component_size) {
-                text_renderer.max_width = ui_component.real_size.x;
-                text_renderer.max_height = ui_component.real_size.y;
+                layout_tr.max_width  = ui_component.real_size.x;
+                layout_tr.max_height = ui_component.real_size.y;
+            } else {
+                if (text_renderer.max_width  > 0) layout_tr.max_width  = text_renderer.max_width  * pos_scale_factor.x;
+                if (text_renderer.max_height > 0) layout_tr.max_height = text_renderer.max_height * pos_scale_factor.y;
             }
 
             /* Get the font (use default if none specified) */
@@ -255,8 +264,8 @@ void UiPipeline::enqueue_text(RenderGraph& render_graph, RenderView& render_view
             /* Calculate container size for text layout */
             glm::vec2 container_size = ui_component.real_size;
 
-            /* Perform text layout */
-            TextLayoutResult layout = TextLayout::layout(text_renderer, font, container_size);
+            /* Perform text layout using the scaled copy */
+            TextLayoutResult layout = TextLayout::layout(layout_tr, font, container_size);
 
             glm::vec3 scale {};
             glm::vec3 translation {};
