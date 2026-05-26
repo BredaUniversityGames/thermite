@@ -128,6 +128,11 @@ void MenuController::disable_pause_menu() const {
     // Dispatch game unpaused event
     tmt::engine.ecs.get_dispatcher().trigger(game::GameUnpausedEvent {});
 
+    // enable HUD's
+    auto& player = tmt::engine.ecs.get_component<Player>(player_entity);
+    if (player.get_state() == PlayerState::FREEMOVING) player.set_hud_enabled(player.player_hud, true);
+    if (player.get_state() == PlayerState::ATTACHED) player.set_hud_enabled(player.barge_hud, false);
+
     // enable systems
     auto& systems = tmt::engine.ecs.systems;
 
