@@ -33,8 +33,6 @@ void game::Missile::start() {
     voxel_body.layer = enemy.projectile_layer;
     voxel_body.type = tmt::VoxelBody::STATIC;
 
-    enemy_projectile_mask = enemy.projectile_mask;
-
     // set random offset
     offset = glm::vec3(
         (static_cast<float>(rand()) / RAND_MAX - 0.5f) * enemy.missile_max_randomness, (static_cast<float>(rand()) / RAND_MAX - 0.5f) * enemy.missile_max_randomness,
@@ -119,9 +117,10 @@ void game::Missile::update(const tmt::FrameData& time) {
     // const tmt::Ray ray_cast = tmt::Ray(previous_position, glm::normalize(delta));
     // const tmt::Hit hit = tmt::engine.ecs.systems.get<tmt::Physics>().raycast(ray_cast, layer_mask);
 
-    const tmt::Ray ray_cast = tmt::Ray(position.get_world_position() + glm::normalize(velocity), glm::normalize(velocity));
+    const tmt::Ray ray_cast = tmt::Ray(position.get_world_position()
+       , glm::normalize(velocity));
 
-    const tmt::Hit hit = tmt::engine.ecs.systems.get<tmt::Physics>().raycast(ray_cast, enemy_projectile_mask);
+    const tmt::Hit hit = tmt::engine.ecs.systems.get<tmt::Physics>().raycast(ray_cast, enemy.enemy_projectile_mask);
 
     // TODO this is very dumb code that should be updated when we have proper raycasts check
     if (hit.entity != entt::null && hit.distance < 0.1f || glm::distance(player_pos, position.get_world_position()) < enemy.missile_explosion_radius) {

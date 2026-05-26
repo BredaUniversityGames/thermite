@@ -92,8 +92,10 @@ void NavMesh::compute_normals(int iterations) {
 
         if (max_distance < 0.001f) {
             for (auto& connecting_node : node.connecting_nodes) {
+                (*generating_nodes)[connecting_node].normal = glm::vec3(0, 0, 0);
                 for (int j = 0; j < (*generating_nodes)[connecting_node].connecting_nodes.size(); j++) {
                     auto& connecting_node_connection = (*generating_nodes)[connecting_node].connecting_nodes[j];
+                    //(*generating_nodes)[connecting_node_connection].normal = glm::vec3(0, 0, 0);
                     if (connecting_node_connection == i) {
                         // remove this connection, it's invalid
                         (*generating_nodes)[connecting_node].connecting_nodes.erase((*generating_nodes)[connecting_node].connecting_nodes.begin() + j);
@@ -178,7 +180,9 @@ void NavMesh::average_neighbor_normals(int iterations) {
             unsigned int idx = node.connecting_nodes[j];
             node_normal += (*generating_nodes)[idx].normal;
         }
-        node.normal = glm::normalize(node_normal);
+        if (glm::length(node_normal) > 0.001f) {
+            node.normal = glm::normalize(node_normal);
+        }
     }
     if (!entered_loop) {
         generation_iteration = -1;
