@@ -28,8 +28,12 @@ void game::AttachComponent::start() {
         }
     }
     tmt::engine.ecs.get_dispatcher().sink<AttachAttemptEvent>().connect<&AttachComponent::on_check_range_to_attach>(this);
+    tmt::engine.ecs.get_dispatcher().sink<GamePausedEvent>().connect<&AttachComponent::on_game_paused>(this);
+    tmt::engine.ecs.get_dispatcher().sink<GameUnpausedEvent>().connect<&AttachComponent::on_game_unpaused>(this);
 }
 void game::AttachComponent::update(const tmt::FrameData& time) {
+    if (paused) return;
+
     if (is_attached == false) {
         is_moving = false;
         has_started_pressing = false;
@@ -117,4 +121,12 @@ void game::AttachComponent::on_check_range_to_attach(const AttachAttemptEvent& e
 
         tmt::engine.ecs.get_dispatcher().trigger<AttachEvent>({ .entity = entity_that_attaches, .is_attached = is_attached });
     }
+}
+
+void game::AttachComponent::on_game_paused(const game::GamePausedEvent&) {
+    paused = true;
+}
+
+void game::AttachComponent::on_game_unpaused(const game::GameUnpausedEvent&) {
+    paused = false;
 }
