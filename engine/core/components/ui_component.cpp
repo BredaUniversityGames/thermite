@@ -83,7 +83,7 @@ glm::vec2 AnchorHelper::calculate_anchor_offset(const Entity entity) {
         return offset;
     }
 
-    glm::vec2 local_offset = calculate_anchor_offset_in_rect(parent_ui->size, ui->anchor) - parent_ui->size * parent_ui->pivot;
+    glm::vec2 local_offset = calculate_anchor_offset_in_rect(parent_ui->real_size, ui->anchor) - parent_ui->real_size * parent_ui->pivot;
 
     glm::mat4 parent_rs = parent_transform->get_world_matrix();
     parent_rs[3] = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
@@ -104,7 +104,7 @@ Rect AnchorHelper::get_bounds(Entity entity) {
     const glm::vec2 world_scale = transform->get_world_scale();
     const glm::vec3 world_rotation = glm::eulerAngles(transform->get_world_rotation());
 
-    const glm::vec2 scaled_size = ui_component->size * abs(world_scale);
+    const glm::vec2 scaled_size = ui_component->real_size * abs(world_scale);
 
     // Reconstruct the same axes that contains() uses
     const glm::vec3 cos_r(glm::cos(world_rotation));
@@ -133,7 +133,7 @@ bool AnchorHelper::is_inside(const Entity entity, const glm::vec2& viewport_poin
     if (!transform) return false;
 
     // get ui elements
-    const auto rect = ui_component->size;
+    const auto rect = ui_component->real_size;
     const auto offset = calculate_anchor_offset(entity);
 
     // apply transform values

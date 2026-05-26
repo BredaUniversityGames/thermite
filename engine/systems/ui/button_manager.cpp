@@ -94,7 +94,7 @@ void UIElementManager::update_states(const tmt::FrameData& time) {
                 break;
         }
 
-        const float image_width = ui_component.size.x;
+        const float image_width = ui_component.real_size.x;
         const glm::vec3 slider_position = transform.get_world_position();
 
         auto& handle_transform = engine.ecs.get_component<Transform>(slider.handle_entity);

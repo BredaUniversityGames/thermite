@@ -146,7 +146,7 @@ void UiPipeline::enqueue_images(RenderGraph& render_graph, RenderView& render_vi
             /* Fill out all the image instance attributes */
             GpuImage& image = images.emplace_back();
             decompose_matrix(world, image.pos, image.extent, image.angles);
-            image.extent = image.extent * ui_component.size;
+            image.extent = image.extent * ui_component.real_size;
             image.pivot = ui_component.pivot;
             image.color = image_renderer.color;
             if (image_renderer.texture) image.image_index = image_renderer.texture.resource->image.get_index();
@@ -213,8 +213,8 @@ void UiPipeline::enqueue_text(RenderGraph& render_graph, RenderView& render_view
 
             /* Sync max_width/max_height with UIComponent size if enabled */
             if (text_renderer.use_ui_component_size) {
-                text_renderer.max_width = ui_component.size.x;
-                text_renderer.max_height = ui_component.size.y;
+                text_renderer.max_width = ui_component.real_size.x;
+                text_renderer.max_height = ui_component.real_size.y;
             }
 
             /* Get the font (use default if none specified) */
@@ -235,11 +235,11 @@ void UiPipeline::enqueue_text(RenderGraph& render_graph, RenderView& render_view
             base_pos += anchor_offset;
 
             /* Apply pivot offset */
-            glm::vec2 pivot_offset = ui_component.pivot * ui_component.size;
+            glm::vec2 pivot_offset = ui_component.pivot * ui_component.real_size;
             base_pos -= pivot_offset;
 
             /* Calculate container size for text layout */
-            glm::vec2 container_size = ui_component.size;
+            glm::vec2 container_size = ui_component.real_size;
 
             /* Perform text layout */
             TextLayoutResult layout = TextLayout::layout(text_renderer, font, container_size);
