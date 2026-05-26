@@ -22,7 +22,6 @@ void game::FuelComponent::start() {
     if (current_fuel > 0.0f) {
         tmt::engine.ecs.get_dispatcher().sink<TriggerMovementEvent>().connect<&MoverComponent::update_movement>(get_mover_component(mover_entity));
     }
-
 }
 
 void game::FuelComponent::end() {

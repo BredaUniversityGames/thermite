@@ -37,11 +37,10 @@ void game::AttachComponent::start() {
 }
 void game::AttachComponent::update(const tmt::FrameData& time) {
     if (is_attached == false) {
-        if(is_moving) tmt::engine.ecs.get_dispatcher().trigger(TriggerMovementStopEvent {});
+        if (is_moving) tmt::engine.ecs.get_dispatcher().trigger(TriggerMovementStopEvent {});
 
         is_moving = false;
         has_started_pressing = false;
-
 
         if (entity_that_attaches != entt::null) {
             // triggers when we are in range to attach, will display press E to attach
@@ -73,9 +72,8 @@ void game::AttachComponent::update(const tmt::FrameData& time) {
         has_started_pressing = false;
         tmt::Log::info("Movement is {}", is_moving);
 
-        if(!is_moving)
-        {
-            tmt::engine.ecs.get_dispatcher().trigger(TriggerMovementStopEvent{});
+        if (!is_moving) {
+            tmt::engine.ecs.get_dispatcher().trigger(TriggerMovementStopEvent {});
         }
     }
 
