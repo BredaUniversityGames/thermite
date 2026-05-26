@@ -44,6 +44,8 @@ void game::MoverComponent::update_movement(const TriggerMovementEvent& event) {
         return;
     }
 
+    if(!tmt::engine.ecs.is_enabled(move_flair_entity)) tmt::engine.ecs.enable(move_flair_entity);
+
     velocity += acceleration * tmt::engine.frame_data().delta_time;
     float distance = velocity * tmt::engine.frame_data().delta_time;
 
@@ -52,5 +54,10 @@ void game::MoverComponent::update_movement(const TriggerMovementEvent& event) {
 
 void game::MoverComponent::stop_movement(const TriggerMovementStopEvent& event) 
 {
+    tmt::Log::info("MoverComponent: movement stopped");
+    if(move_flair_entity != entt::null)
+    {
+        tmt::engine.ecs.disable(move_flair_entity);
+    }
     stop = true;
 }

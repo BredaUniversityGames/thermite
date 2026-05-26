@@ -24,7 +24,9 @@ class MoverComponent : public tmt::GameComponent<MoverComponent> {
     DebugLineConfig cfg;
 
     // this has to be the same entity that triggered the event
-    tmt::Entity trigger_entity;
+    tmt::Entity trigger_entity = entt::null;
+
+    tmt::Entity move_flair_entity = entt::null;
 
    private:
     float velocity = 0.f;
@@ -32,4 +34,4 @@ class MoverComponent : public tmt::GameComponent<MoverComponent> {
 };
 
 }  // namespace game
-TMT_GAME_COMPONENT(game::MoverComponent, (movement_speed, can_move, cfg, trigger_entity, acceleration, deceleration));
+TMT_GAME_COMPONENT(game::MoverComponent, (movement_speed, can_move, cfg, trigger_entity, acceleration, deceleration, move_flair_entity));

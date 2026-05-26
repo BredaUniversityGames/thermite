@@ -27,6 +27,7 @@ void game::FuelComponent::start() {
 
 void game::FuelComponent::end() {
     tmt::engine.ecs.get_dispatcher().sink<MovementUpdateEvent>().disconnect<&FuelComponent::on_trigger_movement>(this);
+    tmt::engine.ecs.get_dispatcher().sink<TriggerMovementStopEvent>().disconnect<&MoverComponent::stop_movement>(get_mover_component(mover_entity));
 
     tmt::engine.ecs.get_dispatcher().sink<TriggerMovementEvent>().disconnect<&MoverComponent::update_movement>(get_mover_component(mover_entity));
 }
