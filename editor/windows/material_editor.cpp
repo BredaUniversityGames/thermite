@@ -52,7 +52,7 @@ void MaterialEditor::on_inspect() {
     if (renderer == nullptr) return;
 
     Palette& palette = editor.systems[Editor::Mode::VOXEL].get<Palette>();
-    const MaterialIndex material_index = palette.get_selected_material_index();
+    const MaterialIndex material_index = palette.get_selected_material_indices().front();
     Material& material = renderer->resource->blas->palette.entries[material_index];
 
     ImGui::BeginGroup();
