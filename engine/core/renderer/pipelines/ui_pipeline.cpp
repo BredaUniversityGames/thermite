@@ -134,10 +134,6 @@ void UiPipeline::enqueue_images(RenderGraph& render_graph, RenderView& render_vi
             return view.get<Transform>(a).get_world_position().z < view.get<Transform>(b).get_world_position().z;
         });
 
-        const glm::uvec2 original_size = glm::uvec2(1920, 1080);
-        const glm::uvec2 screen_size = render_view.gpu_view.resolution;
-        const glm::vec2 scale_factor = glm::vec2(screen_size) / glm::vec2(original_size);
-
         for (const auto entity : sorted_entities) {
             /* Get the components for this entity */
             auto [image_renderer, ui_component, transform] = view.get(entity);
