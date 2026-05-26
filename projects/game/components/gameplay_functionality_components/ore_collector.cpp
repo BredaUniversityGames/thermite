@@ -8,8 +8,8 @@
 #include "projects/game/data_headers/save_entries.hpp"
 #include "projects/game/data_headers/wallet.hpp"
 
-
 namespace game {
+
 void game::OreCollector::start() {
     tmt::engine.ecs.get_dispatcher().sink<TriggerCollisionEvent>().connect<&OreCollector::on_collision_trigger>(this);
     if (wallet_entity == entt::null) {
@@ -85,7 +85,7 @@ void game::OreCollector::on_collision_trigger(const TriggerCollisionEvent& trigg
         tmt::Log::info("Ore count is {}, for {}", count, magic_enum::enum_name(type));
     }
 
-    //vfx trigger before deletion
+    // vfx trigger before deletion
     spawn_emitter(tmt::engine.ecs.try_get_component<tmt::Transform>(trigger.other_object)->get_world_position());
 
     tmt::engine.ecs.destroy_entity(trigger.other_object);
@@ -113,7 +113,6 @@ void game::OreCollector::on_collision_trigger(const TriggerCollisionEvent& trigg
 }
 
 void OreCollector::spawn_emitter(glm::vec3 spawn_pos) {
-
     if (emitter_lifetime <= 0.0f) {
         return;
     }
@@ -135,4 +134,4 @@ void OreCollector::spawn_emitter(glm::vec3 spawn_pos) {
     emitter_lifetime_table.emplace(instantiated_entity, emitter_lifetime);
 }
 
-}
+}  // namespace game
