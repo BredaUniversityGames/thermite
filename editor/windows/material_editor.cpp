@@ -210,14 +210,8 @@ void MaterialEditor::on_inspect() {
                 // Don't retrigger if the value that was clicked is the same.
                 if (material.type == value) continue;
 
-                diff = new NodePaletteDiff { selected_material_indices };
-                diff->before([value] { redo_material_member(&Material::type, value); });
-
+                handle_material_change(selected_entity, selected_material_indices, &Material::type, value, true);
                 set_material_property(palette_ptr, selected_material_indices, &Material::type, value);
-
-                diff->after([value] { redo_material_member(&Material::type, value); });
-                NodePaletteDiff::send_to_manager(std::move(*diff), "Modify material property(s)");
-                delete diff;
             }
 
             ImGui::EndCombo();
@@ -230,8 +224,8 @@ void MaterialEditor::on_inspect() {
 }
 
 template <typename Type>
-void MaterialEditor::handle_material_change(const Entity selected_entity, const std::vector<MaterialIndex>& material_indices, Type Material::* member, Type after_value) {
-    if (ImGui::IsItemActivated()) {
+void MaterialEditor::handle_material_change(const Entity selected_entity, const std::vector<MaterialIndex>& material_indices, Type Material::* member, Type after_value, const bool activated) {
+    if (ImGui::IsItemActivated() || activated) {
         diff = new NodePaletteDiff { material_indices };
         std::unordered_map<UUID, std::vector<Type>> previous_values;
 
@@ -253,7 +247,6 @@ void MaterialEditor::handle_material_change(const Entity selected_entity, const 
             std::vector<Type>& material_values = previous_values[uuid.uuid];
             material_values.reserve(material_indices.size());
 
-
             for (const MaterialIndex material_index : material_indices) {
                 Material& material = renderer.resource->blas->palette.entries[material_index];
                 material_values.push_back(material.*member);
@@ -261,12 +254,11 @@ void MaterialEditor::handle_material_change(const Entity selected_entity, const 
         }
 
         diff->before([member, before_values = std::move(previous_values)] { undo_material_member(member, before_values); });
-        return;
     }
 
     if (ImGui::IsItemDeactivatedAfterEdit()) {
         diff->after([member, after_value] { redo_material_member(member, after_value); });
-        tmt::NodePaletteDiff::send_to_manager(std::move(*diff), "Modify material property(s)");
+        tmt::NodePaletteDiff::send_to_manager(std::move(*diff), "Modified material property(s)");
         delete diff;
     }
 }

@@ -24,7 +24,7 @@ class MaterialEditor : public IWindow<> {
     NodePaletteDiff* diff { nullptr };
 
     template <typename Type>
-    void handle_material_change(Entity selected_entity, const std::vector<MaterialIndex>& material_indices, Type Material::* member, Type after_value);
+    void handle_material_change(Entity selected_entity, const std::vector<MaterialIndex>& material_indices, Type Material::* member, Type after_value, bool activated = false);
 };
 
 }  // namespace tmt
