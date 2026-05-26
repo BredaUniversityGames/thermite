@@ -55,7 +55,7 @@ void game::OreCollector::update(const tmt::FrameData& time) {
 
         body.velocity += dir * accel * dt;
 
-        // damping 
+        // damping
         body.velocity *= 0.985f;
     }
 }
