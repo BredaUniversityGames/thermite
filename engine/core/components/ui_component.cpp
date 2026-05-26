@@ -100,7 +100,12 @@ Rect AnchorHelper::get_bounds(Entity entity) {
     if (!ui_component || !transform) return Rect {};
 
     const auto offset = calculate_anchor_offset(entity);
-    const glm::vec2 world_pos = transform->get_world_position();
+    const glm::uvec2 screen_res = engine.renderer.render_view.gpu_view.resolution;
+    const glm::vec2 scale_factor(
+        static_cast<float>(screen_res.x) / UIComponent::REFERENCE_WIDTH,
+        static_cast<float>(screen_res.y) / UIComponent::REFERENCE_HEIGHT
+    );
+    const glm::vec2 world_pos = glm::vec2(transform->get_world_position()) * scale_factor;
     const glm::vec2 world_scale = transform->get_world_scale();
     const glm::vec3 world_rotation = glm::eulerAngles(transform->get_world_rotation());
 
@@ -137,7 +142,12 @@ bool AnchorHelper::is_inside(const Entity entity, const glm::vec2& viewport_poin
     const auto offset = calculate_anchor_offset(entity);
 
     // apply transform values
-    const glm::vec2 world_pos = transform->get_world_position();
+    const glm::uvec2 screen_res = engine.renderer.render_view.gpu_view.resolution;
+    const glm::vec2 scale_factor(
+        static_cast<float>(screen_res.x) / UIComponent::REFERENCE_WIDTH,
+        static_cast<float>(screen_res.y) / UIComponent::REFERENCE_HEIGHT
+    );
+    const glm::vec2 world_pos = glm::vec2(transform->get_world_position()) * scale_factor;
     const glm::vec2 world_scale = transform->get_world_scale();
     const glm::vec3 world_rotation = glm::eulerAngles(transform->get_world_rotation());
 

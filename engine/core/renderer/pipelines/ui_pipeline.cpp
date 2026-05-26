@@ -125,6 +125,12 @@ void UiPipeline::enqueue_images(RenderGraph& render_graph, RenderView& render_vi
     /* Temporary list of image instances */
     std::vector<GpuImage> images {};
 
+    /* Factor to convert authored (1920x1080) positions to actual screen pixels. */
+    const glm::vec2 pos_scale_factor(
+        static_cast<float>(render_view.gpu_view.resolution.x) / UIComponent::REFERENCE_WIDTH,
+        static_cast<float>(render_view.gpu_view.resolution.y) / UIComponent::REFERENCE_HEIGHT
+    );
+
     { /* Collect all the images in the scene (Game ECS) */
         const entt::basic_view view = engine.ecs.view<ImageRenderer, UIComponent, Transform>();
 
@@ -146,6 +152,8 @@ void UiPipeline::enqueue_images(RenderGraph& render_graph, RenderView& render_vi
             /* Fill out all the image instance attributes */
             GpuImage& image = images.emplace_back();
             decompose_matrix(world, image.pos, image.extent, image.angles);
+            /* Scale authored position to real screen pixels before anchor is applied. */
+            image.pos *= pos_scale_factor;
             image.extent = image.extent * ui_component.real_size;
             image.pivot = ui_component.pivot;
             image.color = image_renderer.color;
@@ -193,6 +201,12 @@ void UiPipeline::enqueue_images(RenderGraph& render_graph, RenderView& render_vi
 void UiPipeline::enqueue_text(RenderGraph& render_graph, RenderView& render_view) {
     std::vector<GpuGlyph> glyphs {};
 
+    /* Factor to convert authored (1920x1080) positions to actual screen pixels. */
+    const glm::vec2 pos_scale_factor(
+        static_cast<float>(render_view.gpu_view.resolution.x) / UIComponent::REFERENCE_WIDTH,
+        static_cast<float>(render_view.gpu_view.resolution.y) / UIComponent::REFERENCE_HEIGHT
+    );
+
     { /* Collect all the text in the scene (Game ECS) */
         const entt::basic_view view = engine.ecs.view<TextRenderer, UIComponent, Transform>();
 
@@ -229,8 +243,8 @@ void UiPipeline::enqueue_text(RenderGraph& render_graph, RenderView& render_view
                 continue; /* No font available */
             }
 
-            /* Calculate the base position from transform */
-            glm::vec2 base_pos = glm::vec2(transform.get_world_position());
+            /* Calculate the base position from transform, scaled to actual screen pixels. */
+            glm::vec2 base_pos = glm::vec2(transform.get_world_position()) * pos_scale_factor;
             glm::vec2 anchor_offset = AnchorHelper::calculate_anchor_offset(entity);
             base_pos += anchor_offset;
 
