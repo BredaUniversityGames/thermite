@@ -40,6 +40,10 @@ struct ThermiteOreSettings {
     LayerMask layer_mask {};
 };
 
+struct VFXSettings {
+    tmt::ResourceRef<tmt::Json> explosion_vfx_prefab;
+};
+
 class OreManager : public tmt::GameComponent<OreManager> {
    public:
     using GameComponent::GameComponent;
@@ -53,17 +57,22 @@ class OreManager : public tmt::GameComponent<OreManager> {
     void initiate_thermite_explosion(tmt::Entity voxel_entity, glm::uvec3 voxel_position);
 
     ThermiteOreSettings thermite_ore_settings;
+    VFXSettings vfx_settings;
 
    private:
+    std::unordered_map<tmt::Entity, float> emitter_lifetime_table;
     std::unordered_set<std::pair<tmt::Entity, glm::uvec3>> thermite_to_explode;
     std::unordered_set<std::pair<tmt::Entity, glm::uvec3>> new_thermite_to_explode;
     tmt::Entity ore_properties_entity = entt::null;
     std::unordered_map<tmt::Material::Type, OreProperties::MiningOre> ore_database;
     float thermite_ore_explosion_cooldown_timer = 0.0f;
     void process_thermite_ore_explosion(tmt::Entity voxel_entity, glm::uvec3 explosion_center);
+    void spawn_emitter(glm::vec3);
     tmt::Entity player_entity = entt::null;
+    float vfx_lifetime_thermite_explosion = 5.0f;
 };
 
 }  // namespace game
 TMT_OBJECT(game::ThermiteOreSettings, (radius_explosion, damage_explosion, cooldown_explosion, explosion_strength, layer_mask));
-TMT_GAME_COMPONENT(game::OreManager, (thermite_ore_settings));
+TMT_OBJECT(game::VFXSettings, (explosion_vfx_prefab));
+TMT_GAME_COMPONENT(game::OreManager, (thermite_ore_settings, vfx_settings));
