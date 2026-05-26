@@ -5,7 +5,7 @@ on:
     branches:
       - main
       
-
+    
 jobs:
   build:
     name: "Build ${{ matrix.preset }}"
@@ -16,7 +16,7 @@ jobs:
           - Release-Editor
           - Debug-Game
           - Release-Game
-    runs-on: windows-latest
+    runs-on: self-hosted
     env:
       SCCACHE_GHA_ENABLED: "true"
       # Normalize paths for cache hits across runners
@@ -52,7 +52,7 @@ jobs:
         
   cpp-linter-windows:
     name: "Run cpp-linter (Windows)"
-    runs-on: windows-latest
+    runs-on: self-hosted
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -99,7 +99,7 @@ jobs:
       matrix:
         include:
           - preset: Debug-Game
-    runs-on: windows-latest
+    runs-on: self-hosted
     env:
       SCCACHE_GHA_ENABLED: "true"
       SCCACHE_BASEDIRS: ${{ github.workspace }}
