@@ -176,13 +176,14 @@ class Player : public tmt::GameComponent<Player> {
     float base_pitch = 0.0f;
     glm::vec2 recoil_offset = glm::vec2(0.0f);
 
+    void set_hud_enabled(tmt::Entity hud_root, bool enabled);
+
    private:
     void refill(float delta);
     void drain_energy(float delta);
     void reset_action_time(std::string_view action_name);
     void apply_boost();
     void reset_boost(float delta_time);
-    void set_hud_enabled(tmt::Entity hud_root, bool enabled);
     void update_shake(float dt);
     void set_crosshair(tmt::Entity active);
     void ensure_attached_camera();

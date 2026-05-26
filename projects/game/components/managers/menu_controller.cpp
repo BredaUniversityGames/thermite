@@ -92,6 +92,11 @@ void MenuController::enable_pause_menu() const {
     // Dispatch game paused event
     tmt::engine.ecs.get_dispatcher().trigger(game::GamePausedEvent {});
 
+    // Disable HUD's
+    auto& player = tmt::engine.ecs.get_component<Player>(player_entity);
+    player.set_hud_enabled(player.player_hud, false);
+    player.set_hud_enabled(player.barge_hud, false);
+
     // disable systems
     auto& systems = tmt::engine.ecs.systems;
 
@@ -190,6 +195,10 @@ void MenuController::handle_saving(const EndRun& event) const {
     save_resources_on_run(multiplier);
 }
 void MenuController::enable_end_of_game_menu(const EndRun& event) const {
+    auto& player = tmt::engine.ecs.get_component<Player>(player_entity);
+    player.set_hud_enabled(player.player_hud, false);
+    player.set_hud_enabled(player.barge_hud, false);
+
     if (pause_menu_entity != entt::null) {
         tmt::engine.ecs.disable(pause_menu_entity);
     }
