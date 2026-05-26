@@ -22,6 +22,8 @@ void tag_invoke(ImReflect::ImInput_t, const char* name, game::MediumEnemy& value
     ImReflect::Input("Core", value.core, type_settings, type_response);
     ImReflect::Input("Rig Controller", value.rig_controller, type_settings, type_response);
     if (ImGui::TreeNodeEx("Available Positions", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImReflect::Input("Available Pos Max Height Diff", value.available_pos_max_height_diff, type_settings, type_response);
+        ImReflect::Input("Available Pos Min Height Diff", value.available_pos_min_height_diff, type_settings, type_response);
         ImReflect::Input("", value.available_positions, type_settings, type_response);
         ImGui::TreePop();
     }

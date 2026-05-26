@@ -193,7 +193,11 @@ void game::MediumEnemy::update(const tmt::FrameData& time) {
     int closest_node = nav_mesh.find_closest_node(walking_transform.get_world_position());
 
     auto* nodes = nav_mesh.nodes_mesh;
-    auto& normal = (*nodes)[closest_node].normal;
+    auto normal = (*nodes)[closest_node].normal;
+    if (glm::length(normal) > 1.1f || glm::length(normal) < 0.9f) {
+        normal = walking_transform.get_up();
+        tmt::Log::warn("current normal is cooked from medium enemy.cpp");
+    }
 
     const tmt::Ray ray = tmt::Ray(walking_transform.get_world_position() + normal * 0.5f, glm::normalize(-normal));
     const tmt::Hit hit = tmt::engine.ecs.systems.get<tmt::Physics>().raycast(ray, enemy_mask);
@@ -261,7 +265,8 @@ void game::MediumEnemy::update(const tmt::FrameData& time) {
         tmt::engine.polyline.draw_arrow(ray.origin, ray.dir, 1.0f);
         tmt::Hit hit = tmt::engine.ecs.systems.get<tmt::Physics>().raycast(ray, enemy_mask);
         float ground_distance = hit.distance - 1.0f;
-        float move_distance = ground_distance - available_positions[i].height_offset > 10.0f ? 10.0f : ground_distance - available_positions[i].height_offset;
+        float move_distance = ground_distance - available_positions[i].height_offset;
+        move_distance = glm::clamp(move_distance, available_pos_min_height_diff, available_pos_max_height_diff);
         pos_transform.set_world_position(ref_pos + ray.dir * move_distance);
         tmt::engine.polyline.draw_sphere(pos_transform.get_world_position(), 0.1f, 8);
         tmt::engine.polyline.draw_sphere(ref_pos, 0.2f, 8);
