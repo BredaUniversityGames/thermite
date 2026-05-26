@@ -16,11 +16,15 @@ class OreCollector : public tmt::GameComponent<OreCollector> {
     float radius = 1.0f;
     // debugging settings
     tmt::Entity wallet_entity { entt::null };
+    tmt::ResourceRef<tmt::Json> ore_collection_vfx_prefab;
 
    private:
+    std::unordered_map<tmt::Entity, float> emitter_lifetime_table;
+    void spawn_emitter(glm::vec3 spawn_pos);
     uint64_t ore_count = 0u;
     void on_collision_trigger(const TriggerCollisionEvent& trigger);
+    float emitter_lifetime = 2.0f;
 };
 
 }  // namespace game
-TMT_GAME_COMPONENT(game::OreCollector, (radius, wallet_entity));
+TMT_GAME_COMPONENT(game::OreCollector, (radius, wallet_entity, ore_collection_vfx_prefab));
