@@ -102,6 +102,9 @@ class NavMesh {
     std::vector<NavNode>* buffer_a = nullptr;
     std::vector<NavNode>* buffer_b = nullptr;
 
+    int voxels_since_generation = -1;
+    int voxels_to_lose = 100;
+
    public:
     glm::mat4 world_matrix = glm::mat4(1.f);
     bool nav_nodes_valid() {
@@ -110,13 +113,13 @@ class NavMesh {
         return true;
     }
     void compute_normals(int iterations = std::numeric_limits<int>::max());
-
     void average_neighbor_normals(int iterations = std::numeric_limits<int>::max());
     void generate_mesh_over_time();
     void generate_mesh(int iterations = std::numeric_limits<int>::max());
     std::vector<int> find_path(const int starting_node_id, const int ending_node_id);
     int find_closest_node(const glm::vec3& position);
     std::optional<glm::vec3> follow_path(glm::vec3 start, glm::vec3 end);
+    void check_if_should_regenerate();
     void inspect();
 };
 

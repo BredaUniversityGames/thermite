@@ -196,16 +196,21 @@ void NavMesh::generate_mesh_over_time() {
         case NavMeshGenerationState::UNINITIALISED: {
             auto entity = tmt::engine.ecs.get_entity(*this);
             auto children = tmt::engine.ecs.get_component<tmt::Transform>(entity).get_all_children();
+            nav_mesh_entities.clear();
+            voxels_since_generation = 0;
             for (auto child : children) {
                 if (tmt::engine.ecs.has_component<tmt::VoxelRenderer>(child)) {
                     nav_mesh_entities.push_back(child);
+                    auto resource = tmt::engine.ecs.get_component<tmt::VoxelRenderer>(child).resource;
+                    voxels_since_generation += resource->blas->voxel_count - resource->blas->voxels_wasted;
                 }
             }
-
-            generating_lod = 3;
+            generating_lod = 2;
             generating_entity_index = 0;
-            init();
-            nodes_mesh->clear();
+            if (!nodes_mesh) {
+                init();
+                nodes_mesh->clear();
+            } 
             generation_state = NavMeshGenerationState::INITIALISING_VOLUME;
             generation_iteration = -1;
             break;
@@ -501,6 +506,19 @@ std::optional<glm::vec3> tmt::NavMesh::follow_path(glm::vec3 start, glm::vec3 en
     }
 
     return glm::normalize(target_pos - start);
+}
+
+void tmt::NavMesh::check_if_should_regenerate() {
+    int amount_of_voxels_remaining = 0;
+    for (const auto& voxel_entity : nav_mesh_entities) {
+        auto resource = tmt::engine.ecs.get_component<tmt::VoxelRenderer>(voxel_entity).resource;
+        uint32_t current_voxels = resource->blas->voxel_count - resource->blas->voxels_wasted;
+        amount_of_voxels_remaining += current_voxels;
+    }
+    if (voxels_since_generation - amount_of_voxels_remaining > voxels_to_lose) {
+        generation_state = NavMeshGenerationState::UNINITIALISED; 
+        generate_mesh_over_time();
+    }
 }
 
 void tmt::NavMesh::inspect() {
