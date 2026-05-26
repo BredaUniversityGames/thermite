@@ -162,10 +162,6 @@ void OreManager::spawn_emitter(glm::vec3 spawn_pos) {
 
     emitter_component->active = false;
     emitter_component->should_burst = true;
-    for (auto& particle_component : emitter_component->effects) {
-        particle_component.active = false;
-        particle_component.should_burst = true;
-    }
 
     emitter_lifetime_table.emplace(instantiated_entity, lifetime);
 }
