@@ -19,7 +19,7 @@ struct Missile : public tmt::GameComponent<Missile> {
     void empty_check();
 
     glm::vec3 velocity = glm::vec3(0, 0, 0);
-   
+
     tmt::ResourceRef<tmt::Stencil> stencil;
     tmt::Entity enemy_entity;
 
