@@ -6,7 +6,7 @@ namespace game {
 void UnpauseButtonComponent::start() {
     // menu controller entity set
     auto menu_controller_view = tmt::engine.ecs.view<MenuController>();
-    if (menu_controller_view.empty) {
+    if (menu_controller_view.empty()) {
         tmt::Log::error("Menu controller not found. Please ensure a menu controller is present to use the unpause button component.");
         return;
     }
