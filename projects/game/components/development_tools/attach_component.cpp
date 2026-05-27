@@ -7,6 +7,7 @@
 #include "projects/game/components/gameplay_functionality_components/player.hpp"
 #include "projects/game/components/ui_components/movement_tip.hpp"
 #include "projects/game/data_headers/game_input.hpp"
+#include "projects/game/components/gameplay_functionality_components/mover_component.hpp"
 namespace {
 
 void set_attached_entity_transform(tmt::Entity entity, tmt::Entity parent = entt::null) {
@@ -30,11 +31,18 @@ void game::AttachComponent::start() {
     tmt::engine.ecs.get_dispatcher().sink<AttachAttemptEvent>().connect<&AttachComponent::on_check_range_to_attach>(this);
     tmt::engine.ecs.get_dispatcher().sink<GamePausedEvent>().connect<&AttachComponent::on_game_paused>(this);
     tmt::engine.ecs.get_dispatcher().sink<GameUnpausedEvent>().connect<&AttachComponent::on_game_unpaused>(this);
+
+    auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
+    auto& mover_comp = tmt::engine.ecs.get_component<MoverComponent>(transform.get_parent());
+
+    tmt::engine.ecs.get_dispatcher().sink<TriggerMovementStopEvent>().connect<&MoverComponent::stop_movement>(mover_comp);
 }
 void game::AttachComponent::update(const tmt::FrameData& time) {
     if (paused) return;
 
     if (is_attached == false) {
+        if (is_moving) tmt::engine.ecs.get_dispatcher().trigger(TriggerMovementStopEvent {});
+
         is_moving = false;
         has_started_pressing = false;
 
@@ -67,6 +75,10 @@ void game::AttachComponent::update(const tmt::FrameData& time) {
         first_frame = false;
         has_started_pressing = false;
         tmt::Log::info("Movement is {}", is_moving);
+
+        if (!is_moving) {
+            tmt::engine.ecs.get_dispatcher().trigger(TriggerMovementStopEvent {});
+        }
     }
 
     if (is_moving) {
