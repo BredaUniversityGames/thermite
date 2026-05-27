@@ -149,6 +149,8 @@ void Player::start() {
     if (tmt::engine.ecs.valid(barge)) {
         ensure_attached_camera();
     }
+
+    audio_emitter = tmt::engine.ecs.try_get_component<tmt::AudioEmitter>(get().entity);
 }
 void Player::end() {
     tmt::engine.ecs.get_dispatcher().sink<AttachEvent>().disconnect<&Player::on_attach>(this);
@@ -676,6 +678,9 @@ void Player::update(const tmt::FrameData& time) {
         if (was_above_threshold && energy_percent <= low_energy_threshold) {
             set_hud_enabled(low_energy_hud, true);
 
+            // Play Sounds
+            player_sounds.battery_half.play();
+
             low_energy_timer = low_energy_duration;
             low_energy_active = true;
         }
@@ -697,6 +702,10 @@ void Player::update(const tmt::FrameData& time) {
         if (use_second_warning) {
             if (was_above_threshold_2 && energy_percent <= low_energy_threshold_2) {
                 set_hud_enabled(low_energy_hud, true);
+
+                // Play sound
+                player_sounds.battery_almost_out.play();
+
                 low_energy_timer_2 = low_energy_duration_2;
                 low_energy_active_2 = true;
             }
@@ -717,10 +726,17 @@ void Player::update(const tmt::FrameData& time) {
 
     // Energy death (timer)
     if (energy.value <= 0.0f) {
+        // Play sound
+        if (!out_of_energy) {
+            player_sounds.battery_out.play();
+            out_of_energy = true;
+        }
+
         out_of_energy_timer += time.delta_time;
     } else {
         // reset out of battery timer
         out_of_energy_timer = 0.0f;
+        out_of_energy = false;
     }
 
     if (out_of_energy_timer >= out_of_energy_time_till_death && !player_ended_run) {
@@ -736,6 +752,8 @@ void Player::update(const tmt::FrameData& time) {
 
     // Health death (instant)
     if (health.value <= 0.0f && !player_ended_run) {
+        // Play sound
+        player_sounds.destroyed_death.play();
         // player ded -> call end run event with player ded
         tmt::engine.ecs.get_dispatcher().trigger(EndRun { true });
 
@@ -899,9 +917,21 @@ void Player::on_attach(const AttachEvent& event) {
     }
 }
 
+void Player::take_damage(float damage) {
+    // Play sound
+    player_sounds.hit.play();
+    health.value -= damage;
+}
+
 void Player::apply_boost() {
     max_speed_calculated = max_speed * boost_max_speed_multiplier;
     acceleration_calculated = acceleration * boost_acceleration_multiplier;
+
+    if (!boost_was_applied) {
+        // Play sound
+        player_sounds.drone_boost.play();
+    }
+
     boost_was_applied = true;
 }
 
