@@ -23,7 +23,12 @@ void UnpauseButtonComponent::start() {
 
 void UnpauseButtonComponent::update(const tmt::FrameData& time) {}
 
-void UnpauseButtonComponent::end() {}
+void UnpauseButtonComponent::end() {
+    // Guard for button
+    if (auto* button_component = tmt::engine.ecs.try_get_component<tmt::Button>(entity)) {
+        button_component->on_click.clear();
+    }
+}
 
 void UnpauseButtonComponent::unpause(tmt::Button::Context context) {
     MenuController* menu_controller_component = tmt::engine.ecs.try_get_component<MenuController>(menu_controller_entity);
