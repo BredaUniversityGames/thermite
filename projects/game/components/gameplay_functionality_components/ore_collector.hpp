@@ -1,7 +1,8 @@
 #pragma once
 #include "engine/systems/gameplay/game_component.hpp"
-
+#include "engine/core/components/emitter.hpp"
 #include "projects/game/data_headers/events.hpp"
+
 namespace game {
 
 class OreCollector : public tmt::GameComponent<OreCollector> {
