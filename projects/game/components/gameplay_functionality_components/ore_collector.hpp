@@ -12,12 +12,17 @@ class OreCollector : public tmt::GameComponent<OreCollector> {
 
     void start() override;
     void update(const tmt::FrameData& time) override;
+    void draw_debug_lines() const override;
     void end() override;
     // Shoots rays
     float radius = 1.0f;
     // debugging settings
     tmt::Entity wallet_entity { entt::null };
     tmt::ResourceRef<tmt::Json> ore_collection_vfx_prefab;
+
+    // Attraction variables
+    float attraction_range = 20.f;
+    float attraction_strength = 100.f;
 
    private:
     std::unordered_map<tmt::Entity, float> emitter_lifetime_table;
@@ -28,4 +33,4 @@ class OreCollector : public tmt::GameComponent<OreCollector> {
 };
 
 }  // namespace game
-TMT_GAME_COMPONENT(game::OreCollector, (radius, wallet_entity, ore_collection_vfx_prefab));
+TMT_GAME_COMPONENT(game::OreCollector, (radius, wallet_entity, attraction_range, attraction_strength, ore_collection_vfx_prefab));
