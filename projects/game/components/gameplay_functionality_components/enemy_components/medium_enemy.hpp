@@ -97,6 +97,7 @@ class MediumEnemy : public tmt::GameComponent<MediumEnemy> {
     float rotation_speed_during_laser = 0.8f;
     float laser_sitting_down_time = 0.5f;
     float laser_winding_up_time = 0.5f;
+    float laser_aim_tween_duration = 1.0f;
     float laser_sitting_down_height_offset = 0.2f;
     float laser_damage = 0.5f;
     float laser_damage_radius = 0.5f;
