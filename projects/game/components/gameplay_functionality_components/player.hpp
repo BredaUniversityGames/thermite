@@ -71,13 +71,13 @@ struct CameraShakeSettings {
     float recoil_strength = 2.0f;      // how high it kicks UP
     float recoil_return_speed = 5.0f;  // how fast it goes DOWN
     float recoil_horizontal = 0.2f;    // side randomness
-    float get_max_intensity() const { return max_intensity/* * multiplier*/; }
-    float get_recoil_return_speed() const { return recoil_return_speed /** multiplier*/; }
-    float get_boost_intensity() const { return boost_intensity/* * multiplier*/; }
-    float get_decay_speed() const { return decay_speed/* * multiplier*/; }
-    float get_recoil_strength() const { return recoil_strength /** multiplier*/; }
-    float get_recoil_horizontal() const { return recoil_horizontal /** multiplier*/; }
-    float get_drill_intensity() const { return drill_intensity/* * multiplier*/; }
+    float get_max_intensity() const { return max_intensity * multiplier; }
+    float get_recoil_return_speed() const { return recoil_return_speed * multiplier; }
+    float get_boost_intensity() const { return boost_intensity * multiplier; }
+    float get_decay_speed() const { return decay_speed * multiplier; }
+    float get_recoil_strength() const { return recoil_strength * multiplier; }
+    float get_recoil_horizontal() const { return recoil_horizontal * multiplier; }
+    float get_drill_intensity() const { return drill_intensity * multiplier; }
 
     void set_multiplier(float _multiplier) { multiplier = _multiplier; }
 
@@ -88,6 +88,8 @@ struct CameraShakeSettings {
     float shake_frequency = 1.f;
     float shake_damping = 0.2f;
     float shake_initial_response = 0.f;
+
+    float damage_shake_multiplier = 1.f;
 
    private:
     // loaded from the saved data
@@ -244,7 +246,8 @@ TMT_OBJECT(game::AttachedCameraSettings, (distance, height_offset, look_at_heigh
 TMT_OBJECT(game::AttachCameraTransitionSettings, (enabled, play_on_first_attach, inherit_player_facing_on_attach, blend_look_over_tween, start_look_blend_time, duration, ease));
 TMT_OBJECT(game::DetachCameraTransitionSettings, (enabled, align_player_to_camera, duration, ease));
 TMT_OBJECT(game::CameraShakeSettings, (enabled, max_intensity, boost_intensity, drill_intensity, decay_speed, recoil_strength, recoil_return_speed, recoil_horizontal, recoil_frequency, recoil_damping, recoil_initial_response, 
-                                       shake_frequency, shake_damping, shake_initial_response));
+                                       shake_frequency, shake_damping, shake_initial_response, damage_shake_multiplier)
+);
 TMT_GAME_COMPONENT(
     game::Player, (camera_sensitivity, acceleration, deceleration, drag, max_speed, boost_max_speed_multiplier, boost_acceleration_multiplier, boost_deceleration_factor,
                    boost_cost_per_second_per_additional_speed_above_max, boost_initial_cost, boost_availability, health, energy, energy_drain_per_second, out_of_energy_time_till_death,

@@ -1,14 +1,10 @@
 ﻿#include "player.hpp"
-
 #include "engine/core/polyline.hpp"
 #include "projects/game/data_headers/events.hpp"
-
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-
 #include "engine/core/input/input.hpp"
 #include "engine/core/components/camera.hpp"
-
 #include "engine/core/window.hpp"
 #include "engine/core/components/image_renderer.hpp"
 #include "engine/core/input/input_map.hpp"
@@ -670,6 +666,9 @@ void Player::update(const tmt::FrameData& time) {
     // Fire event health changed
     if (previous_health != health.value) {
         tmt::engine.ecs.get_dispatcher().trigger(PlayerHealthChanged { entity, health.value, previous_health });
+        
+        float diff = std::max(0.f, previous_health - health.value);
+        add_camera_shake(diff * camera_shake_settings.damage_shake_multiplier);
     }
     previous_health = health.value;
     // Fire event max energy changed
