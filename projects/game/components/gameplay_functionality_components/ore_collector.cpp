@@ -32,7 +32,6 @@ void game::OreCollector::update(const tmt::FrameData& time) {
         emitter_lifetime_table.erase(emitter_entity);
     }
 
-void game::OreCollector::update(const tmt::FrameData& time) {
     auto& collector_transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
 
     auto barge_entity = collector_transform.get_parent();
