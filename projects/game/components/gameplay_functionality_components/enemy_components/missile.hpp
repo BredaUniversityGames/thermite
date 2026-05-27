@@ -22,6 +22,7 @@ struct Missile : public tmt::GameComponent<Missile> {
 
     tmt::ResourceRef<tmt::Stencil> stencil;
     tmt::Entity enemy_entity;
+    tmt::Entity vfx_entity = entt::null;
 
     float life_time = 0.0f;
     glm::vec3 offset = glm::vec3(0, 0, 0);
