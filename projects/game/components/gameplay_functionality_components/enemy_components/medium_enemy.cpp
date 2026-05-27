@@ -118,8 +118,8 @@ void game::MediumEnemy::update(const tmt::FrameData& time) {
                 auto& child_voxel_body = tmt::engine.ecs.get_component<tmt::VoxelBody>(child);
                 child_voxel_body.velocity = velocity * 0.4f + glm::normalize(child_transform.get_world_position() - walking_transform.get_world_position()) * velocity_of_objects_on_death;
                 child_voxel_body.angular_velocity = glm::vec3(
-                    (static_cast<float>(rand()) / RAND_MAX - 0.5f) * velocity_of_objects_on_death , (static_cast<float>(rand()) / RAND_MAX - 0.5f) * velocity_of_objects_on_death ,
-                    (static_cast<float>(rand()) / RAND_MAX - 0.5f) * velocity_of_objects_on_death 
+                    (static_cast<float>(rand()) / RAND_MAX - 0.5f) * velocity_of_objects_on_death, (static_cast<float>(rand()) / RAND_MAX - 0.5f) * velocity_of_objects_on_death,
+                    (static_cast<float>(rand()) / RAND_MAX - 0.5f) * velocity_of_objects_on_death
                 );
                 child_voxel_body.type = tmt::VoxelBody::DYNAMIC;
                 child_voxel_body.gravity = 0.0f;
