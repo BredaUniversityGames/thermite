@@ -15,11 +15,11 @@ class UnpauseButtonComponent : public tmt::GameComponent<UnpauseButtonComponent>
     void end() override;
 
     void unpause(tmt::Button::Context context);
+    tmt::Entity menu_controller_entity = entt::null;
 
    private:
-    tmt::Entity menu_controller_entity = entt::null;
 };
 
 }  // namespace game
 
-TMT_GAME_COMPONENT(game::UnpauseButtonComponent);
+TMT_GAME_COMPONENT(game::UnpauseButtonComponent, (menu_controller_entity));
