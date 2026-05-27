@@ -18,7 +18,6 @@ class UnpauseButtonComponent : public tmt::GameComponent<UnpauseButtonComponent>
 
    private:
     tmt::Entity menu_controller_entity = entt::null;
-    
 };
 
 }  // namespace game
