@@ -207,12 +207,9 @@ void FireLaser::on_tick(tmt::Entity enemy_entity, float dt) {
             for (float i = 0; i < 50.0f; i += dist_between_laser_spheres) {
                 tmt::engine.polyline.draw_sphere(laser_pos + direction * i, .01f);
             }
-            // Aim tween over the last laser_aim_tween_duration seconds of winding up.
+            // move the laser voxels into position with a tween
             const float tween_start_time = enemy.laser_winding_up_time - enemy.laser_aim_tween_duration;
             if (enemy.laser_aim_tween_duration > 0.0f && time >= tween_start_time) {
-                // Lazily cache the rest pose on the first frame of the tween. By this point
-                // the rig blend tween from SITTING_DOWN has long since settled, so what we
-                // read here is the stable laser-ready rest pose.
                 if (rest_local_positions.size() != enemy.laser_voxel_entities.size()) {
                     auto& et = tmt::engine.ecs.get_component<tmt::Transform>(enemy_entity);
                     glm::vec3 cache_enemy_pos = et.get_world_position();
