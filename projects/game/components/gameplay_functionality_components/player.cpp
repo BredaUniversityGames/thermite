@@ -590,9 +590,11 @@ void Player::update(const tmt::FrameData& time) {
         set_crosshair(rifle_crosshair);
     }
     if (input.is_action_just_pressed(action::SWITCH_GRAVITY)) {
+        tool_sounds.gravity_gun_activate.play();
         set_crosshair(gravity_crosshair);
     }
     if (input.is_action_just_pressed(action::SWITCH_MINING)) {
+        tool_sounds.mining_tool_activate.play();
         set_crosshair(mine_crosshair);
     }
 

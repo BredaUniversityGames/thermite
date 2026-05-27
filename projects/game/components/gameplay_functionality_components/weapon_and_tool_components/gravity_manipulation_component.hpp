@@ -6,6 +6,11 @@
 
 namespace game {
 
+struct GravitySounds {
+    tmt::AudioEvent gravity_hold_object;
+    tmt::AudioEvent graviry_launch_project;
+};
+
 class GravityManipulationComponent : public tmt::GameComponent<GravityManipulationComponent> {
    public:
     using GameComponent::GameComponent;
@@ -25,8 +30,11 @@ class GravityManipulationComponent : public tmt::GameComponent<GravityManipulati
     entt::entity attraction_point_entity;  // point of attraction
     entt::entity animated_tool_entity;     // entity with the animation state machine to animate
 
+    GravitySounds sounds;
+
    private:
     std::vector<entt::entity> currently_manipulated_entities;
+    tmt::Entity player = entt::null;
     void grav_point_check();
     void grav_attract();
     void grav_shoot();
@@ -34,8 +42,14 @@ class GravityManipulationComponent : public tmt::GameComponent<GravityManipulati
     void apply_enemy_override();
     void clear_enemy_override();
 
+    void on_release(const ReleaseShootEvent& e);
+
+    bool gravity_shoot_sound_played = false;
+    tmt::AudioInstance gravity_hold_instance;
+
     // TODO the same, this could be primarily handled through weapon, a second timer could be used for the second shot
 };
 
 }  // namespace game
-TMT_GAME_COMPONENT(game::GravityManipulationComponent, (range, max_mass, pull_strength, push_strength, attraction_acceleration, attraction_point_entity, animated_tool_entity));
+TMT_OBJECT(game::GravitySounds, (gravity_hold_object, graviry_launch_project));
+TMT_GAME_COMPONENT(game::GravityManipulationComponent, (range, max_mass, pull_strength, push_strength, attraction_acceleration, attraction_point_entity, animated_tool_entity, sounds));
