@@ -10,6 +10,7 @@
 #include "engine/systems/ai/navigation/nav_mesh.hpp"
 #include "engine/systems/physics/physics_system.hpp"
 #include "engine/systems/physics/components/voxel_body.hpp"
+#include "engine/tools/prefab_helper.hpp"
 
 void game::Missile::start() {
     auto& name = tmt::engine.ecs.get_component<tmt::Name>(entity);
@@ -46,6 +47,20 @@ void game::Missile::start() {
     glm::vec3 forward = glm::normalize(ground_up);
     glm::vec3 up = (glm::abs(glm::dot(forward, ground_up)) < 0.99f) ? ground_up : glm::vec3(0.0f, 1.0f, 0.0f);
     missile_trans.set_world_rotation(glm::quatLookAt(forward, up));
+
+    // instantiate vfx prefab
+    auto explosion_prefab = enemy.missile_vfx_prefab;
+    vfx_entity = tmt::PrefabHelper::instantiate_prefab(explosion_prefab->file_location);
+    auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(vfx_entity);
+    transform.set_parent(entity);
+    transform.set_local_position(glm::vec3(0.0f, 0.0f, 1.0f));
+    transform.set_local_rotation(glm::vec3(0.0f, -90.0f, 0.0f));
+    tmt::ParticleEmitter* emitter_component = tmt::engine.ecs.try_get_component<tmt::ParticleEmitter>(vfx_entity);
+    if (!emitter_component) {
+        tmt::Log::error("Cant spawn particle on emitter, check prefab on ore manager component on entity: {}", entity);
+        return;
+    }
+    emitter_component->active = true;
 }
 
 void game::Missile::update(const tmt::FrameData& time) {
@@ -135,6 +150,10 @@ void game::Missile::explode() {
     if (enemy.audio_emitter != nullptr) {
         const tmt::AudioInstance3D instance = enemy.audio_emitter->play(enemy.sounds.sound_missile_explosion);
         instance.set_maximum_distance(enemy.aggro_range * 1.25f);  // Multiply be 1.25f to ensure the player can hear it even when at the edge of the range
+    }
+    // delete vfx entity
+    if (tmt::engine.ecs.valid(vfx_entity)) {
+        tmt::engine.ecs.destroy_entity(vfx_entity);
     }
 
     enemy.ore_manager->initiate_thermite_explosion(entity, glm::uvec3(0, 0, 0));

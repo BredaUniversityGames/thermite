@@ -41,6 +41,18 @@ void FireLaser::cleanup(tmt::Entity enemy_entity) {
     if (tmt::engine.ecs.valid(laser_entity)) {
         tmt::engine.ecs.destroy_entity(laser_entity);
     }
+    tmt::ParticleEmitter* emitter_component_charge = tmt::engine.ecs.try_get_component<tmt::ParticleEmitter>(enemy.laser_charge_particle_entity);
+    if (!emitter_component_charge) {
+        tmt::Log::error("Cant spawn particle on emitter, check prefab on ore manager component on entity: {}", enemy.laser_charge_particle_entity);
+    } else {
+        emitter_component_charge->active = false;
+    }
+    tmt::ParticleEmitter* emitter_component_laser = tmt::engine.ecs.try_get_component<tmt::ParticleEmitter>(enemy.laser_fire_particle_entity);
+    if (!emitter_component_laser) {
+        tmt::Log::error("Cant spawn particle on emitter, check prefab on ore manager component on entity: {}", enemy.laser_fire_particle_entity);
+    } else {
+        emitter_component_laser->active = false;
+    }
     laser_entity = entt::null;
     state = WINDING_UP;
     enemy.laser_timer = 0.0f;
@@ -188,6 +200,13 @@ void FireLaser::on_tick(tmt::Entity enemy_entity, float dt) {
                         auto& enemy_comp = tmt::engine.ecs.get_component<game::MediumEnemy>(enemy_entity);
                         tmt::engine.ecs.get_component<tmt::ConstrainedRig>(enemy_comp.rig_controller).blend = *value;
                     });
+                tmt::ParticleEmitter* emitter_component = tmt::engine.ecs.try_get_component<tmt::ParticleEmitter>(enemy.laser_charge_particle_entity);
+                if (!emitter_component) {
+                    tmt::Log::error("Cant spawn particle on emitter, check prefab on ore manager component on entity: {}", enemy.laser_charge_particle_entity);
+                } else {
+                    emitter_component->active = true;
+                }
+
                 enemy.set_stored_offsets_to_ref_entity();
                 state = WINDING_UP;
                 time = 0.0f;
@@ -217,6 +236,7 @@ void FireLaser::on_tick(tmt::Entity enemy_entity, float dt) {
             for (float i = 0; i < 50.0f; i += dist_between_laser_spheres) {
                 tmt::engine.polyline.draw_sphere(laser_pos + direction * i, .01f);
             }
+
             // move the laser voxels into position with a tween
             const float tween_start_time = enemy.laser_winding_up_time - enemy.laser_aim_tween_duration;
             if (enemy.laser_aim_tween_duration > 0.0f && time >= tween_start_time) {
@@ -262,6 +282,20 @@ void FireLaser::on_tick(tmt::Entity enemy_entity, float dt) {
                 auto& voxel_renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(laser_entity);
                 auto ref = tmt::engine.resources.copy_resource<tmt::VoxelVolume>(enemy.laser_voxel_object);
                 voxel_renderer.resource = ref;
+
+                tmt::ParticleEmitter* emitter_component_charge = tmt::engine.ecs.try_get_component<tmt::ParticleEmitter>(enemy.laser_charge_particle_entity);
+                if (!emitter_component_charge) {
+                    tmt::Log::error("Cant spawn particle on emitter, check prefab on ore manager component on entity: {}", enemy.laser_charge_particle_entity);
+                } else {
+                    emitter_component_charge->active = false;
+                }
+                tmt::ParticleEmitter* emitter_component_laser = tmt::engine.ecs.try_get_component<tmt::ParticleEmitter>(enemy.laser_fire_particle_entity);
+                if (!emitter_component_laser) {
+                    tmt::Log::error("Cant spawn particle on emitter, check prefab on ore manager component on entity: {}", enemy.laser_fire_particle_entity);
+                } else {
+                    emitter_component_laser->active = true;
+                }
+
                 // auto& voxel_body = tmt::engine.ecs.add_component<tmt::VoxelBody>(laser_entity);
                 // voxel_body.layer = enemy.projectile_layer;
                 // voxel_body.type = tmt::VoxelBody::STATIC;
