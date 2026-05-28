@@ -18,6 +18,14 @@ AudioInstance3D AudioEmitter::play(const AudioEvent& event, const bool update_po
     return instance;
 }
 
+void AudioEmitter::stop_instances() {
+    for (const AudioInstance3D& instance : playing_instances) {
+        instance.stop();
+    }
+
+    playing_instances.clear();
+}
+
 void AudioEmitter::cleanup_playing_instances() {
     std::erase_if(playing_instances, [](const AudioInstance3D& instance) { return !instance.is_valid(); });
 }
