@@ -1,10 +1,10 @@
 #include "missile.hpp"
-#include "missile.hpp"
 #include "engine/systems/ai/goap/components/goap_agent_factory.hpp"
 
 #include "engine/core/renderer/renderer.hpp"
 #include "engine/core/polyline.hpp"
 #include "engine/core/components/voxel_renderer.hpp"
+#include "engine/core/components/emitter.hpp"
 
 #include "engine/systems/ai/goap/goap_system.hpp"
 #include "engine/systems/ai/navigation/nav_mesh.hpp"
