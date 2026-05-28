@@ -132,8 +132,10 @@ class Player : public tmt::GameComponent<Player> {
     // Helper functions
     tmt::Transform& get_transform() const { return tmt::engine.ecs.get_component<tmt::Transform>(entity); }
     tmt::Camera& get_camera() const { return tmt::engine.ecs.get_component<tmt::Camera>(entity); }
+    PlayerState get_state() { return state; };
     void set_state(PlayerState new_state) { state = new_state; };
-    PlayerState get_state() const { return state; };
+    PlayerState get_state_before_pause() { return state_before_pause; };
+    void set_state_before_pause(PlayerState new_state) { state_before_pause = new_state; }
     glm::vec3 get_velocity() const { return velocity; };
 
     // HUD entities
@@ -187,13 +189,14 @@ class Player : public tmt::GameComponent<Player> {
     float base_pitch = 0.0f;
     glm::vec2 recoil_offset = glm::vec2(0.0f);
 
+    void set_hud_enabled(tmt::Entity hud_root, bool enabled);
+
    private:
     void refill(float delta);
     void drain_energy(float delta);
     void reset_action_time(std::string_view action_name);
     void apply_boost();
     void reset_boost(float delta_time);
-    void set_hud_enabled(tmt::Entity hud_root, bool enabled);
     void update_shake(float dt);
     void set_crosshair(tmt::Entity active);
     void ensure_attached_camera();
@@ -205,6 +208,7 @@ class Player : public tmt::GameComponent<Player> {
     glm::vec3 get_attached_camera_orbit_position(const glm::vec3& barge_pos) const;
 
     PlayerState state = PlayerState::FREEMOVING;
+    PlayerState state_before_pause;
     glm::vec3 velocity = { 0.0f, 0.0f, 0.0f };
     glm::vec3 input_dir { 0.0f };
     float max_speed_calculated = max_speed;
@@ -239,7 +243,7 @@ TMT_OBJECT(game::CameraShakeSettings, (enabled, max_intensity, boost_intensity, 
 TMT_GAME_COMPONENT(
     game::Player, (camera_sensitivity, acceleration, deceleration, drag, max_speed, boost_max_speed_multiplier, boost_acceleration_multiplier, boost_deceleration_factor,
                    boost_cost_per_second_per_additional_speed_above_max, boost_initial_cost, boost_availability, health, energy, energy_drain_per_second, out_of_energy_time_till_death,
-                   low_energy_threshold, low_energy_duration, use_second_warning, low_energy_threshold_2, low_energy_duration_2, player_hud, barge_hud, low_energy_hud, black_out_hud, black_out_curve, rifle_crosshair,
-                   gravity_crosshair, mine_crosshair, barge, recharge_distance, ray_check, camera_shake_settings, attached_camera_settings, attach_camera_transition_settings,
-                   detach_camera_transition_settings)
+                   low_energy_threshold, low_energy_duration, use_second_warning, low_energy_threshold_2, low_energy_duration_2, player_hud, barge_hud, low_energy_hud, black_out_hud,
+                   black_out_curve, rifle_crosshair, gravity_crosshair, mine_crosshair, barge, recharge_distance, ray_check, camera_shake_settings, attached_camera_settings,
+                   attach_camera_transition_settings, detach_camera_transition_settings)
 );
