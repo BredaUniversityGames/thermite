@@ -106,7 +106,7 @@ void GenerationComponent::start() {
 
                 for (auto& [entity, clearance_volume] : tmt::engine.ecs.view<ClearanceVolume>()) {
                     if (clearance_volume.contains(min + point.pos)) {
-                       continue;
+                        continue;
                     }
                 }
 
@@ -117,7 +117,6 @@ void GenerationComponent::start() {
 
                 transform.set_local_position(min + point.pos);
                 transform.set_local_rotation(glm::vec3(pitch, yaw, roll));
-
 
                 auto sub_location_path = tmt::IO::get_sub_location_path(cell_template.light_prefab.file_location.sub_location);
                 auto absolute_path = cell_template.light_prefab.file_location.get_relative_path();
