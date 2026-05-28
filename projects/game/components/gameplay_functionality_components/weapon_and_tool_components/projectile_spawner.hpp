@@ -6,7 +6,7 @@ namespace game {
 
 struct RifleSounds {
     tmt::AudioEvent rifle_impact;
-    tmt::AudioEvent rifle_shoot;
+    tmt::AudioEvent rifle_shoot;  // done
 };
 
 class ProjectileSpawner : public tmt::GameComponent<ProjectileSpawner> {

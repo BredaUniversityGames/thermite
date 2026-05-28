@@ -87,18 +87,19 @@ struct CameraShakeSettings {
     float multiplier { 1.0f };
 };
 struct PlayerSounds {
-    tmt::AudioEvent destroyed_death;     // done
-    tmt::AudioEvent drone_boost;         // done
-    tmt::AudioEvent hit;                 // done
-    tmt::AudioEvent jet_propulsion;
-    tmt::AudioEvent battery_half;        // done
-    tmt::AudioEvent battery_almost_out;  // done
-    tmt::AudioEvent battery_out;         // done
+    tmt::AudioEvent destroyed_death;       // done
+    tmt::AudioEvent drone_boost;           // done
+    tmt::AudioEvent hit;                   // done
+    tmt::AudioEvent battery_half;          // done
+    tmt::AudioEvent battery_almost_out;    // done
+    tmt::AudioEvent battery_out;           // done
 };
 struct ToolSounds {
-    tmt::AudioEvent gravity_gun_activate;
-    tmt::AudioEvent mining_tool_activate;
+    tmt::AudioEvent gravity_gun_activate;  // done
+    tmt::AudioEvent mining_tool_activate;  // done
 };
+
+enum class ToolType { RIFLE, GRAVITY, MINING };
 
 class Player : public tmt::GameComponent<Player> {
    public:
@@ -252,6 +253,8 @@ class Player : public tmt::GameComponent<Player> {
 
     // sound variables
     bool out_of_energy = false;
+
+    ToolType active_tool = ToolType::RIFLE;
 };
 
 }  // namespace game
@@ -263,7 +266,7 @@ TMT_OBJECT(game::AttachedCameraSettings, (distance, height_offset, look_at_heigh
 TMT_OBJECT(game::AttachCameraTransitionSettings, (enabled, play_on_first_attach, inherit_player_facing_on_attach, blend_look_over_tween, start_look_blend_time, duration, ease));
 TMT_OBJECT(game::DetachCameraTransitionSettings, (enabled, align_player_to_camera, duration, ease));
 TMT_OBJECT(game::CameraShakeSettings, (enabled, max_intensity, boost_intensity, drill_intensity, decay_speed, recoil_strength, recoil_return_speed, recoil_horizontal));
-TMT_OBJECT(game::PlayerSounds, (destroyed_death, drone_boost, hit, jet_propulsion, battery_half, battery_almost_out, battery_out));
+TMT_OBJECT(game::PlayerSounds, (destroyed_death, drone_boost, hit, battery_half, battery_almost_out, battery_out));
 TMT_OBJECT(game::ToolSounds, (gravity_gun_activate, mining_tool_activate));
 TMT_GAME_COMPONENT(
     game::Player, (camera_sensitivity, acceleration, deceleration, drag, max_speed, boost_max_speed_multiplier, boost_acceleration_multiplier, boost_deceleration_factor,

@@ -7,8 +7,8 @@
 namespace game {
 
 struct GravitySounds {
-    tmt::AudioEvent gravity_hold_object;
-    tmt::AudioEvent graviry_launch_project;
+    tmt::AudioEvent gravity_hold_object;     // done
+    tmt::AudioEvent graviry_launch_project;  // done
 };
 
 class GravityManipulationComponent : public tmt::GameComponent<GravityManipulationComponent> {
