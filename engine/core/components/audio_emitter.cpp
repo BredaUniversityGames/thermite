@@ -38,6 +38,14 @@ void AudioEmitter::stop_instances() {
     playing_instances.clear();
 }
 
+void AudioEmitter::disconnect_instance(const AudioInstance3D& instance) {
+    std::erase(playing_instances_3d, instance);
+}
+
+void AudioEmitter::disconnect_instance(const AudioInstance& instance) {
+    std::erase(playing_instances, instance);
+}
+
 void AudioEmitter::cleanup_playing_instances() {
     std::erase_if(playing_instances_3d, [](const AudioInstance3D& instance) { return !instance.is_valid(); });
     std::erase_if(playing_instances, [](const AudioInstance& instance) { return !instance.is_valid(); });

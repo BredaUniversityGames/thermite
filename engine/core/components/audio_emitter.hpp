@@ -24,6 +24,10 @@ class AudioEmitter : public OnSceneStart {
     // Stop all instances currently playing through this emitter.
     void stop_instances();
 
+    // Disconnect an audio instance from being managed by this emitter (used for explosions).
+    void disconnect_instance(const AudioInstance3D& instance);
+    void disconnect_instance(const AudioInstance& instance);
+
    private:
     std::vector<AudioInstance3D> playing_instances_3d;
     std::vector<AudioInstance> playing_instances;
