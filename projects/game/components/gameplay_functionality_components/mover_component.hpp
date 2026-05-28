@@ -17,6 +17,8 @@ class MoverComponent : public tmt::GameComponent<MoverComponent> {
     void draw_debug_lines() const;
     void update_movement(const TriggerMovementEvent& event);
     void stop_movement(const TriggerMovementStopEvent& event);
+    void on_game_paused(const game::GamePausedEvent&);
+    void on_game_unpaused(const game::GameUnpausedEvent&);
 
     float movement_speed = 1.0f;
     float acceleration = 1.f;
@@ -36,6 +38,7 @@ class MoverComponent : public tmt::GameComponent<MoverComponent> {
    private:
     float velocity = 0.f;
     bool stop = false;
+    bool paused = false;
 };
 
 }  // namespace game

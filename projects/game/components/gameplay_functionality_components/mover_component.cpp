@@ -9,6 +9,8 @@
 void game::MoverComponent::start() {
     // TODO check if data
     movement_speed = tmt::engine.player_data.get<float>(BARGE_MOVE_DATA, movement_speed);
+    tmt::engine.ecs.get_dispatcher().sink<GamePausedEvent>().connect<&MoverComponent::on_game_paused>(this);
+    tmt::engine.ecs.get_dispatcher().sink<GameUnpausedEvent>().connect<&MoverComponent::on_game_unpaused>(this);
 }
 void game::MoverComponent::draw_debug_lines() const {
     cfg.set_values();
@@ -18,6 +20,7 @@ void game::MoverComponent::draw_debug_lines() const {
 }
 
 void game::MoverComponent::update(const tmt::FrameData& time) {
+    if (paused) return;
     auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
 
     auto pos = transform.get_world_position();
@@ -67,4 +70,12 @@ void game::MoverComponent::stop_movement(const TriggerMovementStopEvent& event) 
 
 
     stop = true;
+}
+
+void game::MoverComponent::on_game_paused(const game::GamePausedEvent&) {
+    paused = true;
+}
+
+void game::MoverComponent::on_game_unpaused(const game::GameUnpausedEvent&) {
+    paused = false;
 }
