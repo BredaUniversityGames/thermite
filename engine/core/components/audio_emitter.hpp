@@ -22,8 +22,11 @@ class AudioEmitter : public OnSceneStart {
     // Stop all instances currently playing through this emitter.
     void stop_instances();
 
+    AudioInstance play_2d(const AudioEvent& event, bool stop_other_instances = false);
+
    private:
     std::vector<AudioInstance3D> playing_instances;
+    std::vector<AudioInstance> playing_instances_2d;
 
     void cleanup_playing_instances();
     void on_scene_start() override;
