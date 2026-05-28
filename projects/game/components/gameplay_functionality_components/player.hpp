@@ -3,6 +3,8 @@
 #include "engine/core/components/camera.hpp"
 #include "engine/tools/types/bezier_curve.hpp"
 #include "engine/shared/ray.hpp"
+#include "engine/tools/tweening.hpp"
+#include "engine/tools/tweening/transform.hpp"
 #include "projects/game/data_headers/events.hpp"
 #include "projects/game/data_headers/layer_mask.hpp"
 
@@ -31,6 +33,32 @@ struct RayCollisionCheck {
     float camera_near_distance = 0.3f;
 };
 enum class PlayerState { FREEMOVING, ATTACHED, PAUSED };
+struct AttachedCameraSettings {
+    float distance = 12.0f;
+    float height_offset = 3.0f;
+    float look_at_height_offset = 1.5f;
+    float rotation_sensitivity = 0.08f;
+    float pitch_min = -25.0f;
+    float pitch_max = 45.0f;
+    float default_yaw = 0.0f;
+    float default_pitch = 15.0f;
+    float fov = 75.0f;
+};
+struct DetachCameraTransitionSettings {
+    bool enabled = true;
+    bool align_player_to_camera = true;
+    float duration = 0.6f;
+    Tweening::Ease ease = Tweening::Ease::IN_OUT_SINE;
+};
+struct AttachCameraTransitionSettings {
+    bool enabled = true;
+    bool play_on_first_attach = false;
+    bool inherit_player_facing_on_attach = true;
+    bool blend_look_over_tween = true;
+    float start_look_blend_time = 0.15f;
+    float duration = 0.6f;
+    Tweening::Ease ease = Tweening::Ease::IN_OUT_SINE;
+};
 struct CameraShakeSettings {
     // Camera shake
     bool enabled = true;          // global toggle for designers
@@ -104,7 +132,10 @@ class Player : public tmt::GameComponent<Player> {
     // Helper functions
     tmt::Transform& get_transform() const { return tmt::engine.ecs.get_component<tmt::Transform>(entity); }
     tmt::Camera& get_camera() const { return tmt::engine.ecs.get_component<tmt::Camera>(entity); }
+    PlayerState get_state() { return state; };
     void set_state(PlayerState new_state) { state = new_state; };
+    PlayerState get_state_before_pause() { return state_before_pause; };
+    void set_state_before_pause(PlayerState new_state) { state_before_pause = new_state; }
     glm::vec3 get_velocity() const { return velocity; };
 
     // HUD entities
@@ -149,11 +180,16 @@ class Player : public tmt::GameComponent<Player> {
 
     // screen shake
     CameraShakeSettings camera_shake_settings;
+    AttachedCameraSettings attached_camera_settings;
+    AttachCameraTransitionSettings attach_camera_transition_settings;
+    DetachCameraTransitionSettings detach_camera_transition_settings;
     float current_shake = 0.0f;
 
     float base_yaw = 0.0f;
     float base_pitch = 0.0f;
     glm::vec2 recoil_offset = glm::vec2(0.0f);
+
+    void set_hud_enabled(tmt::Entity hud_root, bool enabled);
 
    private:
     void refill(float delta);
@@ -161,11 +197,18 @@ class Player : public tmt::GameComponent<Player> {
     void reset_action_time(std::string_view action_name);
     void apply_boost();
     void reset_boost(float delta_time);
-    void set_hud_enabled(tmt::Entity hud_root, bool enabled);
     void update_shake(float dt);
     void set_crosshair(tmt::Entity active);
+    void ensure_attached_camera();
+    void update_attached_camera();
+    void start_attach_camera_transition();
+    void start_detach_camera_transition();
+    void align_player_camera_to_attached();
+    void sync_attached_orbit_from_camera();
+    glm::vec3 get_attached_camera_orbit_position(const glm::vec3& barge_pos) const;
 
     PlayerState state = PlayerState::FREEMOVING;
+    PlayerState state_before_pause;
     glm::vec3 velocity = { 0.0f, 0.0f, 0.0f };
     glm::vec3 input_dir { 0.0f };
     float max_speed_calculated = max_speed;
@@ -177,6 +220,15 @@ class Player : public tmt::GameComponent<Player> {
     float previous_max_energy = energy.max_value;
     float previous_energy = energy.value;
     float out_of_energy_timer = 0.0f;
+    tmt::Entity attached_camera_entity = entt::null;
+    float attached_camera_yaw = 0.0f;
+    float attached_camera_pitch = 0.0f;
+    bool attach_camera_transition_active = false;
+    bool detach_camera_transition_active = false;
+    bool has_attached_before = false;
+    float attach_transition_look_blend_elapsed = 0.0f;
+    bool attach_transition_start_forward_set = false;
+    glm::vec3 attach_transition_start_forward { 0.0f, 0.0f, 1.0f };
 };
 
 }  // namespace game
@@ -184,10 +236,14 @@ TMT_OBJECT(game::PlayerStat, (max_value, value, increase_multiplier));
 TMT_OBJECT(game::PlayerMovement, (acceleration, max_speed, boost_max_speed_multiplier));
 TMT_OBJECT(game::PlayerRecharge, (recharge_distance, out_of_energy_time_till_death));
 TMT_OBJECT(game::RayCollisionCheck, (collision_layer, player_radius, collision_speed_damping, camera_near_distance));
+TMT_OBJECT(game::AttachedCameraSettings, (distance, height_offset, look_at_height_offset, rotation_sensitivity, pitch_min, pitch_max, default_yaw, default_pitch, fov));
+TMT_OBJECT(game::AttachCameraTransitionSettings, (enabled, play_on_first_attach, inherit_player_facing_on_attach, blend_look_over_tween, start_look_blend_time, duration, ease));
+TMT_OBJECT(game::DetachCameraTransitionSettings, (enabled, align_player_to_camera, duration, ease));
 TMT_OBJECT(game::CameraShakeSettings, (enabled, max_intensity, boost_intensity, drill_intensity, decay_speed, recoil_strength, recoil_return_speed, recoil_horizontal));
 TMT_GAME_COMPONENT(
     game::Player, (camera_sensitivity, acceleration, deceleration, drag, max_speed, boost_max_speed_multiplier, boost_acceleration_multiplier, boost_deceleration_factor,
                    boost_cost_per_second_per_additional_speed_above_max, boost_initial_cost, boost_availability, health, energy, energy_drain_per_second, out_of_energy_time_till_death,
-                   low_energy_threshold, low_energy_duration, use_second_warning, low_energy_threshold_2, low_energy_duration_2, player_hud, barge_hud, low_energy_hud, black_out_hud, black_out_curve, rifle_crosshair,
-                   gravity_crosshair, mine_crosshair, barge, recharge_distance, ray_check, camera_shake_settings)
+                   low_energy_threshold, low_energy_duration, use_second_warning, low_energy_threshold_2, low_energy_duration_2, player_hud, barge_hud, low_energy_hud, black_out_hud,
+                   black_out_curve, rifle_crosshair, gravity_crosshair, mine_crosshair, barge, recharge_distance, ray_check, camera_shake_settings, attached_camera_settings,
+                   attach_camera_transition_settings, detach_camera_transition_settings)
 );

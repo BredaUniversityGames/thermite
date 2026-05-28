@@ -146,6 +146,9 @@ void Player::start() {
     set_crosshair(rifle_crosshair);
     // attach player to component
     tmt::engine.ecs.get_dispatcher().trigger<AttachAttemptEvent>({ .entity = entity });
+    if (tmt::engine.ecs.valid(barge)) {
+        ensure_attached_camera();
+    }
 }
 void Player::end() {
     tmt::engine.ecs.get_dispatcher().sink<AttachEvent>().disconnect<&Player::on_attach>(this);
@@ -215,6 +218,209 @@ void Player::look_camera() {
     }
 
     transform.look_at(transform.get_world_position() + front + shake_offset, glm::vec3(0.0f, 1.0f, 0.0f));
+}
+
+void Player::ensure_attached_camera() {
+    auto& ecs = tmt::engine.ecs;
+    if (ecs.valid(attached_camera_entity)) {
+        if (ecs.has_component<tmt::Camera>(attached_camera_entity)) {
+            auto& camera = ecs.get_component<tmt::Camera>(attached_camera_entity);
+            camera.fov = attached_camera_settings.fov;
+        }
+        return;
+    }
+
+    attached_camera_entity = ecs.create_entity("Attached Camera");
+    auto& camera = ecs.add_component<tmt::Camera>(attached_camera_entity);
+    camera.fov = attached_camera_settings.fov;
+    camera.active = false;
+
+    attached_camera_yaw = attached_camera_settings.default_yaw;
+    attached_camera_pitch = glm::clamp(attached_camera_settings.default_pitch, attached_camera_settings.pitch_min, attached_camera_settings.pitch_max);
+}
+
+void Player::update_attached_camera() {
+    auto& ecs = tmt::engine.ecs;
+    if (!ecs.valid(barge)) return;
+
+    ensure_attached_camera();
+
+    if (attach_camera_transition_active || detach_camera_transition_active) return;
+
+    auto& input = tmt::engine.input;
+    if (input.is_mouse_locked()) {
+        attached_camera_yaw -= input.get_mouse_delta_x() * attached_camera_settings.rotation_sensitivity;
+        attached_camera_pitch -= input.get_mouse_delta_y() * attached_camera_settings.rotation_sensitivity;
+        attached_camera_pitch = glm::clamp(attached_camera_pitch, attached_camera_settings.pitch_min, attached_camera_settings.pitch_max);
+    }
+
+    auto& barge_transform = ecs.get_component<tmt::Transform>(barge);
+    auto& camera_transform = ecs.get_component<tmt::Transform>(attached_camera_entity);
+
+    glm::vec3 barge_pos = barge_transform.get_world_position();
+    glm::vec3 target_pos = barge_pos + glm::vec3(0.0f, attached_camera_settings.look_at_height_offset, 0.0f);
+    glm::vec3 camera_pos = get_attached_camera_orbit_position(barge_pos);
+
+    camera_transform.set_world_position(camera_pos);
+    camera_transform.look_at(target_pos, glm::vec3(0.0f, 1.0f, 0.0f));
+}
+
+void Player::start_attach_camera_transition() {
+    auto& ecs = tmt::engine.ecs;
+    if (!ecs.valid(attached_camera_entity)) return;
+    if (!ecs.valid(entity)) return;
+    if (!ecs.valid(barge)) return;
+
+    auto& player_transform = ecs.get_component<tmt::Transform>(entity);
+    auto& attached_transform = ecs.get_component<tmt::Transform>(attached_camera_entity);
+    auto& barge_transform = ecs.get_component<tmt::Transform>(barge);
+
+    attach_transition_start_forward = player_transform.get_forward();
+    attach_transition_start_forward_set = glm::length(attach_transition_start_forward) > 0.001f;
+
+    if (attach_camera_transition_settings.inherit_player_facing_on_attach && attach_transition_start_forward_set) {
+        float pitch = glm::degrees(asinf(attach_transition_start_forward.y));
+        float yaw = glm::degrees(atan2f(attach_transition_start_forward.z, attach_transition_start_forward.x));
+        attached_camera_pitch = glm::clamp(pitch, attached_camera_settings.pitch_min, attached_camera_settings.pitch_max);
+        attached_camera_yaw = yaw;
+    }
+
+    glm::vec3 player_pos = player_transform.get_world_position();
+    attached_transform.set_world_position(player_pos);
+    attached_transform.set_world_rotation(player_transform.get_world_rotation());
+
+    glm::vec3 barge_pos = barge_transform.get_world_position();
+    glm::vec3 target_pos = barge_pos + glm::vec3(0.0f, attached_camera_settings.look_at_height_offset, 0.0f);
+    glm::vec3 orbit_pos = get_attached_camera_orbit_position(barge_pos);
+
+    attach_camera_transition_active = true;
+    attach_transition_look_blend_elapsed = 0.0f;
+    tmt::Camera::set_active_camera(attached_camera_entity);
+
+    Tweening::tween<tmt::Transform>(attached_camera_entity)
+        .duration(attach_camera_transition_settings.duration)
+        .ease(attach_camera_transition_settings.ease)
+        .on_complete([this]() {
+            attach_camera_transition_active = false;
+            sync_attached_orbit_from_camera();
+        })
+        .move()
+        .world_space()
+        .from(player_pos)
+        .to(orbit_pos)
+        .on_update([this, target_pos](float alpha, tmt::Transform& transform) {
+            glm::vec3 start_forward = attach_transition_start_forward_set ? attach_transition_start_forward : transform.get_forward();
+            glm::vec3 target_forward = glm::normalize(target_pos - transform.get_world_position());
+
+            float blend_time = attach_camera_transition_settings.start_look_blend_time;
+            if (blend_time > 0.0f && attach_transition_look_blend_elapsed < blend_time) {
+                attach_transition_look_blend_elapsed = glm::min(attach_transition_look_blend_elapsed + tmt::engine.frame_data().delta_time, blend_time);
+                float t = attach_transition_look_blend_elapsed / blend_time;
+                glm::vec3 blended = glm::normalize(glm::mix(start_forward, target_forward, t));
+                transform.look_at(transform.get_world_position() + blended, glm::vec3(0.0f, 1.0f, 0.0f));
+            } else if (attach_camera_transition_settings.blend_look_over_tween) {
+                glm::vec3 blended = glm::normalize(glm::mix(start_forward, target_forward, alpha));
+                transform.look_at(transform.get_world_position() + blended, glm::vec3(0.0f, 1.0f, 0.0f));
+            } else {
+                transform.look_at(target_pos, glm::vec3(0.0f, 1.0f, 0.0f));
+            }
+        });
+}
+
+glm::vec3 Player::get_attached_camera_orbit_position(const glm::vec3& barge_pos) const {
+    glm::vec3 target_pos = barge_pos + glm::vec3(0.0f, attached_camera_settings.look_at_height_offset, 0.0f);
+
+    glm::vec3 offset;
+    offset.x = cos(glm::radians(attached_camera_yaw)) * cos(glm::radians(attached_camera_pitch));
+    offset.y = sin(glm::radians(attached_camera_pitch));
+    offset.z = sin(glm::radians(attached_camera_yaw)) * cos(glm::radians(attached_camera_pitch));
+    offset = glm::normalize(offset);
+
+    glm::vec3 camera_pos = target_pos - offset * attached_camera_settings.distance;
+    camera_pos.y += attached_camera_settings.height_offset;
+    return camera_pos;
+}
+
+void Player::align_player_camera_to_attached() {
+    auto& ecs = tmt::engine.ecs;
+    if (!ecs.valid(attached_camera_entity)) return;
+    if (!ecs.valid(entity)) return;
+
+    auto& attached_transform = ecs.get_component<tmt::Transform>(attached_camera_entity);
+    glm::vec3 dir = attached_transform.get_forward();
+    if (glm::length(dir) < 0.001f) return;
+
+    dir = glm::normalize(dir);
+    float pitch = glm::degrees(asinf(dir.y));
+    float yaw = glm::degrees(atan2f(dir.z, dir.x));
+
+    base_yaw = yaw;
+    base_pitch = glm::clamp(pitch, -89.0f, 89.0f);
+}
+
+void Player::start_detach_camera_transition() {
+    auto& ecs = tmt::engine.ecs;
+    if (!ecs.valid(attached_camera_entity)) return;
+    if (!ecs.valid(entity)) return;
+
+    auto& player_transform = ecs.get_component<tmt::Transform>(entity);
+    auto& attached_transform = ecs.get_component<tmt::Transform>(attached_camera_entity);
+
+    const glm::vec3 player_pos = player_transform.get_world_position();
+    const glm::vec3 attached_pos = attached_transform.get_world_position();
+
+    const glm::vec3 attached_forward = attached_transform.get_forward();
+
+    detach_camera_transition_active = true;
+    attach_transition_start_forward_set = false;
+
+    Tweening::tween<tmt::Transform>(attached_camera_entity)
+        .duration(detach_camera_transition_settings.duration)
+        .ease(detach_camera_transition_settings.ease)
+        .on_complete([this]() {
+            if (detach_camera_transition_settings.align_player_to_camera) {
+                align_player_camera_to_attached();
+            }
+            tmt::Camera::set_active_camera(entity);
+            detach_camera_transition_active = false;
+        })
+        .move()
+        .world_space()
+        .from(attached_pos)
+        .to(player_pos)
+        .on_update([this, attached_forward, attached_pos](float alpha, tmt::Transform& transform) {
+            auto& ecs = tmt::engine.ecs;
+            if (!ecs.valid(entity)) return;
+            auto& player_transform = ecs.get_component<tmt::Transform>(entity);
+
+            glm::vec3 player_pos = player_transform.get_world_position();
+            glm::vec3 pos = glm::mix(attached_pos, player_pos, alpha);
+            transform.set_world_position(pos);
+
+            glm::vec3 player_forward = player_transform.get_forward();
+            glm::vec3 blended = detach_camera_transition_settings.align_player_to_camera ? attached_forward : glm::mix(attached_forward, player_forward, alpha);
+            if (glm::length(blended) < 0.001f) {
+                blended = attached_forward;
+            }
+            glm::vec3 dir = glm::normalize(blended);
+            transform.look_at(transform.get_world_position() + dir, glm::vec3(0.0f, 1.0f, 0.0f));
+        });
+}
+
+void Player::sync_attached_orbit_from_camera() {
+    auto& ecs = tmt::engine.ecs;
+    if (!ecs.valid(attached_camera_entity)) return;
+
+    auto& camera_transform = ecs.get_component<tmt::Transform>(attached_camera_entity);
+    glm::vec3 forward = camera_transform.get_forward();
+    if (glm::length(forward) < 0.001f) return;
+
+    forward = glm::normalize(forward);
+    float pitch = glm::degrees(asinf(forward.y));
+    float yaw = glm::degrees(atan2f(forward.z, forward.x));
+
+    attached_camera_pitch = glm::clamp(pitch, attached_camera_settings.pitch_min, attached_camera_settings.pitch_max);
+    attached_camera_yaw = yaw;
 }
 
 tmt::Hit Player::check_collision() const {
@@ -425,7 +631,7 @@ void Player::update(const tmt::FrameData& time) {
             break;
         case game::PlayerState::ATTACHED:
             attempt_attach(input);
-            look_camera();
+            update_attached_camera();
             refill(time.delta_time);
             break;
             // TODO this state might disappear
@@ -632,6 +838,7 @@ void Player::draw_debug_lines() const {
 }
 
 void Player::attempt_attach(tmt::Input& input) {
+    if (attach_camera_transition_active || detach_camera_transition_active) return;
     if (input.is_action_just_pressed(action::ATTACH_KEY)) {
         tmt::engine.ecs.get_dispatcher().trigger<AttachAttemptEvent>({ .entity = entity });
     }
@@ -662,11 +869,33 @@ void Player::on_attach(const AttachEvent& event) {
         set_hud_enabled(player_hud, false);
         set_hud_enabled(barge_hud, true);
 
+        if (tmt::engine.ecs.valid(barge)) {
+            ensure_attached_camera();
+            const bool should_play_attach_tween = attach_camera_transition_settings.enabled && (has_attached_before || attach_camera_transition_settings.play_on_first_attach);
+            if (should_play_attach_tween) {
+                start_attach_camera_transition();
+            } else {
+                tmt::Camera::set_active_camera(attached_camera_entity);
+                sync_attached_orbit_from_camera();
+            }
+            has_attached_before = true;
+            attach_transition_start_forward_set = false;
+        }
+
     } else {
         state = PlayerState::FREEMOVING;
 
         set_hud_enabled(player_hud, true);
         set_hud_enabled(barge_hud, false);
+
+        if (detach_camera_transition_settings.enabled && tmt::engine.ecs.valid(attached_camera_entity)) {
+            start_detach_camera_transition();
+        } else {
+            tmt::Camera::set_active_camera(entity);
+            if (detach_camera_transition_settings.align_player_to_camera) {
+                align_player_camera_to_attached();
+            }
+        }
     }
 }
 

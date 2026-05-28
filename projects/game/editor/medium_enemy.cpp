@@ -22,15 +22,29 @@ void tag_invoke(ImReflect::ImInput_t, const char* name, game::MediumEnemy& value
     ImReflect::Input("Core", value.core, type_settings, type_response);
     ImReflect::Input("Rig Controller", value.rig_controller, type_settings, type_response);
     if (ImGui::TreeNodeEx("Available Positions", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImReflect::Input("Available Pos Max Height Diff", value.available_pos_max_height_diff, type_settings, type_response);
+        ImReflect::Input("Available Pos Min Height Diff", value.available_pos_min_height_diff, type_settings, type_response);
         ImReflect::Input("", value.available_positions, type_settings, type_response);
         ImGui::TreePop();
     }
 
     /* ── Layers ────────────────────────── */
     if (ImGui::TreeNodeEx("Masks & Layers", ImGuiTreeNodeFlags_DefaultOpen)) {
-        ImReflect::Input("Enemy Mask", value.enemy_mask, type_settings, type_response);
-        ImReflect::Input("Projectile Layer Mask", value.projectile_mask, type_settings, type_response);
-        help("Mask that only excludes enemy projectiles, so they don't collide with themselves");
+        if (ImGui::TreeNode("Enemy Mask")) {
+            ImReflect::Input("Enemy Mask", value.enemy_mask, type_settings, type_response);
+            help("Mask that excludes enemies");
+            ImGui::TreePop();
+        }
+        if (ImGui::TreeNode("Projectile Mask")) {
+            ImReflect::Input("Projectile Mask", value.projectile_mask, type_settings, type_response);
+            help("Mask that only excludes enemy projectiles, so they don't collide with themselves");
+            ImGui::TreePop();
+        }
+        if (ImGui::TreeNode("Enemy Projectile Mask")) {
+            ImReflect::Input("Enemy Projectile Mask", value.enemy_projectile_mask, type_settings, type_response);
+            help("Mask that excludes enemies and projectiles");
+            ImGui::TreePop();
+        }
         ImReflect::Input("Projectile Layer", value.projectile_layer, type_settings, type_response);
         help("Layer all projectiles are put on");
         ImReflect::Input("Enemy Layer", value.enemy_layer, type_settings, type_response);
@@ -152,6 +166,21 @@ void tag_invoke(ImReflect::ImInput_t, const char* name, game::MediumEnemy& value
                 help("Amount of voxels that need to be destroyed for the laser to be destroyed.");
                 ImGui::TreePop();
             }
+
+            ImGui::TreePop();
+        }
+
+        /* Sounds */
+        if (ImGui::TreeNode("Sounds")) {
+            ImReflect::Input("Aggroed Audio", value.sounds.sound_aggroed_audio, type_settings, type_response);
+            ImReflect::Input("Laser", value.sounds.sound_laser, type_settings, type_response);
+            ImReflect::Input("Missile Explosion", value.sounds.sound_missile_explosion, type_settings, type_response);
+            ImReflect::Input("Missile Fire", value.sounds.sound_missile_fire, type_settings, type_response);
+            ImReflect::Input("Random Chatter", value.sounds.sound_random_chatter, type_settings, type_response);
+            ImReflect::Input("Shield Slam", value.sounds.sound_shield_slam, type_settings, type_response);
+            ImReflect::Input("Taunt", value.sounds.sound_taunt, type_settings, type_response);
+            ImReflect::Input("Walk", value.sounds.sound_walk, type_settings, type_response);
+            ImReflect::Input("Core Destroyed", value.sounds.sound_core_destroyed, type_settings, type_response);
 
             ImGui::TreePop();
         }

@@ -3,9 +3,11 @@
 #include "engine/core/polyline.hpp"
 #include "engine/core/input/input.hpp"
 #include "glm/gtx/norm.inl"
+#include "projects/game/components/gameplay_functionality_components/enable_movement_tips.hpp"
 #include "projects/game/components/gameplay_functionality_components/player.hpp"
 #include "projects/game/components/ui_components/movement_tip.hpp"
 #include "projects/game/data_headers/game_input.hpp"
+#include "projects/game/components/gameplay_functionality_components/mover_component.hpp"
 namespace {
 
 void set_attached_entity_transform(tmt::Entity entity, tmt::Entity parent = entt::null) {
@@ -27,9 +29,20 @@ void game::AttachComponent::start() {
         }
     }
     tmt::engine.ecs.get_dispatcher().sink<AttachAttemptEvent>().connect<&AttachComponent::on_check_range_to_attach>(this);
+    tmt::engine.ecs.get_dispatcher().sink<GamePausedEvent>().connect<&AttachComponent::on_game_paused>(this);
+    tmt::engine.ecs.get_dispatcher().sink<GameUnpausedEvent>().connect<&AttachComponent::on_game_unpaused>(this);
+
+    auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
+    auto& mover_comp = tmt::engine.ecs.get_component<MoverComponent>(transform.get_parent());
+
+    tmt::engine.ecs.get_dispatcher().sink<TriggerMovementStopEvent>().connect<&MoverComponent::stop_movement>(mover_comp);
 }
 void game::AttachComponent::update(const tmt::FrameData& time) {
+    if (paused) return;
+
     if (is_attached == false) {
+        if (is_moving) tmt::engine.ecs.get_dispatcher().trigger(TriggerMovementStopEvent {});
+
         is_moving = false;
         has_started_pressing = false;
 
@@ -40,10 +53,9 @@ void game::AttachComponent::update(const tmt::FrameData& time) {
         // enable movement tip if possible on the first exit from the barge
         if (once) {
             once = false;
-            auto view { tmt::engine.ecs.view<MovementTip>(entt::exclude_t {}) };
+            auto view { tmt::engine.ecs.view<EnableMovementTips>(entt::exclude_t {}) };
             if (view.empty() == false) {
-                // enable movement tips, they will disable themselves if already shown
-                tmt::engine.ecs.enable(std::get<0>(view.front().components).entity);
+                std::get<0>(view.front().components).enable_entities_in_order();
             }
         }
         return;
@@ -63,6 +75,10 @@ void game::AttachComponent::update(const tmt::FrameData& time) {
         first_frame = false;
         has_started_pressing = false;
         tmt::Log::info("Movement is {}", is_moving);
+
+        if (!is_moving) {
+            tmt::engine.ecs.get_dispatcher().trigger(TriggerMovementStopEvent {});
+        }
     }
 
     if (is_moving) {
@@ -117,4 +133,12 @@ void game::AttachComponent::on_check_range_to_attach(const AttachAttemptEvent& e
 
         tmt::engine.ecs.get_dispatcher().trigger<AttachEvent>({ .entity = entity_that_attaches, .is_attached = is_attached });
     }
+}
+
+void game::AttachComponent::on_game_paused(const game::GamePausedEvent&) {
+    paused = true;
+}
+
+void game::AttachComponent::on_game_unpaused(const game::GameUnpausedEvent&) {
+    paused = false;
 }

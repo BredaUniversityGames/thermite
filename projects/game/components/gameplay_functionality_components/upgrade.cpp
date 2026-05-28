@@ -13,6 +13,7 @@ void Upgrade::start() {
     if (auto* name_component { tmt::engine.ecs.try_get_component<tmt::Name>(entity) }) {
         // check if this should be disabled
         if (tmt::engine.player_data.get<bool>(name_component->name, false)) {
+            apply_entity_enable_disable();
             tmt::engine.ecs.disable(entity);
         }
     }
@@ -104,7 +105,7 @@ void Upgrade::modify_upgrade_entities() const {
             tmt::engine.player_data.get<MiningData>(MINING_DATA).ray_amount = static_cast<uint32_t>(upgrade_to);
             break;
         case UpgradeType::DRILL_SPEED:
-            tmt::engine.player_data.get<MiningData>(RIFLE_FIRE_DATA).rays_per_second = upgrade_to;
+            tmt::engine.player_data.get<MiningData>(MINING_DATA).rays_per_second = upgrade_to;
             break;
 
         // ── Gravity Tool ──
@@ -125,6 +126,15 @@ void Upgrade::modify_upgrade_entities() const {
     }
 }
 
+void Upgrade::apply_entity_enable_disable() const {
+    for (tmt::Entity curr_entity : entities_to_disable) {
+        disable(curr_entity);
+    }
+
+    for (tmt::Entity curr_entity : entities_to_enable) {
+        enable(curr_entity);
+    }
+}
 bool Upgrade::apply_upgrade() {
     auto* wallet_component = tmt::engine.ecs.try_get_component<Wallet>(game::Player::get().entity);
 
@@ -146,13 +156,7 @@ bool Upgrade::apply_upgrade() {
 
     modify_upgrade_entities();
 
-    for (tmt::Entity curr_entity : entities_to_disable) {
-        disable(curr_entity);
-    }
-
-    for (tmt::Entity curr_entity : entities_to_enable) {
-        enable(curr_entity);
-    }
+    apply_entity_enable_disable();
     return true;
 }
 

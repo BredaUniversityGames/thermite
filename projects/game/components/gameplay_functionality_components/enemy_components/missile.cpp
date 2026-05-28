@@ -33,8 +33,6 @@ void game::Missile::start() {
     voxel_body.layer = enemy.projectile_layer;
     voxel_body.type = tmt::VoxelBody::STATIC;
 
-    enemy_projectile_mask = enemy.projectile_mask;
-
     // set random offset
     offset = glm::vec3(
         (static_cast<float>(rand()) / RAND_MAX - 0.5f) * enemy.missile_max_randomness, (static_cast<float>(rand()) / RAND_MAX - 0.5f) * enemy.missile_max_randomness,
@@ -52,6 +50,8 @@ void game::Missile::start() {
 
 void game::Missile::update(const tmt::FrameData& time) {
     auto& enemy = tmt::engine.ecs.get_component<game::MediumEnemy>(enemy_entity);
+    auto& voxel_body = tmt::engine.ecs.get_component<tmt::VoxelBody>(entity);
+    // voxel_body.layer = 0;
     if (life_time > enemy.life_time) {
         explode();
         return;
@@ -119,7 +119,7 @@ void game::Missile::update(const tmt::FrameData& time) {
 
     const tmt::Ray ray_cast = tmt::Ray(position.get_world_position(), glm::normalize(velocity));
 
-    const tmt::Hit hit = tmt::engine.ecs.systems.get<tmt::Physics>().raycast(ray_cast, enemy_projectile_mask);
+    const tmt::Hit hit = tmt::engine.ecs.systems.get<tmt::Physics>().raycast(ray_cast, enemy.enemy_projectile_mask);
 
     // TODO this is very dumb code that should be updated when we have proper raycasts check
     if (hit.entity != entt::null && hit.distance < 0.1f || glm::distance(player_pos, position.get_world_position()) < enemy.missile_explosion_radius) {
@@ -131,6 +131,12 @@ void game::Missile::end() {}
 
 void game::Missile::explode() {
     auto& enemy = tmt::engine.ecs.get_component<MediumEnemy>(enemy_entity);
+
+    if (enemy.audio_emitter != nullptr) {
+        const tmt::AudioInstance3D instance = enemy.audio_emitter->play(enemy.sounds.sound_missile_explosion);
+        instance.set_maximum_distance(enemy.aggro_range * 1.25f);  // Multiply be 1.25f to ensure the player can hear it even when at the edge of the range
+    }
+
     enemy.ore_manager->initiate_thermite_explosion(entity, glm::uvec3(0, 0, 0));
 
     auto& missile_trans = tmt::engine.ecs.get_component<tmt::Transform>(entity);
