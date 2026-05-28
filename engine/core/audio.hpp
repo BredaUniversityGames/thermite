@@ -228,7 +228,7 @@ class Audio : public OnGamePause, public OnGameResume, public OnGameEnd, public 
     FMOD::Studio::System* system;
     FMOD::System* core_system;
 
-    std::vector<AudioInstance3D> active_instances;
+    std::vector<AudioInstance3D> active_instances_3d;
     std::vector<AudioInstance> active_instances_2d;
 
     // Inherited from OnDrawLines

@@ -270,7 +270,7 @@ AudioInstance AudioEvent::play() const {
     if (TryLogError(result, "Event instance with this description could not be created")) return { {}, nullptr };
 
     if (is_3d())
-        engine.audio.active_instances.push_back(AudioInstance3D { source_bank, event_instance });
+        engine.audio.active_instances_3d.push_back(AudioInstance3D { source_bank, event_instance });
     else
         engine.audio.active_instances_2d.push_back(AudioInstance { source_bank, event_instance });
 
@@ -416,7 +416,7 @@ void Audio::update() {
     // Audio updates should always keep updating, this makes sure we can preview sounds in the editor.
     system->update();
 
-    std::erase_if(active_instances, [](const AudioInstance3D& instance) { return instance.is_stopped(); });
+    std::erase_if(active_instances_3d, [](const AudioInstance3D& instance) { return instance.is_stopped(); });
     std::erase_if(active_instances_2d, [](const AudioInstance& instance) { return instance.is_stopped(); });
 }
 
@@ -430,9 +430,17 @@ void Audio::end() const {
 }
 
 void Audio::on_game_pause() {
-    paused_game_audio.reserve(active_instances.size());
+    paused_game_audio.reserve(active_instances_3d.size() + active_instances_2d.size());
 
-    for (AudioInstance instance : active_instances) {
+    for (AudioInstance instance : active_instances_3d) {
+        if (instance.get_paused()) continue;
+
+        // If the audio instance is not paused yet, we pause it to resume once the game resumes.
+        paused_game_audio.emplace_back(instance);
+        instance.set_paused(true);
+    }
+
+    for (AudioInstance instance : active_instances_2d) {
         if (instance.get_paused()) continue;
 
         // If the audio instance is not paused yet, we pause it to resume once the game resumes.
@@ -489,7 +497,7 @@ FMOD::Studio::VCA* Audio::get_vca(const FMOD_GUID& guid) const {
 }
 
 void Audio::stop_all_audio_instances() {
-    for (const AudioInstance3D& instance : active_instances) {
+    for (const AudioInstance3D& instance : active_instances_3d) {
         instance.stop(FMOD_STUDIO_STOP_IMMEDIATE);
     }
 
@@ -497,7 +505,7 @@ void Audio::stop_all_audio_instances() {
         instance.stop(FMOD_STUDIO_STOP_IMMEDIATE);
     }
 
-    active_instances.clear();
+    active_instances_3d.clear();
     active_instances_2d.clear();
 }
 
