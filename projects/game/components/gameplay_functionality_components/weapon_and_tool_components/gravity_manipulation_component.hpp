@@ -3,6 +3,7 @@
 #include "engine/systems/gameplay/game_component.hpp"
 #include "engine/core/resources/stencil.hpp"
 #include "engine/systems/physics/components/voxel_body.hpp"
+#include "engine/core/components/audio_emitter.hpp"
 
 namespace game {
 

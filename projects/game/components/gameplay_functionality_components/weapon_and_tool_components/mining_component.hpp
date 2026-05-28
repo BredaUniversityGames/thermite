@@ -7,6 +7,7 @@
 #include "engine/shared/ray.hpp"
 #include "projects/game/components/managers/ore_manager.hpp"
 #include "projects/game/data_headers/layer_mask.hpp"
+#include "engine/core/components/audio_emitter.hpp"
 
 namespace game {
 

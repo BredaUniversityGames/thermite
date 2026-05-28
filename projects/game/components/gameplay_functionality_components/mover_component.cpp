@@ -68,7 +68,6 @@ void game::MoverComponent::stop_movement(const TriggerMovementStopEvent& event) 
         jet_sound_instance = {};
     }
 
-
     stop = true;
 }
 
