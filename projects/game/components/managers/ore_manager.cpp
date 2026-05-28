@@ -3,6 +3,7 @@
 #include <queue>
 
 #include "engine/core/components/voxel_renderer.hpp"
+#include "engine/core/components/emitter.hpp"
 #include "engine/systems/physics/destruction_system.hpp"
 #include "engine/systems/physics/physics_system.hpp"
 #include "engine/systems/physics/components/voxel_body.hpp"
@@ -149,7 +150,8 @@ void OreManager::spawn_emitter(glm::vec3 spawn_pos) {
         return;
     }
 
-    tmt::Entity instantiated_entity = tmt::PrefabHelper::instantiate_prefab(explosion_prefab->file_location);
+    tmt::Entity instantiated_entity = tmt::PrefabHelper::instantiate_prefab(explosion_prefab.file_location);
+    if (instantiated_entity == entt::null) return;
     auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(instantiated_entity);
 
     transform.set_world_position(spawn_pos);

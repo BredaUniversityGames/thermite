@@ -7,6 +7,7 @@
 #include "engine/tools/tweening/transform.hpp"
 #include "projects/game/data_headers/events.hpp"
 #include "projects/game/data_headers/layer_mask.hpp"
+#include "engine/core/components/audio_emitter.hpp"
 
 namespace game {
 
@@ -85,6 +86,20 @@ struct CameraShakeSettings {
     // loaded from the saved data
     float multiplier { 1.0f };
 };
+struct PlayerSounds {
+    tmt::AudioEvent destroyed_death;       // done
+    tmt::AudioEvent drone_boost;           // done
+    tmt::AudioEvent hit;                   // done
+    tmt::AudioEvent battery_half;          // done
+    tmt::AudioEvent battery_almost_out;    // done
+    tmt::AudioEvent battery_out;           // done
+};
+struct ToolSounds {
+    tmt::AudioEvent gravity_gun_activate;  // done
+    tmt::AudioEvent mining_tool_activate;  // done
+};
+
+enum class ToolType { RIFLE, GRAVITY, MINING };
 
 class Player : public tmt::GameComponent<Player> {
    public:
@@ -106,6 +121,7 @@ class Player : public tmt::GameComponent<Player> {
     void draw_debug_lines() const override;
     void attempt_attach(tmt::Input& input);
     void on_attach(const AttachEvent& event);
+    void take_damage(float damage);
     void end() override;
     float camera_sensitivity = 0.1f;
 
@@ -132,8 +148,10 @@ class Player : public tmt::GameComponent<Player> {
     // Helper functions
     tmt::Transform& get_transform() const { return tmt::engine.ecs.get_component<tmt::Transform>(entity); }
     tmt::Camera& get_camera() const { return tmt::engine.ecs.get_component<tmt::Camera>(entity); }
+    PlayerState get_state() { return state; };
     void set_state(PlayerState new_state) { state = new_state; };
-    PlayerState get_state() const { return state; };
+    PlayerState get_state_before_pause() { return state_before_pause; };
+    void set_state_before_pause(PlayerState new_state) { state_before_pause = new_state; }
     glm::vec3 get_velocity() const { return velocity; };
 
     // HUD entities
@@ -187,13 +205,19 @@ class Player : public tmt::GameComponent<Player> {
     float base_pitch = 0.0f;
     glm::vec2 recoil_offset = glm::vec2(0.0f);
 
+    void set_hud_enabled(tmt::Entity hud_root, bool enabled);
+
+    // Sounds
+    tmt::AudioEmitter* audio_emitter;
+    PlayerSounds player_sounds;
+    ToolSounds tool_sounds;
+
    private:
     void refill(float delta);
     void drain_energy(float delta);
     void reset_action_time(std::string_view action_name);
     void apply_boost();
     void reset_boost(float delta_time);
-    void set_hud_enabled(tmt::Entity hud_root, bool enabled);
     void update_shake(float dt);
     void set_crosshair(tmt::Entity active);
     void ensure_attached_camera();
@@ -205,6 +229,7 @@ class Player : public tmt::GameComponent<Player> {
     glm::vec3 get_attached_camera_orbit_position(const glm::vec3& barge_pos) const;
 
     PlayerState state = PlayerState::FREEMOVING;
+    PlayerState state_before_pause;
     glm::vec3 velocity = { 0.0f, 0.0f, 0.0f };
     glm::vec3 input_dir { 0.0f };
     float max_speed_calculated = max_speed;
@@ -225,6 +250,11 @@ class Player : public tmt::GameComponent<Player> {
     float attach_transition_look_blend_elapsed = 0.0f;
     bool attach_transition_start_forward_set = false;
     glm::vec3 attach_transition_start_forward { 0.0f, 0.0f, 1.0f };
+
+    // sound variables
+    bool out_of_energy = false;
+
+    ToolType active_tool = ToolType::RIFLE;
 };
 
 }  // namespace game
@@ -236,10 +266,12 @@ TMT_OBJECT(game::AttachedCameraSettings, (distance, height_offset, look_at_heigh
 TMT_OBJECT(game::AttachCameraTransitionSettings, (enabled, play_on_first_attach, inherit_player_facing_on_attach, blend_look_over_tween, start_look_blend_time, duration, ease));
 TMT_OBJECT(game::DetachCameraTransitionSettings, (enabled, align_player_to_camera, duration, ease));
 TMT_OBJECT(game::CameraShakeSettings, (enabled, max_intensity, boost_intensity, drill_intensity, decay_speed, recoil_strength, recoil_return_speed, recoil_horizontal));
+TMT_OBJECT(game::PlayerSounds, (destroyed_death, drone_boost, hit, battery_half, battery_almost_out, battery_out));
+TMT_OBJECT(game::ToolSounds, (gravity_gun_activate, mining_tool_activate));
 TMT_GAME_COMPONENT(
     game::Player, (camera_sensitivity, acceleration, deceleration, drag, max_speed, boost_max_speed_multiplier, boost_acceleration_multiplier, boost_deceleration_factor,
                    boost_cost_per_second_per_additional_speed_above_max, boost_initial_cost, boost_availability, health, energy, energy_drain_per_second, out_of_energy_time_till_death,
                    low_energy_threshold, low_energy_duration, use_second_warning, low_energy_threshold_2, low_energy_duration_2, player_hud, barge_hud, low_energy_hud, black_out_hud,
                    black_out_curve, rifle_crosshair, gravity_crosshair, mine_crosshair, barge, recharge_distance, ray_check, camera_shake_settings, attached_camera_settings,
-                   attach_camera_transition_settings, detach_camera_transition_settings)
+                   attach_camera_transition_settings, detach_camera_transition_settings, player_sounds, tool_sounds)
 );
