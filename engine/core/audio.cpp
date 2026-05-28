@@ -520,7 +520,6 @@ Audio::DopplerSettings Audio::get_3d_settings() const {
 }
 
 void Audio::pause_game_audio() {
-    paused_game_audio.clear();
     paused_game_audio.reserve(active_instances_3d.size() + active_instances_2d.size());
 
     // Pause 3D instances
