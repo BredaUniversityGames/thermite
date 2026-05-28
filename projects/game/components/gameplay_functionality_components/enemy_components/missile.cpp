@@ -43,9 +43,9 @@ void game::Missile::start() {
     // initial missile rotation
     auto& nav_mesh = tmt::engine.ecs.get_component<tmt::NavMesh>(enemy.walkable_asteroid);
     if (!nav_mesh.nav_nodes_valid()) return;
-    auto ground_up = (*nav_mesh.nodes_mesh)[nav_mesh.find_closest_node(enemy_pos)].normal;
+    auto ground_up = -(*nav_mesh.nodes_mesh)[nav_mesh.find_closest_node(enemy_pos)].normal;
     glm::vec3 forward = glm::normalize(ground_up);
-    glm::vec3 up = (glm::abs(glm::dot(forward, ground_up)) < 0.99f) ? ground_up : glm::vec3(0.0f, 1.0f, 0.0f);
+    glm::vec3 up = (glm::abs(glm::dot(forward, ground_up)) < 0.99f) ? ground_up : glm::vec3(0.0f, -1.0f, 0.0f);
     missile_trans.set_world_rotation(glm::quatLookAt(forward, up));
 
     // instantiate vfx prefab
@@ -53,8 +53,7 @@ void game::Missile::start() {
     vfx_entity = tmt::PrefabHelper::instantiate_prefab(explosion_prefab->file_location);
     auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(vfx_entity);
     transform.set_parent(entity);
-    transform.set_local_position(glm::vec3(0.0f, 0.0f, 1.0f));
-    transform.set_local_rotation(glm::vec3(0.0f, -90.0f, 0.0f));
+    transform.set_local_rotation(glm::vec3(0.0f, glm::radians(90.0f), 0.0f));
     tmt::ParticleEmitter* emitter_component = tmt::engine.ecs.try_get_component<tmt::ParticleEmitter>(vfx_entity);
     if (!emitter_component) {
         tmt::Log::error("Cant spawn particle on emitter, check prefab on ore manager component on entity: {}", entity);
@@ -120,12 +119,11 @@ void game::Missile::update(const tmt::FrameData& time) {
 
     // missile rotation
     if (glm::dot(velocity, velocity) > 0.0001f) {
-        glm::vec3 forward = glm::normalize(velocity);
+        glm::vec3 forward = glm::normalize(-velocity);
         glm::vec3 up = (glm::abs(glm::dot(forward, ground_up)) < 0.99f) ? ground_up : glm::vec3(0.0f, 1.0f, 0.0f);
         glm::quat target_rot = glm::quatLookAt(forward, up);
         glm::quat current_rot = position.get_world_rotation();
-        glm::quat rot = glm::slerp(current_rot, target_rot, enemy.missile_rotation_speed * time.delta_time);
-        position.set_world_rotation(rot);
+        position.set_world_rotation(glm::slerp(current_rot, target_rot, enemy.missile_rotation_speed * time.delta_time));
     }
 
     // collision check
