@@ -15,6 +15,7 @@
 #include "engine/core/renderer/renderer.hpp"
 #include "engine/systems/physics/physics_system.hpp"
 #include "engine/systems/physics/components/voxel_body.hpp"
+#include "engine/core/renderer/pipelines/vfx_pipeline.hpp"
 #define GLM_ENABLE_EXPERIMENTAL
 #include "glm/gtx/quaternion.hpp"
 
