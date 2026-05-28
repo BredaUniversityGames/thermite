@@ -240,7 +240,7 @@ void Physics::on_fixed_update(const FrameData&) {
             object.local_to_world = transform.get_world_matrix();
 
             /* Distance check from camera */
-            const float distance_from_camera = glm::length2(transform.get_world_position() - camera_position);
+            const float distance_from_camera = glm::length(transform.get_world_position() - camera_position);
             if (distance_from_camera > max_distance) {
                 // Skip objects that are too far from the camera
                 continue;
