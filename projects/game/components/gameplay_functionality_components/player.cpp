@@ -1026,7 +1026,6 @@ void Player::set_crosshair(tmt::Entity active) {
 }
 
 void Player::setup_vfx_emitter(tmt::Entity& entity_to_set_up, tmt::ResourceRef<tmt::Json>& prefab_to_set_up) {
-
     if (!prefab_to_set_up) {
         tmt::Log::error("Didnt set up vfx prefab on player. Please check.");
         return;
@@ -1045,7 +1044,6 @@ void Player::setup_vfx_emitter(tmt::Entity& entity_to_set_up, tmt::ResourceRef<t
     transform.set_world_position(tmt::engine.ecs.try_get_component<tmt::Transform>(entity)->get_world_position());
 
     emitter_component->active = false;
-
 }
 
 }  // namespace game

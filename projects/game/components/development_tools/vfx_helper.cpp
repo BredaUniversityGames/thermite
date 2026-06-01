@@ -26,4 +26,4 @@ void GameVFXHelper::burst_vfx_emitter(tmt::Entity emitter_entity) {
     }
 }
 
-}
+}  // namespace game

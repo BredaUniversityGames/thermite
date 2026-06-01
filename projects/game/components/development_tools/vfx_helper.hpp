@@ -9,7 +9,7 @@ class GameVFXHelper : public tmt::GameComponent<GameVFXHelper> {
     using GameComponent::GameComponent;
     static std::string_view get_name() { return "Game VFX Helper"; }
 
-    void start() override{}
+    void start() override {}
     void update(const tmt::FrameData& time) override {}
     void end() override {}
 
