@@ -117,10 +117,9 @@ void GravityManipulationComponent::add_vfx_emitters() {
         tmt::Log::error("Unable to set up gravity manipulation gun vfx. Please set it up properly. (missing spawnpoint entity definitions)");
         return;
     }
-     
+
     entity_pull_vfx = tmt::PrefabHelper::instantiate_prefab(vfx_gravity_gun.pull_vfx_prefab->file_location);
     auto& transform_pull = tmt::engine.ecs.get_component<tmt::Transform>(entity_pull_vfx);
-
 
     tmt::ParticleEmitter* emitter_component_pull = tmt::engine.ecs.try_get_component<tmt::ParticleEmitter>(entity_pull_vfx);
     if (!emitter_component_pull) {
@@ -129,10 +128,9 @@ void GravityManipulationComponent::add_vfx_emitters() {
     }
     transform_pull.set_parent(vfx_gravity_gun.pull_vfx_point_entity);
     transform_pull.set_world_position(tmt::engine.ecs.try_get_component<tmt::Transform>(vfx_gravity_gun.pull_vfx_point_entity)->get_world_position());
- 
+
     entity_push_vfx = tmt::PrefabHelper::instantiate_prefab(vfx_gravity_gun.pull_vfx_prefab->file_location);
     auto& transform_push = tmt::engine.ecs.get_component<tmt::Transform>(entity_push_vfx);
-
 
     tmt::ParticleEmitter* emitter_component_push = tmt::engine.ecs.try_get_component<tmt::ParticleEmitter>(entity_push_vfx);
     if (!emitter_component_push) {
@@ -141,7 +139,6 @@ void GravityManipulationComponent::add_vfx_emitters() {
     }
     transform_push.set_parent(vfx_gravity_gun.pull_vfx_point_entity);
     transform_push.set_world_position(tmt::engine.ecs.try_get_component<tmt::Transform>(vfx_gravity_gun.pull_vfx_point_entity)->get_world_position());
-
 
     emitter_component_pull->active = false;
     emitter_component_push->active = false;
@@ -154,4 +151,5 @@ void GravityManipulationComponent::vfx_emitter_burst(tmt::Entity bursting_entity
     }
     emitter_component->should_burst = true;
 }
+
 }  // namespace game
