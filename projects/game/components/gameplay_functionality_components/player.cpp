@@ -17,6 +17,7 @@
 #include "engine/shared/ray.hpp"
 #include "engine/systems/physics/physics_system.hpp"
 #include "engine/tools/player_data.hpp"
+#include "engine/tools/prefab_helper.hpp"
 #include "projects/game/components/development_tools/debug_line_helper.hpp"
 #include "projects/game/data_headers/save_entries.hpp"
 #include "projects/game/data_headers/wallet.hpp"
@@ -148,6 +149,9 @@ void Player::start() {
     audio_emitter = tmt::engine.ecs.try_get_component<tmt::AudioEmitter>(get().entity);
     health.value = health.max_value;
     energy.value = energy.max_value;
+
+    // Set up the vfx emitters
+    setup_vfx_emitter(recharge_emitter_entity, player_vfx_settings.recharge_vfx_prefab);
 }
 void Player::end() {
     tmt::engine.ecs.get_dispatcher().sink<AttachEvent>().disconnect<&Player::on_attach>(this);
@@ -1012,5 +1016,24 @@ void Player::set_crosshair(tmt::Entity active) {
         ecs.enable(active);
     }
 }
+
+void Player::setup_vfx_emitter(tmt::Entity entity_to_set_up, tmt::ResourceRef<tmt::Json>& prefab_to_set_up) {
+
+    entity_to_set_up = tmt::PrefabHelper::instantiate_prefab(prefab_to_set_up.file_location);
+    auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity_to_set_up);
+
+    tmt::ParticleEmitter* emitter_component = tmt::engine.ecs.try_get_component<tmt::ParticleEmitter>(entity_to_set_up);
+    if (!emitter_component) {
+        tmt::Log::error("Cant spawn particle on emitter, check prefabs on entity: {}", entity);
+        return;
+    }
+
+    transform.set_parent(entity);
+    transform.set_world_position(tmt::engine.ecs.try_get_component<tmt::Transform>(entity)->get_world_position());
+
+    emitter_component->active = false;
+
+}
+
 
 }  // namespace game
