@@ -33,6 +33,11 @@ struct RayCollisionCheck {
     float collision_speed_damping = 0.4f;
     float camera_near_distance = 0.3f;
 };
+
+struct PlayerVFXSettings {
+    tmt::ResourceRef<tmt::Json> recharge_vfx_prefab;
+};
+
 enum class PlayerState { FREEMOVING, ATTACHED, PAUSED };
 struct AttachedCameraSettings {
     float distance = 12.0f;
@@ -184,6 +189,7 @@ class Player : public tmt::GameComponent<Player> {
     tmt::Entity gravity_crosshair = entt::null;
     tmt::Entity mine_crosshair = entt::null;
 
+    PlayerVFXSettings player_vfx_settings;
     // Barge point
     tmt::Entity barge = entt::null;
 
@@ -268,10 +274,12 @@ TMT_OBJECT(game::DetachCameraTransitionSettings, (enabled, align_player_to_camer
 TMT_OBJECT(game::CameraShakeSettings, (enabled, max_intensity, boost_intensity, drill_intensity, decay_speed, recoil_strength, recoil_return_speed, recoil_horizontal));
 TMT_OBJECT(game::PlayerSounds, (destroyed_death, drone_boost, hit, battery_half, battery_almost_out, battery_out));
 TMT_OBJECT(game::ToolSounds, (gravity_gun_activate, mining_tool_activate));
+TMT_OBJECT(game::PlayerVFXSettings, (recharge_vfx_prefab));
 TMT_GAME_COMPONENT(
     game::Player, (camera_sensitivity, acceleration, deceleration, drag, max_speed, boost_max_speed_multiplier, boost_acceleration_multiplier, boost_deceleration_factor,
                    boost_cost_per_second_per_additional_speed_above_max, boost_initial_cost, boost_availability, health, energy, energy_drain_per_second, out_of_energy_time_till_death,
                    low_energy_threshold, low_energy_duration, use_second_warning, low_energy_threshold_2, low_energy_duration_2, player_hud, barge_hud, low_energy_hud, black_out_hud,
-                   black_out_curve, rifle_crosshair, gravity_crosshair, mine_crosshair, barge, recharge_distance, ray_check, camera_shake_settings, attached_camera_settings,
+                   black_out_curve, rifle_crosshair, gravity_crosshair, mine_crosshair, player_vfx_settings, barge, recharge_distance, ray_check, camera_shake_settings,
+                   attached_camera_settings,
                    attach_camera_transition_settings, detach_camera_transition_settings, player_sounds, tool_sounds)
 );
