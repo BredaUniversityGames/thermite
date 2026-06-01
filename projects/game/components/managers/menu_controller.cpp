@@ -56,7 +56,7 @@ void MenuController::update(const tmt::FrameData& time) {
             return;
         }
 
-        const bool settings_menu_open = settings_menu_entity != entt::null && !tmt::engine.ecs.is_disabled(settings_menu_entity);
+        const bool settings_menu_open = settings_menu_entity != entt::null && tmt::engine.ecs.is_enabled(settings_menu_entity);
         // close_settings_menu_entity
         if (settings_menu_open) {
             if (close_settings_menu_entity != entt::null) {
