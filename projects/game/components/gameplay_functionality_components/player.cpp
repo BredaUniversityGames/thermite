@@ -21,6 +21,7 @@
 #include "projects/game/components/development_tools/debug_line_helper.hpp"
 #include "projects/game/data_headers/save_entries.hpp"
 #include "projects/game/data_headers/wallet.hpp"
+#include "projects/game/components/development_tools/vfx_helper.hpp"
 
 // TODO before we have a serializer for input, you can add all the needed keybindings here.
 //  TODO we still have to add the gamepad inputs here
@@ -874,10 +875,17 @@ void Player::refill(float delta) {
 
     health.value = glm::min(health.max_value, health.value + delta * health.increase_multiplier);
     energy.value = glm::min(energy.max_value, energy.value + delta * energy.increase_multiplier);
+
+    if (health.value < health.max_value || energy.value < energy.max_value) {
+        GameVFXHelper::activate_vfx_emitter(recharge_emitter_entity);
+    } else {
+        GameVFXHelper::deactivate_vfx_emitter(recharge_emitter_entity);
+    }
 }
 
 void Player::drain_energy(float delta) {
     energy.value = glm::min(energy.max_value, energy.value - delta * energy_drain_per_second);
+    GameVFXHelper::deactivate_vfx_emitter(recharge_emitter_entity);
 }
 
 void Player::on_attach(const AttachEvent& event) {
@@ -1017,7 +1025,12 @@ void Player::set_crosshair(tmt::Entity active) {
     }
 }
 
-void Player::setup_vfx_emitter(tmt::Entity entity_to_set_up, tmt::ResourceRef<tmt::Json>& prefab_to_set_up) {
+void Player::setup_vfx_emitter(tmt::Entity& entity_to_set_up, tmt::ResourceRef<tmt::Json>& prefab_to_set_up) {
+
+    if (!prefab_to_set_up) {
+        tmt::Log::error("Didnt set up vfx prefab on player. Please check.");
+        return;
+    }
 
     entity_to_set_up = tmt::PrefabHelper::instantiate_prefab(prefab_to_set_up.file_location);
     auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity_to_set_up);
@@ -1034,6 +1047,5 @@ void Player::setup_vfx_emitter(tmt::Entity entity_to_set_up, tmt::ResourceRef<tm
     emitter_component->active = false;
 
 }
-
 
 }  // namespace game

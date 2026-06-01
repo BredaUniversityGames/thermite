@@ -232,7 +232,7 @@ class Player : public tmt::GameComponent<Player> {
     void start_detach_camera_transition();
     void align_player_camera_to_attached();
     void sync_attached_orbit_from_camera();
-    void setup_vfx_emitter(tmt::Entity entity_to_set_up, tmt::ResourceRef<tmt::Json>& prefab_to_set_up);
+    void setup_vfx_emitter(tmt::Entity& entity_to_set_up, tmt::ResourceRef<tmt::Json>& prefab_to_set_up);
     glm::vec3 get_attached_camera_orbit_position(const glm::vec3& barge_pos) const;
 
     PlayerState state = PlayerState::FREEMOVING;
