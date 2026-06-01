@@ -59,6 +59,9 @@ class AudioInstance {
     void set_parameter(const AudioParameter& event_parameter, int value) const;
     void set_label_parameter(const AudioParameter& event_parameter, const std::string& value) const;
 
+    [[nodiscard]] bool operator==(const AudioInstance& other) const { return instance == other.instance; }
+    [[nodiscard]] bool operator!=(const AudioInstance& other) const { return instance != other.instance; }
+
    protected:
     FMOD::Studio::EventInstance* instance { nullptr };
     ResourceRef<AudioBank> source_bank {};
@@ -90,6 +93,9 @@ class AudioInstance3D : public AudioInstance {
 
     float get_minimum_distance() const;
     float get_maximum_distance() const;
+
+    [[nodiscard]] bool operator==(const AudioInstance3D& other) const { return instance == other.instance; }
+    [[nodiscard]] bool operator!=(const AudioInstance3D& other) const { return instance != other.instance; }
 
    private:
     [[nodiscard]] FMOD_3D_ATTRIBUTES get_3d_attributes() const;
@@ -212,6 +218,9 @@ class Audio : public OnGamePause, public OnGameResume, public OnGameEnd, public 
 
     void set_3d_settings(const DopplerSettings& settings) const;
     [[nodiscard]] DopplerSettings get_3d_settings() const;
+
+    void pause_game_audio();
+    void resume_game_audio();
 
    private:
     void update_listeners() const;

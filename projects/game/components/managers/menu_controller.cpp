@@ -3,6 +3,7 @@
 #include "projects/game/data_headers/game_input.hpp"
 #include "projects/game/components/gameplay_functionality_components/player.hpp"
 #include "projects/game/components/managers/weapon_manager.hpp"
+#include "engine/core/audio.hpp"
 
 // systems to disable for pause
 #include "engine/systems/ai/goap/goap_system.hpp"
@@ -14,6 +15,7 @@
 #include "engine/systems/motion_math/motion_math_system.hpp"  // undure of this pause either
 #include "engine/systems/physics/physics_system.hpp"
 #include "engine/tools/player_data.hpp"
+#include "engine/core/input/input_map.hpp"
 #include "projects/game/components/development_tools/save_data.hpp"
 #include "projects/game/components/gameplay_functionality_components/ore_collector.hpp"
 #include "projects/game/data_headers/save_entries.hpp"
@@ -25,6 +27,10 @@ void MenuController::start() {
     // Bind end run to event
     tmt::engine.ecs.get_dispatcher().sink<EndRun>().connect<&MenuController::enable_end_of_game_menu>(this);
     player_entity = Player::get().entity;  // Assuming there's only one player entity in the game
+
+    // menus
+    tmt::engine.input_map.add_action(action::OPEN_PAUSE_MENU);
+    tmt::engine.input_map.add_key_to_action(action::OPEN_PAUSE_MENU, tmt::Key::ESCAPE);
 }
 
 void MenuController::update(const tmt::FrameData& time) {
@@ -45,7 +51,7 @@ void MenuController::update(const tmt::FrameData& time) {
 
     if (input.is_action_just_pressed(action::OPEN_PAUSE_MENU)) {
         if (pause_menu_entity == entt::null) {
-            tmt::Log::error("No pause menu entity has been set, cannot open pause menu.");
+            tmt::Log::debug("No pause menu entity has been set, cannot open pause menu.");
             return;
         }
 
@@ -123,6 +129,9 @@ void MenuController::enable_pause_menu() const {
     if (systems.try_get<tmt::Physics>()) {
         systems.get<tmt::Physics>().disable();
     }
+
+    // unpause any running sounds
+    tmt::engine.audio.pause_game_audio();
 }
 
 void MenuController::disable_pause_menu() const {
@@ -166,6 +175,9 @@ void MenuController::disable_pause_menu() const {
     if (systems.try_get<tmt::Physics>()) {
         systems.get<tmt::Physics>().enable();
     }
+
+    // unpause any running sounds
+    tmt::engine.audio.resume_game_audio();
 }
 
 void MenuController::enable_inventory_menu() const {

@@ -38,7 +38,7 @@ std::vector<AudioInstance> paused_game_audio;
 }  // namespace
 
 bool AudioInstance::is_valid() const {
-    return !is_stopped() && instance->isValid();
+    return instance->isValid() && !is_stopped();
 }
 
 bool AudioInstance::is_stopped() const {
@@ -430,31 +430,11 @@ void Audio::end() const {
 }
 
 void Audio::on_game_pause() {
-    paused_game_audio.reserve(active_instances_3d.size() + active_instances_2d.size());
-
-    for (AudioInstance instance : active_instances_3d) {
-        if (instance.get_paused()) continue;
-
-        // If the audio instance is not paused yet, we pause it to resume once the game resumes.
-        paused_game_audio.emplace_back(instance);
-        instance.set_paused(true);
-    }
-
-    for (AudioInstance instance : active_instances_2d) {
-        if (instance.get_paused()) continue;
-
-        // If the audio instance is not paused yet, we pause it to resume once the game resumes.
-        paused_game_audio.emplace_back(instance);
-        instance.set_paused(true);
-    }
+    pause_game_audio();
 }
 
 void Audio::on_game_resume() {
-    // Resume the stored audio instances then clear the vector.
-    for (AudioInstance instance : paused_game_audio) {
-        instance.set_paused(false);
-    }
-    paused_game_audio.clear();
+    resume_game_audio();
 }
 
 void Audio::on_game_end() {
@@ -539,6 +519,34 @@ Audio::DopplerSettings Audio::get_3d_settings() const {
     return settings;
 }
 
+void Audio::pause_game_audio() {
+    paused_game_audio.reserve(active_instances_3d.size() + active_instances_2d.size());
+
+    // Pause 3D instances
+    for (AudioInstance3D& instance : active_instances_3d) {
+        if (instance.get_paused()) continue;
+
+        paused_game_audio.emplace_back(instance);
+        instance.set_paused(true);
+    }
+
+    // Pause 2D instances
+    for (AudioInstance& instance : active_instances_2d) {
+        if (instance.get_paused()) continue;
+
+        paused_game_audio.emplace_back(instance);
+        instance.set_paused(true);
+    }
+}
+
+void Audio::resume_game_audio() {
+    for (AudioInstance& instance : paused_game_audio) {
+        instance.set_paused(false);
+    }
+
+    paused_game_audio.clear();
+}
+
 void Audio::update_listeners() const {
     // Loop over the all listeners to update their positions/velocities.
     const entt::basic_group listener_group = engine.ecs.group<AudioListener>(entt::get<Transform>);
@@ -578,7 +586,7 @@ void Audio::update_emitters() {
             .up = std::bit_cast<FMOD_VECTOR>(transform.get_up()),
         };
 
-        for (const AudioInstance3D& instance : audio_emitter.playing_instances) {
+        for (const AudioInstance3D& instance : audio_emitter.playing_instances_3d) {
             const FMOD_RESULT result = instance.instance->set3DAttributes(&attributes);
             TryLogError(result, "Failed to set emitter attributes");
         }
@@ -639,7 +647,7 @@ void Audio::on_draw_lines() const {
         if (game_active) {
             // During pause or gameplay, draw the distance bounds of the active playing sounds.
             FMOD_3D_ATTRIBUTES attributes;
-            for (const AudioInstance3D& instance : audio_emitter.playing_instances) {
+            for (const AudioInstance3D& instance : audio_emitter.playing_instances_3d) {
                 // on_draw_lines() is called before the audio update function, so we have to make sure the instance is still valid.
                 if (not instance.is_valid()) continue;
 
