@@ -19,7 +19,11 @@ class UI : public ISystem {
     void set_size(tmt::UIComponent& ui_component, const tmt::Transform& transform, const glm::uvec2& screen_size);
     void on_end() override;
 
+    /* Audio */
     UiAudioRegistry menu_sounds;
+    tmt::AudioInstance slider_instance;
+    tmt::AudioInstance money_gained_instance;
+    tmt::AudioInstance insufficient_funds_instance;
 };
 
 }  // namespace tmt
