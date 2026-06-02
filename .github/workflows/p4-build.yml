@@ -65,32 +65,32 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
 
-  # build-editor:
-  #   name: Build Developer-Packaging
-  #   # Skipped when workflow_dispatch is run with skip_editor=true.
-  #   # On a push event, `inputs` is null, so !inputs.skip_editor is true
-  #   # and the job runs as normal.
-  #   if: ${{ !inputs.skip_editor }}
-  #   needs: version
-  #   runs-on: windows-latest
-  #   steps:
-  #     - name: Checkout repository
-  #       uses: actions/checkout@v4
-  #       with:
-  #         submodules: recursive
-  #     - name: Setup MSVC
-  #       uses: ilammy/msvc-dev-cmd@v1
-  #     - name: Configure
-  #       shell: pwsh
-  #       run: cmake --preset Developer-Packaging -DCMAKE_UNITY_BUILD=ON -DBUILD_VERSION="${{ needs.version.outputs.new_version }}"
-  #     - name: Build
-  #       shell: pwsh
-  #       run: cmake --build --preset Developer-Packaging --target game -j
-  #     - name: Upload artifact
-  #       uses: actions/upload-artifact@v4
-  #       with:
-  #         name: editor-build
-  #         path: build/Developer-Packaging/bin/game/*
+  build-editor:
+    name: Build Developer-Packaging
+    # Skipped when workflow_dispatch is run with skip_editor=true.
+    # On a push event, `inputs` is null, so !inputs.skip_editor is true
+    # and the job runs as normal.
+    if: ${{ !inputs.skip_editor }}
+    needs: version
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Setup MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+      - name: Configure
+        shell: pwsh
+        run: cmake --preset Developer-Packaging -DCMAKE_UNITY_BUILD=ON -DBUILD_VERSION="${{ needs.version.outputs.new_version }}"
+      - name: Build
+        shell: pwsh
+        run: cmake --build --preset Developer-Packaging --target game -j
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: editor-build
+          path: build/Developer-Packaging/bin/game/*
 
   build-game:
     name: Build Release-Game
@@ -108,7 +108,7 @@ jobs:
         # No THERMITE_DEVELOPER_BUILD flag here — we want the Steam
         # exe to be minimal (just the binary). Assets are assembled
         # separately from the engine folder in the dev zip + P4.
-        run: cmake --preset Release-Game -DCMAKE_UNITY_BUILD=ON -DTHERMITE_PACKAGE_BUILD=ON -DBUILD_VERSION="${{ needs.version.outputs.new_version }}"
+        run: cmake --preset Release-Game -DCMAKE_UNITY_BUILD=ON -DBUILD_VERSION="${{ needs.version.outputs.new_version }}"
       - name: Build
         shell: pwsh
         run: cmake --build --preset Release-Game --target game -j
@@ -117,11 +117,11 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: game-build
-          path: build/Release-Game/bin/game/*
+          path: build/Release-Game/bin/game/game.exe
 
   release:
     name: Create Release
-    needs: [ version, build-game ]
+    needs: [ version, build-editor, build-game ]
     # `needs` normally cascades skips: if build-editor is skipped, this
     # job is too. We override that — run release as long as nothing
     # actually FAILED or was cancelled. `always()` forces evaluation
@@ -129,7 +129,8 @@ jobs:
     if: |
       always() &&
       needs.version.result == 'success' &&
-      needs.build-game.result == 'success'
+      needs.build-game.result == 'success' &&
+      (needs.build-editor.result == 'success' || needs.build-editor.result == 'skipped')
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -141,6 +142,12 @@ jobs:
 
       # --- Downloads: always grab the Release-Game exe, grab the
       # --- editor build only when it actually ran.
+      - name: Download editor artifact
+        if: ${{ !inputs.skip_editor }}
+        uses: actions/download-artifact@v4
+        with:
+          name: editor-build
+          path: release-package
       - name: Download game artifact
         uses: actions/download-artifact@v4
         with:

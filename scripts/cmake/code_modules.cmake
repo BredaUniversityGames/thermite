@@ -86,7 +86,7 @@ function(find_and_add_targets)
             graphite_bundle_crash_diagnostics("${CMAKE_BINARY_DIR}/bin/${target_name}")
 
             # Copy over auxialliary assets for developer use
-            if (THERMITE_PACKAGE_BUILD OR THERMITE_DEVELOPER_BUILD)
+            if (THERMITE_DEVELOPER_BUILD)
                 copy_directory_to_output(${target_name}
                         "${CMAKE_SOURCE_DIR}/engine/assets"
                         "engine/assets"
