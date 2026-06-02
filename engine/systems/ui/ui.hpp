@@ -1,6 +1,7 @@
 #pragma once
 #include "engine/core/system.hpp"
 #include <glm/glm.hpp>
+#include "ui_audio_registry.hpp"
 
 namespace tmt {
 
@@ -17,6 +18,8 @@ class UI : public ISystem {
     void on_update(const tmt::FrameData& time) override;
     void set_size(tmt::UIComponent& ui_component, const tmt::Transform& transform, const glm::uvec2& screen_size);
     void on_end() override;
+
+    UiAudioRegistry menu_sounds;
 };
 
 }  // namespace tmt
