@@ -184,16 +184,6 @@ void Explode::on_tick(tmt::Entity agent, float dt) {
             }
         }
 
-        // Explosion component
-        auto& explosion = ecs.add_component<Explosion>(explosion_entity);
-
-        // Copy params from agent
-        explosion.param = small_enemy->explosion_parameters;
-        explosion.explode();
-
-        // destroy core entity & explosion
-        ecs.destroy_entity(thermite);
-
         tmt::engine.ecs.remove_component<SteeringAgent>(agent);
         tmt::engine.ecs.remove_component<tmt::GoapAgent>(agent);
 
@@ -207,6 +197,16 @@ void Explode::on_tick(tmt::Entity agent, float dt) {
         }
 
         small_enemy->die(agent);
+
+        // Explosion component
+        auto& explosion = ecs.add_component<Explosion>(explosion_entity);
+
+        // Copy params from agent
+        explosion.param = small_enemy->explosion_parameters;
+        explosion.explode();
+
+        // destroy core entity & explosion
+        ecs.destroy_entity(thermite);
     }
 }
 
