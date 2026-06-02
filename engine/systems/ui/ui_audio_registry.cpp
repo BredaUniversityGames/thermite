@@ -1,4 +1,6 @@
 #include "ui_audio_registry.hpp"
+#include "engine/tools/serializer/all.hpp"
+#include "engine/tools/serializer.hpp"
 
 void tmt::UiAudioRegistry::load() {
     const std::string file_data = tmt::IO::read_text_file({ tmt::IO::Location::PROJECT, "audio/menu_sounds.json" });
