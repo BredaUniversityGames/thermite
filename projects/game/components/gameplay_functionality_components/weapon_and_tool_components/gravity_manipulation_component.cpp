@@ -111,6 +111,10 @@ void GravityManipulationComponent::add_vfx_emitters() {
         return;
     }
 
+    if (!vfx_gravity_gun.pull_vfx_prefab.resource || !vfx_gravity_gun.push_vfx_prefab.resource) {
+        tmt::Log::error("Cannot set vfx for gravity gun, abort emitter spawning, set prefabs. Entity: {}", entity);
+        return;
+    }
     entity_pull_vfx = tmt::PrefabHelper::instantiate_prefab(vfx_gravity_gun.pull_vfx_prefab->file_location);
     auto& transform_pull = tmt::engine.ecs.get_component<tmt::Transform>(entity_pull_vfx);
 
