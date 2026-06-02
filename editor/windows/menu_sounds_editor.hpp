@@ -1,11 +1,12 @@
 #pragma once
+
 #include "editor/core/window.hpp"
 
 namespace tmt {
 
-class MenuSoundsEditor : public IWindow<> {
+class MenuSoundsEditor : public tmt::IWindow<> {
    public:
-    constexpr std::string get_title() const override { return "UI Audio"; }
+    std::string get_title() const override { return "Menu Sounds"; }
 
     void on_editor_start() override;
     void on_editor_end() override;

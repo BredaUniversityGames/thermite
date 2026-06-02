@@ -248,4 +248,5 @@ class Audio : public OnGamePause, public OnGameResume, public OnGameEnd, public 
 }  // namespace tmt
 
 JSON_REFLECT(FMOD_STUDIO_PARAMETER_ID, data1, data2);
+JSON_REFLECT(tmt::AudioEvent, uuid);
 JSON_REFLECT(tmt::AudioParameter, source_event, id);

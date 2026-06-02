@@ -1,30 +1,40 @@
 #include "menu_sounds_editor.hpp"
 
-#include "inspector.hpp"
+#include <imgui.h>
+#include <ImReflect.hpp>
 
 #include "engine/engine.hpp"
-#include "engine/core/logger.hpp"
-
 #include "engine/systems/ui/ui.hpp"
-// #include "engine/systems/ui/ui_audio_registry.hpp"
-
-#include <imgui.h>
 
 namespace tmt {
 
-void MenuSoundsEditor::on_editor_start() {}
+void MenuSoundsEditor::on_editor_start() {
+    auto* ui = engine.ecs.systems.try_get<UI>();
+
+    if (!ui) {
+        Log::warn("UI system not active.");
+        return;
+    }
+
+    ui->menu_sounds.load();
+}
 
 void MenuSoundsEditor::on_editor_end() {}
 
 void MenuSoundsEditor::on_inspect() {
-    auto* audio = engine.ecs.systems.try_get<UI>();
-    if (!audio) return;
+    auto* ui = engine.ecs.systems.try_get<UI>();
+    if (!ui) return;
 
     ImGui::Begin("Menu Sounds");
 
-    if (ImGui::Button("Save")) audio->menu_sounds.save();
+    if (ImGui::Button("Save")) {
+        ui->menu_sounds.save();
+        Log::info("Menu sounds saved.");
+    }
 
-    Inspector::draw(audio->menu_sounds.sounds);
+    ImGui::Separator();
+
+    ImReflect::Input("", ui->menu_sounds.sounds);
 
     ImGui::End();
 }
