@@ -108,7 +108,7 @@ jobs:
         # No THERMITE_DEVELOPER_BUILD flag here — we want the Steam
         # exe to be minimal (just the binary). Assets are assembled
         # separately from the engine folder in the dev zip + P4.
-        run: cmake --preset Release-Game -DCMAKE_UNITY_BUILD=ON -DBUILD_VERSION="${{ needs.version.outputs.new_version }}"
+        run: cmake --preset Release-Game -DCMAKE_UNITY_BUILD=ON -DTHERMITE_PACKAGE_BUILD=ON -DBUILD_VERSION="${{ needs.version.outputs.new_version }}"
       - name: Build
         shell: pwsh
         run: cmake --build --preset Release-Game --target game -j
