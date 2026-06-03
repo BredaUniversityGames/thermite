@@ -7,11 +7,11 @@ struct MenuSounds {
     tmt::AudioEvent button_hover;        // done
     tmt::AudioEvent button_click;        // done
     tmt::AudioEvent slider_move;         // done
-    tmt::AudioEvent button_accept;       //
-    tmt::AudioEvent insufficient_funds;  //
-    tmt::AudioEvent money_gained;        //
-    tmt::AudioEvent loading;             //
-    tmt::AudioEvent open_menu;           //
+    tmt::AudioEvent button_accept;       // done
+    tmt::AudioEvent insufficient_funds;  // done
+    tmt::AudioEvent money_gained;        // done
+    tmt::AudioEvent loading;             // done, no looping
+    tmt::AudioEvent open_menu;           // only esc menu
 };
 
 }  // namespace tmt

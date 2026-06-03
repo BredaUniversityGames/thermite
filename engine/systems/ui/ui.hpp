@@ -24,6 +24,7 @@ class UI : public ISystem {
     tmt::AudioInstance slider_instance;
     tmt::AudioInstance money_gained_instance;
     tmt::AudioInstance insufficient_funds_instance;
+    tmt::AudioInstance loading_instance;
 };
 
 }  // namespace tmt
