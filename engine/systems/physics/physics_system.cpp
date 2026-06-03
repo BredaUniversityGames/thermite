@@ -140,16 +140,31 @@ void Physics::on_update(const FrameData& frame) {
             vb.initialized = true;
         }
 
-        // engine.polyline.use_color(1.0f, 0.3f, 0.3f);
-        // engine.polyline.use_depth_testing(false);
-        // engine.polyline.use_line_width(0.3f);
-        // engine.polyline.draw_sphere(vb.center_of_mass, 0.1f, 16u);
+         //engine.polyline.use_color(1.0f, 0.3f, 0.3f);
+         //engine.polyline.use_depth_testing(false);
+         //engine.polyline.use_line_width(0.3f);
+         //engine.polyline.draw_sphere(vb.center_of_mass, 0.1f, 16u);
 
-        //// Debug draw bounding box
-        // engine.polyline.use_color(0.2f, 1.0f, 0.3f);
-        // engine.polyline.use_depth_testing(true);
-        // engine.polyline.use_line_width(0.2f);
-        // engine.polyline.draw_obb(vb.position, glm::vec3(vb.width, vb.height, vb.depth) * 0.5f, vb.rotation);
+         //// Debug draw bounding box
+         //engine.polyline.use_color(0.2f, 1.0f, 0.3f);
+         //engine.polyline.use_depth_testing(true);
+         //engine.polyline.use_line_width(0.2f);
+         //engine.polyline.draw_obb(vb.position, glm::vec3(vb.width, vb.height, vb.depth) * 0.5f, vb.rotation);
+
+        //// Check if any object has unresonably high velocity
+        //if (vb.type == VoxelBody::DYNAMIC && glm::length2(vb.velocity) > 10000.0f) {
+        //    Log::warn("Entity {} has high velocity: {}", (uint32_t)entity, glm::length(vb.velocity));
+        //    vb.velocity = glm::vec3(0);
+        //    vb.angular_velocity = glm::vec3(0);
+        //}
+
+        //// Check if any object has nan position or rotation
+        //if (glm::any(glm::isnan(vb.position)) || glm::isnan(vb.rotation.x) || glm::isnan(vb.rotation.y) || glm::isnan(vb.rotation.z) ||
+        //    glm::isnan(vb.rotation.w)) {
+        //    Log::error("Entity {} has NaN position or rotation!", (uint32_t)entity);
+        //    // Log other values for debugging
+        //    Log::error("Inv mass: {}, Velocity x: {} y: {} z: {}, Angular Velocity: x: {} y: {} z: {}", vb.inv_mass, vb.velocity.x, vb.velocity.y, vb.velocity.z, vb.angular_velocity.x, vb.angular_velocity.y, vb.angular_velocity.z);
+        //}
     }
 
     // Physics interpolation
@@ -190,6 +205,11 @@ void Physics::on_fixed_update(const FrameData&) {
         // Add drag
         vb.velocity *= std::max(0.0f, 1.0f - vb.linear_drag * Engine::Config::FIXED_TIME_STEP);
         vb.angular_velocity *= std::max(0.0f, 1.0f - vb.angular_drag * Engine::Config::FIXED_TIME_STEP);
+
+
+        if (vb.velocity.x != vb.velocity.x || vb.velocity.y != vb.velocity.y || vb.velocity.z != vb.velocity.z || glm::length2(vb.velocity) > 1e4f) {
+            Log::error("Entity {} has an invalid velocity! at update forces", (uint32_t)entity);
+        }
 
         if (vb.type == VoxelBody::STATIC) continue;
 
@@ -663,6 +683,10 @@ void Physics::apply_velocities() const {
     for (const auto& [entity, vb, transform] : engine.ecs.view<VoxelBody, Transform>().each()) {
         if (vb.type == VoxelBody::STATIC) continue;
 
+        if (vb.velocity.x != vb.velocity.x || vb.velocity.y != vb.velocity.y || vb.velocity.z != vb.velocity.z || glm::length2(vb.velocity) > 1e4f) {
+            Log::error("Entity {} has an invalid velocity! at apply velocities", (uint32_t)entity);
+        }
+
         // Update positions
         vb.position += vb.velocity * Engine::Config::FIXED_TIME_STEP;
         vb.center_of_mass += vb.velocity * Engine::Config::FIXED_TIME_STEP;
@@ -846,6 +870,8 @@ void calculate_center_of_mass(VoxelBody& vb, const VoxelVolume& volume) {
         vb.inv_mass = 1.0f;
     else
         vb.inv_mass = 1.0f / (voxel_mass * voxel_count);
+
+    Log::info("Body Mass: {}", voxel_mass * voxel_count);
 }
 
 glm::mat3 recurse_inertia(
