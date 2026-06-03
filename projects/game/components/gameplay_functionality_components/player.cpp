@@ -126,9 +126,12 @@ void Player::start() {
 
         return;
     }
+
+    auto& wallet_data = tmt::engine.player_data.get<WalletData>(WALLET_DATA, WalletData { wallet->limits, wallet->total_resource_limit });
     auto& cam_shake { tmt::engine.player_data.get<float>(CAMERA_SHAKE) };
     camera_shake_settings.set_multiplier(cam_shake);
     wallet->currencies = resources;
+    wallet->total_resource_limit = wallet_data.total_resource_limit;
     if (tmt::engine.ecs.is_enabled(entity)) {
         tmt::engine.input.set_mouse_relative_to_window(true);
         glm::vec2 screen_size = { tmt::engine.window.width, tmt::engine.window.height };
@@ -756,7 +759,10 @@ void Player::update(const tmt::FrameData& time) {
     // Health death (instant)
     if (health.value <= 0.0f && !player_ended_run) {
         // Play sound
-        player_sounds.destroyed_death.play();
+        if (!destroyed_death_instance.is_valid() && !player_destroyed) {
+            destroyed_death_instance = player_sounds.destroyed_death.play();
+            player_destroyed = true;
+        }
         // player ded -> call end run event with player ded
         tmt::engine.ecs.get_dispatcher().trigger(EndRun { true });
 
