@@ -13,7 +13,7 @@ void game::Waypoint::update(const tmt::FrameData& time) {
     auto transform { tmt::engine.ecs.get_component<tmt::Transform>(entity_waypoint) };
     auto world_pos { transform.get_world_position() };
     auto clip_pos { tmt::engine.renderer.render_view.gpu_view.world_to_clip * glm::vec4(world_pos, 1.0f) };
-    glm::vec3 barge_screen_pos { clip_pos.x, clip_pos.y, 0.0f };
+    glm::vec3 screen_pos { clip_pos.x, clip_pos.y, 0.0f };
     auto& image = tmt::engine.ecs.get_component<tmt::ImageRenderer>(entity);
 
     // behind
@@ -21,13 +21,13 @@ void game::Waypoint::update(const tmt::FrameData& time) {
         image.color.get().a = 0.0f;
         return;
     }
-    barge_screen_pos /= clip_pos.w;
+    screen_pos /= clip_pos.w;
     // remove jitter
-    barge_screen_pos.x -= tmt::engine.renderer.render_view.gpu_view.jitter.x;
-    barge_screen_pos.y -= tmt::engine.renderer.render_view.gpu_view.jitter.y;
+    screen_pos.x -= tmt::engine.renderer.render_view.gpu_view.jitter.x;
+    screen_pos.y -= tmt::engine.renderer.render_view.gpu_view.jitter.y;
 
-    barge_screen_pos *= glm::vec3 { tmt::UIComponent::REFERENCE_WIDTH * 0.5f, tmt::UIComponent::REFERENCE_HEIGHT * 0.5f, 1.0f };
-    tmt::engine.ecs.get_component<tmt::Transform>(entity).set_world_position(barge_screen_pos);
+    screen_pos *= glm::vec3 { tmt::UIComponent::REFERENCE_WIDTH * 0.5f, tmt::UIComponent::REFERENCE_HEIGHT * 0.5f, 1.0f };
+    tmt::engine.ecs.get_component<tmt::Transform>(entity).set_world_position(screen_pos);
 
     const float distance = glm::length(world_pos - Player::get().get_transform().get_world_position());
 
