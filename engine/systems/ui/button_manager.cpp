@@ -220,24 +220,38 @@ void UIElementManager::update_move_state(float dt) {
 
 void UIElementManager::on_mouse_move(MouseMoveEvent& event) {
     const auto mouse_pos = glm::vec2(event.x, event.y);
-    auto view = engine.ecs.view<Button>();
-    for (auto [entity, button] : view.each()) {
-        if (AnchorHelper::is_inside(entity, mouse_pos)) {
+
+    /* 2D Buttons */
+    auto view = engine.ecs.view<Button, UIComponent, Transform>();
+    for (auto [entity, button, ui_comp, transform] : view.each()) {
+        if (AnchorHelper::is_inside(entity, mouse_pos, ui_comp, transform)) {
             select_button(entity);
             return;
         }
     }
 
+    /* 3D Buttons */
+    auto view_3d = engine.ecs.view<Button, Transform>();
+    for (auto [entity, button, transform] : view_3d.each()) {
+
+    }
+
     if (engine.ecs.has_component<Slider>(selected_entity) == false) {
-        auto slider_view = engine.ecs.view<Slider>();
-        for (auto [entity, slider] : slider_view.each()) {
-            if (AnchorHelper::is_inside(entity, mouse_pos)) {
+        auto slider_view = engine.ecs.view<Slider, UIComponent, Transform>();
+        for (auto [entity, slider, ui_comp, transform] : slider_view.each()) {
+            if (AnchorHelper::is_inside(entity, mouse_pos, ui_comp, transform)) {
                 select_button(entity);
                 return;
             }
-            if (slider.handle_entity != entt::null && AnchorHelper::is_inside(slider.handle_entity, mouse_pos)) {
-                select_button(entity);
-                return;
+
+            if (slider.handle_entity != entt::null) {
+                const auto& ui_comp_handle = engine.ecs.get_component<UIComponent>(slider.handle_entity);
+                const auto& transform_handle = engine.ecs.get_component<Transform>(slider.handle_entity);
+                const bool handle_entity_hovered = AnchorHelper::is_inside(slider.handle_entity, mouse_pos, ui_comp_handle, transform_handle);
+                if (handle_entity_hovered) {
+                    select_button(entity);
+                    return;
+                }
             }
         }
     }
