@@ -40,67 +40,52 @@ class PlayerData {
     /* Important! Type needs to be reflected */
     template <typename T>
     T& get(const std::string& key, T default_value = {}) {
-        /* Check if it's already loaded */
-        const bool contains = entries.contains(key);
-        if (contains == false) {
-            /* Default emplace */
-            auto ops_entry = Entry {
-                .value = default_value,
-                .ops = create_ops<T>(),
-            };
-            entries.emplace(key, ops_entry);
-
-            /* Check if json, else use default */
-            const bool has_json = data && data->get_parsed_json().contains(key);
-            if (has_json) {
-                const tmt::json& j = data->get_parsed_json().at(key);
-                auto& entry = entries.at(key);
-                try {
-                    entry.ops.deserialize(j, entry.value);
-                } catch (const std::exception& e) {
-                    tmt::Log::error(tmt::Log::Scope::ENGINE, "Failed to deserialize key '{}': {}. Using default value.", key, e.what());
-                }
-            }
+        if (!entries.contains(key)) {
+            emplace_entry<T>(key, std::move(default_value));
         }
 
         auto& entry = entries.at(key);
         if (entry.ops.type_index != std::type_index(typeid(T))) {
-            tmt::Log::error(tmt::Log::Scope::ENGINE, "Type mismatch for key '{}'. Requested type: '{}', actual type: '{}'. Overriding...", key, typeid(T).name(), entry.ops.type_index.name());
+            tmt::Log::error(tmt::Log::Scope::ENGINE, "Type mismatch for key '{}'. Requested: '{}', actual: '{}'. Overriding...", key, typeid(T).name(), entry.ops.type_index.name());
             entries.erase(key);
-            entries.emplace(
-                key, Entry {
-                         .value = default_value,
-                         .ops = create_ops<T>(),
-                     }
-            );
-            return std::any_cast<T&>(entries.at(key).value);
+            return std::any_cast<T&>(emplace_entry<T>(key, std::move(default_value)).value);
         }
-        return std::any_cast<T&>(entry.value);
+
+        try {
+            return std::any_cast<T&>(entry.value);
+        } catch (const std::bad_any_cast& e) {
+            tmt::Log::error(tmt::Log::Scope::ENGINE, "any_cast failed for key '{}': {}. Overriding with default.", key, e.what());
+            entries.erase(key);
+            return std::any_cast<T&>(emplace_entry<T>(key, std::move(default_value)).value);
+        }
     }
 
     template <typename T>
     std::optional<T> try_get(const std::string& key) {
         if (!entries.contains(key)) {
-            return std::nullopt;
+            if (!data || !data->get_parsed_json().contains(key)) return std::nullopt;
+            emplace_entry<T>(key, T {});
         }
+
         const auto& entry = entries.at(key);
         if (entry.ops.type_index != std::type_index(typeid(T))) {
-            tmt::Log::error(
-                tmt::Log::Scope::ENGINE, "Type mismatch for key '{}'. Requested type: '{}', actual type: '{}'. Returning nullopt...", key, typeid(T).name(), entry.ops.type_index.name()
-            );
+            tmt::Log::error(tmt::Log::Scope::ENGINE, "Type mismatch for key '{}'. Requested: '{}', actual: '{}'. Returning nullopt...", key, typeid(T).name(), entry.ops.type_index.name());
             return std::nullopt;
         }
+
         try {
             return std::any_cast<T>(entry.value);
         } catch (const std::exception& e) {
-            tmt::Log::error(tmt::Log::Scope::ENGINE, "Failed to cast value for key '{}': {}. Returning nullopt...", key, e.what());
+            tmt::Log::error(tmt::Log::Scope::ENGINE, "any_cast failed for key '{}': {}. Returning nullopt...", key, e.what());
             return std::nullopt;
         }
     }
 
     template <typename T>
     bool has(const std::string& key) const {
-        if (!entries.contains(key)) {
+        const bool in_entries = entries.contains(key);
+        const bool in_json = data && data->get_parsed_json().contains(key);
+        if (!in_entries && !in_json) {
             return false;
         }
 
@@ -182,6 +167,29 @@ class PlayerData {
             },
 #endif
         };
+    }
+
+    void load_from_json(const std::string& key) {
+        if (!data || !data->get_parsed_json().contains(key)) return;
+
+        auto& entry = entries.at(key);
+        try {
+            entry.ops.deserialize(data->get_parsed_json().at(key), entry.value);
+        } catch (const std::exception& e) {
+            tmt::Log::error(tmt::Log::Scope::ENGINE, "Failed to deserialize key '{}': {}. Using default value.", key, e.what());
+        }
+    }
+
+    template <typename T>
+    Entry& emplace_entry(const std::string& key, T default_value) {
+        entries.emplace(
+            key, Entry {
+                     .value = std::move(default_value),
+                     .ops = create_ops<T>(),
+                 }
+        );
+        load_from_json(key);
+        return entries.at(key);
     }
 };
 
