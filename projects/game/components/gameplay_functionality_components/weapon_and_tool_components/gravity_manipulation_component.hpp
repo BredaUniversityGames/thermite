@@ -12,6 +12,13 @@ struct GravitySounds {
     tmt::AudioEvent graviry_launch_project;  // done
 };
 
+struct GravityVFX {
+    entt::entity pull_vfx_point_entity;  // entity to place the emitter for the pull on
+    tmt::ResourceRef<tmt::Json> pull_vfx_prefab;
+    entt::entity push_vfx_point_entity;  // entity to place the emitter for the push on
+    tmt::ResourceRef<tmt::Json> push_vfx_prefab;
+};
+
 class GravityManipulationComponent : public tmt::GameComponent<GravityManipulationComponent> {
    public:
     using GameComponent::GameComponent;
@@ -32,13 +39,18 @@ class GravityManipulationComponent : public tmt::GameComponent<GravityManipulati
     entt::entity animated_tool_entity;     // entity with the animation state machine to animate
 
     GravitySounds sounds;
+    GravityVFX vfx_gravity_gun;
 
    private:
     std::vector<entt::entity> currently_manipulated_entities;
     tmt::Entity player = entt::null;
+    tmt::Entity entity_pull_vfx = entt::null;
+    tmt::Entity entity_push_vfx = entt::null;
     void grav_point_check();
     void grav_attract();
     void grav_shoot();
+    void add_vfx_emitters();
+    void vfx_emitter_burst(tmt::Entity bursting_entity);
 
     void apply_enemy_override();
     void clear_enemy_override();
@@ -53,4 +65,7 @@ class GravityManipulationComponent : public tmt::GameComponent<GravityManipulati
 
 }  // namespace game
 TMT_OBJECT(game::GravitySounds, (gravity_hold_object, graviry_launch_project));
-TMT_GAME_COMPONENT(game::GravityManipulationComponent, (range, max_mass, pull_strength, push_strength, attraction_acceleration, attraction_point_entity, animated_tool_entity, sounds));
+TMT_OBJECT(game::GravityVFX, (pull_vfx_point_entity, pull_vfx_prefab, push_vfx_point_entity, push_vfx_prefab));
+TMT_GAME_COMPONENT(
+    game::GravityManipulationComponent, (range, max_mass, pull_strength, push_strength, attraction_acceleration, attraction_point_entity, animated_tool_entity, sounds, vfx_gravity_gun)
+);
