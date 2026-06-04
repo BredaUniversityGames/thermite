@@ -34,7 +34,7 @@ class UpgradePinUiComponent : public tmt::GameComponent<UpgradePinUiComponent> {
     tmt::Entity pin_cost_template = entt::null;
 
    private:
-    void spawn_cost_entity(tmt::Entity parent, int& cost_count, int cost ,const tmt::ResourceRef<tmt::Texture2D>& icon_texture_ref, float vertical_padding, float y_pos_diff) const;
+    void spawn_cost_entity(tmt::Entity parent, int& cost_count, int cost, const tmt::ResourceRef<tmt::Texture2D>& icon_texture_ref, float vertical_padding, float y_pos_diff) const;
 };
 
 }  // namespace game

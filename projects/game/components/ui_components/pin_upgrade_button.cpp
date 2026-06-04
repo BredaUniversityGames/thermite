@@ -1,6 +1,7 @@
 #include "pin_upgrade_button.hpp"
 
 namespace game {
+
 void UpgradePinButtonComponent::start() {
     auto& saved_upgrade_pins = tmt::engine.player_data.get<SavedUpgradePins>(PINNED_UPGRADES, SavedUpgradePins());
 
@@ -66,8 +67,7 @@ void UpgradePinButtonComponent::start() {
     }
 }
 
-void UpgradePinButtonComponent::update(const tmt::FrameData& time) {
-}
+void UpgradePinButtonComponent::update(const tmt::FrameData& time) {}
 
 void UpgradePinButtonComponent::end() {
     if (auto* button_component = tmt::engine.ecs.try_get_component<tmt::Button>(entity)) {
@@ -123,4 +123,5 @@ void UpgradePinButtonComponent::handle_button_press(tmt::Button::Context context
         text_component->text = "Unpin";
     }
 }
-}
+
+}  // namespace game

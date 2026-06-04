@@ -9,7 +9,6 @@ static tmt::Entity copy_entity(tmt::Entity peepee) {
     std::set<tmt::Entity> result;
     tmt::Serializer::deserialize(json, result, tmt::engine.ecs);
 
-
     auto parent_result = tmt::EntityHelper::upper_parents(result);
 
     auto it = parent_result.begin();
@@ -44,7 +43,7 @@ void UpgradePinUiComponent::start() {
         tmt::Log::error("[Upgrade pins] Pin Cost Template Entity has no icon child.");
         return;
     }
-    
+
     tmt::ImageRenderer* template_image_renderer_component = tmt::engine.ecs.try_get_component<tmt::ImageRenderer>(template_icon_entity);
     if (!template_image_renderer_component) {
         tmt::Log::error("[Upgrade pins] Pin Cost Template Entity does not contain a image renderer component (it should).");
@@ -113,15 +112,13 @@ void UpgradePinUiComponent::start() {
     }
 }
 
-void UpgradePinUiComponent::update(const tmt::FrameData& time) {
-    
-}
+void UpgradePinUiComponent::update(const tmt::FrameData& time) {}
 
-void UpgradePinUiComponent::end() {
-    
-}
+void UpgradePinUiComponent::end() {}
 
-void UpgradePinUiComponent::spawn_cost_entity(tmt::Entity parent, int& cost_count, int cost, const tmt::ResourceRef<tmt::Texture2D>& icon_texture_ref, float vertical_padding,float y_pos_diff) const {
+void UpgradePinUiComponent::spawn_cost_entity(
+    tmt::Entity parent, int& cost_count, int cost, const tmt::ResourceRef<tmt::Texture2D>& icon_texture_ref, float vertical_padding, float y_pos_diff
+) const {
     if (cost > 0) {
         auto generated_entity = copy_entity(pin_cost_template);
         auto* cost_text_component = tmt::engine.ecs.try_get_component<tmt::TextRenderer>(generated_entity);
@@ -146,4 +143,5 @@ void UpgradePinUiComponent::spawn_cost_entity(tmt::Entity parent, int& cost_coun
         cost_count++;
     }
 }
-}
+
+}  // namespace game
