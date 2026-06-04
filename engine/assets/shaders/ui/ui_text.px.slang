@@ -46,22 +46,28 @@ float4 main(TextVertexOutput input) : SV_Target {
     float alpha = 0.0f;
     if (glyph.glow_strength() > 0.0f) {
         const float radius = max(glyph.glow_radius(), 1e-3f);
-        const float range_px = 0.5f * spr;
-        const float out_px = max(0.0f, -dist_px);
+        const float range_px = 0.5f * spr;        // SDF data boundary, in screen px
+        const float out_px = max(0.0f, -dist_px); // 0 at edge, range_px on the plateau
 
-        /* Normalized 0..1 across the SDF band, soft falloff, zero at boundary by construction */
-        float t = saturate(out_px / range_px);
-        float glow_a = pow(1.0f - t, 2.0f);  // raise exponent = tighter, lower = softer/wider
+        float glow_a = exp(-out_px / radius);
 
+        /* Small-text compensation (unchanged) */
         const float size_boost = saturate(radius / range_px - 1.0f);
         glow_a *= 1.0f + size_boost * glyph.glow_boost();
 
-        /* Additive: glow is light, not an occluding band */
-        const float3 core_pm = glyph.color.rgb * opacity;
-        const float3 glow_add = glyph.glow_color.rgb * glyph.glow_strength() * glow_a * (1.0f - opacity);
+        /* Force the halo to vanish where the distance field goes flat. Without this,
+           the saturated sd==0 region (corners, far field) carries a constant glow
+           value clipped hard at the rectangular quad edge — the visible box. */
+        glow_a *= 1.0f - smoothstep(range_px * 0.6f, range_px, out_px);
 
-        rgb = saturate((core_pm + glow_add)) * glyph.color.a;
-        alpha = saturate(opacity + glow_a * glyph.glow_strength() * (1.0f - opacity)) * glyph.color.a;
+        const float glow_alpha = saturate(glow_a * glyph.glow_strength());
+        const float3 glow_pm = glyph.glow_color.rgb * glow_alpha;
+        const float3 core_pm = glyph.color.rgb * opacity;
+        const float core_alpha = opacity;
+        const float3 rgb_pm = core_pm + (1.0f - core_alpha) * glow_pm;
+        const float a = core_alpha + (1.0f - core_alpha) * glow_alpha;
+        rgb = rgb_pm * glyph.color.a;
+        alpha = a * glyph.color.a;
     } else {
         rgb = glyph.color.rgb * opacity * glyph.color.a;
         alpha = opacity * glyph.color.a;
