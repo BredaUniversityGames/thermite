@@ -126,7 +126,7 @@ void GravityManipulationComponent::add_vfx_emitters() {
     transform_pull.set_parent(vfx_gravity_gun.pull_vfx_point_entity);
     transform_pull.set_world_position(tmt::engine.ecs.try_get_component<tmt::Transform>(vfx_gravity_gun.pull_vfx_point_entity)->get_world_position());
 
-    entity_push_vfx = tmt::PrefabHelper::instantiate_prefab(vfx_gravity_gun.pull_vfx_prefab->file_location);
+    entity_push_vfx = tmt::PrefabHelper::instantiate_prefab(vfx_gravity_gun.push_vfx_prefab->file_location);
     auto& transform_push = tmt::engine.ecs.get_component<tmt::Transform>(entity_push_vfx);
 
     tmt::ParticleEmitter* emitter_component_push = tmt::engine.ecs.try_get_component<tmt::ParticleEmitter>(entity_push_vfx);
@@ -134,8 +134,8 @@ void GravityManipulationComponent::add_vfx_emitters() {
         tmt::Log::error("Cant spawn particle on emitter, check prefab on entity: {}", entity);
         return;
     }
-    transform_push.set_parent(vfx_gravity_gun.pull_vfx_point_entity);
-    transform_push.set_world_position(tmt::engine.ecs.try_get_component<tmt::Transform>(vfx_gravity_gun.pull_vfx_point_entity)->get_world_position());
+    transform_push.set_parent(vfx_gravity_gun.push_vfx_point_entity);
+    transform_push.set_world_position(tmt::engine.ecs.try_get_component<tmt::Transform>(vfx_gravity_gun.push_vfx_point_entity)->get_world_position());
 
     emitter_component_pull->active = false;
     emitter_component_push->active = false;
