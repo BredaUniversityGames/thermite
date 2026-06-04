@@ -393,7 +393,7 @@ std::unordered_map<glm::ivec2, Cell>& LevelEditor::get_cells() {
 
 inline void tag_invoke(ImReflect::ImInput_t, const char* name, tmt::CellTemplate& value, ImSettings& settings, ImResponse& response) {
     auto& col = value.color.get();
-    ImGui::PushStyleColor(ImGuiCol_Header, {col.r, col.g, col.b, col.a});
+    ImGui::PushStyleColor(ImGuiCol_Header, { col.r, col.g, col.b, col.a });
     bool open = ImGui::CollapsingHeader(value.name.c_str());
     ImGui::PopStyleColor();
     if (open) {
@@ -407,10 +407,10 @@ inline void tag_invoke(ImReflect::ImInput_t, const char* name, tmt::LayerEntry& 
     }
 }
 
-//inline void tag_invoke(ImReflect::ImInput_t, const char* name, std::vector<tmt::ResourceRef<tmt::Json>>& value, ImSettings& settings, ImResponse& response) {
-//    if (ImGui::CollapsingHeader("Spawnables")) {
-//        ImReflect::Detail::imgui_input_visit_field(name, value, settings, response);
-//    }
-//}
+// inline void tag_invoke(ImReflect::ImInput_t, const char* name, std::vector<tmt::ResourceRef<tmt::Json>>& value, ImSettings& settings, ImResponse& response) {
+//     if (ImGui::CollapsingHeader("Spawnables")) {
+//         ImReflect::Detail::imgui_input_visit_field(name, value, settings, response);
+//     }
+// }
 
 #endif

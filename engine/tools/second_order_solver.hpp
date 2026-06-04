@@ -26,7 +26,7 @@ class SecondOrderSolver {
         float k2 = 1.f / ((2.f * glm::pi<float>() * f) * (2.f * glm::pi<float>() * f));
         const float k3 = (r * z) / (2.f * glm::pi<float>() * f);
 
-        float k2_stable = std::max(k2, 1.1f * (delta_time*delta_time/4.f + delta_time*k1/2.f));
+        float k2_stable = std::max(k2, 1.1f * (delta_time * delta_time / 4.f + delta_time * k1 / 2.f));
 
         T estimated_velocity = (target - state.current_target) / delta_time;
         state.current_target = target;
