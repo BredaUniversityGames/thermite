@@ -5,6 +5,10 @@ void UpgradePinButtonComponent::start() {
     auto& saved_upgrade_pins = tmt::engine.player_data.get<SavedUpgradePins>(PINNED_UPGRADES, SavedUpgradePins());
 
     for (auto& entry : saved_upgrade_pins.pinned_upgrades) {
+        if (!tmt::engine.ecs.valid(entry.upgrade_pin_button_entity)) {
+            entry.active = false;
+        }
+
         if (entity == entry.upgrade_pin_button_entity) {
             if (entry.active) {
                 is_pinned = true;
