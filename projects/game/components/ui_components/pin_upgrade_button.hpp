@@ -37,7 +37,6 @@ class UpgradePinButtonComponent : public tmt::GameComponent<UpgradePinButtonComp
    private:
     void add_pin_to_player_data();
     void remove_pin_from_player_data();
-    bool check_player_data_pin();
     void handle_button_press(tmt::Button::Context context);
     PinnedUpgradeData pinned_upgrade_data;
 };
