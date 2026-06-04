@@ -20,13 +20,6 @@ struct GravityVFX {
     tmt::ResourceRef<tmt::Json> push_vfx_prefab;
 };
 
-struct GravityVFX {
-    entt::entity pull_vfx_point_entity;  // entity to place the emitter for the pull on
-    tmt::ResourceRef<tmt::Json> pull_vfx_prefab;
-    entt::entity push_vfx_point_entity;  // entity to place the emitter for the push on
-    tmt::ResourceRef<tmt::Json> push_vfx_prefab;
-};
-
 class GravityManipulationComponent : public tmt::GameComponent<GravityManipulationComponent> {
    public:
     using GameComponent::GameComponent;
