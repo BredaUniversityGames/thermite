@@ -74,14 +74,17 @@ class WeaponManager : public tmt::GameComponent<WeaponManager> {
     float overheat_time = .8f;
     float switching_time = .5f;
 
+    tmt::AudioEvent switch_tool_event;
+    tmt::AudioParameter holding_parameter;
+
     WeaponType last_used_weapon = WeaponType::RIFLE;  // default ?
     tmt::Entity tool_rig = entt::null;
+    bool switching = false;
 
    private:
     void complete_switch();
     float overheat_remaining_time = -0.1f;
     float switching_remaining_time = -0.1f;
-    bool switching = false;
     /// <summary>
     /// Handles the weapon overheat event when a weapon is fired.
     /// </summary>
@@ -131,4 +134,4 @@ TMT_OBJECT(
 );
 TMT_OBJECT(game::WeaponManager::WeaponProcAnimData, (root, anti_overlap, sway, recoil));
 TMT_OBJECT(game::WeaponManager::WeaponEntry, (proc_anim_data, entity));
-TMT_GAME_COMPONENT(game::WeaponManager, (tool_rig, weapons, starting_weapon, shooting_entity, overheat_time, switching_time));
+TMT_GAME_COMPONENT(game::WeaponManager, (tool_rig, weapons, starting_weapon, shooting_entity, overheat_time, switching_time, switch_tool_event, holding_parameter));

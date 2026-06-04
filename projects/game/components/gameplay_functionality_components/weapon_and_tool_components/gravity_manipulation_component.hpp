@@ -3,8 +3,15 @@
 #include "engine/systems/gameplay/game_component.hpp"
 #include "engine/core/resources/stencil.hpp"
 #include "engine/systems/physics/components/voxel_body.hpp"
+#include "engine/core/components/audio_emitter.hpp"
 
 namespace game {
+
+struct GravitySounds {
+    tmt::AudioEvent gravity_activate;  // done
+    tmt::AudioEvent gravity_hold_object;     // done
+    tmt::AudioEvent gravity_launch_object;  // done
+};
 
 class GravityManipulationComponent : public tmt::GameComponent<GravityManipulationComponent> {
    public:
@@ -25,8 +32,12 @@ class GravityManipulationComponent : public tmt::GameComponent<GravityManipulati
     entt::entity attraction_point_entity;  // point of attraction
     entt::entity animated_tool_entity;     // entity with the animation state machine to animate
 
+    GravitySounds sounds;
+    tmt::AudioInstance gravity_active_instance;
+
    private:
     std::vector<entt::entity> currently_manipulated_entities;
+    tmt::Entity player = entt::null;
     void grav_point_check();
     void grav_attract();
     void grav_shoot();
@@ -34,8 +45,10 @@ class GravityManipulationComponent : public tmt::GameComponent<GravityManipulati
     void apply_enemy_override();
     void clear_enemy_override();
 
+    void on_release(const ReleaseShootEvent& e);
     // TODO the same, this could be primarily handled through weapon, a second timer could be used for the second shot
 };
 
 }  // namespace game
-TMT_GAME_COMPONENT(game::GravityManipulationComponent, (range, max_mass, pull_strength, push_strength, attraction_acceleration, attraction_point_entity, animated_tool_entity));
+TMT_OBJECT(game::GravitySounds, (gravity_activate, gravity_hold_object, gravity_launch_object));
+TMT_GAME_COMPONENT(game::GravityManipulationComponent, (range, max_mass, pull_strength, push_strength, attraction_acceleration, attraction_point_entity, animated_tool_entity, sounds));

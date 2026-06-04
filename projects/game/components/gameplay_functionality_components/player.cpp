@@ -79,11 +79,6 @@ void setup_inputs(tmt::InputMap& input_map) {
     input_map.add_action(action::SECONDARY_TOOL_USE);
     input_map.add_action_mouse(action::SECONDARY_TOOL_USE, tmt::MouseButton::RIGHT);
 
-    // menus
-
-    input_map.add_action(action::OPEN_PAUSE_MENU);
-    input_map.add_key_to_action(action::OPEN_PAUSE_MENU, tmt::Key::ESCAPE);
-
     // barge
     input_map.add_action(action::ATTACH_KEY);
     input_map.add_key_to_action(action::ATTACH_KEY, tmt::Key::E);
@@ -129,9 +124,12 @@ void Player::start() {
 
         return;
     }
+
+    auto& wallet_data = tmt::engine.player_data.get<WalletData>(WALLET_DATA, WalletData { wallet->limits, wallet->total_resource_limit });
     auto& cam_shake { tmt::engine.player_data.get<float>(CAMERA_SHAKE) };
     camera_shake_settings.set_multiplier(cam_shake);
     wallet->currencies = resources;
+    wallet->total_resource_limit = wallet_data.total_resource_limit;
     if (tmt::engine.ecs.is_enabled(entity)) {
         tmt::engine.input.set_mouse_relative_to_window(true);
         glm::vec2 screen_size = { tmt::engine.window.width, tmt::engine.window.height };
@@ -147,6 +145,10 @@ void Player::start() {
     if (tmt::engine.ecs.valid(barge)) {
         ensure_attached_camera();
     }
+
+    audio_emitter = tmt::engine.ecs.try_get_component<tmt::AudioEmitter>(get().entity);
+    health.value = health.max_value;
+    energy.value = energy.max_value;
 }
 void Player::end() {
     tmt::engine.ecs.get_dispatcher().sink<AttachEvent>().disconnect<&Player::on_attach>(this);
@@ -597,12 +599,15 @@ void Player::update(const tmt::FrameData& time) {
 
     // Swapping crosshair
     if (input.is_action_just_pressed(action::SWITCH_RIFLE)) {
+        active_tool = ToolType::RIFLE;
         set_crosshair(rifle_crosshair);
     }
     if (input.is_action_just_pressed(action::SWITCH_GRAVITY)) {
+        active_tool = ToolType::GRAVITY;
         set_crosshair(gravity_crosshair);
     }
     if (input.is_action_just_pressed(action::SWITCH_MINING)) {
+        active_tool = ToolType::MINING;
         set_crosshair(mine_crosshair);
     }
 
@@ -691,6 +696,9 @@ void Player::update(const tmt::FrameData& time) {
         if (was_above_threshold && energy_percent <= low_energy_threshold) {
             set_hud_enabled(low_energy_hud, true);
 
+            // Play Sounds
+            player_sounds.battery_half.play();
+
             low_energy_timer = low_energy_duration;
             low_energy_active = true;
         }
@@ -712,6 +720,10 @@ void Player::update(const tmt::FrameData& time) {
         if (use_second_warning) {
             if (was_above_threshold_2 && energy_percent <= low_energy_threshold_2) {
                 set_hud_enabled(low_energy_hud, true);
+
+                // Play sound
+                player_sounds.battery_almost_out.play();
+
                 low_energy_timer_2 = low_energy_duration_2;
                 low_energy_active_2 = true;
             }
@@ -732,10 +744,17 @@ void Player::update(const tmt::FrameData& time) {
 
     // Energy death (timer)
     if (energy.value <= 0.0f) {
+        // Play sound
+        if (!out_of_energy) {
+            player_sounds.battery_out.play();
+            out_of_energy = true;
+        }
+
         out_of_energy_timer += time.delta_time;
     } else {
         // reset out of battery timer
         out_of_energy_timer = 0.0f;
+        out_of_energy = false;
     }
 
     if (out_of_energy_timer >= out_of_energy_time_till_death && !player_ended_run) {
@@ -751,6 +770,11 @@ void Player::update(const tmt::FrameData& time) {
 
     // Health death (instant)
     if (health.value <= 0.0f && !player_ended_run) {
+        // Play sound
+        if (!destroyed_death_instance.is_valid() && !player_destroyed) {
+            destroyed_death_instance = player_sounds.destroyed_death.play();
+            player_destroyed = true;
+        }
         // player ded -> call end run event with player ded
         tmt::engine.ecs.get_dispatcher().trigger(EndRun { true });
 
@@ -914,9 +938,21 @@ void Player::on_attach(const AttachEvent& event) {
     }
 }
 
+void Player::take_damage(float damage) {
+    // Play sound
+    player_sounds.hit.play();
+    health.value -= damage;
+}
+
 void Player::apply_boost() {
     max_speed_calculated = max_speed * boost_max_speed_multiplier;
     acceleration_calculated = acceleration * boost_acceleration_multiplier;
+
+    if (!boost_was_applied) {
+        // Play sound
+        player_sounds.drone_boost.play();
+    }
+
     boost_was_applied = true;
 }
 
@@ -952,19 +988,9 @@ void Player::set_hud_enabled(tmt::Entity hud_root, bool enabled) {
 
     // Toggle this entity
     if (enabled) {
-        ecs.remove_component<tmt::Disable>(hud_root);
+        ecs.enable(hud_root);
     } else {
-        ecs.add_or_get_component<tmt::Disable>(hud_root);
-    }
-
-    // Get transform
-    if (!ecs.has_component<tmt::Transform>(hud_root)) return;
-
-    auto& transform = ecs.get_component<tmt::Transform>(hud_root);
-
-    // Recurse children
-    for (auto child : transform.get_all_children()) {
-        set_hud_enabled(child, enabled);
+        ecs.disable(hud_root);
     }
 }
 

@@ -38,7 +38,14 @@ std::vector<AudioInstance> paused_game_audio;
 }  // namespace
 
 bool AudioInstance::is_valid() const {
-    return engine.audio.active_instances.contains(instance) && instance->isValid();
+    return instance->isValid() && !is_stopped();
+}
+
+bool AudioInstance::is_stopped() const {
+    FMOD_STUDIO_PLAYBACK_STATE state {};
+    instance->getPlaybackState(&state);
+
+    return state == FMOD_STUDIO_PLAYBACK_STOPPED;
 }
 
 void AudioInstance::stop(const FMOD_STUDIO_STOP_MODE stop_mode) const {
@@ -239,48 +246,55 @@ std::vector<AudioParameter> AudioEvent::get_parameters() const {
 
     if (parameter_count <= 0) return {};
 
-    std::vector<AudioParameter> parameters;
-    parameters.reserve(parameter_count);
+    std::vector<AudioParameter> parameters(parameter_count);
     for (int i = 0; i < parameter_count; i++) {
-        FMOD_STUDIO_PARAMETER_DESCRIPTION parameter_description;
+        FMOD_STUDIO_PARAMETER_DESCRIPTION parameter_description {};
         result = description->getParameterDescriptionByIndex(i, &parameter_description);
         if (TryLogError(result, "Failed to get event parameter by index")) return {};
 
-        parameters.emplace_back(*this, parameter_description.id);
+        // Create an AudioParameter based on the description, global or non global.
+        if (parameter_description.flags & FMOD_STUDIO_PARAMETER_GLOBAL) {
+            parameters[i] = AudioParameter { source_bank, parameter_description.id };
+        } else {
+            parameters[i] = AudioParameter { *this, parameter_description.id };
+        }
     }
 
     return parameters;
 }
 
 AudioInstance AudioEvent::play() const {
-    if (TryLogError(!is_valid(), "Invalid AudioEvent for play.")) return { nullptr };
+    if (TryLogError(!is_valid(), "Invalid AudioEvent for play.")) return { {}, nullptr };
 
     const FMOD::Studio::EventDescription* description = engine.audio.get_event_description(uuid);
 
     // Play the event, creating an instance.
     FMOD::Studio::EventInstance* event_instance = nullptr;
     FMOD_RESULT result = description->createInstance(&event_instance);
-    if (TryLogError(result, "Event instance with this description could not be created")) return { nullptr };
+    if (TryLogError(result, "Event instance with this description could not be created")) return { {}, nullptr };
 
-    engine.audio.active_instances.emplace(event_instance);
+    if (is_3d())
+        engine.audio.active_instances_3d.push_back(AudioInstance3D { source_bank, event_instance });
+    else
+        engine.audio.active_instances_2d.push_back(AudioInstance { source_bank, event_instance });
 
     result = event_instance->start();
-    if (TryLogError(result, "Event instance failed to start")) return { nullptr };
+    if (TryLogError(result, "Event instance failed to start")) return { {}, nullptr };
 
     // Mark it for release immediately, once it ends it can immediately be cleaned up.
     result = event_instance->release();
-    if (TryLogError(result, "Event instance failed to mark for release")) return { nullptr };
+    if (TryLogError(result, "Event instance failed to mark for release")) return { {}, nullptr };
 
-    return { event_instance };
+    return { source_bank, event_instance };
 }
 
 AudioInstance3D AudioEvent::play_3d() const {
-    if (TryLogError(!is_valid(), "Invalid AudioEvent for play_3d.")) return { nullptr };
+    if (TryLogError(!is_valid(), "Invalid AudioEvent for play_3d.")) return { {}, nullptr };
 
-    if (TryLogError(!is_3d(), "AudioEvent isn't 3d, invalid call to play_3d.")) return { nullptr };
+    if (TryLogError(!is_3d(), "AudioEvent isn't 3d, invalid call to play_3d.")) return { {}, nullptr };
 
     AudioInstance instance = play();
-    return { instance.instance };
+    return { source_bank, instance.instance };
 }
 
 glm::vec2 AudioEvent::get_min_max_distance() const {
@@ -307,23 +321,21 @@ FMOD_STUDIO_PARAMETER_DESCRIPTION AudioEvent::get_parameter_description(const FM
 }
 
 bool AudioParameter::is_valid() const {
-    if (*this == AudioParameter {}) return false;                       // Check if the audio parameter has an invalid uuid (in which case it, itself is invalid).
+    if (*this == AudioParameter {}) return false;  // Check if the audio parameter has an invalid id (in which case it, itself is invalid).
 
-    if (!source_event.is_valid()) return false;                         // Check if the source event is still valid.
-
-    return source_event.get_parameter_description(id).name != nullptr;  // Check if the audio parameter description is valid.
+    // Check if the audio parameter description is valid.
+    return get_description().name != nullptr;
 }
 
-std::string AudioParameter::get_name() const {
-    return source_event.get_parameter_description(id).name;
+bool AudioParameter::is_global() const {
+    return !source_event.is_valid();
 }
 
-float AudioParameter::get_min() const {
-    return source_event.get_parameter_description(id).minimum;
-}
-
-float AudioParameter::get_max() const {
-    return source_event.get_parameter_description(id).maximum;
+FMOD_STUDIO_PARAMETER_DESCRIPTION AudioParameter::get_description() const {
+    if (is_global()) {
+        return engine.audio.get_global_parameter(id);
+    }
+    return source_event.get_parameter_description(id);
 }
 
 bool VolumeControl::is_valid() const {
@@ -406,11 +418,8 @@ void Audio::update() {
     // Audio updates should always keep updating, this makes sure we can preview sounds in the editor.
     system->update();
 
-    std::erase_if(active_instances, [](const FMOD::Studio::EventInstance* instance) {
-        FMOD_STUDIO_PLAYBACK_STATE state = FMOD_STUDIO_PLAYBACK_STOPPED;
-        instance->getPlaybackState(&state);
-        return state == FMOD_STUDIO_PLAYBACK_STOPPED;
-    });
+    std::erase_if(active_instances_3d, [](const AudioInstance3D& instance) { return instance.is_stopped(); });
+    std::erase_if(active_instances_2d, [](const AudioInstance& instance) { return instance.is_stopped(); });
 }
 
 void Audio::end() const {
@@ -423,23 +432,11 @@ void Audio::end() const {
 }
 
 void Audio::on_game_pause() {
-    paused_game_audio.reserve(active_instances.size());
-
-    for (AudioInstance instance : active_instances) {
-        if (instance.get_paused()) continue;
-
-        // If the audio instance is not paused yet, we pause it to resume once the game resumes.
-        paused_game_audio.emplace_back(instance);
-        instance.set_paused(true);
-    }
+    pause_game_audio();
 }
 
 void Audio::on_game_resume() {
-    // Resume the stored audio instances then clear the vector.
-    for (AudioInstance instance : paused_game_audio) {
-        instance.set_paused(false);
-    }
-    paused_game_audio.clear();
+    resume_game_audio();
 }
 
 void Audio::on_game_end() {
@@ -463,6 +460,15 @@ FMOD::Studio::Bank* Audio::init_bank(const std::vector<char>& bank_data) const {
     return bank;
 }
 
+FMOD_STUDIO_PARAMETER_DESCRIPTION Audio::get_global_parameter(const FMOD_STUDIO_PARAMETER_ID id) const {
+    FMOD_STUDIO_PARAMETER_DESCRIPTION description {};
+
+    const FMOD_RESULT result = system->getParameterDescriptionByID(id, &description);
+    TryLogError(result, "Failed to get FMOD_STUDIO_PARAMETER_DESCRIPTION");
+
+    return description;
+}
+
 FMOD::Studio::EventDescription* Audio::get_event_description(const FMOD_GUID& guid) const {
     FMOD::Studio::EventDescription* description = nullptr;
 
@@ -482,11 +488,16 @@ FMOD::Studio::VCA* Audio::get_vca(const FMOD_GUID& guid) const {
 }
 
 void Audio::stop_all_audio_instances() {
-    for (FMOD::Studio::EventInstance* instance : active_instances) {
-        instance->stop(FMOD_STUDIO_STOP_IMMEDIATE);
+    for (const AudioInstance3D& instance : active_instances_3d) {
+        instance.stop(FMOD_STUDIO_STOP_IMMEDIATE);
     }
 
-    active_instances.clear();
+    for (const AudioInstance& instance : active_instances_2d) {
+        instance.stop(FMOD_STUDIO_STOP_IMMEDIATE);
+    }
+
+    active_instances_3d.clear();
+    active_instances_2d.clear();
 }
 
 void Audio::set_global_parameter(const AudioParameter& parameter, const float value) const {
@@ -517,6 +528,34 @@ Audio::DopplerSettings Audio::get_3d_settings() const {
 
     TryLogError(result, "Failed to get doppler settings");
     return settings;
+}
+
+void Audio::pause_game_audio() {
+    paused_game_audio.reserve(active_instances_3d.size() + active_instances_2d.size());
+
+    // Pause 3D instances
+    for (AudioInstance3D& instance : active_instances_3d) {
+        if (instance.get_paused()) continue;
+
+        paused_game_audio.emplace_back(instance);
+        instance.set_paused(true);
+    }
+
+    // Pause 2D instances
+    for (AudioInstance& instance : active_instances_2d) {
+        if (instance.get_paused()) continue;
+
+        paused_game_audio.emplace_back(instance);
+        instance.set_paused(true);
+    }
+}
+
+void Audio::resume_game_audio() {
+    for (AudioInstance& instance : paused_game_audio) {
+        instance.set_paused(false);
+    }
+
+    paused_game_audio.clear();
 }
 
 void Audio::update_listeners() const {
@@ -558,7 +597,7 @@ void Audio::update_emitters() {
             .up = std::bit_cast<FMOD_VECTOR>(transform.get_up()),
         };
 
-        for (const AudioInstance3D& instance : audio_emitter.playing_instances) {
+        for (const AudioInstance3D& instance : audio_emitter.playing_instances_3d) {
             const FMOD_RESULT result = instance.instance->set3DAttributes(&attributes);
             TryLogError(result, "Failed to set emitter attributes");
         }
@@ -619,7 +658,7 @@ void Audio::on_draw_lines() const {
         if (game_active) {
             // During pause or gameplay, draw the distance bounds of the active playing sounds.
             FMOD_3D_ATTRIBUTES attributes;
-            for (const AudioInstance3D& instance : audio_emitter.playing_instances) {
+            for (const AudioInstance3D& instance : audio_emitter.playing_instances_3d) {
                 // on_draw_lines() is called before the audio update function, so we have to make sure the instance is still valid.
                 if (not instance.is_valid()) continue;
 

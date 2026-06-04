@@ -7,10 +7,16 @@
 #include "engine/tools/player_data.hpp"
 #include "projects/game/data_headers/save_entries.hpp"
 
+#include "engine/core/input/input.hpp"
+#include "projects/game/data_headers/game_input.hpp"
+
+#include "../player.hpp"
+
 namespace game {
 
 void GravityManipulationComponent::start() {
     tmt::engine.ecs.get_dispatcher().sink<WeaponFiredEvent>().connect<&GravityManipulationComponent::on_weapon_fired>(this);
+    tmt::engine.ecs.get_dispatcher().sink<ReleaseShootEvent>().connect<&GravityManipulationComponent::on_release>(this);
 
     max_mass = tmt::engine.player_data.get<float>(GRAVITY_GUN_DATA, max_mass);
 }
@@ -19,6 +25,7 @@ void GravityManipulationComponent::update(const tmt::FrameData& time) {}
 
 void GravityManipulationComponent::end() {
     tmt::engine.ecs.get_dispatcher().sink<WeaponFiredEvent>().disconnect<&GravityManipulationComponent::on_weapon_fired>(this);
+    tmt::engine.ecs.get_dispatcher().sink<ReleaseShootEvent>().disconnect<&GravityManipulationComponent::on_release>(this);
 }
 void GravityManipulationComponent::draw_debug_lines() const {
     if (attraction_point_entity == entt::null) return;
@@ -29,10 +36,15 @@ void GravityManipulationComponent::draw_debug_lines() const {
 
 void GravityManipulationComponent::on_weapon_fired(const WeaponFiredEvent& e) {
     if (e.weapon_entity != entity) return;
+
     grav_point_check();
     if (e.secondary_shot == false) {
         grav_attract();
-    } else {
+
+        if (sounds.gravity_activate.is_valid() && !gravity_active_instance.is_valid()) gravity_active_instance = sounds.gravity_activate.play();
+
+    } else if (!currently_manipulated_entities.empty()) {
+        if (sounds.gravity_launch_object.is_valid()) sounds.gravity_launch_object.play();
         grav_shoot();
 
         // Get the animated rig for the tool animations
@@ -43,9 +55,12 @@ void GravityManipulationComponent::on_weapon_fired(const WeaponFiredEvent& e) {
     }
 }
 
-void GravityManipulationComponent::grav_point_check() {
-    currently_manipulated_entities.clear();
+void GravityManipulationComponent::on_release(const ReleaseShootEvent& e) {}
 
+void GravityManipulationComponent::grav_point_check() {
+    const auto start_size = currently_manipulated_entities.size();
+
+    currently_manipulated_entities.clear();
     auto attraction_pos = tmt::engine.ecs.get_component<tmt::Transform>(attraction_point_entity).get_world_position();
 
     auto physical_entity_view = tmt::engine.ecs.view<tmt::VoxelBody>();
@@ -59,6 +74,8 @@ void GravityManipulationComponent::grav_point_check() {
             currently_manipulated_entities.push_back(e);
         }
     }
+
+    if (sounds.gravity_hold_object.is_valid() && currently_manipulated_entities.size() > start_size) sounds.gravity_hold_object.play();
 }
 
 void GravityManipulationComponent::grav_attract() {
