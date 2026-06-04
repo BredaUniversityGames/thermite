@@ -80,6 +80,7 @@ void UpgradePinButtonComponent::add_pin_to_player_data() {
             is_pinned = true;
             pinned_upgrade_data.active = true;
             entry = pinned_upgrade_data;
+            break;
         }
     }
 

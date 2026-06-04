@@ -42,5 +42,6 @@ class UpgradePinButtonComponent : public tmt::GameComponent<UpgradePinButtonComp
 };
 
 }  // namespace game
-
+TMT_OBJECT(game::PinnedUpgradeData, (shown_name, dollar_cost, scrap_cost, copper_cost, thermite_cost, titanium_cost, upgrade_pin_button_entity, active));
+TMT_OBJECT(game::SavedUpgradePins, (pinned_upgrades))
 TMT_GAME_COMPONENT(game::UpgradePinButtonComponent, (upgrade_entity, shown_name, is_pinned));
