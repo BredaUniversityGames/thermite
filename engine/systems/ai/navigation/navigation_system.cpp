@@ -26,8 +26,6 @@ void tmt::NavigationSystem::on_update(const FrameData&) {
     for (const auto& [entity, transform, nav_mesh] : engine.ecs.view<Transform, NavMesh>().each()) {
         float dist = glm::length(transform.get_world_position() - *pos_to_check);
 
-        nav_mesh.draw_nodes = true;
-
         if (dist < closest_nav_mesh_dist && nav_mesh.generation_state == NavMeshGenerationState::FINISHED) {
             closest_nav_mesh = entity;
             closest_nav_mesh_dist = dist;
