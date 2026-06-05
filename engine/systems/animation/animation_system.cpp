@@ -202,7 +202,7 @@ void RigModelManager::on_draw_lines() const {
 
 void tmt::AnimationConstraintSystem::on_start() {
     for (const auto&& [rig_ent, rig_model] : engine.ecs.view<RigModel>().each()) {
-        auto& constrained_rig = engine.ecs.add_component<ConstrainedRig>(rig_ent);
+        auto& constrained_rig = engine.ecs.add_or_get_component<ConstrainedRig>(rig_ent);
         constrained_rig.initial_reference_poses = rig_model.bone_keyframes;
     }
 

@@ -175,6 +175,23 @@ void NavMesh::average_neighbor_normals(int iterations) {
     for (int i = generation_iteration * iterations; i < max_iterations; i++) {
         entered_loop = true;
         auto& node = (*generating_nodes)[i];
+
+        if (node.connecting_nodes.size() <= 2) {
+            for (auto& connecting_node : node.connecting_nodes) {
+                (*generating_nodes)[connecting_node].normal = glm::vec3(0, 0, 0);
+                for (int j = 0; j < (*generating_nodes)[connecting_node].connecting_nodes.size(); j++) {
+                    auto& connecting_node_connection = (*generating_nodes)[connecting_node].connecting_nodes[j];
+                    //(*generating_nodes)[connecting_node_connection].normal = glm::vec3(0, 0, 0);
+                    if (connecting_node_connection == i) {
+                        // remove this connection, it's invalid
+                        (*generating_nodes)[connecting_node].connecting_nodes.erase((*generating_nodes)[connecting_node].connecting_nodes.begin() + j);
+                    }
+                }
+            }
+            node.connecting_nodes.clear();
+            continue;
+        }
+
         auto node_normal = node.normal;
         for (size_t j = 0; j < node.connecting_nodes.size(); j++) {
             unsigned int idx = node.connecting_nodes[j];
@@ -257,6 +274,10 @@ void NavMesh::generate_mesh_over_time() {
             break;
         }
         case NavMeshGenerationState::AVERAGING_NORMALS2: {
+            average_neighbor_normals(iterations);
+            break;
+        }
+        case NavMeshGenerationState::AVERAGING_NORMALS3: {
             average_neighbor_normals(iterations);
             break;
         }

@@ -15,9 +15,9 @@ void tmt::NavigationSystem::on_update(const FrameData&) {
     float closest_nav_mesh_dist = std::numeric_limits<float>::max();
     float closest_unfinished_nav_mesh_dist = std::numeric_limits<float>::max();
     std::optional<glm::vec3> pos_to_check;
-    for (const auto& [entity] : engine.ecs.view<GenerateClosestNavMeshToThis>().each()) {
-        pos_to_check = engine.ecs.get_component<Transform>(entity).get_world_position();
-        break;
+    auto pos_to_check_entity = engine.ecs.view<GenerateClosestNavMeshToThis>().front();
+    if (pos_to_check_entity != entt::null) {
+        pos_to_check = engine.ecs.get_component<Transform>(pos_to_check_entity).get_world_position();
     }
     if (!pos_to_check) {
         tmt::Log ::warn("No entity with GenerateClosestNavMeshToThis component found, nav meshes will not be updated. Add this component to a player for example.");
@@ -26,7 +26,7 @@ void tmt::NavigationSystem::on_update(const FrameData&) {
     for (const auto& [entity, transform, nav_mesh] : engine.ecs.view<Transform, NavMesh>().each()) {
         float dist = glm::length(transform.get_world_position() - *pos_to_check);
 
-        nav_mesh.draw_gen_nodes = true;
+        nav_mesh.draw_nodes = true;
 
         if (dist < closest_nav_mesh_dist && nav_mesh.generation_state == NavMeshGenerationState::FINISHED) {
             closest_nav_mesh = entity;
@@ -42,10 +42,9 @@ void tmt::NavigationSystem::on_update(const FrameData&) {
     }
 
     if (auto nav_mesh = tmt::engine.ecs.try_get_component<NavMesh>(closest_nav_mesh)) {
-        nav_mesh->check_if_should_regenerate();
+            nav_mesh->check_if_should_regenerate();
     }
     if (auto nav_mesh = tmt::engine.ecs.try_get_component<NavMesh>(closest_unfinished_nav_mesh)) {
-        nav_mesh->check_if_should_regenerate();
         auto& bvh = tmt::engine.renderer.scene_view.bvh;
 
         if (bvh.nodes[0].left_first == 0u && bvh.nodes[0].prim_count == 0u) {
