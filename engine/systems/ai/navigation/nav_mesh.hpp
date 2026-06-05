@@ -9,6 +9,8 @@
 
 namespace tmt {
 
+struct GenerateClosestNavMeshToThis {};
+
 class Volume {
    public:
     glm::uvec3 size;
@@ -74,7 +76,7 @@ class NavMesh {
     // tmt::ResourceRef<tmt::VoxelVolume> voxel_volume;
     std::vector<Entity> nav_mesh_entities;
     int selected_entity_index = 0;
-    int lod_level = 0;
+    /*static constexpr */int lod_level = 2;
     glm::vec3 inflation = glm::vec3(1.0f);
 
     bool draw_nodes = false;
@@ -124,4 +126,8 @@ class NavMesh {
 };
 
 }  // namespace tmt
-TMT_COMPONENT(tmt::NavMesh, "Navigation Mesh", (lod_level, draw_nodes, draw_gen_nodes, draw_path));
+
+TMT_COMPONENT_NAME(tmt::GenerateClosestNavMeshToThis, "Generate Closest Nav Mesh To This");
+TMT_COMPONENT_SERIALIZE_EMPTY(tmt::GenerateClosestNavMeshToThis);
+TMT_COMPONENT_INSPECT_EMPTY(tmt::GenerateClosestNavMeshToThis);
+TMT_COMPONENT(tmt::NavMesh, "Navigation Mesh", (draw_nodes, draw_gen_nodes, draw_path));
