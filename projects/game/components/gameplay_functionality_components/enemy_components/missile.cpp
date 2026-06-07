@@ -32,7 +32,8 @@ void game::Missile::start() {
 
     auto& voxel_body = tmt::engine.ecs.add_component<tmt::VoxelBody>(entity);
     voxel_body.layer = enemy.projectile_layer;
-    voxel_body.type = tmt::VoxelBody::STATIC;
+    voxel_body.type = tmt::VoxelBody::DYNAMIC;
+    voxel_body.gravity = 0.0f;
 
     // set random offset
     offset = glm::vec3(
@@ -72,7 +73,7 @@ void game::Missile::update(const tmt::FrameData& time) {
     }
     life_time += time.delta_time;
 
-    auto& position = tmt::engine.ecs.get_component<tmt::Transform>(entity);
+    //auto& position = tmt::engine.ecs.get_component<tmt::Transform>(entity);
     auto player_pos = tmt::engine.ecs.get_component<tmt::Transform>(enemy.player).get_world_position();
     player_pos += enemy.target_offset;
     auto enemy_pos = tmt::engine.ecs.get_component<tmt::Transform>(enemy_entity).get_world_position();
@@ -80,63 +81,77 @@ void game::Missile::update(const tmt::FrameData& time) {
     if (!nav_mesh.nav_nodes_valid()) return;
     auto ground_up = (*nav_mesh.nodes_mesh)[nav_mesh.find_closest_node(enemy_pos)].normal;
 
-    // fades from full launch down to zero
-    float launch_t = glm::clamp((life_time / enemy.stop_launching_after), 0.0f, 1.0f);
-    glm::vec3 launch_contribution = glm::mix(ground_up * enemy.launch_speed, glm::vec3(0.0f), launch_t);
-
-    // fades from zero up to full homing speed
-    glm::vec3 home_contribution(0.0f);
-    if (life_time > enemy.start_homing_after) {
-        float max_home_time = enemy.life_time - enemy.start_homing_after;
-        float home_time = life_time - enemy.start_homing_after;
-        float home_t = glm::clamp(home_time / max_home_time, 0.0f, 1.0f);
-
-        glm::vec3 to_player = player_pos - position.get_world_position();
-        if (glm::dot(to_player, to_player) > 0.0001f) {
-            home_contribution = glm::normalize(to_player) * enemy.home_speed * home_t;
-        }
-    }
-
-    // slow down homing towards end of life
-    if (life_time > enemy.slow_homing_accuracy_after && glm::dot(velocity, velocity) > 0.0001f) {
-        float max_slowing_time = enemy.life_time - enemy.slow_homing_accuracy_after;
-        float slowing_time = life_time - enemy.slow_homing_accuracy_after;
-        float slow_t = glm::clamp(slowing_time / max_slowing_time, 0.0f, 1.0f);
-        float home_contribution_length = glm::length(home_contribution);
-        home_contribution = glm::mix(home_contribution, velocity, slow_t);
-        home_contribution = glm::normalize(home_contribution) * home_contribution_length;
-    }
-
-    auto added_vel = launch_contribution + home_contribution;
-    float length = glm::length(added_vel);
-    if (length > 0.0001f && life_time < enemy.start_homing_after) {
-        added_vel += offset;
-        added_vel = glm::normalize(added_vel) * length;
-    }
-    velocity += added_vel;
-    velocity *= 0.7f;
-    position.translate(velocity * time.delta_time);
-
-    // missile rotation
-    if (glm::dot(velocity, velocity) > 0.0001f) {
-        glm::vec3 forward = glm::normalize(-velocity);
-        glm::vec3 up = (glm::abs(glm::dot(forward, ground_up)) < 0.99f) ? ground_up : glm::vec3(0.0f, 1.0f, 0.0f);
-        glm::quat target_rot = glm::quatLookAt(forward, up);
-        glm::quat current_rot = position.get_world_rotation();
-        position.set_world_rotation(glm::slerp(current_rot, target_rot, enemy.missile_rotation_speed * time.delta_time));
-    }
-
     // collision check
     // const tmt::Ray ray_cast = tmt::Ray(previous_position, glm::normalize(delta));
     // const tmt::Hit hit = tmt::engine.ecs.systems.get<tmt::Physics>().raycast(ray_cast, layer_mask);
+    
+    const tmt::Ray ray_cast = tmt::Ray(voxel_body.position, glm::normalize(voxel_body.velocity));
 
-    const tmt::Ray ray_cast = tmt::Ray(position.get_world_position(), glm::normalize(velocity));
+    game::LayerMask mask;
+    if (has_been_close_to_player) {
+        mask = enemy.projectile_mask;
+    } else {
+        mask = enemy.enemy_projectile_mask;
+    }
+    const tmt::Hit hit = tmt::engine.ecs.systems.get<tmt::Physics>().raycast(ray_cast, mask);
 
-    const tmt::Hit hit = tmt::engine.ecs.systems.get<tmt::Physics>().raycast(ray_cast, enemy.enemy_projectile_mask);
-
-    // TODO this is very dumb code that should be updated when we have proper raycasts check
-    if (hit.entity != entt::null && hit.distance < 0.1f || glm::distance(player_pos, position.get_world_position()) < enemy.missile_explosion_radius) {
+    // check for collision with player or if within explosion radius, then explode
+    if (hit.distance < enemy.missile_explosion_radius || glm::distance(player_pos, voxel_body.position) < enemy.missile_explosion_radius) {
+        tmt::engine.ecs.get_component<game::Player>(enemy.player).apply_impulse(voxel_body.velocity, 4.0f);
         explode();
+    }
+
+    if ((hit.distance > enemy.missile_explosion_radius * 4.0f && glm::distance(player_pos, voxel_body.position) > enemy.missile_explosion_radius * 4.0f) &&
+        !has_been_close_to_player) {
+        // fades from full launch down to zero
+        float launch_t = glm::clamp((life_time / enemy.stop_launching_after), 0.0f, 1.0f);
+        glm::vec3 launch_contribution = glm::mix(ground_up * enemy.launch_speed, glm::vec3(0.0f), launch_t);
+
+        // fades from zero up to full homing speed
+        glm::vec3 home_contribution(0.0f);
+        if (life_time > enemy.start_homing_after) {
+            float max_home_time = enemy.life_time - enemy.start_homing_after;
+            float home_time = life_time - enemy.start_homing_after;
+            float home_t = glm::clamp(home_time / max_home_time, 0.0f, 1.0f);
+
+            glm::vec3 to_player = player_pos - voxel_body.position;
+            if (glm::dot(to_player, to_player) > 0.0001f) {
+                home_contribution = glm::normalize(to_player) * enemy.home_speed * home_t;
+            }
+        }
+
+        // slow down homing towards end of life
+        if (life_time > enemy.slow_homing_accuracy_after && glm::dot(voxel_body.velocity, voxel_body.velocity) > 0.0001f) {
+            float max_slowing_time = enemy.life_time - enemy.slow_homing_accuracy_after;
+            float slowing_time = life_time - enemy.slow_homing_accuracy_after;
+            float slow_t = glm::clamp(slowing_time / max_slowing_time, 0.0f, 1.0f);
+            float home_contribution_length = glm::length(home_contribution);
+            home_contribution = glm::mix(home_contribution, voxel_body.velocity, slow_t);
+            home_contribution = glm::normalize(home_contribution) * home_contribution_length;
+        }
+
+        auto added_vel = launch_contribution + home_contribution;
+        float length = glm::length(added_vel);
+        if (length > 0.0001f && life_time < enemy.start_homing_after) {
+            added_vel += offset;
+            added_vel = glm::normalize(added_vel) * length;
+        }
+        voxel_body.velocity += added_vel;
+        voxel_body.velocity *= 0.7f;
+        // position.translate(voxel_body.velocity * time.delta_time);
+    } else {
+        has_been_close_to_player = true;
+    }
+
+    // missile rotation
+    if (glm::dot(voxel_body.velocity, voxel_body.velocity) > 0.0001f) {
+        glm::vec3 forward = glm::normalize(-voxel_body.velocity);
+        glm::vec3 up = (glm::abs(glm::dot(forward, ground_up)) < 0.99f) ? ground_up : glm::vec3(0.0f, 1.0f, 0.0f);
+        glm::quat target_rot = glm::quatLookAt(forward, up);
+        glm::quat current_rot = voxel_body.rotation;
+        float rot_speed = enemy.missile_rotation_speed;
+        if (has_been_close_to_player) rot_speed *= 5.0f; 
+        voxel_body.rotation = glm::slerp(current_rot, target_rot, rot_speed * time.delta_time);
     }
 }
 
@@ -154,20 +169,20 @@ void game::Missile::explode() {
         tmt::engine.ecs.destroy_entity(vfx_entity);
     }
 
-    enemy.ore_manager->initiate_thermite_explosion(entity, glm::uvec3(0, 0, 0));
+    enemy.ore_manager->initiate_thermite_explosion(entity, glm::uvec3(1, 1, 1));
 
-    auto& missile_trans = tmt::engine.ecs.get_component<tmt::Transform>(entity);
-    auto& voxel_body = tmt::engine.ecs.get_component<tmt::VoxelBody>(entity);
-    voxel_body.layer = 0;
-    voxel_body.type = tmt::VoxelBody::DYNAMIC;
-    voxel_body.gravity = 0.0f;
-    voxel_body.velocity = velocity;
-    voxel_body.position = missile_trans.get_world_position();
-    voxel_body.rotation = missile_trans.get_world_rotation();
+    //auto& missile_trans = tmt::engine.ecs.get_component<tmt::Transform>(entity);
+    //auto& voxel_body = tmt::engine.ecs.get_component<tmt::VoxelBody>(entity);
+    //voxel_body.layer = 0;
+    //voxel_body.type = tmt::VoxelBody::DYNAMIC;
+    //voxel_body.gravity = 0.0f;
+    //// voxel_body.velocity = voxel_body.velocity;
+    //voxel_body.position = missile_trans.get_world_position();
+    //voxel_body.rotation = missile_trans.get_world_rotation();
 
-    auto& renderer = tmt::engine.ecs.get_component<tmt::VoxelRenderer>(entity);
+    //auto& renderer = tmt::engine.ecs.get_component<tmt::VoxelRenderer>(entity);
 
-    tmt::engine.ecs.systems.try_get<tmt::Physics>()->recalculate_physics_data(voxel_body, *renderer.resource.resource);
+    //tmt::engine.ecs.systems.try_get<tmt::Physics>()->recalculate_physics_data(voxel_body, *renderer.resource.resource);
 
     tmt::engine.ecs.remove_component<Missile>(entity);
 }

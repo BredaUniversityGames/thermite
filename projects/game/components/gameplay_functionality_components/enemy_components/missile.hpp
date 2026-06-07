@@ -18,7 +18,8 @@ struct Missile : public tmt::GameComponent<Missile> {
     void explode();
     void empty_check();
 
-    glm::vec3 velocity = glm::vec3(0, 0, 0);
+    //glm::vec3 velocity = glm::vec3(0, 0, 0);
+    bool has_been_close_to_player = false;
 
     tmt::ResourceRef<tmt::Stencil> stencil;
     tmt::Entity enemy_entity;
