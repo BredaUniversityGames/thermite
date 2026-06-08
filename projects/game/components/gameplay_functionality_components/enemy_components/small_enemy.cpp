@@ -100,10 +100,7 @@ void SmallEnemy::die(tmt::Entity agent) {
                 // small random velocity forward
                 glm::vec3 forward = transform.get_forward();
                 body->velocity += -forward * Random::rand_range(0.5f, 2.5f);
-                body->angular_velocity += glm::vec3(
-                    Random::rand_range(-1.0f, 1.0f),
-                    Random::rand_range(-1.0f, 1.0f),
-                    Random::rand_range(-1.0f, 1.0f));
+                body->angular_velocity += glm::vec3(Random::rand_range(-1.0f, 1.0f), Random::rand_range(-1.0f, 1.0f), Random::rand_range(-1.0f, 1.0f));
 
                 tmt::Physics::initialize_voxel_body(*body, *renderer->resource.resource.get());
             }

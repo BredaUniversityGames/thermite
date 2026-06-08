@@ -16,6 +16,8 @@ void Upgrade::start() {
         if (tmt::engine.player_data.get<bool>(name_component->name, false)) {
             apply_entity_enable_disable();
             tmt::engine.ecs.disable(entity);
+            // event: this upgrade entity was purchased
+            event_queud = true;
         }
     }
     auto button_component = tmt::engine.ecs.try_get_component<tmt::Button>(entity);
@@ -24,6 +26,13 @@ void Upgrade::start() {
         button_component->on_click.add(this, &Upgrade::button_apply);
     } else {
         tmt::Log::warn("No button found for upgrade!");
+    }
+}
+
+void Upgrade::update(const tmt::FrameData& time) {
+    if (event_queud) {
+        tmt::engine.ecs.get_dispatcher().enqueue(UpgradesWasPurchasedEvent { .purchased_upgrade_entity = entity });
+        event_queud = false;
     }
 }
 
@@ -162,6 +171,10 @@ bool Upgrade::apply_upgrade() {
     modify_upgrade_entities();
 
     apply_entity_enable_disable();
+
+    // event: upgrade was purchased
+    tmt::engine.ecs.get_dispatcher().trigger(UpgradesWasPurchasedEvent { .purchased_upgrade_entity = entity });
+
     return true;
 }
 
