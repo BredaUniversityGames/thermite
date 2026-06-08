@@ -204,7 +204,7 @@ glm::vec3 SteeringSystem::collision_avoidance(const SteeringAgent& agent, const 
 
     float avoid_distance = 15.0f;
 
-    float back_offset = 0.5f;
+    float back_offset = 0.8f;
     glm::vec3 base = position - forward * back_offset;
 
     std::vector<std::pair<glm::vec3, glm::vec3>> rays = {
@@ -222,10 +222,21 @@ glm::vec3 SteeringSystem::collision_avoidance(const SteeringAgent& agent, const 
         engine.polyline.use_line_width(0.5f);
         engine.polyline.draw_line(ray.origin, ray.origin + ray.dir * avoid_distance);
 
-        if (hit && hit.distance < avoid_distance) {
-            float strength = agent.max_force * (avoid_distance - hit.distance) / avoid_distance;
+        if (hit) {
+            float t = 1.0f - (hit.distance / avoid_distance);
+            t = glm::clamp(t, 0.0f, 1.0f);
 
-            avoid += -r.second * strength;
+            float strength = agent.max_force * t;
+
+            glm::vec3 side = glm::normalize(glm::cross(world_up, r.second));
+
+            // choose a consistent side based on obstacle direction
+            if (hit.distance < avoid_distance * 0.5f) {
+                avoid += side * strength;
+            } else {
+                avoid -= side * strength;
+            }
+
             blocked++;
         }
     }
