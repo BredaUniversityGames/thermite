@@ -48,7 +48,7 @@ class SteeringSystem : public ISystem {
      * Calculate collision avoidance force using forward and side rays.
      * Ignores entities on the enemy layer.
      */
-    glm::vec3 collision_avoidance(const SteeringAgent& agent, const glm::vec3& position, const VoxelBody& body);
+    glm::vec3 collision_avoidance(const SteeringAgent& agent, const glm::vec3& position, const VoxelBody& body, glm::vec3 dir);
 
     /**
      * Calculate collision avoidance force between small enemies.

@@ -186,7 +186,7 @@ glm::vec3 SteeringSystem::wander(const SteeringAgent& agent, const glm::vec3& po
  *  - For each hit within avoidDistance, accumulate a repelling force proportional to proximity.
  *  - If all rays from all origins are blocked, do a los check to either keep going or block
  */
-glm::vec3 SteeringSystem::collision_avoidance(const SteeringAgent& agent, const glm::vec3& position, const VoxelBody& body) {
+glm::vec3 SteeringSystem::collision_avoidance(const SteeringAgent& agent, const glm::vec3& position, const VoxelBody& body, glm::vec3 dir) {
     auto* physics = engine.ecs.systems.try_get<Physics>();
     if (!physics) return glm::vec3(0);
 
@@ -194,7 +194,12 @@ glm::vec3 SteeringSystem::collision_avoidance(const SteeringAgent& agent, const 
 
     if (glm::length2(body.velocity) < 0.0001f) return glm::vec3(0);
 
-    glm::vec3 forward = glm::normalize(body.velocity);
+    // glm::vec3 forward = glm::normalize(body.velocity);
+    glm::vec3 desired = dir;
+
+    if (glm::length2(desired) < 0.0001f) return glm::vec3(0);
+
+    glm::vec3 forward = glm::normalize(desired);
     glm::vec3 world_up(0, 1, 0);
 
     glm::vec3 right = glm::normalize(glm::cross(forward, world_up));
@@ -204,11 +209,11 @@ glm::vec3 SteeringSystem::collision_avoidance(const SteeringAgent& agent, const 
 
     float avoid_distance = 15.0f;
 
-    float back_offset = 0.8f;
+    float back_offset = 1.5f;
     glm::vec3 base = position - forward * back_offset;
 
     std::vector<std::pair<glm::vec3, glm::vec3>> rays = {
-        { base, forward }, { base - right * 0.6f, forward }, { base + right * 0.6f, forward }, { base + up * 0.6f, forward }, { base - up * 0.6f, forward }
+        { base, forward }, { base - right * 0.8f, forward }, { base + right * 0.8f, forward }, { base + up * 1.2f, forward }, { base - up * 1.2f, forward }
     };
 
     glm::vec3 avoid(0.0f);
@@ -228,14 +233,16 @@ glm::vec3 SteeringSystem::collision_avoidance(const SteeringAgent& agent, const 
 
             float strength = agent.max_force * t;
 
-            glm::vec3 side = glm::normalize(glm::cross(world_up, r.second));
+            //glm::vec3 side = glm::normalize(glm::cross(world_up, r.second));
+            glm::vec3 side = glm::normalize(glm::cross(world_up, forward));
 
             // choose a consistent side based on obstacle direction
-            if (hit.distance < avoid_distance * 0.5f) {
+            /*if (hit.distance < avoid_distance * 0.5f) {
                 avoid += side * strength;
             } else {
                 avoid -= side * strength;
-            }
+            }*/
+            avoid += side * strength;
 
             blocked++;
         }
@@ -244,6 +251,8 @@ glm::vec3 SteeringSystem::collision_avoidance(const SteeringAgent& agent, const 
     if (blocked == (int)rays.size()) {
         all_rays_blocked = true;
     }
+
+    if (glm::length2(avoid) < 0.01f) avoid = glm::vec3(0.0f);
 
     return avoid;
 }
@@ -342,7 +351,7 @@ glm::vec3 SteeringSystem::calculate_force(const SteeringAgent& agent, const Stee
     }
 
     // Add avoidance on top
-    glm::vec3 avoid = collision_avoidance(agent, position, body);
+    glm::vec3 avoid = collision_avoidance(agent, position, body, dir_to_target);
 
     // If we can see the player, and not all the rays are blocked, move towards player
     if (has_line_of_sight && all_rays_blocked) {
