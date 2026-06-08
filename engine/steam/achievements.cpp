@@ -24,7 +24,7 @@ bool tmt::SteamAchievements::set_achievement(const char* id) const {
         return true;
     }
     if (SteamUserStats()->SetAchievement(id) == false) {
-        tmt::Log::error("SetAchievement failed for id '{}'", id);
+        Log::error("SetAchievement failed for id '{}'", id);
         return false;
     }
     return SteamUserStats()->StoreStats();
@@ -57,7 +57,7 @@ void tmt::SteamAchievements::check_achievement(AchievementSteamData& achievement
         return;
     }
     switch (achievement.ach_type) {
-        case ACH_ENEMY_KILL_COUNT:
+        case ACH_ENEMY_10_KILL_COUNT:
             if (stats.enemy_killed_count >= 10) {
                 unlock_achievement(achievement);
             }
@@ -93,14 +93,20 @@ void tmt::SteamAchievements::on_user_stats_stored(UserStatsStored_t* callback) {
     // we may get callbacks for other games' stats arriving, ignore them
     if (APP_ID == callback->m_nGameID) {
         if (k_EResultOK == callback->m_eResult) {
-            tmt::Log::info("{}", "Stored stats for Steam");
+            Log::info("{}", "Stored stats for Steam");
+        } else if (k_EResultInvalidParam == callback->m_eResult) {
+            Log::error("Failed to validate stats");
         } else {
-            tmt::Log::error("{}", magic_enum::enum_name(callback->m_eResult));
+            Log::error("Still failed for this reason:{}", magic_enum::enum_name(callback->m_eResult));
         }
     }
 }
 void tmt::SteamAchievements::on_achievement_stored(UserAchievementStored_t* callback) {
     if (APP_ID == callback->m_nGameID) {
-        tmt::Log::info("{}", "Stored Achievement for Steam");
+        if (0 == callback->m_nMaxProgress) {
+            Log::info("Achievement {} unlocked!", callback->m_rgchAchievementName);
+        } else {
+            Log::info("Achievement {} progress callback, ({},{}", callback->m_rgchAchievementName, callback->m_nCurProgress, callback->m_nMaxProgress);
+        }
     }
 }

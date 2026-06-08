@@ -25,6 +25,7 @@ tmt::SteamAPI::~SteamAPI() {
 }
 void tmt::SteamAPI::update() {
     SteamAPI_RunCallbacks();
+    achievement->update();
 }
 void tmt::SteamAPI::init_achievements() {
     if (success_init == false) {
