@@ -51,7 +51,7 @@ void Wander::on_tick(tmt::Entity enemy_entity, float dt) {
             enemy.velocity += velocity;
         }
         if (glm::abs(enemy.velocity.x) < 0.1f && glm::abs(enemy.velocity.y) < 0.1f && glm::abs(enemy.velocity.z) < 0.1f) {
-            tmt::Log::warn("Wander path recomputed", glm::length(enemy.velocity));
+            //tmt::Log::warn("Wander path recomputed", glm::length(enemy.velocity));
             has_path = false;  // need a new random destination
             return;
         }
