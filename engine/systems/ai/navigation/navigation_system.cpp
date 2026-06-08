@@ -30,7 +30,7 @@ void tmt::NavigationSystem::on_update(const FrameData&) {
             closest_nav_mesh = entity;
             closest_nav_mesh_dist = dist;
         }
-        if (nav_mesh.generation_state != NavMeshGenerationState::FINISHED && nav_mesh.generation_state != NavMeshGenerationState::UNINITIALISED && dist < closest_unfinished_nav_mesh_dist) {
+        if (nav_mesh.generation_state != NavMeshGenerationState::FINISHED && dist < closest_unfinished_nav_mesh_dist) {
             closest_unfinished_nav_mesh = entity;
             closest_unfinished_nav_mesh_dist = dist;
         }
