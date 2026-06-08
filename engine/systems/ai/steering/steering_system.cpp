@@ -194,7 +194,6 @@ glm::vec3 SteeringSystem::collision_avoidance(const SteeringAgent& agent, const 
 
     if (glm::length2(body.velocity) < 0.0001f) return glm::vec3(0);
 
-    // glm::vec3 forward = glm::normalize(body.velocity);
     glm::vec3 desired = dir;
 
     if (glm::length2(desired) < 0.0001f) return glm::vec3(0);
@@ -232,16 +231,8 @@ glm::vec3 SteeringSystem::collision_avoidance(const SteeringAgent& agent, const 
             t = glm::clamp(t, 0.0f, 1.0f);
 
             float strength = agent.max_force * t;
-
-            //glm::vec3 side = glm::normalize(glm::cross(world_up, r.second));
             glm::vec3 side = glm::normalize(glm::cross(world_up, forward));
 
-            // choose a consistent side based on obstacle direction
-            /*if (hit.distance < avoid_distance * 0.5f) {
-                avoid += side * strength;
-            } else {
-                avoid -= side * strength;
-            }*/
             avoid += side * strength;
 
             blocked++;
