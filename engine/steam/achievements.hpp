@@ -6,7 +6,7 @@
 
 namespace tmt {
 
-enum AchievementType { ACH_COMPLETE_ONE_RUN, ACH_KILL_10_ENEMIES = 1 };
+enum AchievementType { ACH_COMPLETE_ONE_RUN, ACH_KILL_10_ENEMIES, ACH_DRONE_UPGRADES, ACH_DRILL_UPGRADES, ACH_BARGE_UPGRADES, ACH_RIFLE_UPGRADES };
 
 struct AchievementSteamData {
     AchievementType ach_type;

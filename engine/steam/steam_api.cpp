@@ -32,6 +32,7 @@ void tmt::SteamAPI::init_achievements() {
         return;
     }
 
-    achievement_data = { _ACH_ID(ACH_COMPLETE_ONE_RUN, "Rookie"), _ACH_ID(ACH_KILL_10_ENEMIES, "Kill10") };
+    achievement_data = { _ACH_ID(ACH_COMPLETE_ONE_RUN, "Rookie"),      _ACH_ID(ACH_KILL_10_ENEMIES, "Kill10"),       _ACH_ID(ACH_DRONE_UPGRADES, "DroneUpgrades"),
+                         _ACH_ID(ACH_DRILL_UPGRADES, "DrillUpgrades"), _ACH_ID(ACH_BARGE_UPGRADES, "BargeUpgrades"), _ACH_ID(ACH_RIFLE_UPGRADES, "RifleUpgrades") };
     achievement = new SteamAchievements(achievement_data.data(), static_cast<int32_t>(achievement_data.size()));
 }
