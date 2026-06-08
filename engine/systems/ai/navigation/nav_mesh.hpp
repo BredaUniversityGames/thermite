@@ -85,6 +85,9 @@ class NavMesh {
     bool draw_path = false;
 
    private:
+    int last_starting_node = -1;
+    int last_ending_node = -1;
+
     std::unordered_map<uint32_t, int>* node_map;
     int generating_entity_index = 0;
     Volume volume;
@@ -121,6 +124,7 @@ class NavMesh {
     void generate_mesh(int iterations = std::numeric_limits<int>::max());
     std::vector<int> find_path(const int starting_node_id, const int ending_node_id);
     int find_closest_node(const glm::vec3& position);
+    int find_closest_node_cached(const glm::vec3& position, int hint);
     std::optional<glm::vec3> follow_path(glm::vec3 start, glm::vec3 end);
     void check_if_should_regenerate();
     void inspect();

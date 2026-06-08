@@ -208,7 +208,7 @@ void NavMesh::average_neighbor_normals(int iterations) {
 }
 
 void NavMesh::generate_mesh_over_time() {
-    int iterations = 100;
+    int iterations = 200;
     switch (generation_state) {
         case NavMeshGenerationState::UNINITIALISED: {
             auto entity = tmt::engine.ecs.get_entity(*this);
@@ -494,11 +494,43 @@ int tmt::NavMesh::find_closest_node(const glm::vec3& position) {
     return closest_node;
 }
 
+int tmt::NavMesh::find_closest_node_cached(const glm::vec3& position, int hint) {
+    if (!nodes_mesh) return -1;
+    const auto& nodes = *nodes_mesh;
+    const int count = (int)nodes.size();
+
+    if (hint < 0 || hint >= count) {
+        return find_closest_node(position);
+    }
+
+    // Start from the cached node, then walk to a closer neighbor.
+    int current = hint;
+    glm::vec3 d = position - nodes[current].world_pos;
+    float best_sq = glm::dot(d, d);
+
+    bool improved = true;
+    while (improved) {
+        improved = false;
+        for (int n : nodes[current].connecting_nodes) {
+            glm::vec3 dn = position - nodes[n].world_pos;
+            float sq = glm::dot(dn, dn);
+            if (sq < best_sq) {
+                best_sq = sq;
+                current = n;
+                improved = true;
+            }
+        }
+    }
+    return current;
+}
+
 std::optional<glm::vec3> tmt::NavMesh::follow_path(glm::vec3 start, glm::vec3 end) {
     if (!nodes_mesh) return std::nullopt;
     // Calculate path
-    int start_pos = find_closest_node(start);
-    int closest_node_id = find_closest_node(end);
+    int start_pos = find_closest_node_cached(start, last_starting_node);
+    int closest_node_id = find_closest_node_cached(end, last_ending_node);
+    last_starting_node = start_pos;
+    last_ending_node = closest_node_id;
     std::vector<int> new_path = find_path(start_pos, closest_node_id);
     path = new_path;
     if (new_path.size() < 1) return std::nullopt;
