@@ -11,6 +11,7 @@
 #include "engine/systems/physics/physics_system.hpp"
 #include "engine/systems/physics/components/voxel_body.hpp"
 #include "engine/tools/prefab_helper.hpp"
+#include "projects/game/components/gameplay_functionality_components/player.hpp"
 
 void game::Missile::start() {
     auto& name = tmt::engine.ecs.get_component<tmt::Name>(entity);
