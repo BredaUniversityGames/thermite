@@ -139,12 +139,9 @@ glm::vec3 GenerationComponent::coord_to_world(glm::ivec2 coord, const tmt::Level
 }
 
 void GenerationComponent::update(const tmt::FrameData& time) {
-    static unsigned int iteration = 0;
-
     auto& phys_sys = tmt::engine.ecs.systems.get<tmt::Physics>();
 
     if (lighting_pass_data.size() > 0) {
-        
         auto& [cell_template_idx, point, spawned_entity, has_lantern_prefab] = lighting_pass_data[iteration];
 
         bool remove_entry = false;
@@ -152,8 +149,7 @@ void GenerationComponent::update(const tmt::FrameData& time) {
         auto& cell_template = level_configuration.scene_pickable_cell_templates[cell_template_idx];
         auto& layer_entry = cell_template.field.layer_entries[point.entry_idx];
 
-        if (layer_entry.can_spawn_lights  && main_sun_entity != entt::null &&
-            layer_entry.radius_factor < cell_template.light_spawn_radius_factor_threshold) {
+        if (layer_entry.can_spawn_lights && main_sun_entity != entt::null && layer_entry.radius_factor < cell_template.light_spawn_radius_factor_threshold) {
             auto& sun_transform = tmt::engine.ecs.get_component<tmt::Transform>(main_sun_entity);
             auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(spawned_entity);
 
@@ -223,9 +219,10 @@ void GenerationComponent::update(const tmt::FrameData& time) {
 
         if (remove_entry) {
             lighting_pass_data.erase(lighting_pass_data.begin() + iteration);
-        } else if(iteration + 1 < lighting_pass_data.size()) {
+        } else if (iteration + 1 < lighting_pass_data.size()) {
             ++iteration;
-        } else iteration = 0;
+        } else
+            iteration = 0;
     }
 }
 
