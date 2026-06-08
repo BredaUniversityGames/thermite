@@ -6,7 +6,7 @@
 
 namespace tmt {
 
-enum AchievementType { ACH_COMPLETE_ONE_RUN, ACH_ENEMY_10_KILL_COUNT = 1 };
+enum AchievementType { ACH_COMPLETE_ONE_RUN, ACH_KILL_10_ENEMIES = 1 };
 
 struct AchievementSteamData {
     AchievementType ach_type;
@@ -32,6 +32,7 @@ class SteamAchievements {
     GameStats stats {};
     STEAM_CALLBACK(SteamAchievements, on_user_stats_stored, UserStatsStored_t, callback_user_stats_stored);
     STEAM_CALLBACK(SteamAchievements, on_achievement_stored, UserAchievementStored_t, callback_achievement_stored);
+    bool store_stats { false };
 
    private:
     void load_user_stats();
@@ -44,7 +45,6 @@ class SteamAchievements {
 
     ISteamUserStats* user_stats { nullptr };
     bool valid_stats { false };
-    bool store_stats { false };
 };
 
 }  // namespace tmt

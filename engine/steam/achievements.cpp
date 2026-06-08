@@ -19,67 +19,18 @@ bool tmt::SteamAchievements::set_achievement(const char* id) const {
         return false;
     }
     bool already_achieved = false;
-    SteamUserStats()->GetAchievement(id, &already_achieved);
+    user_stats->GetAchievement(id, &already_achieved);
     if (already_achieved) {
         return true;
     }
-    if (SteamUserStats()->SetAchievement(id) == false) {
+    if (user_stats->SetAchievement(id) == false) {
         Log::error("SetAchievement failed for id '{}'", id);
         return false;
     }
-    return SteamUserStats()->StoreStats();
-}
-void tmt::SteamAchievements::load_user_stats() {
-    if (user_stats == nullptr) {
-        return;
-    }
-
-    for (auto i { 0 }; i < achievement_count; i++) {
-        auto& achievement { achivements_handle[i] };
-        user_stats->GetAchievement(achievement.ach_id.c_str(), &achievement.achieved);
-    }
-    // Add other stats here:
-    user_stats->GetStat("enemy_killed_count", &stats.enemy_killed_count);
-
-    valid_stats = true;
-}
-void tmt::SteamAchievements::unlock_achievement(AchievementSteamData& achievement) {
-    achievement.achieved = true;
-
-    achievement.icon_image = 0;
-
-    user_stats->SetAchievement(achievement.ach_id.c_str());
-
-    store_stats = true;
-}
-void tmt::SteamAchievements::check_achievement(AchievementSteamData& achievement) {
-    if (achievement.achieved) {
-        return;
-    }
-    switch (achievement.ach_type) {
-        case ACH_ENEMY_10_KILL_COUNT:
-            if (stats.enemy_killed_count >= 10) {
-                unlock_achievement(achievement);
-            }
-            break;
-        case ACH_COMPLETE_ONE_RUN:
-            // handled directly right now, could change it to use stats?
-            break;
-        default:
-            break;
-    }
-}
-void tmt::SteamAchievements::store_if_needed() {
-    if (store_stats == false) {
-        return;
-    }
-    // set everything here
-    user_stats->SetStat("enemy_count_killed", stats.enemy_killed_count);
-
-    bool success = user_stats->StoreStats();
-    store_stats = !success;
+    return user_stats->StoreStats();
 }
 void tmt::SteamAchievements::update() {
+    if (!initialized) return;
     if (valid_stats == false) {
         load_user_stats();
     }
@@ -109,4 +60,55 @@ void tmt::SteamAchievements::on_achievement_stored(UserAchievementStored_t* call
             Log::info("Achievement {} progress callback, ({},{}", callback->m_rgchAchievementName, callback->m_nCurProgress, callback->m_nMaxProgress);
         }
     }
+}
+void tmt::SteamAchievements::load_user_stats() {
+    if (user_stats == nullptr) {
+        return;
+    }
+
+    for (auto i { 0 }; i < achievement_count; i++) {
+        auto& achievement { achivements_handle[i] };
+        user_stats->GetAchievement(achievement.ach_id.c_str(), &achievement.achieved);
+    }
+    // Add other stats here:
+    bool get_state_success { true };
+    get_state_success &= user_stats->GetStat("enemy_killed_count", &stats.enemy_killed_count);
+
+    valid_stats = get_state_success;
+}
+void tmt::SteamAchievements::unlock_achievement(AchievementSteamData& achievement) {
+    achievement.achieved = true;
+
+    achievement.icon_image = 0;
+
+    user_stats->SetAchievement(achievement.ach_id.c_str());
+
+    store_stats = true;
+}
+void tmt::SteamAchievements::check_achievement(AchievementSteamData& achievement) {
+    if (achievement.achieved) {
+        return;
+    }
+    switch (achievement.ach_type) {
+        case ACH_KILL_10_ENEMIES:
+            if (stats.enemy_killed_count >= 10) {
+                unlock_achievement(achievement);
+            }
+            break;
+        case ACH_COMPLETE_ONE_RUN:
+            // handled directly right now, could change it to use stats?
+            break;
+        default:
+            break;
+    }
+}
+void tmt::SteamAchievements::store_if_needed() {
+    if (store_stats == false) {
+        return;
+    }
+    // set everything here
+    user_stats->SetStat("enemy_killed_count", stats.enemy_killed_count);
+
+    bool success = user_stats->StoreStats();
+    store_stats = !success;
 }
