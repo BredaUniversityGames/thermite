@@ -30,7 +30,9 @@ void CameraMouse::update(const tmt::FrameData& time) {
     const glm::vec2 mouse_pos = tmt::engine.input.get_mouse_position();
     const glm::uvec2 screen_res = tmt::engine.renderer.render_view.gpu_view.resolution;
 
-    const glm::vec2 mouse_centered = (mouse_pos / glm::vec2(screen_res)) - 0.5f;
+    glm::vec2 mouse_centered = (mouse_pos / glm::vec2(screen_res)) - 0.5f;
+    mouse_centered = glm::clamp(mouse_centered, -1.0f, 1.0f);
+
     const glm::vec2 target_offset = { mouse_centered.x * sway_radius_x * (invert_x ? -1.0f : 1.0f), mouse_centered.y * sway_radius_y * (invert_y ? -1.0f : 1.0f) };
 
     const float alpha = 1.0f - glm::exp(-smoothing * time.delta_time);
