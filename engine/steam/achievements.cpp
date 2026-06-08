@@ -62,7 +62,7 @@ void tmt::SteamAchievements::on_achievement_stored(UserAchievementStored_t* call
     }
 }
 void tmt::SteamAchievements::load_user_stats() {
-    if (user_stats == nullptr) {
+    if (user_stats == nullptr || achivements_handle == nullptr) {
         return;
     }
 

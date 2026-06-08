@@ -32,7 +32,6 @@ void tmt::SteamAPI::init_achievements() {
         return;
     }
 
-    std::vector<AchievementSteamData> achievement_data { _ACH_ID(ACH_COMPLETE_ONE_RUN, "Rookie"), _ACH_ID(ACH_KILL_10_ENEMIES, "Kill10") };
-
+    achievement_data = { _ACH_ID(ACH_COMPLETE_ONE_RUN, "Rookie"), _ACH_ID(ACH_KILL_10_ENEMIES, "Kill10") };
     achievement = new SteamAchievements(achievement_data.data(), static_cast<int32_t>(achievement_data.size()));
 }
