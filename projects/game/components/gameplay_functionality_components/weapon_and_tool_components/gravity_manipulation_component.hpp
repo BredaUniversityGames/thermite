@@ -42,7 +42,6 @@ class GravityManipulationComponent : public tmt::GameComponent<GravityManipulati
     GravitySounds sounds;
     GravityVFX vfx_gravity_gun;
     tmt::AudioInstance gravity_active_instance;
-    GravityVFX vfx_gravity_gun;
 
    private:
     std::vector<entt::entity> currently_manipulated_entities;
