@@ -15,6 +15,7 @@ struct GenerationComponent : public tmt::GameComponent<GenerationComponent> {
     // void draw_debug_lines() const override;
    private:
     bool generated_lights = false;
+    unsigned int iteration = 0;
     tmt::Entity main_sun_entity;
     std::vector<std::tuple<int, tmt::PoissonPoint, tmt::Entity, bool>> lighting_pass_data;
     tmt::LevelConfiguration level_configuration;
@@ -37,5 +38,5 @@ struct ClearanceVolume : public tmt::GameComponent<ClearanceVolume> {
 };
 
 }  // namespace game
-TMT_OBJECT(game::ClearanceVolume, (size));
+TMT_GAME_COMPONENT(game::ClearanceVolume, (size));
 TMT_GAME_COMPONENT_EMPTY(game::GenerationComponent);
