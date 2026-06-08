@@ -65,7 +65,7 @@ class SteeringSystem : public ISystem {
      */
     void check_completion(const SteeringAgent& agent, SteeringRequest& request, const Transform& transform, VoxelBody& body);
 
-    private:
+   private:
     bool all_rays_blocked = false;
 };
 
