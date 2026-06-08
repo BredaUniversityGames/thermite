@@ -62,7 +62,7 @@ class GravityManipulationComponent : public tmt::GameComponent<GravityManipulati
 };
 
 }  // namespace game
-TMT_OBJECT(game::GravitySounds, (gravity_hold_object, graviry_launch_project));
+TMT_OBJECT(game::GravitySounds, (gravity_hold_object, gravity_launch_object));
 TMT_OBJECT(game::GravityVFX, (pull_vfx_point_entity, pull_vfx_prefab, push_vfx_point_entity, push_vfx_prefab));
 TMT_GAME_COMPONENT(
     game::GravityManipulationComponent, (range, max_mass, pull_strength, push_strength, attraction_acceleration, attraction_point_entity, animated_tool_entity, sounds, vfx_gravity_gun)
