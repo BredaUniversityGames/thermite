@@ -405,7 +405,7 @@ void UiPipeline::enqueue_3d(RenderGraph& render_graph, RenderView& render_view) 
     if (!images_3d.empty()) {
         /* Upload the image instances */
         render_graph.upload_buffer(images_3d_buffer, images_3d.data(), 0u, images_3d.size() * sizeof(GpuImage3D));
-        image_count += (uint32_t)images_3d.size();
+        image_count = (uint32_t)images_3d.size();
 
         /* Get Render Image */
         const BindHandle render_image = render_view.get_render_image();
@@ -434,7 +434,7 @@ void UiPipeline::enqueue_3d(RenderGraph& render_graph, RenderView& render_view) 
         /* clang-format on */
 
         /* Draw all images with 1 draw call, using instancing & bindless textures. */
-        image_pass.draw(image_vertex_buffer, 6u, 0u, (uint32_t)images_3d.size());
+        image_pass.draw(image_vertex_buffer, 6u, 0u, image_count);
     }
 
     /* Text */
