@@ -19,13 +19,14 @@ void Wander::on_start(tmt::Entity enemy_entity) {
 void Wander::on_tick(tmt::Entity enemy_entity, float dt) {
     auto& enemy = tmt::engine.ecs.get_component<game::MediumEnemy>(enemy_entity);
     auto& nav_mesh = tmt::engine.ecs.get_component<tmt::NavMesh>(enemy.walkable_asteroid);
-
     if (!nav_mesh.nav_nodes_valid()) {
         tmt::Log::warn("Nav mesh not generated yet for wander action!");
         return;
     }
     tmt::Transform& enemy_transform = tmt::engine.ecs.get_component<tmt::Transform>(enemy_entity);
     const auto& enemy_entity_pos = enemy_transform.get_world_position();
+    auto player_entity_pos = tmt::engine.ecs.get_component<tmt::Transform>(enemy.player).get_world_position();
+    if (glm::distance(enemy_entity_pos, player_entity_pos) > enemy.aggro_range * 1.5f) return;
 
     auto nm_nodes = nav_mesh.nodes_mesh;
 
