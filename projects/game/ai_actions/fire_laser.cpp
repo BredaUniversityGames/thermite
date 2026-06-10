@@ -15,6 +15,7 @@
 #include "engine/core/renderer/renderer.hpp"
 #include "engine/systems/physics/physics_system.hpp"
 #include "engine/systems/physics/components/voxel_body.hpp"
+#include "engine/core/renderer/pipelines/vfx_pipeline.hpp"
 #define GLM_ENABLE_EXPERIMENTAL
 #include "glm/gtx/quaternion.hpp"
 
@@ -40,6 +41,18 @@ void FireLaser::cleanup(tmt::Entity enemy_entity) {
     tmt::engine.ecs.get_component<tmt::RigController>(enemy.rig_controller).set_parameter_bool("laser", false);
     if (tmt::engine.ecs.valid(laser_entity)) {
         tmt::engine.ecs.destroy_entity(laser_entity);
+    }
+    tmt::ParticleEmitter* emitter_component_charge = tmt::engine.ecs.try_get_component<tmt::ParticleEmitter>(enemy.laser_charge_particle_entity);
+    if (!emitter_component_charge) {
+        tmt::Log::error("Cant spawn particle on emitter, check prefab on ore manager component on entity: {}", enemy.laser_charge_particle_entity);
+    } else {
+        emitter_component_charge->active = false;
+    }
+    tmt::ParticleEmitter* emitter_component_laser = tmt::engine.ecs.try_get_component<tmt::ParticleEmitter>(enemy.laser_fire_particle_entity);
+    if (!emitter_component_laser) {
+        tmt::Log::error("Cant spawn particle on emitter, check prefab on ore manager component on entity: {}", enemy.laser_fire_particle_entity);
+    } else {
+        emitter_component_laser->active = false;
     }
     laser_entity = entt::null;
     state = WINDING_UP;
@@ -166,10 +179,12 @@ void FireLaser::on_tick(tmt::Entity enemy_entity, float dt) {
     auto player_pos = tmt::engine.ecs.get_component<tmt::Transform>(enemy.player).get_world_position();
     player_pos += enemy.laser_target_offset;
 
+    auto* audio_emitter = tmt::engine.ecs.try_get_component<tmt::AudioEmitter>(enemy_entity);
+
     switch (state) {
         case SITTING_DOWN: {
-            if (enemy.audio_emitter != nullptr && !enemy.shield_slam_instance.is_valid()) {
-                enemy.shield_slam_instance = enemy.audio_emitter->play(enemy.sounds.sound_shield_slam);
+            if (audio_emitter != nullptr && !enemy.shield_slam_instance.is_valid()) {
+                enemy.shield_slam_instance = audio_emitter->play(enemy.sounds.sound_shield_slam);
                 enemy.shield_slam_instance.set_maximum_distance(enemy.aggro_range * 1.25f);  // Multiply be 1.25f to ensure the player can hear it even when at the edge of the range
             }
 
@@ -188,6 +203,13 @@ void FireLaser::on_tick(tmt::Entity enemy_entity, float dt) {
                         auto& enemy_comp = tmt::engine.ecs.get_component<game::MediumEnemy>(enemy_entity);
                         tmt::engine.ecs.get_component<tmt::ConstrainedRig>(enemy_comp.rig_controller).blend = *value;
                     });
+                tmt::ParticleEmitter* emitter_component = tmt::engine.ecs.try_get_component<tmt::ParticleEmitter>(enemy.laser_charge_particle_entity);
+                if (!emitter_component) {
+                    tmt::Log::error("Cant spawn particle on emitter, check prefab on ore manager component on entity: {}", enemy.laser_charge_particle_entity);
+                } else {
+                    emitter_component->active = true;
+                }
+
                 enemy.set_stored_offsets_to_ref_entity();
                 state = WINDING_UP;
                 time = 0.0f;
@@ -199,9 +221,8 @@ void FireLaser::on_tick(tmt::Entity enemy_entity, float dt) {
             tmt::Transform& enemy_transform = tmt::engine.ecs.get_component<tmt::Transform>(enemy_entity);
             target_pos = enemy_transform.get_world_position() + enemy_transform.get_forward() * enemy.laser_range * 0.8f;
 
-            if (enemy.audio_emitter != nullptr && !enemy.laser_instance.is_valid()) {
-                enemy.laser_instance = enemy.audio_emitter->play(enemy.sounds.sound_laser);
-                enemy.laser_instance.set_maximum_distance(enemy.aggro_range * 1.25f);  // Multiply be 1.25f to ensure the player can hear it even when at the edge of the range
+            if (audio_emitter != nullptr && !enemy.laser_instance.is_valid()) {
+                enemy.laser_instance = audio_emitter->play(enemy.sounds.sound_laser);
             }
 
             enemy.height_above_ground_offset = -enemy.height_above_ground + enemy.laser_sitting_down_height_offset;
@@ -217,6 +238,7 @@ void FireLaser::on_tick(tmt::Entity enemy_entity, float dt) {
             for (float i = 0; i < 50.0f; i += dist_between_laser_spheres) {
                 tmt::engine.polyline.draw_sphere(laser_pos + direction * i, .01f);
             }
+
             // move the laser voxels into position with a tween
             const float tween_start_time = enemy.laser_winding_up_time - enemy.laser_aim_tween_duration;
             if (enemy.laser_aim_tween_duration > 0.0f && time >= tween_start_time) {
@@ -262,9 +284,27 @@ void FireLaser::on_tick(tmt::Entity enemy_entity, float dt) {
                 auto& voxel_renderer = tmt::engine.ecs.add_component<tmt::VoxelRenderer>(laser_entity);
                 auto ref = tmt::engine.resources.copy_resource<tmt::VoxelVolume>(enemy.laser_voxel_object);
                 voxel_renderer.resource = ref;
+
+                tmt::ParticleEmitter* emitter_component_charge = tmt::engine.ecs.try_get_component<tmt::ParticleEmitter>(enemy.laser_charge_particle_entity);
+                if (!emitter_component_charge) {
+                    tmt::Log::error("Cant spawn particle on emitter, check prefab on ore manager component on entity: {}", enemy.laser_charge_particle_entity);
+                } else {
+                    emitter_component_charge->active = false;
+                }
+                tmt::ParticleEmitter* emitter_component_laser = tmt::engine.ecs.try_get_component<tmt::ParticleEmitter>(enemy.laser_fire_particle_entity);
+                if (!emitter_component_laser) {
+                    tmt::Log::error("Cant spawn particle on emitter, check prefab on ore manager component on entity: {}", enemy.laser_fire_particle_entity);
+                } else {
+                    emitter_component_laser->active = true;
+                }
+
                 // auto& voxel_body = tmt::engine.ecs.add_component<tmt::VoxelBody>(laser_entity);
                 // voxel_body.layer = enemy.projectile_layer;
                 // voxel_body.type = tmt::VoxelBody::STATIC;
+
+                if (audio_emitter != nullptr && enemy.laser_instance.is_valid()) {
+                    enemy.laser_instance.set_parameter(enemy.sounds.laser_parameter, 0.75f);
+                }
 
                 state = FIRING;
                 time = 0.0f;
@@ -324,6 +364,11 @@ void FireLaser::on_tick(tmt::Entity enemy_entity, float dt) {
 
             if (time > enemy.laser_firing_time) {
                 cleanup(enemy_entity);
+
+                if (audio_emitter != nullptr && enemy.laser_instance.is_valid()) {
+                    enemy.laser_instance.stop();
+                }
+
                 return;
             }
 
@@ -347,6 +392,7 @@ void FireLaser::on_tick(tmt::Entity enemy_entity, float dt) {
             // deal damage to player and cutoff laser
             if (distance_to_player < enemy.laser_damage_radius) {
                 tmt::engine.ecs.get_component<game::Player>(enemy.player).health.value -= enemy.laser_damage * dt;
+                // tmt::engine.ecs.get_component<game::Player>(enemy.player).take_damage(enemy.laser_damage * dt);
                 // end_pos = closest_point;
             }
 

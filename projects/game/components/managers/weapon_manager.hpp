@@ -1,6 +1,9 @@
 #pragma once
 #include "engine/systems/gameplay/game_component.hpp"
+#include "engine/core/audio.hpp"
 #include "projects/game/data_headers/events.hpp"
+#include "engine/core/audio.hpp"
+
 namespace game {
 
 enum class WeaponType { RIFLE, GRAVITY, MINING };
@@ -74,19 +77,23 @@ class WeaponManager : public tmt::GameComponent<WeaponManager> {
     float overheat_time = .8f;
     float switching_time = .5f;
 
+    tmt::AudioEvent switch_tool_event;
+    tmt::AudioParameter holding_parameter;
+
     WeaponType last_used_weapon = WeaponType::RIFLE;  // default ?
     tmt::Entity tool_rig = entt::null;
+    bool switching = false;
 
    private:
     void complete_switch();
     float overheat_remaining_time = -0.1f;
     float switching_remaining_time = -0.1f;
-    bool switching = false;
     /// <summary>
     /// Handles the weapon overheat event when a weapon is fired.
     /// </summary>
     /// <param name="event">The weapon fired event containing information about the fired weapon.</param>
     void on_overheat(const WeaponFiredEvent& event);
+    bool gravity_overheated() const;
     void check_trigger_shoot_event();
     void transition_to_other_weapons();
     void show_weapon_tips(game::WeaponType slot);
@@ -131,4 +138,4 @@ TMT_OBJECT(
 );
 TMT_OBJECT(game::WeaponManager::WeaponProcAnimData, (root, anti_overlap, sway, recoil));
 TMT_OBJECT(game::WeaponManager::WeaponEntry, (proc_anim_data, entity));
-TMT_GAME_COMPONENT(game::WeaponManager, (tool_rig, weapons, starting_weapon, shooting_entity, overheat_time, switching_time));
+TMT_GAME_COMPONENT(game::WeaponManager, (tool_rig, weapons, starting_weapon, shooting_entity, overheat_time, switching_time, switch_tool_event, holding_parameter));

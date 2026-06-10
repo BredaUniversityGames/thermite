@@ -7,6 +7,7 @@
 #include "engine/shared/ray.hpp"
 #include "projects/game/components/managers/ore_manager.hpp"
 #include "projects/game/data_headers/layer_mask.hpp"
+#include "engine/core/components/audio_emitter.hpp"
 
 namespace game {
 
@@ -42,6 +43,7 @@ struct MiningData {
     uint32_t ray_amount = 20;
     float rays_per_second = 30.0f;
 };
+
 class MiningComponent : public tmt::GameComponent<MiningComponent> {
    public:
     using GameComponent::GameComponent;
@@ -58,6 +60,13 @@ class MiningComponent : public tmt::GameComponent<MiningComponent> {
     RayCylinder ray_cylinder {};
     LayerMask ray_mask {};
     float time_draw_rays_in_debug = 2.0f;
+
+    tmt::AudioEvent mining_activate_sound;
+    tmt::AudioInstance mining_activate_sound_instance;
+    tmt::AudioEvent mining_sound;
+    tmt::AudioInstance mining_sound_instance;
+
+    tmt::Entity player_entity = entt::null;
 
    private:
     tmt::Transform* get_transform() const;
@@ -81,11 +90,9 @@ class MiningComponent : public tmt::GameComponent<MiningComponent> {
 
     // Ore manager for custom behaviour of mined ore
     OreManager* ore_manager = nullptr;
-
-    tmt::Entity player_entity = entt::null;
 };
 
 }  // namespace game
 TMT_OBJECT(game::RayCylinder, (base_transform_entity, base_radius, ray_distance, ray_amount, rotating_speed));
-TMT_GAME_COMPONENT(game::MiningComponent, (active, cfg, ray_cylinder, ray_mask, time_draw_rays_in_debug));
+TMT_GAME_COMPONENT(game::MiningComponent, (active, cfg, ray_cylinder, ray_mask, time_draw_rays_in_debug, mining_activate_sound, mining_sound, player_entity));
 TMT_OBJECT(game::MiningData, (base_radius, ray_distance, ray_amount, rays_per_second));

@@ -7,6 +7,7 @@
 #include "engine/tools/tweening/transform.hpp"
 #include "projects/game/data_headers/events.hpp"
 #include "projects/game/data_headers/layer_mask.hpp"
+#include "engine/core/components/audio_emitter.hpp"
 
 namespace game {
 
@@ -32,6 +33,11 @@ struct RayCollisionCheck {
     float collision_speed_damping = 0.4f;
     float camera_near_distance = 0.3f;
 };
+
+struct PlayerVFXSettings {
+    tmt::ResourceRef<tmt::Json> recharge_vfx_prefab;
+};
+
 enum class PlayerState { FREEMOVING, ATTACHED, PAUSED };
 struct AttachedCameraSettings {
     float distance = 12.0f;
@@ -81,10 +87,30 @@ struct CameraShakeSettings {
 
     void set_multiplier(float _multiplier) { multiplier = _multiplier; }
 
+    float recoil_frequency = 1.f;
+    float recoil_damping = 0.2f;
+    float recoil_initial_response = 0.f;
+
+    float shake_frequency = 1.f;
+    float shake_damping = 0.2f;
+    float shake_initial_response = 0.f;
+
+    float damage_shake_multiplier = 1.f;
+
    private:
     // loaded from the saved data
     float multiplier { 1.0f };
 };
+struct PlayerSounds {
+    tmt::AudioEvent destroyed_death;     // done
+    tmt::AudioEvent drone_boost;         // done
+    tmt::AudioEvent hit;                 // done
+    tmt::AudioEvent battery_half;        // done
+    tmt::AudioEvent battery_almost_out;  // done
+    tmt::AudioEvent battery_out;         // done
+};
+
+enum class ToolType { RIFLE, GRAVITY, MINING };
 
 class Player : public tmt::GameComponent<Player> {
    public:
@@ -106,6 +132,7 @@ class Player : public tmt::GameComponent<Player> {
     void draw_debug_lines() const override;
     void attempt_attach(tmt::Input& input);
     void on_attach(const AttachEvent& event);
+    void take_damage(float damage);
     void end() override;
     float camera_sensitivity = 0.1f;
 
@@ -168,6 +195,7 @@ class Player : public tmt::GameComponent<Player> {
     tmt::Entity gravity_crosshair = entt::null;
     tmt::Entity mine_crosshair = entt::null;
 
+    PlayerVFXSettings player_vfx_settings;
     // Barge point
     tmt::Entity barge = entt::null;
 
@@ -191,6 +219,10 @@ class Player : public tmt::GameComponent<Player> {
 
     void set_hud_enabled(tmt::Entity hud_root, bool enabled);
 
+    // Sounds
+    tmt::AudioEmitter* audio_emitter;
+    PlayerSounds player_sounds;
+
    private:
     void refill(float delta);
     void drain_energy(float delta);
@@ -205,6 +237,7 @@ class Player : public tmt::GameComponent<Player> {
     void start_detach_camera_transition();
     void align_player_camera_to_attached();
     void sync_attached_orbit_from_camera();
+    void setup_vfx_emitter(tmt::Entity& entity_to_set_up, tmt::ResourceRef<tmt::Json>& prefab_to_set_up);
     glm::vec3 get_attached_camera_orbit_position(const glm::vec3& barge_pos) const;
 
     PlayerState state = PlayerState::FREEMOVING;
@@ -229,6 +262,15 @@ class Player : public tmt::GameComponent<Player> {
     float attach_transition_look_blend_elapsed = 0.0f;
     bool attach_transition_start_forward_set = false;
     glm::vec3 attach_transition_start_forward { 0.0f, 0.0f, 1.0f };
+
+    // sound variables
+    bool out_of_energy = false;
+    tmt::AudioInstance destroyed_death_instance;
+    bool player_destroyed = false;
+
+    ToolType active_tool = ToolType::RIFLE;
+
+    tmt::Entity recharge_emitter_entity = entt::null;
 };
 
 }  // namespace game
@@ -239,11 +281,16 @@ TMT_OBJECT(game::RayCollisionCheck, (collision_layer, player_radius, collision_s
 TMT_OBJECT(game::AttachedCameraSettings, (distance, height_offset, look_at_height_offset, rotation_sensitivity, pitch_min, pitch_max, default_yaw, default_pitch, fov));
 TMT_OBJECT(game::AttachCameraTransitionSettings, (enabled, play_on_first_attach, inherit_player_facing_on_attach, blend_look_over_tween, start_look_blend_time, duration, ease));
 TMT_OBJECT(game::DetachCameraTransitionSettings, (enabled, align_player_to_camera, duration, ease));
-TMT_OBJECT(game::CameraShakeSettings, (enabled, max_intensity, boost_intensity, drill_intensity, decay_speed, recoil_strength, recoil_return_speed, recoil_horizontal));
+TMT_OBJECT(
+    game::CameraShakeSettings, (enabled, max_intensity, boost_intensity, drill_intensity, decay_speed, recoil_strength, recoil_return_speed, recoil_horizontal, recoil_frequency,
+                                recoil_damping, recoil_initial_response, shake_frequency, shake_damping, shake_initial_response, damage_shake_multiplier)
+);
+TMT_OBJECT(game::PlayerSounds, (destroyed_death, drone_boost, hit, battery_half, battery_almost_out, battery_out));
+TMT_OBJECT(game::PlayerVFXSettings, (recharge_vfx_prefab));
 TMT_GAME_COMPONENT(
     game::Player, (camera_sensitivity, acceleration, deceleration, drag, max_speed, boost_max_speed_multiplier, boost_acceleration_multiplier, boost_deceleration_factor,
                    boost_cost_per_second_per_additional_speed_above_max, boost_initial_cost, boost_availability, health, energy, energy_drain_per_second, out_of_energy_time_till_death,
                    low_energy_threshold, low_energy_duration, use_second_warning, low_energy_threshold_2, low_energy_duration_2, player_hud, barge_hud, low_energy_hud, black_out_hud,
-                   black_out_curve, rifle_crosshair, gravity_crosshair, mine_crosshair, barge, recharge_distance, ray_check, camera_shake_settings, attached_camera_settings,
-                   attach_camera_transition_settings, detach_camera_transition_settings)
+                   black_out_curve, rifle_crosshair, gravity_crosshair, mine_crosshair, player_vfx_settings, barge, recharge_distance, ray_check, camera_shake_settings,
+                   attached_camera_settings, attach_camera_transition_settings, detach_camera_transition_settings, player_sounds)
 );

@@ -3,6 +3,8 @@
 #include "projects/game/data_headers/game_input.hpp"
 #include "projects/game/components/gameplay_functionality_components/player.hpp"
 #include "projects/game/components/managers/weapon_manager.hpp"
+#include "engine/core/audio.hpp"
+#include "engine/systems/ui/ui.hpp"
 
 // systems to disable for pause
 #include "engine/systems/ai/goap/goap_system.hpp"
@@ -14,10 +16,12 @@
 #include "engine/systems/motion_math/motion_math_system.hpp"  // undure of this pause either
 #include "engine/systems/physics/physics_system.hpp"
 #include "engine/tools/player_data.hpp"
+#include "engine/core/input/input_map.hpp"
 #include "projects/game/components/development_tools/save_data.hpp"
 #include "projects/game/components/gameplay_functionality_components/ore_collector.hpp"
 #include "projects/game/data_headers/save_entries.hpp"
 #include "projects/game/data_headers/wallet.hpp"
+#include "projects/game/components/ui_components/entity_control_component.hpp"
 
 namespace game {
 
@@ -25,6 +29,10 @@ void MenuController::start() {
     // Bind end run to event
     tmt::engine.ecs.get_dispatcher().sink<EndRun>().connect<&MenuController::enable_end_of_game_menu>(this);
     player_entity = Player::get().entity;  // Assuming there's only one player entity in the game
+
+    // menus
+    tmt::engine.input_map.add_action(action::OPEN_PAUSE_MENU);
+    tmt::engine.input_map.add_key_to_action(action::OPEN_PAUSE_MENU, tmt::Key::ESCAPE);
 }
 
 void MenuController::update(const tmt::FrameData& time) {
@@ -45,8 +53,24 @@ void MenuController::update(const tmt::FrameData& time) {
 
     if (input.is_action_just_pressed(action::OPEN_PAUSE_MENU)) {
         if (pause_menu_entity == entt::null) {
-            tmt::Log::error("No pause menu entity has been set, cannot open pause menu.");
+            tmt::Log::debug("No pause menu entity has been set, cannot open pause menu.");
             return;
+        }
+
+        const bool settings_menu_open = settings_menu_entity != entt::null && tmt::engine.ecs.is_enabled(settings_menu_entity);
+        // close_settings_menu_entity
+        if (settings_menu_open) {
+            if (close_settings_menu_entity != entt::null) {
+                const auto& entity_control_component = tmt::engine.ecs.try_get_component<EntityControlComponent>(close_settings_menu_entity);
+                if (entity_control_component) {
+                    entity_control_component->handle_action();
+                } else {
+                    tmt::Log::error("No entity control component found for close settings menu entity, cannot close settings menu.");
+                }
+                return;  // if settings menu is open, we want to close it instead of handling the pause menu input
+            } else {
+                tmt::Log::error("No close settings menu entity has been set, cannot close settings menu.");
+            }
         }
 
         if (tmt::engine.ecs.is_disabled(pause_menu_entity)) {
@@ -78,6 +102,8 @@ void MenuController::end() {
     } else {
         handle_saving({ true });
     }
+
+    enable_systems();
 }
 
 void MenuController::enable_pause_menu() const {
@@ -88,6 +114,7 @@ void MenuController::enable_pause_menu() const {
     if (check_for_open_menus()) return;
     /*unlock_mouse();
     tmt::engine.ecs.enable(pause_menu_entity);*/
+
     auto& player = tmt::engine.ecs.get_component<Player>(player_entity);
 
     player.set_state_before_pause(player.get_state());
@@ -123,6 +150,12 @@ void MenuController::enable_pause_menu() const {
     if (systems.try_get<tmt::Physics>()) {
         systems.get<tmt::Physics>().disable();
     }
+
+    // unpause any running sounds
+    tmt::engine.audio.pause_game_audio();
+
+    auto* ui = tmt::engine.ecs.systems.try_get<tmt::UI>();
+    ui->menu_sounds.sounds.open_menu.play();
 }
 
 void MenuController::disable_pause_menu() const {
@@ -148,6 +181,10 @@ void MenuController::disable_pause_menu() const {
     if (player.get_state() == PlayerState::FREEMOVING) player.set_hud_enabled(player.player_hud, true);
     if (player.get_state() == PlayerState::ATTACHED) player.set_hud_enabled(player.barge_hud, true);
 
+    enable_systems();
+}
+
+void MenuController::enable_systems() const {
     // enable systems
     auto& systems = tmt::engine.ecs.systems;
 
@@ -166,6 +203,9 @@ void MenuController::disable_pause_menu() const {
     if (systems.try_get<tmt::Physics>()) {
         systems.get<tmt::Physics>().enable();
     }
+
+    // unpause any running sounds
+    tmt::engine.audio.resume_game_audio();
 }
 
 void MenuController::enable_inventory_menu() const {
@@ -174,6 +214,7 @@ void MenuController::enable_inventory_menu() const {
         return;
     }
     if (check_for_open_menus()) return;
+
     unlock_mouse();
     tmt::engine.ecs.enable(inventory_menu_entity);
 }
@@ -193,6 +234,7 @@ void MenuController::enable_upgrade_menu() const {
         return;
     }
     if (check_for_open_menus()) return;
+
     unlock_mouse();
     tmt::engine.ecs.enable(upgrade_menu_entity);
 }

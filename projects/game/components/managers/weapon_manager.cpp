@@ -15,6 +15,8 @@
 #include "projects/game/components/ui_components/weapon_tip.hpp"
 
 void game::WeaponManager::switch_to(WeaponType weapon_slot) {
+    auto* rig_controller = tmt::engine.ecs.try_get_component<tmt::RigController>(tool_rig);
+
     if (weapon_slot == current_weapon) {
         tmt::Log::info("[WeaponManager] Already on {}, ignoring switch", magic_enum::enum_name(current_weapon));
         return;
@@ -24,15 +26,18 @@ void game::WeaponManager::switch_to(WeaponType weapon_slot) {
     // unsubscribe only the first time we are in a transition stage
     if (switching == false) {
         unsubscribe_weapon(current_weapon);
+        rig_controller->set_parameter_bool("InUse", false);
     }
 
-    auto* rig_controller = tmt::engine.ecs.try_get_component<tmt::RigController>(tool_rig);
     if (rig_controller) {
         rig_controller->set_parameter_int("ToolType", static_cast<int>(weapon_slot));
         rig_controller->set_parameter_trigger("SwitchTool");
     } else {
         tmt::Log::error("[WeaponManager] Weapon entity is not set, can't animate transitions!");
     }
+
+    // Play the switch tool sound.
+    if (switch_tool_event.is_valid()) switch_tool_event.play();
 
     // the new subscription happens when the switching is done
     switching_remaining_time = switching_time;
@@ -105,6 +110,10 @@ void game::WeaponManager::on_overheat(const game::WeaponFiredEvent& event) {
     }
 }
 
+bool game::WeaponManager::gravity_overheated() const {
+    return current_weapon == game::WeaponType::GRAVITY && overheat_remaining_time >= 0.0f;
+}
+
 void game::WeaponManager::check_trigger_shoot_event() {
     auto& input = tmt::engine.input;
     auto* player = tmt::engine.ecs.try_get_component<game::Player>(shooting_entity);
@@ -115,8 +124,12 @@ void game::WeaponManager::check_trigger_shoot_event() {
         return;
     }
 
-    if (input.is_action_pressed(action::SHOOT)) {
+    // Only update the shoot event if the weapon isn't a gravity gun or if it is a gravity gun and is not overheated.
+    if (input.is_action_pressed(action::SHOOT) && !gravity_overheated()) {
+        if (switching) return;
         tmt::engine.ecs.get_dispatcher().trigger(ShootEvent { shooting_entity, false });
+
+        if (holding_parameter.is_valid()) tmt::engine.audio.set_global_parameter(holding_parameter, 1.0f);
 
         auto* rig_controller = tmt::engine.ecs.try_get_component<tmt::RigController>(tool_rig);
         if (rig_controller) {
@@ -125,6 +138,8 @@ void game::WeaponManager::check_trigger_shoot_event() {
 
     } else if (input.is_action_just_released(action::SHOOT)) {
         tmt::engine.ecs.get_dispatcher().trigger(ReleaseShootEvent { shooting_entity });
+
+        if (holding_parameter.is_valid()) tmt::engine.audio.set_global_parameter(holding_parameter, 0.0f);
 
         auto* rig_controller = tmt::engine.ecs.try_get_component<tmt::RigController>(tool_rig);
         if (rig_controller) {
@@ -154,7 +169,8 @@ void game::WeaponManager::update(const tmt::FrameData& time) {
         }
     }
 
-    // TODO replace with proper state
+    transition_to_other_weapons();
+
     if (switching) {
         switching_remaining_time -= tmt::engine.frame_data().delta_time;
 
@@ -171,9 +187,8 @@ void game::WeaponManager::update(const tmt::FrameData& time) {
                 break;
             case game::WeaponType::GRAVITY:
                 if (!is_attached) {
-                    if (overheat_remaining_time < 0.0f) {
-                        check_trigger_shoot_event();
-                    }
+                    check_trigger_shoot_event();
+
                     if (tmt::engine.input.is_action_pressed(action::SECONDARY_TOOL_USE)) {
                         tmt::engine.ecs.get_dispatcher().trigger(ShootEvent { shooting_entity, true });
                     }
@@ -189,8 +204,6 @@ void game::WeaponManager::update(const tmt::FrameData& time) {
     }
 
     update_procedural_motion(time.delta_time);
-
-    transition_to_other_weapons();
 
     // state timers update
     if (overheat_remaining_time > 0.0f) {

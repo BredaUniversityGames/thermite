@@ -8,6 +8,8 @@
 #include "engine/core/components/transform.hpp"
 #include "engine/core/polyline.hpp"
 #include "engine/core/renderer/renderer.hpp"
+#include "ui.hpp"
+#include "engine/shared/ray.hpp"
 #include <cmath>
 
 namespace tmt {
@@ -26,6 +28,8 @@ void UIElementManager::on_update(const tmt::FrameData& time) {
 }
 
 void UIElementManager::update_states(const tmt::FrameData& time) {
+    auto* ui = engine.ecs.systems.try_get<tmt::UI>();
+
     /* group with buttons and image renderers */
     auto button_view = engine.ecs.view<Button, UIInteractable, ImageRenderer>();
     for (const auto& [entity, button, interactable, image_renderer] : button_view.each()) {
@@ -36,6 +40,7 @@ void UIElementManager::update_states(const tmt::FrameData& time) {
             case ButtonState::IDLE:
                 break;
             case ButtonState::ON_SELECT:
+                ui->menu_sounds.sounds.button_hover.play();
                 interactable.on_select({ entity, interactable.state, interactable.disabled });
                 interactable.state = ButtonState::SELECTED;
                 break;
@@ -49,6 +54,7 @@ void UIElementManager::update_states(const tmt::FrameData& time) {
             case ButtonState::DISABLED:
                 break;
             case ButtonState::ON_CLICK:
+                ui->menu_sounds.sounds.button_click.play();
                 button.on_click(context);
                 interactable.state = ButtonState::ON_HOLD;
                 break;
@@ -124,7 +130,14 @@ void UIElementManager::update_states(const tmt::FrameData& time) {
         /* Round to step */
         new_value = std::round(new_value / slider.step) * slider.step;
 
+        float previous_value = slider.value;
+
         slider.value = new_value;
+
+        if (!ui->slider_instance.is_valid() && previous_value != slider.value) {
+            ui->slider_instance = ui->menu_sounds.sounds.slider_move.play();
+        }
+
         slider.on_value_changed(context);
     }
 }
@@ -220,23 +233,58 @@ void UIElementManager::update_move_state(float dt) {
 
 void UIElementManager::on_mouse_move(MouseMoveEvent& event) {
     const auto mouse_pos = glm::vec2(event.x, event.y);
-    auto view = engine.ecs.view<Button>();
-    for (auto [entity, button] : view.each()) {
-        if (AnchorHelper::is_inside(entity, mouse_pos)) {
+
+    /* 2D Buttons */
+    auto view = engine.ecs.view<Button, UIComponent, Transform>();
+    for (auto [entity, button, ui_comp, transform] : view.each()) {
+        if (AnchorHelper::is_inside(entity, mouse_pos, ui_comp, transform)) {
             select_button(entity);
             return;
         }
     }
 
-    auto slider_view = engine.ecs.view<Slider>();
-    for (auto [entity, slider] : slider_view.each()) {
-        if (AnchorHelper::is_inside(entity, mouse_pos)) {
+    /* 3D Buttons */
+    auto view_3d = engine.ecs.view<Button, Transform>(entt::exclude<UIComponent>);
+    const Ray ray_3d = engine.renderer.render_view.pixel_ray(glm::ivec2(mouse_pos));
+    for (auto [entity, button, transform] : view_3d.each()) {
+        const glm::mat4 world_to_local = glm::inverse(transform.get_world_matrix());
+        const glm::vec3 local_origin = glm::vec3(world_to_local * glm::vec4(ray_3d.origin, 1.0f));
+        const glm::vec3 local_dir = glm::mat3(world_to_local) * ray_3d.dir;
+
+        /* Skip if the ray is nearly parallel to the quad's plane. */
+        if (std::abs(local_dir.z) < 1e-6f) continue;
+
+        /* Distance along the ray to the Z=0 plane. */
+        const float t = -local_origin.z / local_dir.z;
+        if (t <= 0.0f) continue; /* Quad is behind the camera. */
+
+        /* Hit point in local space. */
+        const glm::vec3 local_hit = local_origin + t * local_dir;
+
+        /* Check whether the hit lands within the unit quad. */
+        if (local_hit.x >= 0.0f && local_hit.x <= 1.0f && local_hit.y >= 0.0f && local_hit.y <= 1.0f) {
             select_button(entity);
             return;
         }
-        if (slider.handle_entity != entt::null && AnchorHelper::is_inside(slider.handle_entity, mouse_pos)) {
-            select_button(entity);
-            return;
+    }
+
+    if (engine.ecs.has_component<Slider>(selected_entity) == false) {
+        auto slider_view = engine.ecs.view<Slider, UIComponent, Transform>();
+        for (auto [entity, slider, ui_comp, transform] : slider_view.each()) {
+            if (AnchorHelper::is_inside(entity, mouse_pos, ui_comp, transform)) {
+                select_button(entity);
+                return;
+            }
+
+            if (slider.handle_entity != entt::null) {
+                const auto& ui_comp_handle = engine.ecs.get_component<UIComponent>(slider.handle_entity);
+                const auto& transform_handle = engine.ecs.get_component<Transform>(slider.handle_entity);
+                const bool handle_entity_hovered = AnchorHelper::is_inside(slider.handle_entity, mouse_pos, ui_comp_handle, transform_handle);
+                if (handle_entity_hovered) {
+                    select_button(entity);
+                    return;
+                }
+            }
         }
     }
 

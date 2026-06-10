@@ -1,14 +1,10 @@
 ﻿#include "player.hpp"
-
 #include "engine/core/polyline.hpp"
 #include "projects/game/data_headers/events.hpp"
-
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-
 #include "engine/core/input/input.hpp"
 #include "engine/core/components/camera.hpp"
-
 #include "engine/core/window.hpp"
 #include "engine/core/components/image_renderer.hpp"
 #include "engine/core/input/input_map.hpp"
@@ -17,9 +13,13 @@
 #include "engine/shared/ray.hpp"
 #include "engine/systems/physics/physics_system.hpp"
 #include "engine/tools/player_data.hpp"
+#include "engine/tools/prefab_helper.hpp"
 #include "projects/game/components/development_tools/debug_line_helper.hpp"
 #include "projects/game/data_headers/save_entries.hpp"
 #include "projects/game/data_headers/wallet.hpp"
+#include "engine/tools/second_order_solver.hpp"
+#include "engine/tools/random.hpp"
+#include "projects/game/components/development_tools/vfx_helper.hpp"
 
 // TODO before we have a serializer for input, you can add all the needed keybindings here.
 //  TODO we still have to add the gamepad inputs here
@@ -81,11 +81,6 @@ void setup_inputs(tmt::InputMap& input_map) {
     input_map.add_action(action::SECONDARY_TOOL_USE);
     input_map.add_action_mouse(action::SECONDARY_TOOL_USE, tmt::MouseButton::RIGHT);
 
-    // menus
-
-    input_map.add_action(action::OPEN_PAUSE_MENU);
-    input_map.add_key_to_action(action::OPEN_PAUSE_MENU, tmt::Key::ESCAPE);
-
     // barge
     input_map.add_action(action::ATTACH_KEY);
     input_map.add_key_to_action(action::ATTACH_KEY, tmt::Key::E);
@@ -131,9 +126,12 @@ void Player::start() {
 
         return;
     }
-    auto& cam_shake { tmt::engine.player_data.get<float>(CAMERA_SHAKE) };
+
+    auto& wallet_data = tmt::engine.player_data.get<WalletData>(WALLET_DATA, WalletData { wallet->limits, wallet->total_resource_limit });
+    auto& cam_shake { tmt::engine.player_data.get<float>(CAMERA_SHAKE, 1.f) };
     camera_shake_settings.set_multiplier(cam_shake);
     wallet->currencies = resources;
+    wallet->total_resource_limit = wallet_data.total_resource_limit;
     if (tmt::engine.ecs.is_enabled(entity)) {
         tmt::engine.input.set_mouse_relative_to_window(true);
         glm::vec2 screen_size = { tmt::engine.window.width, tmt::engine.window.height };
@@ -149,6 +147,13 @@ void Player::start() {
     if (tmt::engine.ecs.valid(barge)) {
         ensure_attached_camera();
     }
+
+    audio_emitter = tmt::engine.ecs.try_get_component<tmt::AudioEmitter>(get().entity);
+    health.value = health.max_value;
+    energy.value = energy.max_value;
+
+    // Set up the vfx emitters
+    setup_vfx_emitter(recharge_emitter_entity, player_vfx_settings.recharge_vfx_prefab);
 }
 void Player::end() {
     tmt::engine.ecs.get_dispatcher().sink<AttachEvent>().disconnect<&Player::on_attach>(this);
@@ -216,8 +221,21 @@ void Player::look_camera() {
 
         shake_offset = shake_current;
     }
+    static tmt::SecondOrderSolver::State<glm::vec3> recoil_additive { .current_state = {} };
+    tmt::SecondOrderSolver::solve(
+        recoil_additive, glm::vec3 { recoil_offset.x, recoil_offset.y, 0.f }, camera_shake_settings.recoil_frequency, camera_shake_settings.recoil_damping,
+        camera_shake_settings.recoil_initial_response, tmt::engine.frame_data().delta_time
+    );
 
-    transform.look_at(transform.get_world_position() + front + shake_offset, glm::vec3(0.0f, 1.0f, 0.0f));
+    static tmt::SecondOrderSolver::State<glm::vec3> shake_additive { .current_state = {} };
+    tmt::SecondOrderSolver::solve(
+        shake_additive, shake_offset, camera_shake_settings.shake_frequency, camera_shake_settings.shake_damping, camera_shake_settings.shake_initial_response,
+        tmt::engine.frame_data().delta_time
+    );
+
+    glm::vec3 additive = recoil_additive.current_state + shake_additive.current_state;
+
+    transform.look_at(transform.get_world_position() + front + additive, glm::vec3(0.0f, 1.0f, 0.0f));
 }
 
 void Player::ensure_attached_camera() {
@@ -585,12 +603,15 @@ void Player::update(const tmt::FrameData& time) {
 
     // Swapping crosshair
     if (input.is_action_just_pressed(action::SWITCH_RIFLE)) {
+        active_tool = ToolType::RIFLE;
         set_crosshair(rifle_crosshair);
     }
     if (input.is_action_just_pressed(action::SWITCH_GRAVITY)) {
+        active_tool = ToolType::GRAVITY;
         set_crosshair(gravity_crosshair);
     }
     if (input.is_action_just_pressed(action::SWITCH_MINING)) {
+        active_tool = ToolType::MINING;
         set_crosshair(mine_crosshair);
     }
 
@@ -654,6 +675,9 @@ void Player::update(const tmt::FrameData& time) {
     // Fire event health changed
     if (previous_health != health.value) {
         tmt::engine.ecs.get_dispatcher().trigger(PlayerHealthChanged { entity, health.value, previous_health });
+
+        float diff = std::max(0.f, previous_health - health.value);
+        add_camera_shake(diff * camera_shake_settings.damage_shake_multiplier);
     }
     previous_health = health.value;
     // Fire event max energy changed
@@ -676,6 +700,9 @@ void Player::update(const tmt::FrameData& time) {
         if (was_above_threshold && energy_percent <= low_energy_threshold) {
             set_hud_enabled(low_energy_hud, true);
 
+            // Play Sounds
+            player_sounds.battery_half.play();
+
             low_energy_timer = low_energy_duration;
             low_energy_active = true;
         }
@@ -697,6 +724,10 @@ void Player::update(const tmt::FrameData& time) {
         if (use_second_warning) {
             if (was_above_threshold_2 && energy_percent <= low_energy_threshold_2) {
                 set_hud_enabled(low_energy_hud, true);
+
+                // Play sound
+                player_sounds.battery_almost_out.play();
+
                 low_energy_timer_2 = low_energy_duration_2;
                 low_energy_active_2 = true;
             }
@@ -717,10 +748,17 @@ void Player::update(const tmt::FrameData& time) {
 
     // Energy death (timer)
     if (energy.value <= 0.0f) {
+        // Play sound
+        if (!out_of_energy) {
+            player_sounds.battery_out.play();
+            out_of_energy = true;
+        }
+
         out_of_energy_timer += time.delta_time;
     } else {
         // reset out of battery timer
         out_of_energy_timer = 0.0f;
+        out_of_energy = false;
     }
 
     if (out_of_energy_timer >= out_of_energy_time_till_death && !player_ended_run) {
@@ -736,6 +774,11 @@ void Player::update(const tmt::FrameData& time) {
 
     // Health death (instant)
     if (health.value <= 0.0f && !player_ended_run) {
+        // Play sound
+        if (!destroyed_death_instance.is_valid() && !player_destroyed) {
+            destroyed_death_instance = player_sounds.destroyed_death.play();
+            player_destroyed = true;
+        }
         // player ded -> call end run event with player ded
         tmt::engine.ecs.get_dispatcher().trigger(EndRun { true });
 
@@ -849,10 +892,17 @@ void Player::refill(float delta) {
 
     health.value = glm::min(health.max_value, health.value + delta * health.increase_multiplier);
     energy.value = glm::min(energy.max_value, energy.value + delta * energy.increase_multiplier);
+
+    if (health.value < health.max_value || energy.value < energy.max_value) {
+        GameVFXHelper::activate_vfx_emitter(recharge_emitter_entity);
+    } else {
+        GameVFXHelper::deactivate_vfx_emitter(recharge_emitter_entity);
+    }
 }
 
 void Player::drain_energy(float delta) {
     energy.value = glm::min(energy.max_value, energy.value - delta * energy_drain_per_second);
+    GameVFXHelper::deactivate_vfx_emitter(recharge_emitter_entity);
 }
 
 void Player::on_attach(const AttachEvent& event) {
@@ -899,9 +949,21 @@ void Player::on_attach(const AttachEvent& event) {
     }
 }
 
+void Player::take_damage(float damage) {
+    // Play sound
+    player_sounds.hit.play();
+    health.value -= damage;
+}
+
 void Player::apply_boost() {
     max_speed_calculated = max_speed * boost_max_speed_multiplier;
     acceleration_calculated = acceleration * boost_acceleration_multiplier;
+
+    if (!boost_was_applied) {
+        // Play sound
+        player_sounds.drone_boost.play();
+    }
+
     boost_was_applied = true;
 }
 
@@ -937,19 +999,9 @@ void Player::set_hud_enabled(tmt::Entity hud_root, bool enabled) {
 
     // Toggle this entity
     if (enabled) {
-        ecs.remove_component<tmt::Disable>(hud_root);
+        ecs.enable(hud_root);
     } else {
-        ecs.add_or_get_component<tmt::Disable>(hud_root);
-    }
-
-    // Get transform
-    if (!ecs.has_component<tmt::Transform>(hud_root)) return;
-
-    auto& transform = ecs.get_component<tmt::Transform>(hud_root);
-
-    // Recurse children
-    for (auto child : transform.get_all_children()) {
-        set_hud_enabled(child, enabled);
+        ecs.disable(hud_root);
     }
 }
 
@@ -967,8 +1019,7 @@ void Player::update_shake(float dt) {
 void Player::add_recoil() {
     recoil_offset.y += camera_shake_settings.get_recoil_strength();
 
-    float rand_x = (rand() / (float)RAND_MAX - 0.5f) * 2.0f;
-    recoil_offset.x += rand_x * camera_shake_settings.get_recoil_horizontal();
+    recoil_offset.x += Random::rand_range(-1.f, 1.f) * camera_shake_settings.get_recoil_horizontal();
 }
 
 void Player::set_crosshair(tmt::Entity active) {
@@ -988,6 +1039,27 @@ void Player::set_crosshair(tmt::Entity active) {
     if (ecs.valid(active)) {
         ecs.enable(active);
     }
+}
+
+void Player::setup_vfx_emitter(tmt::Entity& entity_to_set_up, tmt::ResourceRef<tmt::Json>& prefab_to_set_up) {
+    if (!prefab_to_set_up) {
+        tmt::Log::error("Didnt set up vfx prefab on player. Please check.");
+        return;
+    }
+
+    entity_to_set_up = tmt::PrefabHelper::instantiate_prefab(prefab_to_set_up.file_location);
+    auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity_to_set_up);
+
+    tmt::ParticleEmitter* emitter_component = tmt::engine.ecs.try_get_component<tmt::ParticleEmitter>(entity_to_set_up);
+    if (!emitter_component) {
+        tmt::Log::error("Cant spawn particle on emitter, check prefabs on entity: {}", entity);
+        return;
+    }
+
+    transform.set_parent(entity);
+    transform.set_world_position(tmt::engine.ecs.try_get_component<tmt::Transform>(entity)->get_world_position());
+
+    emitter_component->active = false;
 }
 
 }  // namespace game

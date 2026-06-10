@@ -62,19 +62,20 @@ void MiningComponent::start() {
         tmt::Log::warn("No ore manager found in scene, add one if you want to use custom ore behaviour");
     }
 
-    auto mining_data { tmt::engine.player_data.try_get<MiningData>(MINING_DATA) };
-    if (mining_data.has_value()) {
-        ray_cylinder.ray_distance = mining_data->ray_distance;
-        ray_cylinder.base_radius = mining_data->base_radius;
-        ray_cylinder.ray_amount = mining_data->ray_amount;
+    // initialize the save data with a decent default, otherwise, set the data from the mining data
+    if (auto* weapon { tmt::engine.ecs.try_get_component<Weapon>(entity) }) {
+        auto mining_data { tmt::engine.player_data.get<MiningData>(
+            MINING_DATA, { .base_radius = ray_cylinder.base_radius,
+                           .ray_distance = ray_cylinder.ray_distance,
+                           .ray_amount = ray_cylinder.ray_amount,
+                           .rays_per_second = weapon->primary_fire_rate.shots_per_second }
+        ) };
 
-        if (auto* weapon { tmt::engine.ecs.try_get_component<Weapon>(entity) }) {
-            weapon->primary_fire_rate.shots_per_second = mining_data->rays_per_second;
-        }
-    }
+        ray_cylinder.ray_distance = mining_data.ray_distance;
+        ray_cylinder.base_radius = mining_data.base_radius;
+        ray_cylinder.ray_amount = mining_data.ray_amount;
 
-    if (!tmt::engine.ecs.valid(player_entity)) {
-        player_entity = tmt::engine.ecs.view<Player>(entt::exclude_t {}).front().entity;  // Assuming there's only one player entity in the game
+        weapon->primary_fire_rate.shots_per_second = mining_data.rays_per_second;
     }
 }
 
@@ -91,6 +92,7 @@ tmt::Transform* MiningComponent::get_transform() const {
     }
     return transform;
 }
+
 void MiningComponent::draw_debug_lines() const {
     cfg.set_values();
     auto& polyline = tmt::engine.polyline;
@@ -122,12 +124,19 @@ void MiningComponent::on_weapon_fired(const WeaponFiredEvent& e) {
         player->add_camera_shake(player->camera_shake_settings.get_drill_intensity());
     }
 
+    if (mining_activate_sound.is_valid() && !mining_activate_sound_instance.is_valid()) mining_activate_sound_instance = mining_activate_sound.play();
+
     mine(e.direction);
 }
 void MiningComponent::on_stop_mining(const ReleaseShootEvent& e) {
     // TODO this will trigger no matter what the entity is for now
     stopped_mining = true;
     tmt::engine.ecs.get_dispatcher().trigger<MineNothingEvent>({ entity });
+
+    if (mining_sound_instance.is_valid()) {
+        mining_sound_instance.stop();
+        mining_sound_instance = {};
+    }
 
     tmt::Log::info("Stopped mining, reset previous hits");
 }
@@ -182,6 +191,7 @@ void MiningComponent::mine(const glm::vec3& dir) {
         mining_voxels.clear();
         stopped_mining = false;
     }
+
     previous_computed_origins = compute_ray_origins(*get_transform());
     // Get a list of all unique voxels that we hit this frame
     UniqueVoxelsSet new_mining_voxel_set {};
@@ -190,12 +200,20 @@ void MiningComponent::mine(const glm::vec3& dir) {
         const tmt::Hit hit = tmt::engine.ecs.systems.get<tmt::Physics>().raycast(ray_cast, ray_mask);
 
         if (hit.miss() == false && hit.distance < ray_cylinder.ray_distance) {
+            if (!mining_sound_instance.is_valid()) {
+                mining_sound_instance = mining_sound.play();
+            }
             new_mining_voxel_set.insert(VoxelID { hit.entity, hit.coord });
             // handle_ore(hit);
         }
     }
     if (new_mining_voxel_set.empty() == true) {
         tmt::engine.ecs.get_dispatcher().trigger<MineNothingEvent>({ entity });
+
+        if (mining_sound_instance.is_valid()) {
+            mining_sound_instance.stop();
+            mining_sound_instance = {};
+        }
     }
     // Comparing with the previous hit we get 3 options
     // we do not have a voxel that has previously been in the dictionary, but not in this frame of mining, meaning we have to remove it

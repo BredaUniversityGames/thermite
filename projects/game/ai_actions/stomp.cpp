@@ -58,8 +58,9 @@ void Stomp::on_tick(tmt::Entity enemy_entity, float dt) {
         tmt::Transform& enemy_transform = tmt::engine.ecs.get_component<tmt::Transform>(enemy_entity);
         const auto& enemy_entity_pos = enemy_transform.get_world_position();
 
-        if (enemy.audio_emitter != nullptr && !enemy.shield_slam_instance.is_valid()) {
-            enemy.shield_slam_instance = enemy.audio_emitter->play(enemy.sounds.sound_shield_slam);
+        auto* audio_emitter = tmt::engine.ecs.try_get_component<tmt::AudioEmitter>(enemy_entity);
+        if (audio_emitter != nullptr && !enemy.shield_slam_instance.is_valid()) {
+            enemy.shield_slam_instance = audio_emitter->play(enemy.sounds.sound_shield_slam);
             enemy.shield_slam_instance.set_maximum_distance(enemy.aggro_range * 1.25f);  // Multiply be 1.25f to ensure the player can hear it even when at the edge of the range
         }
 
@@ -67,7 +68,7 @@ void Stomp::on_tick(tmt::Entity enemy_entity, float dt) {
         auto& player_transform = tmt::engine.ecs.get_component<tmt::Transform>(enemy.player);
         const auto& player_pos = player_transform.get_world_position();
         if (glm::length(player_pos - enemy_entity_pos) <= enemy.stomp_radius) {
-            tmt::engine.ecs.get_component<game::Player>(enemy.player).health.value -= enemy.stomp_damage;
+            tmt::engine.ecs.get_component<game::Player>(enemy.player).take_damage(enemy.stomp_damage);
         }
 
         tmt::engine.polyline.use_color(0, 1, 0);
