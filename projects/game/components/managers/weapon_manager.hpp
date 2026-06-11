@@ -1,5 +1,6 @@
 #pragma once
 #include "engine/systems/gameplay/game_component.hpp"
+#include "engine/core/audio.hpp"
 #include "projects/game/data_headers/events.hpp"
 #include "engine/core/audio.hpp"
 
@@ -92,6 +93,7 @@ class WeaponManager : public tmt::GameComponent<WeaponManager> {
     /// </summary>
     /// <param name="event">The weapon fired event containing information about the fired weapon.</param>
     void on_overheat(const WeaponFiredEvent& event);
+    bool gravity_overheated() const;
     void check_trigger_shoot_event();
     void transition_to_other_weapons();
     void show_weapon_tips(game::WeaponType slot);

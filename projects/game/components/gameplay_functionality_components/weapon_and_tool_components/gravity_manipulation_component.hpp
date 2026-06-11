@@ -8,8 +8,8 @@
 namespace game {
 
 struct GravitySounds {
-    tmt::AudioEvent gravity_activate;  // done
-    tmt::AudioEvent gravity_hold_object;     // done
+    tmt::AudioEvent gravity_activate;       // done
+    tmt::AudioEvent gravity_hold_object;    // done
     tmt::AudioEvent gravity_launch_object;  // done
 };
 
@@ -40,8 +40,8 @@ class GravityManipulationComponent : public tmt::GameComponent<GravityManipulati
     entt::entity animated_tool_entity;     // entity with the animation state machine to animate
 
     GravitySounds sounds;
-    tmt::AudioInstance gravity_active_instance;
     GravityVFX vfx_gravity_gun;
+    tmt::AudioInstance gravity_active_instance;
 
    private:
     std::vector<entt::entity> currently_manipulated_entities;
@@ -57,7 +57,6 @@ class GravityManipulationComponent : public tmt::GameComponent<GravityManipulati
     void apply_enemy_override();
     void clear_enemy_override();
 
-    void on_release(const ReleaseShootEvent& e);
     // TODO the same, this could be primarily handled through weapon, a second timer could be used for the second shot
 };
 
