@@ -229,7 +229,7 @@ void game::MediumEnemy::update(const tmt::FrameData& time) {
     glm::vec3 move_to = ray.origin + ray.dir * hit.distance - ray.dir * (height_above_ground + height_above_ground_offset);
     glm::vec3 desired_velocity = glm::normalize(move_to - walking_transform.get_world_position()) * walk_speed * 0.5f;
     if (glm::isnan(desired_velocity.x)) {
-        tmt::Log::warn("desired vel is nan");
+        assert(false);
     } else {
         if (glm::length(desired_velocity) > 10.0f) tmt::Log::warn("Desired velocity is very high: {}", glm::length(desired_velocity));
         velocity += desired_velocity;

@@ -51,39 +51,47 @@ class Log {
 
     template <typename... Args>
     static void info(Scope scope, spdlog::format_string_t<Args...> fmt, Args&&... args) {
+        return; 
         loggers[scope]->info(fmt, std::forward<Args>(args)...);
     }
     template <typename... Args>
     static void debug(Scope scope, spdlog::format_string_t<Args...> fmt, Args&&... args) {
+        return;
         loggers[scope]->debug(fmt, std::forward<Args>(args)...);
     }
 
     template <typename... Args>
     static void warn(Scope scope, spdlog::format_string_t<Args...> fmt, Args&&... args) {
+        return;
         loggers[scope]->warn(fmt, std::forward<Args>(args)...);
     }
 
     template <typename... Args>
     static void error(Scope scope, spdlog::format_string_t<Args...> fmt, Args&&... args) {
+        return;
         loggers[scope]->error(fmt, std::forward<Args>(args)...);
     }
     template <typename... Args>
     static void debug(spdlog::format_string_t<Args...> fmt, Args&&... args) {
+        return;
         loggers[Scope::GLOBAL]->debug(fmt, std::forward<Args>(args)...);
     }
     template <typename... Args>
     static void info(spdlog::format_string_t<Args...> fmt, Args&&... args) {
+        return;
         loggers[Scope::GLOBAL]->info(fmt, std::forward<Args>(args)...);
     }
 
     template <typename... Args>
     static void warn(spdlog::format_string_t<Args...> fmt, Args&&... args) {
+        return;
         spdlog::warn(fmt, std::forward<Args>(args)...);
         loggers[Scope::GLOBAL]->warn(fmt, std::forward<Args>(args)...);
     }
 
     template <typename... Args>
     static void error(spdlog::format_string_t<Args...> fmt, Args&&... args) {
+        return;
         loggers[Scope::GLOBAL]->error(fmt, std::forward<Args>(args)...);
     }
 

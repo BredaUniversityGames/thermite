@@ -10,10 +10,13 @@
 #include "engine/systems/animation/components/bone_hierarchy_renderer.hpp"
 #include "engine/systems/animation/constraints/damped_transform.hpp"
 #include "engine/systems/animation/constraints/two_bone_ik.hpp"
+#include "engine/systems/animation/constraints/fabrik_ik.hpp"
 #include "engine/core/renderer/renderer.hpp"
 #include "engine/core/components/rig_controller.hpp"
 #include "engine/systems/physics/components/voxel_body.hpp"
 #include "engine/systems/ai/navigation/nav_mesh.hpp"
+#include <glm/gtx/quaternion.hpp>
+
 
 namespace tmt {
 
@@ -45,6 +48,13 @@ void RigModelManager::on_start() {
 
         if (rig_ent != entt::null) {
             two_bone_constraint.constrained_rig_ent = rig_ent;
+        }
+    }
+    for (const auto&& [entity, transform, fabrik_ik_constraint] : engine.ecs.view<Transform, AnimConstraints::FABRIKIKConstraint>().each()) {
+        Entity rig_ent = try_find_rig_entity(entity);
+
+        if (rig_ent != entt::null) {
+            fabrik_ik_constraint.constrained_rig_ent = rig_ent;
         }
     }
 }
@@ -202,8 +212,10 @@ void RigModelManager::on_draw_lines() const {
 
 void tmt::AnimationConstraintSystem::on_start() {
     for (const auto&& [rig_ent, rig_model] : engine.ecs.view<RigModel>().each()) {
-        auto& constrained_rig = engine.ecs.add_component<ConstrainedRig>(rig_ent);
-        constrained_rig.initial_reference_poses = rig_model.bone_keyframes;
+        auto constrained_rig = engine.ecs.try_get_component<ConstrainedRig>(rig_ent);
+        if(!constrained_rig) constrained_rig = &engine.ecs.add_component<ConstrainedRig>(rig_ent);
+        constrained_rig->initial_reference_poses = rig_model.bone_keyframes;
+        constrained_rig->constrained_poses = constrained_rig->initial_reference_poses;
     }
 
     for (const auto&& [entity, transform, damped_constraint] : engine.ecs.view<Transform, AnimConstraints::DampedTransformConstraint>().each()) {
@@ -242,6 +254,9 @@ void tmt::AnimationConstraintSystem::on_start() {
                 two_bone_constraint.foot_parent_rest_rotation = glm::inverse(parent_transform.get_world_rotation()) * end_transform->get_world_rotation();
             }
         }
+    }
+    for (const auto&& [entity, transform, fabrik_ik_constraint] : engine.ecs.view<Transform, AnimConstraints::FABRIKIKConstraint>().each()) {
+        
     }
 }
 void tmt::AnimationConstraintSystem::on_update(const tmt::FrameData& time) {
@@ -297,6 +312,116 @@ void tmt::AnimationConstraintSystem::on_update(const tmt::FrameData& time) {
             root_transform.set_local_rotation(output.root_rot);
             mid_transform.set_local_rotation(output.mid_rot);
             if (two_bone_constraint.obey_foot_bind_pose) tip_transform.set_local_rotation(output.end_rot);
+        }
+    }
+    for (const auto&& [entity, transform, fabrik_ik_constraint] : engine.ecs.view<Transform, AnimConstraints::FABRIKIKConstraint>().each()) {
+        
+        if (!fabrik_ik_constraint.pole_dirs_initialized) {
+            glm::quat root_world_rot = glm::quat_identity<float, glm::packed_highp>();
+            if (fabrik_ik_constraint.constrained_rig_ent != entt::null) {
+                auto& rig_transform = tmt::engine.ecs.get_component<tmt::Transform>(fabrik_ik_constraint.constrained_rig_ent);
+                root_world_rot = rig_transform.get_world_rotation();
+            }
+            const size_t joint_count = fabrik_ik_constraint.chain.size();
+
+            auto& last_seg_transform = tmt::engine.ecs.get_component<tmt::Transform>(fabrik_ik_constraint.chain[fabrik_ik_constraint.chain.size() - 1]);
+            auto& second_last_transform = tmt::engine.ecs.get_component<tmt::Transform>(fabrik_ik_constraint.chain[fabrik_ik_constraint.chain.size() - 2]);
+
+            fabrik_ik_constraint.local_aim = glm::normalize(last_seg_transform.get_local_position());
+
+            glm::vec3 rig_up_world = root_world_rot * glm::vec3(0, 0, 1);
+
+            glm::vec3 local_up_axis = glm::inverse(second_last_transform.get_world_rotation()) * rig_up_world;
+
+            // Remove component along local aim axis.
+            local_up_axis -= fabrik_ik_constraint.local_aim * glm::dot(local_up_axis, fabrik_ik_constraint.local_aim);
+
+            if (glm::length2(local_up_axis) < 0.000001f) {
+                // Fallback if rig up is parallel to the child direction.
+                local_up_axis = glm::vec3(0, 0, 1);
+
+                local_up_axis -= fabrik_ik_constraint.local_aim * glm::dot(local_up_axis, fabrik_ik_constraint.local_aim);
+
+                if (glm::length2(local_up_axis) < 0.000001f) {
+                    local_up_axis = glm::vec3(1, 0, 0);
+                    local_up_axis -= fabrik_ik_constraint.local_aim * glm::dot(local_up_axis, fabrik_ik_constraint.local_aim);
+                }
+            }
+
+            fabrik_ik_constraint.local_up = glm::normalize(local_up_axis);
+
+            if (joint_count >= 3) {
+                fabrik_ik_constraint.cached_local_pole_dirs.resize(joint_count - 2);
+                // fabrik_ik_constraint.rest_angles.resize(joint_count-2);
+
+                bool all_valid = true;
+
+                for (size_t i = 1; i + 1 < joint_count; ++i) {
+                    const auto& a_transform = tmt::engine.ecs.get_component<tmt::Transform>(fabrik_ik_constraint.chain[i - 1]);
+
+                    const auto& joint_transform = tmt::engine.ecs.get_component<tmt::Transform>(fabrik_ik_constraint.chain[i]);
+
+                    const auto& b_transform = tmt::engine.ecs.get_component<tmt::Transform>(fabrik_ik_constraint.chain[i + 1]);
+
+                    glm::vec3 world_pole_dir;
+
+                    bool valid =
+                        AnimConstraints::FABRIKIK::derive_pole_dir(a_transform.get_world_position(), joint_transform.get_world_position(), b_transform.get_world_position(), world_pole_dir);
+
+                    if (!valid) {
+                        all_valid = false;
+                        break;
+                    }
+
+                    glm::vec3 local_pole_dir = glm::inverse(root_world_rot) * world_pole_dir;
+
+                    fabrik_ik_constraint.cached_local_pole_dirs[i - 1] = glm::normalize(local_pole_dir);
+                }
+
+                fabrik_ik_constraint.pole_dirs_initialized = all_valid;
+            }
+        }
+        
+        AnimConstraints::FABRIKIK::FABRIKSolverInput input_data;
+        input_data.chain_entities = fabrik_ik_constraint.chain;
+        input_data.angle_strengths = fabrik_ik_constraint.angle_strengths;
+
+        glm::quat root_world_rot = glm::quat_identity<float, glm::packed_highp>();
+        if (fabrik_ik_constraint.constrained_rig_ent != entt::null) {
+            auto& rig_transform = tmt::engine.ecs.get_component<tmt::Transform>(fabrik_ik_constraint.constrained_rig_ent);
+            root_world_rot = rig_transform.get_world_rotation();
+        }
+        input_data.rig_world_rotation = root_world_rot;
+        for (const glm::vec3& local_pole : fabrik_ik_constraint.cached_local_pole_dirs) {
+            glm::vec3 world_pole = root_world_rot * local_pole;
+            input_data.poles.push_back(glm::normalize(world_pole));
+        }
+
+        auto& effector_transform = tmt::engine.ecs.get_component<tmt::Transform>(fabrik_ik_constraint.target_effector);
+        input_data.effector = effector_transform.get_world_position();
+        input_data.local_aim = fabrik_ik_constraint.local_aim;
+        input_data.local_up = fabrik_ik_constraint.local_up;
+
+        auto output_data = AnimConstraints::FABRIKIK::solve_fabrik(input_data);
+
+        if (fabrik_ik_constraint.constrained_rig_ent != entt::null) {
+            auto& constrained_rig = engine.ecs.get_component<ConstrainedRig>(fabrik_ik_constraint.constrained_rig_ent);
+            
+            for (int i = 0; i < fabrik_ik_constraint.chain.size() - 1; i++) {
+                auto segment_entity = fabrik_ik_constraint.chain[i];
+
+                auto& local_keyframe = constrained_rig.constrained_poses[segment_entity];
+                local_keyframe.rotation = output_data.chain_rotations[i];
+            }
+
+            
+        } else {
+            for (int i = 0; i < fabrik_ik_constraint.chain.size() - 1; i++) {
+                auto segment_entity = fabrik_ik_constraint.chain[i];
+
+                auto& chain_segment_transform = tmt::engine.ecs.get_component<tmt::Transform>(segment_entity);
+                chain_segment_transform.set_local_rotation(output_data.chain_rotations[i]);
+            }
         }
     }
     for (const auto&& [entity, transform, walk_cycle] : engine.ecs.view<Transform, AnimConstraints::EffectorWalkCycle>().each()) {

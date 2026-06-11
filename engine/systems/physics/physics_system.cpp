@@ -1,4 +1,6 @@
 #include "physics_system.hpp"
+#include "physics_system.hpp"
+#include "physics_system.hpp"
 
 #include <glm/gtx/norm.hpp>
 #include <glm/gtx/quaternion.hpp>
@@ -1108,6 +1110,27 @@ std::vector<std::pair<Entity, std::vector<std::pair<float, glm::uvec3>>>> Physic
         entity = entities[(uint32_t)entity];
     }
     return data;
+}
+
+std::pair<bool, glm::vec3> Physics::check_sphere(const glm::vec3& center, float radius, uint32_t layer_mask) {
+    return bvh.check_sphere(center, radius, layer_mask);
+}
+
+std::pair<bool, glm::vec3> Physics::sweep_spheres(const glm::vec3& center_start, const glm::vec3& end, float radius, uint32_t layer_mask, int checks) {
+    glm::vec3 diff = (end - center_start);
+    glm::vec3 direction = glm::normalize(diff);
+    float mag = glm::length(diff);
+    float interval = mag / static_cast<float>(checks);
+
+    for (size_t i = 0; i < checks; i++) {
+        auto info_pair = check_sphere(center_start + direction * static_cast<float>(i) * interval, radius, layer_mask);
+        
+        tmt::engine.polyline.use_color({1.f, 0.f, 0.f, 1.f});
+        tmt::engine.polyline.draw_sphere(center_start + direction * static_cast<float>(i) * interval, radius);
+
+        if(info_pair.first) return info_pair;
+    }
+    return {false, {}};
 }
 
 void Physics::recalculate_physics_data(VoxelBody& vb, VoxelVolume& volume) {

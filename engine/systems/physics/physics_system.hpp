@@ -70,6 +70,8 @@ class Physics : public ISystem {
     // Overlap against layers in layer_mask
     std::vector<uint32_t> overlap(const Aabb& aabb, uint32_t layer_mask) const;
     std::vector<std::pair<Entity, std::vector<std::pair<float, glm::uvec3>>>> overlap_sphere(const glm::vec3& center, float radius, uint32_t layer_mask);
+    std::pair<bool, glm::vec3> check_sphere(const glm::vec3& center, float radius, uint32_t layer_mask);
+    std::pair<bool, glm::vec3> sweep_spheres(const glm::vec3& center_start, const glm::vec3& end, float radius, uint32_t layer_mask, int checks = 5);
 
     static void recalculate_physics_data(VoxelBody& vb, VoxelVolume& volume);
     static void recalculate_surface_normals(VoxelRenderer& renderer);

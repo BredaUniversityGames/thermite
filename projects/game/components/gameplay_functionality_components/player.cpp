@@ -590,6 +590,8 @@ void Player::update(const tmt::FrameData& time) {
     recoil_offset.x = glm::mix(recoil_offset.x, 0.0f, recovery);
     recoil_offset.y = glm::mix(recoil_offset.y, 0.0f, recovery);
 
+    auto& transform = tmt::engine.ecs.get_component<tmt::Transform>(entity);
+
     // Swapping crosshair
     if (input.is_action_just_pressed(action::SWITCH_RIFLE)) {
         active_tool = ToolType::RIFLE;

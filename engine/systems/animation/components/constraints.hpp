@@ -41,6 +41,26 @@ struct TwoBoneIKConstraint {
     tmt::Entity constrained_rig_ent = entt::null;
     bool obey_foot_bind_pose = false;
 };
+
+struct FABRIKIKConstraint
+{
+    std::vector<tmt::Entity> chain = {entt::null};
+    tmt::Entity target_effector = entt::null;
+
+    bool pole_dirs_initialized = false;
+    std::vector<glm::vec3> chain_pole_dirs;
+    std::vector<glm::vec3> cached_local_pole_dirs;
+    std::vector<float> angle_strengths;
+
+    //last bone rotation
+    glm::vec3 local_aim;
+    glm::vec3 local_up;
+
+    //std::vector<float> rest_angles;
+
+    tmt::Entity constrained_rig_ent = entt::null;
+};
+
 struct EffectorWalkCycle {
     // step after how much time?
     float step_time;
@@ -86,6 +106,7 @@ struct EffectorWalkCycle {
 }  // namespace tmt
 TMT_COMPONENT(tmt::AnimConstraints::DampedTransformConstraint, "Damped Transform Constraint", (damp));
 TMT_COMPONENT(tmt::AnimConstraints::TwoBoneIKConstraint, "Two Bone IK Constraint", (mid, tip, target_position_entity, bend_position_entity, obey_foot_bind_pose));
+TMT_COMPONENT(tmt::AnimConstraints::FABRIKIKConstraint, "FABRIK IK Constraint", (chain, target_effector, chain_pole_dirs, angle_strengths));
 TMT_COMPONENT(
     tmt::AnimConstraints::EffectorWalkCycle, "Effector Walk Cycle",
     (step_time, step_duration, step_height, desired_target_entity, effector_entity, ground_entity, cycle_offset, grounded, step_prediction_strength, stepping_curve, height_curve)

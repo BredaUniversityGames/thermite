@@ -459,7 +459,7 @@ int tmt::NavMesh::find_closest_node(const glm::vec3& position) {
     if (!nodes_mesh) return -1;
     for (int i = 0; i < (int)(*nodes_mesh).size(); i++) {
         float distance = glm::distance(position, (*nodes_mesh)[i].world_pos);
-        if (distance < closest_distance) {
+        if (distance < closest_distance && !(*nodes_mesh)[i].connecting_nodes.empty()) {
             closest_distance = distance;
             closest_node = i;
         }
@@ -505,7 +505,9 @@ std::optional<glm::vec3> tmt::NavMesh::follow_path(glm::vec3 start, glm::vec3 en
         }
     }
 
-    return glm::normalize(target_pos - start);
+    glm::vec3 dir = glm::normalize(target_pos - start);
+
+    return dir;
 }
 
 void tmt::NavMesh::check_if_should_regenerate() {

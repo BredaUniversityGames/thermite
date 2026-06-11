@@ -81,8 +81,11 @@ class Bvh2 {
     /* Trace the acceleration structure. Used for raycasting to check for layers to ignore */
     Hit trace(const Ray& ray, uint32_t ray_mask) const;
 
-    /* Sphere check the acceleration structure */
+    /* Sphere overlap the acceleration structure */
     std::vector<std::pair<tmt::Entity, std::vector<std::pair<float, glm::uvec3>>>> overlap_sphere(const glm::vec3& center, float radius, uint32_t layer_mask);
+
+    /* Sphere check the acceleration structure */
+    std::pair<bool, glm::vec3> check_sphere(const glm::vec3& center, float radius, uint32_t layer_mask);
 };
 
 }  // namespace tmt

@@ -513,7 +513,41 @@ std::vector<std::pair<Entity, std::vector<std::pair<float, glm::uvec3>>>> Bvh2<T
     }
 
     return return_data;
-}
+} 
+
+template <typename T>
+std::pair<bool, glm::vec3> Bvh2<T>::check_sphere(const glm::vec3& center, float radius, uint32_t layer_mask) {
+    Aabb sphere_aabb(center - radius, center + radius);
+
+    std::vector<uint32_t> candidates = overlap(sphere_aabb, layer_mask);
+
+    std::pair<bool, glm::vec3> return_data = {false, {}};
+
+    float closest = std::numeric_limits<float>::max();
+    for (uint32_t i = 0; i < candidates.size(); i++) {
+        const T& prim = prims[candidates[i]];
+        const std::vector<std::pair<float, glm::uvec3>> hit_voxels = prim.sphere_overlap(center, radius);
+
+        const glm::vec3 half_extent = glm::vec3(prim.size) * UNITS_PER_VOXEL * 0.5f;
+        if (!hit_voxels.empty()) 
+        {
+            return_data.first = true;
+            for  (auto& vox : hit_voxels) {
+                if(vox.first < closest) 
+                {
+                    closest = vox.first;
+
+                    auto& local_vox_coord = vox.second;
+                    const glm::vec3 local_voxel_center = -half_extent + (glm::vec3(local_vox_coord.x, local_vox_coord.y, local_vox_coord.z) + glm::vec3(0.5f)) * UNITS_PER_VOXEL;
+
+                    return_data.second = prim.local_to_world * glm::vec4(local_voxel_center, 1.f);
+                }
+            }
+        }
+    }
+
+    return return_data;
+} 
 
 template <typename T>
 Bvh2<T>::~Bvh2() {
