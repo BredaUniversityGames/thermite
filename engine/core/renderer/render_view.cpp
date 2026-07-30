@@ -102,6 +102,10 @@ void RenderView::init() {
                           .expect("failed to create lbuffer texture.");
     lbuffer.image = bank.create_image("Luminance Buffer Image", lbuffer.texture).expect("failed to create lbuffer image.");
 
+    lbuffer_post_taa.texture = bank.create_texture("Luminance Buffer (Post TAA) Texture", TextureUsage::ColorAttachment | TextureUsage::Storage | TextureUsage::Sampled, TextureFormat::RGBA16Sfloat, full_rate)
+                          .expect("failed to create lbuffer texture.");
+    lbuffer_post_taa.image = bank.create_image("Luminance Buffer (Post TAA) Image", lbuffer_post_taa.texture).expect("failed to create lbuffer image.");
+
     /* Create the thresholded luminance buffer */
     tbuffer.meta = { 7, 1 };  // Set 7 mips, 1 array layer
     tbuffer.texture =
@@ -242,6 +246,8 @@ void RenderView::deinit() {
     bank.destroy(prev_dbuffer.texture);
     bank.destroy(lbuffer.image);
     bank.destroy(lbuffer.texture);
+    bank.destroy(lbuffer_post_taa.image);
+    bank.destroy(lbuffer_post_taa.texture);
     bank.destroy(diff_buffer.image);
     bank.destroy(diff_buffer.texture);
     for (auto& timage : tbuffer.images) bank.destroy(timage);
@@ -324,6 +330,7 @@ void RenderView::resize_textures() {
     bank.resize_texture(dbuffer.texture, full_rate).expect("failed to resize depth buffer texture.");
     bank.resize_texture(prev_dbuffer.texture, full_rate).expect("failed to resize depth buffer texture.");
     bank.resize_texture(lbuffer.texture, full_rate).expect("failed to resize lbuffer texture.");
+    bank.resize_texture(lbuffer_post_taa.texture, full_rate).expect("failed to resize lbuffer texture.");
     bank.resize_texture(diff_buffer.texture, diff_rate).expect("failed to resize diffuse buffer texture.");
     bank.resize_texture(spec_buffer.texture, spec_rate).expect("failed to resize specular buffer texture.");
     bank.resize_texture(hbuffer1.texture, full_rate).expect("failed to resize hbuffer texture.");

@@ -17,10 +17,12 @@ Texture2D<uint32_t> stencil_buffer;
 [vk::image_format("unknown")]
 Texture2D<uint32_t> prev_stencil_buffer;
 /* Luminance buffer. */
-RWTexture2D<float3> lbuffer;
+Texture2D<float3> lbuffer;
 /* History buffers. */
 RWTexture2D<float4> hbuffer1;
 Texture2D<float4> hbuffer2;
+/* Post TAA Buffer */
+RWTexture2D<float3> lbuffer_out;
 
 [[vk::push_constant]]
 uint32_t taa_flag;
@@ -39,8 +41,7 @@ float3 clip_aabb(float3 aabb_min, float3 aabb_max, float3 history) {
 // Source: TheRealMJP - https://gist.github.com/TheRealMJP/c83b8c0f46b63f3a88a5986f4fa982b1
 // Samples a texture with Catmull-Rom filtering, using 9 texture fetches instead of 16.
 // See http://vec3.ca/bicubic-filtering-in-fewer-taps/ for more details
-float4 sample_texture_catmull_roll(in Texture2D<float4> tex, in SamplerState linearSampler, in float2 uv, in float2 texSize)
-{
+float4 sample_texture_catmull_roll(in Texture2D<float4> tex, in SamplerState linearSampler, in float2 uv, in float2 texSize) {
     // We're going to sample a a 4x4 grid of texels surrounding the target UV coordinate. We'll do this by rounding
     // down the sample location to get the exact center of our "starting" texel. The starting texel will be at
     // location [1, 1] in the grid, where [0, 0] is the top left corner.
@@ -93,9 +94,10 @@ float4 sample_texture_catmull_roll(in Texture2D<float4> tex, in SamplerState lin
 [numthreads(16, 8, 1)]
 void main(int2 thread_id: SV_DispatchThreadID) {
     float3 curr_luminance = lbuffer[thread_id];
+    float3 curr_ycocg = cs::acescg_to_ycocg(curr_luminance);
 
     if (taa_flag != 1u) {
-        lbuffer[thread_id] = curr_luminance;
+        lbuffer_out[thread_id] = curr_luminance;
         return;
     }
 
@@ -105,13 +107,13 @@ void main(int2 thread_id: SV_DispatchThreadID) {
     /* m1 & m2 are used for variance clipping */
     float3 m1 = float3(0.0f, 0.0f, 0.0f);
     float3 m2 = float3(0.0f, 0.0f, 0.0f);
-    float3 neighbour_min = curr_luminance;
-    float3 neighbour_max = curr_luminance;
+    float3 neighbour_min = curr_ycocg;
+    float3 neighbour_max = curr_ycocg;
     int2 closest_offset = int2(0, 0);
     float closest_depth = 0.0f;
     for (int y = -1; y <= 1; y++) {
         for (int x = -1; x <= 1; x++) {
-            const float3 s = lbuffer[thread_id + int2(x, y)];
+            const float3 s = cs::acescg_to_ycocg(lbuffer[thread_id + int2(x, y)]);
             m1 += s;
             m2 += s * s;
             neighbour_min = min(neighbour_min, s);
@@ -142,7 +144,9 @@ void main(int2 thread_id: SV_DispatchThreadID) {
 
     /* Sample and clip history */
     float3 prev_luminance = sample_texture_catmull_roll(hbuffer2, linear_sampler, uv_last, float2(render_view.resolution)).rgb;
-    prev_luminance = clip_aabb(var_min, var_max, prev_luminance);
+    float3 prev_ycocg = cs::acescg_to_ycocg(prev_luminance);
+    prev_ycocg = clip_aabb(var_min, var_max, prev_ycocg);
+    prev_luminance = cs::ycocg_to_acescg(prev_ycocg);
 
     /* Reject off-screen */
     const bool valid = all(uv_last >= 0.0f) && all(uv_last <= 1.0f);
@@ -151,12 +155,13 @@ void main(int2 thread_id: SV_DispatchThreadID) {
     /* Use less of previous frame if we reproject particles */
     const uint32_t prev_stencil = prev_stencil_buffer.SampleLevel(point_sampler, uv_last, 0.0f);
     blend = curr_stencil == prev_stencil ? blend : 0.1f;
-            
+
     output = lerp(curr_luminance, prev_luminance, blend);
 
     /* NaN rejection check */
-    if (any(isnan(output)) == false) {
-        hbuffer1[thread_id] = float4(output, 1.0f);
-        lbuffer[thread_id] = output;
+    if (any(isnan(output))) {
+        output = curr_luminance;  // fall back to current frame
     }
+    hbuffer1[thread_id] = float4(output, 1.0f);
+    lbuffer_out[thread_id] = output;
 }

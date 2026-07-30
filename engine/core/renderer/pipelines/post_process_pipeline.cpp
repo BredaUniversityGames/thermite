@@ -35,9 +35,10 @@ void PostProcessPipeline::enqueue(RenderGraph& render_graph, RenderView& render_
         .read(frame_flag ? render_view.depth_image : render_view.prev_depth_image)
         .read(frame_flag ? render_view.stencil_image : render_view.prev_stencil_image)
         .read(frame_flag ? render_view.prev_stencil_image : render_view.stencil_image)
-        .write(render_view.lbuffer.image)
+        .read(render_view.lbuffer.image)
         .write(frame_flag ? render_view.hbuffer1.image : render_view.hbuffer2.image)
         .read(frame_flag ? render_view.hbuffer2.image : render_view.hbuffer1.image)
+        .write(render_view.lbuffer_post_taa.image)
         .push_constants(&taa_flag, 0, sizeof(uint32_t))
         .group_size(16, 8)
         .work_size(render_view.gpu_view.resolution.x, render_view.gpu_view.resolution.y);
@@ -54,7 +55,7 @@ void PostProcessPipeline::enqueue(RenderGraph& render_graph, RenderView& render_
 
         /* clang-format off */
         render_graph.add_compute_pass("luminance threshold", "luminance_threshold.cs")
-                    .read(render_view.lbuffer.image)
+                    .read(render_view.lbuffer_post_taa.image)
                     .write(render_view.tbuffer.images[0])
                     .push_constants(&threshold_constants, 0u, sizeof(ThresholdConstants))
                     .group_size(16, 8)
@@ -107,7 +108,7 @@ void PostProcessPipeline::enqueue(RenderGraph& render_graph, RenderView& render_
     render_graph.add_compute_pass("color grading and tonemapping", "cg_tonemap.cs")
         .read(render_view.render_view_buffer)
         .read(scene_view.scene_view)
-        .read(render_view.lbuffer.image)
+        .read(render_view.lbuffer_post_taa.image)
         .read(render_view.tbuffer.images[0])
         .write(render_view.post_tonemap.image)
         .read(lut_sampler)
